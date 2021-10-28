@@ -3,6 +3,7 @@ module github.com/smartcontractkit/chainlink-relay
 go 1.17
 
 require (
+	github.com/Depado/ginprom v1.2.1-0.20200115153638-53bbba851bd8
 	github.com/gin-gonic/gin v1.7.4
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/lib/pq v1.10.3

@@ -29,8 +29,52 @@ type EncryptedKeyRings struct {
 
 type EthKeyStates gorm.Model
 
-type P2PPeers struct {
+type P2pPeers struct {
 	gorm.Model
 	Addr   string
 	PeerID string `gorm:"not null"`
+}
+
+type Offchainreporting2ContractConfigs struct {
+	gorm.Model
+	Offchainreporting2OracleSpecID uint32         `gorm:"primaryKey;unique"`
+	ConfigDigest                   [32]byte       `gorm:"type:bytea"`
+	Signers                        pq.ByteaArray  `gorm:"type:bytea[]"`
+	Transmitters                   pq.StringArray `gorm:"type:text[]"`
+	OnchainConfig                  []byte         `gorm:"type:bytea"`
+	OffchainConfig                 []byte         `gorm:"type:bytea"`
+	ConfigCount                    uint64
+	F                              uint8
+	OffchainConfigVersion          uint64
+}
+
+type Offchainreporting2DiscovererAnnouncements struct {
+	LocalPeerID  string `gorm:"primaryKey"`
+	RemotePeerID string `gorm:"primaryKey"`
+	Ann          []byte `gorm:"type:bytea"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type Offchainreporting2PersistentStates struct {
+	Offchainreporting2OracleSpecID uint32 `gorm:"primaryKey;unique"`
+	ConfigDigest                   []byte `gorm:"primaryKey;unique;type:bytea"`
+	Epoch                          uint32
+	HighestSentEpoch               uint32
+	HighestReceivedEpoch           []uint32 `gorm:"type:bigint[]"`
+	CreatedAt                      time.Time
+	UpdatedAt                      time.Time
+}
+
+type Offchainreporting2PendingTransmissions struct {
+	Offchainreporting2OracleSpecID uint32        `gorm:"primaryKey;unique"`
+	ConfigDigest                   []byte        `gorm:"primaryKey;unique;type:bytea"`
+	Epoch                          uint32        `gorm:"primaryKey;unique"`
+	Round                          uint8         `gorm:"primaryKey;unique"`
+	ExtraHash                      []byte        `gorm:"type:bytea"`
+	Report                         []byte        `gorm:"type:bytea"`
+	AttributedSignatures           pq.ByteaArray `gorm:"type:bytea[]"`
+	Time                           time.Time
+	CreatedAt                      time.Time
+	UpdatedAt                      time.Time
 }

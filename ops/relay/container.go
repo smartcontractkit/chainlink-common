@@ -51,7 +51,7 @@ func New(ctx *pulumi.Context, image *docker.Image, dbPort int, index int, secret
 	})
 	return Relay{
 		Name: fmt.Sprintf("relay_%s", indexStr),
-		URL: fmt.Sprintf("localhost:%d", config.RequireInt(ctx, "R-PORT-START")+index),
-		P2P: fmt.Sprintf("localhost:%d", config.RequireInt(ctx, "R-P2P_LISTEN_PORT-START")+index),
+		URL:  fmt.Sprintf("localhost:%d", config.RequireInt(ctx, "R-PORT-START")+index),
+		P2P:  fmt.Sprintf("localhost:%d", config.RequireInt(ctx, "R-P2P_LISTEN_PORT-START")+index),
 	}, err
 }

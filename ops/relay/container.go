@@ -21,13 +21,13 @@ func New(ctx *pulumi.Context, image *docker.Image, dbPort int, index int, secret
 		indexStr = strconv.Itoa(index - 1)
 	}
 
-	// get env vars from YAML file
+	// get env vars from YAML file (staddard across relays)
 	envs, err := utils.GetEnvVars(ctx, "R")
 	if err != nil {
 		return Relay{}, err
 	}
 
-	// add additional configs
+	// add additional configs (collected or calculated from environment configs)
 	envs = append(envs,
 		fmt.Sprintf("DATABASE_URL=postgresql://postgres@localhost:%d/relay_%s?sslmode=disable", dbPort, indexStr),
 		fmt.Sprintf("CLIENT_NODE_URL=%s", "http://localhost:6688"),
@@ -38,8 +38,12 @@ func New(ctx *pulumi.Context, image *docker.Image, dbPort int, index int, secret
 		fmt.Sprintf("CHAINLINK_PORT=%d", config.RequireInt(ctx, "R-PORT-START")+index),
 		fmt.Sprintf("OCR2_P2PV2_LISTEN_ADDRESSES=127.0.0.1:%d", config.RequireInt(ctx, "R-P2P_LISTEN_PORT-START")+index),
 		fmt.Sprintf("OCR2_P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%d", config.RequireInt(ctx, "R-P2P_LISTEN_PORT-START")+index),
-		fmt.Sprintf("MNEMONIC=%s", config.Require(ctx, "R_"+strings.ToUpper(indexStr)+"-MNEMONIC")),
 	)
+
+	// fetch additional env vars (specific to each relay)
+	envListR, err := utils.GetEnvList(ctx, "R_X")
+	envsR := utils.GetVars(ctx, "R_"+strings.ToUpper(indexStr), envListR)
+	envs = append(envs, envsR...)
 
 	_, err = docker.NewContainer(ctx, "relay-"+indexStr, &docker.ContainerArgs{
 		Image:         image.BaseImageName,

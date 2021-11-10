@@ -3,7 +3,9 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
+	"sync/atomic"
 
 	"github.com/smartcontractkit/chainlink-relay/core/server/webhook"
 	"github.com/smartcontractkit/chainlink/core/logger"
@@ -11,8 +13,9 @@ import (
 )
 
 var (
-	priceFeedParam = "PriceFeed"
-	juelsToXParam  = "JuelsToX"
+	priceFeedParam      = "PriceFeed"
+	juelsToXParam       = "JuelsToX"
+	errAlreadyTriggered = errors.New("Observe (job run) has already been triggered")
 )
 
 // DataSources struct for both data source interfaces
@@ -27,7 +30,8 @@ type dataSourceState struct {
 	RunData *chan *big.Int
 	Log     *logger.Logger
 	Prices  map[string]*big.Int
-	Started bool
+	locked  uint32
+	Done    chan struct{}
 }
 
 // NewDataSources creates the desired interface for the price feed and juelsToEth data source
@@ -54,13 +58,16 @@ func NewDataSources(id string, trigger *webhook.Trigger, runChannel *chan *big.I
 // and return the job run result here as a "proxy" to the EAs
 // this allows the CL node to track OCR rounds/job runs
 func (dss *dataSourceState) Observe(ctx context.Context) error {
-	if dss.Started == true {
-		return errors.New("Observe (job run) has already been triggered")
+	// https://stackoverflow.com/a/45211470
+	// use low level memory utility to perform locking/unlocking
+	if !atomic.CompareAndSwapUint32(&dss.locked, 0, 1) {
+		return errAlreadyTriggered
 	}
+	defer atomic.StoreUint32(&dss.locked, 0)
 
 	// set observation request started
-	dss.Started = true
 	dss.Log.Infof("[%s] Observe (job run) triggered", dss.ID)
+	dss.Done = make(chan struct{}) // create channel for signaling finish
 
 	// send job trigger
 	go dss.Webhook.TriggerJob(dss.ID)
@@ -70,9 +77,7 @@ func (dss *dataSourceState) Observe(ctx context.Context) error {
 	dss.Prices[juelsToXParam] = big.NewInt(0)
 	dss.Log.Infof("[%s] Observation (job run) received: %+v", dss.ID, dss.Prices)
 
-	// set observation request completed
-	dss.Started = false
-
+	close(dss.Done) // close channel to indicate done
 	return nil
 }
 
@@ -83,21 +88,22 @@ type dataSource struct {
 
 func (ds dataSource) Observe(ctx context.Context) (*big.Int, error) {
 	ds.dss.Log.Infof("[%s - %s] Observe triggered", ds.dss.ID, ds.Key)
-	// if no observation has been triggered, trigger new observation round
-	if !ds.dss.Started {
-		ds.dss.Log.Infof("[%s - %s] Triggering new observe job run", ds.dss.ID, ds.Key)
-		if err := ds.dss.Observe(ctx); err != nil {
-			return big.NewInt(0), err
-		}
-	} else {
-		// if observation has already been triggered
+
+	// try triggering observe
+	err := ds.dss.Observe(ctx)
+
+	switch err {
+	case nil: // occurs when new observation is triggered successfully
+		// do nothing
+	case errAlreadyTriggered: // occrus when observe has already been triggered
 		ds.dss.Log.Infof("[%s - %s] Waiting for observe job run to complete", ds.dss.ID, ds.Key)
-		for ds.dss.Started == true {
-			// wait for Done to be called then return prices
-		}
+		// once observe is complete (channel closure)
+		<-ds.dss.Done
+	default: // return if unknown error
+		return big.NewInt(0), err
 	}
 
-	// once observe is complete, return specific price data from state
+	// return specific price data from state
 	ds.dss.Log.Infof("[%s - %s] Observe complete: %s", ds.dss.ID, ds.Key, ds.dss.Prices[ds.Key])
 	return ds.dss.Prices[ds.Key], nil
 }

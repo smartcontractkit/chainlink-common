@@ -59,19 +59,20 @@ func (ms *mockService) Start() {
 	// start ws subscription to address
 	go ms.contract.Start()
 
-	// use dataSource
-	ds := DataSource{
-		id:      ms.job.JobID,
-		webhook: &ms.webhook,
-		runData: &ms.runData,
-		log:     ms.log,
-	}
+	// create DataSources
+	ds := NewDataSources(ms.job.JobID, &ms.webhook, &ms.runData, ms.log)
 
+	runJToX := false
 	for {
 		select {
 		case <-timer.Ticks():
+			if runJToX { // run every other
+				go ds.JuelsToX.Observe(context.TODO()) // run as a go func to run observations in parallel
+			}
+			runJToX = !runJToX
+
 			// TODO: Implement a timeout context
-			if _, err := ds.Observe(context.TODO()); err != nil {
+			if _, err := ds.Price.Observe(context.TODO()); err != nil {
 				ms.log.Error(err)
 			}
 			timer.Reset(ms.heartbeat)

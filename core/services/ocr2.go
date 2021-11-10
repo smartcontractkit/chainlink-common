@@ -82,15 +82,15 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 	defaultLogger := logger.Default.Named("OCR2")
 	ocrLogger := ocrcommon.NewLogger(defaultLogger, true, func(string) {})
 
-	// create DataSource
+	// create DataSources
 	runData := make(chan *big.Int)
-	ds := DataSource{id: job.JobID, webhook: &trigger, runData: &runData, log: defaultLogger}
+	ds := NewDataSources(job.JobID, &trigger, &runData, defaultLogger)
 
 	// create median plug in
 	numericalMedianFactory := median.NumericalMedianFactory{
 		ContractTransmitter:   contractTracker,
-		DataSource:            &ds,
-		JuelsPerEthDataSource: &JuelsToEthDataSource{},
+		DataSource:            ds.Price,
+		JuelsPerEthDataSource: ds.JuelsToX,
 		Logger:                ocrLogger,
 		ReportCodec:           contractTracker,
 	}

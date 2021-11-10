@@ -25,7 +25,10 @@ type Deployer interface {
 	OCR2Address() string                    // fetch deployed OCR contract address
 }
 
-func New(ctx *pulumi.Context, deployer Deployer) error {
+// ObservationSource creates the observation source for the CL node jobs
+type ObservationSource func(priceAdapter, relay string) string
+
+func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) error {
 	img := map[string]*utils.Image{}
 
 	// fetch postgres
@@ -241,13 +244,7 @@ func New(ctx *pulumi.Context, deployer Deployer) error {
 					bootstrap,                  //isBootstrapPeer
 					relays[k].Keys["OCRKeyID"], // keyBundleID
 				),
-				ObservationSource: fmt.Sprintf(`
-         ea  [type=bridge name=%s requestData=<{"data":{"from":"LINK", "to":"USD"}}>]
-         parse [type="jsonparse" path="result"]
-         multiply [type="multiply" times=100000000]
-         return [type=bridge name="%s" requestData=<{"jobID":$(jobSpec.externalJobID), "result":$(multiply)}>]
-
-         ea -> parse -> multiply -> return`, ea, name),
+				ObservationSource: obsSource(ea, name),
 			}
 			_, err = cl.Call.CreateJob(spec)
 			if msg.Check(err) != nil {

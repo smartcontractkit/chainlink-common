@@ -23,19 +23,15 @@ func TestDataSource_Observe(t *testing.T) {
 	server := test.MockServer(func(rw http.ResponseWriter, req *http.Request) {
 		require.NoError(t, test.WriteResponse(rw, http.StatusOK, nil))
 		data <- big.NewInt(1000) // mock trigger returned response by sending to channel
+		data <- big.NewInt(1000) // return data for juelsPerX data
 	})
 	defer server.Close()
 
 	trigger := webhook.NewTrigger(server.URL, &test.MockWebhookConfig{})
-	ds := DataSource{
-		id:      jobID,
-		webhook: &trigger,
-		runData: &data,
-		log:     logger.Default,
-	}
+	ds := NewDataSources(jobID, &trigger, &data, logger.Default)
 
 	// trigger observation using the chainlink module
-	res, err := ds.Observe(context.TODO())
+	res, err := ds.Price.Observe(context.TODO())
 	require.NoError(t, err)
 	assert.Equal(t, uint64(1000), res.Uint64())
 }
@@ -53,19 +49,14 @@ func TestDataSource_Observe_WithContextCancel(t *testing.T) {
 	defer server.Close()
 
 	trigger := webhook.NewTrigger(server.URL, &test.MockWebhookConfig{})
-	ds := DataSource{
-		id:      jobID,
-		webhook: &trigger,
-		runData: &data,
-		log:     logger.Default,
-	}
+	ds := NewDataSources(jobID, &trigger, &data, logger.Default)
 
 	// trigger observation using the chainlink module
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
 	defer cancel()
 
 	// run observe function
-	go ds.Observe(ctx)
+	go ds.Price.Observe(ctx)
 
 	// context should timeout before data is returned in channel
 	select {
@@ -74,4 +65,30 @@ func TestDataSource_Observe_WithContextCancel(t *testing.T) {
 	case <-ctx.Done():
 		require.True(t, true, "Context timeout exceeded")
 	}
+}
+
+func TestDataSource_Observe_MultipleCalls(t *testing.T) {
+	t.Parallel()
+
+	jobID := "test-job-id"
+	data := make(chan *big.Int)
+
+	called := 0
+	server := test.MockServer(func(rw http.ResponseWriter, req *http.Request) {
+		called++
+		require.NoError(t, test.WriteResponse(rw, http.StatusOK, nil))
+		data <- big.NewInt(1000) // mock trigger returned response by sending to channel
+		data <- big.NewInt(1000) // return data for juelsPerX data
+	})
+	defer server.Close()
+
+	trigger := webhook.NewTrigger(server.URL, &test.MockWebhookConfig{})
+	ds := NewDataSources(jobID, &trigger, &data, logger.Default)
+
+	// trigger simultaneous observation using the chainlink module
+	go ds.JuelsToX.Observe(context.TODO())
+	res, err := ds.Price.Observe(context.TODO())
+	require.NoError(t, err)
+	assert.Equal(t, uint64(1000), res.Uint64())
+	assert.Equal(t, 1, called) // server should only be called once even though two observes called
 }

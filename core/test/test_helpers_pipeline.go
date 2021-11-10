@@ -13,7 +13,7 @@ func (mp MockPipeline) Start(models.Job) error {
 	return mp.Error
 }
 
-func (mp MockPipeline) Run(string, string) error {
+func (mp MockPipeline) Run(string, []byte) error {
 	return mp.Error
 }
 

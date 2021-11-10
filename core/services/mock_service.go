@@ -68,7 +68,12 @@ func (ms *mockService) Start() {
 		select {
 		case <-timer.Ticks():
 			if runJToX { // run every other
-				go ds.JuelsToX.Observe(context.TODO()) // run as a go func to run observations in parallel
+				go func() {
+					// run as a go func to run observations in parallel
+					if _, err := ds.JuelsToX.Observe(context.TODO()); err != nil {
+						ms.log.Error(err)
+					}
+				}()
 			}
 			runJToX = !runJToX
 

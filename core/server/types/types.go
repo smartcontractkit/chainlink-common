@@ -32,7 +32,7 @@ type Resp struct {
 
 // JobRunData holds the expected CL job run response
 type JobRunData struct {
-	JobID  string `json:"jobID"`
+	JobID string `json:"jobID"`
 }
 
 // SetKeyData holds the expected key/secret structure for setting secrets

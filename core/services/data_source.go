@@ -73,7 +73,7 @@ func (dss *dataSourceState) Observe(ctx context.Context) error {
 
 	// wait for job run data to be returned
 	dss.Prices[priceFeedParam] = <-*dss.RunData // use first value
-	dss.Prices[juelsToXParam] = <-*dss.RunData // use second value
+	dss.Prices[juelsToXParam] = <-*dss.RunData  // use second value
 	dss.Log.Infof("[%s] Observation (job run) received: %+v", dss.ID, dss.Prices)
 
 	close(dss.Done) // close channel to indicate done

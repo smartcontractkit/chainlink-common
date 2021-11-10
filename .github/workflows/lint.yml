@@ -23,7 +23,7 @@ jobs:
           # working-directory: somedir
 
           # Optional: golangci-lint command line arguments.
-          args: --enable=gofmt --tests=false --exclude-use-default
+          args: --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s
 
           # Optional: show only new issues if it's a pull request. The default value is `false`.
           # only-new-issues: true

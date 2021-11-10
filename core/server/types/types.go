@@ -13,7 +13,7 @@ type SubscriptionStorer interface {
 // ServicesPipeline is the interface for interacting with the services pipeline
 type ServicesPipeline interface {
 	Start(models.Job) error
-	Run(string, string) error
+	Run(string, []byte) error
 	Stop(string) error
 }
 
@@ -33,7 +33,6 @@ type Resp struct {
 // JobRunData holds the expected CL job run response
 type JobRunData struct {
 	JobID  string `json:"jobID"`
-	Result string `json:"result"`
 }
 
 // SetKeyData holds the expected key/secret structure for setting secrets

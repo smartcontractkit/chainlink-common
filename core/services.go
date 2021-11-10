@@ -15,7 +15,7 @@ import (
 type Service interface {
 	Start() // does not return anything because Start() is called via go routine
 	Stop() error
-	Run(string) error
+	Run([]byte) error
 }
 
 type Services struct {
@@ -83,9 +83,8 @@ func (s *Services) Start(job models.Job) error {
 }
 
 // Run is used in the web server to return job run data to the service that triggered a job run
-func (s *Services) Run(jobid string, result string) error {
-	// does result need to be parsed into a big.Int?
-	return s.services[jobid].Run(result)
+func (s *Services) Run(jobid string, raw []byte) error {
+	return s.services[jobid].Run(raw)
 }
 
 // Stop starts a specific service with a given jobid

@@ -19,3 +19,8 @@ type Blockchain interface {
 	NewContractTracker(address, jobID string) (ContractTracker, error)
 	OCR() types.OnchainKeyring
 }
+
+type OCRJobRunData struct {
+	Result   string `json:"result"`
+	JuelsToX string `json:"juelsToX"`
+}

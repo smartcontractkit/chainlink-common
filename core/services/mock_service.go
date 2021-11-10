@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -83,13 +84,20 @@ func (ms *mockService) Start() {
 }
 
 // Run is a wrapper to pass data back to the original thread and unblock the function
-func (ms *mockService) Run(data string) error {
-	var val big.Int
-	if _, ok := val.SetString(data, 10); !ok {
-		return fmt.Errorf("[%s] Failed to parse *big.Int from %s", ms.job.JobID, data)
+func (ms *mockService) Run(raw []byte) error {
+	var data types.OCRJobRunData
+	if err := json.Unmarshal(raw, &data); err != nil {
+		return err
 	}
 
-	ms.runData <- &val // pass data back to job run
+	// send data onward to data source
+	for _, v := range []string{data.Result, data.JuelsToX} {
+		var val big.Int
+		if _, ok := val.SetString(v, 10); !ok {
+			return fmt.Errorf("[%s] Failed to parse *big.Int from %s", ms.job.JobID, v)
+		}
+		ms.runData <- &val // pass data back to job run
+	}
 	return nil
 }
 

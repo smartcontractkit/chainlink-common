@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -175,13 +176,19 @@ func (o *OCR2) Stop() error {
 }
 
 // Run provides the standard service interface (wraps number parsing together)
-func (o *OCR2) Run(data string) error {
-	var val big.Int
-	_, ok := val.SetString(data, 10)
-	if !ok {
-		return fmt.Errorf("Failed to parse data string (%s) to *big.Int", data)
+func (o *OCR2) Run(raw []byte) error {
+	var data types.OCRJobRunData
+	if err := json.Unmarshal(raw, &data); err != nil {
+		return err
 	}
 
-	o.runData <- &val // pass data back to job run
+	// send data onward to data source
+	for _, v := range []string{data.Result, data.JuelsToX} {
+		var val big.Int
+		if _, ok := val.SetString(v, 10); !ok {
+			return fmt.Errorf("[%s] Failed to parse *big.Int from %s", o.job.JobID, v)
+		}
+		o.runData <- &val // pass data back to job run
+	}
 	return nil
 }

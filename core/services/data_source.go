@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 	"sync/atomic"
 
@@ -73,8 +72,8 @@ func (dss *dataSourceState) Observe(ctx context.Context) error {
 	go dss.Webhook.TriggerJob(dss.ID)
 
 	// wait for job run data to be returned
-	dss.Prices[priceFeedParam] = <-*dss.RunData
-	dss.Prices[juelsToXParam] = big.NewInt(0)
+	dss.Prices[priceFeedParam] = <-*dss.RunData // use first value
+	dss.Prices[juelsToXParam] = <-*dss.RunData // use second value
 	dss.Log.Infof("[%s] Observation (job run) received: %+v", dss.ID, dss.Prices)
 
 	close(dss.Done) // close channel to indicate done

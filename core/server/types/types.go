@@ -1,6 +1,8 @@
 package types
 
 import (
+	"encoding/json"
+
 	"github.com/smartcontractkit/chainlink-relay/core/store/models"
 )
 
@@ -32,7 +34,8 @@ type Resp struct {
 
 // JobRunData holds the expected CL job run response
 type JobRunData struct {
-	JobID string `json:"jobID"`
+	JobID string          `json:"jobID"`
+	Data  json.RawMessage `json:"data"`
 }
 
 // SetKeyData holds the expected key/secret structure for setting secrets

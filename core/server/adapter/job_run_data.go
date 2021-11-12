@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,21 +23,14 @@ func NewJobHandler(s types.ServicesPipeline) Job {
 // Run is the endpoint for returning EA data for a specific job
 func (j *Job) Run(c *gin.Context) {
 	var req types.JobRunData
-	raw, err := c.GetRawData()
-	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusBadRequest, nil)
-		return
-	}
-
-	if err := json.Unmarshal(raw, &req); err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusBadRequest, nil)
 		return
 	}
 
 	// return job data to service
-	if err := j.services.Run(req.JobID, raw); err != nil {
+	if err := j.services.Run(req.JobID, req.Data); err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, nil)
 		return

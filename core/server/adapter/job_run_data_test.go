@@ -10,8 +10,13 @@ import (
 )
 
 type MockJobResult struct {
-	JobID  string
-	Result string
+	JobID string
+	Data  MockJobResultData
+}
+
+type MockJobResultData struct {
+	Result   string
+	JuelsToX string
 }
 
 // https://stackoverflow.com/questions/59186562/unit-testing-with-gin-gonic
@@ -25,9 +30,9 @@ func TestNewJobHandler_Run(t *testing.T) {
 		jobData     interface{}
 		code        int
 	}{
-		{"success", nil, MockJobResult{"test", "1000"}, 201},
+		{"success", nil, MockJobResult{"test", MockJobResultData{"1000", "1000"}}, 201},
 		{"bad request", nil, []byte{}, 400},
-		{"server error", errors.New("failed run"), MockJobResult{"test", "1000"}, 500},
+		{"server error", errors.New("failed run"), MockJobResult{"test", MockJobResultData{"1000", "1000"}}, 500},
 	}
 
 	for _, i := range inputs {

@@ -18,7 +18,6 @@ func TestGetConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	// test a few variables from each config
-	assert.Equal(t, test.MockTestEnv, cfg.EthereumURL()) //required
 	assert.Equal(t, false, cfg.Dev())
 	assert.Equal(t, test.MockTestEnv, cfg.ICSecret()) // required
 	assert.Equal(t, test.MockTestEnv, cfg.CIKey())    // required

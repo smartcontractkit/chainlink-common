@@ -13,7 +13,7 @@ var Required = struct {
 	Core    []string
 	Webhook []string
 }{
-	Core:    []string{"DATABASE_URL", "KEYSTORE_PASSWORD"}, // default relay only requires WS URL
+	Core:    []string{"KEYSTORE_PASSWORD", "DATABASE_URL"}, // default relay only requires WS URL
 	Webhook: []string{"IC_ACCESSKEY", "IC_SECRET", "CI_ACCESSKEY", "CI_SECRET"},
 }
 

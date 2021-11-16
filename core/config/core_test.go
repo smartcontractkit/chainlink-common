@@ -24,7 +24,7 @@ func TestNewCoreConfig_Success(t *testing.T) {
 func TestNewCoreConfig_MissingRequired(t *testing.T) {
 	// create core configs
 	_, err := NewCoreConfig()
-	require.EqualError(t, err, fmt.Sprintf("Required env var: %s not found", Required.Core[0]))
+	require.EqualError(t, err, fmt.Sprintf("Required env var: %s not found", unsetCoreConfig))
 }
 
 func TestNewCoreConfig_Fail_GeneralConfig(t *testing.T) {

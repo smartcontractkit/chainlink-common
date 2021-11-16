@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	unsetCoreConfig = "KEYSTORE_PASSWORD"
+)
+
 func TestGetConfig(t *testing.T) {
 	// set env vars
 	test.MockSetRequiredConfigs(t, Required.Core)
@@ -25,5 +29,5 @@ func TestGetConfig(t *testing.T) {
 
 func TestGetConfig_Fail_MissingEnvVar(t *testing.T) {
 	_, err := GetConfig()
-	assert.EqualError(t, err, fmt.Sprintf("Required env var: %s not found", Required.Core[0]))
+	assert.EqualError(t, err, fmt.Sprintf("Required env var: %s not found", unsetCoreConfig))
 }

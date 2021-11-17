@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/smartcontractkit/chainlink-relay/core/config"
 	"github.com/smartcontractkit/chainlink-relay/core/server/webhook"
+	"github.com/smartcontractkit/chainlink-relay/core/services/monitoring"
 	"github.com/smartcontractkit/chainlink-relay/core/services/types"
 	"github.com/smartcontractkit/chainlink-relay/core/store"
 	"github.com/smartcontractkit/chainlink-relay/core/store/models"
@@ -30,12 +31,13 @@ type ocrService interface {
 
 // OCR2 is the service for offchain reporting 2 bootstrap and normal nodes
 type OCR2 struct {
-	oracle   ocrService
-	job      models.Job
-	webhook  webhook.Trigger
-	runData  chan *big.Int
-	contract types.ContractTracker
-	log      *logger.Logger
+	oracle             ocrService
+	job                models.Job
+	webhook            webhook.Trigger
+	runData            chan *big.Int
+	contract           types.ContractTracker
+	monitoringEndpoint monitoring.Client
+	log                *logger.Logger
 }
 
 // NewOCR2 creates a new OCR2 service
@@ -103,6 +105,23 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 	}
 	ocr2keyring := store.NewOCR2KeyWrapper(ocrkey) // see keystore.go for details
 
+	// monitoring
+	var clientPrivateKeyHex string // TODO (dru) extract this from the keystore
+	otiConn, err := monitoring.NewConnection(
+		cfg.TelemetryIngressURL(),
+		clientPrivateKeyHex,
+		cfg.TelemetryIngressServerPubKey(),
+	)
+	if err != nil {
+		return OCR2{}, err
+	}
+	monitoringEndpoint := monitoring.NewClient(
+		otiConn,
+		job.JobID, // address
+		100,
+		ocrLogger,
+	)
+
 	// create bootstrap node or reporting node
 	var oracleNode ocrService
 	if job.IsBootstrapPeer {
@@ -113,7 +132,7 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 			Database:               ocrdb,
 			LocalConfig:            localConfig,
 			Logger:                 ocrLogger,
-			MonitoringEndpoint:     Monitoring(),
+			MonitoringEndpoint:     monitoringEndpoint,
 			OffchainConfigDigester: contractTracker,
 		}
 
@@ -130,7 +149,7 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 			Database:                     ocrdb,
 			LocalConfig:                  localConfig,
 			Logger:                       ocrLogger,
-			MonitoringEndpoint:           Monitoring(),
+			MonitoringEndpoint:           monitoringEndpoint,
 			OffchainConfigDigester:       contractTracker,
 			OffchainKeyring:              &ocr2keyring,
 			OnchainKeyring:               blockchain.OCR(),
@@ -145,12 +164,13 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 
 	// return OCR2 object
 	return OCR2{
-		job:      job,
-		oracle:   oracleNode,
-		webhook:  trigger,
-		runData:  runData,
-		contract: contractTracker,
-		log:      defaultLogger,
+		job:                job,
+		oracle:             oracleNode,
+		webhook:            trigger,
+		runData:            runData,
+		contract:           contractTracker,
+		monitoringEndpoint: monitoringEndpoint,
+		log:                defaultLogger,
 	}, nil
 }
 
@@ -158,6 +178,9 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 func (o *OCR2) Start() {
 	// start contract subscription
 	go o.contract.Start()
+
+	// start client for the monitoring endpoint which pushes telemetry to OTI
+	go o.monitoringEndpoint.Start()
 
 	o.log.Infof("[%s] Start OCR2 service", o.job.JobID)
 	if err := o.oracle.Start(); err != nil {
@@ -172,6 +195,7 @@ func (o *OCR2) Stop() error {
 	if err := o.contract.Close(); err != nil {
 		return err
 	}
+	o.monitoringEndpoint.Close()
 	return o.oracle.Close()
 }
 

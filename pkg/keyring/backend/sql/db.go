@@ -13,10 +13,12 @@ type backend struct {
 	db *sqlx.DB
 }
 
-type encryptedKey struct {
-	Name  string `db:"key_name"`
-	Value string `db:"key_value"`
-}
+// TODO: define the database schema to support keyring.Signer interface
+//		- inspiration from CL Core db design and github.com/cosmos/cosmos-sdk/crypto/keyring/records.pb.go
+// type encryptedKey struct {
+// 	Name  string `db:"key_name"`
+// 	Value string `db:"key_value"`
+// }
 
 func NewKeyring(db *sqlx.DB) *backend {
 	// TODO: db migrations

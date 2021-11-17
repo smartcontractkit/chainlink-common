@@ -1,16 +1,17 @@
 package keyring
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/smartcontractkit/chainlink-relay/pkg/keyring/algo"
 	"github.com/smartcontractkit/chainlink-relay/pkg/keyring/backend/sql"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 )
 
 func getCodec() codec.Codec {
@@ -19,17 +20,25 @@ func getCodec() codec.Codec {
 	return codec.NewProtoCodec(registry)
 }
 
+var algoOptionFn = func(options *keyring.Options) {
+	options.SupportedAlgos = keyring.SigningAlgoList{
+		algo.Secp256k1,
+		algo.Ed25519,
+	}
+
+	options.SupportedAlgosLedger = keyring.SigningAlgoList{
+		algo.Secp256k1,
+		algo.Ed25519,
+	}
+}
+
 func newKeyringInMem() keyring.Keyring {
-	return keyring.NewInMemory(getCodec(), func(options *keyring.Options) {
-		// TODO: edit keyring options with custom supported signing algorithms
-	})
+	return keyring.NewInMemory(getCodec(), algoOptionFn)
 }
 
 func newKeyringSql() keyring.Keyring {
 	backend := sql.NewKeyring(nil)
-	return keyring.NewKeystore(backend, getCodec(), func(options *keyring.Options) {
-		// TODO: edit keyring options with custom supported signing algorithms
-	})
+	return keyring.NewKeystore(backend, getCodec(), algoOptionFn)
 }
 
 func TestNewService(t *testing.T) {
@@ -57,27 +66,50 @@ func TestNewServicePortsSignVerify(t *testing.T) {
 	}
 
 	// generate a key to test
-	uid := "uuid-1"
 	mnemonic := "health amateur need boy enough bless april march dove rabbit satoshi purse"
 	bip39Passphrase := ""
-	hdPath := "m/44'/60'/0'/0"
-	algo := hd.Secp256k1
+	hdPath := "m/44'/60'/0'/0/0"
 
-	_, err := keyrings[keyringEthTest].NewAccount(uid, mnemonic, bip39Passphrase, hdPath, algo)
-	assert.NoError(t, err)
+	testCases := []struct {
+		name string
+		uid  string
+		algo keyring.SignatureAlgo
+	}{
+		{
+			name: "can sign/verify secp256k1",
+			uid:  "uuid-secp256k1-1",
+			algo: algo.Secp256k1,
+		},
+		{
+			name: "can sign/verify ed25519",
+			uid:  "uuid-ed25519-1",
+			algo: algo.Ed25519,
+		},
+	}
 
-	// add keyrings to service
-	s := NewService(nil, keyrings)
-	assert.NotEmpty(t, s)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := keyrings[keyringEthTest].NewAccount(tc.uid, mnemonic, bip39Passphrase, hdPath, tc.algo)
+			assert.NoError(t, err)
 
-	// sign
-	msg := []byte{0}
-	sig, pk, err := s.Signers[keyringEthTest].Sign(uid, msg)
-	assert.NoError(t, err)
+			// add keyrings to service
+			s := NewService(nil, keyrings)
+			assert.NotEmpty(t, s)
 
-	// verify
-	ok := pk.VerifySignature(msg, sig)
-	assert.True(t, ok)
+			// sign
+			msg := []byte{0}
+			sig, pk, err := s.Signers[keyringEthTest].Sign(tc.uid, msg)
+			assert.NoError(t, err)
+
+			// debug
+			fmt.Println(pk.Address())
+			fmt.Println(pk.String())
+
+			// verify
+			ok := pk.VerifySignature(msg, sig)
+			assert.True(t, ok)
+		})
+	}
 }
 
 // TODO: test keyring.Keyring.ImportPrivKey

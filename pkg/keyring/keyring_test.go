@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
 )
 
 func getCodec() codec.Codec {
@@ -31,7 +32,7 @@ func newKeyringSql() keyring.Keyring {
 	})
 }
 
-func TestNewServiceMemKeystore(t *testing.T) {
+func TestNewService(t *testing.T) {
 	keyrings := Keyrings{
 		"ethereum.tx-ocr_report.test/mem": newKeyringInMem(),
 		"ethereum.tx-ocr_report.test/sql": newKeyringSql(),
@@ -48,3 +49,35 @@ func TestNewServiceMemKeystore(t *testing.T) {
 	assert.NotEmpty(t, s.Signers["solana.tx.test/mem"])
 	assert.NotEmpty(t, s.Signers["solana.ocr-report.test/mem"])
 }
+
+func TestNewServicePortsSignVerify(t *testing.T) {
+	keyringEthTest := "ethereum.tx.test/mem"
+	keyrings := Keyrings{
+		"ethereum.tx.test/mem": newKeyringInMem(),
+	}
+
+	// generate a key to test
+	uid := "uuid-1"
+	mnemonic := "health amateur need boy enough bless april march dove rabbit satoshi purse"
+	bip39Passphrase := ""
+	hdPath := "m/44'/60'/0'/0"
+	algo := hd.Secp256k1
+
+	_, err := keyrings[keyringEthTest].NewAccount(uid, mnemonic, bip39Passphrase, hdPath, algo)
+	assert.NoError(t, err)
+
+	// add keyrings to service
+	s := NewService(nil, keyrings)
+	assert.NotEmpty(t, s)
+
+	// sign
+	msg := []byte{0}
+	sig, pk, err := s.Signers[keyringEthTest].Sign(uid, msg)
+	assert.NoError(t, err)
+
+	// verify
+	ok := pk.VerifySignature(msg, sig)
+	assert.True(t, ok)
+}
+
+// TODO: test keyring.Keyring.ImportPrivKey

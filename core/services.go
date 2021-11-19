@@ -1,9 +1,13 @@
 package core
 
 import (
+	"crypto/ed25519"
+	"encoding/hex"
+
 	"github.com/smartcontractkit/chainlink-relay/core/config"
 	"github.com/smartcontractkit/chainlink-relay/core/server/webhook"
 	"github.com/smartcontractkit/chainlink-relay/core/services"
+	"github.com/smartcontractkit/chainlink-relay/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-relay/core/services/types"
 	"github.com/smartcontractkit/chainlink-relay/core/store/models"
 	"github.com/smartcontractkit/chainlink/core/logger"
@@ -19,32 +23,55 @@ type Service interface {
 }
 
 type Services struct {
-	services    map[string]Service
-	webhook     webhook.Trigger
-	cfg         config.Config
-	db          *gorm.DB
-	keys        keystore.Master
-	blockchain  types.Blockchain
-	Log         *logger.Logger
-	peerWrapper *ocrcore.SingletonPeerWrapper
+	services         map[string]Service
+	webhook          webhook.Trigger
+	cfg              config.Config
+	db               *gorm.DB
+	keys             keystore.Master
+	blockchain       types.Blockchain
+	Log              *logger.Logger
+	peerWrapper      *ocrcore.SingletonPeerWrapper
+	telemetryService telemetry.Service
 }
 
+const telemetryCSAKey = "telemetry-private-key"
+
 // NewServices create services manager
-func NewServices(db *gorm.DB, cfg config.Config, keys keystore.Master, blockchainClient types.Blockchain) (Services, error) {
+func NewServices(
+	db *gorm.DB,
+	cfg config.Config,
+	keys keystore.Master,
+	blockchainClient types.Blockchain,
+) (Services, error) {
 	log := logger.Default.Named("services-pipeline")
 	if cfg.Mock() {
 		log.Info("Mock service enabled. Disable to use OCR2")
 	}
-
+	// Initialize telemetry service.
+	nodePrivateKey, err := keys.CSA().Get(telemetryCSAKey)
+	if err != nil {
+		return Services{}, err
+	}
+	serverPublicKey := make([]byte, hex.DecodedLen(len(cfg.TelemetryIngressServerPubKey())))
+	if _, err := hex.Decode(serverPublicKey, []byte(cfg.TelemetryIngressServerPubKey())); err != nil {
+		return Services{}, err
+	}
+	telemetryService := telemetry.NewService(
+		cfg.TelemetryIngressURL(),
+		ed25519.PrivateKey(nodePrivateKey.Raw().String()),
+		ed25519.PublicKey(serverPublicKey),
+		log,
+	)
 	return Services{
-		db:          db,
-		services:    map[string]Service{},
-		webhook:     webhook.NewTrigger(cfg.ClientNodeURL(), cfg),
-		cfg:         cfg,
-		keys:        keys,
-		blockchain:  blockchainClient,
-		Log:         log,
-		peerWrapper: ocrcore.NewSingletonPeerWrapper(keys, cfg, db),
+		db:               db,
+		services:         map[string]Service{},
+		webhook:          webhook.NewTrigger(cfg.ClientNodeURL(), cfg),
+		cfg:              cfg,
+		keys:             keys,
+		blockchain:       blockchainClient,
+		Log:              log,
+		peerWrapper:      ocrcore.NewSingletonPeerWrapper(keys, cfg, db),
+		telemetryService: telemetryService,
 	}, nil
 }
 
@@ -70,7 +97,12 @@ func (s *Services) Start(job models.Job) error {
 			}
 		}
 
-		ocr2, err := services.NewOCR2(job, s.db, s.webhook, s.cfg, s.keys, s.blockchain, s.peerWrapper)
+		telemetryClient, err := s.telemetryService.Start()
+		if err != nil {
+			return err
+		}
+
+		ocr2, err := services.NewOCR2(job, s.db, s.webhook, s.cfg, s.keys, s.blockchain, s.peerWrapper, telemetryClient)
 		if err != nil {
 			return err
 		}
@@ -98,6 +130,8 @@ func (s *Services) Stop(jobid string) error {
 	if len(s.services) == 0 {
 		s.Log.Info("All jobs stopped")
 	}
+
+	s.telemetryService.Stop()
 	return nil
 }
 

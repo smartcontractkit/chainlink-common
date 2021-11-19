@@ -3,10 +3,11 @@
 // - protoc-gen-go-wsrpc v0.0.1
 // - protoc             v3.13.0
 
-package monitoring
+package telemetry
 
 import (
 	context "context"
+
 	wsrpc "github.com/smartcontractkit/wsrpc"
 )
 
@@ -54,7 +55,7 @@ func _Telemetry_Telemetry_Handler(srv interface{}, ctx context.Context, dec func
 // It's only intended for direct use with wsrpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Telemetry_ServiceDesc = wsrpc.ServiceDesc{
-	ServiceName: "monitoring.Telemetry",
+	ServiceName: "telemetry.Telemetry",
 	HandlerType: (*TelemetryServer)(nil),
 	Methods: []wsrpc.MethodDesc{
 		{

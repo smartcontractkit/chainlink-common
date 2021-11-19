@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"math/big"
-	"sync/atomic"
 
 	"github.com/smartcontractkit/chainlink-relay/core/server/webhook"
 	"github.com/smartcontractkit/chainlink/core/logger"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
+	"go.uber.org/atomic"
 )
 
 var (
@@ -29,7 +29,7 @@ type dataSourceState struct {
 	RunData *chan *big.Int
 	Log     *logger.Logger
 	Prices  map[string]*big.Int
-	locked  uint32
+	locked  *atomic.Bool
 	Done    chan struct{}
 }
 
@@ -44,6 +44,7 @@ func NewDataSources(id string, trigger *webhook.Trigger, runChannel *chan *big.I
 		RunData: runChannel,
 		Log:     log,
 		Prices:  map[string]*big.Int{},
+		locked:  atomic.NewBool(false), // initialize to unlocked
 	}
 
 	return DataSources{
@@ -57,12 +58,11 @@ func NewDataSources(id string, trigger *webhook.Trigger, runChannel *chan *big.I
 // and return the job run result here as a "proxy" to the EAs
 // this allows the CL node to track OCR rounds/job runs
 func (dss *dataSourceState) Observe(ctx context.Context) error {
-	// https://stackoverflow.com/a/45211470
-	// use low level memory utility to perform locking/unlocking
-	if !atomic.CompareAndSwapUint32(&dss.locked, 0, 1) {
+	// lock
+	if !dss.locked.CAS(false, true) {
 		return errAlreadyTriggered
 	}
-	defer atomic.StoreUint32(&dss.locked, 0)
+	defer dss.locked.Store(false)
 
 	// set observation request started
 	dss.Log.Infof("[%s] Observe (job run) triggered", dss.ID)

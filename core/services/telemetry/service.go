@@ -36,6 +36,8 @@ func NewService(
 	}
 }
 
+const messageBufferCapacity = 100
+
 func (s *service) Start() (Client, error) {
 	conn, err := wsrpc.DialWithContext(
 		s.ctx,
@@ -48,7 +50,7 @@ func (s *service) Start() (Client, error) {
 	if err != nil {
 		return &client{}, err
 	}
-	client := NewClient(s.ctx, generated.NewTelemetryClient(conn), 100, s.log)
+	client := NewClient(s.ctx, generated.NewTelemetryClient(conn), messageBufferCapacity, s.log)
 	return client, nil
 }
 

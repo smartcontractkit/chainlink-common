@@ -3,7 +3,6 @@ package telemetry
 import (
 	context "context"
 	"crypto/ed25519"
-	"net/url"
 
 	"github.com/smartcontractkit/chainlink-relay/core/services/telemetry/generated"
 	"github.com/smartcontractkit/chainlink/core/logger"
@@ -13,14 +12,14 @@ import (
 type service struct {
 	ctx              context.Context
 	cancelCtx        context.CancelFunc
-	serverURL        *url.URL
+	serverURL        string
 	clientPrivateKey ed25519.PrivateKey
 	serverPublicKey  ed25519.PublicKey
 	log              *logger.Logger
 }
 
 func NewService(
-	serverURL *url.URL,
+	serverURL string,
 	clientPrivateKey ed25519.PrivateKey,
 	serverPublicKey ed25519.PublicKey,
 	log *logger.Logger,
@@ -41,7 +40,7 @@ const messageBufferCapacity = 100
 func (s *service) Start() (Client, error) {
 	conn, err := wsrpc.DialWithContext(
 		s.ctx,
-		s.serverURL.String(),
+		s.serverURL,
 		wsrpc.WithTransportCreds(
 			s.clientPrivateKey,
 			s.serverPublicKey,

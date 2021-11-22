@@ -5,9 +5,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"fmt"
 	"net"
-	"net/url"
 	"sort"
 	"strconv"
 	"sync"
@@ -40,9 +38,8 @@ func TestTelemetry(t *testing.T) {
 	go server.Serve(listener)
 
 	log := logger.Default.Named("telemetry")
-	serverURL, err := url.Parse("ws://127.0.0.1:1337")
 	require.NoError(t, err)
-	service := NewService(serverURL, clientPrivateKey, serverPublicKey, log)
+	service := NewService("127.0.0.1:1337", clientPrivateKey, serverPublicKey, log)
 	client, err := service.Start()
 	require.NoError(t, err)
 	defer service.Stop()
@@ -62,7 +59,6 @@ func TestTelemetry(t *testing.T) {
 					Telemetry: []byte{i*10 + j},
 					Address:   strconv.Itoa(int(i)),
 				})
-				fmt.Printf("node %d sent msg %d\n", i, j)
 			}
 		}(i)
 	}
@@ -74,7 +70,9 @@ func TestTelemetry(t *testing.T) {
 		return bytes.Compare(backend.buffer[i], backend.buffer[j]) < 0
 	})
 
-	// TODO (dru) add assertions
+	for i = 0; i < 100; i++ {
+		require.Equal(t, []byte{i}, backend.buffer[i])
+	}
 }
 
 // *telemetryServer is an instance of generated.TelemetryServer used in tests.

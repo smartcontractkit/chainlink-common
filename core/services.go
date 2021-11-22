@@ -3,6 +3,7 @@ package core
 import (
 	"crypto/ed25519"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/smartcontractkit/chainlink-relay/core/config"
 	"github.com/smartcontractkit/chainlink-relay/core/server/webhook"
@@ -56,8 +57,9 @@ func NewServices(
 	if _, err := hex.Decode(serverPublicKey, []byte(cfg.TelemetryIngressServerPubKey())); err != nil {
 		return Services{}, err
 	}
+	serverURL := fmt.Sprintf("%s:%s", cfg.TelemetryIngressURL().Hostname(), cfg.TelemetryIngressURL().Port())
 	telemetryService := telemetry.NewService(
-		cfg.TelemetryIngressURL(),
+		serverURL,
 		ed25519.PrivateKey(nodePrivateKey.Raw().String()),
 		ed25519.PublicKey(serverPublicKey),
 		log,

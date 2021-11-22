@@ -58,8 +58,9 @@ func (c *client) run() {
 			}
 			if err != nil {
 				c.log.Errorf("failed to deliver telemetry: %v", err)
+			} else {
+				c.log.Debug("delivered telemetry payload: %v", res.Body)
 			}
-			c.log.Debug("delivered telemetry payload: %v", res.Body)
 		case <-c.ctx.Done():
 			return
 		}

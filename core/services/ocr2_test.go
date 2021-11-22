@@ -20,11 +20,11 @@ func TestOCR2_NumericalMedian(t *testing.T) {
 
 	// create plugin factory
 	factory := median.NumericalMedianFactory{
-		ContractTransmitter:   &test.MockMedianContract{},
-		DataSource:            &test.MockDataSource{},
-		JuelsPerEthDataSource: &test.MockDataSource{},
-		Logger:                test.MockOCRLogger,
-		ReportCodec:           evmreportcodec.ReportCodec{},
+		ContractTransmitter:       &test.MockMedianContract{},
+		DataSource:                &test.MockDataSource{},
+		JuelsPerFeeCoinDataSource: &test.MockDataSource{},
+		Logger:                    test.MockOCRLogger,
+		ReportCodec:               evmreportcodec.ReportCodec{},
 	}
 
 	// get onchainConfig

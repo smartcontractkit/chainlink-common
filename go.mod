@@ -10,10 +10,11 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.10.3
 	github.com/pkg/errors v0.9.1
-	github.com/smartcontractkit/chainlink v0.10.10-0.20211101125004-5d2ce656d2b6
-	github.com/smartcontractkit/libocr v0.0.0-20211027142358-580c720a7bcf
+	github.com/smartcontractkit/chainlink v0.10.10-0.20211119211949-b5ff68b9e95d
+	github.com/smartcontractkit/libocr v0.0.0-20211117215336-6c9726817b2d
 	github.com/smartcontractkit/wsrpc v0.3.4
 	github.com/stretchr/testify v1.7.0
+	go.uber.org/atomic v1.9.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	google.golang.org/protobuf v1.27.1
 	gorm.io/driver/postgres v1.0.8
@@ -196,7 +197,6 @@ require (
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/kyber/v3 v3.0.13 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.18.1 // indirect
 	golang.org/x/net v0.0.0-20211101193420-4a448f8816b3 // indirect

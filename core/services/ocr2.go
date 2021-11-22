@@ -99,11 +99,11 @@ func NewOCR2(
 
 	// create median plug in
 	numericalMedianFactory := median.NumericalMedianFactory{
-		ContractTransmitter:   contractTracker,
-		DataSource:            ds.Price,
-		JuelsPerEthDataSource: ds.JuelsToX,
-		Logger:                ocrLogger,
-		ReportCodec:           contractTracker,
+		ContractTransmitter:       contractTracker,
+		DataSource:                ds.Price,
+		JuelsPerFeeCoinDataSource: ds.JuelsToX,
+		Logger:                    ocrLogger,
+		ReportCodec:               contractTracker,
 	}
 
 	// fetch key

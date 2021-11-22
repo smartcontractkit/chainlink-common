@@ -5,11 +5,12 @@ import (
 	"crypto/ed25519"
 	"net/url"
 
+	"github.com/smartcontractkit/chainlink-relay/core/services/telemetry/generated"
 	"github.com/smartcontractkit/chainlink/core/logger"
 	wsrpc "github.com/smartcontractkit/wsrpc"
 )
 
-type Service struct {
+type service struct {
 	ctx              context.Context
 	cancelCtx        context.CancelFunc
 	serverURL        *url.URL
@@ -25,7 +26,7 @@ func NewService(
 	log *logger.Logger,
 ) Service {
 	ctx, cancelFunc := context.WithCancel(context.TODO())
-	return Service{
+	return &service{
 		ctx,
 		cancelFunc,
 		serverURL,
@@ -35,7 +36,7 @@ func NewService(
 	}
 }
 
-func (s Service) Start() (Client, error) {
+func (s *service) Start() (Client, error) {
 	conn, err := wsrpc.DialWithContext(
 		s.ctx,
 		s.serverURL.String(),
@@ -45,12 +46,12 @@ func (s Service) Start() (Client, error) {
 		),
 	)
 	if err != nil {
-		return Client{}, err
+		return &client{}, err
 	}
-	client := NewClient(s.ctx, NewTelemetryClient(conn), 100, s.log)
+	client := NewClient(s.ctx, generated.NewTelemetryClient(conn), 100, s.log)
 	return client, nil
 }
 
-func (s Service) Stop() {
+func (s *service) Stop() {
 	s.cancelCtx()
 }

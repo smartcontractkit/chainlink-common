@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-relay/core/services/telemetry";
+option go_package = "github.com/smartcontractkit/chainlink-relay/core/services/telemetry/generated";
 
-package telemetry;
+package generated;
 
 service Telemetry {
     rpc Telemetry(TelemetryRequest) returns (TelemetryResponse);

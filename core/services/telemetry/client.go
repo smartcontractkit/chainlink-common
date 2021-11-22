@@ -4,15 +4,16 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/smartcontractkit/chainlink-relay/core/services/telemetry/generated"
 	"github.com/smartcontractkit/chainlink/core/logger"
 	"github.com/smartcontractkit/wsrpc"
 )
 
-type Client struct {
+type client struct {
 	ctx     context.Context
-	backend TelemetryClient
+	backend generated.TelemetryClient
 
-	sendCh         chan *TelemetryRequest
+	sendCh         chan *generated.TelemetryRequest
 	bufferCapacity uint32
 
 	dropMessageCount uint32
@@ -22,14 +23,14 @@ type Client struct {
 
 func NewClient(
 	ctx context.Context,
-	backend TelemetryClient,
+	backend generated.TelemetryClient,
 	bufferCapacity uint32,
 	log *logger.Logger,
 ) Client {
-	c := Client{
+	c := &client{
 		ctx,
 		backend,
-		make(chan *TelemetryRequest, bufferCapacity),
+		make(chan *generated.TelemetryRequest, bufferCapacity),
 		bufferCapacity,
 		0,
 		log,
@@ -38,7 +39,7 @@ func NewClient(
 	return c
 }
 
-func (c Client) Send(req *TelemetryRequest) {
+func (c *client) Send(req *generated.TelemetryRequest) {
 	select {
 	case c.sendCh <- req:
 	default:
@@ -46,7 +47,7 @@ func (c Client) Send(req *TelemetryRequest) {
 	}
 }
 
-func (c Client) run() {
+func (c *client) run() {
 	for {
 		select {
 		case req := <-c.sendCh:
@@ -65,7 +66,7 @@ func (c Client) run() {
 	}
 }
 
-func (c Client) logBufferFullWithExpBackoff(req *TelemetryRequest) {
+func (c *client) logBufferFullWithExpBackoff(req *generated.TelemetryRequest) {
 	count := atomic.AddUint32(&c.dropMessageCount, 1)
 	if count > 0 && (count%c.bufferCapacity == 0 || count&(count-1) == 0) {
 		c.log.Warnf("client send buffer full, dropping telemetry payload=%s address=%s droppedCount=%d bufferCapacity=%d",

@@ -3,12 +3,13 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
-	"sync/atomic"
 
 	"github.com/smartcontractkit/chainlink-relay/core/server/webhook"
 	"github.com/smartcontractkit/chainlink/core/logger"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
+	"go.uber.org/atomic"
 )
 
 var (
@@ -29,7 +30,7 @@ type dataSourceState struct {
 	RunData *chan *big.Int
 	Log     *logger.Logger
 	Prices  map[string]*big.Int
-	locked  uint32
+	locked  *atomic.Bool
 	Done    chan struct{}
 }
 
@@ -44,6 +45,7 @@ func NewDataSources(id string, trigger *webhook.Trigger, runChannel *chan *big.I
 		RunData: runChannel,
 		Log:     log,
 		Prices:  map[string]*big.Int{},
+		locked:  atomic.NewBool(false), // initialize to unlocked
 	}
 
 	return DataSources{
@@ -57,26 +59,34 @@ func NewDataSources(id string, trigger *webhook.Trigger, runChannel *chan *big.I
 // and return the job run result here as a "proxy" to the EAs
 // this allows the CL node to track OCR rounds/job runs
 func (dss *dataSourceState) Observe(ctx context.Context) error {
-	// https://stackoverflow.com/a/45211470
-	// use low level memory utility to perform locking/unlocking
-	if !atomic.CompareAndSwapUint32(&dss.locked, 0, 1) {
+	// lock
+	if !dss.locked.CAS(false, true) {
 		return errAlreadyTriggered
 	}
-	defer atomic.StoreUint32(&dss.locked, 0)
+	defer dss.locked.Store(false)
 
 	// set observation request started
 	dss.Log.Infof("[%s] Observe (job run) triggered", dss.ID)
 	dss.Done = make(chan struct{}) // create channel for signaling finish
+	defer close(dss.Done)          // close channel to indicate done
 
 	// send job trigger
 	go dss.Webhook.TriggerJob(dss.ID)
 
-	// wait for job run data to be returned
-	dss.Prices[priceFeedParam] = <-*dss.RunData // use first value
-	dss.Prices[juelsToXParam] = <-*dss.RunData  // use second value
+	// wait for job run data to be returned (each channel read is wrapped with ctx.Done())
+	select {
+	case dss.Prices[priceFeedParam] = <-*dss.RunData: // use first value
+	case <-ctx.Done():
+		return fmt.Errorf("[%s] Observe (job run) cancelled", dss.ID)
+	}
+	select {
+	case dss.Prices[juelsToXParam] = <-*dss.RunData: // use second value
+	case <-ctx.Done():
+		return fmt.Errorf("[%s] Observe (job run) cancelled", dss.ID)
+	}
+
 	dss.Log.Infof("[%s] Observation (job run) received: %+v", dss.ID, dss.Prices)
 
-	close(dss.Done) // close channel to indicate done
 	return nil
 }
 
@@ -97,9 +107,13 @@ func (ds dataSource) Observe(ctx context.Context) (*big.Int, error) {
 	case errAlreadyTriggered: // occrus when observe has already been triggered
 		ds.dss.Log.Infof("[%s - %s] Waiting for observe job run to complete", ds.dss.ID, ds.Key)
 		// once observe is complete (channel closure)
-		<-ds.dss.Done
+		select {
+		case <-ds.dss.Done: // continue (successful completion)
+		case <-ctx.Done():
+			return big.NewInt(0), fmt.Errorf("[%s - %s] Observe context cancelled", ds.dss.ID, ds.Key)
+		}
 	default: // return if unknown error
-		return big.NewInt(0), err
+		return big.NewInt(0), fmt.Errorf("[%s - %s] %w", ds.dss.ID, ds.Key, err)
 	}
 
 	// return specific price data from state

@@ -34,7 +34,7 @@ type Report struct {
 	} `json:"responses"`
 }
 
-func (g Gauntlet) New(binPath string) (Gauntlet, error) {
+func NewGauntlet(binPath string) (Gauntlet, error) {
 
 	_, err := exec.Command(binPath).Output()
 	if err != nil {

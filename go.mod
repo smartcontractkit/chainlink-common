@@ -5,15 +5,18 @@ go 1.17
 require (
 	github.com/Depado/ginprom v1.2.1-0.20200115153638-53bbba851bd8
 	github.com/gin-gonic/gin v1.7.2
+	github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.10.3
 	github.com/pkg/errors v0.9.1
 	github.com/smartcontractkit/chainlink v0.10.10-0.20211119211949-b5ff68b9e95d
 	github.com/smartcontractkit/libocr v0.0.0-20211117215336-6c9726817b2d
+	github.com/smartcontractkit/wsrpc v0.3.4
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	google.golang.org/protobuf v1.27.1
 	gorm.io/driver/postgres v1.0.8
 	gorm.io/gorm v1.20.12
 )
@@ -45,7 +48,6 @@ require (
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -169,7 +171,6 @@ require (
 	github.com/shirou/gopsutil v3.21.10+incompatible // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/smartcontractkit/sqlx v1.3.5-0.20210805004948-4be295aacbeb // indirect
-	github.com/smartcontractkit/wsrpc v0.3.4 // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
@@ -177,6 +178,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.9.0 // indirect
+	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tendermint/go-amino v0.15.1 // indirect
@@ -206,7 +208,6 @@ require (
 	golang.org/x/tools v0.1.7 // indirect
 	gonum.org/v1/gonum v0.9.3 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/guregu/null.v4 v4.0.0 // indirect
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/smartcontractkit/chainlink-relay/core/config"
 	"github.com/smartcontractkit/chainlink-relay/core/server/webhook"
+	"github.com/smartcontractkit/chainlink-relay/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-relay/core/services/types"
 	"github.com/smartcontractkit/chainlink-relay/core/store"
 	"github.com/smartcontractkit/chainlink-relay/core/store/models"
@@ -39,7 +40,16 @@ type OCR2 struct {
 }
 
 // NewOCR2 creates a new OCR2 service
-func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg config.Config, keys keystore.Master, blockchain types.Blockchain, peerWrapper *ocrcore.SingletonPeerWrapper) (OCR2, error) {
+func NewOCR2(
+	job models.Job,
+	gormdb *gorm.DB,
+	trigger webhook.Trigger,
+	cfg config.Config,
+	keys keystore.Master,
+	blockchain types.Blockchain,
+	peerWrapper *ocrcore.SingletonPeerWrapper,
+	telemetryClient telemetry.Client,
+) (OCR2, error) {
 
 	// create local config
 	bTimeout, err := time.ParseDuration(job.BlockchainTimeout)
@@ -113,7 +123,7 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 			Database:               ocrdb,
 			LocalConfig:            localConfig,
 			Logger:                 ocrLogger,
-			MonitoringEndpoint:     Monitoring(),
+			MonitoringEndpoint:     telemetry.MakeOCREndpoint(telemetryClient, job.JobID),
 			OffchainConfigDigester: contractTracker,
 		}
 
@@ -130,7 +140,7 @@ func NewOCR2(job models.Job, gormdb *gorm.DB, trigger webhook.Trigger, cfg confi
 			Database:                     ocrdb,
 			LocalConfig:                  localConfig,
 			Logger:                       ocrLogger,
-			MonitoringEndpoint:           Monitoring(),
+			MonitoringEndpoint:           telemetry.MakeOCREndpoint(telemetryClient, job.JobID),
 			OffchainConfigDigester:       contractTracker,
 			OffchainKeyring:              &ocr2keyring,
 			OnchainKeyring:               blockchain.OCR(),

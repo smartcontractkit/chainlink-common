@@ -2,19 +2,34 @@ package chainlink
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/pulumi/pulumi-docker/sdk/v3/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 	"github.com/smartcontractkit/chainlink-relay/ops/utils"
 	"github.com/smartcontractkit/integrations-framework/client"
 )
 
 // New spins up image for a chainlink node
-func New(ctx *pulumi.Context, image *docker.RemoteImage, dbPort int) (Node, error) {
+func New(ctx *pulumi.Context, image *docker.RemoteImage, dbPort int, index int) (Node, error) {
+	// treat index 0 as bootstrap
+	indexStr := ""
+	if index == 0 {
+		indexStr = "bootstrap"
+	} else {
+		indexStr = strconv.Itoa(index - 1)
+	}
+
+	// TODO: Default ports?
+
+	portStr := fmt.Sprintf("%d", config.RequireInt(ctx, "CL-PORT-START")+index)
+
 	node := Node{
-		Name: "chainlink-node",
+		Name: "chainlink-" + indexStr,
 		Config: client.ChainlinkConfig{
-			URL:      "http://localhost:6688",
+			URL:      "http://localhost:" + portStr,
 			Email:    "admin@chain.link",
 			Password: "twoChains",
 			RemoteIP: "localhost",
@@ -27,8 +42,18 @@ func New(ctx *pulumi.Context, image *docker.RemoteImage, dbPort int) (Node, erro
 		return Node{}, err
 	}
 
-	// add DB url
-	envs = append(envs, fmt.Sprintf("DATABASE_URL=postgresql://postgres@localhost:%d/chainlink?sslmode=disable", dbPort))
+	// add additional configs (collected or calculated from environment configs)
+	envs = append(envs,
+		fmt.Sprintf("DATABASE_URL=postgresql://postgres@localhost:%d/chainlink_%s?sslmode=disable", dbPort, indexStr),
+		fmt.Sprintf("CHAINLINK_PORT=%s", portStr),
+		fmt.Sprintf("OCR2_P2PV2_LISTEN_ADDRESSES=127.0.0.1:%d", config.RequireInt(ctx, "CL-P2P_PORT-START")+index),
+		fmt.Sprintf("OCR2_P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%d", config.RequireInt(ctx, "CL-P2P_PORT-START")+index),
+	)
+
+	// fetch additional env vars (specific to each chainlink node)
+	envListR, err := utils.GetEnvList(ctx, "CL_X")
+	envsR := utils.GetVars(ctx, "CL_"+strings.ToUpper(indexStr), envListR)
+	envs = append(envs, envsR...)
 
 	entrypoints := pulumi.ToStringArray([]string{"chainlink", "node", "start", "-d", "-p", "/run/secrets/node_password", "-a", "/run/secrets/apicredentials"})
 	uploads := docker.ContainerUploadArray{docker.ContainerUploadArgs{File: pulumi.String("/run/secrets/node_password"), Content: pulumi.String("abcd1234ABCD!@#$")}, docker.ContainerUploadArgs{File: pulumi.String("/run/secrets/apicredentials"), Content: pulumi.String(node.CredentialsString())}}

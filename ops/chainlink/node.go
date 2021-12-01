@@ -62,35 +62,35 @@ func (n *Node) AddBridge(name, url string) error {
 	return msg.Check(err)
 }
 
-func (n *Node) AddEI(name, url string) (map[string]string, error) {
-	msg := utils.LogStatus(fmt.Sprintf("Adding %s EI to CL node", name))
-
-	// check if EI exists and delete (old secrets cannot be retrieved)
-	eis, err := n.Call.ReadEIs()
-	if err != nil {
-		return map[string]string{}, err
-	}
-	for _, e := range eis.Data {
-		if e.Attributes.Name == name {
-			msg.Exists()
-			fmt.Print(" (recreating)")
-			if err := n.Call.DeleteEI(name); err != nil {
-				return map[string]string{}, err
-			}
-		}
-	}
-
-	ei, err := n.Call.CreateEI(&client.EIAttributes{
-		Name: name,
-		URL:  url,
-	})
-	params := map[string]string{}
-	params["ic-key"] = ei.Data.Attributes.IncomingAccessKey
-	params["ic-secret"] = ei.Data.Attributes.Secret
-	params["ci-key"] = ei.Data.Attributes.OutgoingToken
-	params["ci-secret"] = ei.Data.Attributes.OutgoingSecret
-	return params, msg.Check(err)
-}
+// func (n *Node) AddEI(name, url string) (map[string]string, error) {
+// 	msg := utils.LogStatus(fmt.Sprintf("Adding %s EI to CL node", name))
+//
+// 	// check if EI exists and delete (old secrets cannot be retrieved)
+// 	eis, err := n.Call.ReadEIs()
+// 	if err != nil {
+// 		return map[string]string{}, err
+// 	}
+// 	for _, e := range eis.Data {
+// 		if e.Attributes.Name == name {
+// 			msg.Exists()
+// 			fmt.Print(" (recreating)")
+// 			if err := n.Call.DeleteEI(name); err != nil {
+// 				return map[string]string{}, err
+// 			}
+// 		}
+// 	}
+//
+// 	ei, err := n.Call.CreateEI(&client.EIAttributes{
+// 		Name: name,
+// 		URL:  url,
+// 	})
+// 	params := map[string]string{}
+// 	params["ic-key"] = ei.Data.Attributes.IncomingAccessKey
+// 	params["ic-secret"] = ei.Data.Attributes.Secret
+// 	params["ci-key"] = ei.Data.Attributes.OutgoingToken
+// 	params["ci-secret"] = ei.Data.Attributes.OutgoingSecret
+// 	return params, msg.Check(err)
+// }
 
 func (n Node) DeleteAllJobs() error {
 	msg := utils.LogStatus("Cleared existing jobs from CL node")

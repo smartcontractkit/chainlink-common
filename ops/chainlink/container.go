@@ -13,7 +13,7 @@ import (
 )
 
 // New spins up image for a chainlink node
-func New(ctx *pulumi.Context, image *docker.RemoteImage, dbPort int, index int) (Node, error) {
+func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, error) {
 	// treat index 0 as bootstrap
 	indexStr := ""
 	if index == 0 {
@@ -58,9 +58,15 @@ func New(ctx *pulumi.Context, image *docker.RemoteImage, dbPort int, index int) 
 	entrypoints := pulumi.ToStringArray([]string{"chainlink", "node", "start", "-d", "-p", "/run/secrets/node_password", "-a", "/run/secrets/apicredentials"})
 	uploads := docker.ContainerUploadArray{docker.ContainerUploadArgs{File: pulumi.String("/run/secrets/node_password"), Content: pulumi.String("abcd1234ABCD!@#$")}, docker.ContainerUploadArgs{File: pulumi.String("/run/secrets/apicredentials"), Content: pulumi.String(node.CredentialsString())}}
 
+	var imageName pulumi.StringInput
+	if config.GetBool(ctx, "CL-BUILD_LOCALLY") {
+		imageName = image.Local.BaseImageName
+	} else {
+		imageName = image.Img.Name
+	}
+
 	_, err = docker.NewContainer(ctx, node.Name, &docker.ContainerArgs{
-		Image: image.Name,
-		// Attach:           pulumi.BoolPtr(true),
+		Image:         imageName,
 		Logs:          pulumi.BoolPtr(true),
 		NetworkMode:   pulumi.String("host"),
 		Envs:          pulumi.StringArrayInput(pulumi.ToStringArray(envs)),
@@ -68,6 +74,7 @@ func New(ctx *pulumi.Context, image *docker.RemoteImage, dbPort int, index int) 
 		Entrypoints:   entrypoints.ToStringArrayOutput(),
 		Restart:       pulumi.String("on-failure"),
 		MaxRetryCount: pulumi.Int(3),
+		// Attach:        pulumi.BoolPtr(true),
 	})
 	return node, err
 }

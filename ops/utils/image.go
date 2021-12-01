@@ -3,7 +3,6 @@ package utils
 import (
 	"github.com/pulumi/pulumi-docker/sdk/v3/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
 // Image implements the struct for fetching images
@@ -24,8 +23,8 @@ func (i *Image) Pull(ctx *pulumi.Context) error {
 	return err
 }
 
-// Build creates the image for the specified relay dockerfile in the YAML config
-func (i *Image) Build(ctx *pulumi.Context) error {
+// Build the image for the specified dockerfile in the YAML config
+func (i *Image) Build(ctx *pulumi.Context, context string, dockerfile string) error {
 	// build local image
 	img, err := docker.NewImage(ctx, i.Name, &docker.ImageArgs{
 		ImageName: pulumi.String(i.Tag),
@@ -33,8 +32,8 @@ func (i *Image) Build(ctx *pulumi.Context) error {
 		SkipPush: pulumi.Bool(true),
 		Registry: docker.ImageRegistryArgs{},
 		Build: docker.DockerBuildArgs{
-			Context:    pulumi.String(config.Require(ctx, "R-CONTEXT")),
-			Dockerfile: pulumi.String(config.Require(ctx, "R-DOCKERFILE")),
+			Context:    pulumi.String(context),
+			Dockerfile: pulumi.String(dockerfile),
 		},
 	})
 	i.Local = img

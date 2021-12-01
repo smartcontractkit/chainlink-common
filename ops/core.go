@@ -34,10 +34,13 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		Tag:  "postgres:latest", // always use latest postgres
 	}
 
-	// fetch chainlink image
-	img["chainlink"] = &utils.Image{
-		Name: "chainlink-image",
-		Tag:  "public.ecr.aws/chainlink/chainlink:" + config.Require(ctx, "CL-NODE_VERSION"),
+	buildLocal := config.GetBool(ctx, "CL-BUILD_LOCALLY")
+	if !buildLocal {
+		// fetch chainlink image
+		img["chainlink"] = &utils.Image{
+			Name: "chainlink-image",
+			Tag:  "public.ecr.aws/chainlink/chainlink:" + config.Require(ctx, "CL-NODE_VERSION"),
+		}
 	}
 	// TODO: build local chainlink image
 
@@ -60,19 +63,22 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		}
 	}
 
+	// build local chainlink node
+	if buildLocal {
+		img["chainlink"] = &utils.Image{
+			Name: "chainlink-local-build",
+			Tag:  "chainlink:local",
+		}
+		if err := img["chainlink"].Build(ctx, config.Require(ctx, "CL-BUILD_CONTEXT"), config.Require(ctx, "CL-BUILD_DOCKERFILE")); err != nil {
+			return err
+		}
+	}
+
 	// validate number of relays
 	nodeNum := config.GetInt(ctx, "CL-COUNT")
 	if nodeNum < 4 {
 		return fmt.Errorf("Minimum number of chainlink nodes (4) not met (%d)", nodeNum)
 	}
-	// // build local image for relay
-	// img["relay"] = &utils.Image{
-	// 	Name: "relay-image",
-	// 	Tag:  "relay:" + config.Require(ctx, "R-VERSION"), // always use latest postgres
-	// }
-	// if err := img["relay"].Build(ctx); err != nil {
-	// 	return err
-	// }
 
 	// start pg + create DBs
 	db, err := database.New(ctx, img["psql"].Img)
@@ -113,7 +119,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 	nodes := map[string]*chainlink.Node{}
 	for i := 0; i <= nodeNum; i++ {
 		// start container
-		cl, err := chainlink.New(ctx, img["chainlink"].Img, db.Port, i)
+		cl, err := chainlink.New(ctx, img["chainlink"], db.Port, i)
 		if err != nil {
 			return err
 		}

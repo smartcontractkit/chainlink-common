@@ -38,7 +38,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 	if !buildLocal {
 		// fetch chainlink image
 		img["chainlink"] = &utils.Image{
-			Name: "chainlink-image",
+			Name: "chainlink-remote-image",
 			Tag:  "public.ecr.aws/chainlink/chainlink:" + config.Require(ctx, "CL-NODE_VERSION"),
 		}
 	}
@@ -147,126 +147,92 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		}
 	}
 
-	// // add webhooks and EA to CL + start relays
-	// relays := map[string]*relay.Relay{}
-	// for i := 0; i <= nodeNum; i++ {
-	// 	indexStr := ""
-	// 	if i == 0 {
-	// 		indexStr = "bootstrap"
-	// 	} else {
-	// 		indexStr = strconv.Itoa(i - 1)
-	// 	}
-	//
-	// 	eiSecrets := map[string]string{}
-	// 	if !ctx.DryRun() {
-	// 		// create EI secrets
-	// 		eiSecrets, err = cl.AddEI("relay_"+indexStr, fmt.Sprintf("http://localhost:%d/jobs", config.RequireInt(ctx, "R-PORT-START")+i))
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	//
-	// 		// create EA endpoints
-	// 		if err := cl.AddBridge("relay_"+indexStr, fmt.Sprintf("http://localhost:%d/runs", config.RequireInt(ctx, "R-PORT-START")+i)); err != nil {
-	// 			return err
-	// 		}
-	//
-	// 	}
-	//
-	// 	// start container
-	// 	r, err := relay.New(ctx, img["relay"].Local, db.Port, i, eiSecrets)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	//
-	// 	relays[indexStr] = &r
-	// }
+	// fetch keys from relays
+	if !ctx.DryRun() {
+		for k := range nodes {
+			if err := nodes[k].GetKeys(); err != nil {
+				return err
+			}
+		}
 
-	// // fetch keys from relays
-	// if !ctx.DryRun() {
-	// 	for k := range relays {
-	// 		if err := relays[k].GetKeys(); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	//
-	// 	// deploy contracts
-	// 	// upload contracts
-	// 	if err = deployer.Load(); err != nil {
-	// 		return err
-	// 	}
-	// 	// deploy LINK
-	// 	if err = deployer.DeployLINK(); err != nil {
-	// 		return err
-	// 	}
-	//
-	// 	// deploy OCR2 contract (w/ dummy access controller addresses)
-	// 	if err = deployer.DeployOCR(); err != nil {
-	// 		return err
-	// 	}
-	//
-	// 	// transfer tokens to OCR2 contract
-	// 	if err = deployer.TransferLINK(); err != nil {
-	// 		return err
-	// 	}
-	//
-	// 	// set OCR2 config
-	// 	var keys []map[string]string
-	// 	for k, v := range relays {
-	// 		// skip if bootstrap node
-	// 		if k == "bootstrap" {
-	// 			continue
-	// 		}
-	//
-	// 		parsedKeys := map[string]string{}
-	// 		// remove prefixes if present
-	// 		for k, val := range v.Keys {
-	// 			parsedKeys[k] = val
-	// 			// replace value with val without prefix if prefix exists
-	// 			sArr := strings.Split(val, "_")
-	// 			if len(sArr) == 2 {
-	// 				parsedKeys[k] = sArr[1]
-	// 			}
-	// 		}
-	//
-	// 		keys = append(keys, parsedKeys)
-	// 	}
-	// 	if err = deployer.InitOCR(keys); err != nil {
-	// 		return err
-	// 	}
-	//
-	// 	// create job specs
-	// 	p2pBootstrap := relays["bootstrap"].Keys["P2PID"] + "@" + relays["bootstrap"].P2P
-	// 	i := 0
-	// 	for k := range relays {
-	// 		name := "relay_" + k
-	//
-	// 		// if bootstrap, change the other parameters
-	// 		bootstrap := "false"
-	// 		if k == "bootstrap" {
-	// 			bootstrap = "true"
-	// 		}
-	//
-	// 		// create specs + add to CL node
-	// 		ea := eas[i%len(eas)]
-	// 		msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", name, ea))
-	// 		spec := &client.WebhookJobSpec{
-	// 			Name:      name + " job",
-	// 			Initiator: name,
-	// 			InitiatorSpec: fmt.Sprintf("{\\\"contractAddress\\\": \\\"%s\\\",\\\"p2pBootstrapPeers\\\": [\\\"%s\\\"],\\\"isBootstrapPeer\\\": %s,\\\"keyBundleID\\\": \\\"%s\\\",\\\"observationTimeout\\\": \\\"10s\\\",\\\"blockchainTimeout\\\": \\\"20s\\\",\\\"contractConfigTrackerSubscribeInterval\\\": \\\"2m\\\",\\\"contractConfigConfirmations\\\": 3}",
-	// 				deployer.OCR2Address(),     // contractAddress
-	// 				p2pBootstrap,               //p2pBootstrapPeers
-	// 				bootstrap,                  //isBootstrapPeer
-	// 				relays[k].Keys["OCRKeyID"], // keyBundleID
-	// 			),
-	// 			ObservationSource: obsSource(ea, name),
-	// 		}
-	// 		_, err = cl.Call.CreateJob(spec)
-	// 		if msg.Check(err) != nil {
-	// 			return err
-	// 		}
-	// 		i++
-	// 	}
-	// }
+		// // deploy contracts
+		// // upload contracts
+		// if err = deployer.Load(); err != nil {
+		// 	return err
+		// }
+		// // deploy LINK
+		// if err = deployer.DeployLINK(); err != nil {
+		// 	return err
+		// }
+		//
+		// // deploy OCR2 contract (w/ dummy access controller addresses)
+		// if err = deployer.DeployOCR(); err != nil {
+		// 	return err
+		// }
+		//
+		// // transfer tokens to OCR2 contract
+		// if err = deployer.TransferLINK(); err != nil {
+		// 	return err
+		// }
+
+		// // set OCR2 config
+		// var keys []map[string]string
+		// for k, v := range relays {
+		// 	// skip if bootstrap node
+		// 	if k == "bootstrap" {
+		// 		continue
+		// 	}
+		//
+		// 	parsedKeys := map[string]string{}
+		// 	// remove prefixes if present
+		// 	for k, val := range v.Keys {
+		// 		parsedKeys[k] = val
+		// 		// replace value with val without prefix if prefix exists
+		// 		sArr := strings.Split(val, "_")
+		// 		if len(sArr) == 2 {
+		// 			parsedKeys[k] = sArr[1]
+		// 		}
+		// 	}
+		//
+		// 	keys = append(keys, parsedKeys)
+		// }
+		// if err = deployer.InitOCR(keys); err != nil {
+		// 	return err
+		// }
+		//
+		// // create job specs
+		// p2pBootstrap := relays["bootstrap"].Keys["P2PID"] + "@" + relays["bootstrap"].P2P
+		// i := 0
+		// for k := range relays {
+		// 	name := "relay_" + k
+		//
+		// 	// if bootstrap, change the other parameters
+		// 	bootstrap := "false"
+		// 	if k == "bootstrap" {
+		// 		bootstrap = "true"
+		// 	}
+		//
+		// 	// create specs + add to CL node
+		// 	ea := eas[i%len(eas)]
+		// 	msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", name, ea))
+		// 	spec := &client.WebhookJobSpec{
+		// 		Name:      name + " job",
+		// 		Initiator: name,
+		// 		InitiatorSpec: fmt.Sprintf("{\\\"contractAddress\\\": \\\"%s\\\",\\\"p2pBootstrapPeers\\\": [\\\"%s\\\"],\\\"isBootstrapPeer\\\": %s,\\\"keyBundleID\\\": \\\"%s\\\",\\\"observationTimeout\\\": \\\"10s\\\",\\\"blockchainTimeout\\\": \\\"20s\\\",\\\"contractConfigTrackerSubscribeInterval\\\": \\\"2m\\\",\\\"contractConfigConfirmations\\\": 3}",
+		// 			deployer.OCR2Address(),     // contractAddress
+		// 			p2pBootstrap,               //p2pBootstrapPeers
+		// 			bootstrap,                  //isBootstrapPeer
+		// 			relays[k].Keys["OCRKeyID"], // keyBundleID
+		// 		),
+		// 		ObservationSource: obsSource(ea, name),
+		// 	}
+		// 	_, err = cl.Call.CreateJob(spec)
+		// 	if msg.Check(err) != nil {
+		// 		return err
+		// 	}
+		// 	i++
+		// }
+	}
 
 	return nil
 }

@@ -25,15 +25,18 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 	// TODO: Default ports?
 
 	portStr := fmt.Sprintf("%d", config.RequireInt(ctx, "CL-PORT-START")+index)
+	p2pPort := fmt.Sprintf("%d", config.RequireInt(ctx, "CL-P2P_PORT-START")+index)
 
 	node := Node{
 		Name: "chainlink-" + indexStr,
+		P2P: "http://localhost:"+p2pPort,
 		Config: client.ChainlinkConfig{
 			URL:      "http://localhost:" + portStr,
 			Email:    "admin@chain.link",
 			Password: "twoChains",
 			RemoteIP: "localhost",
 		},
+		Keys: map[string]string{},
 	}
 
 	// get env vars from YAML file
@@ -46,8 +49,8 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 	envs = append(envs,
 		fmt.Sprintf("DATABASE_URL=postgresql://postgres@localhost:%d/chainlink_%s?sslmode=disable", dbPort, indexStr),
 		fmt.Sprintf("CHAINLINK_PORT=%s", portStr),
-		fmt.Sprintf("OCR2_P2PV2_LISTEN_ADDRESSES=127.0.0.1:%d", config.RequireInt(ctx, "CL-P2P_PORT-START")+index),
-		fmt.Sprintf("OCR2_P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%d", config.RequireInt(ctx, "CL-P2P_PORT-START")+index),
+		fmt.Sprintf("OCR2_P2PV2_LISTEN_ADDRESSES=127.0.0.1:%s", p2pPort),
+		fmt.Sprintf("OCR2_P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%s", p2pPort),
 	)
 
 	// fetch additional env vars (specific to each chainlink node)

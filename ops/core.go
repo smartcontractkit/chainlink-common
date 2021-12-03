@@ -188,31 +188,30 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		}
 
 		// create job specs
-		p2pBootstrap := nodes["chainlink-bootstrap"].Keys["P2PID"] + "@" + nodes["chainlink-bootstrap"].P2P
 		i := 0
 		for k := range nodes {
-			// if bootstrap, change the other parameters
-			bootstrap := "false"
-			if k == "bootstrap" {
-				bootstrap = "true"
-			}
-
 			// create specs + add to CL node
 			ea := eas[i%len(eas)]
 			msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", k, ea))
 
 			// TODO: swap this for proper ocr2 spec
-			spec := &client.WebhookJobSpec{
-				Name:      "local testing job",
-				Initiator: k,
-				InitiatorSpec: fmt.Sprintf("{\\\"contractAddress\\\": \\\"%s\\\",\\\"p2pBootstrapPeers\\\": [\\\"%s\\\"],\\\"isBootstrapPeer\\\": %s,\\\"keyBundleID\\\": \\\"%s\\\",\\\"observationTimeout\\\": \\\"10s\\\",\\\"blockchainTimeout\\\": \\\"20s\\\",\\\"contractConfigTrackerSubscribeInterval\\\": \\\"2m\\\",\\\"contractConfigConfirmations\\\": 3}",
-					deployer.OCR2Address(),     // contractAddress
-					p2pBootstrap,               //p2pBootstrapPeers
-					bootstrap,                  //isBootstrapPeer
-					nodes[k].Keys["OCRKeyID"], // keyBundleID
-				),
-				ObservationSource: obsSource(ea),
-				// JuelsPerFeeCoinSource: juelsObsSource(ea),
+			spec := &client.OCR2TaskJobSpec{
+				Name:        "local testing job",
+				ContractID:  deployer.OCR2Address(),
+				Relay:       "solana", // TODO: pass custom relay name
+				RelayConfig: "{}", // TODO: pass custom relay configs
+				P2PPeerID:   nodes[k].Keys["P2PID"],
+				P2PBootstrapPeers: []client.P2PData{
+					client.P2PData{
+						PeerID:   nodes["chainlink-bootstrap"].Keys["P2PID"],
+						RemoteIP: nodes["chainlink-bootstrap"].P2P,
+					},
+				},
+				IsBootstrapPeer: k == "chainlink-bootstrap",
+				OCRKeyBundleID: nodes[k].Keys["OCRKeyID"],
+				TransmitterID:  "", // TODO: needs to be filled in depending on network
+				ObservationSource:     obsSource(ea),
+				JuelsPerFeeCoinSource: juelsObsSource(ea),
 			}
 			_, err = nodes[k].Call.CreateJob(spec)
 			if msg.Check(err) != nil {

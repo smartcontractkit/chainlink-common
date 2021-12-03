@@ -29,7 +29,7 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 
 	node := Node{
 		Name: "chainlink-" + indexStr,
-		P2P: "http://localhost:"+p2pPort,
+		P2P: "localhost:"+p2pPort,
 		Config: client.ChainlinkConfig{
 			URL:      "http://localhost:" + portStr,
 			Email:    "admin@chain.link",
@@ -49,8 +49,8 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 	envs = append(envs,
 		fmt.Sprintf("DATABASE_URL=postgresql://postgres@localhost:%d/chainlink_%s?sslmode=disable", dbPort, indexStr),
 		fmt.Sprintf("CHAINLINK_PORT=%s", portStr),
-		fmt.Sprintf("OCR2_P2PV2_LISTEN_ADDRESSES=127.0.0.1:%s", p2pPort),
-		fmt.Sprintf("OCR2_P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%s", p2pPort),
+		fmt.Sprintf("P2PV2_LISTEN_ADDRESSES=127.0.0.1:%s", p2pPort),
+		fmt.Sprintf("P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%s", p2pPort),
 	)
 
 	// fetch additional env vars (specific to each chainlink node)

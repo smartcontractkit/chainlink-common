@@ -6,7 +6,7 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/pulumi/pulumi-docker/sdk/v3 v3.1.0
 	github.com/pulumi/pulumi/sdk/v3 v3.17.0
-	github.com/smartcontractkit/integrations-framework v0.10.13-0.20211203180800-0596b62bdb80
+	github.com/smartcontractkit/integrations-framework v0.10.13-0.20211207192750-cc9c8a52b094
 )
 
 require (

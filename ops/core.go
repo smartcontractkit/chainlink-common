@@ -26,6 +26,10 @@ type Deployer interface {
 type ObservationSource func(priceAdapter string) string
 
 func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, juelsObsSource ObservationSource) error {
+	// check these two parameters at the beginning to prevent getting to the end and erroring if they are not present
+	chain := config.Require(ctx, "CL-RELAY_NAME")
+	relayConfig := config.Require(ctx, "CL-RELAY_CONFIG")
+
 	img := map[string]*utils.Image{}
 
 	// fetch postgres
@@ -150,7 +154,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 	if !ctx.DryRun() {
 		// fetch keys from relays
 		for k := range nodes {
-			if err := nodes[k].GetKeys(); err != nil {
+			if err := nodes[k].GetKeys(chain); err != nil {
 				return err
 			}
 		}
@@ -194,12 +198,11 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 			ea := eas[i%len(eas)]
 			msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", k, ea))
 
-			// TODO: swap this for proper ocr2 spec
 			spec := &client.OCR2TaskJobSpec{
 				Name:        "local testing job",
 				ContractID:  deployer.OCR2Address(),
-				Relay:       "solana", // TODO: pass custom relay name
-				RelayConfig: "{}", // TODO: pass custom relay configs
+				Relay:       chain,
+				RelayConfig: relayConfig,
 				P2PPeerID:   nodes[k].Keys["P2PID"],
 				P2PBootstrapPeers: []client.P2PData{
 					client.P2PData{
@@ -209,7 +212,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 				},
 				IsBootstrapPeer: k == "chainlink-bootstrap",
 				OCRKeyBundleID: nodes[k].Keys["OCRKeyID"],
-				TransmitterID:  "", // TODO: needs to be filled in depending on network
+				TransmitterID:  nodes[k].Keys["OCRTransmitterID"],
 				ObservationSource:     obsSource(ea),
 				JuelsPerFeeCoinSource: juelsObsSource(ea),
 			}

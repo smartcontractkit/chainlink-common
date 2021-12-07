@@ -83,29 +83,54 @@ func (n Node) DeleteAllJobs() error {
 	return msg.Check(err)
 }
 
-func (n *Node) GetKeys() error {
+// TODO: verify does this work for evm and other chains
+func (n *Node) GetKeys(chain string) error {
 	msg := utils.LogStatus(fmt.Sprintf("Retrieved keys from %s", n.Name))
 
-	// TODO: placeholder for fetching keys
-	ocrKeys, err := n.Call.ReadOCRKeys()
+	// TODO: Placeholder to create OCR2 + chain specific key (not automatic in core)
+	_, err := n.Call.CreateTxKey(chain)
 	if err != nil {
 		return msg.Check(err)
 	}
+	_, err = n.Call.CreateOCR2Key(chain)
+	if err != nil {
+		return msg.Check(err)
+	}
+
+	ocrKeys, err := n.Call.ReadOCR2Keys()
+	if err != nil {
+		return msg.Check(err)
+	}
+	// parse first key that matches chain
+	var ocrKey client.OCR2KeyData
+	for _, k := range ocrKeys.Data {
+		if k.Attributes.ChainType == chain {
+			ocrKey = k
+			break
+		}
+	}
+	// if empty, error
+	if ocrKey == (client.OCR2KeyData{}) {
+		return msg.Check(fmt.Errorf("could not find ocr2 key for %s", chain))
+	}
+
 	p2pKeys, err := n.Call.ReadP2PKeys()
 	if err != nil {
 		return msg.Check(err)
 	}
-	addr, err := n.Call.PrimaryEthAddress()
+
+	txKeys, err := n.Call.ReadTxKeys(chain) // this doesn't work for evm (uses a different function)
 	if err != nil {
 		return msg.Check(err)
 	}
 
 	// parse keys into expected format
-	n.Keys["OCRKeyID"] = ocrKeys.Data[0].ID
-	n.Keys["OCROnchainPublicKey"] = ocrKeys.Data[0].Attributes.OnChainSigningAddress
-	n.Keys["OCRTransmitter"] = addr
-	n.Keys["OCROffchainPublicKey"] = ocrKeys.Data[0].Attributes.OffChainPublicKey
-	n.Keys["OCRConfigPublicKey"] = ocrKeys.Data[0].Attributes.ConfigPublicKey
+	n.Keys["OCRKeyID"] = ocrKey.ID
+	n.Keys["OCROnchainPublicKey"] = ocrKey.Attributes.OnChainSigningAddress
+	n.Keys["OCRTransmitter"] = txKeys.Data[0].Attributes.PublicKey
+	n.Keys["OCRTransmitterID"] = txKeys.Data[0].ID
+	n.Keys["OCROffchainPublicKey"] = ocrKey.Attributes.OffChainPublicKey
+	n.Keys["OCRConfigPublicKey"] = ocrKey.Attributes.ConfigPublicKey
 	n.Keys["P2PID"] = p2pKeys.Data[0].Attributes.PeerID
 
 	// replace value with val without prefix if prefix exists

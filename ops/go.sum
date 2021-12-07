@@ -1178,8 +1178,8 @@ github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/smartcontractkit/helmenv v1.0.16 h1:fXUdTwgeyIsEhFz3L82UShXKmgGh6yZGqH+5r8qEdJg=
 github.com/smartcontractkit/helmenv v1.0.16/go.mod h1:iVGF9XLyRF5Ai52JM44m6hRWHIBfDPhspW1WXOwlsmM=
-github.com/smartcontractkit/integrations-framework v0.10.13-0.20211203180800-0596b62bdb80 h1:+uLkMUArW8d3FJZ19uQpQcaQFWyo1j374EDymxVMEDk=
-github.com/smartcontractkit/integrations-framework v0.10.13-0.20211203180800-0596b62bdb80/go.mod h1:M+3iTEW4YxrbIjEIGiljX/iujlP8hcm5u44vcA4AiBI=
+github.com/smartcontractkit/integrations-framework v0.10.13-0.20211207192750-cc9c8a52b094 h1:EdtWnX4spvjVq3VFvAfImjoGNRxxfra9gwznNcio9X4=
+github.com/smartcontractkit/integrations-framework v0.10.13-0.20211207192750-cc9c8a52b094/go.mod h1:M+3iTEW4YxrbIjEIGiljX/iujlP8hcm5u44vcA4AiBI=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=
 github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 github.com/smartystreets/goconvey v1.6.4/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=

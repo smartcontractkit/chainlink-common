@@ -20,15 +20,18 @@ type Deployer interface {
 	TransferLINK() error                    // transfer LINK to OCR contract
 	InitOCR(keys []map[string]string) error // initialize OCR contract with provided keys
 	OCR2Address() string                    // fetch deployed OCR contract address
+	Addresses() map[int]string							// map of all deployed addresses (ocr2, validators, etc)
 }
 
 // ObservationSource creates the observation source for the CL node jobs
 type ObservationSource func(priceAdapter string) string
 
-func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, juelsObsSource ObservationSource) error {
+// RelayConfig creates the stringified config for the job spec
+type RelayConfig func(ctx *pulumi.Context, addresses map[int]string) (string, error)
+
+func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, juelsObsSource ObservationSource, relayConfigFunc RelayConfig) error {
 	// check these two parameters at the beginning to prevent getting to the end and erroring if they are not present
 	chain := config.Require(ctx, "CL-RELAY_NAME")
-	relayConfig := config.Require(ctx, "CL-RELAY_CONFIG")
 
 	img := map[string]*utils.Image{}
 
@@ -188,6 +191,12 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 			keys = append(keys, v.Keys)
 		}
 		if err = deployer.InitOCR(keys); err != nil {
+			return err
+		}
+
+		// create relay config
+		relayConfig, err := relayConfigFunc(ctx, deployer.Addresses())
+		if err != nil {
 			return err
 		}
 

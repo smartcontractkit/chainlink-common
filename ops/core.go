@@ -19,8 +19,9 @@ type Deployer interface {
 	DeployOCR() error                       // deploy OCR contract
 	TransferLINK() error                    // transfer LINK to OCR contract
 	InitOCR(keys []map[string]string) error // initialize OCR contract with provided keys
+	Fund(addresses []string) error          // fund the nodes
 	OCR2Address() string                    // fetch deployed OCR contract address
-	Addresses() map[int]string							// map of all deployed addresses (ocr2, validators, etc)
+	Addresses() map[int]string              // map of all deployed addresses (ocr2, validators, etc)
 }
 
 // ObservationSource creates the observation source for the CL node jobs
@@ -201,6 +202,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		}
 
 		// create job specs
+		var addresses []string
 		i := 0
 		for k := range nodes {
 			// create specs + add to CL node
@@ -219,9 +221,9 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 						RemoteIP: nodes["chainlink-bootstrap"].P2P,
 					},
 				},
-				IsBootstrapPeer: k == "chainlink-bootstrap",
-				OCRKeyBundleID: nodes[k].Keys["OCRKeyID"],
-				TransmitterID:  nodes[k].Keys["OCRTransmitterID"],
+				IsBootstrapPeer:       k == "chainlink-bootstrap",
+				OCRKeyBundleID:        nodes[k].Keys["OCRKeyID"],
+				TransmitterID:         nodes[k].Keys["OCRTransmitterID"],
 				ObservationSource:     obsSource(ea),
 				JuelsPerFeeCoinSource: juelsObsSource(ea),
 			}
@@ -230,6 +232,14 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 				return err
 			}
 			i++
+
+			// retrieve transmitter address for funding
+			addresses = append(addresses, nodes[k].Keys["OCRTransmitter"])
+		}
+
+		// fund nodes
+		if err = deployer.Fund(addresses); err != nil {
+			return err
 		}
 	}
 

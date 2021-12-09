@@ -21,7 +21,8 @@ type FlowReport []struct {
 		Hash     string `json:"hash"`
 		Success  bool   `json:"success"`
 	}
-	StepId int `json:"stepId"`
+	Data   map[string]string `json:"data"`
+	StepId int               `json:"stepId"`
 }
 
 type Report struct {
@@ -32,6 +33,7 @@ type Report struct {
 		}
 		Contract string `json:"contract"`
 	} `json:"responses"`
+	Data map[string]string `json:"data"`
 }
 
 func NewGauntlet(binPath string) (Gauntlet, error) {

@@ -6,7 +6,8 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/pulumi/pulumi-docker/sdk/v3 v3.1.0
 	github.com/pulumi/pulumi/sdk/v3 v3.17.0
-	github.com/smartcontractkit/integrations-framework v0.10.13-0.20211207192750-cc9c8a52b094
+	github.com/smartcontractkit/integrations-framework v0.10.13-0.20211209165847-97e3b3998b97
+	github.com/stretchr/testify v1.7.0
 )
 
 require (
@@ -135,7 +136,7 @@ require (
 	github.com/shirou/gopsutil v3.21.10+incompatible // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/smartcontractkit/helmenv v1.0.16 // indirect
+	github.com/smartcontractkit/helmenv v1.0.17 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/cobra v1.2.1 // indirect
@@ -143,7 +144,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.9.0 // indirect
 	github.com/src-d/gcfg v1.4.0 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/texttheater/golang-levenshtein v0.0.0-20191208221605-eb6844b05fc6 // indirect
 	github.com/tklauser/go-sysconf v0.3.9 // indirect

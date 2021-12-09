@@ -28,7 +28,7 @@ type Deployer interface {
 type ObservationSource func(priceAdapter string) string
 
 // RelayConfig creates the stringified config for the job spec
-type RelayConfig func(ctx *pulumi.Context, addresses map[int]string) (string, error)
+type RelayConfig func(ctx *pulumi.Context, addresses map[int]string) (map[string]string, error)
 
 func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, juelsObsSource ObservationSource, relayConfigFunc RelayConfig) error {
 	// check these two parameters at the beginning to prevent getting to the end and erroring if they are not present

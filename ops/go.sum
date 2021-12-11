@@ -1178,8 +1178,6 @@ github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/smartcontractkit/helmenv v1.0.17 h1:yTtSIhfYJQKa4T8wO1s61IyjV28GCyISuh3PGRwKUNU=
 github.com/smartcontractkit/helmenv v1.0.17/go.mod h1:oFDq/QeOcHMJ8Cl+UEOA3tAmYMHo2ONxOsMYvbzg91E=
-github.com/smartcontractkit/integrations-framework v0.10.13-0.20211209210730-be0fc64293cb h1:Y2zX6+m1CNbn0eaMhaxz4gQKXefQ7UKQWRquWaZMGuE=
-github.com/smartcontractkit/integrations-framework v0.10.13-0.20211209210730-be0fc64293cb/go.mod h1:/9unyuRHLAsiR2DvBR5DDvyS8qcAN4CUpn8drYvtEiw=
 github.com/smartcontractkit/integrations-framework v0.10.13-0.20211211135615-cbaefaf78a2e h1:LZGBF6Gn8ha4jR0zgWnXtft9f5Dx4uFeyEpw7QyaDuI=
 github.com/smartcontractkit/integrations-framework v0.10.13-0.20211211135615-cbaefaf78a2e/go.mod h1:/9unyuRHLAsiR2DvBR5DDvyS8qcAN4CUpn8drYvtEiw=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=

@@ -184,12 +184,12 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 
 		// set OCR2 config
 		var keys []map[string]string
-		for k, v := range nodes {
+		for k := range nodes {
 			// skip if bootstrap node
 			if k == "chainlink-bootstrap" {
 				continue
 			}
-			keys = append(keys, v.Keys)
+			keys = append(keys, nodes[k].Keys)
 		}
 		if err = deployer.InitOCR(keys); err != nil {
 			return err

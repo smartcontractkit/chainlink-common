@@ -126,7 +126,7 @@ func (n *Node) GetKeys(chain string) error {
 
 	// parse keys into expected format
 	n.Keys["OCRKeyID"] = ocrKey.ID
-	n.Keys["OCROnchainPublicKey"] = ocrKey.Attributes.OnChainSigningAddress
+	n.Keys["OCROnchainPublicKey"] = ocrKey.Attributes.OnChainPublicKey
 	n.Keys["OCRTransmitter"] = txKeys.Data[0].Attributes.PublicKey
 	n.Keys["OCRTransmitterID"] = txKeys.Data[0].ID
 	n.Keys["OCROffchainPublicKey"] = ocrKey.Attributes.OffChainPublicKey

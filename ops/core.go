@@ -216,10 +216,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 				RelayConfig: relayConfig,
 				P2PPeerID:   nodes[k].Keys["P2PID"],
 				P2PBootstrapPeers: []client.P2PData{
-					client.P2PData{
-						PeerID:   nodes["chainlink-bootstrap"].Keys["P2PID"],
-						RemoteIP: nodes["chainlink-bootstrap"].P2P,
-					},
+					nodes["chainlink-bootstrap"].P2P,
 				},
 				IsBootstrapPeer:       k == "chainlink-bootstrap",
 				OCRKeyBundleID:        nodes[k].Keys["OCRKeyID"],

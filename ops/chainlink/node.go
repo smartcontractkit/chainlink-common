@@ -13,7 +13,7 @@ import (
 // Node implements the node parameters
 type Node struct {
 	Name   string
-	P2P    string
+	P2P    client.P2PData
 	Config client.ChainlinkConfig
 	Call   client.Chainlink
 	Keys   map[string]string
@@ -132,6 +132,7 @@ func (n *Node) GetKeys(chain string) error {
 	n.Keys["OCROffchainPublicKey"] = ocrKey.Attributes.OffChainPublicKey
 	n.Keys["OCRConfigPublicKey"] = ocrKey.Attributes.ConfigPublicKey
 	n.Keys["P2PID"] = p2pKeys.Data[0].Attributes.PeerID
+	n.P2P.PeerID = n.Keys["P2PID"] // set p2p peerID in the p2p struct
 
 	// replace value with val without prefix if prefix exists
 	for k, val := range n.Keys {

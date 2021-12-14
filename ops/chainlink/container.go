@@ -29,7 +29,11 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 
 	node := Node{
 		Name: "chainlink-" + indexStr,
-		P2P: "localhost:"+p2pPort,
+		P2P: client.P2PData{
+			RemoteIP: "localhost",
+			RemotePort: p2pPort,
+			// PeerID this is set later when GetKeys() is called
+		},
 		Config: client.ChainlinkConfig{
 			URL:      "http://localhost:" + portStr,
 			Email:    "admin@chain.link",

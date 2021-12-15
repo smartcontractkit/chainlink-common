@@ -137,9 +137,7 @@ func (n *Node) GetKeys(chain string) error {
 	// replace value with val without prefix if prefix exists
 	for k, val := range n.Keys {
 		sArr := strings.Split(val, "_")
-		if len(sArr) == 2 {
-			n.Keys[k] = sArr[1]
-		}
+		n.Keys[k] = sArr[len(sArr)-1] // always use the last split (removes multiple prefixes if present)
 	}
 
 	return msg.Check(err)

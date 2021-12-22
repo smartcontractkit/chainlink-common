@@ -14,14 +14,14 @@ import (
 
 // Deployer interface for deploying contracts
 type Deployer interface {
-	Load() error                            // upload contracts (may not be necessary)
-	DeployLINK() error                      // deploy LINK contract
-	DeployOCR() error                       // deploy OCR contract
-	TransferLINK() error                    // transfer LINK to OCR contract
-	InitOCR(keys []map[string]string) error // initialize OCR contract with provided keys
-	Fund(addresses []string) error          // fund the nodes
-	OCR2Address() string                    // fetch deployed OCR contract address
-	Addresses() map[int]string              // map of all deployed addresses (ocr2, validators, etc)
+	Load() error                             // upload contracts (may not be necessary)
+	DeployLINK() error                       // deploy LINK contract
+	DeployOCR() error                        // deploy OCR contract
+	TransferLINK() error                     // transfer LINK to OCR contract
+	InitOCR(keys []chainlink.NodeKeys) error // initialize OCR contract with provided keys
+	Fund(addresses []string) error           // fund the nodes
+	OCR2Address() string                     // fetch deployed OCR contract address
+	Addresses() map[int]string               // map of all deployed addresses (ocr2, validators, etc)
 }
 
 // ObservationSource creates the observation source for the CL node jobs
@@ -183,7 +183,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		}
 
 		// set OCR2 config
-		var keys []map[string]string
+		var keys []chainlink.NodeKeys
 		for k := range nodes {
 			// skip if bootstrap node
 			if k == "chainlink-bootstrap" {
@@ -214,13 +214,13 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 				ContractID:  deployer.OCR2Address(),
 				Relay:       chain,
 				RelayConfig: relayConfig,
-				P2PPeerID:   nodes[k].Keys["P2PID"],
+				P2PPeerID:   nodes[k].Keys.P2PID,
 				P2PBootstrapPeers: []client.P2PData{
 					nodes["chainlink-bootstrap"].P2P,
 				},
 				IsBootstrapPeer:       k == "chainlink-bootstrap",
-				OCRKeyBundleID:        nodes[k].Keys["OCRKeyID"],
-				TransmitterID:         nodes[k].Keys["OCRTransmitterID"],
+				OCRKeyBundleID:        nodes[k].Keys.OCR2KeyID,
+				TransmitterID:         nodes[k].Keys.OCR2TransmitterID,
 				ObservationSource:     obsSource(ea),
 				JuelsPerFeeCoinSource: juelsObsSource(ea),
 			}
@@ -231,7 +231,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 			i++
 
 			// retrieve transmitter address for funding
-			addresses = append(addresses, nodes[k].Keys["OCRTransmitter"])
+			addresses = append(addresses, nodes[k].Keys.OCR2Transmitter)
 		}
 
 		// fund nodes

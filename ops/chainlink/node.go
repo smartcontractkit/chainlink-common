@@ -3,7 +3,6 @@ package chainlink
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-relay/ops/utils"
@@ -16,7 +15,18 @@ type Node struct {
 	P2P    client.P2PData
 	Config client.ChainlinkConfig
 	Call   client.Chainlink
-	Keys   map[string]string
+	Keys   NodeKeys
+}
+
+// NodeKeys implements the needed keys from the core node
+type NodeKeys struct {
+	OCR2KeyID             string
+	OCR2OnchainPublicKey  string
+	OCR2Transmitter       string
+	OCR2TransmitterID     string
+	OCR2OffchainPublicKey string
+	OCR2ConfigPublicKey   string
+	P2PID                 string
 }
 
 // CredentialsString returns formatted string for node input
@@ -125,20 +135,16 @@ func (n *Node) GetKeys(chain string) error {
 	}
 
 	// parse keys into expected format
-	n.Keys["OCRKeyID"] = ocrKey.ID
-	n.Keys["OCROnchainPublicKey"] = ocrKey.Attributes.OnChainPublicKey
-	n.Keys["OCRTransmitter"] = txKeys.Data[0].Attributes.PublicKey
-	n.Keys["OCRTransmitterID"] = txKeys.Data[0].ID
-	n.Keys["OCROffchainPublicKey"] = ocrKey.Attributes.OffChainPublicKey
-	n.Keys["OCRConfigPublicKey"] = ocrKey.Attributes.ConfigPublicKey
-	n.Keys["P2PID"] = p2pKeys.Data[0].Attributes.PeerID
-	n.P2P.PeerID = n.Keys["P2PID"] // set p2p peerID in the p2p struct
-
-	// replace value with val without prefix if prefix exists
-	for k, val := range n.Keys {
-		sArr := strings.Split(val, "_")
-		n.Keys[k] = sArr[len(sArr)-1] // always use the last split (removes multiple prefixes if present)
+	n.Keys = NodeKeys{
+		OCR2KeyID:             utils.RemovePrefix(ocrKey.ID),
+		OCR2OnchainPublicKey:  utils.RemovePrefix(ocrKey.Attributes.OnChainPublicKey),
+		OCR2Transmitter:       utils.RemovePrefix(txKeys.Data[0].Attributes.PublicKey),
+		OCR2TransmitterID:     utils.RemovePrefix(txKeys.Data[0].ID),
+		OCR2OffchainPublicKey: utils.RemovePrefix(ocrKey.Attributes.OffChainPublicKey),
+		OCR2ConfigPublicKey:   utils.RemovePrefix(ocrKey.Attributes.ConfigPublicKey),
+		P2PID:                 utils.RemovePrefix(p2pKeys.Data[0].Attributes.PeerID),
 	}
+	n.P2P.PeerID = n.Keys.P2PID // set p2p peerID in the p2p struct
 
 	return msg.Check(err)
 }

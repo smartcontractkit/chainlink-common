@@ -30,7 +30,7 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 	node := Node{
 		Name: "chainlink-" + indexStr,
 		P2P: client.P2PData{
-			RemoteIP: "localhost",
+			RemoteIP:   "localhost",
 			RemotePort: p2pPort,
 			// PeerID this is set later when GetKeys() is called
 		},
@@ -40,7 +40,7 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 			Password: "twoChains",
 			RemoteIP: "localhost",
 		},
-		Keys: map[string]string{},
+		Keys: NodeKeys{},
 	}
 
 	// get env vars from YAML file

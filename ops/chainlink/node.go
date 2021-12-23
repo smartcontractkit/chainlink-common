@@ -1,6 +1,7 @@
 package chainlink
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -97,31 +98,9 @@ func (n Node) DeleteAllJobs() error {
 func (n *Node) GetKeys(chain string) error {
 	msg := utils.LogStatus(fmt.Sprintf("Retrieved keys from %s", n.Name))
 
-	// TODO: Placeholder to create OCR2 + chain specific key (not automatic in core)
-	_, err := n.Call.CreateTxKey(chain)
+	ocrKey, err := n.fetchOCR2Key(chain, true)
 	if err != nil {
 		return msg.Check(err)
-	}
-	_, err = n.Call.CreateOCR2Key(chain)
-	if err != nil {
-		return msg.Check(err)
-	}
-
-	ocrKeys, err := n.Call.ReadOCR2Keys()
-	if err != nil {
-		return msg.Check(err)
-	}
-	// parse first key that matches chain
-	var ocrKey client.OCR2KeyData
-	for _, k := range ocrKeys.Data {
-		if k.Attributes.ChainType == chain {
-			ocrKey = k
-			break
-		}
-	}
-	// if empty, error
-	if ocrKey == (client.OCR2KeyData{}) {
-		return msg.Check(fmt.Errorf("could not find ocr2 key for %s", chain))
 	}
 
 	p2pKeys, err := n.Call.ReadP2PKeys()
@@ -129,7 +108,7 @@ func (n *Node) GetKeys(chain string) error {
 		return msg.Check(err)
 	}
 
-	txKeys, err := n.Call.ReadTxKeys(chain) // this doesn't work for evm (uses a different function)
+	txKey, err := n.fetchTxKey(chain, true)
 	if err != nil {
 		return msg.Check(err)
 	}
@@ -138,8 +117,8 @@ func (n *Node) GetKeys(chain string) error {
 	n.Keys = NodeKeys{
 		OCR2KeyID:             utils.RemovePrefix(ocrKey.ID),
 		OCR2OnchainPublicKey:  utils.RemovePrefix(ocrKey.Attributes.OnChainPublicKey),
-		OCR2Transmitter:       utils.RemovePrefix(txKeys.Data[0].Attributes.PublicKey),
-		OCR2TransmitterID:     utils.RemovePrefix(txKeys.Data[0].ID),
+		OCR2Transmitter:       utils.RemovePrefix(txKey.Attributes.PublicKey),
+		OCR2TransmitterID:     utils.RemovePrefix(txKey.ID),
 		OCR2OffchainPublicKey: utils.RemovePrefix(ocrKey.Attributes.OffChainPublicKey),
 		OCR2ConfigPublicKey:   utils.RemovePrefix(ocrKey.Attributes.ConfigPublicKey),
 		P2PID:                 utils.RemovePrefix(p2pKeys.Data[0].Attributes.PeerID),
@@ -147,4 +126,59 @@ func (n *Node) GetKeys(chain string) error {
 	n.P2P.PeerID = n.Keys.P2PID // set p2p peerID in the p2p struct
 
 	return msg.Check(err)
+}
+
+func (n Node) fetchOCR2Key(chain string, create bool) (ocrKey client.OCR2KeyData, err error) {
+	ocrKeys, err := n.Call.ReadOCR2Keys()
+	if err != nil {
+		return ocrKey, err
+	}
+	// parse first key that matches chain
+	for _, k := range ocrKeys.Data {
+		if k.Attributes.ChainType == chain {
+			ocrKey = k
+			break
+		}
+	}
+
+	// return if key is found
+	if ocrKey != (client.OCR2KeyData{}) {
+		return ocrKey, nil
+	}
+
+	// return error if key not found and not creating
+	if !create {
+		return ocrKey, fmt.Errorf("could not find ocr2 key for %s", chain)
+	}
+
+	// create key
+	if _, err = n.Call.CreateOCR2Key(chain); err != nil {
+		return ocrKey, err
+	}
+	return n.fetchOCR2Key(chain, false) // fetch key again
+}
+
+func (n Node) fetchTxKey(chain string, create bool) (client.TxKeyData, error) {
+	// check if key exists
+	txKeys, err := n.Call.ReadTxKeys(chain) // this doesn't work for evm (uses a different function)
+	if err != nil {
+		return client.TxKeyData{}, nil
+	}
+
+	// return if key is found
+	if len(txKeys.Data) > 0 {
+		return txKeys.Data[0], nil
+	}
+
+	if !create { // if not told to create, then return not found err
+		return client.TxKeyData{}, errors.New("no transaction key found")
+	}
+
+	// if key is not found, create
+	if _, err := n.Call.CreateTxKey(chain); err != nil {
+		return client.TxKeyData{}, err
+	}
+
+	// after creating fetch again without create
+	return n.fetchTxKey(chain, false)
 }

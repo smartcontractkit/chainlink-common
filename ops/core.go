@@ -2,33 +2,38 @@ package ops
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 	"github.com/smartcontractkit/chainlink-relay/ops/adapter"
 	"github.com/smartcontractkit/chainlink-relay/ops/chainlink"
 	"github.com/smartcontractkit/chainlink-relay/ops/database"
-	"github.com/smartcontractkit/chainlink-relay/ops/relay"
 	"github.com/smartcontractkit/chainlink-relay/ops/utils"
 	"github.com/smartcontractkit/integrations-framework/client"
 )
 
 // Deployer interface for deploying contracts
 type Deployer interface {
-	Load() error                            // upload contracts (may not be necessary)
-	DeployLINK() error                      // deploy LINK contract
-	DeployOCR() error                       // deploy OCR contract
-	TransferLINK() error                    // transfer LINK to OCR contract
-	InitOCR(keys []map[string]string) error // initialize OCR contract with provided keys
-	OCR2Address() string                    // fetch deployed OCR contract address
+	Load() error                             // upload contracts (may not be necessary)
+	DeployLINK() error                       // deploy LINK contract
+	DeployOCR() error                        // deploy OCR contract
+	TransferLINK() error                     // transfer LINK to OCR contract
+	InitOCR(keys []chainlink.NodeKeys) error // initialize OCR contract with provided keys
+	Fund(addresses []string) error           // fund the nodes
+	OCR2Address() string                     // fetch deployed OCR contract address
+	Addresses() map[int]string               // map of all deployed addresses (ocr2, validators, etc)
 }
 
 // ObservationSource creates the observation source for the CL node jobs
-type ObservationSource func(priceAdapter, relay string) string
+type ObservationSource func(priceAdapter string) string
 
-func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) error {
+// RelayConfig creates the stringified config for the job spec
+type RelayConfig func(ctx *pulumi.Context, addresses map[int]string) (map[string]string, error)
+
+func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, juelsObsSource ObservationSource, relayConfigFunc RelayConfig) error {
+	// check these two parameters at the beginning to prevent getting to the end and erroring if they are not present
+	chain := config.Require(ctx, "CL-RELAY_NAME")
+
 	img := map[string]*utils.Image{}
 
 	// fetch postgres
@@ -37,11 +42,15 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		Tag:  "postgres:latest", // always use latest postgres
 	}
 
-	// fetch chainlink image
-	img["chainlink"] = &utils.Image{
-		Name: "chainlink-image",
-		Tag:  "public.ecr.aws/chainlink/chainlink:" + config.Require(ctx, "CL-NODE_VERSION"),
+	buildLocal := config.GetBool(ctx, "CL-BUILD_LOCALLY")
+	if !buildLocal {
+		// fetch chainlink image
+		img["chainlink"] = &utils.Image{
+			Name: "chainlink-remote-image",
+			Tag:  "public.ecr.aws/chainlink/chainlink:" + config.Require(ctx, "CL-NODE_VERSION"),
+		}
 	}
+	// TODO: build local chainlink image
 
 	// fetch list of EAs
 	eas := []string{}
@@ -62,18 +71,21 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		}
 	}
 
+	// build local chainlink node
+	if buildLocal {
+		img["chainlink"] = &utils.Image{
+			Name: "chainlink-local-build",
+			Tag:  "chainlink:local",
+		}
+		if err := img["chainlink"].Build(ctx, config.Require(ctx, "CL-BUILD_CONTEXT"), config.Require(ctx, "CL-BUILD_DOCKERFILE")); err != nil {
+			return err
+		}
+	}
+
 	// validate number of relays
-	relayNum := config.GetInt(ctx, "R-COUNT")
-	if relayNum < 4 {
-		return fmt.Errorf("Minimum number of relays (4) not met (%d)", relayNum)
-	}
-	// build local image for relay
-	img["relay"] = &utils.Image{
-		Name: "relay-image",
-		Tag:  "relay:" + config.Require(ctx, "R-VERSION"), // always use latest postgres
-	}
-	if err := img["relay"].Build(ctx); err != nil {
-		return err
+	nodeNum := config.GetInt(ctx, "CL-COUNT")
+	if nodeNum < 4 {
+		return fmt.Errorf("Minimum number of chainlink nodes (4) not met (%d)", nodeNum)
 	}
 
 	// start pg + create DBs
@@ -88,9 +100,9 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		}
 
 		// create DB names
-		dbNames := []string{"chainlink", "relay_bootstrap"}
-		for i := 0; i < relayNum; i++ {
-			dbNames = append(dbNames, fmt.Sprintf("relay_%d", i))
+		dbNames := []string{"chainlink_bootstrap"}
+		for i := 0; i < nodeNum; i++ {
+			dbNames = append(dbNames, fmt.Sprintf("chainlink_%d", i))
 		}
 
 		// create DBs
@@ -101,81 +113,56 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		}
 	}
 
-	// start cl
-	cl, err := chainlink.New(ctx, img["chainlink"].Img, db.Port)
-	if err != nil {
-		return err
-	}
-	if !ctx.DryRun() {
-		// wait for readiness check
-		if err := cl.Ready(); err != nil {
-			return err
-		}
-
-		// delete all jobs if they exist
-		// any related jobs to EIs must be removed for the EI to be replaced later
-		if err := cl.DeleteAllJobs(); err != nil {
-			return err
-		}
-	}
-
-	// start adapters + add to CL node
+	// start EAs
+	adapters := []client.BridgeTypeAttributes{}
 	for i, ea := range eas {
 		a, err := adapter.New(ctx, img[ea], i)
 		if err != nil {
 			return err
 		}
-		// add to chainlink node
-		if !ctx.DryRun() {
-			if err := cl.AddBridge(a.Name, a.URL); err != nil {
-				return err
-			}
-		}
+		adapters = append(adapters, a)
 	}
 
-	// add webhooks and EA to CL + start relays
-	relays := map[string]*relay.Relay{}
-	for i := 0; i <= relayNum; i++ {
-		indexStr := ""
-		if i == 0 {
-			indexStr = "bootstrap"
-		} else {
-			indexStr = strconv.Itoa(i - 1)
-		}
-
-		eiSecrets := map[string]string{}
-		if !ctx.DryRun() {
-			// create EI secrets
-			eiSecrets, err = cl.AddEI("relay_"+indexStr, fmt.Sprintf("http://localhost:%d/jobs", config.RequireInt(ctx, "R-PORT-START")+i))
-			if err != nil {
-				return err
-			}
-
-			// create EA endpoints
-			if err := cl.AddBridge("relay_"+indexStr, fmt.Sprintf("http://localhost:%d/runs", config.RequireInt(ctx, "R-PORT-START")+i)); err != nil {
-				return err
-			}
-
-		}
-
+	// start chainlink nodes
+	nodes := map[string]*chainlink.Node{}
+	for i := 0; i <= nodeNum; i++ {
 		// start container
-		r, err := relay.New(ctx, img["relay"].Local, db.Port, i, eiSecrets)
+		cl, err := chainlink.New(ctx, img["chainlink"], db.Port, i)
 		if err != nil {
 			return err
 		}
-
-		relays[indexStr] = &r
+		nodes[cl.Name] = &cl // store in map
 	}
 
-	// fetch keys from relays
 	if !ctx.DryRun() {
-		for k := range relays {
-			if err := relays[k].GetKeys(); err != nil {
+		for _, cl := range nodes {
+			// wait for readiness check
+			if err := cl.Ready(); err != nil {
+				return err
+			}
+
+			// delete all jobs if any exist
+			if err := cl.DeleteAllJobs(); err != nil {
+				return err
+			}
+
+			// add adapters to CL node
+			for _, a := range adapters {
+				if err := cl.AddBridge(a.Name, a.URL); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if !ctx.DryRun() {
+		// fetch keys from relays
+		for k := range nodes {
+			if err := nodes[k].GetKeys(chain); err != nil {
 				return err
 			}
 		}
 
-		// deploy contracts
 		// upload contracts
 		if err = deployer.Load(); err != nil {
 			return err
@@ -196,61 +183,60 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource) er
 		}
 
 		// set OCR2 config
-		var keys []map[string]string
-		for k, v := range relays {
+		var keys []chainlink.NodeKeys
+		for k := range nodes {
 			// skip if bootstrap node
-			if k == "bootstrap" {
+			if k == "chainlink-bootstrap" {
 				continue
 			}
-
-			parsedKeys := map[string]string{}
-			// remove prefixes if present
-			for k, val := range v.Keys {
-				parsedKeys[k] = val
-				// replace value with val without prefix if prefix exists
-				sArr := strings.Split(val, "_")
-				if len(sArr) == 2 {
-					parsedKeys[k] = sArr[1]
-				}
-			}
-
-			keys = append(keys, parsedKeys)
+			keys = append(keys, nodes[k].Keys)
 		}
 		if err = deployer.InitOCR(keys); err != nil {
 			return err
 		}
 
+		// create relay config
+		relayConfig, err := relayConfigFunc(ctx, deployer.Addresses())
+		if err != nil {
+			return err
+		}
+
 		// create job specs
-		p2pBootstrap := relays["bootstrap"].Keys["P2PID"] + "@" + relays["bootstrap"].P2P
+		var addresses []string
 		i := 0
-		for k := range relays {
-			name := "relay_" + k
-
-			// if bootstrap, change the other parameters
-			bootstrap := "false"
-			if k == "bootstrap" {
-				bootstrap = "true"
-			}
-
+		for k := range nodes {
 			// create specs + add to CL node
 			ea := eas[i%len(eas)]
-			msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", name, ea))
-			spec := &client.WebhookJobSpec{
-				Name:      name + " job",
-				Initiator: name,
-				InitiatorSpec: fmt.Sprintf("{\\\"contractAddress\\\": \\\"%s\\\",\\\"p2pBootstrapPeers\\\": [\\\"%s\\\"],\\\"isBootstrapPeer\\\": %s,\\\"keyBundleID\\\": \\\"%s\\\",\\\"observationTimeout\\\": \\\"10s\\\",\\\"blockchainTimeout\\\": \\\"20s\\\",\\\"contractConfigTrackerSubscribeInterval\\\": \\\"2m\\\",\\\"contractConfigConfirmations\\\": 3}",
-					deployer.OCR2Address(),     // contractAddress
-					p2pBootstrap,               //p2pBootstrapPeers
-					bootstrap,                  //isBootstrapPeer
-					relays[k].Keys["OCRKeyID"], // keyBundleID
-				),
-				ObservationSource: obsSource(ea, name),
+			msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", k, ea))
+
+			spec := &client.OCR2TaskJobSpec{
+				Name:        "local testing job",
+				ContractID:  deployer.OCR2Address(),
+				Relay:       chain,
+				RelayConfig: relayConfig,
+				P2PPeerID:   nodes[k].Keys.P2PID,
+				P2PBootstrapPeers: []client.P2PData{
+					nodes["chainlink-bootstrap"].P2P,
+				},
+				IsBootstrapPeer:       k == "chainlink-bootstrap",
+				OCRKeyBundleID:        nodes[k].Keys.OCR2KeyID,
+				TransmitterID:         nodes[k].Keys.OCR2TransmitterID,
+				ObservationSource:     obsSource(ea),
+				JuelsPerFeeCoinSource: juelsObsSource(ea),
 			}
-			_, err = cl.Call.CreateJob(spec)
+			_, err = nodes[k].Call.CreateJob(spec)
 			if msg.Check(err) != nil {
 				return err
 			}
 			i++
+
+			// retrieve transmitter address for funding
+			addresses = append(addresses, nodes[k].Keys.OCR2Transmitter)
+		}
+
+		// fund nodes
+		if err = deployer.Fund(addresses); err != nil {
+			return err
 		}
 	}
 

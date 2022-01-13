@@ -205,6 +205,24 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		var addresses []string
 		i := 0
 		for k := range nodes {
+			// adding chain node to CL node
+			switch relayConfig["nodeType"] {
+			case "terra":
+				msg := utils.LogStatus(fmt.Sprintf("Adding terra node to '%s'", k))
+				attrs := client.TerraNodeAttributes{
+					Name:          "Terra Node Localhost",
+					TerraChainID:  relayConfig["chainID"],
+					TendermintURL: relayConfig["tendermintURL"],
+					FCDURL:        relayConfig["fcdURL"],
+				}
+				_, err = nodes[k].Call.CreateTerraNode(&attrs)
+				if msg.Check(err) != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("unknown node type %s", relayConfig["nodeType"])
+			}
+
 			// create specs + add to CL node
 			ea := eas[i%len(eas)]
 			msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", k, ea))

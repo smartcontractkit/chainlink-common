@@ -134,6 +134,11 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		nodes[cl.Name] = &cl // store in map
 	}
 
+	if config.GetBool(ctx, "ENV-ONLY_BOOT_CONTAINERS") {
+		fmt.Println("ONLY BOOTING CONTAINERS")
+		return nil
+	}
+
 	if !ctx.DryRun() {
 		for _, cl := range nodes {
 			// wait for readiness check

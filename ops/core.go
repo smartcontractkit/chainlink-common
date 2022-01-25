@@ -220,7 +220,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 					return err
 				}
 			default:
-				return fmt.Errorf("unknown node type %s", relayConfig["nodeType"])
+				fmt.Printf("WARN: No chain config to add to '%s'\n", k)
 			}
 
 			// create specs + add to CL node

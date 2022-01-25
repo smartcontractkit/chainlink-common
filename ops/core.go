@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/ops/database"
 	"github.com/smartcontractkit/chainlink-relay/ops/utils"
 	"github.com/smartcontractkit/integrations-framework/client"
+	"gopkg.in/guregu/null.v4"
 )
 
 // Deployer interface for deploying contracts
@@ -248,17 +249,32 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		var addresses []string
 		i := 0
 		for k := range nodes {
-			// adding chain node to CL node
+			// add chain & node to CL node
 			switch relayConfig["nodeType"] {
 			case "terra":
-				msg := utils.LogStatus(fmt.Sprintf("Adding terra node to '%s'", k))
-				attrs := client.TerraNodeAttributes{
+				msg := utils.LogStatus(fmt.Sprintf("Adding terra chain to '%s'", k))
+				chainAttrs := client.TerraChainAttributes{
+					ChainID: relayConfig["chainID"],
+					Config: client.TerraChainConfig{
+						BlocksUntilTxTimeout:  null.IntFrom(1),
+						ConfirmPollPeriod:     null.StringFrom("1m0s"),
+						FallbackGasPriceULuna: null.StringFrom("9.999"),
+						GasLimitMultiplier:    null.FloatFrom(1.55555),
+						MaxMsgsPerBatch:       null.IntFrom(10),
+					},
+				}
+				_, err = nodes[k].Call.CreateTerraChain(&chainAttrs)
+				if msg.Check(err) != nil {
+					return err
+				}
+				msg = utils.LogStatus(fmt.Sprintf("Adding terra node to '%s'", k))
+				nodeAttrs := client.TerraNodeAttributes{
 					Name:          "Terra Node Localhost",
 					TerraChainID:  relayConfig["chainID"],
 					TendermintURL: relayConfig["tendermintURL"],
 					FCDURL:        relayConfig["fcdURL"],
 				}
-				_, err = nodes[k].Call.CreateTerraNode(&attrs)
+				_, err = nodes[k].Call.CreateTerraNode(&nodeAttrs)
 				if msg.Check(err) != nil {
 					return err
 				}

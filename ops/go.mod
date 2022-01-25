@@ -6,7 +6,8 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/pulumi/pulumi-docker/sdk/v3 v3.1.0
 	github.com/pulumi/pulumi/sdk/v3 v3.17.0
-	github.com/smartcontractkit/integrations-framework v1.0.29
+	github.com/smartcontractkit/integrations-framework v1.0.36-0.20220124220015-0efc5b13cfc6
+	gopkg.in/guregu/null.v4 v4.0.0
 )
 
 require (
@@ -143,7 +144,7 @@ require (
 	github.com/shirou/gopsutil v3.21.10+incompatible // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/smartcontractkit/helmenv v1.0.23 // indirect
+	github.com/smartcontractkit/helmenv v1.0.25 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/cobra v1.2.1 // indirect

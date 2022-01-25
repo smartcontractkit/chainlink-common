@@ -1,6 +1,7 @@
 package ops
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -33,6 +34,20 @@ type RelayConfig func(ctx *pulumi.Context, addresses map[int]string) (map[string
 func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, juelsObsSource ObservationSource, relayConfigFunc RelayConfig) error {
 	// check these two parameters at the beginning to prevent getting to the end and erroring if they are not present
 	chain := config.Require(ctx, "CL-RELAY_NAME")
+	onlyContainers := config.GetBool(ctx, "ENV-ONLY_BOOT_CONTAINERS")
+	mixedUpgrade := config.GetBool(ctx, "ENV-MIX_UPGRADE")
+	buildLocal := config.GetBool(ctx, "CL-BUILD_LOCALLY")
+
+	if mixedUpgrade && buildLocal {
+		return errors.New("MIX_UPGRADE and BUILD_LOCALLY cannot be enabled together")
+	}
+
+	if mixedUpgrade {
+		if !onlyContainers {
+			fmt.Println("WARN: MIX_UPGRADE requires ONLY_BOOT_CONTAINERS=true changing config to true")
+			onlyContainers = true
+		}
+	}
 
 	img := map[string]*utils.Image{}
 
@@ -42,15 +57,20 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		Tag:  "postgres:latest", // always use latest postgres
 	}
 
-	buildLocal := config.GetBool(ctx, "CL-BUILD_LOCALLY")
 	if !buildLocal {
 		// fetch chainlink image
 		img["chainlink"] = &utils.Image{
 			Name: "chainlink-remote-image",
 			Tag:  "public.ecr.aws/chainlink/chainlink:" + config.Require(ctx, "CL-NODE_VERSION"),
 		}
+
+		if mixedUpgrade {
+			img["chainlink-upgrade"] = &utils.Image{
+				Name: "chainlink-remote-image-new",
+				Tag:  "public.ecr.aws/chainlink/chainlink:" + config.Require(ctx, "ENV-MIX_UPGRADE_IMAGE"),
+			}
+		}
 	}
-	// TODO: build local chainlink image
 
 	// fetch list of EAs
 	eas := []string{}
@@ -125,13 +145,36 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 
 	// start chainlink nodes
 	nodes := map[string]*chainlink.Node{}
+	mixNodeArr := []bool{}
+	err = config.GetObject(ctx, "ENV-MIX_UPGRADE_NODES", &mixNodeArr)
+	if err != nil && mixedUpgrade {
+		return err // only return error if mixedUpgrade is true
+	}
+	if nodeNum+1 != len(mixNodeArr) {
+		return fmt.Errorf("incorrect MIX_UPGRADE_NODES length (%d), expected %d", len(mixNodeArr), nodeNum+1)
+	}
+
 	for i := 0; i <= nodeNum; i++ {
-		// start container
-		cl, err := chainlink.New(ctx, img["chainlink"], db.Port, i)
+		var cl chainlink.Node
+		var err error
+
+		// mixed upgrade containers
+		if mixedUpgrade && mixNodeArr[i] {
+			cl, err = chainlink.New(ctx, img["chainlink-upgrade"], db.Port, i)
+			fmt.Printf("⚠️  Upgrading %s\n", cl.Name)
+		} else {
+			// start container
+			cl, err = chainlink.New(ctx, img["chainlink"], db.Port, i)
+		}
 		if err != nil {
 			return err
 		}
 		nodes[cl.Name] = &cl // store in map
+	}
+
+	if onlyContainers {
+		fmt.Println("ONLY BOOTING CONTAINERS")
+		return nil
 	}
 
 	if !ctx.DryRun() {
@@ -220,7 +263,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 					return err
 				}
 			default:
-				return fmt.Errorf("unknown node type %s", relayConfig["nodeType"])
+				fmt.Printf("WARN: No chain config to add to '%s'\n", k)
 			}
 
 			// create specs + add to CL node

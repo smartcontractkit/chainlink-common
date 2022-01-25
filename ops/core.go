@@ -151,7 +151,7 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 	if err != nil && mixedUpgrade {
 		return err // only return error if mixedUpgrade is true
 	}
-	if nodeNum+1 != len(mixNodeArr) {
+	if mixedUpgrade && nodeNum+1 != len(mixNodeArr) {
 		return fmt.Errorf("incorrect MIX_UPGRADE_NODES length (%d), expected %d", len(mixNodeArr), nodeNum+1)
 	}
 

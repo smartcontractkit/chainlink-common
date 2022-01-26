@@ -55,6 +55,7 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 		fmt.Sprintf("CHAINLINK_PORT=%s", portStr),
 		fmt.Sprintf("P2PV2_LISTEN_ADDRESSES=127.0.0.1:%s", p2pPort),
 		fmt.Sprintf("P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%s", p2pPort),
+		fmt.Sprintf("CLIENT_NODE_URL=http://localhost:%s", portStr), // needs to point to the correct node for container CLI
 	)
 
 	// fetch additional env vars (specific to each chainlink node)

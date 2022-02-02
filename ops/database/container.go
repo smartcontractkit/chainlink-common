@@ -27,8 +27,10 @@ func New(ctx *pulumi.Context, image *docker.RemoteImage) (Database, error) {
 	}
 
 	_, err = docker.NewContainer(ctx, "postgres", &docker.ContainerArgs{
-		Image: image.Name,
-		Envs:  pulumi.StringArrayInput(pulumi.ToStringArray([]string{"POSTGRES_HOST_AUTH_METHOD=trust"})),
+		Image:       image.Name,
+		Envs:        pulumi.StringArrayInput(pulumi.ToStringArray([]string{"POSTGRES_HOST_AUTH_METHOD=trust"})),
+		NetworkMode: pulumi.String(config.Get(ctx, "NETWORK_NAME")),
+		Hostname:    pulumi.String("postgres"),
 		Ports: docker.ContainerPortArray{
 			docker.ContainerPortArgs{
 				Internal: pulumi.Int(5432),

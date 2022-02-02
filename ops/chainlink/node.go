@@ -43,7 +43,7 @@ func (n *Node) Health() (interface{}, error) {
 // Ready checks when node is ready
 func (n *Node) Ready() error {
 	msg := utils.LogStatus(fmt.Sprintf("Waiting for health checks on %s", n.Name))
-	timeout := 30
+	timeout := 300
 	var err error
 	time.Sleep(2 * time.Second) // removing this breaks running `up` multiple times...
 	for i := 0; i < timeout; i++ {

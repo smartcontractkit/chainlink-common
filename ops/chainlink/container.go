@@ -30,7 +30,7 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 	node := Node{
 		Name: "chainlink-" + indexStr,
 		P2P: client.P2PData{
-			RemoteIP:   "localhost",
+			RemoteIP:   "chainlink-" + indexStr,
 			RemotePort: p2pPort,
 			// PeerID this is set later when GetKeys() is called
 		},
@@ -51,11 +51,11 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 
 	// add additional configs (collected or calculated from environment configs)
 	envs = append(envs,
-		fmt.Sprintf("DATABASE_URL=postgresql://postgres@localhost:%d/chainlink_%s?sslmode=disable", dbPort, indexStr),
-		fmt.Sprintf("CHAINLINK_PORT=%s", portStr),
-		fmt.Sprintf("P2PV2_LISTEN_ADDRESSES=127.0.0.1:%s", p2pPort),
-		fmt.Sprintf("P2PV2_ANNOUNCE_ADDRESSES=127.0.0.1:%s", p2pPort),
-		fmt.Sprintf("CLIENT_NODE_URL=http://localhost:%s", portStr), // needs to point to the correct node for container CLI
+		fmt.Sprintf("DATABASE_URL=postgresql://postgres@postgres:%d/chainlink_%s?sslmode=disable", 5432, indexStr),
+		fmt.Sprintf("CHAINLINK_PORT=%d", 6688),
+		fmt.Sprintf("P2PV2_LISTEN_ADDRESSES=0.0.0.0:%s", p2pPort),
+		fmt.Sprintf("P2PV2_ANNOUNCE_ADDRESSES=0.0.0.0:%s", p2pPort),
+		fmt.Sprintf("CLIENT_NODE_URL=http://0.0.0.0:%s", portStr), // needs to point to the correct node for container CLI
 	)
 
 	// fetch additional env vars (specific to each chainlink node)
@@ -74,9 +74,20 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 	}
 
 	_, err = docker.NewContainer(ctx, node.Name, &docker.ContainerArgs{
-		Image:         imageName,
-		Logs:          pulumi.BoolPtr(true),
-		NetworkMode:   pulumi.String("host"),
+		Image:       imageName,
+		Logs:        pulumi.BoolPtr(true),
+		NetworkMode: pulumi.String(config.Get(ctx, "NETWORK_NAME")),
+		Hostname:    pulumi.String("chainlink-" + indexStr),
+		Ports: docker.ContainerPortArray{
+			docker.ContainerPortArgs{
+				Internal: pulumi.Int(6688),
+				External: pulumi.Int(config.RequireInt(ctx, "CL-PORT-START") + index),
+			},
+			docker.ContainerPortArgs{
+				Internal: pulumi.Int(config.RequireInt(ctx, "CL-P2P_PORT-START") + index),
+				External: pulumi.Int(config.RequireInt(ctx, "CL-P2P_PORT-START") + index),
+			},
+		},
 		Envs:          pulumi.StringArrayInput(pulumi.ToStringArray(envs)),
 		Uploads:       uploads.ToContainerUploadArrayOutput(),
 		Entrypoints:   entrypoints.ToStringArrayOutput(),

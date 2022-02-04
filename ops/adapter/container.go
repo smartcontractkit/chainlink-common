@@ -28,7 +28,7 @@ func New(ctx *pulumi.Context, img *utils.Image, i int) (client.BridgeTypeAttribu
 
 	_, err = docker.NewContainer(ctx, name+"-adapter", &docker.ContainerArgs{
 		Image:       img.Img.Name,
-		NetworkMode: pulumi.String(config.Get(ctx, "NETWORK_NAME")),
+		NetworkMode: pulumi.String(utils.GetDefaultNetworkName(ctx)),
 		Envs:        pulumi.StringArrayInput(pulumi.ToStringArray(envs)),
 		Hostname:    pulumi.String(name + "-adapter"),
 		Ports: docker.ContainerPortArray{

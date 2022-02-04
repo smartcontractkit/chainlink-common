@@ -109,8 +109,10 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		return fmt.Errorf("Minimum number of chainlink nodes (4) not met (%d)", nodeNum)
 	}
 
-	// create network pulumi-local
-	nwName := config.Get(ctx, "NETWORK_NAME")
+	// create network
+	nwName := utils.GetDefaultNetworkName(ctx)
+	fmt.Printf("nwName %s\n", nwName)
+	println(nwName)
 	_, err := utils.CreateNetwork(ctx, nwName)
 
 	if err != nil {

@@ -76,7 +76,7 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 	_, err = docker.NewContainer(ctx, node.Name, &docker.ContainerArgs{
 		Image:       imageName,
 		Logs:        pulumi.BoolPtr(true),
-		NetworkMode: pulumi.String(config.Get(ctx, "NETWORK_NAME")),
+		NetworkMode: pulumi.String(utils.GetDefaultNetworkName(ctx)),
 		Hostname:    pulumi.String("chainlink-" + indexStr),
 		Ports: docker.ContainerPortArray{
 			docker.ContainerPortArgs{
@@ -93,6 +93,12 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 		Entrypoints:   entrypoints.ToStringArrayOutput(),
 		Restart:       pulumi.String("on-failure"),
 		MaxRetryCount: pulumi.Int(3),
+		Hosts: docker.ContainerHostArray{
+			docker.ContainerHostArgs{
+				Host: pulumi.String("host.docker.internal"),
+				Ip:   pulumi.String("host-gateway"),
+			},
+		},
 		// Attach:        pulumi.BoolPtr(true),
 	})
 	return node, err

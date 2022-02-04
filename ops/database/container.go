@@ -4,6 +4,7 @@ import (
 	"github.com/pulumi/pulumi-docker/sdk/v3/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
+	"github.com/smartcontractkit/chainlink-relay/ops/utils"
 )
 
 // New spins up a postgres db docker image
@@ -29,7 +30,7 @@ func New(ctx *pulumi.Context, image *docker.RemoteImage) (Database, error) {
 	_, err = docker.NewContainer(ctx, "postgres", &docker.ContainerArgs{
 		Image:       image.Name,
 		Envs:        pulumi.StringArrayInput(pulumi.ToStringArray([]string{"POSTGRES_HOST_AUTH_METHOD=trust"})),
-		NetworkMode: pulumi.String(config.Get(ctx, "NETWORK_NAME")),
+		NetworkMode: pulumi.String(utils.GetDefaultNetworkName(ctx)),
 		Hostname:    pulumi.String("postgres"),
 		Ports: docker.ContainerPortArray{
 			docker.ContainerPortArgs{

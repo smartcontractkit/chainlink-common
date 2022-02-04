@@ -111,8 +111,6 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 
 	// create network
 	nwName := utils.GetDefaultNetworkName(ctx)
-	fmt.Printf("nwName %s\n", nwName)
-	println(nwName)
 	_, err := utils.CreateNetwork(ctx, nwName)
 
 	if err != nil {

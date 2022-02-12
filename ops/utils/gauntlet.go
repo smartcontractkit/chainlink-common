@@ -1,17 +1,20 @@
 package utils
 
 import (
-	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
 type Gauntlet struct {
-	exec string
+	path string
+	yarn string
+	arg  []string
 }
 
 type FlowReport []struct {
@@ -36,14 +39,35 @@ type Report struct {
 	Data map[string]string `json:"data"`
 }
 
-func NewGauntlet(binPath string) (Gauntlet, error) {
-
-	_, err := exec.Command(binPath).Output()
+func NewGauntlet(path string) (Gauntlet, error) {
+	yarn, err := exec.LookPath("yarn")
 	if err != nil {
-		return Gauntlet{}, errors.New("gauntlet installation check failed")
+		return Gauntlet{}, errors.New("'yarn' is not installed (required by Gauntlet)")
 	}
+
+	// Change path to root directory
+	cwd, _ := os.Getwd()
+	os.Chdir(path)
+
+	fmt.Println("Installing dependencies")
+	if _, err = exec.Command(yarn).Output(); err != nil {
+		return Gauntlet{}, errors.New("error installing dependencies")
+	}
+	// Move back into ops folder
+	os.Chdir(cwd)
+
+	arg := []string{"--cwd", path, "gauntlet"}
+	fmt.Printf("Runing gauntlet via yarn with args: %s\n", arg)
+
+	err = exec.Command(yarn, arg...).Run()
+	if err != nil {
+		return Gauntlet{}, err
+	}
+
 	return Gauntlet{
-		exec: binPath,
+		path: path,
+		yarn: yarn,
+		arg:  arg,
 	}, nil
 }
 
@@ -51,23 +75,26 @@ func (g Gauntlet) Flag(flag string, value string) string {
 	return fmt.Sprintf("--%s=%s", flag, value)
 }
 
-func (g Gauntlet) ExecCommand(args ...string) error {
-	cmd := exec.Command(g.exec, args...)
-	pipe, _ := cmd.StdoutPipe()
-	if err := cmd.Start(); err != nil {
+func (g Gauntlet) ExecCommand(arg ...string) error {
+	// Collect all the args
+	a := []string{}
+	a = append(a, g.arg...)
+	a = append(a, arg...)
+	// Execute
+	cmd := exec.Command(g.yarn, a...)
+	output, err := cmd.CombinedOutput()
+	// For diagnostics we print full combined output on error
+	if err != nil {
+		fmt.Println(string(output))
 		return err
 	}
-	reader := bufio.NewReader(pipe)
-	line, err := reader.ReadString('\n')
-	for err == nil {
-		fmt.Print(line)
-		line, err = reader.ReadString('\n')
-	}
+
 	return nil
 }
 
 func (g Gauntlet) ReadCommandReport() (Report, error) {
-	jsonFile, err := os.Open("report.json")
+	path := filepath.Join(g.path, "report.json")
+	jsonFile, err := os.Open(path)
 	if err != nil {
 		return Report{}, err
 	}
@@ -80,16 +107,14 @@ func (g Gauntlet) ReadCommandReport() (Report, error) {
 }
 
 func (g Gauntlet) ReadCommandFlowReport() (FlowReport, error) {
-	jsonFile, err := os.Open("flow-report.json")
+	path := filepath.Join(g.path, "flow-report.json")
+	jsonFile, err := os.Open(path)
 	if err != nil {
 		return FlowReport{}, err
 	}
 
 	var report FlowReport
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		return FlowReport{}, err
-	}
+	byteValue, _ := ioutil.ReadAll(jsonFile)
 	err = json.Unmarshal(byteValue, &report)
 	if err != nil {
 		return FlowReport{}, err

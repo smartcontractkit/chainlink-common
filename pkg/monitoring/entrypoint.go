@@ -209,4 +209,6 @@ func (e Entrypoint) Run() {
 	}()
 
 	wg.Wait()
+
+	e.Producer.Close()
 }

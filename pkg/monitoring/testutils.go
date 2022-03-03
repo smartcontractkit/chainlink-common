@@ -533,6 +533,9 @@ func (f fakeProducer) Produce(key, value []byte, topic string) error {
 	return nil
 }
 
+func (f fakeProducer) Close() {
+}
+
 // Schema
 
 type fakeSchema struct {

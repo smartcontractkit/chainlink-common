@@ -18,3 +18,7 @@ func (i *instrumentedProducer) Produce(key, value []byte, topic string) error {
 	}
 	return err
 }
+
+func (i *instrumentedProducer) Close() {
+	i.producer.Close()
+}

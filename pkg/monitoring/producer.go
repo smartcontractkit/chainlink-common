@@ -11,6 +11,7 @@ import (
 // Producer is an abstraction on top of Kafka to aid with tests.
 type Producer interface {
 	Produce(key, value []byte, topic string) error
+	Close()
 }
 
 type producer struct {
@@ -64,4 +65,8 @@ func (p *producer) Produce(key, value []byte, topic string) error {
 		Key:   key,
 		Value: value,
 	}, p.deliveryChan)
+}
+
+func (p *producer) Close() {
+	p.backend.Close()
 }

@@ -33,7 +33,7 @@ type ObservationSource func(priceAdapter string) string
 type RelayConfig func(ctx *pulumi.Context, addresses map[int]string) (map[string]string, error)
 
 func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, juelsObsSource ObservationSource, relayConfigFunc RelayConfig) error {
-	// check these two parameters at the beginning to prevent getting to the end and erroring if they are not present
+	// check these parameters at the beginning to prevent getting to the end and erroring if they are not present
 	chain := config.Require(ctx, "CL-RELAY_NAME")
 	onlyContainers := config.GetBool(ctx, "ENV-ONLY_BOOT_CONTAINERS")
 	mixedUpgrade := config.GetBool(ctx, "ENV-MIX_UPGRADE")
@@ -259,7 +259,9 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 		i := 0
 		for k := range nodes {
 			// add chain & node to CL node
-			switch relayConfig["nodeType"] {
+			// TODO: refactor under chainlink folder, pass configs in as interfaces defined from each individual file
+			// also check if nodes/chains exist to prevent recreating
+			switch chain {
 			case "terra":
 				msg := utils.LogStatus(fmt.Sprintf("Adding terra chain to '%s'", k))
 				chainAttrs := client.TerraChainAttributes{
@@ -287,6 +289,25 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 				if msg.Check(err) != nil {
 					return err
 				}
+			case "solana":
+				msg := utils.LogStatus(fmt.Sprintf("Adding solana chain to '%s'", k))
+				chainAttrs := client.SolanaChainAttributes{
+					ChainID: relayConfig["chainID"],
+				}
+				_, err = nodes[k].Call.CreateSolanaChain(&chainAttrs)
+				if msg.Check(err) != nil {
+					return err
+				}
+				msg = utils.LogStatus(fmt.Sprintf("Adding solana node to '%s'", k))
+				nodeAttrs := client.SolanaNodeAttributes{
+					Name:          "Solana Node Localhost",
+					SolanaChainID: relayConfig["chainID"],
+					SolanaURL:     relayConfig["solanaURL"],
+				}
+				_, err = nodes[k].Call.CreateSolanaNode(&nodeAttrs)
+				if msg.Check(err) != nil {
+					return err
+				}
 			default:
 				fmt.Printf("WARN: No chain config to add to '%s'\n", k)
 			}
@@ -295,16 +316,22 @@ func New(ctx *pulumi.Context, deployer Deployer, obsSource ObservationSource, ju
 			ea := eas[i%len(eas)]
 			msg := utils.LogStatus(fmt.Sprintf("Adding job spec to '%s' with '%s' EA", k, ea))
 
+			jobType := "offchainreporting2"
+			if k == "chainlink-bootstrap" {
+				jobType = "bootstrap"
+			}
+
 			spec := &client.OCR2TaskJobSpec{
 				Name:        "local testing job",
+				JobType:     jobType,
 				ContractID:  deployer.OCR2Address(),
 				Relay:       chain,
 				RelayConfig: relayConfig,
+				PluginType:  "median",
 				P2PPeerID:   nodes[k].Keys.P2PID,
 				P2PBootstrapPeers: []client.P2PData{
 					nodes["chainlink-bootstrap"].P2P,
 				},
-				IsBootstrapPeer:       k == "chainlink-bootstrap",
 				OCRKeyBundleID:        nodes[k].Keys.OCR2KeyID,
 				TransmitterID:         nodes[k].Keys.OCR2TransmitterID,
 				ObservationSource:     obsSource(ea),

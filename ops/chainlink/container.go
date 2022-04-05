@@ -60,6 +60,9 @@ func New(ctx *pulumi.Context, image *utils.Image, dbPort int, index int) (Node, 
 
 	// fetch additional env vars (specific to each chainlink node)
 	envListR, err := utils.GetEnvList(ctx, "CL_X")
+	if err != nil {
+		return Node{}, err
+	}
 	envsR := utils.GetVars(ctx, "CL_"+strings.ToUpper(indexStr), envListR)
 	envs = append(envs, envsR...)
 

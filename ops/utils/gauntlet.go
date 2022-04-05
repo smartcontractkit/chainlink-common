@@ -47,14 +47,18 @@ func NewGauntlet(path string) (Gauntlet, error) {
 
 	// Change path to root directory
 	cwd, _ := os.Getwd()
-	os.Chdir(path)
+	if err = os.Chdir(path); err != nil {
+		return Gauntlet{}, errors.Wrap(err, "error in changing to root directory")
+	}
 
 	fmt.Println("Installing dependencies")
 	if _, err = exec.Command(yarn).Output(); err != nil {
 		return Gauntlet{}, errors.New("error installing dependencies")
 	}
 	// Move back into ops folder
-	os.Chdir(cwd)
+	if err = os.Chdir(cwd); err != nil {
+		return Gauntlet{}, errors.Wrap(err, "error in changing to ops folder")
+	}
 
 	arg := []string{"--cwd", path, "gauntlet"}
 	fmt.Printf("Runing gauntlet via yarn with args: %s\n", arg)
@@ -101,7 +105,9 @@ func (g Gauntlet) ReadCommandReport() (Report, error) {
 
 	var report Report
 	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &report)
+	if err = json.Unmarshal(byteValue, &report); err != nil {
+		return Report{}, errors.Wrap(err, "error in unmarshalling report")
+	}
 
 	return report, nil
 }

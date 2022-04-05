@@ -7,9 +7,9 @@ on:
       - master
       - main
   pull_request:
+
 jobs:
-  golangci:
-    name: lint
+  golangci-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -20,7 +20,7 @@ jobs:
           version: v1.45.2
 
           # Optional: working directory, useful for monorepos
-          # working-directory: somedir
+          working-directory: ops
 
           # Optional: golangci-lint command line arguments.
           args: --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s

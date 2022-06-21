@@ -57,3 +57,17 @@ type MedianProvider interface {
 	ReportCodec() median.ReportCodec
 	MedianContract() median.MedianContract
 }
+
+type OCR2VRFRelayer interface {
+	Relayer
+	NewDKGProvider(rargs RelayArgs, transmitterID string) (DKGProvider, error)
+	NewOCR2VRFProvider(rargs RelayArgs, transmitterID string) (OCR2VRFProvider, error)
+}
+
+type DKGProvider interface {
+	Plugin
+}
+
+type OCR2VRFProvider interface {
+	Plugin
+}

@@ -30,6 +30,12 @@ type Envelope struct {
 	AggregatorRoundID uint32
 }
 
+// TxResultsBySender contains the numbers of transactions succeeded/failed published by a single sender.
+type TxResultsBySender struct {
+	NumSucceeded uint64
+	NumFailed    uint64
+}
+
 type TxResults struct {
-	NumSucceeded, NumFailed uint64
+	BySender map[types.Account]TxResultsBySender
 }

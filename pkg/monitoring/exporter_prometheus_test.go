@@ -642,6 +642,7 @@ func TestPrometheusExporter(t *testing.T) {
 		chainConfig := generateChainConfig()
 		feedConfig := generateFeedConfig()
 		nodes := []NodeConfig{generateNodeConfig()}
+		txResults, sumSucceeded, sumFailed := generateTxResults(2)
 
 		metrics.On("SetFeedContractMetadata",
 			chainConfig.GetChainID(),       // chainID
@@ -658,21 +659,50 @@ func TestPrometheusExporter(t *testing.T) {
 		exporter, err := factory.NewExporter(ExporterParams{chainConfig, feedConfig, nodes})
 		require.NoError(t, err)
 
-		txResults := generateTxResults()
+		for sender, results := range txResults.BySender {
+			metrics.On("SetNodeTransactionsSucceeded",
+				float64(results.NumSucceeded),  // succeeded
+				string(sender),                 // oracleName
+				string(sender),                 // sender
+				feedConfig.GetID(),             // contractAddress
+				feedConfig.GetID(),             // feedID
+				chainConfig.GetChainID(),       // chainID
+				feedConfig.GetContractStatus(), // contractStatus
+				feedConfig.GetContractType(),   // contractType
+				feedConfig.GetName(),           // feedName
+				feedConfig.GetPath(),           // feedPath
+				chainConfig.GetNetworkID(),     // networkID
+				chainConfig.GetNetworkName(),   // networkName
+			).Once()
+			metrics.On("SetNodeTransactionsFailed",
+				float64(results.NumFailed),     // failed
+				string(sender),                 // oracleName
+				string(sender),                 // sender
+				feedConfig.GetID(),             // contractAddress
+				feedConfig.GetID(),             // feedID
+				chainConfig.GetChainID(),       // chainID
+				feedConfig.GetContractStatus(), // contractStatus
+				feedConfig.GetContractType(),   // contractType
+				feedConfig.GetName(),           // feedName
+				feedConfig.GetPath(),           // feedPath
+				chainConfig.GetNetworkID(),     // networkID
+				chainConfig.GetNetworkName(),   // networkName
+			).Once()
+		}
 		metrics.On("SetFeedContractTransactionsSucceeded",
-			float64(txResults.NumSucceeded), // succeeded
-			feedConfig.GetID(),              // contractAddress
-			feedConfig.GetID(),              // feedID
-			chainConfig.GetChainID(),        // chainID
-			feedConfig.GetContractStatus(),  // contractStatus
-			feedConfig.GetContractType(),    // contractType
-			feedConfig.GetName(),            // feedName
-			feedConfig.GetPath(),            // feedPath
-			chainConfig.GetNetworkID(),      // networkID
-			chainConfig.GetNetworkName(),    // networkName
+			float64(sumSucceeded),          // succeeded
+			feedConfig.GetID(),             // contractAddress
+			feedConfig.GetID(),             // feedID
+			chainConfig.GetChainID(),       // chainID
+			feedConfig.GetContractStatus(), // contractStatus
+			feedConfig.GetContractType(),   // contractType
+			feedConfig.GetName(),           // feedName
+			feedConfig.GetPath(),           // feedPath
+			chainConfig.GetNetworkID(),     // networkID
+			chainConfig.GetNetworkName(),   // networkName
 		).Once()
 		metrics.On("SetFeedContractTransactionsFailed",
-			float64(txResults.NumFailed),   // failed
+			float64(sumFailed),             // failed
 			feedConfig.GetID(),             // contractAddress
 			feedConfig.GetID(),             // feedID
 			chainConfig.GetChainID(),       // chainID

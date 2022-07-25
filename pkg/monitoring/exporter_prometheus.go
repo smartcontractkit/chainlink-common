@@ -264,8 +264,48 @@ func (p *prometheusExporter) exportEnvelope(envelope Envelope) {
 }
 
 func (p *prometheusExporter) exportTxResults(res TxResults) {
+	var totalNumSucceeded float64 = 0
+	var totalNumFailed float64 = 0
+	for sender, txResultsBySender := range res.BySender {
+		totalNumSucceeded += float64(txResultsBySender.NumSucceeded)
+		totalNumFailed += float64(txResultsBySender.NumFailed)
+		oracleName, found := getOracleName(sender, p.nodes)
+		if !found {
+			oracleName = string(sender)
+		}
+		// Export counts of successful and failed transactions broken down by sender
+		p.metrics.SetNodeTransactionsSucceeded(
+			float64(txResultsBySender.NumSucceeded),
+			oracleName,
+			string(sender),
+			p.feedConfig.GetID(),
+			p.feedConfig.GetID(),
+			p.chainConfig.GetChainID(),
+			p.feedConfig.GetContractStatus(),
+			p.feedConfig.GetContractType(),
+			p.feedConfig.GetName(),
+			p.feedConfig.GetPath(),
+			p.chainConfig.GetNetworkID(),
+			p.chainConfig.GetNetworkName(),
+		)
+		p.metrics.SetNodeTransactionsFailed(
+			float64(txResultsBySender.NumFailed),
+			oracleName,
+			string(sender),
+			p.feedConfig.GetID(),
+			p.feedConfig.GetID(),
+			p.chainConfig.GetChainID(),
+			p.feedConfig.GetContractStatus(),
+			p.feedConfig.GetContractType(),
+			p.feedConfig.GetName(),
+			p.feedConfig.GetPath(),
+			p.chainConfig.GetNetworkID(),
+			p.chainConfig.GetNetworkName(),
+		)
+	}
+	// Exports totals
 	p.metrics.SetFeedContractTransactionsSucceeded(
-		float64(res.NumSucceeded),
+		totalNumSucceeded,
 		p.feedConfig.GetID(),
 		p.feedConfig.GetID(),
 		p.chainConfig.GetChainID(),
@@ -277,7 +317,7 @@ func (p *prometheusExporter) exportTxResults(res TxResults) {
 		p.chainConfig.GetNetworkName(),
 	)
 	p.metrics.SetFeedContractTransactionsFailed(
-		float64(res.NumFailed),
+		totalNumFailed,
 		p.feedConfig.GetID(),
 		p.feedConfig.GetID(),
 		p.chainConfig.GetChainID(),

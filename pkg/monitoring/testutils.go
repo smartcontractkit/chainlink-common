@@ -71,7 +71,8 @@ func (f *fakeEnvelopeSource) Fetch(ctx context.Context) (interface{}, error) {
 	return generateEnvelope()
 }
 func (f *fakeTxResultsSource) Fetch(ctx context.Context) (interface{}, error) {
-	return generateTxResults(), nil
+	results, _, _ := generateTxResults(1)
+	return results, nil
 }
 
 type fakeRandomDataSourceFactory struct {
@@ -475,11 +476,22 @@ func generateEnvelope() (Envelope, error) {
 	}, nil
 }
 
-func generateTxResults() TxResults {
-	return TxResults{
-		NumSucceeded: rand.Uint64(),
-		NumFailed:    rand.Uint64(),
+func generateTxResults(n int) (output TxResults, sumSucceeded, sumFailed uint64) {
+	results := map[types.Account]TxResultsBySender{}
+	sumSucceeded = 0
+	sumFailed = 0
+	for i := 0; i < n; i++ {
+		sender := types.Account(hexEncode([]byte{
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, uint8(i),
+		}))
+		results[sender] = TxResultsBySender{
+			NumSucceeded: uint64(rand.Uint32()),
+			NumFailed:    uint64(rand.Uint32()),
+		}
+		sumSucceeded += results[sender].NumSucceeded
+		sumFailed += results[sender].NumFailed
 	}
+	return TxResults{results}, sumSucceeded, sumFailed
 }
 
 type fakeChainConfig struct {
@@ -534,6 +546,10 @@ func (d *devnullMetrics) SetLinkAvailableForPayment(amount float64, feedID, chai
 func (d *devnullMetrics) SetFeedContractTransactionsSucceeded(numSucceeded float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
 }
 func (d *devnullMetrics) SetFeedContractTransactionsFailed(numFailed float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
+}
+func (d *devnullMetrics) SetNodeTransactionsSucceeded(numSucceeded float64, oracleName, sender, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
+}
+func (d *devnullMetrics) SetNodeTransactionsFailed(numFailed float64, oracleName, sender, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
 }
 func (d *devnullMetrics) SetNodeMetadata(chainID, networkID, networkName, oracleName, sender string) {
 }

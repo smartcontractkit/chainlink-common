@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/confluentinc/confluent-kafka-go v1.8.2
+	github.com/ethereum/go-ethereum v1.10.11
 	github.com/golang/protobuf v1.5.2
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/pkg/errors v0.9.1

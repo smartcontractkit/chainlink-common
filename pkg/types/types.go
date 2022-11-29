@@ -2,7 +2,9 @@ package types
 
 import (
 	"context"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
@@ -36,6 +38,11 @@ type Relayer interface {
 	Service
 	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
+	NewMedianProviderEth(rargs RelayArgs, pargs PluginArgs, keystore RoundRobinKeystore) (MedianProvider, error)
+}
+
+type RoundRobinKeystore interface {
+	GetRoundRobinAddress(chainID *big.Int, addresses ...common.Address) (address common.Address, err error)
 }
 
 // The bootstrap jobs only watch config.

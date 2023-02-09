@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-relay/pkg/loop";
+
+package loop;
+
+import "google/protobuf/empty.proto";
+
+service PluginMedian {
+  rpc NewMedianPluginFactory (NewMedianPluginFactoryRequest) returns (NewMedianPluginFactoryReply) {}
+}
+
+message NewMedianPluginFactoryRequest {
+  uint32 medianProviderID = 1;
+  uint32 dataSourceID = 2;
+  uint32 juelsPerFeeCoinDataSourceID = 3;
+  uint32 errorLogID = 4;
+}
+
+message NewMedianPluginFactoryReply {
+  uint32 reportingPluginFactoryID = 1;
+}
+
+service ErrorLog {
+  rpc SaveError(SaveErrorRequest) returns (google.protobuf.Empty) {}
+}
+
+message SaveErrorRequest {
+  string message = 1;
+}
+
+service ReportCodec {
+  rpc BuildReport (BuildReportRequest) returns (BuildReportReply) {}
+  rpc MedianFromReport (MedianFromReportRequest) returns (MedianFromReportReply) {}
+  rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthReply) {}
+}
+
+message ParsedAttributedObservation {
+  uint32 timestamp = 1;
+  bytes value = 2;
+  bytes julesPerFeeCoin = 3;
+  uint32  observer = 4; // uint8
+}
+
+message BuildReportRequest {
+  repeated ParsedAttributedObservation observations = 1;
+}
+message BuildReportReply {
+  bytes report = 1;
+}
+
+message MedianFromReportRequest {
+  bytes report = 1;
+}
+message MedianFromReportReply {
+  bytes median = 1;
+}
+
+message MaxReportLengthRequest {
+  int64 n = 1;
+}
+message MaxReportLengthReply {
+  int64 max = 1;
+}
+
+service MedianContract {
+  rpc LatestTransmissionDetails (LatestTransmissionDetailsRequest) returns (LatestTransmissionDetailsReply) {}
+  rpc LatestRoundRequested (LatestRoundRequestedRequest) returns (LatestRoundRequestedReply) {}
+}
+
+message LatestTransmissionDetailsRequest {}
+
+message LatestTransmissionDetailsReply {
+  bytes configDigest = 1; // [32]byte
+  uint32 epoch = 2;
+  uint32 round = 3; // uint8
+  bytes latestAnswer = 4;
+  int64 latestTimestamp = 5; // unix milliseconds
+}
+
+message LatestRoundRequestedRequest {
+  int64 lookback = 1; // milliseconds
+}
+
+message LatestRoundRequestedReply {
+  bytes configDigest = 1; // [32]byte
+  uint32 epoch = 2;
+  uint32 round = 3; // uint8
+}
+
+service OnchainConfigCodec {
+  rpc Encode (EncodeRequest) returns (EncodeReply) {}
+  rpc Decode (DecodeRequest) returns (DecodeReply) {}
+}
+
+message OnchainConfig {
+  bytes min = 1;
+  bytes max = 2;
+}
+
+message EncodeRequest {
+  OnchainConfig onchainConfig = 1;
+}
+message EncodeReply {
+  bytes encoded = 1;
+}
+
+message DecodeRequest {
+  bytes encoded = 1;
+}
+
+message DecodeReply {
+  OnchainConfig onchainConfig = 1;
+}

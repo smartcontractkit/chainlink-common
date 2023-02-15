@@ -309,15 +309,13 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		return nil, nil
 	}
 
-	benchmarkPrice, err2 := EncodeValueInt192(obs.BenchmarkPrice)
-	err = multierr.Append(err, err2)
-	bid, err2 := EncodeValueInt192(obs.Bid)
-	err = multierr.Append(err, err2)
-	ask, err2 := EncodeValueInt192(obs.Ask)
-	err = multierr.Append(err, err2)
+	benchmarkPrice, bpErr := EncodeValueInt192(obs.BenchmarkPrice)
+	bid, bidErr := EncodeValueInt192(obs.Bid)
+	ask, askErr := EncodeValueInt192(obs.Ask)
+	err = multierr.Combine(bpErr, bidErr, askErr)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "encode failed")
 	}
 
 	return proto.Marshal(&MercuryObservationProto{

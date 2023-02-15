@@ -477,7 +477,7 @@ func (rp *reportingPlugin) shouldReport(ctx context.Context, repts types.ReportT
 	return true, nil
 }
 
-// TODO: Move checks to validation file
+// NOTE: Questions blocked waiting on research:
 // TODO: Does bid always need to be greater than ask?
 // TODO: And, does bid always need to be lower than benchmark price, and ask be higher than it?
 func (rp *reportingPlugin) checkBenchmarkPrice(paos []ParsedAttributedObservation) error {

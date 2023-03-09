@@ -68,7 +68,7 @@ jobs:
           go get github.com/smartcontractkit/chainlink-relay@${{ github.event.pull_request.head.sha }}
           go mod tidy
       - name: Install Solana CLI
-        run: make test_install_ci
+        run: ./scripts/install-solana-ci.sh
       - name: Build & Test
         run: make test_relay_unit
   starknet-build-relay:

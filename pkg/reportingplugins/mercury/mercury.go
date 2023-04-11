@@ -100,27 +100,17 @@ func (c OffchainConfig) Encode() []byte {
 	return []byte{}
 }
 
-type BigIntObservation struct {
-	Val *big.Int
-	Err error
-}
-
-type Int64Observation struct {
-	Val int64
-	Err error
-}
-
-type ByteSliceObservation struct {
-	Val []byte
+type ObsResult[T any] struct {
+	Val T
 	Err error
 }
 
 type Observation struct {
-	BenchmarkPrice   BigIntObservation
-	Bid              BigIntObservation
-	Ask              BigIntObservation
-	CurrentBlockNum  Int64Observation
-	CurrentBlockHash ByteSliceObservation
+	BenchmarkPrice   ObsResult[*big.Int]
+	Bid              ObsResult[*big.Int]
+	Ask              ObsResult[*big.Int]
+	CurrentBlockNum  ObsResult[int64]
+	CurrentBlockHash ObsResult[[]byte]
 }
 
 // DataSource implementations must be thread-safe. Observe may be called by many

@@ -125,19 +125,19 @@ func Test_Plugin_Observation(t *testing.T) {
 		maxFinalizedBlockNumber := int64(rand.Int31())
 		rp.maxFinalizedBlockNumber.Store(maxFinalizedBlockNumber)
 		obs := Observation{
-			BenchmarkPrice: BigIntObservation{
+			BenchmarkPrice: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			Bid: BigIntObservation{
+			Bid: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			Ask: BigIntObservation{
+			Ask: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			CurrentBlockNum: Int64Observation{
+			CurrentBlockNum: ObsResult[int64]{
 				Val: maxFinalizedBlockNumber + 2,
 			},
-			CurrentBlockHash: ByteSliceObservation{
+			CurrentBlockHash: ObsResult[[]byte]{
 				Val: randBytes(32),
 			},
 		}
@@ -167,23 +167,23 @@ func Test_Plugin_Observation(t *testing.T) {
 	t.Run("when all observations have failed", func(t *testing.T) {
 		obs := Observation{
 			// Vals should be ignored, this is asserted with .Zero below
-			BenchmarkPrice: BigIntObservation{
+			BenchmarkPrice: ObsResult[*big.Int]{
 				Val: randBigInt(),
 				Err: errors.New("benchmarkPrice exploded"),
 			},
-			Bid: BigIntObservation{
+			Bid: ObsResult[*big.Int]{
 				Val: randBigInt(),
 				Err: errors.New("bid exploded"),
 			},
-			Ask: BigIntObservation{
+			Ask: ObsResult[*big.Int]{
 				Val: randBigInt(),
 				Err: errors.New("ask exploded"),
 			},
-			CurrentBlockNum: Int64Observation{
+			CurrentBlockNum: ObsResult[int64]{
 				Err: errors.New("currentBlockNum exploded"),
 				Val: rand.Int63(),
 			},
-			CurrentBlockHash: ByteSliceObservation{
+			CurrentBlockHash: ObsResult[[]byte]{
 				Err: errors.New("currentBlockHash exploded"),
 				Val: randBytes(32),
 			},
@@ -216,19 +216,19 @@ func Test_Plugin_Observation(t *testing.T) {
 	t.Run("if maxFinalizedBlockNumber has not been set", func(t *testing.T) {
 		rp.maxFinalizedBlockNumber.Store(unfetchedInitialMaxFinalizedBlockNumber)
 		obs := Observation{
-			BenchmarkPrice: BigIntObservation{
+			BenchmarkPrice: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			Bid: BigIntObservation{
+			Bid: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			Ask: BigIntObservation{
+			Ask: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			CurrentBlockNum: Int64Observation{
+			CurrentBlockNum: ObsResult[int64]{
 				Val: int64(rand.Int31()),
 			},
-			CurrentBlockHash: ByteSliceObservation{
+			CurrentBlockHash: ObsResult[[]byte]{
 				Val: randBytes(32),
 			},
 		}
@@ -259,19 +259,19 @@ func Test_Plugin_Observation(t *testing.T) {
 		maxFinalizedBlockNumber := int64(rand.Int31())
 		rp.maxFinalizedBlockNumber.Store(maxFinalizedBlockNumber)
 		obs := Observation{
-			BenchmarkPrice: BigIntObservation{
+			BenchmarkPrice: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			Bid: BigIntObservation{
+			Bid: ObsResult[*big.Int]{
 				Val: randBigInt(),
 			},
-			Ask: BigIntObservation{
+			Ask: ObsResult[*big.Int]{
 				Err: errors.New("ask exploded"),
 			},
-			CurrentBlockNum: Int64Observation{
+			CurrentBlockNum: ObsResult[int64]{
 				Err: errors.New("currentBlockNum exploded"),
 			},
-			CurrentBlockHash: ByteSliceObservation{
+			CurrentBlockHash: ObsResult[[]byte]{
 				Val: randBytes(32),
 			},
 		}

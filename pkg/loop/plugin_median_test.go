@@ -182,7 +182,7 @@ func (s staticPluginMedian) NewMedianPluginFactory(ctx context.Context, provider
 	if latestAnswer.Cmp(gotLatestAnswer) != 0 {
 		return nil, fmt.Errorf("expected LatestAnswer %s but got %s", latestAnswer, gotLatestAnswer)
 	}
-	if gotLatestTimestamp != latestTimestamp {
+	if !gotLatestTimestamp.Equal(latestTimestamp) {
 		return nil, fmt.Errorf("expected LatestTimestamp %s but got %s", latestTimestamp, gotLatestTimestamp)
 	}
 	occ := provider.OnchainConfigCodec()
@@ -270,9 +270,9 @@ func (s staticMedianProvider) Close() error { return nil }
 
 func (s staticMedianProvider) Ready() error { panic("unimplemented") }
 
-func (s staticMedianProvider) Name() string { panic("implement me") }
+func (s staticMedianProvider) Name() string { panic("unimplemented") }
 
-func (s staticMedianProvider) HealthReport() map[string]error { panic("implement me") }
+func (s staticMedianProvider) HealthReport() map[string]error { panic("unimplemented") }
 
 func (s staticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return staticOffchainConfigDigester{}

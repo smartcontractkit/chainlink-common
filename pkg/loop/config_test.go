@@ -17,9 +17,9 @@ func (s staticConfigProvider) Close() error { return nil }
 
 func (s staticConfigProvider) Ready() error { panic("unimplemented") }
 
-func (s staticConfigProvider) Name() string { panic("implement me") }
+func (s staticConfigProvider) Name() string { panic("unimplemented") }
 
-func (s staticConfigProvider) HealthReport() map[string]error { panic("implement me") }
+func (s staticConfigProvider) HealthReport() map[string]error { panic("unimplemented") }
 
 func (s staticConfigProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return staticOffchainConfigDigester{}

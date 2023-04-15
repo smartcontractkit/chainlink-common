@@ -36,7 +36,7 @@ message SignRequest {
 }
 
 message SignReply {
-  bytes signed = 1;
+  bytes signedData = 1;
 }
 
 service Relayer {
@@ -222,7 +222,7 @@ message ReportContext {
 
 message AttributedOnchainSignature {
   bytes signature = 1;
-  uint32 signer = 2; // [32]byte
+  uint32 signer = 2; // uint8
 }
 
 message TransmitRequest {

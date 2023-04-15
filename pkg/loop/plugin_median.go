@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	pb "github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
@@ -358,7 +359,7 @@ func (m *medianContractClient) LatestTransmissionDetails(ctx context.Context) (c
 	round = uint8(reply.Round)
 	latestAnswer = big.NewInt(0)
 	latestAnswer.SetBytes(reply.LatestAnswer)
-	latestTimestamp = time.Unix(reply.LatestTimestamp, 0)
+	latestTimestamp = reply.LatestTimestamp.AsTime()
 	return
 }
 
@@ -399,7 +400,7 @@ func (m *medianContractServer) LatestTransmissionDetails(ctx context.Context, re
 		Epoch:           epoch,
 		Round:           uint32(round),
 		LatestAnswer:    latestAnswer.Bytes(),
-		LatestTimestamp: latestTimestamp.Unix(),
+		LatestTimestamp: timestamppb.New(latestTimestamp),
 	}, nil
 }
 

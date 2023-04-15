@@ -15,11 +15,11 @@ func (s staticRelayer) Start(ctx context.Context) error { return nil }
 
 func (s staticRelayer) Close() error { return nil }
 
-func (s staticRelayer) Ready() error { panic("implement me") }
+func (s staticRelayer) Ready() error { panic("unimplemented") }
 
-func (s staticRelayer) Name() string { panic("implement me") }
+func (s staticRelayer) Name() string { panic("unimplemented") }
 
-func (s staticRelayer) HealthReport() map[string]error { panic("implement me") }
+func (s staticRelayer) HealthReport() map[string]error { panic("unimplemented") }
 
 func (s staticRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
 	if !equalRelayArgs(r, rargs) {

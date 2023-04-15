@@ -184,7 +184,7 @@ func (k *keystoreClient) Sign(ctx context.Context, account string, data []byte) 
 	if err != nil {
 		return nil, err
 	}
-	return reply.Signed, nil
+	return reply.SignedData, nil
 }
 
 var _ pb.KeystoreServer = (*keystoreServer)(nil)
@@ -208,5 +208,5 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 	if err != nil {
 		return nil, err
 	}
-	return &pb.SignReply{Signed: signed}, nil
+	return &pb.SignReply{SignedData: signed}, nil
 }

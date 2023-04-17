@@ -154,7 +154,7 @@ message SendTxRequest {
   string chainID = 1;
   string from = 2;
   string to = 3;
-  bytes amount = 4; // big.Int
+  BigInt amount = 4;
   bool balanceCheck = 5;
 }
 
@@ -164,7 +164,7 @@ service DataSource {
 
 // ObserveReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.DataSource.Observe].
 message ObserveReply {
-  bytes value = 1; // big.Int
+  BigInt value = 1;
 }
 
 service OffchainConfigDigester {
@@ -299,3 +299,8 @@ message HealthReportReply {
   map<string, string> healthReport = 1;
 }
 
+// BigInt represents a [big.Int].
+message BigInt {
+  bool negative = 1;
+  bytes value = 2;
+}

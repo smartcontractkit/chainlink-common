@@ -259,8 +259,8 @@ func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedOb
 	for _, o := range observations {
 		req.Observations = append(req.Observations, &pb.ParsedAttributedObservation{
 			Timestamp:       o.Timestamp,
-			Value:           BigToBytes(o.Value),
-			JulesPerFeeCoin: BigToBytes(o.JuelsPerFeeCoin),
+			Value:           pb.NewBigIntFromInt(o.Value),
+			JulesPerFeeCoin: pb.NewBigIntFromInt(o.JuelsPerFeeCoin),
 			Observer:        uint32(o.Observer),
 		})
 	}
@@ -278,7 +278,7 @@ func (r *reportCodecClient) MedianFromReport(report libocr.Report) (*big.Int, er
 	if err != nil {
 		return nil, err
 	}
-	return BigFromBytes(reply.Median), nil
+	return reply.Median.Int(), nil
 }
 
 func (r *reportCodecClient) MaxReportLength(n int) int {
@@ -300,7 +300,7 @@ func (r *reportCodecServer) BuildReport(ctx context.Context, request *pb.BuildRe
 	var obs []median.ParsedAttributedObservation
 	for _, o := range request.Observations {
 
-		val, jpfc := BigFromBytes(o.Value), BigFromBytes(o.JulesPerFeeCoin)
+		val, jpfc := o.Value.Int(), o.JulesPerFeeCoin.Int()
 		if o.Observer > math.MaxUint8 {
 			return nil, fmt.Errorf("expected uint8 Observer (max %d) but got %d", math.MaxUint8, o.Observer)
 		}
@@ -323,7 +323,7 @@ func (r *reportCodecServer) MedianFromReport(ctx context.Context, request *pb.Me
 	if err != nil {
 		return nil, err
 	}
-	return &pb.MedianFromReportReply{Median: BigToBytes(m)}, nil
+	return &pb.MedianFromReportReply{Median: pb.NewBigIntFromInt(m)}, nil
 }
 
 func (r *reportCodecServer) MaxReportLength(ctx context.Context, request *pb.MaxReportLengthRequest) (*pb.MaxReportLengthReply, error) {
@@ -353,7 +353,7 @@ func (m *medianContractClient) LatestTransmissionDetails(ctx context.Context) (c
 		return
 	}
 	round = uint8(reply.Round)
-	latestAnswer = BigFromBytes(reply.LatestAnswer)
+	latestAnswer = reply.LatestAnswer.Int()
 	latestTimestamp = reply.LatestTimestamp.AsTime()
 	return
 }
@@ -394,7 +394,7 @@ func (m *medianContractServer) LatestTransmissionDetails(ctx context.Context, _ 
 		ConfigDigest:    digest[:],
 		Epoch:           epoch,
 		Round:           uint32(round),
-		LatestAnswer:    BigToBytes(latestAnswer),
+		LatestAnswer:    pb.NewBigIntFromInt(latestAnswer),
 		LatestTimestamp: timestamppb.New(latestTimestamp),
 	}, nil
 }
@@ -420,8 +420,8 @@ type onchainConfigCodecClient struct {
 
 func (o *onchainConfigCodecClient) Encode(config median.OnchainConfig) ([]byte, error) {
 	req := &pb.EncodeRequest{OnchainConfig: &pb.OnchainConfig{
-		Min: BigToBytes(config.Min),
-		Max: BigToBytes(config.Max),
+		Min: pb.NewBigIntFromInt(config.Min),
+		Max: pb.NewBigIntFromInt(config.Max),
 	}}
 	reply, err := o.grpc.Encode(context.TODO(), req)
 	if err != nil {
@@ -436,7 +436,7 @@ func (o *onchainConfigCodecClient) Decode(bytes []byte) (oc median.OnchainConfig
 	if err != nil {
 		return
 	}
-	oc.Min, oc.Max = BigFromBytes(reply.OnchainConfig.Min), BigFromBytes(reply.OnchainConfig.Max)
+	oc.Min, oc.Max = reply.OnchainConfig.Min.Int(), reply.OnchainConfig.Max.Int()
 	return
 }
 
@@ -448,7 +448,7 @@ type onchainConfigCodecServer struct {
 }
 
 func (o *onchainConfigCodecServer) Encode(ctx context.Context, request *pb.EncodeRequest) (*pb.EncodeReply, error) {
-	min, max := BigFromBytes(request.OnchainConfig.Min), BigFromBytes(request.OnchainConfig.Max)
+	min, max := request.OnchainConfig.Min.Int(), request.OnchainConfig.Max.Int()
 	b, err := o.impl.Encode(median.OnchainConfig{Max: max, Min: min})
 	if err != nil {
 		return nil, err
@@ -462,7 +462,7 @@ func (o *onchainConfigCodecServer) Decode(ctx context.Context, request *pb.Decod
 		return nil, err
 	}
 	return &pb.DecodeReply{OnchainConfig: &pb.OnchainConfig{
-		Min: BigToBytes(oc.Min),
-		Max: BigToBytes(oc.Max),
+		Min: pb.NewBigIntFromInt(oc.Min),
+		Max: pb.NewBigIntFromInt(oc.Max),
 	}}, nil
 }

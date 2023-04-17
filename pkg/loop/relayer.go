@@ -175,7 +175,7 @@ func (r *relayerClient) SendTx(ctx context.Context, chainID, from, to string, am
 		ChainID:      chainID,
 		From:         from,
 		To:           to,
-		Amount:       BigToBytes(amount),
+		Amount:       pb.NewBigIntFromInt(amount),
 		BalanceCheck: balanceCheck,
 	})
 	return err
@@ -313,7 +313,7 @@ func (r *relayerServer) NodeStatuses(ctx context.Context, request *pb.NodeStatus
 	return &pb.NodeStatusesReply{Nodes: nodes, Count: int32(count)}, nil
 }
 func (r *relayerServer) SendTx(ctx context.Context, request *pb.SendTxRequest) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, r.impl.SendTx(ctx, request.ChainID, request.From, request.To, BigFromBytes(request.Amount), request.BalanceCheck)
+	return &emptypb.Empty{}, r.impl.SendTx(ctx, request.ChainID, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
 }
 
 func healthReport(s map[string]string) (hr map[string]error) {

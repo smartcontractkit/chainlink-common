@@ -21,8 +21,8 @@ func TestBigToBytes(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			b := BigToBytes(tc.i)
-			got := BigFromBytes(b)
+			b := NewBigInt(tc.i)
+			got := BigFromBigInt(b)
 			require.Equal(t, tc.i, got)
 		})
 	}

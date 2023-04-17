@@ -155,7 +155,7 @@ func (c *contractConfigTrackerClient) LatestConfig(ctx context.Context, changedI
 	cfg.OffchainConfigVersion = reply.ContractConfig.OffchainConfigVersion
 	cfg.OffchainConfig = reply.ContractConfig.OffchainConfig
 
-	return cfg, nil
+	return
 }
 
 func (c *contractConfigTrackerClient) LatestBlockHeight(ctx context.Context) (blockHeight uint64, err error) {

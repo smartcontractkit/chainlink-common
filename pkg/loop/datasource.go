@@ -27,9 +27,7 @@ func (d *dataSourceClient) Observe(ctx context.Context) (*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	i := new(big.Int)
-	i.SetBytes(reply.Value)
-	return i, nil
+	return BigFromBytes(reply.Value), nil
 }
 
 var _ pb.DataSourceServer = (*dataSourceServer)(nil)
@@ -45,9 +43,5 @@ func (d *dataSourceServer) Observe(ctx context.Context, _ *emptypb.Empty) (*pb.O
 	if err != nil {
 		return nil, err
 	}
-	r := new(pb.ObserveReply)
-	if val != nil {
-		r.Value = val.Bytes()
-	}
-	return r, nil
+	return &pb.ObserveReply{Value: BigToBytes(val)}, nil
 }

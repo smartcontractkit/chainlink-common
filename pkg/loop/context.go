@@ -26,7 +26,7 @@ func (v *ContextValues) Args() []any {
 		"jobID", v.JobID,
 		"jobName", v.JobName,
 		"contractID", v.ContractID,
-		"feeID", v.FeedID,
+		"feedID", v.FeedID,
 	}
 }
 

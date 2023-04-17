@@ -871,7 +871,7 @@ type ChainStatusesReply struct {
 	unknownFields protoimpl.UnknownFields
 
 	Chains []*ChainStatus `protobuf:"bytes,1,rep,name=chains,proto3" json:"chains,omitempty"`
-	Count  int32          `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	Count  int32          `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"` // total count of chains
 }
 
 func (x *ChainStatusesReply) Reset() {
@@ -1055,7 +1055,7 @@ type NodeStatusesReply struct {
 	unknownFields protoimpl.UnknownFields
 
 	Nodes []*NodeStatus `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty"`
-	Count int32         `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	Count int32         `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"` // total count of nodes
 }
 
 func (x *NodeStatusesReply) Reset() {

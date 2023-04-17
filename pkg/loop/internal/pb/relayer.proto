@@ -118,7 +118,7 @@ message ChainStatusesRequest {
 // ChainStatusesReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.ChainStatuses].
 message ChainStatusesReply {
   repeated ChainStatus chains = 1;
-  int32 count = 2;
+  int32 count = 2; // total count of chains
 }
 
 // ChainStatus represents [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainStatus].
@@ -138,7 +138,7 @@ message NodeStatusesRequest {
 // NodeStatusesReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.NodeStatuses].
 message NodeStatusesReply {
   repeated NodeStatus nodes = 1;
-  int32 count = 2;
+  int32 count = 2; // total count of nodes
 }
 
 // NodeStatus represents [github.com/smartcontractkit/chainlink-relay/pkg/types.NodeStatus].

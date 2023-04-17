@@ -123,6 +123,7 @@ func (x *NewReportingPluginReply) GetReportingPluginInfo() *ReportingPluginInfo 
 	return nil
 }
 
+// ReportingPluginConfig represents [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPluginConfig]
 type ReportingPluginConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -258,6 +259,7 @@ func (x *ReportingPluginConfig) GetMaxDurationShouldTransmitAcceptedReport() int
 	return 0
 }
 
+// ReportingPluginLimits represents [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPluginLimits]
 type ReportingPluginLimits struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -321,6 +323,7 @@ func (x *ReportingPluginLimits) GetMaxReportLength() uint64 {
 	return 0
 }
 
+// ReportingPluginInfo represents [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPluginInfo]
 type ReportingPluginInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -384,6 +387,7 @@ func (x *ReportingPluginInfo) GetReportingPluginLimits() *ReportingPluginLimits 
 	return nil
 }
 
+// QueryRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.Query].
 type QueryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -431,6 +435,7 @@ func (x *QueryRequest) GetReportTimestamp() *ReportTimestamp {
 	return nil
 }
 
+// QueryReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.Query].
 type QueryReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -478,6 +483,7 @@ func (x *QueryReply) GetQuery() []byte {
 	return nil
 }
 
+// ObservationRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.Observation].
 type ObservationRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -533,6 +539,7 @@ func (x *ObservationRequest) GetQuery() []byte {
 	return nil
 }
 
+// ObservationReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.Observation].
 type ObservationReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -580,6 +587,7 @@ func (x *ObservationReply) GetObservation() []byte {
 	return nil
 }
 
+// AttributedObservation represents [github.com/smartcontractkit/libocr/offchainreporting2/types.AttributedObservation]
 type AttributedObservation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -635,6 +643,7 @@ func (x *AttributedObservation) GetObserver() uint32 {
 	return 0
 }
 
+// ReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.Report].
 type ReportRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -698,6 +707,7 @@ func (x *ReportRequest) GetObservations() []*AttributedObservation {
 	return nil
 }
 
+// ReportReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.Report].
 type ReportReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -753,6 +763,7 @@ func (x *ReportReply) GetReport() []byte {
 	return nil
 }
 
+// ShouldAcceptFinalizedReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.ShouldAcceptFinalizedReport].
 type ShouldAcceptFinalizedReportRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -808,6 +819,7 @@ func (x *ShouldAcceptFinalizedReportRequest) GetReport() []byte {
 	return nil
 }
 
+// ShouldAcceptFinalizedReportReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.ShouldAcceptFinalizedReport].
 type ShouldAcceptFinalizedReportReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -855,6 +867,7 @@ func (x *ShouldAcceptFinalizedReportReply) GetShouldAccept() bool {
 	return false
 }
 
+// ShouldTransmitAcceptedReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.ShouldTransmitAcceptedReport].
 type ShouldTransmitAcceptedReportRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -910,6 +923,7 @@ func (x *ShouldTransmitAcceptedReportRequest) GetReport() []byte {
 	return nil
 }
 
+// ShouldTransmitAcceptedReportReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/types.ReportingPlugin.ShouldTransmitAcceptedReport].
 type ShouldTransmitAcceptedReportReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

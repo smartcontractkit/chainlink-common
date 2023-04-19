@@ -84,7 +84,7 @@ func (g Gauntlet) ExecCommand(arg ...string) error {
 	a := []string{}
 	a = append(a, g.arg...)
 	a = append(a, arg...)
-	//nolint:nosec - Execute
+	// #nosec - Execute
 	cmd := exec.Command(g.yarn, a...)
 	output, err := cmd.CombinedOutput()
 	// For diagnostics we print full combined output on error

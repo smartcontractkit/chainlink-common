@@ -105,11 +105,11 @@ type ObsResult[T any] struct {
 }
 
 type Observation struct {
-	BenchmarkPrice   ObsResult[*big.Int]
-	Bid              ObsResult[*big.Int]
-	Ask              ObsResult[*big.Int]
-	CurrentBlockNum  ObsResult[int64]
-	CurrentBlockHash ObsResult[[]byte]
+	BenchmarkPrice        ObsResult[*big.Int]
+	Bid                   ObsResult[*big.Int]
+	Ask                   ObsResult[*big.Int]
+	CurrentBlockNum       ObsResult[int64]
+	CurrentBlockHash      ObsResult[[]byte]
 	CurrentBlockTimestamp ObsResult[uint64]
 }
 
@@ -375,15 +375,15 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 }
 
 type ParsedAttributedObservation struct {
-	Timestamp         uint32
-	BenchmarkPrice    *big.Int
-	Bid               *big.Int
-	Ask               *big.Int
-	CurrentBlockNum   int64 // inclusive; current block
-	CurrentBlockHash  []byte
+	Timestamp             uint32
+	BenchmarkPrice        *big.Int
+	Bid                   *big.Int
+	Ask                   *big.Int
+	CurrentBlockNum       int64 // inclusive; current block
+	CurrentBlockHash      []byte
 	CurrentBlockTimestamp uint64
-	ValidFromBlockNum int64 // exclusive; one above previous upper block
-	Observer          commontypes.OracleID
+	ValidFromBlockNum     int64 // exclusive; one above previous upper block
+	Observer              commontypes.OracleID
 }
 
 func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttributedObservation, error) {

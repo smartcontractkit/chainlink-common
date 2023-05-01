@@ -69,7 +69,7 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 
 	var matchingPaos []ParsedAttributedObservation
 	for _, pao := range paos {
-		if (m[string(pao.CurrentBlockHash)] == maxCnt) {
+		if m[string(pao.CurrentBlockHash)] == maxCnt {
 			matchingPaos = append(matchingPaos, pao)
 		}
 	}

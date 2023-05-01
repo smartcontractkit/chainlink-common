@@ -415,7 +415,6 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttrib
 		obs.CurrentBlockNum,
 		obs.CurrentBlockHash,
 		obs.CurrentBlockTimestamp,
-		0,
 		obs.ValidFromBlockNum,
 		ao.Observer,
 	}, nil

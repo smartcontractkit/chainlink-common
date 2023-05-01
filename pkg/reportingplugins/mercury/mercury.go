@@ -110,6 +110,7 @@ type Observation struct {
 	Ask              ObsResult[*big.Int]
 	CurrentBlockNum  ObsResult[int64]
 	CurrentBlockHash ObsResult[[]byte]
+	CurrentBlockTimestamp ObsResult[uint64]
 }
 
 // DataSource implementations must be thread-safe. Observe may be called by many
@@ -143,6 +144,7 @@ const maxObservationLength = 32 + // feedID
 	byteWidthInt192 + // ask
 	8 + // currentBlockNum
 	32 + // currentBlockHash
+	8 + // currentBlockTimestamp
 	8 + // validFromBlockNum
 	16 /* overapprox. of protobuf overhead */
 
@@ -359,6 +361,12 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		p.CurrentBlockHashValid = true
 	}
 
+	if obs.CurrentBlockTimestamp.Err != nil {
+		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.CurrentBlockTimestamp.Err, "failed to observe CurrentBlockTimestamp"))
+	} else {
+		p.CurrentBlockTimestamp = obs.CurrentBlockTimestamp.Val
+	}
+
 	if len(obsErrors) > 0 {
 		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/6 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
 	}
@@ -406,6 +414,7 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttrib
 		ask,
 		obs.CurrentBlockNum,
 		obs.CurrentBlockHash,
+		obs.CurrentBlockTimestamp,
 		0,
 		obs.ValidFromBlockNum,
 		ao.Observer,

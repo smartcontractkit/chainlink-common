@@ -373,6 +373,7 @@ type ParsedAttributedObservation struct {
 	Ask               *big.Int
 	CurrentBlockNum   int64 // inclusive; current block
 	CurrentBlockHash  []byte
+	CurrentBlockTimestamp uint64
 	ValidFromBlockNum int64 // exclusive; one above previous upper block
 	Observer          commontypes.OracleID
 }
@@ -405,6 +406,7 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttrib
 		ask,
 		obs.CurrentBlockNum,
 		obs.CurrentBlockHash,
+		0,
 		obs.ValidFromBlockNum,
 		ao.Observer,
 	}, nil

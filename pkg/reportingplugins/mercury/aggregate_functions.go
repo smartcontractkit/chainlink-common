@@ -47,7 +47,7 @@ func GetConsensusAsk(paos []ParsedAttributedObservation) *big.Int {
 
 // GetConsensusCurrentBlock gets the most common (mode) block hash/number.
 // In the event of a tie, use the lowest numerical value
-func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash []byte, num int64, err error) {
+func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash []byte, num int64, ts uint64, err error) {
 	// pick the most common blockhash with at least f+1 votes
 
 	// cast to string for map key; this case is optimised by the go compiler:
@@ -62,62 +62,24 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 		}
 	}
 
-	if maxCnt < f+1 {
-		return nil, 0, errors.New("no block hash with at least f+1 votes")
-	}
 	// guaranteed to be at least one hash after this
-
-	var hashes []string
-	for hash, cnt := range m {
-		if cnt == maxCnt {
-			hashes = append(hashes, hash)
-		}
+	if maxCnt < f+1 {
+		return nil, 0, 0, errors.New("no block hash with at least f+1 votes")
 	}
 
-	// determistic tie-break for hash
-	sort.Slice(hashes, func(i, j int) bool {
-		return hashes[i] < hashes[j]
-	})
-	hash = []byte(hashes[0])
-
-	// get block numbers for observations with matching hash
 	var matchingPaos []ParsedAttributedObservation
 	for _, pao := range paos {
-		if string(pao.CurrentBlockHash) == string(hash) {
+		if (m[string(pao.CurrentBlockHash)] == maxCnt) {
 			matchingPaos = append(matchingPaos, pao)
 		}
 	}
 
-	// pick the most common block number with at least f+1 votes
-	m2 := map[int64]int{}
-	maxCnt = 0
-	for _, pao := range matchingPaos {
-		n := pao.CurrentBlockNum
-		m2[n]++
-		if cnt := m2[n]; cnt > maxCnt {
-			maxCnt = cnt
-		}
-	}
-
-	var nums []int64
-	for num, cnt := range m2 {
-		if cnt == maxCnt {
-			nums = append(nums, num)
-		}
-	}
-
-	if maxCnt < f+1 {
-		return nil, 0, errors.Errorf("no block number matching hash 0x%x with at least f+1 votes", hash)
-	}
-	// guaranteed to be at least one num after this
-
-	// determistic tie-break for number
-	sort.Slice(nums, func(i, j int) bool {
-		return nums[i] < nums[j]
+	sort.Slice(matchingPaos, func(i, j int) bool {
+		return string(matchingPaos[i].CurrentBlockHash) < string(matchingPaos[j].CurrentBlockHash)
 	})
-	num = nums[0]
 
-	return hash, num, nil
+	matchedPao := matchingPaos[0]
+	return matchedPao.CurrentBlockHash, matchedPao.CurrentBlockNum, matchedPao.CurrentBlockTimestamp, nil
 }
 
 // GetConsensusValidFromBlock gets the most common (mode) ValidFromBlockNum

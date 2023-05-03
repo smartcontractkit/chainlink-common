@@ -61,7 +61,7 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 	}
 
 	// pick the most common block timestamp with at least f+1 votes
-	ts, err = getConsensusCurrentBlockTimestamp(paos, string(hash), f+1)
+	ts, err = getConsensusCurrentBlockTimestamp(paos, string(hash), num, f+1)
 	if err != nil {
 		return hash, num, ts, errors.Wrap(err, "coulnd't get consensus current block")
 	}
@@ -171,10 +171,10 @@ func getConsensusCurrentBlockNum(paos []ParsedAttributedObservation, blockHash s
 	return
 }
 
-func getConsensusCurrentBlockTimestamp(paos []ParsedAttributedObservation, blockHash string, threshold int) (ts uint64, err error) {
+func getConsensusCurrentBlockTimestamp(paos []ParsedAttributedObservation, blockHash string, blockNum int64, threshold int) (ts uint64, err error) {
 	var matchingPaos []ParsedAttributedObservation
 	for _, pao := range paos {
-		if string(pao.CurrentBlockHash) == blockHash {
+		if string(pao.CurrentBlockHash) == blockHash && pao.CurrentBlockNum == blockNum {
 			matchingPaos = append(matchingPaos, pao)
 		}
 	}
@@ -190,7 +190,7 @@ func getConsensusCurrentBlockTimestamp(paos []ParsedAttributedObservation, block
 	}
 
 	if maxCnt < threshold {
-		return 0, errors.Errorf("no block timestamp matching hash 0x%x with at least f+1 votes", blockHash)
+		return 0, errors.Errorf("no block timestamp matching block hash 0x%x and block number %d with at least f+1 votes", blockHash, blockNum)
 	}
 
 	var timestamps []uint64

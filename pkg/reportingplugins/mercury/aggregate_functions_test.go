@@ -64,7 +64,7 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("if there are not at least f+1 in consensus about timestamp", func(t *testing.T) {
 			badPaos := NewParsedAttributedObservations()
 			for i := range badPaos {
-				badPaos[i].CurrentBlockTimestamp = uint64(i*100)
+				badPaos[i].CurrentBlockTimestamp = uint64(i * 100)
 			}
 			_, _, _, err := GetConsensusCurrentBlock(badPaos, f)
 			assert.EqualError(t, err, "coulnd't get consensus current block: no block timestamp matching hash 0x40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e with at least f+1 votes")

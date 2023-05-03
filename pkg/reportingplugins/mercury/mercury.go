@@ -365,6 +365,7 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.CurrentBlockTimestamp.Err, "failed to observe CurrentBlockTimestamp"))
 	} else {
 		p.CurrentBlockTimestamp = obs.CurrentBlockTimestamp.Val
+		p.CurrentBlockTimestampValid = true
 	}
 
 	if len(obsErrors) > 0 {

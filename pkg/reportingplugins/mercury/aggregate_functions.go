@@ -140,7 +140,7 @@ func getConsensusCurrentBlockNum(paos []ParsedAttributedObservation, blockHash s
 			matchingPaos = append(matchingPaos, pao)
 		}
 	}
-	
+
 	m := map[int64]int{}
 	maxCnt := 0
 	for _, pao := range matchingPaos {
@@ -178,7 +178,7 @@ func getConsensusCurrentBlockTimestamp(paos []ParsedAttributedObservation, block
 			matchingPaos = append(matchingPaos, pao)
 		}
 	}
-	
+
 	m := map[uint64]int{}
 	maxCnt := 0
 	for _, pao := range matchingPaos {

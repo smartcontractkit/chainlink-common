@@ -18,5 +18,6 @@ message MercuryObservationProto {
     bool askValid = 11;
     bool currentBlockNumValid = 12;
     bool currentBlockHashValid = 13;
-    bool validFromBlockNumValid = 14;
+    bool currentBlockTimestampValid = 14;
+    bool validFromBlockNumValid = 15;
 }

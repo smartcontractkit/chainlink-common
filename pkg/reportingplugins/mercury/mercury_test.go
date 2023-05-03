@@ -62,17 +62,17 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 
 		assert.False(t, shouldReport)
 	})
-	// t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
-	// 	paos := NewParsedAttributedObservations()
-	// 	for i := range paos {
-	// 		paos[i].CurrentBlockNum = 500 + int64(i)
-	// 		paos[i].ValidFromBlockNum = 499
-	// 	}
-	// 	shouldReport, err := rp.shouldReport(context.Background(), repts, paos)
-	// 	require.NoError(t, err)
+	t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
+		paos := NewParsedAttributedObservations()
+		for i := range paos {
+			paos[i].CurrentBlockNum = 500 + int64(i)
+			paos[i].ValidFromBlockNum = 499
+		}
+		shouldReport, err := rp.shouldReport(context.Background(), repts, paos)
+		require.NoError(t, err)
 
-	// 	assert.False(t, shouldReport)
-	// })
+		assert.False(t, shouldReport)
+	})
 	t.Run("returns error if it cannot come to consensus about validFromBlockNum", func(t *testing.T) {
 		paos := NewParsedAttributedObservations()
 		for i := range paos {

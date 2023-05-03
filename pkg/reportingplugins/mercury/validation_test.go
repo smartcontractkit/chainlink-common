@@ -82,15 +82,15 @@ func TestValidation(t *testing.T) {
 			err = ValidateBlockValues(paos, f, 0)
 			assert.EqualError(t, err, "validFromBlockNum must be >= 0 (got: -1)")
 		})
-		// t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
-		// 	paos := NewParsedAttributedObservations()
-		// 	for i := range paos {
-		// 		paos[i].CurrentBlockNum = 500 + int64(i)
-		// 		paos[i].ValidFromBlockNum = 499
-		// 	}
-		// 	err := ValidateBlockValues(paos, f, 0)
-		// 	assert.EqualError(t, err, "GetConsensusCurrentBlock failed: no block number matching hash 0x40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e with at least f+1 votes")
-		// })
+		t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
+			paos := NewParsedAttributedObservations()
+			for i := range paos {
+				paos[i].CurrentBlockNum = 500 + int64(i)
+				paos[i].ValidFromBlockNum = 499
+			}
+			err := ValidateBlockValues(paos, f, 0)
+			assert.EqualError(t, err, "GetConsensusCurrentBlock failed: coulnd't get consensus current block: no block number matching hash 0x40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e with at least f+1 votes")
+		})
 		t.Run("returns error if it cannot come to consensus about validFromBlockNum", func(t *testing.T) {
 			paos := NewParsedAttributedObservations()
 			for i := range paos {

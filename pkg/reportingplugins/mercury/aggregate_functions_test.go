@@ -51,7 +51,7 @@ func Test_AggregateFunctions(t *testing.T) {
 
 		t.Run("if there are not at least f+1 in consensus about hash", func(t *testing.T) {
 			_, _, _, err := GetConsensusCurrentBlock(paos, 3)
-			assert.EqualError(t, err, "couldn't get consensys current block: no block hash with at least f+1 votes")
+			assert.EqualError(t, err, "couldn't get consensus current block: no block hash with at least f+1 votes")
 		})
 		t.Run("if there are not at least f+1 in consensus about number", func(t *testing.T) {
 			badPaos := NewParsedAttributedObservations()

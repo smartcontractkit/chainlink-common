@@ -51,7 +51,7 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 	// pick the most common blockhash with at least f+1 votes
 	hash, err = getConsensusCurrentBlockHash(paos, f+1)
 	if err != nil {
-		return hash, 0, 0, errors.Wrap(err, "couldn't get consensys current block")
+		return hash, 0, 0, errors.Wrap(err, "couldn't get consensus current block")
 	}
 
 	// pick the most common block number with at least f+1 votes

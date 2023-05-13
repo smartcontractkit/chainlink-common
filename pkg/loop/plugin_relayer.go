@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/hashicorp/go-plugin"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -83,6 +84,9 @@ func (p *GRPCPluginRelayer) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig:  PluginRelayerHandshakeConfig(),
 		Plugins:          map[string]plugin.Plugin{PluginRelayerName: p},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		GRPCDialOptions: []grpc.DialOption{
+			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())},
 	}
 }
 

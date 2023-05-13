@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2/types"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -71,6 +72,9 @@ func (p *GRPCPluginMedian) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig:  PluginMedianHandshakeConfig(),
 		Plugins:          map[string]plugin.Plugin{PluginMedianName: p},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		GRPCDialOptions: []grpc.DialOption{
+			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())},
 	}
 }
 

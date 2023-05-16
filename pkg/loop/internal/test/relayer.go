@@ -15,7 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 
-	. "github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 )
 
 type StaticKeystore struct{}
@@ -36,7 +36,7 @@ func (s StaticKeystore) Sign(ctx context.Context, id string, data []byte) ([]byt
 
 type StaticPluginRelayer struct{}
 
-func (s StaticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore Keystore) (Relayer, error) {
+func (s StaticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore internal.Keystore) (internal.Relayer, error) {
 	if config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
@@ -133,7 +133,7 @@ func (s staticRelayer) SendTx(ctx context.Context, id, f, t string, a *big.Int, 
 	if amount.Cmp(a) != 0 {
 		return fmt.Errorf("expected amount %s but got %s", amount, a)
 	}
-	if b != balanceCheck {
+	if b != balanceCheck { //nolint:gosimple
 		return fmt.Errorf("expected balance check %t but got %t", balanceCheck, b)
 	}
 	return nil
@@ -147,7 +147,7 @@ func equalRelayArgs(a, b types.RelayArgs) bool {
 		bytes.Equal(a.RelayConfig, b.RelayConfig)
 }
 
-func TestPluginRelayer(t *testing.T, p PluginRelayer) {
+func TestPluginRelayer(t *testing.T, p internal.PluginRelayer) {
 	ctx := utils.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
@@ -159,7 +159,7 @@ func TestPluginRelayer(t *testing.T, p PluginRelayer) {
 	})
 }
 
-func TestRelayer(t *testing.T, relayer Relayer) {
+func TestRelayer(t *testing.T, relayer internal.Relayer) {
 	ctx := utils.Context(t)
 
 	t.Run("ConfigProvider", func(t *testing.T) {

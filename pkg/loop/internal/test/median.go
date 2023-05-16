@@ -18,10 +18,10 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 
-	. "github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 )
 
-func TestPluginMedian(t *testing.T, p PluginMedian) {
+func TestPluginMedian(t *testing.T, p internal.PluginMedian) {
 	ctx := utils.Context(t)
 
 	t.Run("PluginMedian", func(t *testing.T) {
@@ -67,13 +67,16 @@ func (s StaticPluginMedian) Ready() error { panic("implement me") }
 
 func (s StaticPluginMedian) HealthReport() map[string]error { panic("implement me") }
 
-func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog ErrorLog) (libocr.ReportingPluginFactory, error) {
+func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog internal.ErrorLog) (libocr.ReportingPluginFactory, error) {
 	ocd := provider.OffchainConfigDigester()
 	gotDigestPrefix := ocd.ConfigDigestPrefix()
 	if gotDigestPrefix != configDigestPrefix {
 		return nil, fmt.Errorf("expected ConfigDigestPrefix %x but got %x", configDigestPrefix, gotDigestPrefix)
 	}
 	gotDigest, err := ocd.ConfigDigest(contractConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ConfigDigest: %w", err)
+	}
 	if gotDigest != configDigest {
 		return nil, fmt.Errorf("expected ConfigDigest %x but got %x", configDigest, gotDigest)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 	"os/exec"
 	"sync"
 	"time"
@@ -19,6 +20,8 @@ import (
 )
 
 const keepAliveTickDuration = 5 * time.Second //TODO from config
+
+type BrokerConfig = internal.BrokerConfig
 
 type grpcPlugin interface {
 	plugin.Plugin

@@ -4,13 +4,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-)
+	"google.golang.org/protobuf/proto"
 
-const (
-	maxPointByteLen = 32 // stark curve max is 252 bits
-	signatureLen    = 2 * maxPointByteLen
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 )
 
 type Signature struct {

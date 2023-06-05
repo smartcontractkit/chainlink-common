@@ -2,7 +2,6 @@ package loop
 
 import (
 	"context"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,6 +11,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 )
 
 type Telemetry = internal.Telemetry
@@ -27,7 +28,7 @@ func SetupTelemetry(registerer prometheus.Registerer) Telemetry {
 	if registerer == nil {
 		registerer = prometheus.DefaultRegisterer
 	}
-	return Telemetry{dialOptions(registerer), newServerFn(registerer)}
+	return Telemetry{DialOpts: dialOptions(registerer), NewServer: newServerFn(registerer)}
 }
 
 var grpcpromBuckets = []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}

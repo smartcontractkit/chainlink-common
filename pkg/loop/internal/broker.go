@@ -42,10 +42,14 @@ func (a *atomicBroker) NextId() uint32 {
 	return a.load().NextId()
 }
 
-// Telemetry has grpc client and server options.
+// Telemetry has telemetry configuration, including GRPC client and server options.
 type Telemetry struct {
-	DialOpts  []grpc.DialOption
-	NewServer func([]grpc.ServerOption) *grpc.Server // optional
+	// Optionally include additional options when dialing a client.
+	// Normally aligned with [plugin.ClientConfig.GRPCDialOptions].
+	DialOpts []grpc.DialOption
+	// Optionally override the default *grpc.Server constructor.
+	// Normally aligned with [plugin.ServeConfig.GRPCServer].
+	NewServer func([]grpc.ServerOption) *grpc.Server
 }
 
 // BrokerConfig holds Broker configuration fields.

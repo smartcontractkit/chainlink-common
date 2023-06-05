@@ -1,9 +1,10 @@
 package loop_test
 
 import (
+	"testing"
+
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop"

@@ -22,7 +22,7 @@ type MedianService struct {
 
 // NewMedianService returns a new [*MedianService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewMedianService(lggr logger.Logger, telem Telemetry, cmd func() *exec.Cmd, provider types.MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog ErrorLog) *MedianService {
+func NewMedianService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog ErrorLog) *MedianService {
 	newService := func(ctx context.Context, instance any) (ReportingPluginFactory, error) {
 		plug, ok := instance.(PluginMedian)
 		if !ok {
@@ -33,7 +33,7 @@ func NewMedianService(lggr logger.Logger, telem Telemetry, cmd func() *exec.Cmd,
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "MedianService")
 	var ms MedianService
-	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, Telemetry: telem}
+	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
 	ms.init(PluginMedianName, &GRPCPluginMedian{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &ms
 }

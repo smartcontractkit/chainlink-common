@@ -15,11 +15,10 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 )
 
-type Telemetry = internal.Telemetry
+type GRPCOpts = internal.GRPCOpts
 
-// SetupTelemetry initializes open telemetry and returns a prometheus [http.Handler], client side [grpc.DialOption]s, and a
-// [*grpc.Server] constructor that includes interceptor options.
-func SetupTelemetry(registerer prometheus.Registerer) Telemetry {
+// SetupTelemetry initializes open telemetry and returns GRPCOpts with telemetry interceptors.
+func SetupTelemetry(registerer prometheus.Registerer) GRPCOpts {
 	otel.SetTracerProvider(sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 	))
@@ -28,7 +27,7 @@ func SetupTelemetry(registerer prometheus.Registerer) Telemetry {
 	if registerer == nil {
 		registerer = prometheus.DefaultRegisterer
 	}
-	return Telemetry{DialOpts: dialOptions(registerer), NewServer: newServerFn(registerer)}
+	return GRPCOpts{DialOpts: dialOptions(registerer), NewServer: newServerFn(registerer)}
 }
 
 var grpcpromBuckets = []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}

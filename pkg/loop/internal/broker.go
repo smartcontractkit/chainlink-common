@@ -77,6 +77,7 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 	lis, err := b.broker.Accept(id)
 	if err != nil {
 		b.closeAll(deps...)
+		b.lggr.Errorw(fmt.Sprintf("broker failed to accept: %s on connection %d", name, id), "err", err)
 		return 0, resource{}, ErrConnAccept{Name: name, ID: id, Err: err}
 	}
 

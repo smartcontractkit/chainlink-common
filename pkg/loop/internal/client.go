@@ -60,7 +60,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}
 	for cc != nil {
 		err := cc.Invoke(ctx, method, args, reply, opts...)
 		if isErrTerminal(err) {
-			c.lggr.Errorw("clientConn: Invoke: terminal error, will retry", "err", err)
+			c.lggr.Warnw("clientConn: Invoke: terminal error, refreshing connection", "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}
@@ -80,7 +80,7 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	for cc != nil {
 		s, err := cc.NewStream(ctx, desc, method, opts...)
 		if isErrTerminal(err) {
-			c.lggr.Errorw("clientConn: NewStream: terminal error, will retry", "err", err)
+			c.lggr.Warnw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}
@@ -134,7 +134,7 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 	}
 	for !try() {
 		if ctx.Err() != nil {
-			c.lggr.Errorw("Client refresh failed: stopping retry due to context error", "err", ctx.Err())
+			c.lggr.Errorw("Client refresh failed: aborting refresh due to context error", "err", ctx.Err())
 			return nil
 		}
 		wait := b.Duration()

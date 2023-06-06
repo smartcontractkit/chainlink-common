@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/libocr/commontypes"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2/types"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
@@ -60,7 +60,7 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.Reportin
 			MaxReportLength:      int(reply.ReportingPluginInfo.ReportingPluginLimits.MaxReportLength),
 		},
 	}
-	cc, err := r.brokerExt.broker.Dial(reply.ReportingPluginID)
+	cc, err := r.brokerExt.dial(reply.ReportingPluginID)
 	if err != nil {
 		return nil, libocr.ReportingPluginInfo{}, err
 	}

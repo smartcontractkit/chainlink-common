@@ -60,7 +60,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}
 	for cc != nil {
 		err := cc.Invoke(ctx, method, args, reply, opts...)
 		if isErrTerminal(err) {
-			c.lggr.Warnw("clientConn: Invoke: terminal error, refreshing connection", "err", err)
+			c.Logger.Warnw("clientConn: Invoke: terminal error, refreshing connection", "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}
@@ -80,7 +80,7 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	for cc != nil {
 		s, err := cc.NewStream(ctx, desc, method, opts...)
 		if isErrTerminal(err) {
-			c.lggr.Warnw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
+			c.Logger.Warnw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}
@@ -99,24 +99,24 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 	}
 	if c.cc != nil {
 		if err := c.cc.Close(); err != nil {
-			c.lggr.Errorw("Client close failed", "err", err)
+			c.Logger.Errorw("Client close failed", "err", err)
 		}
 		c.closeAll(c.deps...)
 	}
 
 	try := func() bool {
-		c.lggr.Debug("Client refresh")
+		c.Logger.Debug("Client refresh")
 		id, deps, err := c.newClient(ctx)
 		if err != nil {
-			c.lggr.Warnw("Client refresh attempt failed", "err", err)
+			c.Logger.Errorw("Client refresh attempt failed", "err", err)
 			c.closeAll(deps...)
 			return false
 		}
 		c.deps = deps
 
-		lggr := logger.With(c.lggr, "id", id)
+		lggr := logger.With(c.Logger, "id", id)
 		lggr.Debug("Client dial")
-		c.cc, err = c.broker.Dial(id)
+		c.cc, err = c.dial(id)
 		if err != nil {
 			if ctx.Err() != nil {
 				lggr.Errorw("Client dial failed", "err", ErrConnDial{Name: c.name, ID: id, Err: err})
@@ -134,11 +134,11 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 	}
 	for !try() {
 		if ctx.Err() != nil {
-			c.lggr.Errorw("Client refresh failed: aborting refresh due to context error", "err", ctx.Err())
+			c.Logger.Errorw("Client refresh failed: aborting refresh due to context error", "err", ctx.Err())
 			return nil
 		}
 		wait := b.Duration()
-		c.lggr.Infow("Waiting to refresh", "wait", wait)
+		c.Logger.Infow("Waiting to refresh", "wait", wait)
 		select {
 		case <-ctx.Done():
 			return nil

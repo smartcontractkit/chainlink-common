@@ -60,6 +60,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}
 	for cc != nil {
 		err := cc.Invoke(ctx, method, args, reply, opts...)
 		if isErrTerminal(err) {
+			c.lggr.Errorw("clientConn: Invoke: terminal error, will retry", "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}
@@ -79,6 +80,7 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	for cc != nil {
 		s, err := cc.NewStream(ctx, desc, method, opts...)
 		if isErrTerminal(err) {
+			c.lggr.Errorw("clientConn: NewStream: terminal error, will retry", "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}

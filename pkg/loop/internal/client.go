@@ -108,9 +108,7 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 		c.lggr.Debug("Client refresh")
 		id, deps, err := c.newClient(ctx)
 		if err != nil {
-			if ctx.Err() != nil {
-				c.lggr.Errorw("Client refresh failed", "err", err)
-			}
+			c.lggr.Warnw("Client refresh attempt failed", "err", err)
 			c.closeAll(deps...)
 			return false
 		}
@@ -136,6 +134,7 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 	}
 	for !try() {
 		if ctx.Err() != nil {
+			c.lggr.Errorw("Client refresh failed: stopping retry due to context error", "err", ctx.Err())
 			return nil
 		}
 		wait := b.Duration()

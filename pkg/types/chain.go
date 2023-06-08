@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 )
 
@@ -36,3 +37,7 @@ type NodeStatus struct {
 	Config  string // TOML
 	State   string
 }
+
+// ID represents the base type, for any chain's ID.
+// It should be convertible to a string, that can uniquely identify this chain
+type ID fmt.Stringer

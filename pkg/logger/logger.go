@@ -27,6 +27,7 @@ type Logger interface {
 	Errorf(format string, values ...interface{})
 	Panicf(format string, values ...interface{})
 	Fatalf(format string, values ...interface{})
+	Criticalf(format string, values ...interface{})
 
 	Debugw(msg string, keysAndValues ...interface{})
 	Infow(msg string, keysAndValues ...interface{})

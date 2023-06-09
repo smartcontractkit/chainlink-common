@@ -5,6 +5,8 @@ import (
 	"math"
 	mrand "math/rand"
 	"time"
+
+	"github.com/jpillora/backoff"
 )
 
 // WithJitter adds +/- 10% to a duration
@@ -19,6 +21,17 @@ func WithJitter(d time.Duration) time.Duration {
 	jitter := mrand.Intn(int(max))
 	jitter = jitter - (jitter / 2)
 	return time.Duration(int(d) + jitter)
+}
+
+// NewRedialBackoff is a standard backoff to use for redialling or reconnecting to
+// unreachable network endpoints
+func NewRedialBackoff() backoff.Backoff {
+	return backoff.Backoff{
+		Min:    1 * time.Second,
+		Max:    15 * time.Second,
+		Jitter: true,
+	}
+
 }
 
 // ContextFromChan creates a context that finishes when the provided channel

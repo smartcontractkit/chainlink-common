@@ -260,6 +260,10 @@ func (d *different) Named(name string) Logger {
 	return &newLogger
 }
 
+func (d *different) Criticalf(format string, values ...interface{}) {
+	d.WithOptions(zap.AddCallerSkip(1)).DPanicf(format, values...)
+}
+
 type mismatch struct {
 	*zap.SugaredLogger
 	name string
@@ -275,6 +279,10 @@ func (m *mismatch) Helper(skip int) interface{} {
 
 func (m *mismatch) Name() string {
 	return m.name
+}
+
+func (d *mismatch) Criticalf(format string, values ...interface{}) {
+	d.WithOptions(zap.AddCallerSkip(1)).DPanicf(format, values...)
 }
 
 type differentLogger interface {

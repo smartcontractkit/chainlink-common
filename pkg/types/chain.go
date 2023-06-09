@@ -35,4 +35,5 @@ type NodeStatus struct {
 	Name    string
 	Config  string // TOML
 	State   string
+	Order   *int32
 }

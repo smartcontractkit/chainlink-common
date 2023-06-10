@@ -49,8 +49,15 @@ func New() (Logger, error) { return defaultConfig.New() }
 
 // New returns a new Logger for Config.
 func (c *Config) New() (Logger, error) {
+	return NewWith(func(cfg *zap.Config) {
+		cfg.Level.SetLevel(c.Level)
+	})
+}
+
+// NewWith returns a new Logger from a modified [zap.Config].
+func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 	cfg := zap.NewProductionConfig()
-	cfg.Level.SetLevel(c.Level)
+	cfgFn(&cfg)
 	core, err := cfg.Build()
 	if err != nil {
 		return nil, err
@@ -109,7 +116,15 @@ func (l *logger) Name() string {
 	return l.name
 }
 
-// With returns a Logger with keyvals, if l has a method `With(...interface{}) L`, where L implements Logger, otherwise it returns l.
+func (l *logger) helper(skip int) Logger {
+	return &logger{l.sugaredHelper(skip), l.name}
+}
+
+func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
+	return l.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))
+}
+
+// With returns a Logger with keyvals, if 'l' has a method `With(...interface{}) L`, where L implements Logger, otherwise it returns l.
 func With(l Logger, keyvals ...interface{}) Logger {
 	switch t := l.(type) {
 	case *logger:
@@ -138,7 +153,7 @@ func With(l Logger, keyvals ...interface{}) Logger {
 	return w
 }
 
-// Named return a logger with name `n“, if l has a method `Named(name string) L`, where L implements Logger, otherwise it returns l.
+// Named returns a logger with name 'n', if 'l' has a method `Named(string) L`, where L implements Logger, otherwise it returns l.
 func Named(l Logger, n string) Logger {
 	switch t := l.(type) {
 	case *logger:
@@ -163,4 +178,82 @@ func Named(l Logger, n string) Logger {
 		return l
 	}
 	return ret
+}
+
+// Helper returns a logger 'skip' levels of callers skipped, if 'l' has a method `Helper(int) L`, where L implements Logger, otherwise it returns l.
+func Helper(l Logger, skip int) Logger {
+	switch t := l.(type) {
+	case *logger:
+		return t.helper(skip)
+	}
+	v := reflect.ValueOf(l)
+	m := v.MethodByName("Helper")
+	if m == (reflect.Value{}) {
+		// not available
+		return l
+	}
+
+	r := m.Call([]reflect.Value{reflect.ValueOf(skip)})
+	if len(r) != 1 {
+		// unclear how to handle
+		return l
+	}
+	ret, ok := r[0].Interface().(Logger)
+
+	// return is not a Logger
+	if !ok {
+		return l
+	}
+	return ret
+}
+
+// Critical emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+func Critical(l Logger, args ...interface{}) {
+	switch t := l.(type) {
+	case *logger:
+		t.DPanic(args)
+		return
+	}
+	c, ok := l.(interface {
+		Critical(args ...interface{})
+	})
+	if ok {
+		c.Critical(args...)
+		return
+	}
+	l.Error(append([]any{"[crit]"}, args...)...)
+}
+
+// Criticalf emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+func Criticalf(l Logger, format string, values ...interface{}) {
+	switch t := l.(type) {
+	case *logger:
+		t.DPanicf(format, values...)
+		return
+	}
+	c, ok := l.(interface {
+		Critical(format string, values ...interface{})
+	})
+	if ok {
+		c.Critical(format, values...)
+		return
+	}
+	l.Errorf("[crit] "+format, values...)
+}
+
+// Criticalw emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+func Criticalw(l Logger, msg string, keysAndValues ...interface{}) {
+	switch t := l.(type) {
+	case *logger:
+		t.DPanicw(msg, keysAndValues...)
+		return
+	}
+	c, ok := l.(interface {
+		Critical(msg string, keysAndValues ...interface{})
+	})
+	if ok {
+		c.Critical(msg, keysAndValues...)
+		return
+	}
+	l.Errorw("[crit] "+msg, keysAndValues...)
 }

@@ -72,11 +72,16 @@ func Test(tb testing.TB) Logger {
 
 // TestObserved returns a new test Logger for tb and ObservedLogs at the given Level.
 func TestObserved(tb testing.TB, lvl zapcore.Level) (Logger, *observer.ObservedLogs) {
+	sl, logs := testObserved(tb, lvl)
+	return &logger{sl, ""}, logs
+}
+
+func testObserved(tb testing.TB, lvl zapcore.Level) (*zap.SugaredLogger, *observer.ObservedLogs) {
 	oCore, logs := observer.New(lvl)
 	observe := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
 		return zapcore.NewTee(c, oCore)
 	})
-	return &logger{zaptest.NewLogger(tb, zaptest.WrapOptions(observe)).Sugar(), ""}, logs
+	return zaptest.NewLogger(tb, zaptest.WrapOptions(observe)).Sugar(), logs
 }
 
 // Nop returns a no-op Logger.
@@ -130,27 +135,18 @@ func With(l Logger, keyvals ...interface{}) Logger {
 	case *logger:
 		return t.with(keyvals...)
 	}
-	v := reflect.ValueOf(l)
-	m := v.MethodByName("With")
-	if m == (reflect.Value{}) {
-		// not available
-		return l
-	}
 
-	r := m.CallSlice([]reflect.Value{reflect.ValueOf(keyvals)})
-	if len(r) != 1 {
-		// unclear how to handle
-		return l
+	method := reflect.ValueOf(l).MethodByName("With")
+	if method == (reflect.Value{}) {
+		return l // not available
 	}
-	t := r[0].Type()
-	if !t.Implements(typeOfLogger) {
-		// unable to assign
-		return l
+	if ret := method.CallSlice([]reflect.Value{reflect.ValueOf(keyvals)}); len(ret) == 1 {
+		nl, ok := ret[0].Interface().(Logger)
+		if ok {
+			return nl
+		}
 	}
-
-	var w Logger
-	reflect.ValueOf(&w).Elem().Set(r[0])
-	return w
+	return l
 }
 
 // Named returns a logger with name 'n', if 'l' has a method `Named(string) L`, where L implements Logger, otherwise it returns l.
@@ -159,25 +155,18 @@ func Named(l Logger, n string) Logger {
 	case *logger:
 		return t.named(n)
 	}
-	v := reflect.ValueOf(l)
-	m := v.MethodByName("Named")
-	if m == (reflect.Value{}) {
-		// not available
-		return l
-	}
 
-	r := m.Call([]reflect.Value{reflect.ValueOf(n)})
-	if len(r) != 1 {
-		// unclear how to handle
-		return l
+	method := reflect.ValueOf(l).MethodByName("Named")
+	if method == (reflect.Value{}) {
+		return l // not available
 	}
-	ret, ok := r[0].Interface().(Logger)
-
-	// return is not a Logger
-	if !ok {
-		return l
+	if ret := method.Call([]reflect.Value{reflect.ValueOf(n)}); len(ret) == 1 {
+		nl, ok := ret[0].Interface().(Logger)
+		if ok {
+			return nl
+		}
 	}
-	return ret
+	return l
 }
 
 // Helper returns a logger 'skip' levels of callers skipped, if 'l' has a method `Helper(int) L`, where L implements Logger, otherwise it returns l.
@@ -186,25 +175,18 @@ func Helper(l Logger, skip int) Logger {
 	case *logger:
 		return t.helper(skip)
 	}
-	v := reflect.ValueOf(l)
-	m := v.MethodByName("Helper")
-	if m == (reflect.Value{}) {
-		// not available
-		return l
-	}
 
-	r := m.Call([]reflect.Value{reflect.ValueOf(skip)})
-	if len(r) != 1 {
-		// unclear how to handle
-		return l
+	method := reflect.ValueOf(l).MethodByName("Helper")
+	if method == (reflect.Value{}) {
+		return l // not available
 	}
-	ret, ok := r[0].Interface().(Logger)
-
-	// return is not a Logger
-	if !ok {
-		return l
+	if ret := method.Call([]reflect.Value{reflect.ValueOf(skip)}); len(ret) == 1 {
+		nl, ok := ret[0].Interface().(Logger)
+		if ok {
+			return nl
+		}
 	}
-	return ret
+	return l
 }
 
 // Critical emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.

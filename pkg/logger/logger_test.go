@@ -15,9 +15,8 @@ func TestWith(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tt := range []struct {
-		name    string
-		logger  Logger
-		expSame bool
+		name   string
+		logger Logger
 	}{
 		{
 			name:   "test",
@@ -40,22 +39,17 @@ func TestWith(t *testing.T) {
 			logger: &different{zaptest.NewLogger(t).Sugar(), ""},
 		},
 		{
-			name:    "missing",
-			logger:  &mismatch{zaptest.NewLogger(t).Sugar(), ""},
-			expSame: true,
+			name:   "missing",
+			logger: &mismatch{zaptest.NewLogger(t).Sugar(), ""},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got := With(tt.logger, "foo", "bar")
-			same := got == tt.logger
-			if same && !tt.expSame {
+			if got == tt.logger {
 				t.Error("expected a new logger with foo==bar, but got same")
-			} else if tt.expSame && !same {
-				t.Errorf("expected the same logger %v, w/o foo=bar, but got %v", tt.logger, got)
 			}
 		})
 	}
-
 }
 
 func TestNamed(t *testing.T) {
@@ -96,7 +90,49 @@ func TestNamed(t *testing.T) {
 			require.Equal(t, tt.expectedName, tt.logger.Name())
 		})
 	}
+}
 
+func TestHelper(t *testing.T) {
+	prod, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct {
+		name   string
+		logger Logger
+	}{
+		{
+			name:   "test",
+			logger: Test(t),
+		},
+		{
+			name:   "nop",
+			logger: Nop(),
+		},
+		{
+			name:   "prod",
+			logger: prod,
+		},
+		{
+			name:   "other",
+			logger: &other{zaptest.NewLogger(t).Sugar(), ""},
+		},
+		{
+			name:   "different",
+			logger: &different{zaptest.NewLogger(t).Sugar(), ""},
+		},
+		{
+			name:   "missing",
+			logger: &mismatch{zaptest.NewLogger(t).Sugar(), ""},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Helper(tt.logger, 1)
+			if got == tt.logger {
+				t.Error("expected a new logger with foo==bar, but got same")
+			}
+		})
+	}
 }
 
 type other struct {
@@ -106,6 +142,10 @@ type other struct {
 
 func (o *other) With(args ...interface{}) Logger {
 	return &other{o.SugaredLogger.With(args...), ""}
+}
+
+func (o *other) Helper(skip int) Logger {
+	return &other{o.SugaredLogger.With(zap.AddCallerSkip(skip)), ""}
 }
 
 func (o *other) Name() string {
@@ -128,6 +168,10 @@ func (d *different) With(args ...interface{}) differentLogger {
 	return &different{d.SugaredLogger.With(args...), ""}
 }
 
+func (d *different) Helper(skip int) differentLogger {
+	return &other{d.SugaredLogger.With(zap.AddCallerSkip(skip)), ""}
+}
+
 func (d *different) Name() string {
 	return d.name
 }
@@ -146,6 +190,10 @@ type mismatch struct {
 
 func (m *mismatch) With(args ...interface{}) interface{} {
 	return &mismatch{m.SugaredLogger.With(args...), ""}
+}
+
+func (m *mismatch) Helper(skip int) interface{} {
+	return &other{m.SugaredLogger.With(zap.AddCallerSkip(skip)), ""}
 }
 
 func (m *mismatch) Name() string {

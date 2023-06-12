@@ -14,6 +14,7 @@ type ocrWrapper struct {
 // NewOCRWrapper returns a new [ocrtypes.Logger] backed by the given Logger.
 func NewOCRWrapper(l Logger, saveError func(string)) ocrtypes.Logger {
 	return &ocrWrapper{
+		// Skip an extra level since we are passed along to another wrapper.
 		l:         Helper(l, 2),
 		saveError: saveError,
 	}

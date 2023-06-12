@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestWith(t *testing.T) {
@@ -135,6 +138,76 @@ func TestHelper(t *testing.T) {
 	}
 }
 
+func TestCritical(t *testing.T) {
+	lggr, observed := TestObserved(t, zap.DebugLevel)
+	testCritical(t, lggr, observed, "foobar", zap.DPanicLevel)
+
+	var sl *zap.SugaredLogger
+	sl, observed = testObserved(t, zap.DebugLevel)
+	lggr = &other{sl, ""}
+	testCritical(t, lggr, observed, "foobar", zap.DPanicLevel)
+
+	sl, observed = testObserved(t, zap.DebugLevel)
+	lggr = &mismatch{sl, ""}
+	testCritical(t, lggr, observed, "[crit] foobar", zap.ErrorLevel)
+}
+
+func testCritical(t *testing.T, lggr Logger, observed *observer.ObservedLogs, msg string, lvl zapcore.Level) {
+	Critical(lggr, "foo", "bar")
+	all := observed.TakeAll()
+	require.Len(t, all, 1)
+	line := all[0]
+	assert.Equal(t, lvl, line.Level)
+	assert.Equal(t, msg, line.Message)
+}
+
+func TestCriticalw(t *testing.T) {
+	lggr, observed := TestObserved(t, zap.DebugLevel)
+	testCriticalw(t, lggr, observed, "msg", zap.DPanicLevel)
+
+	var sl *zap.SugaredLogger
+	sl, observed = testObserved(t, zap.DebugLevel)
+	lggr = &other{sl, ""}
+	testCriticalw(t, lggr, observed, "msg", zap.DPanicLevel)
+
+	sl, observed = testObserved(t, zap.DebugLevel)
+	lggr = &mismatch{sl, ""}
+	testCriticalw(t, lggr, observed, "[crit] msg", zap.ErrorLevel)
+}
+
+func testCriticalw(t *testing.T, lggr Logger, observed *observer.ObservedLogs, msg string, lvl zapcore.Level) {
+	Criticalw(lggr, "msg", "foo", "bar")
+	all := observed.TakeAll()
+	require.Len(t, all, 1)
+	line := all[0]
+	assert.Equal(t, lvl, line.Level)
+	assert.Equal(t, msg, line.Message)
+	require.Equal(t, "bar", line.ContextMap()["foo"])
+}
+
+func TestCriticalf(t *testing.T) {
+	lggr, observed := TestObserved(t, zap.DebugLevel)
+	testCriticalf(t, lggr, observed, "foo: bar", zap.DPanicLevel)
+
+	var sl *zap.SugaredLogger
+	sl, observed = testObserved(t, zap.DebugLevel)
+	lggr = &other{sl, ""}
+	testCriticalf(t, lggr, observed, "foo: bar", zap.DPanicLevel)
+
+	sl, observed = testObserved(t, zap.DebugLevel)
+	lggr = &mismatch{sl, ""}
+	testCriticalf(t, lggr, observed, "[crit] foo: bar", zap.ErrorLevel)
+}
+
+func testCriticalf(t *testing.T, lggr Logger, observed *observer.ObservedLogs, msg string, lvl zapcore.Level) {
+	Criticalf(lggr, "foo: %s", "bar")
+	all := observed.TakeAll()
+	require.Len(t, all, 1)
+	line := all[0]
+	assert.Equal(t, lvl, line.Level)
+	assert.Equal(t, msg, line.Message)
+}
+
 type other struct {
 	*zap.SugaredLogger
 	name string
@@ -158,6 +231,10 @@ func (o *other) Named(name string) Logger {
 	newLogger.SugaredLogger = o.SugaredLogger.Named(name)
 	return &newLogger
 }
+
+func (o *other) Critical(args ...interface{})                       { o.DPanic(args...) }
+func (o *other) Criticalf(format string, values ...interface{})     { o.DPanicf(format, values...) }
+func (o *other) Criticalw(msg string, keysAndValues ...interface{}) { o.DPanicw(msg, keysAndValues...) }
 
 type different struct {
 	*zap.SugaredLogger

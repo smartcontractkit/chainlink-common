@@ -98,11 +98,6 @@ func (l *logger) with(args ...interface{}) Logger {
 	return &logger{l.SugaredLogger.With(args...), ""}
 }
 
-var (
-	loggerVar    Logger
-	typeOfLogger = reflect.ValueOf(&loggerVar).Elem().Type()
-)
-
 func joinName(old, new string) string {
 	if old == "" {
 		return new
@@ -169,7 +164,8 @@ func Named(l Logger, n string) Logger {
 	return l
 }
 
-// Helper returns a logger 'skip' levels of callers skipped, if 'l' has a method `Helper(int) L`, where L implements Logger, otherwise it returns l.
+// Helper returns a logger with 'skip' levels of callers skipped, if 'l' has a method `Helper(int) L`, where L implements Logger, otherwise it returns l.
+// See [zap.AddCallerSkip]
 func Helper(l Logger, skip int) Logger {
 	switch t := l.(type) {
 	case *logger:
@@ -193,7 +189,7 @@ func Helper(l Logger, skip int) Logger {
 func Critical(l Logger, args ...interface{}) {
 	switch t := l.(type) {
 	case *logger:
-		t.DPanic(args)
+		t.DPanic(args...)
 		return
 	}
 	c, ok := l.(interface {
@@ -203,7 +199,7 @@ func Critical(l Logger, args ...interface{}) {
 		c.Critical(args...)
 		return
 	}
-	l.Error(append([]any{"[crit]"}, args...)...)
+	l.Error(append([]any{"[crit] "}, args...)...)
 }
 
 // Criticalf emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
@@ -214,10 +210,10 @@ func Criticalf(l Logger, format string, values ...interface{}) {
 		return
 	}
 	c, ok := l.(interface {
-		Critical(format string, values ...interface{})
+		Criticalf(format string, values ...interface{})
 	})
 	if ok {
-		c.Critical(format, values...)
+		c.Criticalf(format, values...)
 		return
 	}
 	l.Errorf("[crit] "+format, values...)
@@ -231,10 +227,10 @@ func Criticalw(l Logger, msg string, keysAndValues ...interface{}) {
 		return
 	}
 	c, ok := l.(interface {
-		Critical(msg string, keysAndValues ...interface{})
+		Criticalw(msg string, keysAndValues ...interface{})
 	})
 	if ok {
-		c.Critical(msg, keysAndValues...)
+		c.Criticalw(msg, keysAndValues...)
 		return
 	}
 	l.Errorw("[crit] "+msg, keysAndValues...)

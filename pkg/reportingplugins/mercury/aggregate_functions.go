@@ -73,6 +73,25 @@ func GetConsensusAsk(paos []ParsedAttributedObservation, f int) (*big.Int, error
 	return validAsks[len(validAsks)/2], nil
 }
 
+type block struct {
+	hash string
+	num  int64
+	ts   uint64
+}
+
+func (b1 block) less(b2 block) bool {
+	if b1.num == b2.num && b1.ts == b2.ts {
+		// tie-break on hash, all else being equal
+		return b1.hash < b2.hash
+	} else if b1.num == b2.num {
+		// if block number is equal and timestamps differ, take the latest timestamp
+		return b1.ts > b2.ts
+	} else {
+		// if block number is different, take the higher block number
+		return b1.num > b2.num
+	}
+}
+
 // GetConsensusCurrentBlock gets the most common (mode) block hash/number/timestamps.
 // In the event of a tie, use the lowest numerical value
 func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash []byte, num int64, ts uint64, err error) {
@@ -84,12 +103,6 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 	}
 	if len(validPaos) < f+1 {
 		return nil, 0, 0, fmt.Errorf("fewer than f+1 observations have a valid current block (got: %d/%d)", len(validPaos), len(paos))
-	}
-
-	type block struct {
-		hash string
-		num  int64
-		ts   uint64
 	}
 
 	m := map[block]int{}
@@ -113,16 +126,7 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 		}
 	}
 	sort.Slice(blocks, func(i, j int) bool {
-		if blocks[i].num == blocks[j].num && blocks[i].ts == blocks[j].ts {
-			// tie-break on hash, all else being equal
-			return blocks[i].hash < blocks[j].hash
-		} else if blocks[i].num == blocks[j].num {
-			// if block number is equal and timestamps differ, take the latest timestamp
-			return blocks[i].ts > blocks[j].ts
-		} else {
-			// if block number is different, take the higher block number
-			return blocks[i].num > blocks[j].num
-		}
+		return blocks[i].less(blocks[j])
 	})
 
 	return []byte(blocks[0].hash), blocks[0].num, blocks[0].ts, nil

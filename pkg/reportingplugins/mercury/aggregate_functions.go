@@ -85,25 +85,47 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 	if len(validPaos) < f+1 {
 		return nil, 0, 0, fmt.Errorf("fewer than f+1 observations have a valid current block (got: %d/%d)", len(validPaos), len(paos))
 	}
-	// pick the most common blockhash with at least f+1 votes
-	hash, err = getConsensusCurrentBlockHash(validPaos, f+1)
-	if err != nil {
-		return hash, 0, 0, errors.Wrap(err, "couldn't get consensus current block")
+
+	type block struct {
+		hash string
+		num  int64
+		ts   uint64
 	}
 
-	// pick the most common block number with at least f+1 votes
-	num, err = getConsensusCurrentBlockNum(validPaos, string(hash), f+1)
-	if err != nil {
-		return hash, num, 0, errors.Wrap(err, "couldn't get consensus current block")
+	m := map[block]int{}
+	maxCnt := 0
+	for _, pao := range validPaos {
+		b := block{string(pao.CurrentBlockHash), pao.CurrentBlockNum, pao.CurrentBlockTimestamp}
+		m[b]++
+		if cnt := m[b]; cnt > maxCnt {
+			maxCnt = cnt
+		}
 	}
 
-	// pick the most common block timestamp with at least f+1 votes
-	ts, err = getConsensusCurrentBlockTimestamp(validPaos, string(hash), num, f+1)
-	if err != nil {
-		return hash, num, ts, errors.Wrap(err, "couldn't get consensus current block")
+	if maxCnt < f+1 {
+		return nil, 0, 0, errors.New("no unique block with at least f+1 votes")
 	}
 
-	return hash, num, ts, nil
+	var blocks []block
+	for b, cnt := range m {
+		if cnt == maxCnt {
+			blocks = append(blocks, b)
+		}
+	}
+	sort.Slice(blocks, func(i, j int) bool {
+		if blocks[i].num == blocks[j].num && blocks[i].ts == blocks[j].ts {
+			// tie-break on hash, all else being equal
+			return blocks[i].hash < blocks[j].hash
+		} else if blocks[i].num == blocks[j].num {
+			// if block number is equal and timestamps differ, take the latest timestamp
+			return blocks[i].ts > blocks[j].ts
+		} else {
+			// if block number is different, take the higher block number
+			return blocks[i].num > blocks[j].num
+		}
+	})
+
+	return []byte(blocks[0].hash), blocks[0].num, blocks[0].ts, nil
 }
 
 // GetConsensusMaxFinalizedBlockNum gets the most common (mode)
@@ -147,111 +169,4 @@ func GetConsensusMaxFinalizedBlockNum(paos []ParsedAttributedObservation, f int)
 		return nums[i] < nums[j]
 	})
 	return nums[0], nil
-}
-
-func getConsensusCurrentBlockHash(paos []ParsedAttributedObservation, threshold int) (hash []byte, err error) {
-	m := map[string]int{}
-	maxCnt := 0
-	for _, pao := range paos {
-		h := pao.CurrentBlockHash
-		m[string(h)]++
-		if cnt := m[string(h)]; cnt > maxCnt {
-			maxCnt = cnt
-		}
-	}
-
-	if maxCnt < threshold {
-		return nil, errors.New("no block hash with at least f+1 votes")
-	}
-
-	var hashes []string
-	for hash, cnt := range m {
-		if cnt == maxCnt {
-			hashes = append(hashes, hash)
-		}
-	}
-
-	// determistic tie-break for hash
-	sort.Slice(hashes, func(i, j int) bool {
-		return hashes[i] < hashes[j]
-	})
-
-	hash = []byte(hashes[0])
-	return
-}
-
-func getConsensusCurrentBlockNum(paos []ParsedAttributedObservation, blockHash string, threshold int) (num int64, err error) {
-	var matchingPaos []ParsedAttributedObservation
-	for _, pao := range paos {
-		if string(pao.CurrentBlockHash) == blockHash {
-			matchingPaos = append(matchingPaos, pao)
-		}
-	}
-
-	m := map[int64]int{}
-	maxCnt := 0
-	for _, pao := range matchingPaos {
-		n := pao.CurrentBlockNum
-		m[n]++
-		if cnt := m[n]; cnt > maxCnt {
-			maxCnt = cnt
-		}
-	}
-
-	if maxCnt < threshold {
-		return 0, errors.Errorf("no block number matching hash 0x%x with at least f+1 votes", blockHash)
-	}
-
-	var nums []int64
-	for num, cnt := range m {
-		if cnt == maxCnt {
-			nums = append(nums, num)
-		}
-	}
-
-	// determistic tie-break for num
-	sort.Slice(nums, func(i, j int) bool {
-		return nums[i] < nums[j]
-	})
-
-	num = nums[0]
-	return
-}
-
-func getConsensusCurrentBlockTimestamp(paos []ParsedAttributedObservation, blockHash string, blockNum int64, threshold int) (ts uint64, err error) {
-	var matchingPaos []ParsedAttributedObservation
-	for _, pao := range paos {
-		if string(pao.CurrentBlockHash) == blockHash && pao.CurrentBlockNum == blockNum {
-			matchingPaos = append(matchingPaos, pao)
-		}
-	}
-
-	m := map[uint64]int{}
-	maxCnt := 0
-	for _, pao := range matchingPaos {
-		n := pao.CurrentBlockTimestamp
-		m[n]++
-		if cnt := m[n]; cnt > maxCnt {
-			maxCnt = cnt
-		}
-	}
-
-	if maxCnt < threshold {
-		return 0, errors.Errorf("no block timestamp matching block hash 0x%x and block number %d with at least f+1 votes", blockHash, blockNum)
-	}
-
-	var timestamps []uint64
-	for ts, cnt := range m {
-		if cnt == maxCnt {
-			timestamps = append(timestamps, ts)
-		}
-	}
-
-	// determistic tie-break for timestamps
-	sort.Slice(timestamps, func(i, j int) bool {
-		return timestamps[i] < timestamps[j]
-	})
-
-	ts = timestamps[0]
-	return
 }

@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,6 +20,15 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
+)
+
+var (
+	relayerRestarts = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "loop_relayer_launch_total",
+			Help: "total number of launched loop relayer including restarts",
+		},
+		[]string{"name"})
 )
 
 const keepAliveTickDuration = 5 * time.Second //TODO from config
@@ -88,6 +100,7 @@ func (s *pluginService[P, S]) keepAlive() {
 				s.lggr.Errorw("Relaunching unhealthy plugin", "err", err)
 			}
 			if err := s.tryLaunch(cp); err != nil {
+				relayerRestarts.WithLabelValues(s.pluginName).Inc()
 				s.lggr.Errorw("Failed to launch plugin", "err", err)
 			}
 		case fn := <-s.testInterrupt:
@@ -109,7 +122,7 @@ func (s *pluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	ctx, cancelFn := utils.ContextFromChan(s.stopCh)
 	defer cancelFn()
 
-	s.lggr.Debug("Launching")
+	s.lggr.Info("Launching")
 
 	cc := s.grpcPlug.ClientConfig()
 	cc.Cmd = s.cmd()

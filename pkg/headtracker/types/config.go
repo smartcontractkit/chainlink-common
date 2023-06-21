@@ -2,7 +2,10 @@ package types
 
 import (
 	"fmt"
+	"math/big"
 	"time"
+
+	"golang.org/x/exp/constraints"
 )
 
 type Config interface {
@@ -13,6 +16,8 @@ type Config interface {
 	HeadTrackerSamplingInterval() time.Duration
 }
 
-func FriendlyInt64(n int64) string {
+// FriendlyNumber returns a string printing the integer or big.Int in both
+// decimal and hexadecimal formats.
+func FriendlyNumber[N constraints.Integer | *big.Int](n N) string {
 	return fmt.Sprintf("#%[1]v (0x%[1]x)", n)
 }

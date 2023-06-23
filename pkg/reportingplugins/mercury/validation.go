@@ -8,9 +8,9 @@ import (
 )
 
 // NOTE: hardcoded for now, this may need to change if we support block range on chains other than eth
-const evmHashLen = 32
+const EvmHashLen = 32
 
-func ValidateBenchmarkPrice(paos []ParsedAttributedObservation, f int, min, max *big.Int) error {
+func ValidateBenchmarkPrice(paos []ParsedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBenchmarkPrice(paos, f)
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func ValidateBenchmarkPrice(paos []ParsedAttributedObservation, f int, min, max 
 	return nil
 }
 
-func ValidateBid(paos []ParsedAttributedObservation, f int, min, max *big.Int) error {
+func ValidateBid(paos []ParsedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBid(paos, f)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func ValidateBid(paos []ParsedAttributedObservation, f int, min, max *big.Int) e
 	return nil
 }
 
-func ValidateAsk(paos []ParsedAttributedObservation, f int, min, max *big.Int) error {
+func ValidateAsk(paos []ParsedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusAsk(paos, f)
 	if err != nil {
 		return err
@@ -49,13 +49,13 @@ func ValidateAsk(paos []ParsedAttributedObservation, f int, min, max *big.Int) e
 	return nil
 }
 
-func ValidateCurrentBlock(paos []ParsedAttributedObservation, f int, validFromBlockNum int64) error {
+func ValidateCurrentBlock(paos []ParsedObservation, f int, validFromBlockNum int64) error {
 	if validFromBlockNum < 0 {
 		return fmt.Errorf("validFromBlockNum must be >= 0 (got: %d)", validFromBlockNum)
 	}
-	var newBlockRangePaos []ParsedAttributedObservation
+	var newBlockRangePaos []ParsedObservation
 	for _, pao := range paos {
-		if pao.CurrentBlockValid && pao.CurrentBlockNum >= validFromBlockNum {
+		if pao.GetCurrentBlockValid() && pao.GetCurrentBlockNum() >= validFromBlockNum {
 			newBlockRangePaos = append(newBlockRangePaos, pao)
 		}
 	}
@@ -78,8 +78,8 @@ func ValidateCurrentBlock(paos []ParsedAttributedObservation, f int, validFromBl
 	}
 
 	// NOTE: hardcoded ethereum hash
-	if len(hash) != evmHashLen {
-		return pkgerrors.Errorf("invalid length for hash; expected %d (got: %d)", evmHashLen, len(hash))
+	if len(hash) != EvmHashLen {
+		return pkgerrors.Errorf("invalid length for hash; expected %d (got: %d)", EvmHashLen, len(hash))
 	}
 
 	if validFromBlockNum > num {

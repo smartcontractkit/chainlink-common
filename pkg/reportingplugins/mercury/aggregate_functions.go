@@ -12,19 +12,19 @@ import (
 // The passed slice might be mutated (sorted)
 
 // GetConsensusTimestamp gets the median timestamp
-func GetConsensusTimestamp(paos []ParsedAttributedObservation) uint32 {
+func GetConsensusTimestamp(paos []ParsedObservation) uint32 {
 	sort.Slice(paos, func(i, j int) bool {
-		return paos[i].Timestamp < paos[j].Timestamp
+		return paos[i].GetTimestamp() < paos[j].GetTimestamp()
 	})
-	return paos[len(paos)/2].Timestamp
+	return paos[len(paos)/2].GetTimestamp()
 }
 
 // GetConsensusBenchmarkPrice gets the median benchmark price
-func GetConsensusBenchmarkPrice(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusBenchmarkPrice(paos []ParsedObservation, f int) (*big.Int, error) {
 	var validBenchmarkPrices []*big.Int
 	for _, pao := range paos {
-		if pao.PricesValid {
-			validBenchmarkPrices = append(validBenchmarkPrices, pao.BenchmarkPrice)
+		if pao.GetPricesValid() {
+			validBenchmarkPrices = append(validBenchmarkPrices, pao.GetBenchmarkPrice())
 		}
 	}
 	if len(validBenchmarkPrices) < f+1 {
@@ -38,11 +38,11 @@ func GetConsensusBenchmarkPrice(paos []ParsedAttributedObservation, f int) (*big
 }
 
 // GetConsensusBid gets the median bid
-func GetConsensusBid(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusBid(paos []ParsedObservation, f int) (*big.Int, error) {
 	var validBids []*big.Int
 	for _, pao := range paos {
-		if pao.PricesValid {
-			validBids = append(validBids, pao.Bid)
+		if pao.GetPricesValid() {
+			validBids = append(validBids, pao.GetBid())
 		}
 	}
 	if len(validBids) < f+1 {
@@ -56,11 +56,11 @@ func GetConsensusBid(paos []ParsedAttributedObservation, f int) (*big.Int, error
 }
 
 // GetConsensusAsk gets the median ask
-func GetConsensusAsk(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusAsk(paos []ParsedObservation, f int) (*big.Int, error) {
 	var validAsks []*big.Int
 	for _, pao := range paos {
-		if pao.PricesValid {
-			validAsks = append(validAsks, pao.Ask)
+		if pao.GetPricesValid() {
+			validAsks = append(validAsks, pao.GetAsk())
 		}
 	}
 	if len(validAsks) < f+1 {
@@ -94,10 +94,10 @@ func (b1 block) less(b2 block) bool {
 
 // GetConsensusCurrentBlock gets the most common (mode) block hash/number/timestamps.
 // In the event of a tie, use the lowest numerical value
-func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash []byte, num int64, ts uint64, err error) {
-	var validPaos []ParsedAttributedObservation
+func GetConsensusCurrentBlock(paos []ParsedObservation, f int) (hash []byte, num int64, ts uint64, err error) {
+	var validPaos []ParsedObservation
 	for _, pao := range paos {
-		if pao.CurrentBlockValid {
+		if pao.GetCurrentBlockValid() {
 			validPaos = append(validPaos, pao)
 		}
 	}
@@ -108,7 +108,7 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 	m := map[block]int{}
 	maxCnt := 0
 	for _, pao := range validPaos {
-		b := block{string(pao.CurrentBlockHash), pao.CurrentBlockNum, pao.CurrentBlockTimestamp}
+		b := block{string(pao.GetCurrentBlockHash()), pao.GetCurrentBlockNum(), pao.GetCurrentBlockTimestamp()}
 		m[b]++
 		if cnt := m[b]; cnt > maxCnt {
 			maxCnt = cnt
@@ -135,10 +135,10 @@ func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash [
 // GetConsensusMaxFinalizedBlockNum gets the most common (mode)
 // ConsensusMaxFinalizedBlockNum In the event of a tie, the lower number is
 // chosen
-func GetConsensusMaxFinalizedBlockNum(paos []ParsedAttributedObservation, f int) (int64, error) {
-	var validPaos []ParsedAttributedObservation
+func GetConsensusMaxFinalizedBlockNum(paos []ParsedObservation, f int) (int64, error) {
+	var validPaos []ParsedObservation
 	for _, pao := range paos {
-		if pao.MaxFinalizedBlockNumberValid {
+		if pao.GetMaxFinalizedBlockNumberValid() {
 			validPaos = append(validPaos, pao)
 		}
 	}
@@ -149,7 +149,7 @@ func GetConsensusMaxFinalizedBlockNum(paos []ParsedAttributedObservation, f int)
 	m := map[int64]int{}
 	maxCnt := 0
 	for _, pao := range validPaos {
-		n := pao.MaxFinalizedBlockNumber
+		n := pao.GetMaxFinalizedBlockNumber()
 		m[n]++
 		if cnt := m[n]; cnt > maxCnt {
 			maxCnt = cnt

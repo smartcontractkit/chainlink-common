@@ -4,7 +4,7 @@
 // 	protoc        v3.21.12
 // source: mercury_observation.proto
 
-package mercury
+package mercury_v1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

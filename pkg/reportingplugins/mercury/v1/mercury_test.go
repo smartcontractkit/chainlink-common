@@ -1,4 +1,4 @@
-package mercury
+package mercury_v1
 
 import (
 	"context"

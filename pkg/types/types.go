@@ -76,6 +76,7 @@ type MercuryProvider interface {
 	ConfigProvider
 	ReportCodecV1() mercuryv1.ReportCodec
 	ReportCodecV2() mercuryv2.ReportCodec
+	ReportSchemaVersion() uint32
 	OnchainConfigCodec() mercury.OnchainConfigCodec
 	ContractTransmitter() mercury.Transmitter
 }

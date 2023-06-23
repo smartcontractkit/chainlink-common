@@ -72,10 +72,10 @@ type Factory struct {
 	dataSource         DataSource
 	logger             logger.Logger
 	onchainConfigCodec mercury.OnchainConfigCodec
-	reportCodec        mercury.ReportCodec
+	reportCodec        ReportCodec
 }
 
-func NewFactory(ds DataSource, lggr logger.Logger, occ mercury.OnchainConfigCodec, rc mercury.ReportCodec) Factory {
+func NewFactory(ds DataSource, lggr logger.Logger, occ mercury.OnchainConfigCodec, rc ReportCodec) Factory {
 	return Factory{ds, lggr, occ, rc}
 }
 
@@ -124,7 +124,7 @@ type reportingPlugin struct {
 	onchainConfig  mercury.OnchainConfig
 	dataSource     DataSource
 	logger         logger.Logger
-	reportCodec    mercury.ReportCodec
+	reportCodec    ReportCodec
 
 	configDigest             ocrtypes.ConfigDigest
 	f                        int

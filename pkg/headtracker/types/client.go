@@ -7,6 +7,8 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
 
+//go:generate mockery --quiet --name Client --output ./mocks/ --case=underscore
+
 type Client[H types.Head[BLOCK_HASH], S types.Subscription, ID types.ID, BLOCK_HASH types.Hashable] interface {
 	HeadByNumber(ctx context.Context, number *big.Int) (head H, err error)
 	// ConfiguredChainID returns the chain ID that the node is configured to connect to

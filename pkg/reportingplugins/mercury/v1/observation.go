@@ -73,6 +73,14 @@ func (pao ParsedAttributedObservation) GetCurrentBlockValid() bool {
 	return pao.CurrentBlockValid
 }
 
+func (pao ParsedAttributedObservation) GetMaxFinalizedTimestamp() int64 {
+	panic("current observation doesn't contain the field")
+}
+
+func (pao ParsedAttributedObservation) GetMaxFinalizedTimestampValid() bool {
+	panic("current observation doesn't contain the field")
+}
+
 func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumber() int64 {
 	return pao.MaxFinalizedBlockNumber
 }

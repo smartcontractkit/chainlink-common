@@ -23,6 +23,13 @@ type ParsedObservation interface {
 	GetCurrentBlockValid() bool
 	GetMaxFinalizedBlockNumber() int64
 	GetMaxFinalizedBlockNumberValid() bool
+	GetMaxFinalizedTimestamp() int64
+	GetMaxFinalizedTimestampValid() bool
+}
+
+type ObsResult[T any] struct {
+	Val T
+	Err error
 }
 
 // ReportCodec All functions on ReportCodec should be pure and thread-safe.

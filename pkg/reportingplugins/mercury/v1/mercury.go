@@ -21,31 +21,16 @@ import (
 // Mercury-specific reporting plugin, based off of median:
 // https://github.com/smartcontractkit/offchain-reporting/blob/master/lib/offchainreporting2/reportingplugin/median/median.go
 
-type OffchainConfig struct{}
-
-func DecodeOffchainConfig(b []byte) (o OffchainConfig, err error) {
-	return
-}
-
-func (c OffchainConfig) Encode() []byte {
-	return []byte{}
-}
-
-type ObsResult[T any] struct {
-	Val T
-	Err error
-}
-
 type Observation struct {
-	BenchmarkPrice        ObsResult[*big.Int]
-	Bid                   ObsResult[*big.Int]
-	Ask                   ObsResult[*big.Int]
-	CurrentBlockNum       ObsResult[int64]
-	CurrentBlockHash      ObsResult[[]byte]
-	CurrentBlockTimestamp ObsResult[uint64]
+	BenchmarkPrice        mercury.ObsResult[*big.Int]
+	Bid                   mercury.ObsResult[*big.Int]
+	Ask                   mercury.ObsResult[*big.Int]
+	CurrentBlockNum       mercury.ObsResult[int64]
+	CurrentBlockHash      mercury.ObsResult[[]byte]
+	CurrentBlockTimestamp mercury.ObsResult[uint64]
 	// MaxFinalizedBlockNumber comes from previous report when present and is
 	// only observed from mercury server when previous report is nil
-	MaxFinalizedBlockNumber ObsResult[int64]
+	MaxFinalizedBlockNumber mercury.ObsResult[int64]
 }
 
 // DataSource implementations must be thread-safe. Observe may be called by many
@@ -95,7 +80,7 @@ func NewFactory(ds DataSource, lggr logger.Logger, occ mercury.OnchainConfigCode
 }
 
 func (fac Factory) NewMercuryPlugin(configuration ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
-	offchainConfig, err := DecodeOffchainConfig(configuration.OffchainConfig)
+	offchainConfig, err := mercury.DecodeOffchainConfig(configuration.OffchainConfig)
 	if err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
@@ -135,7 +120,7 @@ func (fac Factory) NewMercuryPlugin(configuration ocr3types.MercuryPluginConfig)
 var _ ocr3types.MercuryPlugin = (*reportingPlugin)(nil)
 
 type reportingPlugin struct {
-	offchainConfig OffchainConfig
+	offchainConfig mercury.OffchainConfig
 	onchainConfig  mercury.OnchainConfig
 	dataSource     DataSource
 	logger         logger.Logger

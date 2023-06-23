@@ -5,14 +5,14 @@ import (
 	"math/big"
 
 	"github.com/smartcontractkit/libocr/commontypes"
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 // todo: group items by function in separate interfaces
 type ParsedObservation interface {
 	GetTimestamp() uint32
-	GetObserver()	commontypes.OracleID
+	GetObserver() commontypes.OracleID
 	GetBenchmarkPrice() *big.Int
 	GetBid() *big.Int
 	GetAsk() *big.Int

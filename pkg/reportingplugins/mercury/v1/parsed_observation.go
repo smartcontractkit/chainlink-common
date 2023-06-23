@@ -3,8 +3,8 @@ package mercury_v1
 import (
 	"math/big"
 
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
+	"github.com/smartcontractkit/libocr/commontypes"
 )
 
 var _ mercury.ParsedObservation = ParsedAttributedObservation{}

@@ -13,12 +13,12 @@ type ReportCodec interface {
 	// ParsedAttributedObservation per observer, and that all observers are
 	// valid. However, observation values, timestamps, etc... should all be
 	// treated as untrusted.
-	BuildReport(paos []mercury.ParsedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error)
+	BuildReport(paos []mercury.ParsedObservation, f int, validFromTimestamp int64) (ocrtypes.Report, error)
 
 	// MaxReportLength Returns the maximum length of a report based on n, the number of oracles.
 	// The output of BuildReport must respect this maximum length.
 	MaxReportLength(n int) (int, error)
 
-	// CurrentBlockNumFromReport returns the median current block number from a report
-	CurrentBlockNumFromReport(types.Report) (int64, error)
+	// CurrentTimestampFromReport returns the median current timestamp from a report
+	CurrentTimestampFromReport(types.Report) (int64, error)
 }

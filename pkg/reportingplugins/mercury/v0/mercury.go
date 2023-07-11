@@ -1,4 +1,4 @@
-package mercury_v2
+package mercury_v0
 
 import (
 	"context"
@@ -18,11 +18,19 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 )
 
+// Mercury-specific reporting plugin, based off of median:
+// https://github.com/smartcontractkit/offchain-reporting/blob/master/lib/offchainreporting2/reportingplugin/median/median.go
+
 type Observation struct {
 	BenchmarkPrice        mercury.ObsResult[*big.Int]
 	Bid                   mercury.ObsResult[*big.Int]
 	Ask                   mercury.ObsResult[*big.Int]
-	MaxFinalizedTimestamp mercury.ObsResult[int64]
+	CurrentBlockNum       mercury.ObsResult[int64]
+	CurrentBlockHash      mercury.ObsResult[[]byte]
+	CurrentBlockTimestamp mercury.ObsResult[uint64]
+	// MaxFinalizedBlockNumber comes from previous report when present and is
+	// only observed from mercury server when previous report is nil
+	MaxFinalizedBlockNumber mercury.ObsResult[int64]
 }
 
 // DataSource implementations must be thread-safe. Observe may be called by many
@@ -44,7 +52,7 @@ type DataSource interface {
 	//
 	// Important: Observe should not perform any potentially time-consuming
 	// actions like database access, once the context passed has expired.
-	Observe(ctx context.Context, repts ocrtypes.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (Observation, error)
+	Observe(ctx context.Context, repts ocrtypes.ReportTimestamp, fetchMaxFinalizedBlockNum bool) (Observation, error)
 }
 
 var _ ocr3types.MercuryPluginFactory = Factory{}
@@ -54,7 +62,10 @@ const maxObservationLength = 32 + // feedID
 	mercury.ByteWidthInt192 + // benchmarkPrice
 	mercury.ByteWidthInt192 + // bid
 	mercury.ByteWidthInt192 + // ask
-	8 + // validFromTimestamp
+	8 + // currentBlockNum
+	32 + // currentBlockHash
+	8 + // currentBlockTimestamp
+	8 + // validFromBlockNum
 	16 /* overapprox. of protobuf overhead */
 
 type Factory struct {
@@ -136,12 +147,14 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 
 	var obsErrors []error
 	if previousReport == nil {
-		// if previousReport we fall back to the observed MaxFinalizedTimestamp
-		if obs.MaxFinalizedTimestamp.Err != nil {
+		// if previousReport we fall back to the observed MaxFinalizedBlockNumber
+		if obs.MaxFinalizedBlockNumber.Err != nil {
 			obsErrors = append(obsErrors, err)
+		} else if obs.CurrentBlockNum.Err == nil && obs.CurrentBlockNum.Val < obs.MaxFinalizedBlockNumber.Val {
+			obsErrors = append(obsErrors, pkgerrors.Errorf("failed to observe ValidFromBlockNum; current block number %d (hash: 0x%x) < max finalized block number %d; ignoring observation for out-of-date RPC", obs.CurrentBlockNum.Val, obs.CurrentBlockHash.Val, obs.MaxFinalizedBlockNumber.Val))
 		} else {
-			p.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp.Val
-			p.MaxFinalizedTimestampValid = true
+			p.MaxFinalizedBlockNumber = obs.MaxFinalizedBlockNumber.Val // MaxFinalizedBlockNumber comes as -1 if unset
+			p.MaxFinalizedBlockNumberValid = true
 		}
 	}
 
@@ -171,6 +184,28 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 
 	if obs.BenchmarkPrice.Err == nil && obs.Bid.Err == nil && obs.Ask.Err == nil {
 		p.PricesValid = true
+	}
+
+	if obs.CurrentBlockNum.Err != nil {
+		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.CurrentBlockNum.Err, "failed to observe CurrentBlockNum"))
+	} else {
+		p.CurrentBlockNum = obs.CurrentBlockNum.Val
+	}
+
+	if obs.CurrentBlockHash.Err != nil {
+		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.CurrentBlockHash.Err, "failed to observe CurrentBlockHash"))
+	} else {
+		p.CurrentBlockHash = obs.CurrentBlockHash.Val
+	}
+
+	if obs.CurrentBlockTimestamp.Err != nil {
+		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.CurrentBlockTimestamp.Err, "failed to observe CurrentBlockTimestamp"))
+	} else {
+		p.CurrentBlockTimestamp = obs.CurrentBlockTimestamp.Val
+	}
+
+	if obs.CurrentBlockNum.Err == nil && obs.CurrentBlockHash.Err == nil && obs.CurrentBlockTimestamp.Err == nil {
+		p.CurrentBlockValid = true
 	}
 
 	if len(obsErrors) > 0 {
@@ -207,9 +242,22 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (mercury.Pars
 		pao.PricesValid = true
 	}
 
-	if obs.MaxFinalizedTimestampValid {
-		pao.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp
-		pao.MaxFinalizedTimestampValid = true
+	if obs.CurrentBlockValid {
+		if len(obs.CurrentBlockHash) != mercury.EvmHashLen {
+			return ParsedAttributedObservation{}, pkgerrors.Errorf("wrong len for hash: %d (expected: %d)", len(obs.CurrentBlockHash), mercury.EvmHashLen)
+		}
+		pao.CurrentBlockHash = obs.CurrentBlockHash
+		if obs.CurrentBlockNum < 0 {
+			return ParsedAttributedObservation{}, pkgerrors.Errorf("negative block number: %d", obs.CurrentBlockNum)
+		}
+		pao.CurrentBlockNum = obs.CurrentBlockNum
+		pao.CurrentBlockTimestamp = obs.CurrentBlockTimestamp
+		pao.CurrentBlockValid = true
+	}
+
+	if obs.MaxFinalizedBlockNumberValid {
+		pao.MaxFinalizedBlockNumber = obs.MaxFinalizedBlockNumber
+		pao.MaxFinalizedBlockNumberValid = true
 	}
 
 	return pao, nil
@@ -240,23 +288,34 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		return false, nil, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
-	// todo: calculate validFromTimestamp
-	var validFromTimestamp int64 = 0
-
-	should, err := rp.shouldReport(validFromTimestamp, repts, paos)
+	var validFromBlockNum int64
+	if previousReport != nil {
+		var currentBlockNum int64
+		currentBlockNum, err = rp.reportCodec.CurrentBlockNumFromReport(previousReport)
+		if err != nil {
+			return false, nil, err
+		}
+		validFromBlockNum = currentBlockNum + 1
+	} else {
+		var maxFinalizedBlockNumber int64
+		maxFinalizedBlockNumber, err = mercury.GetConsensusMaxFinalizedBlockNum(paos, rp.f)
+		if err != nil {
+			return false, nil, err
+		}
+		validFromBlockNum = maxFinalizedBlockNumber + 1
+	}
+	should, err := rp.shouldReport(validFromBlockNum, repts, paos)
 	if err != nil {
 		return false, nil, err
 	}
 	if !should {
 		return false, nil, nil
 	}
-
-	report, err = rp.reportCodec.BuildReport(paos, rp.f, validFromTimestamp)
+	report, err = rp.reportCodec.BuildReport(paos, rp.f, validFromBlockNum)
 	if err != nil {
-		rp.logger.Debugw("failed to BuildReport", "paos", paos, "f", rp.f, "validFromTimestamp", validFromTimestamp, "repts", repts)
+		rp.logger.Debugw("failed to BuildReport", "paos", paos, "f", rp.f, "validFromBlockNum", validFromBlockNum, "repts", repts)
 		return false, nil, err
 	}
-
 	if !(len(report) <= rp.maxReportLength) {
 		return false, nil, pkgerrors.Errorf("report with len %d violates MaxReportLength limit set by ReportCodec (%d)", len(report), rp.maxReportLength)
 	} else if len(report) == 0 {
@@ -266,16 +325,16 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 	return true, report, nil
 }
 
-func (rp *reportingPlugin) shouldReport(validFromTimestamp int64, repts types.ReportTimestamp, paos []mercury.ParsedObservation) (bool, error) {
+func (rp *reportingPlugin) shouldReport(validFromBlockNum int64, repts types.ReportTimestamp, paos []mercury.ParsedObservation) (bool, error) {
 	if !(rp.f+1 <= len(paos)) {
 		return false, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
-	// todo: add validFromTimestamp chech
 	if err := errors.Join(
 		rp.checkBenchmarkPrice(paos),
 		rp.checkBid(paos),
 		rp.checkAsk(paos),
+		rp.checkCurrentBlock(paos, validFromBlockNum),
 	); err != nil {
 		rp.logger.Debugw("shouldReport: no", "err", err)
 		return false, nil
@@ -297,6 +356,10 @@ func (rp *reportingPlugin) checkBid(paos []mercury.ParsedObservation) error {
 
 func (rp *reportingPlugin) checkAsk(paos []mercury.ParsedObservation) error {
 	return mercury.ValidateAsk(paos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
+}
+
+func (rp *reportingPlugin) checkCurrentBlock(paos []mercury.ParsedObservation, validFromBlockNum int64) error {
+	return mercury.ValidateCurrentBlock(paos, rp.f, validFromBlockNum)
 }
 
 func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {

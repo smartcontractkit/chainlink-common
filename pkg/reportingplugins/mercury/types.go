@@ -22,8 +22,6 @@ type ParsedObservation interface {
 	GetCurrentBlockValid() bool
 	GetMaxFinalizedBlockNumber() int64
 	GetMaxFinalizedBlockNumberValid() bool
-	GetMaxFinalizedTimestamp() uint32
-	GetMaxFinalizedTimestampValid() bool
 }
 
 type ObsResult[T any] struct {

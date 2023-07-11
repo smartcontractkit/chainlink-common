@@ -22,7 +22,6 @@ type Observation struct {
 	BenchmarkPrice        mercury.ObsResult[*big.Int]
 	Bid                   mercury.ObsResult[*big.Int]
 	Ask                   mercury.ObsResult[*big.Int]
-	MaxFinalizedTimestamp mercury.ObsResult[uint32]
 }
 
 // DataSource implementations must be thread-safe. Observe may be called by many
@@ -44,7 +43,7 @@ type DataSource interface {
 	//
 	// Important: Observe should not perform any potentially time-consuming
 	// actions like database access, once the context passed has expired.
-	Observe(ctx context.Context, repts ocrtypes.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (Observation, error)
+	Observe(ctx context.Context, repts ocrtypes.ReportTimestamp) (Observation, error)
 }
 
 var _ ocr3types.MercuryPluginFactory = Factory{}
@@ -123,23 +122,13 @@ type reportingPlugin struct {
 }
 
 func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.ReportTimestamp, previousReport types.Report) (ocrtypes.Observation, error) {
-	obs, err := rp.dataSource.Observe(ctx, repts, previousReport == nil)
+	obs, err := rp.dataSource.Observe(ctx, repts)
 	if err != nil {
 		return nil, pkgerrors.Errorf("DataSource.Observe returned an error: %s", err)
 	}
 
 	p := MercuryObservationProto{Timestamp: uint32(time.Now().Unix())}
-
 	var obsErrors []error
-	if previousReport == nil {
-		// if previousReport we fall back to the observed MaxFinalizedTimestamp
-		if obs.MaxFinalizedTimestamp.Err != nil {
-			obsErrors = append(obsErrors, err)
-		} else {
-			p.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp.Val
-			p.MaxFinalizedTimestampValid = true
-		}
-	}
 
 	if obs.BenchmarkPrice.Err != nil {
 		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.BenchmarkPrice.Err, "failed to observe BenchmarkPrice"))
@@ -170,7 +159,7 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	}
 
 	if len(obsErrors) > 0 {
-		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/6 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
+		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/4 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
 	}
 
 	return proto.Marshal(&p)
@@ -203,11 +192,6 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (mercury.Pars
 		pao.PricesValid = true
 	}
 
-	if obs.MaxFinalizedTimestampValid {
-		pao.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp
-		pao.MaxFinalizedTimestampValid = true
-	}
-
 	return pao, nil
 }
 
@@ -236,15 +220,19 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		return false, nil, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
-	// todo: calculate validFromTimestamp
-	var validFromTimestamp int64 = 0
+	var validFromTimestamp uint32
+	if previousReport != nil {
+		validFromTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)
+		if err != nil {
+			return false, nil, pkgerrors.Errorf("failed to extract observation timestamp from previous report: %s", err)
+		}
+	} else {
+		validFromTimestamp = mercury.GetConsensusTimestamp(paos)
+	}
 
 	should, err := rp.shouldReport(validFromTimestamp, repts, paos)
-	if err != nil {
+	if err != nil || !should {
 		return false, nil, err
-	}
-	if !should {
-		return false, nil, nil
 	}
 
 	report, err = rp.reportCodec.BuildReport(paos, rp.f, validFromTimestamp)
@@ -262,12 +250,13 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 	return true, report, nil
 }
 
-func (rp *reportingPlugin) shouldReport(validFromTimestamp int64, repts types.ReportTimestamp, paos []mercury.ParsedObservation) (bool, error) {
+func (rp *reportingPlugin) shouldReport(validFromTimestamp uint32, repts types.ReportTimestamp, paos []mercury.ParsedObservation) (bool, error) {
 	if !(rp.f+1 <= len(paos)) {
 		return false, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
-	// todo: add validFromTimestamp chech
+	// todo: add validFromTimestamp check
+
 	if err := errors.Join(
 		rp.checkBenchmarkPrice(paos),
 		rp.checkBid(paos),

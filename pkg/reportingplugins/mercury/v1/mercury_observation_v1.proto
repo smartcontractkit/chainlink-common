@@ -10,7 +10,4 @@ message MercuryObservationProto {
     bytes bid = 3;
     bytes ask = 4;
     bool pricesValid = 5;
-
-    uint32 maxFinalizedTimestamp = 6;
-    bool maxFinalizedTimestampValid = 7;
 }

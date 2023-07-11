@@ -71,3 +71,41 @@ func GetConsensusAsk(paos []IParsedAttributedObservation, f int) (*big.Int, erro
 
 	return validAsks[len(validAsks)/2], nil
 }
+
+// GetConsensusLinkFee gets the median link fee
+func GetConsensusLinkFee(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
+	var validLinkFees []*big.Int
+	for _, pao := range paos {
+		fee, valid := pao.GetLinkFee()
+		if valid {
+			validLinkFees = append(validLinkFees, fee)
+		}
+	}
+	if len(validLinkFees) < f+1 {
+		return nil, errors.New("fewer than f+1 observations have a valid price")
+	}
+	sort.Slice(validLinkFees, func(i, j int) bool {
+		return validLinkFees[i].Cmp(validLinkFees[j]) < 0
+	})
+
+	return validLinkFees[len(validLinkFees)/2], nil
+}
+
+// GetConsensusNativeFee gets the median native fee
+func GetConsensusNativeFee(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
+	var validNativeFees []*big.Int
+	for _, pao := range paos {
+		fee, valid := pao.GetNativeFee()
+		if valid {
+			validNativeFees = append(validNativeFees, fee)
+		}
+	}
+	if len(validNativeFees) < f+1 {
+		return nil, errors.New("fewer than f+1 observations have a valid price")
+	}
+	sort.Slice(validNativeFees, func(i, j int) bool {
+		return validNativeFees[i].Cmp(validNativeFees[j]) < 0
+	})
+
+	return validNativeFees[len(validNativeFees)/2], nil
+}

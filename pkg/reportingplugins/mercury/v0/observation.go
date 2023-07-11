@@ -79,3 +79,11 @@ func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumber() int64 {
 func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumberValid() bool {
 	return pao.MaxFinalizedBlockNumberValid
 }
+
+func (pao ParsedAttributedObservation) GetLinkFee() (*big.Int, bool) {
+	panic("current observation doesn't contain the field")
+}
+
+func (pao ParsedAttributedObservation) GetNativeFee() (*big.Int, bool) {
+	panic("current observation doesn't contain the field")
+}

@@ -312,6 +312,13 @@ func Test_Plugin_Observation(t *testing.T) {
 			// since previousReport is not nil, maxFinalizedBlockNumber is skipped
 			assert.False(t, p.MaxFinalizedBlockNumberValid)
 		})
+
+		t.Run("when encoding fails on some observations", func(t *testing.T) {
+			t.Fatal("TODO")
+		})
+		t.Run("when encoding fails on all observations", func(t *testing.T) {
+			t.Fatal("TODO")
+		})
 	})
 
 	t.Run("without previous report, includes maxFinalizedBlockNumber observation", func(t *testing.T) {

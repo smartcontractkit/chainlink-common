@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -22,6 +23,9 @@ type Observation struct {
 	BenchmarkPrice mercury.ObsResult[*big.Int]
 	Bid            mercury.ObsResult[*big.Int]
 	Ask            mercury.ObsResult[*big.Int]
+
+	LinkPrice   mercury.ObsResult[*big.Int]
+	NativePrice mercury.ObsResult[*big.Int]
 }
 
 // DataSource implementations must be thread-safe. Observe may be called by many
@@ -48,6 +52,7 @@ type DataSource interface {
 
 var _ ocr3types.MercuryPluginFactory = Factory{}
 
+// FIXME: Needs tests like v0
 const maxObservationLength = 32 + // feedID
 	4 + // timestamp
 	mercury.ByteWidthInt192 + // benchmarkPrice
@@ -127,39 +132,87 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		return nil, pkgerrors.Errorf("DataSource.Observe returned an error: %s", err)
 	}
 
-	p := MercuryObservationProto{Timestamp: uint32(time.Now().Unix())}
+	observationTimestamp := time.Now()
+	if observationTimestamp.Unix() > math.MaxUint32 {
+		return nil, fmt.Errorf("current unix epoch %d exceeds max uint32", observationTimestamp.Unix())
+	}
+	p := MercuryObservationProto{Timestamp: uint32(observationTimestamp.Unix())}
 	var obsErrors []error
 
+	var bpErr, bidErr, askErr error
 	if obs.BenchmarkPrice.Err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.BenchmarkPrice.Err, "failed to observe BenchmarkPrice"))
+		bpErr = pkgerrors.Wrap(obs.BenchmarkPrice.Err, "failed to observe BenchmarkPrice")
+		obsErrors = append(obsErrors, bpErr)
 	} else if benchmarkPrice, err := mercury.EncodeValueInt192(obs.BenchmarkPrice.Val); err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(err, "failed to observe BenchmarkPrice; encoding failed"))
+		bpErr = pkgerrors.Wrap(err, "failed to observe BenchmarkPrice; encoding failed")
+		obsErrors = append(obsErrors, bpErr)
 	} else {
 		p.BenchmarkPrice = benchmarkPrice
 	}
 
 	if obs.Bid.Err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.Bid.Err, "failed to observe Bid"))
+		// TODO: Add tests that its invalid if encoding fails on all
+		bidErr = pkgerrors.Wrap(obs.Bid.Err, "failed to observe Bid")
+		obsErrors = append(obsErrors, bidErr)
 	} else if bid, err := mercury.EncodeValueInt192(obs.Bid.Val); err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(err, "failed to observe Bid; encoding failed"))
+		bidErr = pkgerrors.Wrap(err, "failed to observe Bid; encoding failed")
+		obsErrors = append(obsErrors, bidErr)
 	} else {
 		p.Bid = bid
 	}
 
 	if obs.Ask.Err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.Ask.Err, "failed to observe Ask"))
+		askErr = pkgerrors.Wrap(obs.Ask.Err, "failed to observe Ask")
+		obsErrors = append(obsErrors, askErr)
 	} else if bid, err := mercury.EncodeValueInt192(obs.Ask.Val); err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(err, "failed to observe Ask; encoding failed"))
+		askErr = pkgerrors.Wrap(err, "failed to observe Ask; encoding failed")
+		obsErrors = append(obsErrors, askErr)
 	} else {
 		p.Ask = bid
 	}
 
-	if obs.BenchmarkPrice.Err == nil && obs.Bid.Err == nil && obs.Ask.Err == nil {
+	if bpErr == nil && bidErr == nil && askErr == nil {
 		p.PricesValid = true
 	}
 
+	var linkErr error
+	if obs.LinkPrice.Err != nil {
+		linkErr = pkgerrors.Wrap(obs.LinkPrice.Err, "failed to observe LINK price")
+		obsErrors = append(obsErrors, linkErr)
+	} else {
+		linkFee := CalculateFee(obs.LinkPrice.Val, rp.offchainConfig.BaseUSDFeeCents)
+		if linkFeeEncoded, err := mercury.EncodeValueInt192(linkFee); err != nil {
+			linkErr = pkgerrors.Wrap(err, "failed to observe LINK price; encoding failed")
+			obsErrors = append(obsErrors, linkErr)
+		} else {
+			p.LinkFee = linkFeeEncoded
+		}
+	}
+
+	if linkErr == nil {
+		p.LinkFeeValid = true
+	}
+
+	var nativeErr error
+	if obs.NativePrice.Err != nil {
+		nativeErr = pkgerrors.Wrap(obs.NativePrice.Err, "failed to observe native price")
+		obsErrors = append(obsErrors, nativeErr)
+	} else {
+		nativeFee := CalculateFee(obs.NativePrice.Val, rp.offchainConfig.BaseUSDFeeCents)
+		if nativeFeeEncoded, err := mercury.EncodeValueInt192(nativeFee); err != nil {
+			nativeErr = pkgerrors.Wrap(err, "failed to observe native price; encoding failed")
+			obsErrors = append(obsErrors, nativeErr)
+		} else {
+			p.NativeFee = nativeFeeEncoded
+		}
+	}
+
+	if nativeErr == nil {
+		p.NativeFeeValid = true
+	}
+
 	if len(obsErrors) > 0 {
-		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/4 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
+		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/5 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
 	}
 
 	return proto.Marshal(&p)
@@ -192,6 +245,23 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 		pao.PricesValid = true
 	}
 
+	if obs.LinkFeeValid {
+		var err error
+		pao.LinkFee, err = mercury.DecodeValueInt192(obs.LinkFee)
+		if err != nil {
+			return ParsedAttributedObservation{}, pkgerrors.Errorf("link price cannot be converted to big.Int: %s", err)
+		}
+		pao.LinkFeeValid = true
+	}
+	if obs.NativeFeeValid {
+		var err error
+		pao.NativeFee, err = mercury.DecodeValueInt192(obs.NativeFee)
+		if err != nil {
+			return ParsedAttributedObservation{}, pkgerrors.Errorf("native price cannot be converted to big.Int: %s", err)
+		}
+		pao.NativeFeeValid = true
+	}
+
 	return pao, nil
 }
 
@@ -220,6 +290,7 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		return false, nil, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
+	observationTimestamp := mercury.GetConsensusTimestamp(paos)
 	var validFromTimestamp uint32
 	if previousReport != nil {
 		validFromTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)
@@ -228,7 +299,7 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		}
 	} else {
 		// todo: get rid of this calculation here
-		//validFromTimestamp = mercury.GetConsensusTimestamp(paos)
+		//validFromTimestamp = observationTimestamp
 		validFromTimestamp = 0
 	}
 
@@ -237,7 +308,12 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		return false, nil, err
 	}
 
-	report, err = rp.reportCodec.BuildReport(paos, rp.f, validFromTimestamp)
+	if (int64(observationTimestamp) + int64(rp.offchainConfig.ExpirationWindow)) > math.MaxUint32 {
+		return false, nil, fmt.Errorf("timestamp %d + expiration window %d overflows uint32", observationTimestamp, rp.offchainConfig.ExpirationWindow)
+	}
+	var expiresAt uint32 = observationTimestamp + rp.offchainConfig.ExpirationWindow
+
+	report, err = rp.reportCodec.BuildReport(paos, rp.f, validFromTimestamp, expiresAt)
 	if err != nil {
 		rp.logger.Debugw("failed to BuildReport", "paos", paos, "f", rp.f, "validFromTimestamp", validFromTimestamp, "repts", repts)
 		return false, nil, err
@@ -290,7 +366,7 @@ func (rp *reportingPlugin) checkAsk(paos []IParsedAttributedObservation) error {
 }
 
 func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {
-	reportEpochRound := mercury.EpochRound{repts.Epoch, repts.Round}
+	reportEpochRound := mercury.EpochRound{Epoch: repts.Epoch, Round: repts.Round}
 	if !rp.latestAcceptedEpochRound.Less(reportEpochRound) {
 		rp.logger.Debugw("ShouldAcceptFinalizedReport() = false, report is stale",
 			"latestAcceptedEpochRound", rp.latestAcceptedEpochRound,

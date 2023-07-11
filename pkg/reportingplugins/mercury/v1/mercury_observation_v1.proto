@@ -10,4 +10,9 @@ message MercuryObservationProto {
     bytes bid = 3;
     bytes ask = 4;
     bool pricesValid = 5;
+
+    bytes linkFee = 6;
+    bool linkFeeValid =7;
+    bytes nativeFee = 8;
+    bool nativeFeeValid = 9;
 }

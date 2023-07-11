@@ -15,6 +15,9 @@ type IParsedAttributedObservation interface {
 	GetBid() *big.Int
 	GetAsk() *big.Int
 	GetPricesValid() bool
+
+	GetLinkFee() (*big.Int, bool)
+	GetNativeFee() (*big.Int, bool)
 }
 
 type ObsResult[T any] struct {
@@ -31,6 +34,7 @@ type Fetcher interface {
 	// FetchInitialMaxFinalizedBlockNumber should fetch the initial max
 	// finalized block number from the mercury server.
 	FetchInitialMaxFinalizedBlockNumber(context.Context) (*int64, error)
+	LatestPrice(ctx context.Context, feedID [32]byte) (*big.Int, error)
 }
 
 type Transmitter interface {

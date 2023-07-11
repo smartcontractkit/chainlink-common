@@ -158,31 +158,39 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		}
 	}
 
+	// TODO: common code with v1/v2, can we pull it out?
+	var bpErr, bidErr, askErr error
 	if obs.BenchmarkPrice.Err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.BenchmarkPrice.Err, "failed to observe BenchmarkPrice"))
+		bpErr = pkgerrors.Wrap(obs.BenchmarkPrice.Err, "failed to observe BenchmarkPrice")
+		obsErrors = append(obsErrors, bpErr)
 	} else if benchmarkPrice, err := mercury.EncodeValueInt192(obs.BenchmarkPrice.Val); err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(err, "failed to observe BenchmarkPrice; encoding failed"))
+		bpErr = pkgerrors.Wrap(err, "failed to observe BenchmarkPrice; encoding failed")
+		obsErrors = append(obsErrors, bpErr)
 	} else {
 		p.BenchmarkPrice = benchmarkPrice
 	}
 
 	if obs.Bid.Err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.Bid.Err, "failed to observe Bid"))
+		bidErr = pkgerrors.Wrap(obs.Bid.Err, "failed to observe Bid")
+		obsErrors = append(obsErrors, bidErr)
 	} else if bid, err := mercury.EncodeValueInt192(obs.Bid.Val); err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(err, "failed to observe Bid; encoding failed"))
+		bidErr = pkgerrors.Wrap(err, "failed to observe Bid; encoding failed")
+		obsErrors = append(obsErrors, bidErr)
 	} else {
 		p.Bid = bid
 	}
 
 	if obs.Ask.Err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(obs.Ask.Err, "failed to observe Ask"))
+		askErr = pkgerrors.Wrap(obs.Ask.Err, "failed to observe Ask")
+		obsErrors = append(obsErrors, askErr)
 	} else if bid, err := mercury.EncodeValueInt192(obs.Ask.Val); err != nil {
-		obsErrors = append(obsErrors, pkgerrors.Wrap(err, "failed to observe Ask; encoding failed"))
+		askErr = pkgerrors.Wrap(err, "failed to observe Ask; encoding failed")
+		obsErrors = append(obsErrors, askErr)
 	} else {
 		p.Ask = bid
 	}
 
-	if obs.BenchmarkPrice.Err == nil && obs.Bid.Err == nil && obs.Ask.Err == nil {
+	if bpErr == nil && bidErr == nil && askErr == nil {
 		p.PricesValid = true
 	}
 
@@ -366,7 +374,7 @@ func (rp *reportingPlugin) checkCurrentBlock(paos []IParsedAttributedObservation
 }
 
 func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {
-	reportEpochRound := mercury.EpochRound{repts.Epoch, repts.Round}
+	reportEpochRound := mercury.EpochRound{Epoch: repts.Epoch, Round: repts.Round}
 	if !rp.latestAcceptedEpochRound.Less(reportEpochRound) {
 		rp.logger.Debugw("ShouldAcceptFinalizedReport() = false, report is stale",
 			"latestAcceptedEpochRound", rp.latestAcceptedEpochRound,

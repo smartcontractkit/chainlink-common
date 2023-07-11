@@ -16,6 +16,12 @@ type ParsedAttributedObservation struct {
 	Bid            *big.Int
 	Ask            *big.Int
 	PricesValid    bool
+
+	LinkFee      *big.Int
+	LinkFeeValid bool
+
+	NativeFee      *big.Int
+	NativeFeeValid bool
 }
 
 func (pao ParsedAttributedObservation) GetTimestamp() uint32 {
@@ -26,6 +32,7 @@ func (pao ParsedAttributedObservation) GetObserver() commontypes.OracleID {
 	return pao.Observer
 }
 
+// TODO: Change these to return (val, bool)
 func (pao ParsedAttributedObservation) GetBenchmarkPrice() *big.Int {
 	return pao.BenchmarkPrice
 }
@@ -40,4 +47,12 @@ func (pao ParsedAttributedObservation) GetAsk() *big.Int {
 
 func (pao ParsedAttributedObservation) GetPricesValid() bool {
 	return pao.PricesValid
+}
+
+func (pao ParsedAttributedObservation) GetLinkFee() (*big.Int, bool) {
+	return pao.LinkFee, pao.LinkFeeValid
+}
+
+func (pao ParsedAttributedObservation) GetNativeFee() (*big.Int, bool) {
+	return pao.NativeFee, pao.NativeFeeValid
 }

@@ -54,7 +54,7 @@ const maxObservationLength = 32 + // feedID
 	mercury.ByteWidthInt192 + // benchmarkPrice
 	mercury.ByteWidthInt192 + // bid
 	mercury.ByteWidthInt192 + // ask
-	8 + // validFromTimestamp
+	4 + // validFromTimestamp
 	16 /* overapprox. of protobuf overhead */
 
 type Factory struct {
@@ -120,10 +120,6 @@ type reportingPlugin struct {
 	latestAcceptedEpochRound mercury.EpochRound
 	latestAcceptedMedian     *big.Int
 	maxReportLength          int
-}
-
-func (rp *reportingPlugin) Query(ctx context.Context, repts ocrtypes.ReportTimestamp) (ocrtypes.Query, error) {
-	return nil, nil
 }
 
 func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.ReportTimestamp, previousReport types.Report) (ocrtypes.Observation, error) {

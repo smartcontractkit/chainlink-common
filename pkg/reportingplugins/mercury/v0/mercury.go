@@ -133,10 +133,6 @@ type reportingPlugin struct {
 	maxReportLength          int
 }
 
-func (rp *reportingPlugin) Query(ctx context.Context, repts ocrtypes.ReportTimestamp) (ocrtypes.Query, error) {
-	return nil, nil
-}
-
 func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.ReportTimestamp, previousReport types.Report) (ocrtypes.Observation, error) {
 	obs, err := rp.dataSource.Observe(ctx, repts, previousReport == nil)
 	if err != nil {

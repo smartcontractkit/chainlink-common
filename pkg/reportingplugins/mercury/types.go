@@ -22,7 +22,7 @@ type ParsedObservation interface {
 	GetCurrentBlockValid() bool
 	GetMaxFinalizedBlockNumber() int64
 	GetMaxFinalizedBlockNumberValid() bool
-	GetMaxFinalizedTimestamp() int64
+	GetMaxFinalizedTimestamp() uint32
 	GetMaxFinalizedTimestampValid() bool
 }
 

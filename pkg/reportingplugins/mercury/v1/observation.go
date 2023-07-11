@@ -18,7 +18,7 @@ type ParsedAttributedObservation struct {
 	Ask            *big.Int
 	PricesValid    bool
 
-	MaxFinalizedTimestamp      int64
+	MaxFinalizedTimestamp      uint32
 	MaxFinalizedTimestampValid bool
 }
 
@@ -46,7 +46,7 @@ func (pao ParsedAttributedObservation) GetPricesValid() bool {
 	return pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetMaxFinalizedTimestamp() int64 {
+func (pao ParsedAttributedObservation) GetMaxFinalizedTimestamp() uint32 {
 	return pao.MaxFinalizedTimestamp
 }
 

@@ -19,6 +19,6 @@ type ReportCodec interface {
 	// The output of BuildReport must respect this maximum length.
 	MaxReportLength(n int) (int, error)
 
-	// CurrentTimestampFromReport returns the median current timestamp from a report
+	// CurrentTimestampFromReport returns the consensus current timestamp from a report
 	CurrentTimestampFromReport(types.Report) (int64, error)
 }

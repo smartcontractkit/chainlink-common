@@ -22,7 +22,7 @@ type Observation struct {
 	BenchmarkPrice        mercury.ObsResult[*big.Int]
 	Bid                   mercury.ObsResult[*big.Int]
 	Ask                   mercury.ObsResult[*big.Int]
-	MaxFinalizedTimestamp mercury.ObsResult[int64]
+	MaxFinalizedTimestamp mercury.ObsResult[uint32]
 }
 
 // DataSource implementations must be thread-safe. Observe may be called by many

@@ -48,6 +48,9 @@ func (s startStopOnceState) String() string {
 type StartStopOnce struct {
 	state        atomic.Int32
 	sync.RWMutex // lock is held during startup/shutdown, RLock is held while executing functions dependent on a particular state
+
+	// SvcErrBuffer is an ErrorBuffer that let service owners track critical errors happening in the service.
+	SvcErrBuffer ErrorBuffer
 }
 
 // StartOnce sets the state to Started

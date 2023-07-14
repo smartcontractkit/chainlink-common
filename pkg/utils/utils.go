@@ -5,6 +5,8 @@ import (
 	"math"
 	mrand "math/rand"
 	"time"
+
+	"github.com/jpillora/backoff"
 )
 
 // WithJitter adds +/- 10% to a duration
@@ -49,4 +51,26 @@ func ContextWithDeadlineFn(ctx context.Context, deadlineFn func(orig time.Time) 
 		}
 	}
 	return ctx, cancel
+}
+
+// NewRedialBackoff is a standard backoff to use for redialling or reconnecting to
+// unreachable network endpoints
+func NewRedialBackoff() backoff.Backoff {
+	return backoff.Backoff{
+		Min:    1 * time.Second,
+		Max:    15 * time.Second,
+		Jitter: true,
+	}
+
+}
+
+// UnwrapError returns a list of underlying errors if passed error implements joinedError or return the err in a single-element list otherwise.
+//
+//nolint:errorlint // error type checks will fail on wrapped errors. Disabled since we are not doing checks on error types.
+func UnwrapError(err error) []error {
+	joined, ok := err.(interface{ Unwrap() []error })
+	if !ok {
+		return []error{err}
+	}
+	return joined.Unwrap()
 }

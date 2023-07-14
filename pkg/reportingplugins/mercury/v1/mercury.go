@@ -290,7 +290,7 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		return false, nil, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
-	observationTimestamp := mercury.GetConsensusTimestamp(paos)
+	observationTimestamp := mercury.GetConsensusTimestamp(Convert(paos))
 	var validFromTimestamp uint32
 	if previousReport != nil {
 		validFromTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)

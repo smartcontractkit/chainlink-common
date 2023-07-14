@@ -161,20 +161,17 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 	return &pb.SignReply{SignedData: signed}, nil
 }
 
-// Relayer extends [types.Relayer] and includes [context.Context]s.
+// Relayer is a Service composed of [types.Relayer] and [types.ChainTransactor].
+// It mirrors the methods [types.Relayer] with context-aware functionality, which is needed for
+// cross process communcation.
+
 type Relayer interface {
 	types.Service
+	types.ChainTransactor
 
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)
 	NewMedianProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.MedianProvider, error)
 	NewMercuryProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.MercuryProvider, error)
-
-	ChainStatus(ctx context.Context, id string) (types.ChainStatus, error)
-	ChainStatuses(ctx context.Context, offset, limit int) (chains []types.ChainStatus, count int, err error)
-
-	NodeStatuses(ctx context.Context, offset, limit int, chainIDs ...string) (nodes []types.NodeStatus, count int, err error)
-
-	SendTx(ctx context.Context, chainID, from, to string, amount *big.Int, balanceCheck bool) error
 }
 
 var _ Relayer = (*relayerClient)(nil)

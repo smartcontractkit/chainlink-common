@@ -24,7 +24,7 @@ type Service interface {
 // per relay type, so we pass the config directly through.
 type PluginArgs struct {
 	TransmitterID string
-	PluginConfig  []byte
+	PluginConfig  []byte // OCR2 plugin implementations are responsible for de/serializing as needed
 }
 
 type RelayArgs struct {
@@ -35,6 +35,7 @@ type RelayArgs struct {
 	RelayConfig   []byte
 }
 
+// Relayer is a Service that instatiates product-specific
 type Relayer interface {
 	Service
 	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)
@@ -42,7 +43,8 @@ type Relayer interface {
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 }
 
-// The bootstrap jobs only watch config.
+// ConfigProvider is the basic building block [Service] for OCR2 jobs
+// with is use to watch for configuration changes.
 type ConfigProvider interface {
 	Service
 	OffchainConfigDigester() ocrtypes.OffchainConfigDigester
@@ -53,8 +55,8 @@ type ConfigProvider interface {
 // Deprecated
 type Plugin = PluginProvider
 
-// PluginProvider provides common components for any OCR2 plugin.
-// It watches config and is able to transmit.
+// PluginProvider is the common interface for all OCR2 plugins.
+// It extends [ConfigProvider] with the ability to transmit
 type PluginProvider interface {
 	ConfigProvider
 	ContractTransmitter() ocrtypes.ContractTransmitter
@@ -64,8 +66,8 @@ type PluginProvider interface {
 type MedianProvider interface {
 	PluginProvider
 	ReportCodec() median.ReportCodec
-	MedianContract() median.MedianContract
 	OnchainConfigCodec() median.OnchainConfigCodec
+	MedianContract() median.MedianContract
 }
 
 // MercuryProvider provides components needed for a mercury OCR2 plugin.

@@ -57,16 +57,20 @@ type DataSource interface {
 
 var _ ocr3types.MercuryPluginFactory = Factory{}
 
-const maxObservationLength = 32 + // feedID
-	4 + // timestamp
+// Maximum length in bytes of Observation, Report returned by the
+// MercuryPlugin. Used for defending against spam attacks.
+const maxObservationLength = 4 + // timestamp
 	mercury.ByteWidthInt192 + // benchmarkPrice
 	mercury.ByteWidthInt192 + // bid
 	mercury.ByteWidthInt192 + // ask
+	1 + // pricesValid
 	8 + // currentBlockNum
 	32 + // currentBlockHash
 	8 + // currentBlockTimestamp
-	8 + // validFromBlockNum
-	16 /* overapprox. of protobuf overhead */
+	1 + // currentBlockValid
+	8 + // maxFinalizedBlockNumber
+	1 + // maxFinalizedBlockNumberValid
+	32 // [> overapprox. of protobuf overhead <]
 
 type Factory struct {
 	dataSource         DataSource

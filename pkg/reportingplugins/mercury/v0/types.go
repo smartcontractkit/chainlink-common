@@ -6,6 +6,25 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
+type IParsedAttributedObservation interface {
+	mercury.IParsedAttributedObservation
+	
+	GetCurrentBlockNum() int64
+	GetCurrentBlockHash() []byte
+	GetCurrentBlockTimestamp() uint64
+	GetCurrentBlockValid() bool
+	GetMaxFinalizedBlockNumber() int64
+	GetMaxFinalizedBlockNumberValid() bool
+}
+
+func Convert(pao []IParsedAttributedObservation) []mercury.IParsedAttributedObservation {
+	var ret []mercury.IParsedAttributedObservation
+	for _, v := range pao {
+		ret = append(ret, v)
+	}
+	return ret
+}
+
 // ReportCodec All functions on ReportCodec should be pure and thread-safe.
 // Be careful validating and parsing any data passed.
 type ReportCodec interface {
@@ -13,7 +32,7 @@ type ReportCodec interface {
 	// ParsedAttributedObservation per observer, and that all observers are
 	// valid. However, observation values, timestamps, etc... should all be
 	// treated as untrusted.
-	BuildReport(paos []mercury.ParsedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error)
+	BuildReport(paos []IParsedAttributedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error)
 
 	// MaxReportLength Returns the maximum length of a report based on n, the number of oracles.
 	// The output of BuildReport must respect this maximum length.

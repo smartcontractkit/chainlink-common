@@ -1,7 +1,6 @@
 package mercury
 
 import (
-	"fmt"
 	"math/big"
 
 	pkgerrors "github.com/pkg/errors"
@@ -10,7 +9,7 @@ import (
 // NOTE: hardcoded for now, this may need to change if we support block range on chains other than eth
 const EvmHashLen = 32
 
-func ValidateBenchmarkPrice(paos []ParsedObservation, f int, min, max *big.Int) error {
+func ValidateBenchmarkPrice(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBenchmarkPrice(paos, f)
 	if err != nil {
 		return err
@@ -23,7 +22,7 @@ func ValidateBenchmarkPrice(paos []ParsedObservation, f int, min, max *big.Int) 
 	return nil
 }
 
-func ValidateBid(paos []ParsedObservation, f int, min, max *big.Int) error {
+func ValidateBid(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBid(paos, f)
 	if err != nil {
 		return err
@@ -36,7 +35,7 @@ func ValidateBid(paos []ParsedObservation, f int, min, max *big.Int) error {
 	return nil
 }
 
-func ValidateAsk(paos []ParsedObservation, f int, min, max *big.Int) error {
+func ValidateAsk(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusAsk(paos, f)
 	if err != nil {
 		return err
@@ -44,47 +43,6 @@ func ValidateAsk(paos []ParsedObservation, f int, min, max *big.Int) error {
 
 	if !(min.Cmp(answer) <= 0 && answer.Cmp(max) <= 0) {
 		return pkgerrors.Errorf("median ask price %s is outside of allowable range (Min: %s, Max: %s)", answer, min, max)
-	}
-
-	return nil
-}
-
-func ValidateCurrentBlock(paos []ParsedObservation, f int, validFromBlockNum int64) error {
-	if validFromBlockNum < 0 {
-		return fmt.Errorf("validFromBlockNum must be >= 0 (got: %d)", validFromBlockNum)
-	}
-	var newBlockRangePaos []ParsedObservation
-	for _, pao := range paos {
-		if pao.GetCurrentBlockValid() && pao.GetCurrentBlockNum() >= validFromBlockNum {
-			newBlockRangePaos = append(newBlockRangePaos, pao)
-		}
-	}
-
-	if len(newBlockRangePaos) < f+1 {
-		s := fmt.Sprintf("only %v/%v attributed observations have currentBlockNum >= validFromBlockNum, need at least f+1 (%v/%v) to make a new report", len(newBlockRangePaos), len(paos), f+1, len(paos))
-		_, num, _, err := GetConsensusCurrentBlock(paos, f)
-		if err == nil {
-			return fmt.Errorf("%s; consensusCurrentBlock=%d, validFromBlockNum=%d", s, num, validFromBlockNum)
-		}
-		return fmt.Errorf("%s; GetConsensusCurrentBlock failed: %w", s, err)
-	}
-	hash, num, _, err := GetConsensusCurrentBlock(newBlockRangePaos, f)
-	if err != nil {
-		return fmt.Errorf("GetConsensusCurrentBlock failed: %w", err)
-	}
-
-	if num < 0 {
-		return pkgerrors.Errorf("block number must be >= 0 (got: %d)", num)
-	}
-
-	// NOTE: hardcoded ethereum hash
-	if len(hash) != EvmHashLen {
-		return pkgerrors.Errorf("invalid length for hash; expected %d (got: %d)", EvmHashLen, len(hash))
-	}
-
-	if validFromBlockNum > num {
-		// should be impossible actually due to filtering above, but here for sanity check
-		return pkgerrors.Errorf("validFromBlockNum (%d) must be less than current block number (%d)", validFromBlockNum, num)
 	}
 
 	return nil

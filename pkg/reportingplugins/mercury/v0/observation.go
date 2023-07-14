@@ -3,11 +3,10 @@ package mercury_v0
 import (
 	"math/big"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	"github.com/smartcontractkit/libocr/commontypes"
 )
 
-var _ mercury.ParsedObservation = ParsedAttributedObservation{}
+var _ IParsedAttributedObservation = ParsedAttributedObservation{}
 
 type ParsedAttributedObservation struct {
 	Timestamp uint32

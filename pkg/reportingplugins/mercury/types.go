@@ -8,20 +8,13 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-// todo: group items by function in separate interfaces
-type ParsedObservation interface {
+type IParsedAttributedObservation interface {
 	GetTimestamp() uint32
 	GetObserver() commontypes.OracleID
 	GetBenchmarkPrice() *big.Int
 	GetBid() *big.Int
 	GetAsk() *big.Int
 	GetPricesValid() bool
-	GetCurrentBlockNum() int64
-	GetCurrentBlockHash() []byte
-	GetCurrentBlockTimestamp() uint64
-	GetCurrentBlockValid() bool
-	GetMaxFinalizedBlockNumber() int64
-	GetMaxFinalizedBlockNumberValid() bool
 }
 
 type ObsResult[T any] struct {

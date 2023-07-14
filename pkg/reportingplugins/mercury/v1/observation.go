@@ -3,11 +3,10 @@ package mercury_v1
 import (
 	"math/big"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	"github.com/smartcontractkit/libocr/commontypes"
 )
 
-var _ mercury.ParsedObservation = ParsedAttributedObservation{}
+var _ IParsedAttributedObservation = ParsedAttributedObservation{}
 
 type ParsedAttributedObservation struct {
 	Timestamp uint32
@@ -41,28 +40,4 @@ func (pao ParsedAttributedObservation) GetAsk() *big.Int {
 
 func (pao ParsedAttributedObservation) GetPricesValid() bool {
 	return pao.PricesValid
-}
-
-func (pao ParsedAttributedObservation) GetCurrentBlockNum() int64 {
-	panic("current observation doesn't contain the field")
-}
-
-func (pao ParsedAttributedObservation) GetCurrentBlockHash() []byte {
-	panic("current observation doesn't contain the field")
-}
-
-func (pao ParsedAttributedObservation) GetCurrentBlockTimestamp() uint64 {
-	panic("current observation doesn't contain the field")
-}
-
-func (pao ParsedAttributedObservation) GetCurrentBlockValid() bool {
-	panic("current observation doesn't contain the field")
-}
-
-func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumber() int64 {
-	panic("current observation doesn't contain the field")
-}
-
-func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumberValid() bool {
-	panic("current observation doesn't contain the field")
 }

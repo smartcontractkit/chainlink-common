@@ -211,7 +211,7 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	return proto.Marshal(&p)
 }
 
-func parseAttributedObservation(ao ocrtypes.AttributedObservation) (mercury.ParsedObservation, error) {
+func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttributedObservation, error) {
 	var pao ParsedAttributedObservation
 	var obs MercuryObservationProto
 	if err := proto.Unmarshal(ao.Observation, &obs); err != nil {
@@ -259,8 +259,8 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (mercury.Pars
 	return pao, nil
 }
 
-func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedObservation) []mercury.ParsedObservation {
-	paos := make([]mercury.ParsedObservation, 0, len(aos))
+func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedObservation) []IParsedAttributedObservation {
+	paos := make([]IParsedAttributedObservation, 0, len(aos))
 	for i, ao := range aos {
 		pao, err := parseAttributedObservation(ao)
 		if err != nil {
@@ -294,7 +294,7 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		validFromBlockNum = currentBlockNum + 1
 	} else {
 		var maxFinalizedBlockNumber int64
-		maxFinalizedBlockNumber, err = mercury.GetConsensusMaxFinalizedBlockNum(paos, rp.f)
+		maxFinalizedBlockNumber, err = GetConsensusMaxFinalizedBlockNum(paos, rp.f)
 		if err != nil {
 			return false, nil, err
 		}
@@ -321,7 +321,7 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 	return true, report, nil
 }
 
-func (rp *reportingPlugin) shouldReport(validFromBlockNum int64, repts types.ReportTimestamp, paos []mercury.ParsedObservation) (bool, error) {
+func (rp *reportingPlugin) shouldReport(validFromBlockNum int64, repts types.ReportTimestamp, paos []IParsedAttributedObservation) (bool, error) {
 	if !(rp.f+1 <= len(paos)) {
 		return false, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
@@ -342,20 +342,23 @@ func (rp *reportingPlugin) shouldReport(validFromBlockNum int64, repts types.Rep
 	return true, nil
 }
 
-func (rp *reportingPlugin) checkBenchmarkPrice(paos []mercury.ParsedObservation) error {
-	return mercury.ValidateBenchmarkPrice(paos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
+func (rp *reportingPlugin) checkBenchmarkPrice(paos []IParsedAttributedObservation) error {
+	mPaos := Convert(paos)
+	return mercury.ValidateBenchmarkPrice(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkBid(paos []mercury.ParsedObservation) error {
-	return mercury.ValidateBid(paos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
+func (rp *reportingPlugin) checkBid(paos []IParsedAttributedObservation) error {
+	mPaos := Convert(paos)
+	return mercury.ValidateBid(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkAsk(paos []mercury.ParsedObservation) error {
-	return mercury.ValidateAsk(paos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
+func (rp *reportingPlugin) checkAsk(paos []IParsedAttributedObservation) error {
+	mPaos := Convert(paos)
+	return mercury.ValidateAsk(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkCurrentBlock(paos []mercury.ParsedObservation, validFromBlockNum int64) error {
-	return mercury.ValidateCurrentBlock(paos, rp.f, validFromBlockNum)
+func (rp *reportingPlugin) checkCurrentBlock(paos []IParsedAttributedObservation, validFromBlockNum int64) error {
+	return ValidateCurrentBlock(paos, rp.f, validFromBlockNum)
 }
 
 func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {

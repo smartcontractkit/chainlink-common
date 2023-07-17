@@ -11,10 +11,9 @@ import (
 type IParsedAttributedObservation interface {
 	GetTimestamp() uint32
 	GetObserver() commontypes.OracleID
-	GetBenchmarkPrice() *big.Int
-	GetBid() *big.Int
-	GetAsk() *big.Int
-	GetPricesValid() bool
+	GetBenchmarkPrice() (*big.Int, bool)
+	GetBid() (*big.Int, bool)
+	GetAsk() (*big.Int, bool)
 
 	GetLinkFee() (*big.Int, bool)
 	GetNativeFee() (*big.Int, bool)

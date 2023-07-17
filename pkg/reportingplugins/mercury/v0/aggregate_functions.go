@@ -30,7 +30,8 @@ func (b1 block) less(b2 block) bool {
 func GetConsensusCurrentBlock(paos []IParsedAttributedObservation, f int) (hash []byte, num int64, ts uint64, err error) {
 	var validPaos []IParsedAttributedObservation
 	for _, pao := range paos {
-		if pao.GetCurrentBlockValid() {
+		_, valid := pao.GetCurrentBlockHash()
+		if valid {
 			validPaos = append(validPaos, pao)
 		}
 	}
@@ -41,7 +42,10 @@ func GetConsensusCurrentBlock(paos []IParsedAttributedObservation, f int) (hash 
 	m := map[block]int{}
 	maxCnt := 0
 	for _, pao := range validPaos {
-		b := block{string(pao.GetCurrentBlockHash()), pao.GetCurrentBlockNum(), pao.GetCurrentBlockTimestamp()}
+		blockHash, _ := pao.GetCurrentBlockHash()
+		blockNum, _ := pao.GetCurrentBlockNum()
+		blockTs, _ := pao.GetCurrentBlockTimestamp()
+		b := block{string(blockHash), blockNum, blockTs}
 		m[b]++
 		if cnt := m[b]; cnt > maxCnt {
 			maxCnt = cnt
@@ -71,7 +75,8 @@ func GetConsensusCurrentBlock(paos []IParsedAttributedObservation, f int) (hash 
 func GetConsensusMaxFinalizedBlockNum(paos []IParsedAttributedObservation, f int) (int64, error) {
 	var validPaos []IParsedAttributedObservation
 	for _, pao := range paos {
-		if pao.GetMaxFinalizedBlockNumberValid() {
+		_, valid := pao.GetMaxFinalizedBlockNumber()
+		if valid {
 			validPaos = append(validPaos, pao)
 		}
 	}
@@ -82,7 +87,7 @@ func GetConsensusMaxFinalizedBlockNum(paos []IParsedAttributedObservation, f int
 	m := map[int64]int{}
 	maxCnt := 0
 	for _, pao := range validPaos {
-		n := pao.GetMaxFinalizedBlockNumber()
+		n, _ := pao.GetMaxFinalizedBlockNumber()
 		m[n]++
 		if cnt := m[n]; cnt > maxCnt {
 			maxCnt = cnt

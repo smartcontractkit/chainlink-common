@@ -22,8 +22,9 @@ func GetConsensusTimestamp(paos []IParsedAttributedObservation) uint32 {
 func GetConsensusBenchmarkPrice(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
 	var validBenchmarkPrices []*big.Int
 	for _, pao := range paos {
-		if pao.GetPricesValid() {
-			validBenchmarkPrices = append(validBenchmarkPrices, pao.GetBenchmarkPrice())
+		bmPrice, valid := pao.GetBenchmarkPrice()
+		if valid {
+			validBenchmarkPrices = append(validBenchmarkPrices, bmPrice)
 		}
 	}
 	if len(validBenchmarkPrices) < f+1 {
@@ -40,8 +41,9 @@ func GetConsensusBenchmarkPrice(paos []IParsedAttributedObservation, f int) (*bi
 func GetConsensusBid(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
 	var validBids []*big.Int
 	for _, pao := range paos {
-		if pao.GetPricesValid() {
-			validBids = append(validBids, pao.GetBid())
+		bid, valid := pao.GetBid()
+		if valid {
+			validBids = append(validBids, bid)
 		}
 	}
 	if len(validBids) < f+1 {
@@ -58,8 +60,9 @@ func GetConsensusBid(paos []IParsedAttributedObservation, f int) (*big.Int, erro
 func GetConsensusAsk(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
 	var validAsks []*big.Int
 	for _, pao := range paos {
-		if pao.GetPricesValid() {
-			validAsks = append(validAsks, pao.GetAsk())
+		ask, valid := pao.GetAsk()
+		if valid {
+			validAsks = append(validAsks, ask)
 		}
 	}
 	if len(validAsks) < f+1 {

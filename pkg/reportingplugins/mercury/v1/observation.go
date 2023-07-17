@@ -33,20 +33,16 @@ func (pao ParsedAttributedObservation) GetObserver() commontypes.OracleID {
 }
 
 // TODO: Change these to return (val, bool)
-func (pao ParsedAttributedObservation) GetBenchmarkPrice() *big.Int {
-	return pao.BenchmarkPrice
+func (pao ParsedAttributedObservation) GetBenchmarkPrice() (*big.Int, bool) {
+	return pao.BenchmarkPrice, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetBid() *big.Int {
-	return pao.Bid
+func (pao ParsedAttributedObservation) GetBid() (*big.Int, bool) {
+	return pao.Bid, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetAsk() *big.Int {
-	return pao.Ask
-}
-
-func (pao ParsedAttributedObservation) GetPricesValid() bool {
-	return pao.PricesValid
+func (pao ParsedAttributedObservation) GetAsk() (*big.Int, bool) {
+	return pao.Ask, pao.PricesValid
 }
 
 func (pao ParsedAttributedObservation) GetLinkFee() (*big.Int, bool) {

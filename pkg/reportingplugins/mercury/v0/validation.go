@@ -13,7 +13,8 @@ func ValidateCurrentBlock(paos []IParsedAttributedObservation, f int, validFromB
 	}
 	var newBlockRangePaos []IParsedAttributedObservation
 	for _, pao := range paos {
-		if pao.GetCurrentBlockValid() && pao.GetCurrentBlockNum() >= validFromBlockNum {
+		blockNum, valid := pao.GetCurrentBlockNum()
+		if valid && blockNum >= validFromBlockNum {
 			newBlockRangePaos = append(newBlockRangePaos, pao)
 		}
 	}

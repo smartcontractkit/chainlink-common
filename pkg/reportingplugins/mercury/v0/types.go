@@ -9,12 +9,10 @@ import (
 type IParsedAttributedObservation interface {
 	mercury.IParsedAttributedObservation
 	
-	GetCurrentBlockNum() int64
-	GetCurrentBlockHash() []byte
-	GetCurrentBlockTimestamp() uint64
-	GetCurrentBlockValid() bool
-	GetMaxFinalizedBlockNumber() int64
-	GetMaxFinalizedBlockNumberValid() bool
+	GetCurrentBlockNum() (int64, bool)
+	GetCurrentBlockHash() ([]byte, bool)
+	GetCurrentBlockTimestamp() (uint64, bool)
+	GetMaxFinalizedBlockNumber() (int64, bool)
 }
 
 func Convert(pao []IParsedAttributedObservation) []mercury.IParsedAttributedObservation {

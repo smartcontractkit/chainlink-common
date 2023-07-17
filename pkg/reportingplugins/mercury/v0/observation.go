@@ -40,44 +40,32 @@ func (pao ParsedAttributedObservation) GetObserver() commontypes.OracleID {
 	return pao.Observer
 }
 
-func (pao ParsedAttributedObservation) GetBenchmarkPrice() *big.Int {
-	return pao.BenchmarkPrice
+func (pao ParsedAttributedObservation) GetBenchmarkPrice() (*big.Int, bool) {
+	return pao.BenchmarkPrice, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetBid() *big.Int {
-	return pao.Bid
+func (pao ParsedAttributedObservation) GetBid() (*big.Int, bool) {
+	return pao.Bid, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetAsk() *big.Int {
-	return pao.Ask
+func (pao ParsedAttributedObservation) GetAsk() (*big.Int, bool) {
+	return pao.Ask, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetPricesValid() bool {
-	return pao.PricesValid
+func (pao ParsedAttributedObservation) GetCurrentBlockNum() (int64, bool) {
+	return pao.CurrentBlockNum, pao.CurrentBlockValid
 }
 
-func (pao ParsedAttributedObservation) GetCurrentBlockNum() int64 {
-	return pao.CurrentBlockNum
+func (pao ParsedAttributedObservation) GetCurrentBlockHash() ([]byte, bool) {
+	return pao.CurrentBlockHash, pao.CurrentBlockValid
 }
 
-func (pao ParsedAttributedObservation) GetCurrentBlockHash() []byte {
-	return pao.CurrentBlockHash
+func (pao ParsedAttributedObservation) GetCurrentBlockTimestamp() (uint64, bool) {
+	return pao.CurrentBlockTimestamp, pao.CurrentBlockValid
 }
 
-func (pao ParsedAttributedObservation) GetCurrentBlockTimestamp() uint64 {
-	return pao.CurrentBlockTimestamp
-}
-
-func (pao ParsedAttributedObservation) GetCurrentBlockValid() bool {
-	return pao.CurrentBlockValid
-}
-
-func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumber() int64 {
-	return pao.MaxFinalizedBlockNumber
-}
-
-func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumberValid() bool {
-	return pao.MaxFinalizedBlockNumberValid
+func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumber() (int64, bool) {
+	return pao.MaxFinalizedBlockNumber, pao.MaxFinalizedBlockNumberValid
 }
 
 func (pao ParsedAttributedObservation) GetLinkFee() (*big.Int, bool) {

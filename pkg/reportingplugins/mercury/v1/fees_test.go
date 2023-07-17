@@ -1,7 +1,7 @@
 package mercury_v1
 
-import "testing"
+// import "testing"
 
-func Test_Fees(t *testing.T) {
-	t.Fatal("TODO")
-}
+// func Test_Fees(t *testing.T) {
+// 	t.Fatal("TODO")
+// }

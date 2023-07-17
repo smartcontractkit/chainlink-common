@@ -8,7 +8,7 @@ import (
 
 type IParsedAttributedObservation interface {
 	mercury.IParsedAttributedObservation
-	
+
 	GetCurrentBlockNum() (int64, bool)
 	GetCurrentBlockHash() ([]byte, bool)
 	GetCurrentBlockTimestamp() (uint64, bool)

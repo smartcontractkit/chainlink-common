@@ -241,19 +241,19 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("if there are not at least f+1 in consensus about block number", func(t *testing.T) {
 			badPaos := []IParsedAttributedObservation{
 				ParsedAttributedObservation{
-					CurrentBlockNum: 100,
+					CurrentBlockNum:   100,
 					CurrentBlockValid: true,
 				},
 				ParsedAttributedObservation{
-					CurrentBlockNum: 200,
+					CurrentBlockNum:   200,
 					CurrentBlockValid: true,
 				},
 				ParsedAttributedObservation{
-					CurrentBlockNum: 300,
+					CurrentBlockNum:   300,
 					CurrentBlockValid: true,
 				},
 				ParsedAttributedObservation{
-					CurrentBlockNum: 400,
+					CurrentBlockNum:   400,
 					CurrentBlockValid: true,
 				},
 			}
@@ -264,19 +264,19 @@ func Test_AggregateFunctions(t *testing.T) {
 			badPaos := []IParsedAttributedObservation{
 				ParsedAttributedObservation{
 					CurrentBlockTimestamp: 100,
-					CurrentBlockValid: true,
+					CurrentBlockValid:     true,
 				},
 				ParsedAttributedObservation{
 					CurrentBlockTimestamp: 200,
-					CurrentBlockValid: true,
+					CurrentBlockValid:     true,
 				},
 				ParsedAttributedObservation{
 					CurrentBlockTimestamp: 300,
-					CurrentBlockValid: true,
+					CurrentBlockValid:     true,
 				},
 				ParsedAttributedObservation{
 					CurrentBlockTimestamp: 400,
-					CurrentBlockValid: true,
+					CurrentBlockValid:     true,
 				},
 			}
 			_, _, _, err := GetConsensusCurrentBlock(badPaos, f)
@@ -441,19 +441,19 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("errors if there are not at least f+1 in consensus about number", func(t *testing.T) {
 			badPaos := []IParsedAttributedObservation{
 				ParsedAttributedObservation{
-					MaxFinalizedBlockNumber: 100,
+					MaxFinalizedBlockNumber:      100,
 					MaxFinalizedBlockNumberValid: true,
 				},
 				ParsedAttributedObservation{
-					MaxFinalizedBlockNumber: 200,
+					MaxFinalizedBlockNumber:      200,
 					MaxFinalizedBlockNumberValid: true,
 				},
 				ParsedAttributedObservation{
-					MaxFinalizedBlockNumber: 300,
+					MaxFinalizedBlockNumber:      300,
 					MaxFinalizedBlockNumberValid: true,
 				},
 				ParsedAttributedObservation{
-					MaxFinalizedBlockNumber: 400,
+					MaxFinalizedBlockNumber:      400,
 					MaxFinalizedBlockNumberValid: true,
 				},
 			}

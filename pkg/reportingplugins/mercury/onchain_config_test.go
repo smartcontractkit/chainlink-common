@@ -2,8 +2,8 @@ package mercury
 
 import (
 	"bytes"
-	"testing"
 	"math/big"
+	"testing"
 )
 
 func FuzzDecodeOnchainConfig(f *testing.F) {

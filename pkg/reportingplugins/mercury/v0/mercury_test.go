@@ -28,7 +28,7 @@ type testReportCodec struct {
 	builtReport           ocrtypes.Report
 	buildReportShouldFail bool
 
-	lastBuildReportPaos              []mercury.ParsedObservation
+	lastBuildReportPaos              []IParsedAttributedObservation
 	lastBuildReportF                 int
 	lastBuildReportValidFromBlockNum int64
 }
@@ -41,7 +41,7 @@ func (trc *testReportCodec) reset() {
 	trc.lastBuildReportValidFromBlockNum = 0
 }
 
-func (trc *testReportCodec) BuildReport(paos []mercury.ParsedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error) {
+func (trc *testReportCodec) BuildReport(paos []IParsedAttributedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error) {
 	if trc.buildReportShouldFail {
 		return nil, errors.New("buildReportShouldFail=true")
 	}
@@ -79,52 +79,223 @@ func newReportingPlugin(t *testing.T, codec *testReportCodec) *reportingPlugin {
 	}
 }
 
-// todo: fix tests
+func Test_ReportingPlugin_shouldReport(t *testing.T) {
+	rp := newReportingPlugin(t, &testReportCodec{})
+	repts := types.ReportTimestamp{}
 
-// func Test_ReportingPlugin_shouldReport(t *testing.T) {
-// 	rp := newReportingPlugin(t, &testReportCodec{})
-// 	repts := types.ReportTimestamp{}
-// 	paos := NewValidParsedAttributedObservations()
+	t.Run("reports if all reports have currentBlockNum > validFromBlockNum", func(t *testing.T) {
+		paos := []IParsedAttributedObservation{
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
 
-// 	t.Run("reports if all reports have currentBlockNum > validFromBlockNum", func(t *testing.T) {
-// 		for i := range paos {
-// 			paos[i].CurrentBlockNum = 500
-// 		}
-// 		shouldReport, err := rp.shouldReport(499, repts, paos)
-// 		require.NoError(t, err)
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
 
-// 		assert.True(t, shouldReport)
-// 	})
-// 	t.Run("reporta if all reports have currentBlockNum == validFromBlockNum", func(t *testing.T) {
-// 		for i := range paos {
-// 			paos[i].CurrentBlockNum = 500
-// 		}
-// 		shouldReport, err := rp.shouldReport(500, repts, paos)
-// 		require.NoError(t, err)
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-// 		assert.True(t, shouldReport)
-// 	})
-// 	t.Run("does not report if all reports have currentBlockNum < validFromBlockNum", func(t *testing.T) {
-// 		paos := NewValidParsedAttributedObservations()
-// 		for i := range paos {
-// 			paos[i].CurrentBlockNum = 499
-// 		}
-// 		shouldReport, err := rp.shouldReport(500, repts, paos)
-// 		require.NoError(t, err)
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-// 		assert.False(t, shouldReport)
-// 	})
-// 	t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
-// 		paos := NewValidParsedAttributedObservations()
-// 		for i := range paos {
-// 			paos[i].CurrentBlockNum = 500 + int64(i)
-// 		}
-// 		shouldReport, err := rp.shouldReport(499, repts, paos)
-// 		require.NoError(t, err)
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
 
-// 		assert.False(t, shouldReport)
-// 	})
-// }
+		shouldReport, err := rp.shouldReport(499, repts, paos)
+		require.NoError(t, err)
+
+		assert.True(t, shouldReport)
+	})
+	t.Run("reports if all reports have currentBlockNum == validFromBlockNum", func(t *testing.T) {
+		paos := []IParsedAttributedObservation{
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
+
+		shouldReport, err := rp.shouldReport(500, repts, paos)
+		require.NoError(t, err)
+
+		assert.True(t, shouldReport)
+	})
+	t.Run("does not report if all observations have currentBlockNum < validFromBlockNum", func(t *testing.T) {
+		paos := []IParsedAttributedObservation{
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
+
+		shouldReport, err := rp.shouldReport(500, repts, paos)
+		require.NoError(t, err)
+
+		assert.False(t, shouldReport)
+	})
+	t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
+		paos := []IParsedAttributedObservation{
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       501,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       502,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			ParsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
+
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       503,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
+
+		shouldReport, err := rp.shouldReport(499, repts, paos)
+		require.NoError(t, err)
+
+		assert.False(t, shouldReport)
+	})
+}
 
 var _ DataSource = &mockDataSource{}
 

@@ -29,15 +29,15 @@ type OnchainConfigCodec interface {
 	Decode([]byte) (OnchainConfig, error)
 }
 
-type Fetcher interface {
-	// FetchInitialMaxFinalizedBlockNumber should fetch the initial max
-	// finalized block number from the mercury server.
+type MercuryServerFetcher interface {
+	// FetchInitialMaxFinalizedBlockNumber should fetch the initial max finalized block number
 	FetchInitialMaxFinalizedBlockNumber(context.Context) (*int64, error)
 	LatestPrice(ctx context.Context, feedID [32]byte) (*big.Int, error)
+	LatestTimestamp(context.Context) (uint32, error)
 }
 
 type Transmitter interface {
-	Fetcher
+	MercuryServerFetcher
 	// NOTE: Mercury doesn't actually transmit on-chain, so there is no
 	// "contract" involved with the transmitter.
 	// - Transmit should be implemented and send to Mercury server

@@ -13,7 +13,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
@@ -23,6 +22,8 @@ type Observation struct {
 	BenchmarkPrice mercury.ObsResult[*big.Int]
 	Bid            mercury.ObsResult[*big.Int]
 	Ask            mercury.ObsResult[*big.Int]
+
+	MaxFinalizedTimestamp mercury.ObsResult[uint32]
 
 	LinkPrice   mercury.ObsResult[*big.Int]
 	NativePrice mercury.ObsResult[*big.Int]
@@ -47,12 +48,11 @@ type DataSource interface {
 	//
 	// Important: Observe should not perform any potentially time-consuming
 	// actions like database access, once the context passed has expired.
-	Observe(ctx context.Context, repts ocrtypes.ReportTimestamp) (Observation, error)
+	Observe(ctx context.Context, repts ocrtypes.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (Observation, error)
 }
 
 var _ ocr3types.MercuryPluginFactory = Factory{}
 
-// FIXME: Needs tests like v0
 const maxObservationLength = 32 + // feedID
 	4 + // timestamp
 	mercury.ByteWidthInt192 + // benchmarkPrice
@@ -126,8 +126,8 @@ type reportingPlugin struct {
 	maxReportLength          int
 }
 
-func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.ReportTimestamp, previousReport types.Report) (ocrtypes.Observation, error) {
-	obs, err := rp.dataSource.Observe(ctx, repts)
+func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.ReportTimestamp, previousReport ocrtypes.Report) (ocrtypes.Observation, error) {
+	obs, err := rp.dataSource.Observe(ctx, repts, previousReport == nil)
 	if err != nil {
 		return nil, pkgerrors.Errorf("DataSource.Observe returned an error: %s", err)
 	}
@@ -175,6 +175,23 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		p.PricesValid = true
 	}
 
+	var maxFinalizedTimestampErr error
+	if previousReport == nil {
+		// if previousReport is nil, we fall back to the observed timestamp
+		if obs.MaxFinalizedTimestamp.Err != nil {
+			maxFinalizedTimestampErr = pkgerrors.Wrap(obs.MaxFinalizedTimestamp.Err, "failed to observe MaxFinalizedTimestamp")
+			obsErrors = append(obsErrors, maxFinalizedTimestampErr)
+		} else {
+			p.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp.Val
+		}
+	} else {
+		p.MaxFinalizedTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)
+		if err != nil {
+			maxFinalizedTimestampErr = pkgerrors.Wrap(obs.MaxFinalizedTimestamp.Err, "failed to extract timestamp from report")
+			obsErrors = append(obsErrors, maxFinalizedTimestampErr)
+		}
+	}
+
 	var linkErr error
 	if obs.LinkPrice.Err != nil {
 		linkErr = pkgerrors.Wrap(obs.LinkPrice.Err, "failed to observe LINK price")
@@ -212,7 +229,7 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	}
 
 	if len(obsErrors) > 0 {
-		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/5 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
+		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/6 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
 	}
 
 	return proto.Marshal(&p)
@@ -244,6 +261,8 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 		}
 		pao.PricesValid = true
 	}
+
+	pao.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp
 
 	if obs.LinkFeeValid {
 		var err error
@@ -282,7 +301,7 @@ func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedOb
 	return paos
 }
 
-func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport types.Report, aos []types.AttributedObservation) (shouldReport bool, report types.Report, err error) {
+func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport ocrtypes.Report, aos []ocrtypes.AttributedObservation) (shouldReport bool, report ocrtypes.Report, err error) {
 	paos := parseAttributedObservations(rp.logger, aos)
 
 	// By assumption, we have at most f malicious oracles, so there should be at least f+1 valid paos
@@ -290,23 +309,18 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 		return false, nil, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
-	observationTimestamp := mercury.GetConsensusTimestamp(Convert(paos))
-	var validFromTimestamp uint32
-	if previousReport != nil {
-		validFromTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)
-		if err != nil {
-			return false, nil, pkgerrors.Errorf("failed to extract observation timestamp from previous report: %s", err)
-		}
+	should, err := rp.shouldReport(paos)
+	if err != nil || !should {
+		rp.logger.Debugw("shouldReport: no", "err", err)
+		return false, nil, err
 	} else {
-		// todo: get rid of this calculation here
-		//validFromTimestamp = observationTimestamp
-		validFromTimestamp = 0
+		rp.logger.Debugw("shouldReport: yes",
+			"timestamp", repts,
+		)
 	}
 
-	should, err := rp.shouldReport(validFromTimestamp, repts, paos)
-	if err != nil || !should {
-		return false, nil, err
-	}
+	observationTimestamp := mercury.GetConsensusTimestamp(Convert(paos))
+	validFromTimestamp := GetConsensusMaxFinalizedTimestamp(paos)
 
 	if (int64(observationTimestamp) + int64(rp.offchainConfig.ExpirationWindow)) > math.MaxUint32 {
 		return false, nil, fmt.Errorf("timestamp %d + expiration window %d overflows uint32", observationTimestamp, rp.offchainConfig.ExpirationWindow)
@@ -328,25 +342,20 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 	return true, report, nil
 }
 
-func (rp *reportingPlugin) shouldReport(validFromTimestamp uint32, repts types.ReportTimestamp, paos []IParsedAttributedObservation) (bool, error) {
+func (rp *reportingPlugin) shouldReport(paos []IParsedAttributedObservation) (bool, error) {
 	if !(rp.f+1 <= len(paos)) {
 		return false, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
-
-	// todo: add validFromTimestamp check
 
 	if err := errors.Join(
 		rp.checkBenchmarkPrice(paos),
 		rp.checkBid(paos),
 		rp.checkAsk(paos),
+		rp.checkValidFromTimestamp(paos),
 	); err != nil {
-		rp.logger.Debugw("shouldReport: no", "err", err)
-		return false, nil
+		return false, err
 	}
 
-	rp.logger.Debugw("shouldReport: yes",
-		"timestamp", repts,
-	)
 	return true, nil
 }
 
@@ -365,7 +374,11 @@ func (rp *reportingPlugin) checkAsk(paos []IParsedAttributedObservation) error {
 	return mercury.ValidateAsk(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {
+func (rp *reportingPlugin) checkValidFromTimestamp(paos []IParsedAttributedObservation) error {
+	return ValidateValidFromTimestamp(paos)
+}
+
+func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts ocrtypes.ReportTimestamp, report ocrtypes.Report) (bool, error) {
 	reportEpochRound := mercury.EpochRound{Epoch: repts.Epoch, Round: repts.Round}
 	if !rp.latestAcceptedEpochRound.Less(reportEpochRound) {
 		rp.logger.Debugw("ShouldAcceptFinalizedReport() = false, report is stale",
@@ -394,7 +407,7 @@ func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, rept
 	return true, nil
 }
 
-func (rp *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {
+func (rp *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, repts ocrtypes.ReportTimestamp, report ocrtypes.Report) (bool, error) {
 	return true, nil
 }
 

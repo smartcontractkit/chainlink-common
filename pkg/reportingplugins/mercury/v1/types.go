@@ -8,6 +8,8 @@ import (
 
 type IParsedAttributedObservation interface {
 	mercury.IParsedAttributedObservation
+
+	GetMaxFinalizedTimestamp() uint32
 }
 
 func Convert(pao []IParsedAttributedObservation) []mercury.IParsedAttributedObservation {

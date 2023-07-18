@@ -1,9 +1,13 @@
 package mercury_v1
 
-// func Test_Observation(t *testing.t) {
-// 	t.Fatal("TODO")
-// }
+import (
+	"testing"
+)
 
-// func Test_Report(t *testing.t) {
-// 	t.Fatal("TODO")
-// }
+func Test_Observation(t *testing.T) {
+	t.Skip("TODO")
+}
+
+func Test_Report(t *testing.T) {
+	t.Skip("TODO")
+}

@@ -484,11 +484,77 @@ func Test_Plugin_Observation(t *testing.T) {
 			assert.False(t, p.MaxFinalizedBlockNumberValid)
 		})
 
-		t.Run("when encoding fails on some observations", func(t *testing.T) {
-			t.Skip("TODO")
+		t.Run("when encoding fails on some price observations", func(t *testing.T) {
+			obs := Observation{
+				BenchmarkPrice: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				Bid: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				Ask: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				CurrentBlockNum: mercury.ObsResult[int64]{
+					Val: rand.Int63(),
+				},
+				CurrentBlockHash: mercury.ObsResult[[]byte]{
+					Val: randBytes(32),
+				},
+				CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+					Val: rand.Uint64(),
+				},
+			}
+			rp.dataSource = mockDataSource{obs}
+
+			pbObs, err := rp.Observation(ctx, repts, previousReport)
+			require.NoError(t, err)
+
+			var p MercuryObservationProto
+			require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+			assert.False(t, p.PricesValid)
+			assert.Zero(t, p.BenchmarkPrice)
+			assert.NotZero(t, p.Bid)
+			assert.NotZero(t, p.Ask)
 		})
-		t.Run("when encoding fails on all observations", func(t *testing.T) {
-			t.Skip("TODO")
+		t.Run("when encoding fails on all price observations", func(t *testing.T) {
+			obs := Observation{
+				BenchmarkPrice: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				Bid: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				Ask: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				CurrentBlockNum: mercury.ObsResult[int64]{
+					Val: rand.Int63(),
+				},
+				CurrentBlockHash: mercury.ObsResult[[]byte]{
+					Val: randBytes(32),
+				},
+				CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+					Val: rand.Uint64(),
+				},
+			}
+			rp.dataSource = mockDataSource{obs}
+
+			pbObs, err := rp.Observation(ctx, repts, previousReport)
+			require.NoError(t, err)
+
+			var p MercuryObservationProto
+			require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+			assert.False(t, p.PricesValid)
+			assert.Zero(t, p.BenchmarkPrice)
+			assert.Zero(t, p.Bid)
+			assert.Zero(t, p.Ask)
 		})
 	})
 

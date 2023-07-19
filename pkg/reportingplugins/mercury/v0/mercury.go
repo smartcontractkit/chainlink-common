@@ -108,7 +108,6 @@ func (fac Factory) NewMercuryPlugin(configuration ocr3types.MercuryPluginConfig)
 		configuration.ConfigDigest,
 		configuration.F,
 		mercury.EpochRound{},
-		new(big.Int),
 		maxReportLength,
 	}
 
@@ -133,7 +132,6 @@ type reportingPlugin struct {
 	configDigest             ocrtypes.ConfigDigest
 	f                        int
 	latestAcceptedEpochRound mercury.EpochRound
-	latestAcceptedMedian     *big.Int
 	maxReportLength          int
 }
 
@@ -183,11 +181,11 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	if obs.Ask.Err != nil {
 		askErr = pkgerrors.Wrap(obs.Ask.Err, "failed to observe Ask")
 		obsErrors = append(obsErrors, askErr)
-	} else if bid, err := mercury.EncodeValueInt192(obs.Ask.Val); err != nil {
+	} else if ask, err := mercury.EncodeValueInt192(obs.Ask.Val); err != nil {
 		askErr = pkgerrors.Wrap(err, "failed to observe Ask; encoding failed")
 		obsErrors = append(obsErrors, askErr)
 	} else {
-		p.Ask = bid
+		p.Ask = ask
 	}
 
 	if bpErr == nil && bidErr == nil && askErr == nil {

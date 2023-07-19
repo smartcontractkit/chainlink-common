@@ -9,6 +9,7 @@ import (
 // NOTE: hardcoded for now, this may need to change if we support block range on chains other than eth
 const EvmHashLen = 32
 
+// ValidateBenchmarkPrice checks that value is between min and max
 func ValidateBenchmarkPrice(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBenchmarkPrice(paos, f)
 	if err != nil {
@@ -22,6 +23,7 @@ func ValidateBenchmarkPrice(paos []IParsedAttributedObservation, f int, min, max
 	return nil
 }
 
+// ValidateBid checks that value is between min and max
 func ValidateBid(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBid(paos, f)
 	if err != nil {
@@ -35,6 +37,7 @@ func ValidateBid(paos []IParsedAttributedObservation, f int, min, max *big.Int) 
 	return nil
 }
 
+// ValidateAsk checks that value is between min and max
 func ValidateAsk(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusAsk(paos, f)
 	if err != nil {

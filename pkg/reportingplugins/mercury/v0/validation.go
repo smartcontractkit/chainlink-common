@@ -7,6 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 )
 
+// ValidateCurrentBlock sanity checks number and hash
 func ValidateCurrentBlock(paos []IParsedAttributedObservation, f int, validFromBlockNum int64) error {
 	if validFromBlockNum < 0 {
 		return fmt.Errorf("validFromBlockNum must be >= 0 (got: %d)", validFromBlockNum)

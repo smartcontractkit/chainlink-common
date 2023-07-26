@@ -60,26 +60,26 @@ func TestValidation(t *testing.T) {
 		})
 
 		t.Run("errors when block number < 0", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       -1,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       -1,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       -1,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       -1,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,
@@ -90,26 +90,26 @@ func TestValidation(t *testing.T) {
 			assert.EqualError(t, err, "only 0/4 attributed observations have currentBlockNum >= validFromBlockNum, need at least f+1 (2/4) to make a new report; consensusCurrentBlock=-1, validFromBlockNum=2")
 		})
 		t.Run("errors when validFrom > block number", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,
@@ -120,26 +120,26 @@ func TestValidation(t *testing.T) {
 			assert.EqualError(t, err, "only 0/4 attributed observations have currentBlockNum >= validFromBlockNum, need at least f+1 (2/4) to make a new report; consensusCurrentBlock=1, validFromBlockNum=16634366")
 		})
 		t.Run("errors when validFrom < 0", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       1,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,
@@ -150,26 +150,26 @@ func TestValidation(t *testing.T) {
 			assert.EqualError(t, err, "validFromBlockNum must be >= 0 (got: -1)")
 		})
 		t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       501,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       502,
 					CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
 					CurrentBlockTimestamp: 1682908180,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       503,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:       504,
 					CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
 					CurrentBlockTimestamp: 1682591344,

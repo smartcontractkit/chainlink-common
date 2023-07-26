@@ -20,9 +20,9 @@ func mustDecodeHex(s string) []byte {
 	return b
 }
 
-func NewValidParsedAttributedObservations() []IParsedAttributedObservation {
-	return []IParsedAttributedObservation{
-		ParsedAttributedObservation{
+func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
+	return []ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484822,
 			Observer:  commontypes.OracleID(1),
 
@@ -39,7 +39,7 @@ func NewValidParsedAttributedObservations() []IParsedAttributedObservation {
 			MaxFinalizedBlockNumber:      16634355,
 			MaxFinalizedBlockNumberValid: true,
 		},
-		ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484826,
 			Observer:  commontypes.OracleID(2),
 
@@ -56,7 +56,7 @@ func NewValidParsedAttributedObservations() []IParsedAttributedObservation {
 			MaxFinalizedBlockNumber:      16634355,
 			MaxFinalizedBlockNumberValid: true,
 		},
-		ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484828,
 			Observer:  commontypes.OracleID(3),
 
@@ -73,7 +73,7 @@ func NewValidParsedAttributedObservations() []IParsedAttributedObservation {
 			MaxFinalizedBlockNumber:      16634355,
 			MaxFinalizedBlockNumberValid: true,
 		},
-		ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484830,
 			Observer:  commontypes.OracleID(4),
 
@@ -93,9 +93,9 @@ func NewValidParsedAttributedObservations() []IParsedAttributedObservation {
 	}
 }
 
-func NewInvalidParsedAttributedObservations() []IParsedAttributedObservation {
-	return []IParsedAttributedObservation{
-		ParsedAttributedObservation{
+func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
+	return []ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484822,
 			Observer:  commontypes.OracleID(1),
 
@@ -112,7 +112,7 @@ func NewInvalidParsedAttributedObservations() []IParsedAttributedObservation {
 			MaxFinalizedBlockNumber:      16634355,
 			MaxFinalizedBlockNumberValid: false,
 		},
-		ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484826,
 			Observer:  commontypes.OracleID(2),
 
@@ -129,7 +129,7 @@ func NewInvalidParsedAttributedObservations() []IParsedAttributedObservation {
 			MaxFinalizedBlockNumber:      16634355,
 			MaxFinalizedBlockNumberValid: false,
 		},
-		ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484828,
 			Observer:  commontypes.OracleID(3),
 
@@ -146,7 +146,7 @@ func NewInvalidParsedAttributedObservations() []IParsedAttributedObservation {
 			MaxFinalizedBlockNumber:      16634355,
 			MaxFinalizedBlockNumberValid: false,
 		},
-		ParsedAttributedObservation{
+		parsedAttributedObservation{
 			Timestamp: 1676484830,
 			Observer:  commontypes.OracleID(4),
 
@@ -239,20 +239,20 @@ func Test_AggregateFunctions(t *testing.T) {
 			assert.EqualError(t, err, "no unique block with at least f+1 votes")
 		})
 		t.Run("if there are not at least f+1 in consensus about block number", func(t *testing.T) {
-			badPaos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			badPaos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:   100,
 					CurrentBlockValid: true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:   200,
 					CurrentBlockValid: true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:   300,
 					CurrentBlockValid: true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockNum:   400,
 					CurrentBlockValid: true,
 				},
@@ -261,20 +261,20 @@ func Test_AggregateFunctions(t *testing.T) {
 			assert.EqualError(t, err, "no unique block with at least f+1 votes")
 		})
 		t.Run("if there are not at least f+1 in consensus about timestamp", func(t *testing.T) {
-			badPaos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			badPaos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockTimestamp: 100,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockTimestamp: 200,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockTimestamp: 300,
 					CurrentBlockValid:     true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					CurrentBlockTimestamp: 400,
 					CurrentBlockValid:     true,
 				},
@@ -285,8 +285,8 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("in the event of an even split for block number/hash, take the higher block number", func(t *testing.T) {
 			validFrom := int64(26014056)
 			// values below are from a real observed case of this happening in the wild
-			paos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					Timestamp:                    1686759784,
 					Observer:                     commontypes.OracleID(2),
 					BenchmarkPrice:               big.NewInt(90700),
@@ -300,7 +300,7 @@ func Test_AggregateFunctions(t *testing.T) {
 					MaxFinalizedBlockNumber:      0,
 					MaxFinalizedBlockNumberValid: false,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					Timestamp:                    1686759784,
 					Observer:                     commontypes.OracleID(3),
 					BenchmarkPrice:               big.NewInt(92000),
@@ -314,7 +314,7 @@ func Test_AggregateFunctions(t *testing.T) {
 					MaxFinalizedBlockNumber:      0,
 					MaxFinalizedBlockNumberValid: false,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					Timestamp:                    1686759784,
 					Observer:                     commontypes.OracleID(1),
 					BenchmarkPrice:               big.NewInt(67300),
@@ -328,7 +328,7 @@ func Test_AggregateFunctions(t *testing.T) {
 					MaxFinalizedBlockNumber:      0,
 					MaxFinalizedBlockNumberValid: false,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					Timestamp:                    1686759784,
 					Observer:                     commontypes.OracleID(0),
 					BenchmarkPrice:               big.NewInt(8600),
@@ -351,10 +351,10 @@ func Test_AggregateFunctions(t *testing.T) {
 			assert.GreaterOrEqual(t, num, validFrom)
 		})
 		pao := func(num int64, hash string, ts uint64) ParsedAttributedObservation {
-			return ParsedAttributedObservation{CurrentBlockNum: num, CurrentBlockHash: mustDecodeHex(hash), CurrentBlockTimestamp: ts, CurrentBlockValid: true}
+			return parsedAttributedObservation{CurrentBlockNum: num, CurrentBlockHash: mustDecodeHex(hash), CurrentBlockTimestamp: ts, CurrentBlockValid: true}
 		}
 		t.Run("when there are multiple possible blocks meeting > f+1 hashes, takes the hash with the most block numbers in agreement", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
@@ -376,7 +376,7 @@ func Test_AggregateFunctions(t *testing.T) {
 			assert.Equal(t, uint64(1), ts)
 		})
 		t.Run("in the event of an even split of numbers/hashes, takes the hash with the highest block number", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
@@ -392,7 +392,7 @@ func Test_AggregateFunctions(t *testing.T) {
 			assert.Equal(t, uint64(1), ts)
 		})
 		t.Run("in the case where all block numbers are equal but timestamps differ, tie-breaks on latest timestamp", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 2),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 2),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 2),
@@ -408,7 +408,7 @@ func Test_AggregateFunctions(t *testing.T) {
 			assert.Equal(t, uint64(2), ts)
 		})
 		t.Run("in the case where all block numbers and timestamps are equal, tie-breaks by taking the 'lowest' hash", func(t *testing.T) {
-			paos := []IParsedAttributedObservation{
+			paos := []ParsedAttributedObservation{
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
 				pao(42, "3333333333333333333333333333333333333333333333333333333333333333", 1),
@@ -439,20 +439,20 @@ func Test_AggregateFunctions(t *testing.T) {
 		})
 
 		t.Run("errors if there are not at least f+1 in consensus about number", func(t *testing.T) {
-			badPaos := []IParsedAttributedObservation{
-				ParsedAttributedObservation{
+			badPaos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
 					MaxFinalizedBlockNumber:      100,
 					MaxFinalizedBlockNumberValid: true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					MaxFinalizedBlockNumber:      200,
 					MaxFinalizedBlockNumberValid: true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					MaxFinalizedBlockNumber:      300,
 					MaxFinalizedBlockNumberValid: true,
 				},
-				ParsedAttributedObservation{
+				parsedAttributedObservation{
 					MaxFinalizedBlockNumber:      400,
 					MaxFinalizedBlockNumberValid: true,
 				},

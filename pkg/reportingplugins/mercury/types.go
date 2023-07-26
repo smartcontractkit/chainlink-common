@@ -8,7 +8,7 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-type IParsedAttributedObservation interface {
+type ParsedAttributedObservation interface {
 	GetTimestamp() uint32
 	GetObserver() commontypes.OracleID
 	GetBenchmarkPrice() (*big.Int, bool)

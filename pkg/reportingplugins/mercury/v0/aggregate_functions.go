@@ -27,8 +27,8 @@ func (b1 block) less(b2 block) bool {
 
 // GetConsensusCurrentBlock gets the most common (mode) block hash/number/timestamps.
 // In the event of a tie, use the lowest numerical value
-func GetConsensusCurrentBlock(paos []IParsedAttributedObservation, f int) (hash []byte, num int64, ts uint64, err error) {
-	var validPaos []IParsedAttributedObservation
+func GetConsensusCurrentBlock(paos []ParsedAttributedObservation, f int) (hash []byte, num int64, ts uint64, err error) {
+	var validPaos []ParsedAttributedObservation
 	for _, pao := range paos {
 		_, valid := pao.GetCurrentBlockHash()
 		if valid {
@@ -72,8 +72,8 @@ func GetConsensusCurrentBlock(paos []IParsedAttributedObservation, f int) (hash 
 // GetConsensusMaxFinalizedBlockNum gets the most common (mode)
 // ConsensusMaxFinalizedBlockNum In the event of a tie, the lower number is
 // chosen
-func GetConsensusMaxFinalizedBlockNum(paos []IParsedAttributedObservation, f int) (int64, error) {
-	var validPaos []IParsedAttributedObservation
+func GetConsensusMaxFinalizedBlockNum(paos []ParsedAttributedObservation, f int) (int64, error) {
+	var validPaos []ParsedAttributedObservation
 	for _, pao := range paos {
 		_, valid := pao.GetMaxFinalizedBlockNumber()
 		if valid {

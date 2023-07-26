@@ -221,11 +221,11 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	return proto.Marshal(&p)
 }
 
-func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttributedObservation, error) {
-	var pao ParsedAttributedObservation
+func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttributedObservation, error) {
+	var pao parsedAttributedObservation
 	var obs MercuryObservationProto
 	if err := proto.Unmarshal(ao.Observation, &obs); err != nil {
-		return ParsedAttributedObservation{}, pkgerrors.Errorf("attributed observation cannot be unmarshaled: %s", err)
+		return parsedAttributedObservation{}, pkgerrors.Errorf("attributed observation cannot be unmarshaled: %s", err)
 	}
 
 	pao.Timestamp = obs.Timestamp
@@ -235,26 +235,26 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 		var err error
 		pao.BenchmarkPrice, err = mercury.DecodeValueInt192(obs.BenchmarkPrice)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("benchmarkPrice cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("benchmarkPrice cannot be converted to big.Int: %s", err)
 		}
 		pao.Bid, err = mercury.DecodeValueInt192(obs.Bid)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("bid cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("bid cannot be converted to big.Int: %s", err)
 		}
 		pao.Ask, err = mercury.DecodeValueInt192(obs.Ask)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("ask cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("ask cannot be converted to big.Int: %s", err)
 		}
 		pao.PricesValid = true
 	}
 
 	if obs.CurrentBlockValid {
 		if len(obs.CurrentBlockHash) != mercury.EvmHashLen {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("wrong len for hash: %d (expected: %d)", len(obs.CurrentBlockHash), mercury.EvmHashLen)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("wrong len for hash: %d (expected: %d)", len(obs.CurrentBlockHash), mercury.EvmHashLen)
 		}
 		pao.CurrentBlockHash = obs.CurrentBlockHash
 		if obs.CurrentBlockNum < 0 {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("negative block number: %d", obs.CurrentBlockNum)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("negative block number: %d", obs.CurrentBlockNum)
 		}
 		pao.CurrentBlockNum = obs.CurrentBlockNum
 		pao.CurrentBlockTimestamp = obs.CurrentBlockTimestamp
@@ -269,8 +269,8 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 	return pao, nil
 }
 
-func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedObservation) []IParsedAttributedObservation {
-	paos := make([]IParsedAttributedObservation, 0, len(aos))
+func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedObservation) []ParsedAttributedObservation {
+	paos := make([]ParsedAttributedObservation, 0, len(aos))
 	for i, ao := range aos {
 		pao, err := parseAttributedObservation(ao)
 		if err != nil {
@@ -331,7 +331,7 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 	return true, report, nil
 }
 
-func (rp *reportingPlugin) shouldReport(validFromBlockNum int64, repts types.ReportTimestamp, paos []IParsedAttributedObservation) (bool, error) {
+func (rp *reportingPlugin) shouldReport(validFromBlockNum int64, repts types.ReportTimestamp, paos []ParsedAttributedObservation) (bool, error) {
 	if !(rp.f+1 <= len(paos)) {
 		return false, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
@@ -352,22 +352,22 @@ func (rp *reportingPlugin) shouldReport(validFromBlockNum int64, repts types.Rep
 	return true, nil
 }
 
-func (rp *reportingPlugin) checkBenchmarkPrice(paos []IParsedAttributedObservation) error {
+func (rp *reportingPlugin) checkBenchmarkPrice(paos []ParsedAttributedObservation) error {
 	mPaos := Convert(paos)
 	return mercury.ValidateBenchmarkPrice(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkBid(paos []IParsedAttributedObservation) error {
+func (rp *reportingPlugin) checkBid(paos []ParsedAttributedObservation) error {
 	mPaos := Convert(paos)
 	return mercury.ValidateBid(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkAsk(paos []IParsedAttributedObservation) error {
+func (rp *reportingPlugin) checkAsk(paos []ParsedAttributedObservation) error {
 	mPaos := Convert(paos)
 	return mercury.ValidateAsk(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkCurrentBlock(paos []IParsedAttributedObservation, validFromBlockNum int64) error {
+func (rp *reportingPlugin) checkCurrentBlock(paos []ParsedAttributedObservation, validFromBlockNum int64) error {
 	return ValidateCurrentBlock(paos, rp.f, validFromBlockNum)
 }
 

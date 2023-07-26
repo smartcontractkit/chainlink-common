@@ -11,7 +11,7 @@ import (
 // The passed slice might be mutated (sorted)
 
 // GetConsensusTimestamp gets the median timestamp
-func GetConsensusTimestamp(paos []IParsedAttributedObservation) uint32 {
+func GetConsensusTimestamp(paos []ParsedAttributedObservation) uint32 {
 	sort.Slice(paos, func(i, j int) bool {
 		return paos[i].GetTimestamp() < paos[j].GetTimestamp()
 	})
@@ -19,7 +19,7 @@ func GetConsensusTimestamp(paos []IParsedAttributedObservation) uint32 {
 }
 
 // GetConsensusBenchmarkPrice gets the median benchmark price
-func GetConsensusBenchmarkPrice(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusBenchmarkPrice(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
 	var validBenchmarkPrices []*big.Int
 	for _, pao := range paos {
 		bmPrice, valid := pao.GetBenchmarkPrice()
@@ -27,6 +27,7 @@ func GetConsensusBenchmarkPrice(paos []IParsedAttributedObservation, f int) (*bi
 			validBenchmarkPrices = append(validBenchmarkPrices, bmPrice)
 		}
 	}
+
 	if len(validBenchmarkPrices) < f+1 {
 		return nil, errors.New("fewer than f+1 observations have a valid price")
 	}
@@ -38,7 +39,7 @@ func GetConsensusBenchmarkPrice(paos []IParsedAttributedObservation, f int) (*bi
 }
 
 // GetConsensusBid gets the median bid
-func GetConsensusBid(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusBid(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
 	var validBids []*big.Int
 	for _, pao := range paos {
 		bid, valid := pao.GetBid()
@@ -57,7 +58,7 @@ func GetConsensusBid(paos []IParsedAttributedObservation, f int) (*big.Int, erro
 }
 
 // GetConsensusAsk gets the median ask
-func GetConsensusAsk(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusAsk(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
 	var validAsks []*big.Int
 	for _, pao := range paos {
 		ask, valid := pao.GetAsk()
@@ -76,7 +77,7 @@ func GetConsensusAsk(paos []IParsedAttributedObservation, f int) (*big.Int, erro
 }
 
 // GetConsensusLinkFee gets the median link fee
-func GetConsensusLinkFee(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusLinkFee(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
 	var validLinkFees []*big.Int
 	for _, pao := range paos {
 		fee, valid := pao.GetLinkFee()
@@ -95,7 +96,7 @@ func GetConsensusLinkFee(paos []IParsedAttributedObservation, f int) (*big.Int, 
 }
 
 // GetConsensusNativeFee gets the median native fee
-func GetConsensusNativeFee(paos []IParsedAttributedObservation, f int) (*big.Int, error) {
+func GetConsensusNativeFee(paos []ParsedAttributedObservation, f int) (*big.Int, error) {
 	var validNativeFees []*big.Int
 	for _, pao := range paos {
 		fee, valid := pao.GetNativeFee()

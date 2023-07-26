@@ -6,9 +6,9 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 )
 
-var _ IParsedAttributedObservation = ParsedAttributedObservation{}
+var _ ParsedAttributedObservation = parsedAttributedObservation{}
 
-type ParsedAttributedObservation struct {
+type parsedAttributedObservation struct {
 	Timestamp uint32
 	Observer  commontypes.OracleID
 
@@ -32,46 +32,46 @@ type ParsedAttributedObservation struct {
 	MaxFinalizedBlockNumberValid bool
 }
 
-func (pao ParsedAttributedObservation) GetTimestamp() uint32 {
+func (pao parsedAttributedObservation) GetTimestamp() uint32 {
 	return pao.Timestamp
 }
 
-func (pao ParsedAttributedObservation) GetObserver() commontypes.OracleID {
+func (pao parsedAttributedObservation) GetObserver() commontypes.OracleID {
 	return pao.Observer
 }
 
-func (pao ParsedAttributedObservation) GetBenchmarkPrice() (*big.Int, bool) {
+func (pao parsedAttributedObservation) GetBenchmarkPrice() (*big.Int, bool) {
 	return pao.BenchmarkPrice, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetBid() (*big.Int, bool) {
+func (pao parsedAttributedObservation) GetBid() (*big.Int, bool) {
 	return pao.Bid, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetAsk() (*big.Int, bool) {
+func (pao parsedAttributedObservation) GetAsk() (*big.Int, bool) {
 	return pao.Ask, pao.PricesValid
 }
 
-func (pao ParsedAttributedObservation) GetCurrentBlockNum() (int64, bool) {
+func (pao parsedAttributedObservation) GetCurrentBlockNum() (int64, bool) {
 	return pao.CurrentBlockNum, pao.CurrentBlockValid
 }
 
-func (pao ParsedAttributedObservation) GetCurrentBlockHash() ([]byte, bool) {
+func (pao parsedAttributedObservation) GetCurrentBlockHash() ([]byte, bool) {
 	return pao.CurrentBlockHash, pao.CurrentBlockValid
 }
 
-func (pao ParsedAttributedObservation) GetCurrentBlockTimestamp() (uint64, bool) {
+func (pao parsedAttributedObservation) GetCurrentBlockTimestamp() (uint64, bool) {
 	return pao.CurrentBlockTimestamp, pao.CurrentBlockValid
 }
 
-func (pao ParsedAttributedObservation) GetMaxFinalizedBlockNumber() (int64, bool) {
+func (pao parsedAttributedObservation) GetMaxFinalizedBlockNumber() (int64, bool) {
 	return pao.MaxFinalizedBlockNumber, pao.MaxFinalizedBlockNumberValid
 }
 
-func (pao ParsedAttributedObservation) GetLinkFee() (*big.Int, bool) {
+func (pao parsedAttributedObservation) GetLinkFee() (*big.Int, bool) {
 	panic("current observation doesn't contain the field")
 }
 
-func (pao ParsedAttributedObservation) GetNativeFee() (*big.Int, bool) {
+func (pao parsedAttributedObservation) GetNativeFee() (*big.Int, bool) {
 	panic("current observation doesn't contain the field")
 }

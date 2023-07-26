@@ -6,7 +6,7 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 )
 
-func ValidateValidFromTimestamp(paos []IParsedAttributedObservation) error {
+func ValidateValidFromTimestamp(paos []ParsedAttributedObservation) error {
 	observationTimestamp := mercury.GetConsensusTimestamp(Convert(paos))
 	validFromTimestamp := GetConsensusMaxFinalizedTimestamp(paos)
 

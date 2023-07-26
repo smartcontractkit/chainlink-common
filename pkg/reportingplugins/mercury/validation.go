@@ -10,7 +10,7 @@ import (
 const EvmHashLen = 32
 
 // ValidateBenchmarkPrice checks that value is between min and max
-func ValidateBenchmarkPrice(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
+func ValidateBenchmarkPrice(paos []ParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBenchmarkPrice(paos, f)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func ValidateBenchmarkPrice(paos []IParsedAttributedObservation, f int, min, max
 }
 
 // ValidateBid checks that value is between min and max
-func ValidateBid(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
+func ValidateBid(paos []ParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusBid(paos, f)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func ValidateBid(paos []IParsedAttributedObservation, f int, min, max *big.Int) 
 }
 
 // ValidateAsk checks that value is between min and max
-func ValidateAsk(paos []IParsedAttributedObservation, f int, min, max *big.Int) error {
+func ValidateAsk(paos []ParsedAttributedObservation, f int, min, max *big.Int) error {
 	answer, err := GetConsensusAsk(paos, f)
 	if err != nil {
 		return err

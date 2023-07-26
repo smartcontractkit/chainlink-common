@@ -28,7 +28,7 @@ type testReportCodec struct {
 	builtReport           ocrtypes.Report
 	buildReportShouldFail bool
 
-	lastBuildReportPaos              []IParsedAttributedObservation
+	lastBuildReportPaos              []ParsedAttributedObservation
 	lastBuildReportF                 int
 	lastBuildReportValidFromBlockNum int64
 }
@@ -41,7 +41,7 @@ func (trc *testReportCodec) reset() {
 	trc.lastBuildReportValidFromBlockNum = 0
 }
 
-func (trc *testReportCodec) BuildReport(paos []IParsedAttributedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error) {
+func (trc *testReportCodec) BuildReport(paos []ParsedAttributedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error) {
 	if trc.buildReportShouldFail {
 		return nil, errors.New("buildReportShouldFail=true")
 	}
@@ -84,8 +84,8 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 	repts := types.ReportTimestamp{}
 
 	t.Run("reports if all reports have currentBlockNum > validFromBlockNum", func(t *testing.T) {
-		paos := []IParsedAttributedObservation{
-			ParsedAttributedObservation{
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(345),
 				Bid:            big.NewInt(343),
 				Ask:            big.NewInt(347),
@@ -96,7 +96,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(335),
 				Bid:            big.NewInt(332),
 				Ask:            big.NewInt(336),
@@ -107,7 +107,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(347),
 				Bid:            big.NewInt(345),
 				Ask:            big.NewInt(350),
@@ -118,7 +118,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682591344,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(346),
 				Bid:            big.NewInt(347),
 				Ask:            big.NewInt(350),
@@ -137,8 +137,8 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 		assert.True(t, shouldReport)
 	})
 	t.Run("reports if all reports have currentBlockNum == validFromBlockNum", func(t *testing.T) {
-		paos := []IParsedAttributedObservation{
-			ParsedAttributedObservation{
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(345),
 				Bid:            big.NewInt(343),
 				Ask:            big.NewInt(347),
@@ -149,7 +149,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(335),
 				Bid:            big.NewInt(332),
 				Ask:            big.NewInt(336),
@@ -160,7 +160,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(347),
 				Bid:            big.NewInt(345),
 				Ask:            big.NewInt(350),
@@ -171,7 +171,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682591344,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(346),
 				Bid:            big.NewInt(347),
 				Ask:            big.NewInt(350),
@@ -190,8 +190,8 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 		assert.True(t, shouldReport)
 	})
 	t.Run("does not report if all observations have currentBlockNum < validFromBlockNum", func(t *testing.T) {
-		paos := []IParsedAttributedObservation{
-			ParsedAttributedObservation{
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(345),
 				Bid:            big.NewInt(343),
 				Ask:            big.NewInt(347),
@@ -202,7 +202,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(335),
 				Bid:            big.NewInt(332),
 				Ask:            big.NewInt(336),
@@ -213,7 +213,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(347),
 				Bid:            big.NewInt(345),
 				Ask:            big.NewInt(350),
@@ -224,7 +224,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682591344,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(346),
 				Bid:            big.NewInt(347),
 				Ask:            big.NewInt(350),
@@ -243,8 +243,8 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 		assert.False(t, shouldReport)
 	})
 	t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
-		paos := []IParsedAttributedObservation{
-			ParsedAttributedObservation{
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(345),
 				Bid:            big.NewInt(343),
 				Ask:            big.NewInt(347),
@@ -255,7 +255,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(335),
 				Bid:            big.NewInt(332),
 				Ask:            big.NewInt(336),
@@ -266,7 +266,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682908180,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(347),
 				Bid:            big.NewInt(345),
 				Ask:            big.NewInt(350),
@@ -277,7 +277,7 @@ func Test_ReportingPlugin_shouldReport(t *testing.T) {
 				CurrentBlockTimestamp: 1682591344,
 				CurrentBlockValid:     true,
 			},
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				BenchmarkPrice: big.NewInt(346),
 				Bid:            big.NewInt(347),
 				Ask:            big.NewInt(350),
@@ -658,7 +658,7 @@ func Test_Plugin_parseAttributedObservation(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t,
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				Timestamp:                    0x2a,
 				Observer:                     0x2a,
 				BenchmarkPrice:               big.NewInt(43),
@@ -684,7 +684,7 @@ func Test_Plugin_parseAttributedObservation(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t,
-			ParsedAttributedObservation{
+			parsedAttributedObservation{
 				Observer:                     0x2a,
 				PricesValid:                  false,
 				CurrentBlockValid:            false,

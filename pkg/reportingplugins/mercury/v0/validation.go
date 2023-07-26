@@ -8,11 +8,11 @@ import (
 )
 
 // ValidateCurrentBlock sanity checks number and hash
-func ValidateCurrentBlock(paos []IParsedAttributedObservation, f int, validFromBlockNum int64) error {
+func ValidateCurrentBlock(paos []ParsedAttributedObservation, f int, validFromBlockNum int64) error {
 	if validFromBlockNum < 0 {
 		return fmt.Errorf("validFromBlockNum must be >= 0 (got: %d)", validFromBlockNum)
 	}
-	var newBlockRangePaos []IParsedAttributedObservation
+	var newBlockRangePaos []ParsedAttributedObservation
 	for _, pao := range paos {
 		blockNum, valid := pao.GetCurrentBlockNum()
 		if valid && blockNum >= validFromBlockNum {

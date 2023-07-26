@@ -4,7 +4,7 @@ import (
 	"sort"
 )
 
-func GetConsensusMaxFinalizedTimestamp(paos []IParsedAttributedObservation) uint32 {
+func GetConsensusMaxFinalizedTimestamp(paos []ParsedAttributedObservation) uint32 {
 	sort.Slice(paos, func(i, j int) bool {
 		return paos[i].GetMaxFinalizedTimestamp() < paos[j].GetMaxFinalizedTimestamp()
 	})

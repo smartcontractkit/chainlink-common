@@ -235,11 +235,11 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	return proto.Marshal(&p)
 }
 
-func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttributedObservation, error) {
-	var pao ParsedAttributedObservation
+func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttributedObservation, error) {
+	var pao parsedAttributedObservation
 	var obs MercuryObservationProto
 	if err := proto.Unmarshal(ao.Observation, &obs); err != nil {
-		return ParsedAttributedObservation{}, pkgerrors.Errorf("attributed observation cannot be unmarshaled: %s", err)
+		return parsedAttributedObservation{}, pkgerrors.Errorf("attributed observation cannot be unmarshaled: %s", err)
 	}
 
 	pao.Timestamp = obs.Timestamp
@@ -249,15 +249,15 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 		var err error
 		pao.BenchmarkPrice, err = mercury.DecodeValueInt192(obs.BenchmarkPrice)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("benchmarkPrice cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("benchmarkPrice cannot be converted to big.Int: %s", err)
 		}
 		pao.Bid, err = mercury.DecodeValueInt192(obs.Bid)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("bid cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("bid cannot be converted to big.Int: %s", err)
 		}
 		pao.Ask, err = mercury.DecodeValueInt192(obs.Ask)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("ask cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("ask cannot be converted to big.Int: %s", err)
 		}
 		pao.PricesValid = true
 	}
@@ -268,7 +268,7 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 		var err error
 		pao.LinkFee, err = mercury.DecodeValueInt192(obs.LinkFee)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("link price cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("link price cannot be converted to big.Int: %s", err)
 		}
 		pao.LinkFeeValid = true
 	}
@@ -276,7 +276,7 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 		var err error
 		pao.NativeFee, err = mercury.DecodeValueInt192(obs.NativeFee)
 		if err != nil {
-			return ParsedAttributedObservation{}, pkgerrors.Errorf("native price cannot be converted to big.Int: %s", err)
+			return parsedAttributedObservation{}, pkgerrors.Errorf("native price cannot be converted to big.Int: %s", err)
 		}
 		pao.NativeFeeValid = true
 	}
@@ -284,8 +284,8 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (IParsedAttri
 	return pao, nil
 }
 
-func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedObservation) []IParsedAttributedObservation {
-	paos := make([]IParsedAttributedObservation, 0, len(aos))
+func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedObservation) []ParsedAttributedObservation {
+	paos := make([]ParsedAttributedObservation, 0, len(aos))
 	for i, ao := range aos {
 		pao, err := parseAttributedObservation(ao)
 		if err != nil {
@@ -342,7 +342,7 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 	return true, report, nil
 }
 
-func (rp *reportingPlugin) shouldReport(paos []IParsedAttributedObservation) (bool, error) {
+func (rp *reportingPlugin) shouldReport(paos []ParsedAttributedObservation) (bool, error) {
 	if !(rp.f+1 <= len(paos)) {
 		return false, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
@@ -359,22 +359,22 @@ func (rp *reportingPlugin) shouldReport(paos []IParsedAttributedObservation) (bo
 	return true, nil
 }
 
-func (rp *reportingPlugin) checkBenchmarkPrice(paos []IParsedAttributedObservation) error {
+func (rp *reportingPlugin) checkBenchmarkPrice(paos []ParsedAttributedObservation) error {
 	mPaos := Convert(paos)
 	return mercury.ValidateBenchmarkPrice(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkBid(paos []IParsedAttributedObservation) error {
+func (rp *reportingPlugin) checkBid(paos []ParsedAttributedObservation) error {
 	mPaos := Convert(paos)
 	return mercury.ValidateBid(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkAsk(paos []IParsedAttributedObservation) error {
+func (rp *reportingPlugin) checkAsk(paos []ParsedAttributedObservation) error {
 	mPaos := Convert(paos)
 	return mercury.ValidateAsk(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkValidFromTimestamp(paos []IParsedAttributedObservation) error {
+func (rp *reportingPlugin) checkValidFromTimestamp(paos []ParsedAttributedObservation) error {
 	return ValidateValidFromTimestamp(paos)
 }
 

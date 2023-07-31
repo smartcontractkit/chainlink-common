@@ -188,7 +188,7 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("if more than f+1 are invalid, fails", func(t *testing.T) {
 			invalidMPaos := Convert(invalidPaos)
 			_, err := mercury.GetConsensusBenchmarkPrice(invalidMPaos, f)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price")
+			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 0/4)")
 		})
 	})
 	t.Run("GetConsensusBid", func(t *testing.T) {
@@ -202,7 +202,7 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("if more than f+1 are invalid, fails", func(t *testing.T) {
 			invalidMPaos := Convert(invalidPaos)
 			_, err := mercury.GetConsensusBid(invalidMPaos, f)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price")
+			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 0/4)")
 		})
 	})
 	t.Run("GetConsensusAsk", func(t *testing.T) {
@@ -216,7 +216,7 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("if invalid, fails", func(t *testing.T) {
 			invalidMPaos := Convert(invalidPaos)
 			_, err := mercury.GetConsensusAsk(invalidMPaos, f)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price")
+			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 0/4)")
 		})
 	})
 

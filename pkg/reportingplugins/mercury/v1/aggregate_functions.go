@@ -1,15 +1,15 @@
 package mercury_v1
 
 import (
-	"sort"
 	"fmt"
+	"sort"
 )
 
 func GetConsensusMaxFinalizedTimestamp(paos []ParsedAttributedObservation, f int) (uint32, error) {
 	var validTimestampCount int
 	timestampFrequencyMap := map[uint32]int{}
 	for _, pao := range paos {
-	ts, valid := pao.GetMaxFinalizedTimestamp()
+		ts, valid := pao.GetMaxFinalizedTimestamp()
 		if valid {
 			validTimestampCount++
 			timestampFrequencyMap[ts]++

@@ -17,7 +17,7 @@ type parsedAttributedObservation struct {
 	Ask            *big.Int
 	PricesValid    bool
 
-	MaxFinalizedTimestamp uint32
+	MaxFinalizedTimestamp      uint32
 	MaxFinalizedTimestmapValid bool
 
 	LinkFee      *big.Int

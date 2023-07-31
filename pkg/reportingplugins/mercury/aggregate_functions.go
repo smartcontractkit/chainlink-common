@@ -1,10 +1,9 @@
 package mercury
 
 import (
+	"fmt"
 	"math/big"
 	"sort"
-
-	"github.com/pkg/errors"
 )
 
 // NOTE: All aggregate functions assume at least one element in the passed slice
@@ -29,7 +28,7 @@ func GetConsensusBenchmarkPrice(paos []ParsedAttributedObservation, f int) (*big
 	}
 
 	if len(validBenchmarkPrices) < f+1 {
-		return nil, errors.New("fewer than f+1 observations have a valid price")
+		return nil, fmt.Errorf("fewer than f+1 observations have a valid price (got: %d/%d)", len(validBenchmarkPrices), len(paos))
 	}
 	sort.Slice(validBenchmarkPrices, func(i, j int) bool {
 		return validBenchmarkPrices[i].Cmp(validBenchmarkPrices[j]) < 0
@@ -48,7 +47,7 @@ func GetConsensusBid(paos []ParsedAttributedObservation, f int) (*big.Int, error
 		}
 	}
 	if len(validBids) < f+1 {
-		return nil, errors.New("fewer than f+1 observations have a valid price")
+		return nil, fmt.Errorf("fewer than f+1 observations have a valid price (got: %d/%d)", len(validBids), len(paos))
 	}
 	sort.Slice(validBids, func(i, j int) bool {
 		return validBids[i].Cmp(validBids[j]) < 0
@@ -67,7 +66,7 @@ func GetConsensusAsk(paos []ParsedAttributedObservation, f int) (*big.Int, error
 		}
 	}
 	if len(validAsks) < f+1 {
-		return nil, errors.New("fewer than f+1 observations have a valid price")
+		return nil, fmt.Errorf("fewer than f+1 observations have a valid price (got: %d/%d)", len(validAsks), len(paos))
 	}
 	sort.Slice(validAsks, func(i, j int) bool {
 		return validAsks[i].Cmp(validAsks[j]) < 0
@@ -86,7 +85,7 @@ func GetConsensusLinkFee(paos []ParsedAttributedObservation, f int) (*big.Int, e
 		}
 	}
 	if len(validLinkFees) < f+1 {
-		return nil, errors.New("fewer than f+1 observations have a valid price")
+		return nil, fmt.Errorf("fewer than f+1 observations have a valid linkFee (got: %d/%d)", len(validLinkFees), len(paos))
 	}
 	sort.Slice(validLinkFees, func(i, j int) bool {
 		return validLinkFees[i].Cmp(validLinkFees[j]) < 0
@@ -105,7 +104,7 @@ func GetConsensusNativeFee(paos []ParsedAttributedObservation, f int) (*big.Int,
 		}
 	}
 	if len(validNativeFees) < f+1 {
-		return nil, errors.New("fewer than f+1 observations have a valid price")
+		return nil, fmt.Errorf("fewer than f+1 observations have a valid nativeFee (got: %d/%d)", len(validNativeFees), len(paos))
 	}
 	sort.Slice(validNativeFees, func(i, j int) bool {
 		return validNativeFees[i].Cmp(validNativeFees[j]) < 0

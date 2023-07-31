@@ -176,20 +176,12 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	}
 
 	var maxFinalizedTimestampErr error
-	if previousReport == nil {
-		// if previousReport is nil, we fall back to the observed timestamp
-		if obs.MaxFinalizedTimestamp.Err != nil {
-			maxFinalizedTimestampErr = pkgerrors.Wrap(obs.MaxFinalizedTimestamp.Err, "failed to observe MaxFinalizedTimestamp")
-			obsErrors = append(obsErrors, maxFinalizedTimestampErr)
-		} else {
-			p.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp.Val
-		}
+	if obs.MaxFinalizedTimestamp.Err != nil {
+		maxFinalizedTimestampErr = pkgerrors.Wrap(obs.MaxFinalizedTimestamp.Err, "failed to observe MaxFinalizedTimestamp")
+		obsErrors = append(obsErrors, maxFinalizedTimestampErr)
 	} else {
-		p.MaxFinalizedTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)
-		if err != nil {
-			maxFinalizedTimestampErr = pkgerrors.Wrap(obs.MaxFinalizedTimestamp.Err, "failed to extract timestamp from report")
-			obsErrors = append(obsErrors, maxFinalizedTimestampErr)
-		}
+		p.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp.Val
+		p.MaxFinalizedTimestampValid = true
 	}
 
 	var linkErr error

@@ -309,7 +309,27 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 		return false, nil, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
 	}
 
-	should, err := rp.shouldReport(paos)
+	observationTimestamp := mercury.GetConsensusTimestamp(Convert(paos))
+
+	var validFromTimestamp uint32
+	if previousReport == nil {
+		validFromTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)
+		if err != nil {
+			return false, nil, err
+		}
+	} else {
+		validFromTimestamp, err = GetConsensusMaxFinalizedTimestamp(paos, rp.f)
+		if err != nil {
+			return false, nil, err
+		}
+
+		// no previous observation timestamp available, e.g. in case of new feed
+		if validFromTimestamp == 0 {
+			validFromTimestamp = observationTimestamp
+		}
+	}
+
+	should, err := rp.shouldReport(paos, observationTimestamp, validFromTimestamp)
 	if err != nil || !should {
 		rp.logger.Debugw("shouldReport: no", "err", err)
 		return false, nil, err
@@ -319,13 +339,7 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 		)
 	}
 
-	observationTimestamp := mercury.GetConsensusTimestamp(Convert(paos))
-	validFromTimestamp := GetConsensusMaxFinalizedTimestamp(paos)
-
-	if (int64(observationTimestamp) + int64(rp.offchainConfig.ExpirationWindow)) > math.MaxUint32 {
-		return false, nil, fmt.Errorf("timestamp %d + expiration window %d overflows uint32", observationTimestamp, rp.offchainConfig.ExpirationWindow)
-	}
-	var expiresAt uint32 = observationTimestamp + rp.offchainConfig.ExpirationWindow
+	expiresAt := observationTimestamp + rp.offchainConfig.ExpirationWindow
 
 	report, err = rp.reportCodec.BuildReport(paos, rp.f, validFromTimestamp, expiresAt)
 	if err != nil {
@@ -342,16 +356,13 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 	return true, report, nil
 }
 
-func (rp *reportingPlugin) shouldReport(paos []ParsedAttributedObservation) (bool, error) {
-	if !(rp.f+1 <= len(paos)) {
-		return false, pkgerrors.Errorf("only received %v valid attributed observations, but need at least f+1 (%v)", len(paos), rp.f+1)
-	}
-
+func (rp *reportingPlugin) shouldReport(paos []ParsedAttributedObservation, observationTimestamp uint32, validFromTimestamp uint32) (bool, error) {
 	if err := errors.Join(
 		rp.checkBenchmarkPrice(paos),
 		rp.checkBid(paos),
 		rp.checkAsk(paos),
-		rp.checkValidFromTimestamp(paos),
+		rp.checkValidFromTimestamp(observationTimestamp, validFromTimestamp),
+		rp.checkExpiresAt(observationTimestamp, rp.offchainConfig.ExpirationWindow),
 	); err != nil {
 		return false, err
 	}
@@ -374,8 +385,12 @@ func (rp *reportingPlugin) checkAsk(paos []ParsedAttributedObservation) error {
 	return mercury.ValidateAsk(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
-func (rp *reportingPlugin) checkValidFromTimestamp(paos []ParsedAttributedObservation) error {
-	return ValidateValidFromTimestamp(paos)
+func (rp *reportingPlugin) checkValidFromTimestamp(observationTimestamp uint32, validFromTimestamp uint32) error {
+	return ValidateValidFromTimestamp(observationTimestamp, validFromTimestamp)
+}
+
+func (rp *reportingPlugin) checkExpiresAt(observationTimestamp uint32, expirationWindow uint32) error {
+	return ValidateExpiresAt(observationTimestamp, expirationWindow)
 }
 
 func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts ocrtypes.ReportTimestamp, report ocrtypes.Report) (bool, error) {

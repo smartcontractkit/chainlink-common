@@ -12,9 +12,10 @@ message MercuryObservationProto {
     bool pricesValid = 5;
 
     uint32 maxFinalizedTimestamp = 6;
+    bool maxFinalizedTimestampValid = 7;
 
-    bytes linkFee = 7;
-    bool linkFeeValid = 8;
-    bytes nativeFee = 9;
-    bool nativeFeeValid = 10;
+    bytes linkFee = 8;
+    bool linkFeeValid = 9;
+    bytes nativeFee = 10;
+    bool nativeFeeValid = 11;
 }

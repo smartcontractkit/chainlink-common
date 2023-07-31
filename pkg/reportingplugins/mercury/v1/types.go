@@ -9,7 +9,7 @@ import (
 type ParsedAttributedObservation interface {
 	mercury.ParsedAttributedObservation
 
-	GetMaxFinalizedTimestamp() uint32
+	GetMaxFinalizedTimestamp() (uint32, bool)
 }
 
 func Convert(pao []ParsedAttributedObservation) []mercury.ParsedAttributedObservation {

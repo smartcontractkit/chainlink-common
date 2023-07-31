@@ -21,7 +21,7 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679648456,
-			MaxFinalizedTimestmapValid: true,
+			MaxFinalizedTimestampValid: true,
 
 			LinkFee:        big.NewInt(1),
 			LinkFeeValid:   true,
@@ -37,7 +37,7 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679648456,
-			MaxFinalizedTimestmapValid: true,
+			MaxFinalizedTimestampValid: true,
 
 			LinkFee:        big.NewInt(2),
 			LinkFeeValid:   true,
@@ -53,7 +53,7 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679648456,
-			MaxFinalizedTimestmapValid: true,
+			MaxFinalizedTimestampValid: true,
 
 			LinkFee:        big.NewInt(3),
 			LinkFeeValid:   true,
@@ -69,7 +69,7 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679513477,
-			MaxFinalizedTimestmapValid: true,
+			MaxFinalizedTimestampValid: true,
 
 			LinkFee:        big.NewInt(4),
 			LinkFeeValid:   true,
@@ -90,7 +90,7 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    false,
 
 			MaxFinalizedTimestamp:      1679648456,
-			MaxFinalizedTimestmapValid: false,
+			MaxFinalizedTimestampValid: false,
 
 			LinkFee:        big.NewInt(1),
 			LinkFeeValid:   false,
@@ -106,7 +106,7 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    false,
 
 			MaxFinalizedTimestamp:      1679648456,
-			MaxFinalizedTimestmapValid: false,
+			MaxFinalizedTimestampValid: false,
 
 			LinkFee:        big.NewInt(2),
 			LinkFeeValid:   false,
@@ -122,7 +122,7 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    false,
 
 			MaxFinalizedTimestamp:      1679648456,
-			MaxFinalizedTimestmapValid: false,
+			MaxFinalizedTimestampValid: false,
 
 			LinkFee:        big.NewInt(3),
 			LinkFeeValid:   false,
@@ -138,7 +138,7 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679513477,
-			MaxFinalizedTimestmapValid: true,
+			MaxFinalizedTimestampValid: true,
 
 			LinkFee:        big.NewInt(4),
 			LinkFeeValid:   true,
@@ -215,6 +215,29 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("fails when fewer than f+1 maxFinalizedTimestamps are valid", func(t *testing.T) {
 			_, err := GetConsensusMaxFinalizedTimestamp(invalidPaos, f)
 			assert.EqualError(t, err, "fewer than f+1 observations have a valid maxFinalizedTimestamp (got: 1/4)")
+		})
+
+		t.Run("fails when cannot come to consensus f+1 maxFinalizedTimestamps", func(t *testing.T) {
+			paos := []ParsedAttributedObservation{
+				parsedAttributedObservation{
+					MaxFinalizedTimestamp:      1679648456,
+					MaxFinalizedTimestampValid: true,
+				},
+				parsedAttributedObservation{
+					MaxFinalizedTimestamp:      1679648457,
+					MaxFinalizedTimestampValid: true,
+				},
+				parsedAttributedObservation{
+					MaxFinalizedTimestamp:      1679648458,
+					MaxFinalizedTimestampValid: true,
+				},
+				parsedAttributedObservation{
+					MaxFinalizedTimestamp:      1679513477,
+					MaxFinalizedTimestampValid: true,
+				},
+			}
+			_, err := GetConsensusMaxFinalizedTimestamp(paos, f)
+			assert.EqualError(t, err, "no valid maxFinalizedTimestamp with at least f+1 votes (got counts: map[1679513477:1 1679648456:1 1679648457:1 1679648458:1])")
 		})
 	})
 

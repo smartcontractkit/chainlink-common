@@ -254,7 +254,10 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttrib
 		pao.PricesValid = true
 	}
 
-	pao.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp
+	if obs.MaxFinalizedTimestampValid {
+		pao.MaxFinalizedTimestamp = obs.MaxFinalizedTimestamp
+		pao.MaxFinalizedTimestampValid = true
+	}
 
 	if obs.LinkFeeValid {
 		var err error
@@ -304,7 +307,7 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 	observationTimestamp := mercury.GetConsensusTimestamp(Convert(paos))
 
 	var validFromTimestamp uint32
-	if previousReport == nil {
+	if previousReport != nil {
 		validFromTimestamp, err = rp.reportCodec.ObservationTimestampFromReport(previousReport)
 		if err != nil {
 			return false, nil, err

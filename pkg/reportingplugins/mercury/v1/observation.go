@@ -18,7 +18,7 @@ type parsedAttributedObservation struct {
 	PricesValid    bool
 
 	MaxFinalizedTimestamp      uint32
-	MaxFinalizedTimestmapValid bool
+	MaxFinalizedTimestampValid bool
 
 	LinkFee      *big.Int
 	LinkFeeValid bool
@@ -48,7 +48,7 @@ func (pao parsedAttributedObservation) GetAsk() (*big.Int, bool) {
 }
 
 func (pao parsedAttributedObservation) GetMaxFinalizedTimestamp() (uint32, bool) {
-	return pao.MaxFinalizedTimestamp, pao.MaxFinalizedTimestmapValid
+	return pao.MaxFinalizedTimestamp, pao.MaxFinalizedTimestampValid
 }
 
 func (pao parsedAttributedObservation) GetLinkFee() (*big.Int, bool) {

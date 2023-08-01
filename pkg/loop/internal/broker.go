@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 	"sync/atomic"
 
 	"google.golang.org/grpc"
@@ -64,10 +65,11 @@ type BrokerConfig struct {
 type brokerExt struct {
 	broker Broker
 	BrokerConfig
+	wg *sync.WaitGroup
 }
 
-// named returns a new [*brokerExt] with name added to the logger.
-func (b *brokerExt) named(name string) *brokerExt {
+// withNamedLogger returns a new [*brokerExt] with name added to the logger.
+func (b *brokerExt) withNamedLogger(name string) *brokerExt {
 	bn := *b
 	bn.Logger = logger.Named(b.Logger, name)
 	return &bn
@@ -76,13 +78,13 @@ func (b *brokerExt) named(name string) *brokerExt {
 // newClientConn return a new *clientConn backed by this *brokerExt.
 func (b *brokerExt) newClientConn(name string, newClient newClientFn) *clientConn {
 	return &clientConn{
-		brokerExt: b.named(name),
+		brokerExt: b.withNamedLogger(name),
 		newClient: newClient,
 		name:      name,
 	}
 }
 
-func (b *brokerExt) ctx() (context.Context, context.CancelFunc) {
+func (b *brokerExt) ctxAndCancelFromStopCh() (context.Context, context.CancelFunc) {
 	return utils.ContextFromChan(b.StopCh)
 }
 
@@ -106,7 +108,9 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 		server = b.NewServer(nil)
 	}
 	register(server)
+	b.wg.Add(1)
 	go func() {
+		defer b.wg.Done()
 		defer b.closeAll(deps...)
 		if err := server.Serve(lis); err != nil {
 			b.Logger.Errorw(fmt.Sprintf("Failed to serve %s on connection %d", name, id), "err", err)
@@ -114,7 +118,9 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 	}()
 
 	done := make(chan struct{})
+	b.wg.Add(1)
 	go func() {
+		defer b.wg.Done()
 		select {
 		case <-b.StopCh:
 			server.Stop()
@@ -125,6 +131,7 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 	return id, resource{fnCloser(func() {
 		server.Stop()
 		close(done)
+		b.wg.Wait()
 	}), name}, nil
 }
 

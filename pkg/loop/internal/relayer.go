@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -78,7 +79,7 @@ func RegisterPluginRelayerServer(server *grpc.Server, broker Broker, brokerCfg B
 
 func newPluginRelayerServer(broker Broker, brokerCfg BrokerConfig, impl PluginRelayer) *pluginRelayerServer {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "RelayerPluginServer")
-	return &pluginRelayerServer{brokerExt: &brokerExt{broker, brokerCfg}, impl: impl}
+	return &pluginRelayerServer{brokerExt: &brokerExt{broker, brokerCfg, new(sync.WaitGroup)}, impl: impl}
 }
 
 func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRelayerRequest) (*pb.NewRelayerReply, error) {
@@ -189,7 +190,7 @@ type relayerClient struct {
 }
 
 func newRelayerClient(b *brokerExt, conn grpc.ClientConnInterface) *relayerClient {
-	b = b.named("ChainRelayerClient")
+	b = b.withNamedLogger("ChainRelayerClient")
 	return &relayerClient{b, newServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
@@ -209,7 +210,7 @@ func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.Relay
 		}
 		return reply.ConfigProviderID, nil, nil
 	})
-	return newConfigProviderClient(r.named("ConfigProviderClient"), cc), nil
+	return newConfigProviderClient(r.withNamedLogger("ConfigProviderClient"), cc), nil
 }
 
 func (r *relayerClient) NewMedianProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.MedianProvider, error) {
@@ -323,7 +324,7 @@ type relayerServer struct {
 }
 
 func newChainRelayerServer(impl Relayer, b *brokerExt) *relayerServer {
-	return &relayerServer{impl: impl, brokerExt: b.named("ChainRelayerServer")}
+	return &relayerServer{impl: impl, brokerExt: b.withNamedLogger("ChainRelayerServer")}
 }
 
 func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewConfigProviderRequest) (*pb.NewConfigProviderReply, error) {

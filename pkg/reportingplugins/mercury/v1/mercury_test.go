@@ -1016,6 +1016,7 @@ func Test_Plugin_Observation(t *testing.T) {
 	t.Run("some observations failed", func(t *testing.T) {
 		obs := Observation{
 			BenchmarkPrice: mercury.ObsResult[*big.Int]{
+				Val: big.NewInt(rand.Int63()),
 				Err: errors.New("bechmarkPrice error"),
 			},
 			Bid: mercury.ObsResult[*big.Int]{
@@ -1025,9 +1026,11 @@ func Test_Plugin_Observation(t *testing.T) {
 				Val: big.NewInt(rand.Int63()),
 			},
 			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
+				Val: rand.Uint32(),
 				Err: errors.New("maxFinalizedTimestamp error"),
 			},
 			LinkPrice: mercury.ObsResult[*big.Int]{
+				Val: big.NewInt(rand.Int63()),
 				Err: errors.New("linkPrice error"),
 			},
 			NativePrice: mercury.ObsResult[*big.Int]{
@@ -1054,5 +1057,125 @@ func Test_Plugin_Observation(t *testing.T) {
 		assert.False(t, p.LinkFeeValid)
 		assert.Equal(t, CalculateFee(obs.NativePrice.Val, 100), mustDecodeBigInt(p.NativeFee))
 		assert.True(t, p.NativeFeeValid)
+	})
+
+	t.Run("all observations failed", func(t *testing.T) {
+		obs := Observation{
+			BenchmarkPrice: mercury.ObsResult[*big.Int]{
+				Err: errors.New("bechmarkPrice error"),
+			},
+			Bid: mercury.ObsResult[*big.Int]{
+				Err: errors.New("bid error"),
+			},
+			Ask: mercury.ObsResult[*big.Int]{
+				Err: errors.New("ask error"),
+			},
+			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
+				Err: errors.New("maxFinalizedTimestamp error"),
+			},
+			LinkPrice: mercury.ObsResult[*big.Int]{
+				Err: errors.New("linkPrice error"),
+			},
+			NativePrice: mercury.ObsResult[*big.Int]{
+				Err: errors.New("nativePrice error"),
+			},
+		}
+
+		dataSource.Obs = obs
+
+		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
+		require.NoError(t, err)
+
+		var p MercuryObservationProto
+		require.NoError(t, proto.Unmarshal(parsedObs, &p))
+
+		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
+		assert.Zero(t, p.BenchmarkPrice)
+		assert.Zero(t, p.Bid)
+		assert.Zero(t, p.Ask)
+		assert.False(t, p.PricesValid)
+		assert.Zero(t, p.MaxFinalizedTimestamp)
+		assert.False(t, p.MaxFinalizedTimestampValid)
+		assert.Zero(t, p.LinkFee)
+		assert.False(t, p.LinkFeeValid)
+		assert.Zero(t, p.NativeFee)
+		assert.False(t, p.NativeFeeValid)
+	})
+
+	t.Run("encoding fails on some observations", func(t *testing.T) {
+		obs := Observation{
+			BenchmarkPrice: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+			Bid: mercury.ObsResult[*big.Int]{
+				Val: big.NewInt(rand.Int63()),
+			},
+			Ask: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
+				Val: rand.Uint32(),
+			},
+			LinkPrice: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+			NativePrice: mercury.ObsResult[*big.Int]{
+				Val: big.NewInt(rand.Int63()),
+			},
+		}
+
+		dataSource.Obs = obs
+
+		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
+		require.NoError(t, err)
+
+		var p MercuryObservationProto
+		require.NoError(t, proto.Unmarshal(parsedObs, &p))
+
+		assert.Zero(t, p.BenchmarkPrice)
+		assert.Zero(t, p.Ask)
+		assert.False(t, p.PricesValid)
+		assert.Zero(t, p.LinkFee)
+		assert.False(t, p.LinkFeeValid)
+	})
+
+	t.Run("encoding fails on all observations", func(t *testing.T) {
+		obs := Observation{
+			BenchmarkPrice: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+			Bid: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+			Ask: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
+				Val: rand.Uint32(),
+			},
+			LinkPrice: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+			NativePrice: mercury.ObsResult[*big.Int]{
+				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+			},
+		}
+
+		dataSource.Obs = obs
+
+		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
+		require.NoError(t, err)
+
+		var p MercuryObservationProto
+		require.NoError(t, proto.Unmarshal(parsedObs, &p))
+
+		assert.Zero(t, p.BenchmarkPrice)
+		assert.Zero(t, p.Bid)
+		assert.Zero(t, p.Ask)
+		assert.False(t, p.PricesValid)
+		assert.Zero(t, p.LinkFee)
+		assert.False(t, p.LinkFeeValid)
+		assert.Zero(t, p.NativeFee)
+		assert.False(t, p.NativeFeeValid)
 	})
 }

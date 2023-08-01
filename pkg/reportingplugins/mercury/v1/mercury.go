@@ -59,6 +59,8 @@ const maxObservationLength = 32 + // feedID
 	mercury.ByteWidthInt192 + // bid
 	mercury.ByteWidthInt192 + // ask
 	4 + // validFromTimestamp
+	mercury.ByteWidthInt192 + // linkFee
+	mercury.ByteWidthInt192 + // nativeFee
 	16 /* overapprox. of protobuf overhead */
 
 type Factory struct {

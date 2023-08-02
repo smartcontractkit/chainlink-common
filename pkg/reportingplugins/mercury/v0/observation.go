@@ -32,6 +32,28 @@ type parsedAttributedObservation struct {
 	MaxFinalizedBlockNumberValid bool
 }
 
+func NewParsedAttributedObservation(ts uint32, observer commontypes.OracleID, bp *big.Int, bid *big.Int, ask *big.Int, pricesValid bool,
+	currentBlockNum int64, currentBlockHash []byte, currentBlockTimestamp uint64, currentBlockValid bool,
+	maxFinalizedBlockNumber int64, maxFinalizedBlockNumberValid bool) ParsedAttributedObservation {
+	return parsedAttributedObservation{
+		Timestamp: ts,
+		Observer:  observer,
+
+		BenchmarkPrice: bp,
+		Bid:            bid,
+		Ask:            ask,
+		PricesValid:    pricesValid,
+
+		CurrentBlockNum:       currentBlockNum,
+		CurrentBlockHash:      currentBlockHash,
+		CurrentBlockTimestamp: currentBlockTimestamp,
+		CurrentBlockValid:     currentBlockValid,
+
+		MaxFinalizedBlockNumber:      maxFinalizedBlockNumber,
+		MaxFinalizedBlockNumberValid: maxFinalizedBlockNumberValid,
+	}
+}
+
 func (pao parsedAttributedObservation) GetTimestamp() uint32 {
 	return pao.Timestamp
 }

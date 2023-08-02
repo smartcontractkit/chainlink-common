@@ -27,6 +27,29 @@ type parsedAttributedObservation struct {
 	NativeFeeValid bool
 }
 
+func NewParsedAttributedObservation(ts uint32, observer commontypes.OracleID,
+	bp *big.Int, bid *big.Int, ask *big.Int, pricesValid bool, mfts uint32,
+	mftsValid bool, linkFee *big.Int, linkFeeValid bool, nativeFee *big.Int, nativeFeeValid bool) ParsedAttributedObservation {
+	return parsedAttributedObservation{
+		Timestamp: ts,
+		Observer:  observer,
+
+		BenchmarkPrice: bp,
+		Bid:            bid,
+		Ask:            ask,
+		PricesValid:    pricesValid,
+
+		MaxFinalizedTimestamp:      mfts,
+		MaxFinalizedTimestampValid: mftsValid,
+
+		LinkFee:      linkFee,
+		LinkFeeValid: linkFeeValid,
+
+		NativeFee:      nativeFee,
+		NativeFeeValid: nativeFeeValid,
+	}
+}
+
 func (pao parsedAttributedObservation) GetTimestamp() uint32 {
 	return pao.Timestamp
 }

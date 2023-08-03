@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"sync"
-
 	"google.golang.org/grpc"
 )
 
@@ -14,7 +12,7 @@ type pluginClient struct {
 
 func newPluginClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *pluginClient {
 	var pc pluginClient
-	pc.brokerExt = &brokerExt{&pc.atomicBroker, brokerCfg, new(sync.WaitGroup)}
+	pc.brokerExt = &brokerExt{&pc.atomicBroker, brokerCfg}
 	pc.Refresh(broker, conn)
 	return &pc
 }

@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net"
@@ -11,7 +10,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 // Broker is a subset of the methods exported by *plugin.GRPCBroker.
@@ -65,7 +63,6 @@ type BrokerConfig struct {
 type brokerExt struct {
 	broker Broker
 	BrokerConfig
-	wg *sync.WaitGroup
 }
 
 // withNamedLogger returns a new [*brokerExt] with name added to the logger.
@@ -82,10 +79,6 @@ func (b *brokerExt) newClientConn(name string, newClient newClientFn) *clientCon
 		newClient: newClient,
 		name:      name,
 	}
-}
-
-func (b *brokerExt) ctxAndCancelFromStopCh() (context.Context, context.CancelFunc) {
-	return utils.ContextFromChan(b.StopCh)
 }
 
 func (b *brokerExt) dial(id uint32) (conn *grpc.ClientConn, err error) {
@@ -108,9 +101,10 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 		server = b.NewServer(nil)
 	}
 	register(server)
-	b.wg.Add(1)
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		defer b.wg.Done()
+		defer wg.Done()
 		defer b.closeAll(deps...)
 		if err := server.Serve(lis); err != nil {
 			b.Logger.Errorw(fmt.Sprintf("Failed to serve %s on connection %d", name, id), "err", err)
@@ -118,9 +112,9 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 	}()
 
 	done := make(chan struct{})
-	b.wg.Add(1)
+	wg.Add(1)
 	go func() {
-		defer b.wg.Done()
+		defer wg.Done()
 		select {
 		case <-b.StopCh:
 			server.Stop()
@@ -131,7 +125,7 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 	return id, resource{fnCloser(func() {
 		server.Stop()
 		close(done)
-		b.wg.Wait()
+		wg.Wait()
 	}), name}, nil
 }
 

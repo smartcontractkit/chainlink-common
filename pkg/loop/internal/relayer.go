@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"sync"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -79,7 +78,7 @@ func RegisterPluginRelayerServer(server *grpc.Server, broker Broker, brokerCfg B
 
 func newPluginRelayerServer(broker Broker, brokerCfg BrokerConfig, impl PluginRelayer) *pluginRelayerServer {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "RelayerPluginServer")
-	return &pluginRelayerServer{brokerExt: &brokerExt{broker, brokerCfg, new(sync.WaitGroup)}, impl: impl}
+	return &pluginRelayerServer{brokerExt: &brokerExt{broker, brokerCfg}, impl: impl}
 }
 
 func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRelayerRequest) (*pb.NewRelayerReply, error) {

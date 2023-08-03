@@ -13,6 +13,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 type ReportingPluginFactory interface {
@@ -31,7 +32,7 @@ func newReportingPluginFactoryClient(b *brokerExt, cc grpc.ClientConnInterface) 
 }
 
 func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
-	ctx, cancel := r.ctxAndCancelFromStopCh()
+	ctx, cancel := utils.ContextFromChan(r.StopCh)
 	defer cancel()
 
 	reply, err := r.grpc.NewReportingPlugin(ctx, &pb.NewReportingPluginRequest{ReportingPluginConfig: &pb.ReportingPluginConfig{
@@ -191,7 +192,7 @@ func (r *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context
 }
 
 func (r *reportingPluginClient) Close() error {
-	ctx, cancel := r.ctxAndCancelFromStopCh()
+	ctx, cancel := utils.ContextFromChan(r.StopCh)
 	defer cancel()
 
 	_, err := r.grpc.Close(ctx, &emptypb.Empty{})

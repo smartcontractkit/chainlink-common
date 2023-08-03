@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -18,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 type ErrorLog interface {
@@ -107,7 +107,7 @@ type pluginMedianServer struct {
 }
 
 func RegisterPluginMedianServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl PluginMedian) error {
-	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&brokerExt{broker, brokerCfg, new(sync.WaitGroup)}, impl))
+	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&brokerExt{broker, brokerCfg}, impl))
 	return nil
 }
 
@@ -205,7 +205,7 @@ type reportCodecClient struct {
 }
 
 func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedObservation) (report libocr.Report, err error) {
-	ctx, cancel := r.ctxAndCancelFromStopCh()
+	ctx, cancel := utils.ContextFromChan(r.StopCh)
 	defer cancel()
 
 	var req pb.BuildReportRequest
@@ -227,7 +227,7 @@ func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedOb
 }
 
 func (r *reportCodecClient) MedianFromReport(report libocr.Report) (*big.Int, error) {
-	ctx, cancel := r.ctxAndCancelFromStopCh()
+	ctx, cancel := utils.ContextFromChan(r.StopCh)
 	defer cancel()
 
 	reply, err := r.grpc.MedianFromReport(ctx, &pb.MedianFromReportRequest{Report: report})
@@ -238,7 +238,7 @@ func (r *reportCodecClient) MedianFromReport(report libocr.Report) (*big.Int, er
 }
 
 func (r *reportCodecClient) MaxReportLength(n int) (int, error) {
-	ctx, cancel := r.ctxAndCancelFromStopCh()
+	ctx, cancel := utils.ContextFromChan(r.StopCh)
 	defer cancel()
 
 	reply, err := r.grpc.MaxReportLength(ctx, &pb.MaxReportLengthRequest{N: int64(n)})
@@ -383,7 +383,7 @@ type onchainConfigCodecClient struct {
 }
 
 func (o *onchainConfigCodecClient) Encode(config median.OnchainConfig) ([]byte, error) {
-	ctx, cancel := o.ctxAndCancelFromStopCh()
+	ctx, cancel := utils.ContextFromChan(o.StopCh)
 	defer cancel()
 
 	req := &pb.EncodeRequest{OnchainConfig: &pb.OnchainConfig{
@@ -398,7 +398,7 @@ func (o *onchainConfigCodecClient) Encode(config median.OnchainConfig) ([]byte, 
 }
 
 func (o *onchainConfigCodecClient) Decode(bytes []byte) (oc median.OnchainConfig, err error) {
-	ctx, cancel := o.ctxAndCancelFromStopCh()
+	ctx, cancel := utils.ContextFromChan(o.StopCh)
 	defer cancel()
 
 	var reply *pb.DecodeReply

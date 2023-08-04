@@ -42,6 +42,7 @@ type Relayer interface {
 	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
+	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
 }
 
 // The bootstrap jobs only watch config.
@@ -79,4 +80,34 @@ type MercuryProvider interface {
 	ReportSchemaVersion() uint32
 	OnchainConfigCodec() mercury.OnchainConfigCodec
 	ContractTransmitter() mercury.Transmitter
+}
+
+type FunctionsProvider interface {
+	PluginProvider
+	FunctionsEvents() FunctionsEvents
+}
+
+type OracleRequest struct {
+	RequestID           [32]byte
+	RequestingContract  ocrtypes.Account
+	RequestInitiator    ocrtypes.Account
+	SubscriptionId      uint64
+	SubscriptionOwner   ocrtypes.Account
+	Data                []byte
+	DataVersion         uint16
+	Flags               [32]byte
+	CallbackGasLimit    uint64
+	TxHash              []byte
+	CoordinatorContract ocrtypes.Account
+	OnchainMetadata     []byte
+}
+
+type OracleResponse struct {
+	RequestID [32]byte
+}
+
+// An on-chain event source, which understands router proxy contracts.
+type FunctionsEvents interface {
+	Service
+	LatestEvents() ([]OracleRequest, []OracleResponse, error)
 }

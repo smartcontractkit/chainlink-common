@@ -13,7 +13,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 type ReportingPluginFactory interface {
@@ -28,11 +27,11 @@ type reportingPluginFactoryClient struct {
 }
 
 func newReportingPluginFactoryClient(b *brokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
-	return &reportingPluginFactoryClient{b.withNamedLogger("ReportingPluginProviderClient"), newServiceClient(b, cc), pb.NewReportingPluginFactoryClient(cc)}
+	return &reportingPluginFactoryClient{b.withName("ReportingPluginProviderClient"), newServiceClient(b, cc), pb.NewReportingPluginFactoryClient(cc)}
 }
 
 func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
-	ctx, cancel := utils.ContextFromChan(r.StopCh)
+	ctx, cancel := r.StopCtx()
 	defer cancel()
 
 	reply, err := r.grpc.NewReportingPlugin(ctx, &pb.NewReportingPluginRequest{ReportingPluginConfig: &pb.ReportingPluginConfig{
@@ -79,7 +78,7 @@ type reportingPluginFactoryServer struct {
 }
 
 func newReportingPluginFactoryServer(impl libocr.ReportingPluginFactory, b *brokerExt) *reportingPluginFactoryServer {
-	return &reportingPluginFactoryServer{impl: impl, brokerExt: b.withNamedLogger("ReportingPluginFactoryServer")}
+	return &reportingPluginFactoryServer{impl: impl, brokerExt: b.withName("ReportingPluginFactoryServer")}
 }
 
 func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, request *pb.NewReportingPluginRequest) (*pb.NewReportingPluginReply, error) {
@@ -133,7 +132,7 @@ type reportingPluginClient struct {
 }
 
 func newReportingPluginClient(b *brokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
-	return &reportingPluginClient{b.withNamedLogger("ReportingPluginClient"), pb.NewReportingPluginClient(cc)}
+	return &reportingPluginClient{b.withName("ReportingPluginClient"), pb.NewReportingPluginClient(cc)}
 }
 
 func (r *reportingPluginClient) Query(ctx context.Context, timestamp libocr.ReportTimestamp) (libocr.Query, error) {
@@ -192,7 +191,7 @@ func (r *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context
 }
 
 func (r *reportingPluginClient) Close() error {
-	ctx, cancel := utils.ContextFromChan(r.StopCh)
+	ctx, cancel := r.StopCtx()
 	defer cancel()
 
 	_, err := r.grpc.Close(ctx, &emptypb.Empty{})

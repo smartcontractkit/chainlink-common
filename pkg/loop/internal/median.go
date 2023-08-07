@@ -17,7 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 type ErrorLog interface {
@@ -112,7 +111,7 @@ func RegisterPluginMedianServer(server *grpc.Server, broker Broker, brokerCfg Br
 }
 
 func newPluginMedianServer(b *brokerExt, mp PluginMedian) *pluginMedianServer {
-	return &pluginMedianServer{brokerExt: b.withNamedLogger("PluginMedian"), impl: mp}
+	return &pluginMedianServer{brokerExt: b.withName("PluginMedian"), impl: mp}
 }
 
 func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.NewMedianFactoryRequest) (*pb.NewMedianFactoryReply, error) {
@@ -173,7 +172,7 @@ type medianProviderClient struct {
 }
 
 func newMedianProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *medianProviderClient {
-	m := &medianProviderClient{configProviderClient: newConfigProviderClient(b.withNamedLogger("MedianProviderClient"), cc)}
+	m := &medianProviderClient{configProviderClient: newConfigProviderClient(b.withName("MedianProviderClient"), cc)}
 	m.contractTransmitter = &contractTransmitterClient{b, pb.NewContractTransmitterClient(m.cc)}
 	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(m.cc)}
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(m.cc)}
@@ -205,7 +204,7 @@ type reportCodecClient struct {
 }
 
 func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedObservation) (report libocr.Report, err error) {
-	ctx, cancel := utils.ContextFromChan(r.StopCh)
+	ctx, cancel := r.StopCtx()
 	defer cancel()
 
 	var req pb.BuildReportRequest
@@ -227,7 +226,7 @@ func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedOb
 }
 
 func (r *reportCodecClient) MedianFromReport(report libocr.Report) (*big.Int, error) {
-	ctx, cancel := utils.ContextFromChan(r.StopCh)
+	ctx, cancel := r.StopCtx()
 	defer cancel()
 
 	reply, err := r.grpc.MedianFromReport(ctx, &pb.MedianFromReportRequest{Report: report})
@@ -238,7 +237,7 @@ func (r *reportCodecClient) MedianFromReport(report libocr.Report) (*big.Int, er
 }
 
 func (r *reportCodecClient) MaxReportLength(n int) (int, error) {
-	ctx, cancel := utils.ContextFromChan(r.StopCh)
+	ctx, cancel := r.StopCtx()
 	defer cancel()
 
 	reply, err := r.grpc.MaxReportLength(ctx, &pb.MaxReportLengthRequest{N: int64(n)})
@@ -383,7 +382,7 @@ type onchainConfigCodecClient struct {
 }
 
 func (o *onchainConfigCodecClient) Encode(config median.OnchainConfig) ([]byte, error) {
-	ctx, cancel := utils.ContextFromChan(o.StopCh)
+	ctx, cancel := o.StopCtx()
 	defer cancel()
 
 	req := &pb.EncodeRequest{OnchainConfig: &pb.OnchainConfig{
@@ -398,7 +397,7 @@ func (o *onchainConfigCodecClient) Encode(config median.OnchainConfig) ([]byte, 
 }
 
 func (o *onchainConfigCodecClient) Decode(bytes []byte) (oc median.OnchainConfig, err error) {
-	ctx, cancel := utils.ContextFromChan(o.StopCh)
+	ctx, cancel := o.StopCtx()
 	defer cancel()
 
 	var reply *pb.DecodeReply

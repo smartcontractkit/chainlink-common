@@ -9,7 +9,6 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 var _ libocr.ContractTransmitter = (*contractTransmitterClient)(nil)
@@ -61,7 +60,7 @@ func (c *contractTransmitterClient) LatestConfigDigestAndEpoch(ctx context.Conte
 }
 
 func (c *contractTransmitterClient) FromAccount() (libocr.Account, error) {
-	ctx, cancel := utils.ContextFromChan(c.StopCh)
+	ctx, cancel := c.StopCtx()
 	defer cancel()
 
 	reply, err := c.grpc.FromAccount(ctx, &pb.FromAccountRequest{})

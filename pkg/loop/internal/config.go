@@ -10,7 +10,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 var _ types.ConfigProvider = (*configProviderClient)(nil)
@@ -44,7 +43,7 @@ type offchainConfigDigesterClient struct {
 }
 
 func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig) (digest libocr.ConfigDigest, err error) {
-	ctx, cancel := utils.ContextFromChan(o.StopCh)
+	ctx, cancel := o.StopCtx()
 	defer cancel()
 
 	var reply *pb.ConfigDigestReply
@@ -63,7 +62,7 @@ func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig
 }
 
 func (o *offchainConfigDigesterClient) ConfigDigestPrefix() (libocr.ConfigDigestPrefix, error) {
-	ctx, cancel := utils.ContextFromChan(o.StopCh)
+	ctx, cancel := o.StopCtx()
 	defer cancel()
 
 	reply, err := o.grpc.ConfigDigestPrefix(ctx, &pb.ConfigDigestPrefixRequest{})

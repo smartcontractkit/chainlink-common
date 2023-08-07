@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
+	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 // Broker is a subset of the methods exported by *plugin.GRPCBroker.
@@ -65,8 +67,8 @@ type brokerExt struct {
 	BrokerConfig
 }
 
-// withNamedLogger returns a new [*brokerExt] with name added to the logger.
-func (b *brokerExt) withNamedLogger(name string) *brokerExt {
+// withName returns a new [*brokerExt] with name added to the logger.
+func (b *brokerExt) withName(name string) *brokerExt {
 	bn := *b
 	bn.Logger = logger.Named(b.Logger, name)
 	return &bn
@@ -75,10 +77,14 @@ func (b *brokerExt) withNamedLogger(name string) *brokerExt {
 // newClientConn return a new *clientConn backed by this *brokerExt.
 func (b *brokerExt) newClientConn(name string, newClient newClientFn) *clientConn {
 	return &clientConn{
-		brokerExt: b.withNamedLogger(name),
+		brokerExt: b.withName(name),
 		newClient: newClient,
 		name:      name,
 	}
+}
+
+func (b *brokerExt) StopCtx() (context.Context, context.CancelFunc) {
+	return utils.ContextFromChan(b.StopCh)
 }
 
 func (b *brokerExt) dial(id uint32) (conn *grpc.ClientConn, err error) {

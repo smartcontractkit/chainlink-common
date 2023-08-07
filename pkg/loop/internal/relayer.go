@@ -163,19 +163,12 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 
 // Relayer extends [types.Relayer] and includes [context.Context]s.
 type Relayer interface {
-	types.Service
+	types.ChainService
 
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)
 	NewMedianProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.MedianProvider, error)
 	NewMercuryProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.MercuryProvider, error)
 	NewFunctionsProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.FunctionsProvider, error)
-
-	ChainStatus(ctx context.Context, id string) (types.ChainStatus, error)
-	ChainStatuses(ctx context.Context, offset, limit int) (chains []types.ChainStatus, count int, err error)
-
-	NodeStatuses(ctx context.Context, offset, limit int, chainIDs ...string) (nodes []types.NodeStatus, count int, err error)
-
-	SendTx(ctx context.Context, chainID, from, to string, amount *big.Int, balanceCheck bool) error
 }
 
 var _ Relayer = (*relayerClient)(nil)
@@ -243,10 +236,8 @@ func (r *relayerClient) NewFunctionsProvider(context.Context, types.RelayArgs, t
 	return nil, errors.New("functions are not supported")
 }
 
-func (r *relayerClient) ChainStatus(ctx context.Context, id string) (types.ChainStatus, error) {
-	reply, err := r.relayer.ChainStatus(ctx, &pb.ChainStatusRequest{
-		Id: id,
-	})
+func (r *relayerClient) ChainStatus(ctx context.Context) (types.ChainStatus, error) {
+	reply, err := r.relayer.ChainStatus(ctx, &pb.ChainStatusRequest{})
 	if err != nil {
 		return types.ChainStatus{}, err
 	}
@@ -258,32 +249,10 @@ func (r *relayerClient) ChainStatus(ctx context.Context, id string) (types.Chain
 	}, nil
 }
 
-func (r *relayerClient) ChainStatuses(ctx context.Context, offset, limit int) (chains []types.ChainStatus, count int, err error) {
-	var reply *pb.ChainStatusesReply
-	reply, err = r.relayer.ChainStatuses(ctx, &pb.ChainStatusesRequest{
+func (r *relayerClient) NodeStatuses(ctx context.Context, offset, limit int) (nodes []types.NodeStatus, count int, err error) {
+	reply, err := r.relayer.NodeStatuses(ctx, &pb.NodeStatusesRequest{
 		Offset: int32(offset),
 		Limit:  int32(limit),
-	})
-	if err != nil {
-		return
-	}
-	count = int(reply.Count)
-	for _, c := range reply.Chains {
-		chains = append(chains, types.ChainStatus{
-			ID:      c.Id,
-			Enabled: c.Enabled,
-			Config:  c.Config,
-		})
-	}
-
-	return
-}
-
-func (r *relayerClient) NodeStatuses(ctx context.Context, offset, limit int, chainIDs ...string) (nodes []types.NodeStatus, count int, err error) {
-	reply, err := r.relayer.NodeStatuses(ctx, &pb.NodeStatusesRequest{
-		Offset:   int32(offset),
-		Limit:    int32(limit),
-		ChainIDs: chainIDs,
 	})
 	if err != nil {
 		return nil, -1, err
@@ -300,9 +269,8 @@ func (r *relayerClient) NodeStatuses(ctx context.Context, offset, limit int, cha
 	return
 }
 
-func (r *relayerClient) SendTx(ctx context.Context, chainID, from, to string, amount *big.Int, balanceCheck bool) error {
+func (r *relayerClient) SendTx(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
 	_, err := r.relayer.SendTx(ctx, &pb.SendTxRequest{
-		ChainID:      chainID,
 		From:         from,
 		To:           to,
 		Amount:       pb.NewBigIntFromInt(amount),
@@ -405,7 +373,7 @@ func (r *relayerServer) NewMercuryProvider(ctx context.Context, request *pb.NewM
 }
 
 func (r *relayerServer) ChainStatus(ctx context.Context, request *pb.ChainStatusRequest) (*pb.ChainStatusReply, error) {
-	chain, err := r.impl.ChainStatus(ctx, request.Id)
+	chain, err := r.impl.ChainStatus(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -416,24 +384,8 @@ func (r *relayerServer) ChainStatus(ctx context.Context, request *pb.ChainStatus
 	}}, nil
 }
 
-func (r *relayerServer) ChainStatuses(ctx context.Context, request *pb.ChainStatusesRequest) (*pb.ChainStatusesReply, error) {
-	chains, count, err := r.impl.ChainStatuses(ctx, int(request.Offset), int(request.Limit))
-	if err != nil {
-		return nil, err
-	}
-	reply := &pb.ChainStatusesReply{Count: int32(count)}
-	for _, c := range chains {
-		reply.Chains = append(reply.Chains, &pb.ChainStatus{
-			Id:      c.ID,
-			Enabled: c.Enabled,
-			Config:  c.Config,
-		})
-	}
-	return reply, nil
-}
-
 func (r *relayerServer) NodeStatuses(ctx context.Context, request *pb.NodeStatusesRequest) (*pb.NodeStatusesReply, error) {
-	nodeConfigs, count, err := r.impl.NodeStatuses(ctx, int(request.Offset), int(request.Limit), request.ChainIDs...)
+	nodeConfigs, count, err := r.impl.NodeStatuses(ctx, int(request.Offset), int(request.Limit))
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +401,7 @@ func (r *relayerServer) NodeStatuses(ctx context.Context, request *pb.NodeStatus
 	return &pb.NodeStatusesReply{Nodes: nodes, Count: int32(count)}, nil
 }
 func (r *relayerServer) SendTx(ctx context.Context, request *pb.SendTxRequest) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, r.impl.SendTx(ctx, request.ChainID, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
+	return &emptypb.Empty{}, r.impl.SendTx(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
 }
 
 func healthReport(s map[string]string) (hr map[string]error) {

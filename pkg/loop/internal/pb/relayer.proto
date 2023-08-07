@@ -130,9 +130,9 @@ message ChainStatus {
 
 // NodeStatusesRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.NodeStatuses].
 message NodeStatusesRequest {
+  reserved 3; // chainIDs
   int32 offset = 1;
   int32 limit = 2;
-  repeated string chainIDs = 3;
 }
 
 // NodeStatusesReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.NodeStatuses].
@@ -151,7 +151,7 @@ message NodeStatus {
 
 // SendTxRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.SendTx].
 message SendTxRequest {
-  string chainID = 1;
+  reserved 1; //chainID
   string from = 2;
   string to = 3;
   BigInt amount = 4;

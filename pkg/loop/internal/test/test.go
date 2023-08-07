@@ -42,8 +42,6 @@ var (
 		Config: ConfigTOML,
 	}
 	chainID            = "chain-id"
-	chainIDs           = []string{"foo", "bar"}
-	chains             = []types.ChainStatus{chain, {ID: "test-id", Enabled: true}}
 	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
 	configDigestPrefix = libocr.ConfigDigestPrefix(99)
 	contractConfig     = libocr.ContractConfig{

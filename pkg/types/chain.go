@@ -21,6 +21,9 @@ type ChainSet[I any, C ChainService] interface {
 type ChainService interface {
 	Service
 
+	ChainStatus(ctx context.Context) (ChainStatus, error)
+	NodeStatuses(ctx context.Context, offset, limit int) (nodes []NodeStatus, count int, err error)
+
 	SendTx(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 }
 

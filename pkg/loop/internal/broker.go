@@ -83,7 +83,7 @@ func (b *brokerExt) newClientConn(name string, newClient newClientFn) *clientCon
 	}
 }
 
-func (b *brokerExt) StopCtx() (context.Context, context.CancelFunc) {
+func (b *brokerExt) stopCtx() (context.Context, context.CancelFunc) {
 	return utils.ContextFromChan(b.StopCh)
 }
 

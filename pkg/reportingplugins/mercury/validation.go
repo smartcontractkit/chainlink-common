@@ -1,6 +1,7 @@
 package mercury
 
 import (
+	"math"
 	"math/big"
 
 	pkgerrors "github.com/pkg/errors"
@@ -46,6 +47,22 @@ func ValidateAsk(paos []ParsedAttributedObservation, f int, min, max *big.Int) e
 
 	if !(min.Cmp(answer) <= 0 && answer.Cmp(max) <= 0) {
 		return pkgerrors.Errorf("median ask price %s is outside of allowable range (Min: %s, Max: %s)", answer, min, max)
+	}
+
+	return nil
+}
+
+func ValidateValidFromTimestamp(observationTimestamp uint32, validFromTimestamp uint32) error {
+	if observationTimestamp < validFromTimestamp {
+		return pkgerrors.Errorf("observationTimestamp (%d) must be >= validFromTimestamp (%d)", observationTimestamp, validFromTimestamp)
+	}
+
+	return nil
+}
+
+func ValidateExpiresAt(observationTimestamp uint32, expirationWindow uint32) error {
+	if int64(observationTimestamp)+int64(expirationWindow) > math.MaxUint32 {
+		return pkgerrors.Errorf("timestamp %d + expiration window %d overflows uint32", observationTimestamp, expirationWindow)
 	}
 
 	return nil

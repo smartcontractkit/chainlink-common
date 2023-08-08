@@ -15,6 +15,8 @@ type ParsedAttributedObservation interface {
 	GetBid() (*big.Int, bool)
 	GetAsk() (*big.Int, bool)
 
+	GetMaxFinalizedTimestamp() (uint32, bool)
+
 	GetLinkFee() (*big.Int, bool)
 	GetNativeFee() (*big.Int, bool)
 }

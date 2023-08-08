@@ -1,4 +1,4 @@
-package mercury_v3
+package mercury_v2
 
 import (
 	"context"
@@ -20,8 +20,6 @@ import (
 
 type Observation struct {
 	BenchmarkPrice mercury.ObsResult[*big.Int]
-	Bid            mercury.ObsResult[*big.Int]
-	Ask            mercury.ObsResult[*big.Int]
 
 	MaxFinalizedTimestamp mercury.ObsResult[uint32]
 
@@ -56,8 +54,6 @@ var _ ocr3types.MercuryPluginFactory = Factory{}
 const maxObservationLength = 32 + // feedID
 	4 + // timestamp
 	mercury.ByteWidthInt192 + // benchmarkPrice
-	mercury.ByteWidthInt192 + // bid
-	mercury.ByteWidthInt192 + // ask
 	4 + // validFromTimestamp
 	mercury.ByteWidthInt192 + // linkFee
 	mercury.ByteWidthInt192 + // nativeFee
@@ -141,7 +137,7 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	p := MercuryObservationProto{Timestamp: uint32(observationTimestamp.Unix())}
 	var obsErrors []error
 
-	var bpErr, bidErr, askErr error
+	var bpErr error
 	if obs.BenchmarkPrice.Err != nil {
 		bpErr = pkgerrors.Wrap(obs.BenchmarkPrice.Err, "failed to observe BenchmarkPrice")
 		obsErrors = append(obsErrors, bpErr)
@@ -150,30 +146,6 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		obsErrors = append(obsErrors, bpErr)
 	} else {
 		p.BenchmarkPrice = benchmarkPrice
-	}
-
-	if obs.Bid.Err != nil {
-		// TODO: Add tests that its invalid if encoding fails on all
-		bidErr = pkgerrors.Wrap(obs.Bid.Err, "failed to observe Bid")
-		obsErrors = append(obsErrors, bidErr)
-	} else if bid, err := mercury.EncodeValueInt192(obs.Bid.Val); err != nil {
-		bidErr = pkgerrors.Wrap(err, "failed to observe Bid; encoding failed")
-		obsErrors = append(obsErrors, bidErr)
-	} else {
-		p.Bid = bid
-	}
-
-	if obs.Ask.Err != nil {
-		askErr = pkgerrors.Wrap(obs.Ask.Err, "failed to observe Ask")
-		obsErrors = append(obsErrors, askErr)
-	} else if bid, err := mercury.EncodeValueInt192(obs.Ask.Val); err != nil {
-		askErr = pkgerrors.Wrap(err, "failed to observe Ask; encoding failed")
-		obsErrors = append(obsErrors, askErr)
-	} else {
-		p.Ask = bid
-	}
-
-	if bpErr == nil && bidErr == nil && askErr == nil {
 		p.PricesValid = true
 	}
 
@@ -223,7 +195,7 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	}
 
 	if len(obsErrors) > 0 {
-		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/6 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
+		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/4 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
 	}
 
 	return proto.Marshal(&p)
@@ -244,14 +216,6 @@ func parseAttributedObservation(ao ocrtypes.AttributedObservation) (ParsedAttrib
 		pao.BenchmarkPrice, err = mercury.DecodeValueInt192(obs.BenchmarkPrice)
 		if err != nil {
 			return parsedAttributedObservation{}, pkgerrors.Errorf("benchmarkPrice cannot be converted to big.Int: %s", err)
-		}
-		pao.Bid, err = mercury.DecodeValueInt192(obs.Bid)
-		if err != nil {
-			return parsedAttributedObservation{}, pkgerrors.Errorf("bid cannot be converted to big.Int: %s", err)
-		}
-		pao.Ask, err = mercury.DecodeValueInt192(obs.Ask)
-		if err != nil {
-			return parsedAttributedObservation{}, pkgerrors.Errorf("ask cannot be converted to big.Int: %s", err)
 		}
 		pao.PricesValid = true
 	}
@@ -356,8 +320,6 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 func (rp *reportingPlugin) shouldReport(paos []ParsedAttributedObservation, observationTimestamp uint32, validFromTimestamp uint32) (bool, error) {
 	if err := errors.Join(
 		rp.checkBenchmarkPrice(paos),
-		rp.checkBid(paos),
-		rp.checkAsk(paos),
 		rp.checkValidFromTimestamp(observationTimestamp, validFromTimestamp),
 		rp.checkExpiresAt(observationTimestamp, rp.offchainConfig.ExpirationWindow),
 	); err != nil {
@@ -370,16 +332,6 @@ func (rp *reportingPlugin) shouldReport(paos []ParsedAttributedObservation, obse
 func (rp *reportingPlugin) checkBenchmarkPrice(paos []ParsedAttributedObservation) error {
 	mPaos := Convert(paos)
 	return mercury.ValidateBenchmarkPrice(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
-}
-
-func (rp *reportingPlugin) checkBid(paos []ParsedAttributedObservation) error {
-	mPaos := Convert(paos)
-	return mercury.ValidateBid(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
-}
-
-func (rp *reportingPlugin) checkAsk(paos []ParsedAttributedObservation) error {
-	mPaos := Convert(paos)
-	return mercury.ValidateAsk(mPaos, rp.f, rp.onchainConfig.Min, rp.onchainConfig.Max)
 }
 
 func (rp *reportingPlugin) checkValidFromTimestamp(observationTimestamp uint32, validFromTimestamp uint32) error {

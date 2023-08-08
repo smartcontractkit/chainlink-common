@@ -1,4 +1,4 @@
-package mercury_v3
+package mercury_v2
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func (rc *testReportCodec) BuildReport(paos []ParsedAttributedObservation, f int
 }
 
 func (rc testReportCodec) MaxReportLength(n int) (int, error) {
-	return 123, nil
+	return 456, nil
 }
 
 func (rc testReportCodec) ObservationTimestampFromReport(ocrtypes.Report) (uint32, error) {
@@ -95,8 +95,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -111,8 +109,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 45,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -127,8 +123,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 47,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -143,8 +137,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 39,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -172,8 +164,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -201,8 +191,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 47,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -217,8 +205,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 39,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -246,8 +232,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -273,8 +257,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -289,8 +271,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 45,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -305,8 +285,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 47,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -321,8 +299,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 39,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      120,
@@ -349,8 +325,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -365,8 +339,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 45,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -381,8 +353,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 47,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -397,8 +367,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 39,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -422,8 +390,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -438,8 +404,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 45,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      41,
@@ -454,8 +418,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 47,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      42,
@@ -470,8 +432,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 39,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      43,
@@ -495,8 +455,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 55,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      0,
@@ -511,8 +469,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 55,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      0,
@@ -527,8 +483,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 55,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      0,
@@ -543,8 +497,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 55,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      43,
@@ -571,26 +523,18 @@ func Test_Plugin_Report(t *testing.T) {
 			paos := []ParsedAttributedObservation{
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
 					PricesValid:    false,
 				},
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
 					PricesValid:    false,
 				},
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
 					PricesValid:    false,
 				},
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
 					PricesValid:    true,
 				},
 			}
@@ -603,164 +547,24 @@ func Test_Plugin_Report(t *testing.T) {
 			paos := []ParsedAttributedObservation{
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(123123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
 					PricesValid:    true,
 				},
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(456456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
 					PricesValid:    true,
 				},
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(789789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
 					PricesValid:    true,
 				},
 				parsedAttributedObservation{
 					BenchmarkPrice: big.NewInt(123890),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
 					PricesValid:    true,
 				},
 			}
 
 			err := rp.checkBenchmarkPrice(paos)
 			assert.EqualError(t, err, "median benchmark price 456456 is outside of allowable range (Min: 1, Max: 1000)")
-		})
-	})
-
-	t.Run("checkBid", func(t *testing.T) {
-		t.Run("checkBid errors when fewer than f+1 observations have valid price", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
-
-			err := rp.checkBid(paos)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
-		})
-
-		t.Run("checkBid errors when consensus bid is outside of allowable range", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120120),
-					Ask:            big.NewInt(130),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780780),
-					Ask:            big.NewInt(800),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
-
-			err := rp.checkBid(paos)
-			assert.EqualError(t, err, "median bid price 450450 is outside of allowable range (Min: 1, Max: 1000)")
-		})
-	})
-
-	t.Run("checkAsk", func(t *testing.T) {
-		t.Run("checkAsk errors when fewer than f+1 observations have valid price", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
-
-			err := rp.checkAsk(paos)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
-		})
-
-		t.Run("checkAsk errors when consensus ask is outside of allowable range", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130130),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460460),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800800),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460460),
-					PricesValid:    true,
-				},
-			}
-
-			err := rp.checkAsk(paos)
-			assert.EqualError(t, err, "median ask price 460460 is outside of allowable range (Min: 1, Max: 1000)")
 		})
 	})
 
@@ -781,8 +585,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -797,8 +599,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 45,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -813,8 +613,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 47,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -829,8 +627,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 39,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -846,7 +642,7 @@ func Test_Plugin_Report(t *testing.T) {
 
 			_, _, err := rp.Report(ocrtypes.ReportTimestamp{}, nil, aos)
 
-			assert.EqualError(t, err, "report with len 65536 violates MaxReportLength limit set by ReportCodec (123)")
+			assert.EqualError(t, err, "report with len 65536 violates MaxReportLength limit set by ReportCodec (456)")
 		})
 
 		t.Run("Report errors when the report length is 0", func(t *testing.T) {
@@ -855,8 +651,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 42,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -871,8 +665,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 45,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -887,8 +679,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 47,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -903,8 +693,6 @@ func Test_Plugin_Report(t *testing.T) {
 					Timestamp: 39,
 
 					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
 					PricesValid:    true,
 
 					MaxFinalizedTimestamp:      40,
@@ -940,8 +728,6 @@ func Test_Plugin_Observation(t *testing.T) {
 		obs := MercuryObservationProto{
 			Timestamp:                  math.MaxUint32,
 			BenchmarkPrice:             make([]byte, 24),
-			Bid:                        make([]byte, 24),
-			Ask:                        make([]byte, 24),
 			PricesValid:                true,
 			MaxFinalizedTimestamp:      math.MaxUint32,
 			MaxFinalizedTimestampValid: true,
@@ -956,7 +742,7 @@ func Test_Plugin_Observation(t *testing.T) {
 		// that increment the count below
 		numFields := reflect.TypeOf(obs).NumField() //nolint:all
 		// 3 fields internal to pbuf struct
-		require.Equal(t, 11, numFields-3)
+		require.Equal(t, 9, numFields-3)
 
 		b, err := proto.Marshal(&obs)
 		require.NoError(t, err)
@@ -966,12 +752,6 @@ func Test_Plugin_Observation(t *testing.T) {
 	t.Run("all observations succeeded", func(t *testing.T) {
 		obs := Observation{
 			BenchmarkPrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
 				Val: big.NewInt(rand.Int63()),
 			},
 			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
@@ -994,8 +774,6 @@ func Test_Plugin_Observation(t *testing.T) {
 
 		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
 		assert.Equal(t, obs.BenchmarkPrice.Val, mustDecodeBigInt(p.BenchmarkPrice))
-		assert.Equal(t, obs.Bid.Val, mustDecodeBigInt(p.Bid))
-		assert.Equal(t, obs.Ask.Val, mustDecodeBigInt(p.Ask))
 		assert.True(t, p.PricesValid)
 		assert.Equal(t, obs.MaxFinalizedTimestamp.Val, p.MaxFinalizedTimestamp)
 		assert.True(t, p.MaxFinalizedTimestampValid)
@@ -1010,12 +788,6 @@ func Test_Plugin_Observation(t *testing.T) {
 			BenchmarkPrice: mercury.ObsResult[*big.Int]{
 				Val: big.NewInt(rand.Int63()),
 				Err: errors.New("bechmarkPrice error"),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
 			},
 			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
 				Val: rand.Uint32(),
@@ -1040,8 +812,6 @@ func Test_Plugin_Observation(t *testing.T) {
 
 		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
 		assert.Zero(t, p.BenchmarkPrice)
-		assert.Equal(t, obs.Bid.Val, mustDecodeBigInt(p.Bid))
-		assert.Equal(t, obs.Ask.Val, mustDecodeBigInt(p.Ask))
 		assert.False(t, p.PricesValid)
 		assert.Zero(t, p.MaxFinalizedTimestamp)
 		assert.False(t, p.MaxFinalizedTimestampValid)
@@ -1055,12 +825,6 @@ func Test_Plugin_Observation(t *testing.T) {
 		obs := Observation{
 			BenchmarkPrice: mercury.ObsResult[*big.Int]{
 				Err: errors.New("bechmarkPrice error"),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Err: errors.New("bid error"),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Err: errors.New("ask error"),
 			},
 			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
 				Err: errors.New("maxFinalizedTimestamp error"),
@@ -1083,8 +847,6 @@ func Test_Plugin_Observation(t *testing.T) {
 
 		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
 		assert.Zero(t, p.BenchmarkPrice)
-		assert.Zero(t, p.Bid)
-		assert.Zero(t, p.Ask)
 		assert.False(t, p.PricesValid)
 		assert.Zero(t, p.MaxFinalizedTimestamp)
 		assert.False(t, p.MaxFinalizedTimestampValid)
@@ -1099,12 +861,6 @@ func Test_Plugin_Observation(t *testing.T) {
 			BenchmarkPrice: mercury.ObsResult[*big.Int]{
 				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
 			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
 			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
 				Val: rand.Uint32(),
 			},
@@ -1125,7 +881,6 @@ func Test_Plugin_Observation(t *testing.T) {
 		require.NoError(t, proto.Unmarshal(parsedObs, &p))
 
 		assert.Zero(t, p.BenchmarkPrice)
-		assert.Zero(t, p.Ask)
 		assert.False(t, p.PricesValid)
 		assert.Zero(t, p.LinkFee)
 		assert.False(t, p.LinkFeeValid)
@@ -1136,12 +891,6 @@ func Test_Plugin_Observation(t *testing.T) {
 			BenchmarkPrice: mercury.ObsResult[*big.Int]{
 				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
 			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
 			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
 				Val: rand.Uint32(),
 			},
@@ -1162,8 +911,6 @@ func Test_Plugin_Observation(t *testing.T) {
 		require.NoError(t, proto.Unmarshal(parsedObs, &p))
 
 		assert.Zero(t, p.BenchmarkPrice)
-		assert.Zero(t, p.Bid)
-		assert.Zero(t, p.Ask)
 		assert.False(t, p.PricesValid)
 		assert.Zero(t, p.LinkFee)
 		assert.False(t, p.LinkFeeValid)

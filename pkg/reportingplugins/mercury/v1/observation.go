@@ -90,6 +90,10 @@ func (pao parsedAttributedObservation) GetMaxFinalizedBlockNumber() (int64, bool
 	return pao.MaxFinalizedBlockNumber, pao.MaxFinalizedBlockNumberValid
 }
 
+func (pao parsedAttributedObservation) GetMaxFinalizedTimestamp() (uint32, bool) {
+	panic("current observation doesn't contain the field")
+}
+
 func (pao parsedAttributedObservation) GetLinkFee() (*big.Int, bool) {
 	panic("current observation doesn't contain the field")
 }

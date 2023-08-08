@@ -1,4 +1,4 @@
-package mercury_v3
+package mercury_v2
 
 import (
 	"math/big"
@@ -16,8 +16,6 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 1689648456,
 
 			BenchmarkPrice: big.NewInt(123),
-			Bid:            big.NewInt(120),
-			Ask:            big.NewInt(130),
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679648456,
@@ -32,8 +30,6 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 1689648456,
 
 			BenchmarkPrice: big.NewInt(456),
-			Bid:            big.NewInt(450),
-			Ask:            big.NewInt(460),
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679648456,
@@ -48,8 +44,6 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 1689648789,
 
 			BenchmarkPrice: big.NewInt(789),
-			Bid:            big.NewInt(780),
-			Ask:            big.NewInt(800),
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679648456,
@@ -64,8 +58,6 @@ func NewValidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 1689648789,
 
 			BenchmarkPrice: big.NewInt(456),
-			Bid:            big.NewInt(450),
-			Ask:            big.NewInt(460),
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679513477,
@@ -85,8 +77,6 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 1,
 
 			BenchmarkPrice: big.NewInt(123),
-			Bid:            big.NewInt(120),
-			Ask:            big.NewInt(130),
 			PricesValid:    false,
 
 			MaxFinalizedTimestamp:      1679648456,
@@ -101,8 +91,6 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 2,
 
 			BenchmarkPrice: big.NewInt(456),
-			Bid:            big.NewInt(450),
-			Ask:            big.NewInt(460),
 			PricesValid:    false,
 
 			MaxFinalizedTimestamp:      1679648456,
@@ -117,8 +105,6 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 2,
 
 			BenchmarkPrice: big.NewInt(789),
-			Bid:            big.NewInt(780),
-			Ask:            big.NewInt(800),
 			PricesValid:    false,
 
 			MaxFinalizedTimestamp:      1679648456,
@@ -133,8 +119,6 @@ func NewInvalidParsedAttributedObservations() []ParsedAttributedObservation {
 			Timestamp: 3,
 
 			BenchmarkPrice: big.NewInt(456),
-			Bid:            big.NewInt(450),
-			Ask:            big.NewInt(460),
 			PricesValid:    true,
 
 			MaxFinalizedTimestamp:      1679513477,
@@ -171,36 +155,6 @@ func Test_AggregateFunctions(t *testing.T) {
 		t.Run("fails when fewer than f+1 prices are valid", func(t *testing.T) {
 			invalidMPaos := Convert(invalidPaos)
 			_, err := mercury.GetConsensusBenchmarkPrice(invalidMPaos, f)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
-		})
-	})
-
-	t.Run("GetConsensusBid", func(t *testing.T) {
-		t.Run("gets consensus bid when prices are valid", func(t *testing.T) {
-			validMPaos := Convert(validPaos)
-			bid, err := mercury.GetConsensusBid(validMPaos, f)
-			require.NoError(t, err)
-			assert.Equal(t, "450", bid.String())
-		})
-
-		t.Run("fails when fewer than f+1 prices are valid", func(t *testing.T) {
-			invalidMPaos := Convert(invalidPaos)
-			_, err := mercury.GetConsensusBid(invalidMPaos, f)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
-		})
-	})
-
-	t.Run("GetConsensusAsk", func(t *testing.T) {
-		t.Run("gets consensus ask when prices are valid", func(t *testing.T) {
-			validMPaos := Convert(validPaos)
-			bid, err := mercury.GetConsensusAsk(validMPaos, f)
-			require.NoError(t, err)
-			assert.Equal(t, "460", bid.String())
-		})
-
-		t.Run("fails when fewer than f+1 prices are valid", func(t *testing.T) {
-			invalidMPaos := Convert(invalidPaos)
-			_, err := mercury.GetConsensusAsk(invalidMPaos, f)
 			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
 		})
 	})

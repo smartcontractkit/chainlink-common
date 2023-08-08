@@ -1,4 +1,4 @@
-package mercury_v3
+package mercury_v2
 
 import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"

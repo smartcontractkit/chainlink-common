@@ -10,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	mercuryv1 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v1"
+	mercuryv2 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v2"
 	mercuryv3 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v3"
 )
 
@@ -76,6 +77,7 @@ type MedianProvider interface {
 type MercuryProvider interface {
 	ConfigProvider
 	ReportCodecV1() mercuryv1.ReportCodec
+	ReportCodecV2() mercuryv2.ReportCodec
 	ReportCodecV3() mercuryv3.ReportCodec
 	ReportSchemaVersion() uint32
 	OnchainConfigCodec() mercury.OnchainConfigCodec

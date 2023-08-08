@@ -54,7 +54,7 @@ func TestCalculateBumpedFee(t *testing.T) {
 	bumpPercent := uint16(10)
 
 	// Expected results
-	expectedFeePrice := big.NewInt(192) // 42 (original fee) + 42 * 10 / 100 (bumpPercent)
+	expectedFeePrice := big.NewInt(192)
 
 	actualFeePrice, err := CalculateBumpedFee(
 		lggr,
@@ -95,7 +95,8 @@ func TestApplyMultiplier(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		got := ApplyMultiplier(uint32(tc.input), tc.cfg.MultiplierLimit)
+		got, err := ApplyMultiplier(uint32(tc.input), tc.cfg.MultiplierLimit)
+		require.NoError(t, err)
 		assert.Equal(t, tc.want, int(got))
 	}
 }

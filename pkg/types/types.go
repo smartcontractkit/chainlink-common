@@ -9,8 +9,8 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
-	mercuryv0 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v0"
 	mercuryv1 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v1"
+	mercuryv3 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v3"
 )
 
 type Service interface {
@@ -75,8 +75,8 @@ type MedianProvider interface {
 // Mercury requires config tracking but does not transmit on-chain.
 type MercuryProvider interface {
 	ConfigProvider
-	ReportCodecV0() mercuryv0.ReportCodec
 	ReportCodecV1() mercuryv1.ReportCodec
+	ReportCodecV3() mercuryv3.ReportCodec
 	ReportSchemaVersion() uint32
 	OnchainConfigCodec() mercury.OnchainConfigCodec
 	ContractTransmitter() mercury.Transmitter

@@ -15,21 +15,26 @@ type parsedAttributedObservation struct {
 	BenchmarkPrice *big.Int
 	Bid            *big.Int
 	Ask            *big.Int
-	PricesValid    bool
+	// All three prices must be valid, or none are (they all should come from one API query and hold invariant bid <= bm <= ask)
+	PricesValid bool
 
-	MaxFinalizedTimestamp      uint32
-	MaxFinalizedTimestampValid bool
+	CurrentBlockNum       int64 // inclusive; current block
+	CurrentBlockHash      []byte
+	CurrentBlockTimestamp uint64
+	// All three block observations must be valid, or none are (they all come from the same block)
+	CurrentBlockValid bool
 
-	LinkFee      *big.Int
-	LinkFeeValid bool
-
-	NativeFee      *big.Int
-	NativeFeeValid bool
+	// MaxFinalizedBlockNumber comes from previous report when present and is
+	// only observed from mercury server when previous report is nil
+	//
+	// MaxFinalizedBlockNumber will be -1 if there is none
+	MaxFinalizedBlockNumber      int64
+	MaxFinalizedBlockNumberValid bool
 }
 
-func NewParsedAttributedObservation(ts uint32, observer commontypes.OracleID,
-	bp *big.Int, bid *big.Int, ask *big.Int, pricesValid bool, mfts uint32,
-	mftsValid bool, linkFee *big.Int, linkFeeValid bool, nativeFee *big.Int, nativeFeeValid bool) ParsedAttributedObservation {
+func NewParsedAttributedObservation(ts uint32, observer commontypes.OracleID, bp *big.Int, bid *big.Int, ask *big.Int, pricesValid bool,
+	currentBlockNum int64, currentBlockHash []byte, currentBlockTimestamp uint64, currentBlockValid bool,
+	maxFinalizedBlockNumber int64, maxFinalizedBlockNumberValid bool) ParsedAttributedObservation {
 	return parsedAttributedObservation{
 		Timestamp: ts,
 		Observer:  observer,
@@ -39,14 +44,13 @@ func NewParsedAttributedObservation(ts uint32, observer commontypes.OracleID,
 		Ask:            ask,
 		PricesValid:    pricesValid,
 
-		MaxFinalizedTimestamp:      mfts,
-		MaxFinalizedTimestampValid: mftsValid,
+		CurrentBlockNum:       currentBlockNum,
+		CurrentBlockHash:      currentBlockHash,
+		CurrentBlockTimestamp: currentBlockTimestamp,
+		CurrentBlockValid:     currentBlockValid,
 
-		LinkFee:      linkFee,
-		LinkFeeValid: linkFeeValid,
-
-		NativeFee:      nativeFee,
-		NativeFeeValid: nativeFeeValid,
+		MaxFinalizedBlockNumber:      maxFinalizedBlockNumber,
+		MaxFinalizedBlockNumberValid: maxFinalizedBlockNumberValid,
 	}
 }
 
@@ -70,14 +74,26 @@ func (pao parsedAttributedObservation) GetAsk() (*big.Int, bool) {
 	return pao.Ask, pao.PricesValid
 }
 
-func (pao parsedAttributedObservation) GetMaxFinalizedTimestamp() (uint32, bool) {
-	return pao.MaxFinalizedTimestamp, pao.MaxFinalizedTimestampValid
+func (pao parsedAttributedObservation) GetCurrentBlockNum() (int64, bool) {
+	return pao.CurrentBlockNum, pao.CurrentBlockValid
+}
+
+func (pao parsedAttributedObservation) GetCurrentBlockHash() ([]byte, bool) {
+	return pao.CurrentBlockHash, pao.CurrentBlockValid
+}
+
+func (pao parsedAttributedObservation) GetCurrentBlockTimestamp() (uint64, bool) {
+	return pao.CurrentBlockTimestamp, pao.CurrentBlockValid
+}
+
+func (pao parsedAttributedObservation) GetMaxFinalizedBlockNumber() (int64, bool) {
+	return pao.MaxFinalizedBlockNumber, pao.MaxFinalizedBlockNumberValid
 }
 
 func (pao parsedAttributedObservation) GetLinkFee() (*big.Int, bool) {
-	return pao.LinkFee, pao.LinkFeeValid
+	panic("current observation doesn't contain the field")
 }
 
 func (pao parsedAttributedObservation) GetNativeFee() (*big.Int, bool) {
-	return pao.NativeFee, pao.NativeFeeValid
+	panic("current observation doesn't contain the field")
 }

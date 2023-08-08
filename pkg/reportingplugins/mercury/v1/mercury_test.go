@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/big"
 	"math/rand"
-	"reflect"
+	reflect "reflect"
 	"testing"
 	"time"
 
@@ -14,922 +14,308 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
-	"github.com/stretchr/testify/require"
 )
 
-type testDataSource struct {
-	Obs Observation
-}
-
-func (ds testDataSource) Observe(ctx context.Context, repts ocrtypes.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (Observation, error) {
-	return ds.Obs, nil
-}
-
 type testReportCodec struct {
-	observationTimestamp uint32
-	validFromTimestamp   uint32
-	builtReport          ocrtypes.Report
+	currentBlock          int64
+	currentBlockErr       error
+	builtReport           ocrtypes.Report
+	buildReportShouldFail bool
+
+	lastBuildReportPaos              []ParsedAttributedObservation
+	lastBuildReportF                 int
+	lastBuildReportValidFromBlockNum int64
 }
 
-func (rc *testReportCodec) BuildReport(paos []ParsedAttributedObservation, f int, validFromTimestamp uint32, expiresAt uint32) (ocrtypes.Report, error) {
-	rc.validFromTimestamp = validFromTimestamp
-	return rc.builtReport, nil
+func (trc *testReportCodec) reset() {
+	trc.currentBlockErr = nil
+	trc.buildReportShouldFail = false
+	trc.lastBuildReportPaos = nil
+	trc.lastBuildReportF = 0
+	trc.lastBuildReportValidFromBlockNum = 0
 }
 
-func (rc testReportCodec) MaxReportLength(n int) (int, error) {
-	return n*32 + // feed ID
-			n*4 + // timestamp
-			n*24 + // benchmarkPrice
-			n*24 + // bid
-			n*24 + // ask
-			n*4 + // validFromTimestamp
-			n*24 + // linkFee
-			n*24, // nativeFee
+func (trc *testReportCodec) BuildReport(paos []ParsedAttributedObservation, f int, validFromBlockNum int64) (ocrtypes.Report, error) {
+	if trc.buildReportShouldFail {
+		return nil, errors.New("buildReportShouldFail=true")
+	}
+	trc.lastBuildReportPaos = paos
+	trc.lastBuildReportF = f
+	trc.lastBuildReportValidFromBlockNum = validFromBlockNum
+	return trc.builtReport, nil
+}
+
+func (trc *testReportCodec) MaxReportLength(n int) (int, error) {
+	return 8*32 + // feed ID
+			32 + // timestamp
+			192 + // benchmarkPrice
+			192 + // bid
+			192 + // ask
+			64 + //currentBlockNum
+			8*32 + // currentBlockHash
+			64, // validFromBlockNum
 		nil
 }
 
-func (rc testReportCodec) ObservationTimestampFromReport(ocrtypes.Report) (uint32, error) {
-	return rc.observationTimestamp, nil
+func (trc *testReportCodec) CurrentBlockNumFromReport(types.Report) (int64, error) {
+	return trc.currentBlock, trc.currentBlockErr
 }
 
-func newAttributedObservation(t *testing.T, p *MercuryObservationProto) ocrtypes.AttributedObservation {
-	marshalledObs, err := proto.Marshal(p)
+func newReportingPlugin(t *testing.T, codec *testReportCodec) *reportingPlugin {
+	maxReportLength, err := codec.MaxReportLength(4)
 	require.NoError(t, err)
-	return ocrtypes.AttributedObservation{
-		Observation: ocrtypes.Observation(marshalledObs),
-		Observer:    commontypes.OracleID(42),
-	}
-}
-
-func newTestReportPlugin(t *testing.T, codec *testReportCodec, ds *testDataSource) *reportingPlugin {
-	offchainConfig := mercury.OffchainConfig{
-		ExpirationWindow: 1,
-		BaseUSDFeeCents:  100,
-	}
-	onchainConfig := mercury.OnchainConfig{
-		Min: big.NewInt(1),
-		Max: big.NewInt(1000),
-	}
-	maxReportLength, _ := codec.MaxReportLength(4)
 	return &reportingPlugin{
-		offchainConfig:           offchainConfig,
-		onchainConfig:            onchainConfig,
-		dataSource:               ds,
-		logger:                   logger.Test(t),
-		reportCodec:              codec,
-		configDigest:             ocrtypes.ConfigDigest{},
-		f:                        1,
-		latestAcceptedEpochRound: mercury.EpochRound{},
-		latestAcceptedMedian:     big.NewInt(0),
-		maxReportLength:          maxReportLength,
+		f:               1,
+		onchainConfig:   mercury.OnchainConfig{Min: big.NewInt(0), Max: big.NewInt(1000)},
+		logger:          logger.Test(t),
+		reportCodec:     codec,
+		maxReportLength: maxReportLength,
 	}
 }
 
-func Test_Plugin_Report(t *testing.T) {
-	dataSource := &testDataSource{}
-	codec := &testReportCodec{}
-	rp := newTestReportPlugin(t, codec, dataSource)
+func Test_ReportingPlugin_shouldReport(t *testing.T) {
+	rp := newReportingPlugin(t, &testReportCodec{})
+	repts := types.ReportTimestamp{}
 
-	t.Run("when previous report is not nil", func(t *testing.T) {
-		previousReport := ocrtypes.Report{}
+	t.Run("reports if all reports have currentBlockNum > validFromBlockNum", func(t *testing.T) {
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
 
-		t.Run("reports if more than f+1 observations are valid", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
 
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 45,
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
 
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
-					PricesValid:    true,
+		shouldReport, err := rp.shouldReport(499, repts, paos)
+		require.NoError(t, err)
 
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 47,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 39,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-			codec.observationTimestamp = 11
-			codec.builtReport = ocrtypes.Report{1, 2, 3}
-
-			should, report, err := rp.Report(ocrtypes.ReportTimestamp{}, previousReport, aos)
-			assert.True(t, should)
-			assert.NoError(t, err)
-			assert.Equal(t, codec.builtReport, report)
-			assert.Equal(t, codec.validFromTimestamp, codec.observationTimestamp)
-		})
-
-		t.Run("reports if no f+1 maxFinalizedTimestamp observations available", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 45,
-
-					PricesValid: false,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 47,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 39,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-			codec.observationTimestamp = 22
-			codec.builtReport = ocrtypes.Report{2, 3, 4}
-
-			should, report, err := rp.Report(ocrtypes.ReportTimestamp{}, previousReport, aos)
-			assert.True(t, should)
-			assert.NoError(t, err)
-			assert.Equal(t, codec.builtReport, report)
-			assert.Equal(t, codec.validFromTimestamp, codec.observationTimestamp)
-		})
-
-		t.Run("errors when less than f+1 valid observations available", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-			}
-
-			_, _, err := rp.Report(ocrtypes.ReportTimestamp{}, previousReport, aos)
-			assert.EqualError(t, err, "only received 1 valid attributed observations, but need at least f+1 (2)")
-		})
+		assert.True(t, shouldReport)
 	})
+	t.Run("reports if all reports have currentBlockNum == validFromBlockNum", func(t *testing.T) {
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
 
-	t.Run("when previous report is nil", func(t *testing.T) {
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
 
-		t.Run("reports if more than f+1 observations are valid", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
 
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 45,
+		shouldReport, err := rp.shouldReport(500, repts, paos)
+		require.NoError(t, err)
 
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 47,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 39,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      120,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-			codec.builtReport = ocrtypes.Report{1, 2, 3}
-
-			should, report, err := rp.Report(ocrtypes.ReportTimestamp{}, nil, aos)
-			assert.True(t, should)
-			assert.NoError(t, err)
-			assert.Equal(t, codec.builtReport, report)
-			assert.Equal(t, int(codec.validFromTimestamp), 40)
-		})
-
-		t.Run("errors when less than f+1 maxFinalizedTimestamp observations available", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 45,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 47,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 39,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: false,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-
-			should, _, err := rp.Report(ocrtypes.ReportTimestamp{}, nil, aos)
-			assert.False(t, should)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid maxFinalizedTimestamp (got: 1/4)")
-		})
-
-		t.Run("errors when cannot come to consensus on MaxFinalizedTimestamp", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 45,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      41,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 47,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      42,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 39,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      43,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-
-			should, _, err := rp.Report(ocrtypes.ReportTimestamp{}, nil, aos)
-			assert.False(t, should)
-			assert.EqualError(t, err, "no valid maxFinalizedTimestamp with at least f+1 votes (got counts: map[40:1 41:1 42:1 43:1])")
-		})
-
-		t.Run("maxFinalizedTimestamp equals to observationTimestamp when consensus on MaxFinalizedTimestamp = 0", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 55,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      0,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 55,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      0,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 55,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      0,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 55,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      43,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-			codec.builtReport = ocrtypes.Report{7, 8, 9}
-
-			should, report, err := rp.Report(ocrtypes.ReportTimestamp{}, nil, aos)
-			assert.True(t, should)
-			assert.NoError(t, err)
-			assert.Equal(t, codec.builtReport, report)
-			assert.Equal(t, int(codec.validFromTimestamp), 55)
-		})
+		assert.True(t, shouldReport)
 	})
+	t.Run("does not report if all observations have currentBlockNum < validFromBlockNum", func(t *testing.T) {
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
 
-	t.Run("checkBenchmarkPrice", func(t *testing.T) {
-		t.Run("checkBenchmarkPrice errors when fewer than f+1 observations have valid price", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
 
-			err := rp.checkBenchmarkPrice(paos)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
-		})
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-		t.Run("checkBenchmarkPrice errors when consensus benchmark price is outside of allowable range", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123890),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-			err := rp.checkBenchmarkPrice(paos)
-			assert.EqualError(t, err, "median benchmark price 456456 is outside of allowable range (Min: 1, Max: 1000)")
-		})
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       499,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
+
+		shouldReport, err := rp.shouldReport(500, repts, paos)
+		require.NoError(t, err)
+
+		assert.False(t, shouldReport)
 	})
+	t.Run("returns error if it cannot come to consensus about currentBlockNum", func(t *testing.T) {
+		paos := []ParsedAttributedObservation{
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(345),
+				Bid:            big.NewInt(343),
+				Ask:            big.NewInt(347),
+				PricesValid:    true,
 
-	t.Run("checkBid", func(t *testing.T) {
-		t.Run("checkBid errors when fewer than f+1 observations have valid price", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       500,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(335),
+				Bid:            big.NewInt(332),
+				Ask:            big.NewInt(336),
+				PricesValid:    true,
 
-			err := rp.checkBid(paos)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
-		})
+				CurrentBlockHash:      mustDecodeHex("8f30cda279821c5bb6f72f7ab900aa5118215ce59fcf8835b12d0cdbadc9d7b0"),
+				CurrentBlockNum:       501,
+				CurrentBlockTimestamp: 1682908180,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(347),
+				Bid:            big.NewInt(345),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-		t.Run("checkBid errors when consensus bid is outside of allowable range", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120120),
-					Ask:            big.NewInt(130),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780780),
-					Ask:            big.NewInt(800),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       502,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+			parsedAttributedObservation{
+				BenchmarkPrice: big.NewInt(346),
+				Bid:            big.NewInt(347),
+				Ask:            big.NewInt(350),
+				PricesValid:    true,
 
-			err := rp.checkBid(paos)
-			assert.EqualError(t, err, "median bid price 450450 is outside of allowable range (Min: 1, Max: 1000)")
-		})
+				CurrentBlockHash:      mustDecodeHex("40044147503a81e9f2a225f4717bf5faf5dc574f69943bdcd305d5ed97504a7e"),
+				CurrentBlockNum:       503,
+				CurrentBlockTimestamp: 1682591344,
+				CurrentBlockValid:     true,
+			},
+		}
+
+		shouldReport, err := rp.shouldReport(499, repts, paos)
+		require.NoError(t, err)
+
+		assert.False(t, shouldReport)
 	})
+}
 
-	t.Run("checkAsk", func(t *testing.T) {
-		t.Run("checkAsk errors when fewer than f+1 observations have valid price", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800),
-					PricesValid:    false,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460),
-					PricesValid:    true,
-				},
-			}
+var _ DataSource = &mockDataSource{}
 
-			err := rp.checkAsk(paos)
-			assert.EqualError(t, err, "fewer than f+1 observations have a valid price (got: 1/4)")
-		})
+type mockDataSource struct{ obs Observation }
 
-		t.Run("checkAsk errors when consensus ask is outside of allowable range", func(t *testing.T) {
-			paos := []ParsedAttributedObservation{
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(123),
-					Bid:            big.NewInt(120),
-					Ask:            big.NewInt(130130),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460460),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(789),
-					Bid:            big.NewInt(780),
-					Ask:            big.NewInt(800800),
-					PricesValid:    true,
-				},
-				parsedAttributedObservation{
-					BenchmarkPrice: big.NewInt(456),
-					Bid:            big.NewInt(450),
-					Ask:            big.NewInt(460460),
-					PricesValid:    true,
-				},
-			}
+func (m mockDataSource) Observe(context.Context, ocrtypes.ReportTimestamp, bool) (Observation, error) {
+	return m.obs, nil
+}
 
-			err := rp.checkAsk(paos)
-			assert.EqualError(t, err, "median ask price 460460 is outside of allowable range (Min: 1, Max: 1000)")
-		})
-	})
+func randBigInt() *big.Int {
+	return big.NewInt(rand.Int63())
+}
 
-	t.Run("checkValidFromTimestamp errors when observationTimestamp < validFromTimestamp", func(t *testing.T) {
-		err := rp.checkValidFromTimestamp(123, 456)
-		assert.EqualError(t, err, "observationTimestamp (123) must be >= validFromTimestamp (456)")
-	})
-
-	t.Run("checkExpiresAt errors when expiresAt overflows", func(t *testing.T) {
-		err := rp.checkExpiresAt(math.MaxUint32, math.MaxUint32)
-		assert.EqualError(t, err, "timestamp 4294967295 + expiration window 4294967295 overflows uint32")
-	})
-
-	t.Run("buildReport failures", func(t *testing.T) {
-		t.Run("Report errors when the report is too large", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 45,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 47,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 39,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-			codec.builtReport = make([]byte, 1<<16)
-
-			_, _, err := rp.Report(ocrtypes.ReportTimestamp{}, nil, aos)
-
-			assert.EqualError(t, err, "report with len 65536 violates MaxReportLength limit set by ReportCodec (640)")
-		})
-
-		t.Run("Report errors when the report length is 0", func(t *testing.T) {
-			aos := []ocrtypes.AttributedObservation{
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 42,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(123)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(120)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(130)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.1e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.1e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 45,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(234)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(230)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(240)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.2e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.2e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 47,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(345)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(340)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(350)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.3e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.3e18)),
-					NativeFeeValid: true,
-				}),
-				newAttributedObservation(t, &MercuryObservationProto{
-					Timestamp: 39,
-
-					BenchmarkPrice: mercury.MustEncodeValueInt192(big.NewInt(456)),
-					Bid:            mercury.MustEncodeValueInt192(big.NewInt(450)),
-					Ask:            mercury.MustEncodeValueInt192(big.NewInt(460)),
-					PricesValid:    true,
-
-					MaxFinalizedTimestamp:      40,
-					MaxFinalizedTimestampValid: true,
-
-					LinkFee:        mercury.MustEncodeValueInt192(big.NewInt(1.4e18)),
-					LinkFeeValid:   true,
-					NativeFee:      mercury.MustEncodeValueInt192(big.NewInt(2.4e18)),
-					NativeFeeValid: true,
-				}),
-			}
-			codec.builtReport = []byte{}
-			_, _, err := rp.Report(ocrtypes.ReportTimestamp{}, nil, aos)
-
-			assert.EqualError(t, err, "report may not have zero length (invariant violation)")
-		})
-	})
+func randBytes(n int) []byte {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func mustDecodeBigInt(b []byte) *big.Int {
@@ -941,22 +327,621 @@ func mustDecodeBigInt(b []byte) *big.Int {
 }
 
 func Test_Plugin_Observation(t *testing.T) {
-	dataSource := &testDataSource{}
-	codec := &testReportCodec{}
-	rp := newTestReportPlugin(t, codec, dataSource)
-	t.Run("Observation protobuf doesn't exceed maxObservationLength", func(t *testing.T) {
+	ctx := context.Background()
+	repts := ocrtypes.ReportTimestamp{}
+	codec := &testReportCodec{
+		currentBlock: int64(rand.Int31()),
+		builtReport:  []byte{},
+	}
+
+	rp := newReportingPlugin(t, codec)
+
+	t.Run("with previous report", func(t *testing.T) {
+		// content of previousReport is irrelevant, the only thing that matters
+		// for this test is that it's not nil
+		previousReport := ocrtypes.Report{}
+
+		t.Run("when all observations are successful", func(t *testing.T) {
+			obs := Observation{
+				BenchmarkPrice: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				Bid: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				Ask: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				CurrentBlockNum: mercury.ObsResult[int64]{
+					Val: rand.Int63(),
+				},
+				CurrentBlockHash: mercury.ObsResult[[]byte]{
+					Val: randBytes(32),
+				},
+				CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+					Val: rand.Uint64(),
+				},
+			}
+
+			rp.dataSource = mockDataSource{obs}
+
+			pbObs, err := rp.Observation(ctx, repts, previousReport)
+			require.NoError(t, err)
+
+			var p MercuryObservationProto
+			require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+			assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
+			assert.Equal(t, obs.BenchmarkPrice.Val, mustDecodeBigInt(p.BenchmarkPrice))
+			assert.Equal(t, obs.Bid.Val, mustDecodeBigInt(p.Bid))
+			assert.Equal(t, obs.Ask.Val, mustDecodeBigInt(p.Ask))
+			assert.Equal(t, obs.CurrentBlockNum.Val, p.CurrentBlockNum)
+			assert.Equal(t, obs.CurrentBlockHash.Val, p.CurrentBlockHash)
+			assert.Equal(t, obs.CurrentBlockTimestamp.Val, p.CurrentBlockTimestamp)
+			// since previousReport is not nil, maxFinalizedBlockNumber is skipped
+			assert.Zero(t, p.MaxFinalizedBlockNumber)
+
+			assert.True(t, p.PricesValid)
+			assert.True(t, p.CurrentBlockValid)
+			// since previousReport is not nil, maxFinalizedBlockNumber is skipped
+			assert.False(t, p.MaxFinalizedBlockNumberValid)
+		})
+
+		t.Run("when all observations have failed", func(t *testing.T) {
+			obs := Observation{
+				// Vals should be ignored, this is asserted with .Zero below
+				BenchmarkPrice: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+					Err: errors.New("benchmarkPrice exploded"),
+				},
+				Bid: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+					Err: errors.New("bid exploded"),
+				},
+				Ask: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+					Err: errors.New("ask exploded"),
+				},
+				CurrentBlockNum: mercury.ObsResult[int64]{
+					Err: errors.New("currentBlockNum exploded"),
+					Val: rand.Int63(),
+				},
+				CurrentBlockHash: mercury.ObsResult[[]byte]{
+					Err: errors.New("currentBlockHash exploded"),
+					Val: randBytes(32),
+				},
+				CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+					Err: errors.New("currentBlockTimestamp exploded"),
+					Val: rand.Uint64(),
+				},
+			}
+			rp.dataSource = mockDataSource{obs}
+
+			pbObs, err := rp.Observation(ctx, repts, previousReport)
+			require.NoError(t, err)
+
+			var p MercuryObservationProto
+			require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+			assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
+			assert.Zero(t, p.BenchmarkPrice)
+			assert.Zero(t, p.Bid)
+			assert.Zero(t, p.Ask)
+			assert.Zero(t, p.CurrentBlockNum)
+			assert.Zero(t, p.CurrentBlockHash)
+			assert.Zero(t, p.CurrentBlockTimestamp)
+			// since previousReport is not nil, maxFinalizedBlockNumber is skipped
+			assert.Zero(t, p.MaxFinalizedBlockNumber)
+
+			assert.False(t, p.PricesValid)
+			assert.False(t, p.CurrentBlockValid)
+			// since previousReport is not nil, maxFinalizedBlockNumber is skipped
+			assert.False(t, p.MaxFinalizedBlockNumberValid)
+		})
+
+		t.Run("when some observations have failed", func(t *testing.T) {
+			obs := Observation{
+				BenchmarkPrice: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				Bid: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				Ask: mercury.ObsResult[*big.Int]{
+					Err: errors.New("ask exploded"),
+				},
+				CurrentBlockNum: mercury.ObsResult[int64]{
+					Err: errors.New("currentBlockNum exploded"),
+				},
+				CurrentBlockHash: mercury.ObsResult[[]byte]{
+					Val: randBytes(32),
+				},
+				CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+					Val: rand.Uint64(),
+				},
+			}
+			rp.dataSource = mockDataSource{obs}
+
+			pbObs, err := rp.Observation(ctx, repts, previousReport)
+			require.NoError(t, err)
+
+			var p MercuryObservationProto
+			require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+			assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
+			assert.Equal(t, obs.BenchmarkPrice.Val, mustDecodeBigInt(p.BenchmarkPrice))
+			assert.Equal(t, obs.Bid.Val, mustDecodeBigInt(p.Bid))
+			assert.Zero(t, p.Ask)
+			assert.Zero(t, p.CurrentBlockNum)
+			assert.Equal(t, obs.CurrentBlockHash.Val, p.CurrentBlockHash)
+			assert.Equal(t, obs.CurrentBlockTimestamp.Val, p.CurrentBlockTimestamp)
+			// since previousReport is not nil, maxFinalizedBlockNumber is skipped
+			assert.Zero(t, p.MaxFinalizedBlockNumber)
+
+			assert.False(t, p.PricesValid)
+			assert.False(t, p.CurrentBlockValid)
+			// since previousReport is not nil, maxFinalizedBlockNumber is skipped
+			assert.False(t, p.MaxFinalizedBlockNumberValid)
+		})
+
+		t.Run("when encoding fails on some price observations", func(t *testing.T) {
+			obs := Observation{
+				BenchmarkPrice: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				Bid: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				Ask: mercury.ObsResult[*big.Int]{
+					Val: randBigInt(),
+				},
+				CurrentBlockNum: mercury.ObsResult[int64]{
+					Val: rand.Int63(),
+				},
+				CurrentBlockHash: mercury.ObsResult[[]byte]{
+					Val: randBytes(32),
+				},
+				CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+					Val: rand.Uint64(),
+				},
+			}
+			rp.dataSource = mockDataSource{obs}
+
+			pbObs, err := rp.Observation(ctx, repts, previousReport)
+			require.NoError(t, err)
+
+			var p MercuryObservationProto
+			require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+			assert.False(t, p.PricesValid)
+			assert.Zero(t, p.BenchmarkPrice)
+			assert.NotZero(t, p.Bid)
+			assert.NotZero(t, p.Ask)
+		})
+		t.Run("when encoding fails on all price observations", func(t *testing.T) {
+			obs := Observation{
+				BenchmarkPrice: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				Bid: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				Ask: mercury.ObsResult[*big.Int]{
+					// too large to encode
+					Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
+				},
+				CurrentBlockNum: mercury.ObsResult[int64]{
+					Val: rand.Int63(),
+				},
+				CurrentBlockHash: mercury.ObsResult[[]byte]{
+					Val: randBytes(32),
+				},
+				CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+					Val: rand.Uint64(),
+				},
+			}
+			rp.dataSource = mockDataSource{obs}
+
+			pbObs, err := rp.Observation(ctx, repts, previousReport)
+			require.NoError(t, err)
+
+			var p MercuryObservationProto
+			require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+			assert.False(t, p.PricesValid)
+			assert.Zero(t, p.BenchmarkPrice)
+			assert.Zero(t, p.Bid)
+			assert.Zero(t, p.Ask)
+		})
+	})
+
+	t.Run("without previous report, includes maxFinalizedBlockNumber observation", func(t *testing.T) {
+		currentBlockNum := int64(rand.Int31())
+		obs := Observation{
+			BenchmarkPrice: mercury.ObsResult[*big.Int]{
+				Val: randBigInt(),
+			},
+			Bid: mercury.ObsResult[*big.Int]{
+				Val: randBigInt(),
+			},
+			Ask: mercury.ObsResult[*big.Int]{
+				Val: randBigInt(),
+			},
+			CurrentBlockNum: mercury.ObsResult[int64]{
+				Val: currentBlockNum,
+			},
+			CurrentBlockHash: mercury.ObsResult[[]byte]{
+				Val: randBytes(32),
+			},
+			CurrentBlockTimestamp: mercury.ObsResult[uint64]{
+				Val: rand.Uint64(),
+			},
+			MaxFinalizedBlockNumber: mercury.ObsResult[int64]{
+				Val: currentBlockNum - 42,
+			},
+		}
+		rp.dataSource = mockDataSource{obs}
+
+		pbObs, err := rp.Observation(ctx, repts, nil)
+		require.NoError(t, err)
+
+		var p MercuryObservationProto
+		require.NoError(t, proto.Unmarshal(pbObs, &p))
+
+		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
+		assert.Equal(t, obs.BenchmarkPrice.Val, mustDecodeBigInt(p.BenchmarkPrice))
+		assert.Equal(t, obs.Bid.Val, mustDecodeBigInt(p.Bid))
+		assert.Equal(t, obs.Ask.Val, mustDecodeBigInt(p.Ask))
+		assert.Equal(t, obs.CurrentBlockNum.Val, p.CurrentBlockNum)
+		assert.Equal(t, obs.CurrentBlockHash.Val, p.CurrentBlockHash)
+		assert.Equal(t, obs.CurrentBlockTimestamp.Val, p.CurrentBlockTimestamp)
+		assert.Equal(t, obs.MaxFinalizedBlockNumber.Val, p.MaxFinalizedBlockNumber)
+
+		assert.True(t, p.PricesValid)
+		assert.True(t, p.CurrentBlockValid)
+		assert.True(t, p.MaxFinalizedBlockNumberValid)
+	})
+
+}
+
+func newAttributedObservation(t *testing.T, p *MercuryObservationProto) ocrtypes.AttributedObservation {
+	marshalledObs, err := proto.Marshal(p)
+	require.NoError(t, err)
+	return ocrtypes.AttributedObservation{
+		Observation: ocrtypes.Observation(marshalledObs),
+		Observer:    commontypes.OracleID(42),
+	}
+}
+
+func newUnparseableAttributedObservation() ocrtypes.AttributedObservation {
+	return ocrtypes.AttributedObservation{
+		Observation: []byte{1, 2},
+		Observer:    commontypes.OracleID(42),
+	}
+}
+
+var blockHash = randBytes(32)
+
+func newValidMercuryObservationProto() *MercuryObservationProto {
+	return &MercuryObservationProto{
+		Timestamp:                    42,
+		BenchmarkPrice:               mercury.MustEncodeValueInt192(big.NewInt(43)),
+		Bid:                          mercury.MustEncodeValueInt192(big.NewInt(44)),
+		Ask:                          mercury.MustEncodeValueInt192(big.NewInt(45)),
+		PricesValid:                  true,
+		CurrentBlockNum:              49,
+		CurrentBlockHash:             blockHash,
+		CurrentBlockTimestamp:        46,
+		CurrentBlockValid:            true,
+		MaxFinalizedBlockNumber:      47,
+		MaxFinalizedBlockNumberValid: true,
+	}
+}
+
+func newInvalidMercuryObservationProto() *MercuryObservationProto {
+	return &MercuryObservationProto{
+		PricesValid:                  false,
+		CurrentBlockValid:            false,
+		MaxFinalizedBlockNumberValid: false,
+	}
+}
+
+func Test_Plugin_parseAttributedObservation(t *testing.T) {
+	t.Run("with all valid values", func(t *testing.T) {
+		obs := newValidMercuryObservationProto()
+		ao := newAttributedObservation(t, obs)
+
+		pao, err := parseAttributedObservation(ao)
+		assert.NoError(t, err)
+
+		assert.Equal(t,
+			parsedAttributedObservation{
+				Timestamp:                    0x2a,
+				Observer:                     0x2a,
+				BenchmarkPrice:               big.NewInt(43),
+				Bid:                          big.NewInt(44),
+				Ask:                          big.NewInt(45),
+				PricesValid:                  true,
+				CurrentBlockNum:              49,
+				CurrentBlockHash:             obs.CurrentBlockHash,
+				CurrentBlockTimestamp:        46,
+				CurrentBlockValid:            true,
+				MaxFinalizedBlockNumber:      47,
+				MaxFinalizedBlockNumberValid: true,
+			},
+			pao,
+		)
+	})
+
+	t.Run("with all invalid values", func(t *testing.T) {
+		obs := newInvalidMercuryObservationProto()
+		ao := newAttributedObservation(t, obs)
+
+		pao, err := parseAttributedObservation(ao)
+		assert.NoError(t, err)
+
+		assert.Equal(t,
+			parsedAttributedObservation{
+				Observer:                     0x2a,
+				PricesValid:                  false,
+				CurrentBlockValid:            false,
+				MaxFinalizedBlockNumberValid: false,
+			},
+			pao,
+		)
+	})
+
+	t.Run("with unparseable values", func(t *testing.T) {
+		t.Run("ao cannot be unmarshalled", func(t *testing.T) {
+			ao := newUnparseableAttributedObservation()
+
+			_, err := parseAttributedObservation(ao)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "attributed observation cannot be unmarshaled")
+		})
+		t.Run("bad benchmark price", func(t *testing.T) {
+			obs := newValidMercuryObservationProto()
+			obs.BenchmarkPrice = randBytes(16)
+			ao := newAttributedObservation(t, obs)
+
+			_, err := parseAttributedObservation(ao)
+			assert.EqualError(t, err, "benchmarkPrice cannot be converted to big.Int: expected b to have length 24, but got length 16")
+		})
+		t.Run("bad bid", func(t *testing.T) {
+			obs := newValidMercuryObservationProto()
+			obs.Bid = []byte{1}
+			ao := newAttributedObservation(t, obs)
+
+			_, err := parseAttributedObservation(ao)
+			assert.EqualError(t, err, "bid cannot be converted to big.Int: expected b to have length 24, but got length 1")
+		})
+		t.Run("bad ask", func(t *testing.T) {
+			obs := newValidMercuryObservationProto()
+			obs.Ask = []byte{1}
+			ao := newAttributedObservation(t, obs)
+
+			_, err := parseAttributedObservation(ao)
+			assert.EqualError(t, err, "ask cannot be converted to big.Int: expected b to have length 24, but got length 1")
+		})
+		t.Run("bad block hash", func(t *testing.T) {
+			obs := newValidMercuryObservationProto()
+			obs.CurrentBlockHash = []byte{1}
+			ao := newAttributedObservation(t, obs)
+
+			_, err := parseAttributedObservation(ao)
+			assert.EqualError(t, err, "wrong len for hash: 1 (expected: 32)")
+		})
+		t.Run("negative block number", func(t *testing.T) {
+			obs := newValidMercuryObservationProto()
+			obs.CurrentBlockNum = -1
+			ao := newAttributedObservation(t, obs)
+
+			_, err := parseAttributedObservation(ao)
+			assert.EqualError(t, err, "negative block number: -1")
+		})
+	})
+}
+
+func Test_Plugin_Report(t *testing.T) {
+	repts := types.ReportTimestamp{}
+
+	t.Run("when previous report is nil", func(t *testing.T) {
+		codec := &testReportCodec{
+			currentBlock: int64(rand.Int31()),
+			builtReport:  []byte{1, 2, 3, 4},
+		}
+		rp := newReportingPlugin(t, codec)
+
+		t.Run("errors if not enough attributed observations", func(t *testing.T) {
+			_, _, err := rp.Report(repts, nil, []types.AttributedObservation{})
+			assert.EqualError(t, err, "only received 0 valid attributed observations, but need at least f+1 (2)")
+		})
+		t.Run("succeeds, ignoring unparseable attributed observations", func(t *testing.T) {
+			aos := []types.AttributedObservation{
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newUnparseableAttributedObservation(),
+			}
+			should, report, err := rp.Report(repts, nil, aos)
+
+			assert.True(t, should)
+			assert.Equal(t, codec.builtReport, report)
+			assert.NoError(t, err)
+		})
+		t.Run("succeeds and generates validFromBlockNum from maxFinalizedBlockNumber", func(t *testing.T) {
+			codec.reset()
+
+			aos := []types.AttributedObservation{
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+			}
+			should, report, err := rp.Report(repts, nil, aos)
+
+			assert.True(t, should)
+			assert.Equal(t, codec.builtReport, report)
+			assert.NoError(t, err)
+
+			assert.Equal(t, 48, int(codec.lastBuildReportValidFromBlockNum))
+			assert.Len(t, codec.lastBuildReportPaos, 4)
+			assert.Equal(t, 1, codec.lastBuildReportF)
+		})
+		t.Run("errors if cannot get consensus maxFinalizedBlockNumber", func(t *testing.T) {
+			obs := []*MercuryObservationProto{
+				newValidMercuryObservationProto(),
+				newValidMercuryObservationProto(),
+				newValidMercuryObservationProto(),
+				newValidMercuryObservationProto(),
+			}
+			for i := range obs {
+				obs[i].MaxFinalizedBlockNumber = int64(i)
+			}
+			aos := []types.AttributedObservation{
+				newAttributedObservation(t, obs[0]),
+				newAttributedObservation(t, obs[1]),
+				newAttributedObservation(t, obs[2]),
+				newAttributedObservation(t, obs[3]),
+			}
+			_, _, err := rp.Report(repts, nil, aos)
+
+			assert.EqualError(t, err, "no valid maxFinalizedBlockNumber with at least f+1 votes (got counts: map[0:1 1:1 2:1 3:1])")
+		})
+		t.Run("returns false if shouldReport returns false", func(t *testing.T) {
+			obs := []*MercuryObservationProto{
+				newValidMercuryObservationProto(),
+				newValidMercuryObservationProto(),
+				newValidMercuryObservationProto(),
+				newValidMercuryObservationProto(),
+			}
+			for i := range obs {
+				obs[i].BenchmarkPrice = mercury.MustEncodeValueInt192(big.NewInt(-1)) // benchmark price below min of 0, cannot report
+			}
+			aos := []types.AttributedObservation{
+				newAttributedObservation(t, obs[0]),
+				newAttributedObservation(t, obs[1]),
+				newAttributedObservation(t, obs[2]),
+				newAttributedObservation(t, obs[3]),
+			}
+			should, report, err := rp.Report(repts, nil, aos)
+
+			assert.False(t, should)
+			assert.Nil(t, report)
+			assert.NoError(t, err)
+		})
+		t.Run("BuildReport failures", func(t *testing.T) {
+			t.Run("errors if BuildReport returns error", func(t *testing.T) {
+				codec.buildReportShouldFail = true
+				defer codec.reset()
+
+				aos := []types.AttributedObservation{
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newUnparseableAttributedObservation(),
+				}
+				_, _, err := rp.Report(repts, nil, aos)
+
+				assert.EqualError(t, err, "buildReportShouldFail=true")
+			})
+			t.Run("errors if BuildReport returns a report that is too long", func(t *testing.T) {
+				codec.builtReport = randBytes(9999)
+				aos := []types.AttributedObservation{
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newUnparseableAttributedObservation(),
+				}
+				_, _, err := rp.Report(repts, nil, aos)
+
+				assert.EqualError(t, err, "report with len 9999 violates MaxReportLength limit set by ReportCodec (1248)")
+			})
+			t.Run("errors if BuildReport returns a report that is too short", func(t *testing.T) {
+				codec.builtReport = []byte{}
+				aos := []types.AttributedObservation{
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newAttributedObservation(t, newValidMercuryObservationProto()),
+					newUnparseableAttributedObservation(),
+				}
+				_, _, err := rp.Report(repts, nil, aos)
+
+				assert.EqualError(t, err, "report may not have zero length (invariant violation)")
+			})
+		})
+	})
+	t.Run("when previous report is present", func(t *testing.T) {
+		codec := &testReportCodec{
+			currentBlock: int64(rand.Int31()),
+			builtReport:  []byte{1, 2, 3, 4},
+		}
+		rp := newReportingPlugin(t, codec)
+		previousReport := types.Report{}
+
+		t.Run("succeeds and uses block number in previous report if valid", func(t *testing.T) {
+			currentBlock := int64(32)
+			codec.currentBlock = currentBlock
+
+			aos := []types.AttributedObservation{
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+			}
+			should, report, err := rp.Report(repts, previousReport, aos)
+
+			assert.True(t, should)
+			assert.Equal(t, codec.builtReport, report)
+			assert.NoError(t, err)
+
+			// current block of previous report + 1 is the validFromBlockNum of current report
+			assert.Equal(t, 33, int(codec.lastBuildReportValidFromBlockNum))
+			assert.Len(t, codec.lastBuildReportPaos, 4)
+			assert.Equal(t, 1, codec.lastBuildReportF)
+		})
+		t.Run("errors if cannot extract block number from previous report", func(t *testing.T) {
+			codec.currentBlockErr = errors.New("test error current block fail")
+
+			aos := []types.AttributedObservation{
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+				newAttributedObservation(t, newValidMercuryObservationProto()),
+			}
+			should, _, err := rp.Report(repts, previousReport, aos)
+
+			assert.False(t, should)
+			assert.EqualError(t, err, "test error current block fail")
+		})
+	})
+}
+
+func Test_MaxObservationLength(t *testing.T) {
+	t.Run("maximally sized pbuf does not exceed maxObservationLength", func(t *testing.T) {
+		maxInt192Bytes := make([]byte, 24)
+		for i := 0; i < 24; i++ {
+			maxInt192Bytes[i] = 255
+		}
+		maxHash := make([]byte, 32)
+		for i := 0; i < 32; i++ {
+			maxHash[i] = 255
+		}
 		obs := MercuryObservationProto{
-			Timestamp:                  math.MaxUint32,
-			BenchmarkPrice:             make([]byte, 24),
-			Bid:                        make([]byte, 24),
-			Ask:                        make([]byte, 24),
-			PricesValid:                true,
-			MaxFinalizedTimestamp:      math.MaxUint32,
-			MaxFinalizedTimestampValid: true,
-			LinkFee:                    make([]byte, 24),
-			LinkFeeValid:               true,
-			NativeFee:                  make([]byte, 24),
-			NativeFeeValid:             true,
+			Timestamp:                    math.MaxUint32,
+			BenchmarkPrice:               maxInt192Bytes,
+			Bid:                          maxInt192Bytes,
+			Ask:                          maxInt192Bytes,
+			PricesValid:                  true,
+			CurrentBlockNum:              math.MaxInt64,
+			CurrentBlockHash:             maxHash,
+			CurrentBlockTimestamp:        math.MaxUint64,
+			CurrentBlockValid:            true,
+			MaxFinalizedBlockNumber:      math.MaxInt64,
+			MaxFinalizedBlockNumberValid: true,
 		}
 		// This assertion is here to force this test to fail if a new field is
 		// added to the protobuf. In this case, you must add the max value of
@@ -966,216 +951,9 @@ func Test_Plugin_Observation(t *testing.T) {
 		// 3 fields internal to pbuf struct
 		require.Equal(t, 11, numFields-3)
 
+		// the actual test
 		b, err := proto.Marshal(&obs)
 		require.NoError(t, err)
 		assert.LessOrEqual(t, len(b), maxObservationLength)
-	})
-
-	t.Run("all observations succeeded", func(t *testing.T) {
-		obs := Observation{
-			BenchmarkPrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
-				Val: rand.Uint32(),
-			},
-			LinkPrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			NativePrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-		}
-		dataSource.Obs = obs
-
-		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
-		require.NoError(t, err)
-
-		var p MercuryObservationProto
-		require.NoError(t, proto.Unmarshal(parsedObs, &p))
-
-		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
-		assert.Equal(t, obs.BenchmarkPrice.Val, mustDecodeBigInt(p.BenchmarkPrice))
-		assert.Equal(t, obs.Bid.Val, mustDecodeBigInt(p.Bid))
-		assert.Equal(t, obs.Ask.Val, mustDecodeBigInt(p.Ask))
-		assert.True(t, p.PricesValid)
-		assert.Equal(t, obs.MaxFinalizedTimestamp.Val, p.MaxFinalizedTimestamp)
-		assert.True(t, p.MaxFinalizedTimestampValid)
-		assert.Equal(t, CalculateFee(obs.LinkPrice.Val, 100), mustDecodeBigInt(p.LinkFee))
-		assert.True(t, p.LinkFeeValid)
-		assert.Equal(t, CalculateFee(obs.NativePrice.Val, 100), mustDecodeBigInt(p.NativeFee))
-		assert.True(t, p.NativeFeeValid)
-	})
-
-	t.Run("some observations failed", func(t *testing.T) {
-		obs := Observation{
-			BenchmarkPrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-				Err: errors.New("bechmarkPrice error"),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
-				Val: rand.Uint32(),
-				Err: errors.New("maxFinalizedTimestamp error"),
-			},
-			LinkPrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-				Err: errors.New("linkPrice error"),
-			},
-			NativePrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-		}
-
-		dataSource.Obs = obs
-
-		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
-		require.NoError(t, err)
-
-		var p MercuryObservationProto
-		require.NoError(t, proto.Unmarshal(parsedObs, &p))
-
-		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
-		assert.Zero(t, p.BenchmarkPrice)
-		assert.Equal(t, obs.Bid.Val, mustDecodeBigInt(p.Bid))
-		assert.Equal(t, obs.Ask.Val, mustDecodeBigInt(p.Ask))
-		assert.False(t, p.PricesValid)
-		assert.Zero(t, p.MaxFinalizedTimestamp)
-		assert.False(t, p.MaxFinalizedTimestampValid)
-		assert.Zero(t, p.LinkFee)
-		assert.False(t, p.LinkFeeValid)
-		assert.Equal(t, CalculateFee(obs.NativePrice.Val, 100), mustDecodeBigInt(p.NativeFee))
-		assert.True(t, p.NativeFeeValid)
-	})
-
-	t.Run("all observations failed", func(t *testing.T) {
-		obs := Observation{
-			BenchmarkPrice: mercury.ObsResult[*big.Int]{
-				Err: errors.New("bechmarkPrice error"),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Err: errors.New("bid error"),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Err: errors.New("ask error"),
-			},
-			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
-				Err: errors.New("maxFinalizedTimestamp error"),
-			},
-			LinkPrice: mercury.ObsResult[*big.Int]{
-				Err: errors.New("linkPrice error"),
-			},
-			NativePrice: mercury.ObsResult[*big.Int]{
-				Err: errors.New("nativePrice error"),
-			},
-		}
-
-		dataSource.Obs = obs
-
-		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
-		require.NoError(t, err)
-
-		var p MercuryObservationProto
-		require.NoError(t, proto.Unmarshal(parsedObs, &p))
-
-		assert.LessOrEqual(t, p.Timestamp, uint32(time.Now().Unix()))
-		assert.Zero(t, p.BenchmarkPrice)
-		assert.Zero(t, p.Bid)
-		assert.Zero(t, p.Ask)
-		assert.False(t, p.PricesValid)
-		assert.Zero(t, p.MaxFinalizedTimestamp)
-		assert.False(t, p.MaxFinalizedTimestampValid)
-		assert.Zero(t, p.LinkFee)
-		assert.False(t, p.LinkFeeValid)
-		assert.Zero(t, p.NativeFee)
-		assert.False(t, p.NativeFeeValid)
-	})
-
-	t.Run("encoding fails on some observations", func(t *testing.T) {
-		obs := Observation{
-			BenchmarkPrice: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
-				Val: rand.Uint32(),
-			},
-			LinkPrice: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			NativePrice: mercury.ObsResult[*big.Int]{
-				Val: big.NewInt(rand.Int63()),
-			},
-		}
-
-		dataSource.Obs = obs
-
-		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
-		require.NoError(t, err)
-
-		var p MercuryObservationProto
-		require.NoError(t, proto.Unmarshal(parsedObs, &p))
-
-		assert.Zero(t, p.BenchmarkPrice)
-		assert.Zero(t, p.Ask)
-		assert.False(t, p.PricesValid)
-		assert.Zero(t, p.LinkFee)
-		assert.False(t, p.LinkFeeValid)
-	})
-
-	t.Run("encoding fails on all observations", func(t *testing.T) {
-		obs := Observation{
-			BenchmarkPrice: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			Bid: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			Ask: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			MaxFinalizedTimestamp: mercury.ObsResult[uint32]{
-				Val: rand.Uint32(),
-			},
-			LinkPrice: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-			NativePrice: mercury.ObsResult[*big.Int]{
-				Val: new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			},
-		}
-
-		dataSource.Obs = obs
-
-		parsedObs, err := rp.Observation(context.Background(), ocrtypes.ReportTimestamp{}, nil)
-		require.NoError(t, err)
-
-		var p MercuryObservationProto
-		require.NoError(t, proto.Unmarshal(parsedObs, &p))
-
-		assert.Zero(t, p.BenchmarkPrice)
-		assert.Zero(t, p.Bid)
-		assert.Zero(t, p.Ask)
-		assert.False(t, p.PricesValid)
-		assert.Zero(t, p.LinkFee)
-		assert.False(t, p.LinkFeeValid)
-		assert.Zero(t, p.NativeFee)
-		assert.False(t, p.NativeFeeValid)
 	})
 }

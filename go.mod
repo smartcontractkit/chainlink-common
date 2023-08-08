@@ -24,6 +24,7 @@ require (
 	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
+	github.com/shopspring/decimal v1.3.1
 )
 
 require (
@@ -50,7 +51,6 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.1 // indirect
-	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/objx v0.5.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect

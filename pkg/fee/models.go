@@ -48,7 +48,7 @@ func CalculateBumpedFee(
 
 	if bumpedFeePrice.Cmp(maxFeePrice) > 0 {
 		return maxFeePrice, errors.Wrapf(ErrBumpFeeExceedsLimit, "bumped fee price of %s would exceed configured max fee price of %s (original price was %s). %s",
-			toChainUnit(bumpedFeePrice), maxFeePrice, toChainUnit(originalfeePrice), label.NodeConnectivityProblemWarning)
+			toChainUnit(bumpedFeePrice), toChainUnit(maxFeePrice), toChainUnit(originalfeePrice), label.NodeConnectivityProblemWarning)
 	} else if bumpedFeePrice.Cmp(originalfeePrice) == 0 {
 		// NOTE: This really shouldn't happen since we enforce minimums for
 		// FeeEstimator.BumpPercent and FeeEstimator.BumpMin in the config validation,

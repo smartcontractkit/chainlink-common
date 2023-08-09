@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 	"sync/atomic"
 
 	"google.golang.org/grpc"
@@ -66,8 +67,8 @@ type brokerExt struct {
 	BrokerConfig
 }
 
-// named returns a new [*brokerExt] with name added to the logger.
-func (b *brokerExt) named(name string) *brokerExt {
+// withName returns a new [*brokerExt] with name added to the logger.
+func (b *brokerExt) withName(name string) *brokerExt {
 	bn := *b
 	bn.Logger = logger.Named(b.Logger, name)
 	return &bn
@@ -76,13 +77,13 @@ func (b *brokerExt) named(name string) *brokerExt {
 // newClientConn return a new *clientConn backed by this *brokerExt.
 func (b *brokerExt) newClientConn(name string, newClient newClientFn) *clientConn {
 	return &clientConn{
-		brokerExt: b.named(name),
+		brokerExt: b.withName(name),
 		newClient: newClient,
 		name:      name,
 	}
 }
 
-func (b *brokerExt) ctx() (context.Context, context.CancelFunc) {
+func (b *brokerExt) stopCtx() (context.Context, context.CancelFunc) {
 	return utils.ContextFromChan(b.StopCh)
 }
 
@@ -90,7 +91,18 @@ func (b *brokerExt) dial(id uint32) (conn *grpc.ClientConn, err error) {
 	return b.broker.DialWithOptions(id, b.DialOpts...)
 }
 
-func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...resource) (uint32, resource, error) {
+func (b *brokerExt) serveNew(name string, register func(*grpc.Server), deps ...resource) (uint32, resource, error) {
+	var server *grpc.Server
+	if b.NewServer == nil {
+		server = grpc.NewServer()
+	} else {
+		server = b.NewServer(nil)
+	}
+	register(server)
+	return b.serve(name, server, deps...)
+}
+
+func (b *brokerExt) serve(name string, server *grpc.Server, deps ...resource) (uint32, resource, error) {
 	id := b.broker.NextId()
 	b.Logger.Debugf("Serving %s on connection %d", name, id)
 	lis, err := b.broker.Accept(id)
@@ -99,14 +111,10 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 		return 0, resource{}, ErrConnAccept{Name: name, ID: id, Err: err}
 	}
 
-	var server *grpc.Server
-	if b.NewServer == nil {
-		server = grpc.NewServer()
-	} else {
-		server = b.NewServer(nil)
-	}
-	register(server)
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		defer b.closeAll(deps...)
 		if err := server.Serve(lis); err != nil {
 			b.Logger.Errorw(fmt.Sprintf("Failed to serve %s on connection %d", name, id), "err", err)
@@ -114,7 +122,9 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 	}()
 
 	done := make(chan struct{})
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		select {
 		case <-b.StopCh:
 			server.Stop()
@@ -125,6 +135,7 @@ func (b *brokerExt) serve(name string, register func(*grpc.Server), deps ...reso
 	return id, resource{fnCloser(func() {
 		server.Stop()
 		close(done)
+		wg.Wait()
 	}), name}, nil
 }
 

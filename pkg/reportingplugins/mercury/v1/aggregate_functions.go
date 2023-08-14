@@ -2,8 +2,9 @@ package mercury_v1
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"sort"
+
+	"github.com/pkg/errors"
 )
 
 type block struct {

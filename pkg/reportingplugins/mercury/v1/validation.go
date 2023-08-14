@@ -2,6 +2,7 @@ package mercury_v1
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"

@@ -16,9 +16,10 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
-	"github.com/stretchr/testify/require"
 )
 
 type testDataSource struct {

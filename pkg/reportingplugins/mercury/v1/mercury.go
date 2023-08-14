@@ -10,10 +10,11 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 )
@@ -80,24 +81,29 @@ type Factory struct {
 }
 
 func NewFactory(ds DataSource, lggr logger.Logger, occ mercury.OnchainConfigCodec, rc ReportCodec) Factory {
+	fmt.Println("NewFactory() called")
 	return Factory{ds, lggr, occ, rc}
 }
 
 func (fac Factory) NewMercuryPlugin(configuration ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+	fmt.Printf("NewMercuryPlugin() called \n %v", configuration)
 	offchainConfig, err := mercury.DecodeOffchainConfig(configuration.OffchainConfig)
 	if err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
 
+	fmt.Println("offchainconfig decoded")
 	onchainConfig, err := fac.onchainConfigCodec.Decode(configuration.OnchainConfig)
 	if err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
+	fmt.Println("onchain decoded")
 
 	maxReportLength, err := fac.reportCodec.MaxReportLength(configuration.N)
 	if err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
+	fmt.Println("maxreportlength decoded")
 
 	r := &reportingPlugin{
 		offchainConfig,
@@ -111,6 +117,7 @@ func (fac Factory) NewMercuryPlugin(configuration ocr3types.MercuryPluginConfig)
 		maxReportLength,
 	}
 
+	fmt.Println("NewMercuryPlugin() finished")
 	return r, ocr3types.MercuryPluginInfo{
 		Name: "Mercury",
 		Limits: ocr3types.MercuryPluginLimits{
@@ -136,6 +143,7 @@ type reportingPlugin struct {
 }
 
 func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.ReportTimestamp, previousReport types.Report) (ocrtypes.Observation, error) {
+	fmt.Println("Observation() called")
 	obs, err := rp.dataSource.Observe(ctx, repts, previousReport == nil)
 	if err != nil {
 		return nil, pkgerrors.Errorf("DataSource.Observe returned an error: %s", err)
@@ -156,7 +164,6 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		}
 	}
 
-	// TODO: common code with v1/v2, can we pull it out?
 	var bpErr, bidErr, askErr error
 	if obs.BenchmarkPrice.Err != nil {
 		bpErr = pkgerrors.Wrap(obs.BenchmarkPrice.Err, "failed to observe BenchmarkPrice")
@@ -287,6 +294,7 @@ func parseAttributedObservations(lggr logger.Logger, aos []ocrtypes.AttributedOb
 }
 
 func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport types.Report, aos []types.AttributedObservation) (shouldReport bool, report types.Report, err error) {
+	fmt.Println("Report() called")
 	paos := parseAttributedObservations(rp.logger, aos)
 
 	// By assumption, we have at most f malicious oracles, so there should be at least f+1 valid paos

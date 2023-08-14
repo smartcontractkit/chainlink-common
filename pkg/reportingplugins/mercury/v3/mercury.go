@@ -11,9 +11,10 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 )
@@ -153,7 +154,6 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	}
 
 	if obs.Bid.Err != nil {
-		// TODO: Add tests that its invalid if encoding fails on all
 		bidErr = pkgerrors.Wrap(obs.Bid.Err, "failed to observe Bid")
 		obsErrors = append(obsErrors, bidErr)
 	} else if bid, err := mercury.EncodeValueInt192(obs.Bid.Val); err != nil {
@@ -330,11 +330,11 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 	if err != nil || !should {
 		rp.logger.Debugw("shouldReport: no", "err", err)
 		return false, nil, err
-	} else {
-		rp.logger.Debugw("shouldReport: yes",
-			"timestamp", repts,
-		)
 	}
+
+	rp.logger.Debugw("shouldReport: yes",
+		"timestamp", repts,
+	)
 
 	expiresAt := observationTimestamp + rp.offchainConfig.ExpirationWindow
 

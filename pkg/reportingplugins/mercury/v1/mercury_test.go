@@ -2,10 +2,11 @@ package mercury_v1
 
 import (
 	"context"
+	crand "crypto/rand"
 	"math"
 	"math/big"
 	"math/rand"
-	reflect "reflect"
+	"reflect"
 	"testing"
 	"time"
 
@@ -311,7 +312,7 @@ func randBigInt() *big.Int {
 
 func randBytes(n int) []byte {
 	b := make([]byte, n)
-	_, err := rand.Read(b)
+	_, err := crand.Read(b)
 	if err != nil {
 		panic(err)
 	}

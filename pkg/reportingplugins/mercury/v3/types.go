@@ -1,8 +1,9 @@
 package mercury_v3
 
 import (
-	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 )
 
 type ParsedAttributedObservation interface {

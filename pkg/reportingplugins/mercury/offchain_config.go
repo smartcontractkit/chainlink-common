@@ -10,7 +10,6 @@ type OffchainConfig struct {
 }
 
 func DecodeOffchainConfig(b []byte) (o OffchainConfig, err error) {
-	// TODO: consider protobuf for better efficiency
 	err = json.Unmarshal(b, &o)
 	return
 }

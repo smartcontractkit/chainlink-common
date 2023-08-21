@@ -1,15 +1,19 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
 	"gopkg.in/guregu/null.v4"
 
 	feetypes "github.com/smartcontractkit/chainlink-relay/pkg/fee/types"
+	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	clnull "github.com/smartcontractkit/chainlink-relay/pkg/null"
 	"github.com/smartcontractkit/chainlink-relay/pkg/services/datatypes"
 	"github.com/smartcontractkit/chainlink-relay/pkg/services/pg"
@@ -204,4 +208,100 @@ type Tx[
 	// TransmitChecker defines the check that should be performed before a transaction is submitted on
 	// chain.
 	TransmitChecker *datatypes.JSON
+}
+
+func (e *Tx[CHAIN_ID, ADDR, TX_HASH, BLOCK_HASH, SEQ, FEE]) GetError() error {
+	if e.Error.Valid {
+		return errors.New(e.Error.String)
+	}
+	return nil
+}
+
+// GetID allows Tx to be used as jsonapi.MarshalIdentifier
+func (e *Tx[CHAIN_ID, ADDR, TX_HASH, BLOCK_HASH, SEQ, FEE]) GetID() string {
+	return fmt.Sprintf("%d", e.ID)
+}
+
+// GetMeta returns an Tx's meta in struct form, unmarshalling it from JSON first.
+func (e *Tx[CHAIN_ID, ADDR, TX_HASH, BLOCK_HASH, SEQ, FEE]) GetMeta() (*TxMeta[ADDR, TX_HASH], error) {
+	if e.Meta == nil {
+		return nil, nil
+	}
+	var m TxMeta[ADDR, TX_HASH]
+	return &m, errors.Wrap(json.Unmarshal(*e.Meta, &m), "unmarshalling meta")
+}
+
+// GetLogger returns a new logger with metadata fields.
+func (e *Tx[CHAIN_ID, ADDR, TX_HASH, BLOCK_HASH, SEQ, FEE]) GetLogger(lgr logger.Logger) logger.Logger {
+	lgr = logger.With(lgr,
+		"txID", e.ID,
+		"sequence", e.Sequence,
+		"checker", e.TransmitChecker,
+		"feeLimit", e.FeeLimit,
+	)
+
+	meta, err := e.GetMeta()
+	if err != nil {
+		lgr.Errorw("failed to get meta of the transaction", "err", err)
+		return lgr
+	}
+
+	if meta != nil {
+		lgr = logger.With(lgr, "jobID", meta.JobID)
+
+		if meta.RequestTxHash != nil {
+			lgr = logger.With(lgr, "requestTxHash", *meta.RequestTxHash)
+		}
+
+		if meta.RequestID != nil {
+			id := *meta.RequestID
+			lgr = logger.With(lgr, "requestID", new(big.Int).SetBytes(id.Bytes()).String())
+		}
+
+		if len(meta.RequestIDs) != 0 {
+			var ids []string
+			for _, id := range meta.RequestIDs {
+				ids = append(ids, new(big.Int).SetBytes(id.Bytes()).String())
+			}
+			lgr = logger.With(lgr, "requestIDs", strings.Join(ids, ","))
+		}
+
+		if meta.UpkeepID != nil {
+			lgr = logger.With(lgr, "upkeepID", *meta.UpkeepID)
+		}
+
+		if meta.SubID != nil {
+			lgr = logger.With(lgr, "subID", *meta.SubID)
+		}
+
+		if meta.MaxLink != nil {
+			lgr = logger.With(lgr, "maxLink", *meta.MaxLink)
+		}
+
+		if meta.FwdrDestAddress != nil {
+			lgr = logger.With(lgr, "FwdrDestAddress", *meta.FwdrDestAddress)
+		}
+
+		if len(meta.MessageIDs) > 0 {
+			for _, mid := range meta.MessageIDs {
+				lgr = logger.With(lgr, "messageID", mid)
+			}
+		}
+
+		if len(meta.SeqNumbers) > 0 {
+			lgr = logger.With(lgr, "SeqNumbers", meta.SeqNumbers)
+		}
+	}
+
+	return lgr
+}
+
+// GetChecker returns an Tx's transmit checker spec in struct form, unmarshalling it from JSON
+// first.
+func (e *Tx[CHAIN_ID, ADDR, TX_HASH, BLOCK_HASH, SEQ, FEE]) GetChecker() (TransmitCheckerSpec[ADDR], error) {
+	if e.TransmitChecker == nil {
+		return TransmitCheckerSpec[ADDR]{}, nil
+	}
+	var t TransmitCheckerSpec[ADDR]
+	return t, errors.Wrap(json.Unmarshal(*e.TransmitChecker, &t), "unmarshalling transmit checker")
 }

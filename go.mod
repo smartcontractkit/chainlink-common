@@ -16,6 +16,7 @@ require (
 	github.com/riferrei/srclient v0.5.4
 	github.com/shopspring/decimal v1.3.1
 	github.com/smartcontractkit/libocr v0.0.0-20230802221916-2271752fa829
+	github.com/smartcontractkit/sqlx v1.3.5-0.20210805004948-4be295aacbeb
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
 	go.opentelemetry.io/otel v1.16.0
@@ -27,6 +28,8 @@ require (
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
 )
+
+require github.com/jmoiron/sqlx v1.3.5 // indirect
 
 require (
 	github.com/benbjohnson/clock v1.3.0 // indirect

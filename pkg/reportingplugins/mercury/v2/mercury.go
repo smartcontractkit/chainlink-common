@@ -281,14 +281,13 @@ func (rp *reportingPlugin) Report(repts ocrtypes.ReportTimestamp, previousReport
 		return false, nil, err
 	}
 
-	if err := rp.validateReport(rf); err != nil {
+	if err = rp.validateReport(rf); err != nil {
 		rp.logger.Debugw("shouldReport: no (validation error)", "err", err, "timestamp", repts)
 		return false, nil, err
-	} else {
-		rp.logger.Debugw("shouldReport: yes",
-			"timestamp", repts,
-		)
 	}
+	rp.logger.Debugw("shouldReport: yes",
+		"timestamp", repts,
+	)
 
 	report, err = rp.reportCodec.BuildReport(rf)
 	if err != nil {

@@ -21,7 +21,10 @@ type ChainSet[I any, C ChainService] interface {
 type ChainService interface {
 	Service
 
-	SendTx(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
+	GetChainStatus(ctx context.Context) (ChainStatus, error)
+	ListNodeStatuses(ctx context.Context, page_size int32, page_token string) (stats []NodeStatus, next_page_token string, err error)
+	// choose different name than SendTx to avoid collison during refactor.
+	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 }
 
 type ChainStatus struct {

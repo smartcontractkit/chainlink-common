@@ -129,6 +129,8 @@ type reportingPlugin struct {
 	maxReportLength          int
 }
 
+var MISSING_PRICE = big.NewInt(-1)
+
 func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.ReportTimestamp, previousReport ocrtypes.Report) (ocrtypes.Observation, error) {
 	obs, err := rp.dataSource.Observe(ctx, repts, previousReport == nil)
 	if err != nil {
@@ -190,10 +192,12 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	if obs.LinkPrice.Err != nil {
 		linkErr = pkgerrors.Wrap(obs.LinkPrice.Err, "failed to observe LINK price")
 		obsErrors = append(obsErrors, linkErr)
+	} else if obs.LinkPrice.Val.Cmp(MISSING_PRICE) <= 0 {
+		p.LinkFee = mercury.MaxInt192Enc
 	} else {
 		linkFee := mercury.CalculateFee(obs.LinkPrice.Val, rp.offchainConfig.BaseUSDFeeCents)
 		if linkFeeEncoded, err := mercury.EncodeValueInt192(linkFee); err != nil {
-			linkErr = pkgerrors.Wrap(err, "failed to observe LINK price; encoding failed")
+			linkErr = pkgerrors.Wrapf(err, "failed to calculate LINK fee; encoding failed for val=%s", linkFee)
 			obsErrors = append(obsErrors, linkErr)
 		} else {
 			p.LinkFee = linkFeeEncoded
@@ -208,10 +212,12 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	if obs.NativePrice.Err != nil {
 		nativeErr = pkgerrors.Wrap(obs.NativePrice.Err, "failed to observe native price")
 		obsErrors = append(obsErrors, nativeErr)
+	} else if obs.NativePrice.Val.Cmp(MISSING_PRICE) <= 0 {
+		p.NativeFee = mercury.MaxInt192Enc
 	} else {
 		nativeFee := mercury.CalculateFee(obs.NativePrice.Val, rp.offchainConfig.BaseUSDFeeCents)
 		if nativeFeeEncoded, err := mercury.EncodeValueInt192(nativeFee); err != nil {
-			nativeErr = pkgerrors.Wrap(err, "failed to observe native price; encoding failed")
+			nativeErr = pkgerrors.Wrapf(err, "failed to calculate native fee; encoding failed for val=%s", nativeFee)
 			obsErrors = append(obsErrors, nativeErr)
 		} else {
 			p.NativeFee = nativeFeeEncoded

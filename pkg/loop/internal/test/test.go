@@ -22,7 +22,7 @@ const (
 	balanceCheck     = true
 	blockHeight      = uint64(1337)
 	changedInBlock   = uint64(14)
-	count            = 2
+	total            = 2
 	epoch            = uint32(88)
 	errMsg           = "test error"
 	from             = "0xabcd"

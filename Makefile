@@ -19,6 +19,9 @@ mockery: $(mockery) ## Install mockery.
 	go install github.com/vektra/mockery/v2@v2.28.1
 
 PHONY: generate
+
 generate: mockery install-protoc
-	 go generate -x ./...
+# add our installed protoc to the head of the PATH
+# maybe there is a cleaner way to do this
+	 PATH=$$HOME/.local/bin:$$PATH go generate -x ./...
 	  

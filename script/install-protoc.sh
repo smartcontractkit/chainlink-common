@@ -45,7 +45,7 @@ curl -LO $pb_url/download/v${VERSION}/$artifact
 if [[ ! -d $install_dir ]]; then
     mkdir $install_dir
 fi
-unzip -u $artifact -d $install_dir
+unzip -uo $artifact -d $install_dir
 rm $artifact
 
 echo "protoc $VERSION installed in $install_dir"

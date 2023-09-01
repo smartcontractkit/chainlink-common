@@ -87,6 +87,7 @@ URL = 'https://test.url'
 		ContractID:    "testcontract",
 		New:           true,
 		RelayConfig:   []byte{42: 11},
+		ProviderType:  types.ProviderTypeMedian,
 	}
 	report        = libocr.Report{42: 101}
 	reportContext = libocr.ReportContext{

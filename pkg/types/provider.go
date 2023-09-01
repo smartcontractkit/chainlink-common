@@ -2,6 +2,13 @@ package types
 
 import ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+const (
+	ProviderTypePlugin    = "plugin"
+	ProviderTypeMedian    = "median"
+	ProviderTypeFunctions = "functions"
+	ProviderTypeMercury   = "mercury"
+)
+
 // The bootstrap jobs only watch config.
 type ConfigProvider interface {
 	Service

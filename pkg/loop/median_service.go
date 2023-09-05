@@ -28,7 +28,7 @@ func NewMedianService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cm
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMedian but got %T", instance)
 		}
-		return plug.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
+		return plug.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, nil, errorLog)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "MedianService")

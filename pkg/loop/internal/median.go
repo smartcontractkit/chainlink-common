@@ -35,7 +35,7 @@ func NewPluginMedianClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.Cli
 	return &PluginMedianClient{pluginClient: pc, median: pb.NewPluginMedianClient(pc), serviceClient: newServiceClient(pc.brokerExt, pc)}
 }
 
-func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin, gasPrice median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	cc := m.newClientConn("MedianPluginFactory", func(ctx context.Context) (id uint32, deps resources, err error) {
 		dataSourceID, dsRes, err := m.serveNew("DataSource", func(s *grpc.Server) {
 			pb.RegisterDataSourceServer(s, &dataSourceServer{impl: dataSource})
@@ -147,7 +147,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	errorLogRes := resource{errorLogConn, "ErrorLog"}
 	errorLog := newErrorLogClient(errorLogConn)
 
-	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
+	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, nil, errorLog)
 	if err != nil {
 		m.closeAll(dsRes, juelsRes, providerRes, errorLogRes)
 		return nil, err

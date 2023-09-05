@@ -30,7 +30,7 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := utils.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &StaticErrorLog{})
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, nil, &StaticErrorLog{})
 		require.NoError(t, err)
 
 		TestReportingPluginFactory(t, factory)
@@ -68,7 +68,7 @@ func TestReportingPluginFactory(t *testing.T, factory types.ReportingPluginFacto
 
 type StaticPluginMedian struct{}
 
-func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource, gasPrice median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	ocd := provider.OffchainConfigDigester()
 	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
 	if err != nil {

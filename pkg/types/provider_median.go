@@ -17,7 +17,7 @@ type MedianProvider interface {
 
 type PluginMedian interface {
 	// NewMedianFactory returns a new ReportingPluginFactory. If provider implements GRPCClientConn, it can be forwarded efficiently via proxy.
-	NewMedianFactory(ctx context.Context, provider MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog ErrorLog) (ReportingPluginFactory, error)
+	NewMedianFactory(ctx context.Context, provider MedianProvider, dataSource, juelsPerFeeCoin, gasPrice median.DataSource, errorLog ErrorLog) (ReportingPluginFactory, error)
 }
 
 type ReportingPluginFactory interface {

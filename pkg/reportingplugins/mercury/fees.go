@@ -1,7 +1,6 @@
 package mercury
 
 import (
-	"github.com/pkg/errors"
 	"math/big"
 )
 
@@ -16,9 +15,10 @@ var PRICE_SCALING_FACTOR = big.NewFloat(1e6)
 var FEE_SCALING_FACTOR = big.NewFloat(1e18)
 
 // CalculateFee outputs a fee in wei according to the formula: baseUSDFeeCents * scaleFactor / tokenPriceInUSD
-func CalculateFee(tokenPriceInUSD *big.Int, baseUSDFeeCents uint32) (*big.Int, error) {
+func CalculateFee(tokenPriceInUSD *big.Int, baseUSDFeeCents uint32) (*big.Int) {
 	if tokenPriceInUSD.Cmp(big.NewInt(0)) == 0 || baseUSDFeeCents == 0 {
-		return nil, errors.Errorf("token price and base fee must be non-zero")
+		// zero fee if token price or base fee is zero
+		return big.NewInt(0)
 	}
 
 	// scale baseFee in USD
@@ -34,5 +34,5 @@ func CalculateFee(tokenPriceInUSD *big.Int, baseUSDFeeCents uint32) (*big.Int, e
 
 	// convert to big.Int
 	finalFee, _ := fee.Int(nil)
-	return finalFee, nil
+	return finalFee
 }

@@ -195,17 +195,12 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	} else if obs.LinkPrice.Val.Cmp(MissingPrice) <= 0 {
 		p.LinkFee = mercury.MaxInt192Enc
 	} else {
-		linkFee, err := mercury.CalculateFee(obs.LinkPrice.Val, rp.offchainConfig.BaseUSDFeeCents)
-		if err != nil {
-			linkErr = pkgerrors.Wrap(err, "failed to observe LINK price; fee calculation failed")
+		linkFee := mercury.CalculateFee(obs.LinkPrice.Val, rp.offchainConfig.BaseUSDFeeCents)
+		if linkFeeEncoded, err := mercury.EncodeValueInt192(linkFee); err != nil {
+			linkErr = pkgerrors.Wrapf(err, "failed to encode LINK fee; val=%s", linkFee)
 			obsErrors = append(obsErrors, linkErr)
 		} else {
-			if linkFeeEncoded, err := mercury.EncodeValueInt192(linkFee); err != nil {
-				linkErr = pkgerrors.Wrapf(err, "failed to encode LINK fee; val=%s", linkFee)
-				obsErrors = append(obsErrors, linkErr)
-			} else {
-				p.LinkFee = linkFeeEncoded
-			}
+			p.LinkFee = linkFeeEncoded
 		}
 	}
 
@@ -220,17 +215,12 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 	} else if obs.NativePrice.Val.Cmp(MissingPrice) <= 0 {
 		p.NativeFee = mercury.MaxInt192Enc
 	} else {
-		nativeFee, err := mercury.CalculateFee(obs.NativePrice.Val, rp.offchainConfig.BaseUSDFeeCents)
-		if err != nil {
-			nativeErr = pkgerrors.Wrap(err, "failed to observe native price; fee calculation failed")
+		nativeFee := mercury.CalculateFee(obs.NativePrice.Val, rp.offchainConfig.BaseUSDFeeCents)
+		if nativeFeeEncoded, err := mercury.EncodeValueInt192(nativeFee); err != nil {
+			nativeErr = pkgerrors.Wrapf(err, "failed to encode native fee; val=%s", nativeFee)
 			obsErrors = append(obsErrors, nativeErr)
 		} else {
-			if nativeFeeEncoded, err := mercury.EncodeValueInt192(nativeFee); err != nil {
-				nativeErr = pkgerrors.Wrapf(err, "failed to encode native fee; val=%s", nativeFee)
-				obsErrors = append(obsErrors, nativeErr)
-			} else {
-				p.NativeFee = nativeFeeEncoded
-			}
+			p.NativeFee = nativeFeeEncoded
 		}
 	}
 

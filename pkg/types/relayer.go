@@ -36,6 +36,15 @@ type NodeStatus struct {
 	State   string
 }
 
+// ChainService is a sub-interface of [loop.Relayer] that encapsulates the explicit interactions with a chain
+type ChainService interface {
+	Service
+
+	GetChainStatus(ctx context.Context) (ChainStatus, error)
+	ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error)
+	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
+}
+
 // Deprecated: use loop.Relayer, which includes context.Context.
 type Relayer interface {
 	Service
@@ -43,25 +52,4 @@ type Relayer interface {
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
-}
-
-// Deprecated
-type ChainSet[I any, C ChainService] interface {
-	Service
-
-	Chain(ctx context.Context, id I) (C, error)
-
-	ChainStatus(ctx context.Context, id string) (ChainStatus, error)
-	ChainStatuses(ctx context.Context, offset, limit int) (chains []ChainStatus, count int, err error)
-
-	NodeStatuses(ctx context.Context, offset, limit int, chainIDs ...string) (nodes []NodeStatus, count int, err error)
-
-	SendTx(ctx context.Context, chainID, from, to string, amount *big.Int, balanceCheck bool) error
-}
-
-// Deprecated
-type ChainService interface {
-	Service
-
-	SendTx(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 }

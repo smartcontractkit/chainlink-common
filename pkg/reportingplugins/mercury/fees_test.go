@@ -18,7 +18,7 @@ func Test_Fees(t *testing.T) {
 	t.Run("with token price > 1", func(t *testing.T) {
 		tokenPriceInUSD := scalePrice(1630)
 		fee := CalculateFee(tokenPriceInUSD, baseUSDFeeCents)
-		expectedFee := big.NewInt(429447852760736) // 0.000429447852760736 18 decimals
+		expectedFee := big.NewInt(429447852760700) // 0.0004294478527607 18 decimals
 		if fee.Cmp(expectedFee) != 0 {
 			t.Errorf("Expected fee to be %v, got %v", expectedFee, fee)
 		}

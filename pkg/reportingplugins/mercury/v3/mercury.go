@@ -191,12 +191,17 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		linkErr = pkgerrors.Wrap(obs.LinkPrice.Err, "failed to observe LINK price")
 		obsErrors = append(obsErrors, linkErr)
 	} else {
-		linkFee := mercury.CalculateFee(obs.LinkPrice.Val, rp.offchainConfig.BaseUSDFeeCents)
-		if linkFeeEncoded, err := mercury.EncodeValueInt192(linkFee); err != nil {
-			linkErr = pkgerrors.Wrap(err, "failed to observe LINK price; encoding failed")
+		linkFee, err := mercury.CalculateFee(obs.LinkPrice.Val, rp.offchainConfig.BaseUSDFeeCents)
+		if err != nil {
+			linkErr = pkgerrors.Wrap(err, "failed to observe LINK price; fee calculation failed")
 			obsErrors = append(obsErrors, linkErr)
 		} else {
-			p.LinkFee = linkFeeEncoded
+			if linkFeeEncoded, err := mercury.EncodeValueInt192(linkFee); err != nil {
+				linkErr = pkgerrors.Wrap(err, "failed to observe LINK price; encoding failed")
+				obsErrors = append(obsErrors, linkErr)
+			} else {
+				p.LinkFee = linkFeeEncoded
+			}
 		}
 	}
 
@@ -209,12 +214,17 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 		nativeErr = pkgerrors.Wrap(obs.NativePrice.Err, "failed to observe native price")
 		obsErrors = append(obsErrors, nativeErr)
 	} else {
-		nativeFee := mercury.CalculateFee(obs.NativePrice.Val, rp.offchainConfig.BaseUSDFeeCents)
-		if nativeFeeEncoded, err := mercury.EncodeValueInt192(nativeFee); err != nil {
-			nativeErr = pkgerrors.Wrap(err, "failed to observe native price; encoding failed")
+		nativeFee, err := mercury.CalculateFee(obs.NativePrice.Val, rp.offchainConfig.BaseUSDFeeCents)
+		if err != nil {
+			nativeErr = pkgerrors.Wrap(err, "failed to observe native price; fee calculation failed")
 			obsErrors = append(obsErrors, nativeErr)
 		} else {
-			p.NativeFee = nativeFeeEncoded
+			if nativeFeeEncoded, err := mercury.EncodeValueInt192(nativeFee); err != nil {
+				nativeErr = pkgerrors.Wrap(err, "failed to observe native price; encoding failed")
+				obsErrors = append(obsErrors, nativeErr)
+			} else {
+				p.NativeFee = nativeFeeEncoded
+			}
 		}
 	}
 

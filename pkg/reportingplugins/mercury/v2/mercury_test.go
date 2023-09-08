@@ -457,9 +457,15 @@ func Test_Plugin_Observation(t *testing.T) {
 		assert.True(t, p.PricesValid)
 		assert.Equal(t, obs.MaxFinalizedTimestamp.Val, p.MaxFinalizedTimestamp)
 		assert.True(t, p.MaxFinalizedTimestampValid)
-		assert.Equal(t, mercury.CalculateFee(obs.LinkPrice.Val, 100), mustDecodeBigInt(p.LinkFee))
+
+		fee, err := mercury.CalculateFee(obs.LinkPrice.Val, 100)
+		assert.NoError(t, err)
+		assert.Equal(t, fee, mustDecodeBigInt(p.LinkFee))
 		assert.True(t, p.LinkFeeValid)
-		assert.Equal(t, mercury.CalculateFee(obs.NativePrice.Val, 100), mustDecodeBigInt(p.NativeFee))
+
+		fee, err = mercury.CalculateFee(obs.NativePrice.Val, 100)
+		assert.NoError(t, err)
+		assert.Equal(t, fee, mustDecodeBigInt(p.NativeFee))
 		assert.True(t, p.NativeFeeValid)
 	})
 
@@ -497,7 +503,10 @@ func Test_Plugin_Observation(t *testing.T) {
 		assert.False(t, p.MaxFinalizedTimestampValid)
 		assert.Zero(t, p.LinkFee)
 		assert.False(t, p.LinkFeeValid)
-		assert.Equal(t, mercury.CalculateFee(obs.NativePrice.Val, 100), mustDecodeBigInt(p.NativeFee))
+
+		fee, err := mercury.CalculateFee(obs.NativePrice.Val, 100)
+		assert.NoError(t, err)
+		assert.Equal(t, fee, mustDecodeBigInt(p.NativeFee))
 		assert.True(t, p.NativeFeeValid)
 	})
 

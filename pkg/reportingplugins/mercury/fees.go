@@ -2,6 +2,7 @@ package mercury
 
 import (
 	"math/big"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -16,7 +17,7 @@ var PRICE_SCALING_FACTOR = decimal.NewFromInt(1e6)
 var FEE_SCALING_FACTOR = decimal.NewFromInt(1e18)
 
 // CalculateFee outputs a fee in wei according to the formula: baseUSDFeeCents * scaleFactor / tokenPriceInUSD
-func CalculateFee(tokenPriceInUSD *big.Int, baseUSDFeeCents uint32) (*big.Int) {
+func CalculateFee(tokenPriceInUSD *big.Int, baseUSDFeeCents uint32) *big.Int {
 	if tokenPriceInUSD.Cmp(big.NewInt(0)) == 0 || baseUSDFeeCents == 0 {
 		// zero fee if token price or base fee is zero
 		return big.NewInt(0)

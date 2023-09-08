@@ -47,6 +47,7 @@ message ParsedAttributedObservation {
   BigInt value = 2;
   BigInt julesPerFeeCoin = 3;
   uint32  observer = 4; // uint8
+  BigInt gasPrice = 5;
 }
 
 // BuildReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec.BuildReport].

@@ -65,6 +65,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
+replace github.com/smartcontractkit/libocr => github.com/augustbleeds/libocr v0.0.0-20230901193648-78ff9454fecd
+
 replace (
 	// until merged upstream: https://github.com/hashicorp/go-plugin/pull/257
 	github.com/hashicorp/go-plugin => github.com/smartcontractkit/go-plugin v0.0.0-20230605132010-0f4d515d1472

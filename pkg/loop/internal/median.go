@@ -247,6 +247,7 @@ func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedOb
 			Value:           pb.NewBigIntFromInt(o.Value),
 			JulesPerFeeCoin: pb.NewBigIntFromInt(o.JuelsPerFeeCoin),
 			Observer:        uint32(o.Observer),
+			GasPrice:        pb.NewBigIntFromInt(o.GasPrice),
 		})
 	}
 	var reply *pb.BuildReportReply

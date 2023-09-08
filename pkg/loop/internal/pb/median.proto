@@ -18,6 +18,7 @@ message NewMedianFactoryRequest {
   uint32 dataSourceID = 2;
   uint32 juelsPerFeeCoinDataSourceID = 3;
   uint32 errorLogID = 4;
+  uint32 gasPriceDataSourceID = 5;
 }
 
 // NewMedianFactoryRequest has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.NewMedianFactory].

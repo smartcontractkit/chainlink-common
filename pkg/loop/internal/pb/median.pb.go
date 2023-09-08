@@ -32,6 +32,7 @@ type NewMedianFactoryRequest struct {
 	DataSourceID                uint32 `protobuf:"varint,2,opt,name=dataSourceID,proto3" json:"dataSourceID,omitempty"`
 	JuelsPerFeeCoinDataSourceID uint32 `protobuf:"varint,3,opt,name=juelsPerFeeCoinDataSourceID,proto3" json:"juelsPerFeeCoinDataSourceID,omitempty"`
 	ErrorLogID                  uint32 `protobuf:"varint,4,opt,name=errorLogID,proto3" json:"errorLogID,omitempty"`
+	GasPriceDataSourceID 		uint32 `protobuf:"varint,5,opt,name=gasPriceDataSourceID,proto3" json:"gasPriceDataSourceID,omitempty"`
 }
 
 func (x *NewMedianFactoryRequest) Reset() {

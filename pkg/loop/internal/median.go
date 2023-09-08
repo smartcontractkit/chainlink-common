@@ -53,6 +53,18 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		}
 		deps.Add(juelsPerFeeCoinDataSourceRes)
 
+		var gasPriceDataSourceID uint32
+		if gasPrice != nil {
+			var gasPriceDataSourceRes resource
+			gasPriceDataSourceID, gasPriceDataSourceRes, err = m.serveNew("GasPriceDataSource", func(s *grpc.Server) {
+				pb.RegisterDataSourceServer(s, &dataSourceServer{impl: gasPrice})
+			})
+			if err != nil {
+				return 0, nil, err
+			}
+			deps.Add(gasPriceDataSourceRes)
+		}
+
 		var (
 			providerID  uint32
 			providerRes resource
@@ -87,6 +99,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			MedianProviderID:            providerID,
 			DataSourceID:                dataSourceID,
 			JuelsPerFeeCoinDataSourceID: juelsPerFeeCoinDataSourceID,
+			GasPriceDataSourceID:        gasPriceDataSourceID,
 			ErrorLogID:                  errorLogID,
 		})
 		if err != nil {
@@ -131,9 +144,21 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	juelsRes := resource{juelsConn, "JuelsPerFeeCoinDataSource"}
 	juelsPerFeeCoin := newDataSourceClient(juelsConn)
 
+	var gasPriceRes resource
+	var gasPrice *dataSourceClient
+	if request.GasPriceDataSourceID != 0 {
+		gasPriceConn, err := m.dial(request.GasPriceDataSourceID)
+		if err != nil {
+			m.closeAll(dsRes, juelsRes)
+			return nil, ErrConnDial{Name: "GasPriceDataSource", ID: request.GasPriceDataSourceID, Err: err}
+		}
+		gasPriceRes = resource{gasPriceConn, "GasPriceDataSource"}
+		gasPrice = newDataSourceClient(gasPriceConn)
+	}
+
 	providerConn, err := m.dial(request.MedianProviderID)
 	if err != nil {
-		m.closeAll(dsRes, juelsRes)
+		m.closeAll(dsRes, juelsRes, gasPriceRes)
 		return nil, ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
 	}
 	providerRes := resource{providerConn, "MedianProvider"}
@@ -141,15 +166,15 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 	errorLogConn, err := m.dial(request.ErrorLogID)
 	if err != nil {
-		m.closeAll(dsRes, juelsRes, providerRes)
+		m.closeAll(dsRes, juelsRes, gasPriceRes, providerRes)
 		return nil, ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := resource{errorLogConn, "ErrorLog"}
 	errorLog := newErrorLogClient(errorLogConn)
 
-	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, nil, errorLog)
+	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, gasPrice, errorLog)
 	if err != nil {
-		m.closeAll(dsRes, juelsRes, providerRes, errorLogRes)
+		m.closeAll(dsRes, juelsRes, gasPriceRes, providerRes, errorLogRes)
 		return nil, err
 	}
 

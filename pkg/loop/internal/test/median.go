@@ -28,9 +28,17 @@ type PluginMedianTest struct {
 }
 
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
-	t.Run("PluginMedian", func(t *testing.T) {
+	t.Run("PluginMedian No GasPriceDataSource", func(t *testing.T) {
 		ctx := utils.Context(t)
 		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, nil, &StaticErrorLog{})
+		require.NoError(t, err)
+
+		TestReportingPluginFactory(t, factory)
+	})
+
+	t.Run("PluginMedian With GasPriceDataSource", func(t *testing.T) {
+		ctx := utils.Context(t)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &staticDataSource{gasPrice}, &StaticErrorLog{})
 		require.NoError(t, err)
 
 		TestReportingPluginFactory(t, factory)

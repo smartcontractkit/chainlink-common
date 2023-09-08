@@ -56,6 +56,7 @@ var (
 	}
 	encoded         = []byte{5: 11}
 	juelsPerFeeCoin = big.NewInt(1234)
+	gasPrice        = big.NewInt(777)
 	onchainConfig   = median.OnchainConfig{Min: big.NewInt(-12), Max: big.NewInt(1234567890987654321)}
 	latestAnswer    = big.NewInt(-66)
 	latestTimestamp = time.Unix(1234567890, 987654321)

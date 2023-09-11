@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb";
+
+package loop;
+
+service PluginGeneric {
+  rpc NewGenericServiceFactory (NewGenericServiceFactoryRequest) returns (NewGenericServiceFactoryReply) {}
+}
+
+// NewGenericServiceFactoryRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.NewGenericServiceFactory].
+message NewGenericServiceFactoryRequest {
+  uint32 providerID = 1;
+  uint32 errorLogID = 2;
+  bytes pluginConfig = 3;
+}
+
+// NewGenericServiceFactoryReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop.Relayer.NewGenericServiceFactory].
+message NewGenericServiceFactoryReply {
+  uint32 reportingPluginFactoryID = 1;
+}

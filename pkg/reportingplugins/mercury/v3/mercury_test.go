@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 
@@ -35,6 +36,7 @@ type testReportCodec struct {
 	builtReport          ocrtypes.Report
 
 	builtReportFields *ReportFields
+	err               error
 }
 
 func (rc *testReportCodec) BuildReport(rf ReportFields) (ocrtypes.Report, error) {
@@ -48,7 +50,7 @@ func (rc testReportCodec) MaxReportLength(n int) (int, error) {
 }
 
 func (rc testReportCodec) ObservationTimestampFromReport(ocrtypes.Report) (uint32, error) {
-	return rc.observationTimestamp, nil
+	return rc.observationTimestamp, rc.err
 }
 
 func newAttributedObservation(t *testing.T, p *MercuryObservationProto) ocrtypes.AttributedObservation {
@@ -63,7 +65,7 @@ func newAttributedObservation(t *testing.T, p *MercuryObservationProto) ocrtypes
 func newTestReportPlugin(t *testing.T, codec *testReportCodec, ds *testDataSource) *reportingPlugin {
 	offchainConfig := mercury.OffchainConfig{
 		ExpirationWindow: 1,
-		BaseUSDFeeCents:  100,
+		BaseUSDFee:       decimal.NewFromInt32(1),
 	}
 	onchainConfig := mercury.OnchainConfig{
 		Min: big.NewInt(1),
@@ -330,7 +332,28 @@ func Test_Plugin_Report(t *testing.T) {
 			}, *codec.builtReportFields)
 
 		})
-		t.Run("errors if cannot extract timestamp from previous report", func(t *testing.T) {})
+		t.Run("errors if cannot extract timestamp from previous report", func(t *testing.T) {
+			codec.err = errors.New("something exploded trying to extract timestamp")
+			aos := newValidAos(t)
+
+			should, _, err := rp.Report(ocrtypes.ReportTimestamp{}, previousReport, aos)
+			assert.False(t, should)
+			assert.EqualError(t, err, "something exploded trying to extract timestamp")
+		})
+		t.Run("does not report if observationTimestamp < validFromTimestamp", func(t *testing.T) {
+			codec.observationTimestamp = 43
+			codec.err = nil
+
+			protos := newValidProtos()
+			for i := range protos {
+				protos[i].Timestamp = 42
+			}
+			aos := newValidAos(t, protos...)
+
+			should, _, err := rp.Report(ocrtypes.ReportTimestamp{}, previousReport, aos)
+			assert.False(t, should)
+			assert.NoError(t, err)
+		})
 	})
 
 	t.Run("buildReport failures", func(t *testing.T) {
@@ -495,11 +518,11 @@ func Test_Plugin_Observation(t *testing.T) {
 		assert.Equal(t, obs.MaxFinalizedTimestamp.Val, p.MaxFinalizedTimestamp)
 		assert.True(t, p.MaxFinalizedTimestampValid)
 
-		fee := mercury.CalculateFee(obs.LinkPrice.Val, 100)
+		fee := mercury.CalculateFee(obs.LinkPrice.Val, decimal.NewFromInt32(1))
 		assert.Equal(t, fee, mustDecodeBigInt(p.LinkFee))
 		assert.True(t, p.LinkFeeValid)
 
-		fee = mercury.CalculateFee(obs.NativePrice.Val, 100)
+		fee = mercury.CalculateFee(obs.NativePrice.Val, decimal.NewFromInt32(1))
 		assert.Equal(t, fee, mustDecodeBigInt(p.NativeFee))
 		assert.True(t, p.NativeFeeValid)
 	})
@@ -562,7 +585,7 @@ func Test_Plugin_Observation(t *testing.T) {
 		assert.Zero(t, p.LinkFee)
 		assert.False(t, p.LinkFeeValid)
 
-		fee := mercury.CalculateFee(obs.NativePrice.Val, 100)
+		fee := mercury.CalculateFee(obs.NativePrice.Val, decimal.NewFromInt32(1))
 		assert.Equal(t, fee, mustDecodeBigInt(p.NativeFee))
 		assert.True(t, p.NativeFeeValid)
 	})

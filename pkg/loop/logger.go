@@ -12,6 +12,10 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 )
 
+const PluginLoggerTestName = "logger-test"
+
+const LoggerTestName = "server-side-logger-name"
+
 // HCLogLogger returns an [hclog.Logger] backed by the given [logger.Logger].
 func HCLogLogger(l logger.Logger) hclog.Logger {
 	hcl := hclog.NewInterceptLogger(&hclog.LoggerOptions{

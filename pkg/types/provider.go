@@ -1,11 +1,6 @@
 package types
 
-import (
-	"context"
-
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-	"google.golang.org/grpc"
-)
+import ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 // The bootstrap jobs only watch config.
 type ConfigProvider interface {
@@ -23,8 +18,4 @@ type Plugin = PluginProvider
 type PluginProvider interface {
 	ConfigProvider
 	ContractTransmitter() ocrtypes.ContractTransmitter
-}
-
-type PluginGeneric interface {
-	NewGenericServiceFactory(ctx context.Context, config []byte, grpcProvider grpc.ClientConnInterface, errorLog ErrorLog) (ReportingPluginFactory, error)
 }

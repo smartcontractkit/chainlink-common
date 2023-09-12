@@ -2,7 +2,6 @@ package loop_test
 
 import (
 	"os/exec"
-	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -19,9 +18,9 @@ import (
 func TestMedianService(t *testing.T) {
 	t.Parallel()
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return helperProcess(loop.PluginMedianName)
+		return HelperProcess(loop.PluginMedianName, test.HelperProcessOptions{})
 	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), &test.StaticErrorLog{})
-	hook := median.TestHook()
+	hook := median.PluginService.XXXTestHook()
 	require.NoError(t, median.Start(tests.Context(t)))
 	t.Cleanup(func() { assert.NoError(t, median.Close()) })
 
@@ -52,7 +51,7 @@ func TestMedianService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return helperProcess(loop.PluginMedianName, strconv.Itoa(int(limit.Add(1))))
+		return HelperProcess(loop.PluginMedianName, test.HelperProcessOptions{Limit: int(limit.Add(1))})
 	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), &test.StaticErrorLog{})
 	require.NoError(t, median.Start(tests.Context(t)))
 	t.Cleanup(func() { assert.NoError(t, median.Close()) })

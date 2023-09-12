@@ -130,7 +130,7 @@ func GetConsensusLinkFee(paos []PAOLinkFee, f int) (*big.Int, error) {
 	var validLinkFees []*big.Int
 	for _, pao := range paos {
 		fee, valid := pao.GetLinkFee()
-		if valid && fee.Cmp(Zero) >= 0 {
+		if valid && fee.Sign() >= 0 {
 			validLinkFees = append(validLinkFees, fee)
 		}
 	}
@@ -153,7 +153,7 @@ func GetConsensusNativeFee(paos []PAONativeFee, f int) (*big.Int, error) {
 	var validNativeFees []*big.Int
 	for _, pao := range paos {
 		fee, valid := pao.GetNativeFee()
-		if valid && fee.Cmp(Zero) >= 0 {
+		if valid && fee.Sign() >= 0 {
 			validNativeFees = append(validNativeFees, fee)
 		}
 	}

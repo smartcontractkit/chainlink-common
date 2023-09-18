@@ -147,10 +147,10 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	var gasPriceRes resource
 	var gasPrice *dataSourceClient
 	if request.GasPriceDataSourceID != 0 {
-		gasPriceConn, err := m.dial(request.GasPriceDataSourceID)
-		if err != nil {
+		gasPriceConn, dialErr := m.dial(request.GasPriceDataSourceID)
+		if dialErr != nil {
 			m.closeAll(dsRes, juelsRes)
-			return nil, ErrConnDial{Name: "GasPriceDataSource", ID: request.GasPriceDataSourceID, Err: err}
+			return nil, ErrConnDial{Name: "GasPriceDataSource", ID: request.GasPriceDataSourceID, Err: dialErr}
 		}
 		gasPriceRes = resource{gasPriceConn, "GasPriceDataSource"}
 		gasPrice = newDataSourceClient(gasPriceConn)

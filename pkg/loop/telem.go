@@ -56,9 +56,12 @@ func SetupTelemetry(registerer prometheus.Registerer, config TracingConfig) GRPC
 // It sets the global trace provider and opens a connection to the configured collector.
 func SetupTracing(config TracingConfig) {
 	log, err := logger.New()
+	if err != nil {
+		panic(err)
+	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5 * time.Second)
 
 	// Enough to shutdown the underlying connection since DialContext is used in blocking mode
 	defer cancel()
@@ -69,7 +72,7 @@ func SetupTracing(config TracingConfig) {
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		log.Errorf("Connecting to OTEL collector failed: %v", err)
+		log.Errorf("Connecting to OTEL collector %w failed: %v", config.CollectorTarget, err)
 	}
 
 	// Set up a trace exporter

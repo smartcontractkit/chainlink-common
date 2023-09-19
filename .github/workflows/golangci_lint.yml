@@ -14,21 +14,5 @@ jobs:
         with:
           go-version: '1.20'
       
-      - name: Install golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.53.3
-      
-      # go.work makes it necessary to run linter manually
-      - name: Run golangci-lint
-        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s --out-format checkstyle:golangci-lint-report.xml \;
-      
-      - name: Check golangci-lint report for errors
-        run: find . -name "golangci-lint-report.xml" -exec grep "error" {} + && exit 1 || true
-
-      - name: Upload golangci-lint report
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: golangci-lint-report
-          path: |
-            ./ops/golangci-lint-report.xml
-            ./golangci-lint-report.xml
+      - name: Run lint (Run `make lint` locally to reproduce)
+        run: make lint

@@ -59,6 +59,8 @@ func (p *GRPCPluginRelayer) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig:  PluginRelayerHandshakeConfig(),
 		Plugins:          map[string]plugin.Plugin{PluginRelayerName: p},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		// Could be used to pass Tracing config, but no suitable GRPC dial option?
+		// https://github.com/grpc/grpc-go/blob/master/dialoptions.go
 		GRPCDialOptions:  p.DialOpts,
 		Logger:           HCLogLogger(p.Logger),
 	}

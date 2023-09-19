@@ -45,6 +45,7 @@ type Config struct {
 var defaultConfig Config
 
 // New returns a new Logger with the default configuration.
+// TODO: why do API consumers have to worry about err here? Not useful?
 func New() (Logger, error) { return defaultConfig.New() }
 
 // New returns a new Logger for Config.

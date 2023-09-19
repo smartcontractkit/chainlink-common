@@ -3,7 +3,7 @@ package loop
 import (
 	"context"
 	"os"
-	"sync"
+	"runtime/debug"
 	"time"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
@@ -30,24 +30,20 @@ type TracingConfig struct {
 	// NodeAttributes are the attributes to attach to traces.
 	NodeAttributes map[string]string
 
-	// Enables tracing; requires a collector to be provided 
+	// Enables tracing; requires a collector to be provided
 	Enabled bool
 
 	// Collector is the address of the OTEL collector to send traces to.
 	CollectorTarget string
 }
 
-var once sync.Once
-
 // SetupTelemetry initializes open telemetry and returns GRPCOpts with telemetry interceptors.
-// TODO: is this idempotent when called from both the host/client and plugin/server?
+// It is called from the host and each plugin - intended as there is bidirectional communication
 func SetupTelemetry(registerer prometheus.Registerer, config TracingConfig) GRPCOpts {
-	once.Do(func() {
-		if config.Enabled {
-			SetupTracing(config)
-		}
-	})
-	
+	if config.Enabled {
+		SetupTracing(config)
+	}
+
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	if registerer == nil {
@@ -57,10 +53,10 @@ func SetupTelemetry(registerer prometheus.Registerer, config TracingConfig) GRPC
 }
 
 // SetupTracing initializes open telemetry with the provided config.
-// It sets the global trace provider and opens a connection to the configured collector. 
+// It sets the global trace provider and opens a connection to the configured collector.
 func SetupTracing(config TracingConfig) {
 	log, err := logger.New()
-	
+
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 
@@ -84,11 +80,22 @@ func SetupTracing(config TracingConfig) {
 		return
 	}
 
+	var version string
+	var service string
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		log.Errorf("failed to read build info: %w", err)
+		version = "unknown"
+		service = "cl-node"
+	} else {
+		version = buildInfo.Main.Version
+		service = buildInfo.Main.Path
+	}
+
 	attributes := []attribute.KeyValue{
-		semconv.ServiceNameKey.String("cl-node"),
+		semconv.ServiceNameKey.String(service),
 		semconv.ProcessPIDKey.Int(os.Getpid()),
-		// TODO: figure out how to wire node version through?
-		semconv.ServiceVersionKey.String("0.0.1"),
+		semconv.ServiceVersionKey.String(version),
 	}
 
 	for k, v := range config.NodeAttributes {
@@ -107,7 +114,7 @@ func SetupTracing(config TracingConfig) {
 		// TODO: revisit
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 	)
-	
+
 	otel.SetTracerProvider(tracerProvider)
 }
 

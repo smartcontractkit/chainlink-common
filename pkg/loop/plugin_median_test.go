@@ -33,6 +33,20 @@ func TestPluginMedian(t *testing.T) {
 func TestPluginMedianExec(t *testing.T) {
 	t.Parallel()
 	stopCh := newStopCh(t)
+
+	pm := newPluginMedianExec(t, stopCh)
+
+	test.TestPluginMedian(t, pm)
+
+	t.Run("proxy", func(t *testing.T) {
+		pr := newPluginRelayerExec(t, stopCh)
+		p := newMedianProvider(t, pr)
+		pmt := test.PluginMedianTest{MedianProvider: p}
+		pmt.TestPluginMedian(t, pm)
+	})
+}
+
+func newPluginMedianExec(t *testing.T, stopCh <-chan struct{}) types.PluginMedian {
 	median := loop.GRPCPluginMedian{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := median.ClientConfig()
 	cc.Cmd = NewHelperProcessCommand(loop.PluginMedianName)
@@ -40,19 +54,11 @@ func TestPluginMedianExec(t *testing.T) {
 	t.Cleanup(c.Kill)
 	client, err := c.Client()
 	require.NoError(t, err)
-	defer client.Close()
+	t.Cleanup(func() { assert.NoError(t, client.Close()) })
 	require.NoError(t, client.Ping())
 	i, err := client.Dispense(loop.PluginMedianName)
 	require.NoError(t, err)
-
-	test.TestPluginMedian(t, i.(types.PluginMedian))
-
-	t.Run("proxy", func(t *testing.T) {
-		pr := newPluginRelayerExec(t, stopCh)
-		p := newMedianProvider(t, pr)
-		pm := test.PluginMedianTest{MedianProvider: p}
-		pm.TestPluginMedian(t, i.(types.PluginMedian))
-	})
+	return i.(types.PluginMedian)
 }
 
 func newStopCh(t *testing.T) <-chan struct{} {

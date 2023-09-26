@@ -28,7 +28,7 @@ func (h HelperProcessCommand) New() *exec.Cmd {
 		cmdArgs = append(cmdArgs, fmt.Sprintf("-limit=%d", h.Limit))
 	}
 	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...) // #nosec
-	cmd.Env = os.Environ()
+	cmd.Env = append(os.Environ(), "GOMEMLIMIT=1MiB")
 	return cmd
 }
 

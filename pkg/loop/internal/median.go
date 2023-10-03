@@ -171,9 +171,14 @@ var (
 
 type medianProviderClient struct {
 	*pluginProviderClient
+	chainReader        types.ChainReader
 	reportCodec        median.ReportCodec
 	medianContract     median.MedianContract
 	onchainConfigCodec median.OnchainConfigCodec
+}
+
+func (m *medianProviderClient) ChainReader() types.ChainReader {
+	return m.chainReader
 }
 
 func (m *medianProviderClient) ClientConn() grpc.ClientConnInterface { return m.cc }

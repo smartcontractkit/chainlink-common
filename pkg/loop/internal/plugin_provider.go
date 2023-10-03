@@ -5,11 +5,17 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
 
 type pluginProviderClient struct {
 	*configProviderClient
+	chainReader         types.ChainReader
 	contractTransmitter libocr.ContractTransmitter
+}
+
+func (p *pluginProviderClient) ChainReader() types.ChainReader {
+	return p.chainReader
 }
 
 func (p *pluginProviderClient) ClientConn() grpc.ClientConnInterface { return p.cc }

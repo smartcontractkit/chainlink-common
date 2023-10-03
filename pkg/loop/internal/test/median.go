@@ -285,6 +285,8 @@ func (s StaticMedianProvider) Name() string { panic("unimplemented") }
 
 func (s StaticMedianProvider) HealthReport() map[string]error { panic("unimplemented") }
 
+func (s StaticMedianProvider) ChainReader() types.ChainReader { panic("unimplemented") }
+
 func (s StaticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return staticOffchainConfigDigester{}
 }

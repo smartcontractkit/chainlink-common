@@ -4,9 +4,13 @@ import (
 	"context"
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
 
 type StaticPluginProvider struct{}
+
+func (s StaticPluginProvider) ChainReader() types.ChainReader { panic("unimplemented") }
 
 func (s StaticPluginProvider) Start(ctx context.Context) error { return nil }
 

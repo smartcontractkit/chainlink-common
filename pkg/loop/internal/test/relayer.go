@@ -62,12 +62,13 @@ func (s staticRelayer) Start(ctx context.Context) error { return nil }
 
 func (s staticRelayer) Close() error { return nil }
 
-func (s staticRelayer) Ready() error { panic("unimplemented") }
+func (s staticRelayer) Ready() error { return nil }
 
-func (s staticRelayer) Name() string { panic("unimplemented") }
+func (s staticRelayer) Name() string { return "staticRelayer" }
 
-func (s staticRelayer) HealthReport() map[string]error { panic("unimplemented") }
-
+func (s staticRelayer) HealthReport() map[string]error {
+	return map[string]error{s.Name(): s.Ready()}
+}
 func (s staticRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
 	if !equalRelayArgs(r, RelayArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", RelayArgs, r)

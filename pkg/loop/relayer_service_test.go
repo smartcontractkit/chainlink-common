@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
@@ -14,6 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestRelayerService(t *testing.T) {
@@ -61,4 +64,25 @@ func TestRelayerService_recovery(t *testing.T) {
 	servicetest.Run(t, relayer)
 
 	relayertest.Run(t, relayer)
+}
+
+func TestRelayerService_HealthReport(t *testing.T) {
+	lggr := logger.Named(logger.Test(t), "Foo")
+	capRegistry := mocks.NewCapabilitiesRegistry(t)
+	s := loop.NewRelayerService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
+		return test.HelperProcessCommand{Command: loop.PluginRelayerName}.New()
+	}, test.ConfigTOML, keystoretest.Keystore, capRegistry)
+
+	servicetest.AssertHealthReportNames(t, s.HealthReport(),
+		"Foo.RelayerService")
+
+	require.NoError(t, s.Start(tests.Context(t)))
+	t.Cleanup(func() { require.NoError(t, s.Close()) })
+
+	require.Eventually(t, func() bool { return s.Ready() == nil }, tests.WaitTimeout(t)/2, time.Second, s.Ready())
+
+	servicetest.AssertHealthReportNames(t, s.HealthReport(),
+		"Foo.RelayerService",
+		"Foo.RelayerService.PluginRelayerClient.ChainRelayerClient",
+		"staticRelayer")
 }

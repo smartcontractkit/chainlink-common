@@ -47,7 +47,7 @@ func (t *telemetryEndpoint) SendLog(log []byte) {
 		Payload:       log,
 	})
 	if err != nil {
-		//TODO: log error? commontypes.MonitoringEndpoint does not return anything, but we should log something at least
+		//TODO: log error? commontypes.MonitoringEndpoint does not return anything, but we should log something at least?
 	}
 }
 

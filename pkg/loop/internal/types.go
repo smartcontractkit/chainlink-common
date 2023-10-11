@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 
+	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
 
@@ -28,4 +29,8 @@ type Relayer interface {
 
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)
 	NewPluginProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.PluginProvider, error)
+}
+
+type PipelineRunner interface {
+	ExecuteRun(ctx context.Context, spec types.Spec, vars types.Vars, l logger.Logger) (run *types.Run, trrs types.TaskRunResults, err error)
 }

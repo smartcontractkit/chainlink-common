@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb";
+
+package loop;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+message Options {
+  bool persist_errored_runs = 1; // Controls whether or not we will save the run async
+  google.protobuf.Duration max_task_duration = 2;
+  uint32 gas_limit = 3;
+  bool forwarding_allowed = 4;
+}
+
+message Job {
+  int32 id = 1;
+  string name = 2;
+  string type = 3;
+}
+
+message RunRequest {
+  int32 id = 1;
+  string source = 2;
+  google.protobuf.Struct vars = 3;
+  Options options = 4;
+  Job job = 5;
+}
+
+message TaskResult {
+  string id = 1;
+  string type = 2;
+  google.protobuf.Value value = 3;
+  int32 index = 4;
+}
+
+message RunResponse {
+  repeated TaskResult results = 1;
+}
+
+service PipelineRunnerService {
+  rpc ExecuteRun(RunRequest) returns (RunResponse);
+}

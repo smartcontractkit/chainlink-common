@@ -11,6 +11,7 @@ import (
 type pluginProviderClient struct {
 	*configProviderClient
 	contractTransmitter libocr.ContractTransmitter
+	chainReader         types.ChainReader
 }
 
 func (p *pluginProviderClient) ClientConn() grpc.ClientConnInterface { return p.cc }
@@ -25,9 +26,13 @@ func (p *pluginProviderClient) ContractTransmitter() libocr.ContractTransmitter 
 	return p.contractTransmitter
 }
 
-type PluginProviderServer struct{}
-
 func (p PluginProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker Broker, brokerCfg BrokerConfig) types.PluginProvider {
 	be := &brokerExt{broker: broker, BrokerConfig: brokerCfg}
 	return newPluginProviderClient(be, conn)
+}
+
+type PluginProviderServer struct{}
+
+func (p *pluginProviderClient) ChainReader() types.ChainReader {
+	return p.chainReader
 }

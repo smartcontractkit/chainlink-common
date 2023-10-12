@@ -256,6 +256,51 @@ message FromAccountReply {
   string Account = 1;
 }
 
+service ChainReader {
+  rpc RegisterEventFilter (RegisterEventFilterRequest) returns (RegisterEventFilterReply) {}
+  rpc UnregisterEventFilter (UnregisterEventFilterRequest) returns (RegisterEventFilterReply) {}
+  rpc QueryEvents (QueryEventsRequest) returns (QueryEventsReply) {}
+  rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+}
+
+// TODO
+message RegisterEventFilterRequest {}
+
+// TODO
+message RegisterEventFilterReply {}
+
+// TODO
+message UnregisterEventFilterRequest {}
+
+// TODO
+message UnregisterEventFilterReply {}
+
+// TODO
+message QueryEventsRequest {}
+
+// TODO
+message QueryEventsReply {}
+
+// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
+message GetLatestValueRequest {
+    BoundContract bc = 1;
+    string method = 2;
+    bytes params = 3;
+    bytes returnValues = 4;
+}
+
+// GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
+message GetLatestValueReply {
+  bytes retValues = 1;
+}
+
+// BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].
+message BoundContract {
+    string address = 1;
+    string name = 2;
+    bool pending = 3;
+}
+
 service Service {
   rpc Name (google.protobuf.Empty) returns (NameReply) {}
   rpc Close (google.protobuf.Empty) returns (google.protobuf.Empty) {}

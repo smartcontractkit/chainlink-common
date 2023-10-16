@@ -35,6 +35,9 @@ type TracingConfig struct {
 
 	// Collector is the address of the OTEL collector to send traces to.
 	CollectorTarget string
+
+	// SamplingRatio is the ratio of traces to sample. 1.0 means sample all traces.
+	SamplingRatio float64
 }
 
 // SetupTelemetry initializes open telemetry and returns GRPCOpts with telemetry interceptors.
@@ -113,9 +116,7 @@ func SetupTracing(config TracingConfig) {
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(traceExporter),
 		sdktrace.WithResource(resource),
-
-		// TODO: revisit
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(config.SamplingRatio)),
 	)
 
 	otel.SetTracerProvider(tracerProvider)

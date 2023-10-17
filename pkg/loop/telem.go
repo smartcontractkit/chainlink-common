@@ -20,7 +20,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 )
 
@@ -40,15 +39,9 @@ type TracingConfig struct {
 	SamplingRatio float64
 }
 
-// SetupTelemetry initializes open telemetry and returns GRPCOpts with telemetry interceptors.
+// NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
 // It is called from the host and each plugin - intended as there is bidirectional communication
-func SetupTelemetry(registerer prometheus.Registerer, config TracingConfig) GRPCOpts {
-	if config.Enabled {
-		SetupTracing(config)
-	}
-
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
+func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
 	if registerer == nil {
 		registerer = prometheus.DefaultRegisterer
 	}
@@ -57,10 +50,9 @@ func SetupTelemetry(registerer prometheus.Registerer, config TracingConfig) GRPC
 
 // SetupTracing initializes open telemetry with the provided config.
 // It sets the global trace provider and opens a connection to the configured collector.
-func SetupTracing(config TracingConfig) {
-	log, err := logger.New()
-	if err != nil {
-		panic(err)
+func SetupTracing(config TracingConfig) error {
+	if !config.Enabled {
+		return nil
 	}
 
 	ctx := context.Background()
@@ -75,22 +67,20 @@ func SetupTracing(config TracingConfig) {
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		log.Errorf("Connecting to OTEL collector %w failed: %v", config.CollectorTarget, err)
+		return err
 	}
 
 	// Set up a trace exporter
 	// Shutting down the traceExporter will not shutdown the underlying connection.
 	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
-		log.Errorf("failed to create trace exporter: %w", err)
-		return
+		return err
 	}
 
 	var version string
 	var service string
 	buildInfo, ok := debug.ReadBuildInfo()
 	if !ok {
-		log.Errorf("failed to read build info: %w", err)
 		version = "unknown"
 		service = "cl-node"
 	} else {
@@ -120,6 +110,8 @@ func SetupTracing(config TracingConfig) {
 	)
 
 	otel.SetTracerProvider(tracerProvider)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return nil
 }
 
 var grpcpromBuckets = []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}

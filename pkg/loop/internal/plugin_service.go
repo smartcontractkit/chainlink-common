@@ -1,4 +1,4 @@
-package loop
+package internal
 
 import (
 	"context"
@@ -13,14 +13,11 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-relay/pkg/services"
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 const KeepAliveTickDuration = 5 * time.Second //TODO from config
-
-type BrokerConfig = internal.BrokerConfig
 
 type grpcPlugin interface {
 	plugin.Plugin

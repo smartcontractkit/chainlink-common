@@ -1,4 +1,4 @@
-package loop
+package test
 
 import (
 	"context"
@@ -9,9 +9,15 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
 )
 
-// NOTE: This is part of the main package because it needs to be imported by the test binary at `./internal/test/cmd`
+const PluginLoggerTestName = "logger-test"
+
+const LoggerTestName = "server-side-logger-name"
+
+// NOTE: This is part of the test package because it needs to be imported by the test binary at `./internal/test/cmd`
+// as well as the test at `./pkg/loop/logger_loop_test.go`
 type GRPCPluginLoggerTest struct {
 	plugin.NetRPCUnsupportedPlugin
 
@@ -35,7 +41,7 @@ func (g *GRPCPluginLoggerTest) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig:  PluginLoggerTestHandshakeConfig(),
 		Plugins:          map[string]plugin.Plugin{PluginLoggerTestName: g},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		Logger:           HCLogLogger(g.Logger),
+		Logger:           loop.HCLogLogger(g.Logger),
 	}
 }
 

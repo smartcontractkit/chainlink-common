@@ -9,19 +9,14 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
 )
 
-const PluginLoggerTestName = "logger-test"
-
-const LoggerTestName = "server-side-logger-name"
-
 func TestHCLogLogger(t *testing.T) {
 	lggr, ol := logger.TestObserved(t, zapcore.ErrorLevel)
-	loggerTest := &loop.GRPCPluginLoggerTest{Logger: lggr}
+	loggerTest := &test.GRPCPluginLoggerTest{Logger: lggr}
 	cc := loggerTest.ClientConfig()
-	cc.Cmd = HelperProcess(PluginLoggerTestName, test.HelperProcessOptions{})
+	cc.Cmd = HelperProcess(test.PluginLoggerTestName, test.HelperProcessOptions{})
 	c := plugin.NewClient(cc)
 	t.Cleanup(c.Kill)
 	_, err := c.Client()
@@ -29,6 +24,6 @@ func TestHCLogLogger(t *testing.T) {
 
 	// Some logs should come through with plugin-side names
 	require.NotEmpty(t, ol.Filter(func(entry observer.LoggedEntry) bool {
-		return entry.LoggerName == LoggerTestName
+		return entry.LoggerName == test.LoggerTestName
 	}), ol.All())
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/reporting_plugins"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
 
@@ -74,21 +74,21 @@ func main() {
 		})
 		os.Exit(0)
 
-	case loop.PluginLoggerTestName:
-		loggerTest := &loop.GRPCPluginLoggerTest{Logger: logger.Named(lggr, loop.LoggerTestName)}
+	case test.PluginLoggerTestName:
+		loggerTest := &test.GRPCPluginLoggerTest{Logger: logger.Named(lggr, test.LoggerTestName)}
 		plugin.Serve(&plugin.ServeConfig{
-			HandshakeConfig: loop.PluginLoggerTestHandshakeConfig(),
+			HandshakeConfig: test.PluginLoggerTestHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
-				loop.PluginLoggerTestName: loggerTest,
+				test.PluginLoggerTestName: loggerTest,
 			},
 			GRPCServer: grpcServer,
 		})
 
-	case reporting_plugins.PluginServiceName:
+	case reportingplugins.PluginServiceName:
 		plugin.Serve(&plugin.ServeConfig{
-			HandshakeConfig: reporting_plugins.ReportingPluginHandshakeConfig(),
+			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
-				reporting_plugins.PluginServiceName: &reporting_plugins.GRPCService[types.PluginProvider]{
+				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.PluginProvider]{
 					PluginServer: test.StaticReportingPluginWithPluginProvider{},
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
@@ -100,11 +100,11 @@ func main() {
 		})
 		os.Exit(0)
 
-	case "generic-median":
+	case test.ReportingPluginWithMedianProviderName:
 		plugin.Serve(&plugin.ServeConfig{
-			HandshakeConfig: reporting_plugins.ReportingPluginHandshakeConfig(),
+			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
-				reporting_plugins.PluginServiceName: &reporting_plugins.GRPCService[types.MedianProvider]{
+				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.MedianProvider]{
 					PluginServer: test.StaticReportingPluginWithMedianProvider{},
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,

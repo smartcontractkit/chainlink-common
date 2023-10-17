@@ -1,4 +1,4 @@
-package reporting_plugins_test
+package reportingplugins_test
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/reporting_plugins"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 )
@@ -38,8 +38,8 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
-		PluginGenericMedian,
-		&reporting_plugins.GRPCService[types.MedianProvider]{
+		test.ReportingPluginWithMedianProviderName,
+		&reportingplugins.GRPCService[types.MedianProvider]{
 			PluginServer: test.StaticReportingPluginWithMedianProvider{},
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
@@ -56,8 +56,8 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
-		reporting_plugins.PluginServiceName,
-		&reporting_plugins.GRPCService[types.PluginProvider]{
+		reportingplugins.PluginServiceName,
+		&reportingplugins.GRPCService[types.PluginProvider]{
 			PluginServer: test.StaticReportingPluginWithPluginProvider{},
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),

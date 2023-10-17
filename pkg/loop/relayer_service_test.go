@@ -11,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 )
@@ -32,7 +33,7 @@ func TestRelayerService(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * loop.KeepAliveTickDuration)
+		time.Sleep(2 * internal.KeepAliveTickDuration)
 
 		test.TestRelayer(t, relayer)
 	})
@@ -41,7 +42,7 @@ func TestRelayerService(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * loop.KeepAliveTickDuration)
+		time.Sleep(2 * internal.KeepAliveTickDuration)
 
 		test.TestRelayer(t, relayer)
 	})

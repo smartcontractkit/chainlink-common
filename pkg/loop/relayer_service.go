@@ -2,22 +2,20 @@ package loop
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"os/exec"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
-
-var ErrPluginUnavailable = errors.New("plugin unavailable")
 
 var _ Relayer = (*RelayerService)(nil)
 
 // RelayerService is a [types.Service] that maintains an internal [Relayer].
 type RelayerService struct {
-	PluginService[*GRPCPluginRelayer, Relayer]
+	internal.PluginService[*GRPCPluginRelayer, Relayer]
 }
 
 // NewRelayerService returns a new [*RelayerService].

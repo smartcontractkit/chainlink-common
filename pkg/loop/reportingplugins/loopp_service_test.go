@@ -1,4 +1,4 @@
-package reporting_plugins_test
+package reportingplugins_test
 
 import (
 	"os/exec"
@@ -11,8 +11,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/reporting_plugins"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 	utilstests "github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 )
@@ -21,9 +22,6 @@ func HelperProcess(command string, opts test.HelperProcessOptions) *exec.Cmd {
 	return test.HelperProcess("../internal/test/cmd/main.go", command, opts)
 }
 
-// PluginGenericMedian is a generic plugin which wants a median provider
-const PluginGenericMedian = "generic-median"
-
 func TestLOOPPService(t *testing.T) {
 	t.Parallel()
 
@@ -31,12 +29,12 @@ func TestLOOPPService(t *testing.T) {
 		Plugin string
 	}{
 		// A generic plugin with a median provider
-		{Plugin: PluginGenericMedian},
+		{Plugin: test.ReportingPluginWithMedianProviderName},
 		// A generic plugin with a plugin provider
-		{Plugin: reporting_plugins.PluginServiceName},
+		{Plugin: reportingplugins.PluginServiceName},
 	}
 	for _, ts := range tests {
-		looppSvc := reporting_plugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 			return HelperProcess(ts.Plugin, test.HelperProcessOptions{})
 		}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticErrorLog{})
 		hook := looppSvc.XXXTestHook()
@@ -51,7 +49,7 @@ func TestLOOPPService(t *testing.T) {
 			hook.Kill()
 
 			// wait for relaunch
-			time.Sleep(2 * loop.KeepAliveTickDuration)
+			time.Sleep(2 * internal.KeepAliveTickDuration)
 
 			test.TestReportingPluginFactory(t, looppSvc)
 		})
@@ -60,7 +58,7 @@ func TestLOOPPService(t *testing.T) {
 			hook.Reset()
 
 			// wait for relaunch
-			time.Sleep(2 * loop.KeepAliveTickDuration)
+			time.Sleep(2 * internal.KeepAliveTickDuration)
 
 			test.TestReportingPluginFactory(t, looppSvc)
 		})
@@ -70,8 +68,8 @@ func TestLOOPPService(t *testing.T) {
 func TestLOOPPService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
-	looppSvc := reporting_plugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return HelperProcess(PluginGenericMedian, test.HelperProcessOptions{Limit: int(limit.Add(1))})
+	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		return HelperProcess(test.ReportingPluginWithMedianProviderName, test.HelperProcessOptions{Limit: int(limit.Add(1))})
 	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticErrorLog{})
 	require.NoError(t, looppSvc.Start(utilstests.Context(t)))
 	t.Cleanup(func() { assert.NoError(t, looppSvc.Close()) })

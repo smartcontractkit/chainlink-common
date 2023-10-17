@@ -1,4 +1,4 @@
-package reporting_plugins
+package reportingplugins
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
+	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
 
@@ -17,7 +18,7 @@ var _ ocrtypes.ReportingPluginFactory = (*LOOPPService)(nil)
 
 // LOOPPService is a [types.Service] that maintains an internal [types.PluginClient].
 type LOOPPService struct {
-	loop.PluginService[*GRPCService[types.PluginProvider], types.ReportingPluginFactory]
+	internal.PluginService[*GRPCService[types.PluginProvider], types.ReportingPluginFactory]
 }
 
 // NewLOOPPService returns a new [*PluginService].
@@ -34,7 +35,7 @@ func NewLOOPPService(lggr logger.Logger, grpcOpts loop.GRPCOpts, cmd func() *exe
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "GenericService")
 	var ps LOOPPService
-	broker := loop.BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
+	broker := internal.BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
 	ps.Init(PluginServiceName, &GRPCService[types.PluginProvider]{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &ps
 }

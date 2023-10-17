@@ -16,6 +16,8 @@ type MockConn struct {
 	grpc.ClientConnInterface
 }
 
+const ReportingPluginWithMedianProviderName = "reporting-plugin-with-median-provider"
+
 type StaticReportingPluginWithMedianProvider struct {
 }
 

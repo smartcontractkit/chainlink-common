@@ -1,4 +1,4 @@
-package reporting_plugins
+package reportingplugins
 
 import (
 	"context"

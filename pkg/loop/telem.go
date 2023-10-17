@@ -56,7 +56,7 @@ func SetupTracing(config TracingConfig) error {
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 5 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 
 	// Enough to shutdown the underlying connection since DialContext is used in blocking mode
 	defer cancel()

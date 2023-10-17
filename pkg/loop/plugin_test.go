@@ -16,11 +16,11 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
+	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 )
 
 func testPlugin[I any](t *testing.T, name string, p plugin.Plugin, testFn func(*testing.T, I)) {
-	ctx, cancel := context.WithCancel(utils.Context(t))
+	ctx, cancel := context.WithCancel(tests.Context(t))
 	defer cancel()
 
 	ch := make(chan *plugin.ReattachConfig, 1)
@@ -74,7 +74,7 @@ func helperProcess(s ...string) *exec.Cmd {
 		"GO_WANT_HELPER_PROCESS=1",
 	}
 
-	cmd := exec.Command(os.Args[0], cs...)
+	cmd := exec.Command(os.Args[0], cs...) //nolint:gosec
 	cmd.Env = append(env, os.Environ()...)
 	return cmd
 }
@@ -124,6 +124,12 @@ func TestHelperProcess(t *testing.T) {
 		}
 	}
 
+	lggr, err := loop.NewLogger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create logger: %s\n", err)
+		os.Exit(2)
+	}
+
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 	switch cmd {
@@ -131,7 +137,7 @@ func TestHelperProcess(t *testing.T) {
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: loop.PluginRelayerHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
-				loop.PluginRelayerName: &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{}, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+				loop.PluginRelayerName: &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{}, BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
 		})
@@ -141,11 +147,21 @@ func TestHelperProcess(t *testing.T) {
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: loop.PluginMedianHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
-				loop.PluginRelayerName: &loop.GRPCPluginMedian{PluginServer: test.StaticPluginMedian{}, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+				loop.PluginMedianName: &loop.GRPCPluginMedian{PluginServer: test.StaticPluginMedian{}, BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
 		})
 		os.Exit(0)
+
+	case PluginLoggerTestName:
+		loggerTest := &GRPCPluginLoggerTest{Logger: logger.Named(lggr, LoggerTestName)}
+		plugin.Serve(&plugin.ServeConfig{
+			HandshakeConfig: PluginLoggerTestHandshakeConfig(),
+			Plugins: map[string]plugin.Plugin{
+				PluginLoggerTestName: loggerTest,
+			},
+			GRPCServer: grpcServer,
+		})
 
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %q\n", cmd)

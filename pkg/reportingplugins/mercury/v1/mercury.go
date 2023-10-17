@@ -300,12 +300,17 @@ func (rp *reportingPlugin) Report(repts types.ReportTimestamp, previousReport ty
 
 	rf, err := rp.buildReportFields(previousReport, paos)
 	if err != nil {
-		rp.logger.Debugw("failed to build report fields", "paos", paos, "f", rp.f, "reportFields", rf, "repts", repts)
+		rp.logger.Errorw("failed to build report fields", "paos", paos, "f", rp.f, "reportFields", rf, "repts", repts, "err", err)
 		return false, nil, err
 	}
 
+	if rf.CurrentBlockNum < rf.ValidFromBlockNum {
+		rp.logger.Debugw("shouldReport: no (overlap)", "currentBlockNum", rf.CurrentBlockNum, "validFromBlockNum", rf.ValidFromBlockNum, "repts", repts)
+		return false, nil, nil
+	}
+
 	if err = rp.validateReport(rf); err != nil {
-		rp.logger.Debugw("shouldReport: no (validation error)", "err", err, "timestamp", repts)
+		rp.logger.Errorw("shouldReport: no (validation error)", "reportFields", rf, "err", err, "repts", repts, "paos", paos)
 		return false, nil, err
 	}
 	rp.logger.Debugw("shouldReport: yes",
@@ -372,39 +377,6 @@ func (rp *reportingPlugin) validateReport(rf ReportFields) error {
 		mercury.ValidateBetween("median ask", rf.Ask, rp.onchainConfig.Min, rp.onchainConfig.Max),
 		ValidateCurrentBlock(rf),
 	)
-}
-
-func (rp *reportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {
-	reportEpochRound := mercury.EpochRound{Epoch: repts.Epoch, Round: repts.Round}
-	if !rp.latestAcceptedEpochRound.Less(reportEpochRound) {
-		rp.logger.Debugw("ShouldAcceptFinalizedReport() = false, report is stale",
-			"latestAcceptedEpochRound", rp.latestAcceptedEpochRound,
-			"reportEpochRound", reportEpochRound,
-		)
-		return false, nil
-	}
-
-	if !(len(report) <= rp.maxReportLength) {
-		rp.logger.Warnw("report violates MaxReportLength limit set by ReportCodec",
-			"reportEpochRound", reportEpochRound,
-			"reportLength", len(report),
-			"maxReportLength", rp.maxReportLength,
-		)
-		return false, nil
-	}
-
-	rp.logger.Debugw("ShouldAcceptFinalizedReport() = true",
-		"reportEpochRound", reportEpochRound,
-		"latestAcceptedEpochRound", rp.latestAcceptedEpochRound,
-	)
-
-	rp.latestAcceptedEpochRound = reportEpochRound
-
-	return true, nil
-}
-
-func (rp *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, repts types.ReportTimestamp, report types.Report) (bool, error) {
-	return true, nil
 }
 
 func (rp *reportingPlugin) Close() error {

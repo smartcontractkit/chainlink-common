@@ -209,6 +209,8 @@ func (s *PluginService[P, S]) closeClient() (err error) {
 	return
 }
 
+// WaitCtx waits for the service to start up until `ctx.Done` is triggered
+// or it receives the stop signal.
 func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -220,6 +222,7 @@ func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	}
 }
 
+// Wait is the context-ignorant version of WaitCtx above.
 func (s *PluginService[P, S]) Wait() error {
 	return s.WaitCtx(context.Background())
 }

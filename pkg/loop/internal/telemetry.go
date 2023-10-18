@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/smartcontractkit/libocr/commontypes"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
@@ -23,8 +25,9 @@ type TelemetryClient struct {
 }
 
 type telemetryClient struct {
-	*brokerExt
 	grpc pb.TelemetryClient
+
+	lggr logger.Logger
 
 	contractID    string
 	telemetryType string
@@ -33,6 +36,8 @@ type telemetryClient struct {
 }
 
 type telemetryEndpoint struct {
+	lggr logger.Logger
+
 	grpc          pb.TelemetryClient
 	relayID       pb.RelayID
 	contractID    string
@@ -47,7 +52,7 @@ func (t *telemetryEndpoint) SendLog(log []byte) {
 		Payload:       log,
 	})
 	if err != nil {
-		//TODO: log error? commontypes.MonitoringEndpoint does not return anything, but we should log something at least?
+		t.lggr.Errorw("cannot send telemetry", "err", err)
 	}
 }
 
@@ -60,6 +65,7 @@ func (t *telemetryClient) GenMonitoringEndpoint(contractID string, telemType str
 		},
 		contractID:    contractID,
 		telemetryType: telemType,
+		lggr:          t.lggr,
 	}
 }
 
@@ -92,6 +98,10 @@ func (t *telemetryClient) Send(ctx context.Context, contractID string, telemetry
 		return err
 	}
 	return nil
+}
+
+func newTelemetryClient(cc *grpc.ClientConn, lggr logger.Logger) *telemetryClient {
+	return &telemetryClient{grpc: pb.NewTelemetryClient(cc), lggr: lggr}
 }
 
 var _ pb.TelemetryServer = (*telemetryServer)(nil)

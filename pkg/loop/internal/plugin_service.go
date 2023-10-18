@@ -216,7 +216,7 @@ func (s *PluginService[P, S]) Wait(ctx context.Context) error {
 	case <-s.serviceCh:
 		return nil
 	case <-s.stopCh:
-		return nil
+		return errors.New("service was stopped while waiting")
 	}
 }
 

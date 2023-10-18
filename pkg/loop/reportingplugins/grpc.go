@@ -41,8 +41,8 @@ type GRPCService[T types.PluginProvider] struct {
 
 type serverAdapter func(context.Context, types.ReportingPluginServiceConfig, grpc.ClientConnInterface, types.ErrorLog) (types.ReportingPluginFactory, error)
 
-func (g serverAdapter) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, conn grpc.ClientConnInterface, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
-	return g(ctx, config, conn, errorLog)
+func (s serverAdapter) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, conn grpc.ClientConnInterface, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+	return s(ctx, config, conn, errorLog)
 }
 
 func (p *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
@@ -54,23 +54,23 @@ func (p *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginClient], updated with the new broker and conn.
-func (p *GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
-	if p.pluginClient == nil {
-		p.pluginClient = internal.NewReportingPluginServiceClient(broker, p.BrokerConfig, conn)
+func (g *GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+	if g.pluginClient == nil {
+		g.pluginClient = internal.NewReportingPluginServiceClient(broker, g.BrokerConfig, conn)
 	} else {
-		p.pluginClient.Refresh(broker, conn)
+		g.pluginClient.Refresh(broker, conn)
 	}
 
-	return types.ReportingPluginClient(p.pluginClient), nil
+	return types.ReportingPluginClient(g.pluginClient), nil
 }
 
-func (p *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
+func (g *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
 	return &plugin.ClientConfig{
 		HandshakeConfig:  ReportingPluginHandshakeConfig(),
-		Plugins:          map[string]plugin.Plugin{PluginServiceName: p},
+		Plugins:          map[string]plugin.Plugin{PluginServiceName: g},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		GRPCDialOptions:  p.BrokerConfig.DialOpts,
-		Logger:           loop.HCLogLogger(p.BrokerConfig.Logger),
+		GRPCDialOptions:  g.BrokerConfig.DialOpts,
+		Logger:           loop.HCLogLogger(g.BrokerConfig.Logger),
 	}
 }
 

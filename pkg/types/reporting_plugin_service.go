@@ -10,7 +10,7 @@ type ReportingPluginServiceConfig struct {
 	ProviderType string
 	Command      string
 	PluginName   string
-	PluginConfig []byte
+	PluginConfig string
 }
 
 // ReportingPluginClient is the client interface to a plugin running

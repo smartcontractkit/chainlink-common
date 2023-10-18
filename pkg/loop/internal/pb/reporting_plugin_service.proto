@@ -12,7 +12,7 @@ message ReportingPluginServiceConfig {
   string providerType = 1;
   string command = 2;
   string pluginName = 3;
-  bytes pluginConfig = 4;
+  string pluginConfig = 4;
 }
 
 // NewReportingPluginFactoryRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/loop/reporting_plugins/LOOPPService.NewReportingPluginFactory].

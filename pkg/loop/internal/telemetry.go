@@ -28,11 +28,6 @@ type telemetryClient struct {
 	grpc pb.TelemetryClient
 
 	lggr logger.Logger
-
-	contractID    string
-	telemetryType string
-	network       string
-	chainID       string
 }
 
 type telemetryEndpoint struct {

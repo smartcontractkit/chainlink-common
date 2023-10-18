@@ -41,35 +41,35 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 }
 
 func (r *RelayerService) NewConfigProvider(ctx context.Context, args types.RelayArgs) (types.ConfigProvider, error) {
-	if err := r.Wait(ctx); err != nil {
+	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
 	return r.Service.NewConfigProvider(ctx, args)
 }
 
 func (r *RelayerService) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
-	if err := r.Wait(ctx); err != nil {
+	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
 	return r.Service.NewPluginProvider(ctx, rargs, pargs)
 }
 
 func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
-	if err := r.Wait(ctx); err != nil {
+	if err := r.WaitCtx(ctx); err != nil {
 		return types.ChainStatus{}, err
 	}
 	return r.Service.GetChainStatus(ctx)
 }
 
 func (r *RelayerService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
-	if err := r.Wait(ctx); err != nil {
+	if err := r.WaitCtx(ctx); err != nil {
 		return nil, "", -1, err
 	}
 	return r.Service.ListNodeStatuses(ctx, pageSize, pageToken)
 }
 
 func (r *RelayerService) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
-	if err := r.Wait(ctx); err != nil {
+	if err := r.WaitCtx(ctx); err != nil {
 		return err
 	}
 	return r.Service.Transact(ctx, from, to, amount, balanceCheck)

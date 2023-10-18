@@ -209,7 +209,7 @@ func (s *PluginService[P, S]) closeClient() (err error) {
 	return
 }
 
-func (s *PluginService[P, S]) Wait(ctx context.Context) error {
+func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return context.Cause(ctx)
@@ -218,6 +218,10 @@ func (s *PluginService[P, S]) Wait(ctx context.Context) error {
 	case <-s.stopCh:
 		return errors.New("service was stopped while waiting")
 	}
+}
+
+func (s *PluginService[P, S]) Wait() error {
+	return s.WaitCtx(context.Background())
 }
 
 // XXXTestHook returns a TestPluginService.

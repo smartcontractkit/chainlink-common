@@ -39,7 +39,7 @@ func NewMedianService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cm
 }
 
 func (m *MedianService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
-	if err := m.Wait(context.Background()); err != nil {
+	if err := m.Wait(); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
 	return m.Service.NewReportingPlugin(config)

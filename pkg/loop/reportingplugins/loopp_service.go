@@ -41,7 +41,7 @@ func NewLOOPPService(lggr logger.Logger, grpcOpts loop.GRPCOpts, cmd func() *exe
 }
 
 func (g *LOOPPService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
-	if err := g.Wait(context.Background()); err != nil {
+	if err := g.Wait(); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
 	return g.Service.NewReportingPlugin(config)

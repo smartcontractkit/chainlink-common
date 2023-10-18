@@ -218,7 +218,7 @@ func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	case <-s.serviceCh:
 		return nil
 	case <-s.stopCh:
-		return errors.New("service was stopped while waiting")
+		return fmt.Errorf("service was stoped while waiting: %w", context.Canceled)
 	}
 }
 

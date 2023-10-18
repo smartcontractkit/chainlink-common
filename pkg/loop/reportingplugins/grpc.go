@@ -45,12 +45,12 @@ func (s serverAdapter) NewReportingPluginFactory(ctx context.Context, config typ
 	return s(ctx, config, conn, errorLog)
 }
 
-func (p *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
+func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
 	adapter := func(ctx context.Context, cfg types.ReportingPluginServiceConfig, conn grpc.ClientConnInterface, el types.ErrorLog) (types.ReportingPluginFactory, error) {
-		provider := p.PluginServer.ConnToProvider(conn, broker, p.BrokerConfig)
-		return p.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, el)
+		provider := g.PluginServer.ConnToProvider(conn, broker, g.BrokerConfig)
+		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, el)
 	}
-	return internal.RegisterReportingPluginServiceServer(server, broker, p.BrokerConfig, serverAdapter(adapter))
+	return internal.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter(adapter))
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginClient], updated with the new broker and conn.

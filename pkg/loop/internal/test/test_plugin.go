@@ -14,20 +14,41 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 )
 
-type HelperProcessOptions struct {
-	Limit int
+type HelperProcessCommand struct {
+	Limit           int
+	CommandLocation string
+	Command         string
 }
 
-func HelperProcess(commandLocation string, command string, opts HelperProcessOptions) *exec.Cmd {
-	cmdArgs := []string{
-		"go", "run", commandLocation, fmt.Sprintf("-cmd=%s", command),
+func WithLimit(limit int) func(*HelperProcessCommand) {
+	return func(h *HelperProcessCommand) {
+		h.Limit = limit
 	}
-	if opts.Limit != 0 {
-		cmdArgs = append(cmdArgs, fmt.Sprintf("-limit=%d", opts.Limit))
+}
+
+func (h HelperProcessCommand) New() *exec.Cmd {
+	cmdArgs := []string{
+		"go", "run", h.CommandLocation, fmt.Sprintf("-cmd=%s", h.Command),
+	}
+	if h.Limit != 0 {
+		cmdArgs = append(cmdArgs, fmt.Sprintf("-limit=%d", h.Limit))
 	}
 	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...) // #nosec
 	cmd.Env = os.Environ()
 	return cmd
+}
+
+func NewHelperProcess(commandLocation, command string, opts ...func(*HelperProcessCommand)) *exec.Cmd {
+	h := HelperProcessCommand{
+		Command:         command,
+		CommandLocation: commandLocation,
+	}
+
+	for _, opt := range opts {
+		opt(&h)
+	}
+
+	return h.New()
 }
 
 func PluginTest[I any](t *testing.T, name string, p plugin.Plugin, testFn func(*testing.T, I)) {

@@ -16,7 +16,7 @@ func TestHCLogLogger(t *testing.T) {
 	lggr, ol := logger.TestObserved(t, zapcore.ErrorLevel)
 	loggerTest := &test.GRPCPluginLoggerTest{Logger: lggr}
 	cc := loggerTest.ClientConfig()
-	cc.Cmd = HelperProcess(test.PluginLoggerTestName, test.HelperProcessOptions{})
+	cc.Cmd = HelperProcess(test.PluginLoggerTestName)
 	c := plugin.NewClient(cc)
 	t.Cleanup(c.Kill)
 	_, err := c.Client()

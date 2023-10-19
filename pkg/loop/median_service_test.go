@@ -19,7 +19,7 @@ import (
 func TestMedianService(t *testing.T) {
 	t.Parallel()
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return HelperProcess(loop.PluginMedianName)
+		return NewHelperProcessCommand(loop.PluginMedianName)
 	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), &test.StaticErrorLog{})
 	hook := median.PluginService.XXXTestHook()
 	require.NoError(t, median.Start(tests.Context(t)))
@@ -52,7 +52,13 @@ func TestMedianService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return HelperProcess(loop.PluginMedianName, test.WithLimit(int(limit.Add(1))))
+		h := HelperProcessCommand{
+			HelperProcessCommand: test.HelperProcessCommand{
+				Command: loop.PluginMedianName,
+				Limit:   int(limit.Add(1)),
+			},
+		}
+		return h.New()
 	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), &test.StaticErrorLog{})
 	require.NoError(t, median.Start(tests.Context(t)))
 	t.Cleanup(func() { assert.NoError(t, median.Close()) })

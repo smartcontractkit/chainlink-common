@@ -30,7 +30,7 @@ func TestPluginRelayerExec(t *testing.T) {
 func newPluginRelayerExec(t *testing.T, stopCh <-chan struct{}) loop.PluginRelayer {
 	relayer := loop.GRPCPluginRelayer{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := relayer.ClientConfig()
-	cc.Cmd = HelperProcess(loop.PluginRelayerName)
+	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName)
 	c := plugin.NewClient(cc)
 	t.Cleanup(c.Kill)
 	client, err := c.Client()

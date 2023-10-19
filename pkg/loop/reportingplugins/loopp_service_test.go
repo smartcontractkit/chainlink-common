@@ -18,8 +18,22 @@ import (
 	utilstests "github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 )
 
-func HelperProcess(command string, opts ...func(o *test.HelperProcessCommand)) *exec.Cmd {
-	return test.NewHelperProcess("../internal/test/cmd/main.go", command, opts...)
+type HelperProcessCommand struct {
+	test.HelperProcessCommand
+}
+
+func (h HelperProcessCommand) New() *exec.Cmd {
+	h.CommandLocation = "../internal/test/cmd/main.go"
+	return h.HelperProcessCommand.New()
+}
+
+func NewHelperProcessCommand(command string) *exec.Cmd {
+	h := HelperProcessCommand{
+		HelperProcessCommand: test.HelperProcessCommand{
+			Command: command,
+		},
+	}
+	return h.New()
 }
 
 func TestLOOPPService(t *testing.T) {
@@ -35,7 +49,7 @@ func TestLOOPPService(t *testing.T) {
 	}
 	for _, ts := range tests {
 		looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-			return HelperProcess(ts.Plugin)
+			return NewHelperProcessCommand(ts.Plugin)
 		}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticErrorLog{})
 		hook := looppSvc.XXXTestHook()
 		require.NoError(t, looppSvc.Start(utilstests.Context(t)))
@@ -69,7 +83,13 @@ func TestLOOPPService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
 	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return HelperProcess(test.ReportingPluginWithMedianProviderName, test.WithLimit(int(limit.Add(1))))
+		h := HelperProcessCommand{
+			HelperProcessCommand: test.HelperProcessCommand{
+				Command: test.ReportingPluginWithMedianProviderName,
+				Limit:   int(limit.Add(1)),
+			},
+		}
+		return h.New()
 	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticErrorLog{})
 	require.NoError(t, looppSvc.Start(utilstests.Context(t)))
 	t.Cleanup(func() { assert.NoError(t, looppSvc.Close()) })

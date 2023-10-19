@@ -18,20 +18,16 @@ import (
 	utilstests "github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 )
 
-type HelperProcessCommand struct {
-	test.HelperProcessCommand
-}
+type HelperProcessCommand test.HelperProcessCommand
 
 func (h HelperProcessCommand) New() *exec.Cmd {
 	h.CommandLocation = "../internal/test/cmd/main.go"
-	return h.HelperProcessCommand.New()
+	return (test.HelperProcessCommand)(h).New()
 }
 
 func NewHelperProcessCommand(command string) *exec.Cmd {
 	h := HelperProcessCommand{
-		HelperProcessCommand: test.HelperProcessCommand{
-			Command: command,
-		},
+		Command: command,
 	}
 	return h.New()
 }
@@ -84,10 +80,8 @@ func TestLOOPPService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			HelperProcessCommand: test.HelperProcessCommand{
-				Command: test.ReportingPluginWithMedianProviderName,
-				Limit:   int(limit.Add(1)),
-			},
+			Command: test.ReportingPluginWithMedianProviderName,
+			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
 	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticErrorLog{})

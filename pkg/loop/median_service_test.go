@@ -53,10 +53,8 @@ func TestMedianService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			HelperProcessCommand: test.HelperProcessCommand{
-				Command: loop.PluginMedianName,
-				Limit:   int(limit.Add(1)),
-			},
+			Command: loop.PluginMedianName,
+			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
 	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), &test.StaticErrorLog{})

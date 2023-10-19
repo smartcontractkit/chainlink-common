@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"runtime/debug"
-	"time"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -50,29 +49,22 @@ func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
 
 // SetupTracing initializes open telemetry with the provided config.
 // It sets the global trace provider and opens a connection to the configured collector.
+// There is no transport security between the node and OTEL collector.
+// While this is the case, it is recommended to only deploy nodes and the OTEL collector on the same network.
+// TODO: BCF-2703
 func SetupTracing(config TracingConfig) error {
 	if !config.Enabled {
 		return nil
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-
-	// Enough to shutdown the underlying connection since DialContext is used in blocking mode
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
-		// Note the use of insecure transport here. TLS is recommended in production.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		// safe usage in this case https://github.com/grpc/grpc-go/blob/master/Documentation/anti-patterns.md#dialing-in-grpc
-		grpc.WithBlock(),
-	)
-	if err != nil {
-		return err
-	}
 
 	// Set up a trace exporter
 	// Shutting down the traceExporter will not shutdown the underlying connection.
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(config.CollectorTarget), otlptracegrpc.WithDialOption(
+		// Note the use of insecure transport here. TLS is recommended in production.
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	))
 	if err != nil {
 		return err
 	}
@@ -106,7 +98,11 @@ func SetupTracing(config TracingConfig) error {
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(traceExporter),
 		sdktrace.WithResource(resource),
-		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(config.SamplingRatio)),
+		sdktrace.WithSampler(
+			sdktrace.ParentBased(
+				sdktrace.TraceIDRatioBased(config.SamplingRatio),
+			),
+		),
 	)
 
 	otel.SetTracerProvider(tracerProvider)

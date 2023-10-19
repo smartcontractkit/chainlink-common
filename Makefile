@@ -1,13 +1,3 @@
-# Makefile
-
-.PHONY: lint
-lint:
-	# Install golangci-lint
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.53.3
-
-	# Run linter manually
-	$(shell go env GOPATH)/bin/golangci-lint run --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s
-
 .PHONY: gomodtidy
 gomodtidy:
 	go mod tidy

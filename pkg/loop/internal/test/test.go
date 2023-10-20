@@ -22,6 +22,19 @@ answer [type=sum values=<[ $(val), 2 ]>]
 answer;
 `
 
+type LatestTransmissionDetails struct {
+	ConfigDigest libocr.ConfigDigest
+	Epoch        uint32
+	Round        uint8
+	LatestAnswer *big.Int
+	Timestamp    time.Time
+}
+
+type GetLatestValueParams struct {
+	Param1 string
+	Param2 string
+}
+
 const (
 	account          = libocr.Account("testaccount")
 	balanceCheck     = true
@@ -49,10 +62,11 @@ var (
 		ID:     chainID,
 		Config: ConfigTOML,
 	}
-	chainID            = "chain-id"
-	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
-	configDigestPrefix = libocr.ConfigDigestPrefix(99)
-	contractConfig     = libocr.ContractConfig{
+	chainID                   = "chain-id"
+	configDigest              = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
+	configDigestPrefix        = libocr.ConfigDigestPrefix(99)
+	latestTransmissionDetails = LatestTransmissionDetails{ConfigDigest: configDigest, Epoch: epoch, Round: round, Timestamp: time.Now()}
+	contractConfig            = libocr.ContractConfig{
 		ConfigDigest:          configDigest,
 		ConfigCount:           42,
 		Signers:               []libocr.OnchainPublicKey{[]byte{15: 1}},
@@ -145,5 +159,12 @@ URL = 'https://test.url'
 			Index: 0,
 		},
 	}
-	payload = []byte("oops")
+	payload       = []byte("oops")
+	boundContract = types.BoundContract{
+		Name:    "my median contract",
+		Address: "0xBbf078A8849D74653e36E6DBBdC7e1a35E657C26",
+		Pending: false,
+	}
+	medianContractGenericMethod = "LatestTransmissionDetails"
+	getLatestValueParams        = GetLatestValueParams{"value1", "value2"}
 )

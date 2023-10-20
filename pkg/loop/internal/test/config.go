@@ -3,11 +3,15 @@ package test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"reflect"
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 )
 
 type staticConfigProvider struct{}
@@ -84,4 +88,46 @@ func (s staticContractTransmitter) LatestConfigDigestAndEpoch(ctx context.Contex
 
 func (s staticContractTransmitter) FromAccount() (libocr.Account, error) {
 	return account, nil
+}
+
+type staticChainReader struct{}
+
+func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
+	if !assert.ObjectsAreEqual(bc, boundContract) {
+		return fmt.Errorf("expected report context %v but got %v", boundContract, bc)
+	}
+	if method != medianContractGenericMethod {
+		return fmt.Errorf("expected generic contract method %v but got %v", medianContractGenericMethod, method)
+	}
+
+	jsonParams, err := json.Marshal(params)
+	if err != nil {
+		return fmt.Errorf("Received non json-marshable params in GetLatestValue: %v", params)
+	}
+	var gotParams GetLatestValueParams
+	err = json.Unmarshal(jsonParams, &gotParams)
+	if err != nil {
+		return fmt.Errorf("Invalid params received in GetLatestValue, must be unmarshable into type %T", reflect.TypeOf(getLatestValueParams))
+	}
+
+	if !assert.ObjectsAreEqual(gotParams, getLatestValueParams) {
+		return fmt.Errorf("expected params %v but got %v", getLatestValueParams, gotParams)
+	}
+
+	jsonRet, err := json.Marshal(latestTransmissionDetails)
+	if err != nil {
+		return err
+	}
+	var ret *map[string]any
+	ret, ok := retVal.(*map[string]any)
+	if !ok {
+		return fmt.Errorf("Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", reflect.TypeOf(retVal), reflect.TypeOf(ret))
+	}
+
+	err = json.Unmarshal(jsonRet, ret)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

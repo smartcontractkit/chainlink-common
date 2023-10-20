@@ -31,7 +31,7 @@ type ChainReader interface {
 	// json.Marshal(). Typically would be either an anonymous map such as `map[string]any{"baz": 42, "test": true}}` or something which implements the `MarshalJSON()` method (satisfying `Marshaller` interface).
 	//
 	// returnVal should satisfy Marshaller interface.
-	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) ([]byte, error)
+	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
 }
 
 type BoundContract struct {

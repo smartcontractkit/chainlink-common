@@ -15,22 +15,18 @@ type chainReaderClient struct {
 	grpc pb.ChainReaderClient
 }
 
-func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retValues any) ([]byte, error) {
+func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
 	boundContract := pb.BoundContract{Name: bc.Name, Address: bc.Address, Pending: bc.Pending}
 	jsonParams, err := json.Marshal(params)
 	if err != nil {
-		return nil, err
-	}
-	jsonRetValues, err := json.Marshal(retValues)
-	if err != nil {
-		return nil, err
+		return err
 	}
 
-	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: jsonParams, ReturnValues: jsonRetValues})
+	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: jsonParams})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return reply.RetValues, nil
+	return json.Unmarshal(reply.RetVal, retVal)
 }
 
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
@@ -41,15 +37,27 @@ type chainReaderServer struct {
 }
 
 func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	var params map[string]any
+	err := json.Unmarshal(request.Params, &params)
+	if err != nil {
+		return nil, err
+	}
+
 	var bc types.BoundContract
 	bc.Name = request.Bc.Name[:]
 	bc.Address = request.Bc.Address[:]
 	bc.Pending = request.Bc.Pending
-	retValues, err := c.impl.GetLatestValue(ctx, bc, request.Method, request.Params, request.ReturnValues)
+
+	var retVal map[string]any
+	err = c.impl.GetLatestValue(ctx, bc, request.Method, params, &retVal)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.GetLatestValueReply{RetValues: retValues}, nil
+	jsonRetVal, err := json.Marshal(retVal)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetLatestValueReply{RetVal: jsonRetVal}, nil
 }
 
 func (c *chainReaderServer) RegisterEventFilter(ctx context.Context, in *pb.RegisterEventFilterRequest) (*pb.RegisterEventFilterReply, error) {

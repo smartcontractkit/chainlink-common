@@ -15,64 +15,54 @@ import (
 )
 
 type PromServer struct {
-	port        int
+	Port    int
+	Logger  logger.Logger // required
+	Handler http.Handler  // optional
+
 	srvrDone    chan struct{} // closed when the http server is done
 	srvr        *http.Server
 	tcpListener *net.TCPListener
-	lggr        logger.Logger
-
-	handler http.Handler
 }
 
-type PromServerOpts struct {
-	Handler http.Handler
-}
-
-func NewPromServer(port int, lggr logger.Logger) *PromServer {
-	return PromServerOpts{}.New(port, lggr)
-}
-
-func (o PromServerOpts) New(port int, lggr logger.Logger) *PromServer {
-	s := &PromServer{
-		port:     port,
-		lggr:     lggr,
-		srvrDone: make(chan struct{}),
-		srvr: &http.Server{
-			// reasonable default based on typical prom poll interval of 15s.
-			ReadTimeout: 5 * time.Second,
-		},
-
-		handler: o.Handler,
+func (p *PromServer) init() *PromServer {
+	p.srvrDone = make(chan struct{})
+	p.srvr = &http.Server{
+		// reasonable default based on typical prom poll interval of 15s.
+		ReadTimeout: 5 * time.Second,
 	}
-	if s.handler == nil {
-		s.handler = promhttp.HandlerFor(
+	if p.Handler == nil {
+		p.Handler = promhttp.HandlerFor(
 			prometheus.DefaultGatherer,
 			promhttp.HandlerOpts{
 				EnableOpenMetrics: true,
 			},
 		)
 	}
-	return s
+	return p
 }
 
 // Start starts HTTP server on specified port to handle metrics requests
 func (p *PromServer) Start() error {
-	p.lggr.Debugf("Starting prom server on port %d", p.port)
+	if p.Logger == nil {
+		return errors.New("nil Logger")
+	}
+	p.init()
+	p.Logger.Debugf("Starting prom server on port %d", p.Port)
 	err := p.setupListener()
 	if err != nil {
 		return err
 	}
 
-	http.Handle("/metrics", p.handler)
+	http.Handle("/metrics", p.Handler)
 
 	go func() {
 		defer close(p.srvrDone)
 		err := p.srvr.Serve(p.tcpListener)
 		if errors.Is(err, net.ErrClosed) {
 			// ErrClose is expected on gracefully shutdown
-			p.lggr.Warnf("%s closed", p.Name())
+			p.Logger.Warnf("%s closed", p.Name())
 		} else {
-			p.lggr.Errorf("%s: %s", p.Name(), err)
+			p.Logger.Errorf("%s: %s", p.Name(), err)
 		}
 
 	}()
@@ -88,14 +78,14 @@ func (p *PromServer) Close() error {
 
 // Name of the server
 func (p *PromServer) Name() string {
-	return fmt.Sprintf("%s-prom-server", p.lggr.Name())
+	return fmt.Sprintf("%s-prom-server", p.Logger.Name())
 }
 
 // setupListener creates explicit listener so that we can resolve `:0` port, which is needed for testing
 // if we didn't need the resolved addr, or could pick a static port we could use p.srvr.ListenAndServer
 func (p *PromServer) setupListener() error {
 	l, err := net.ListenTCP("tcp", &net.TCPAddr{
-		Port: p.port,
+		Port: p.Port,
 	})
 	if err != nil {
 		return err

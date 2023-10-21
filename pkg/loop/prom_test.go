@@ -24,12 +24,12 @@ func TestPromServer(t *testing.T) {
 	testReg.MustRegister(testMetric)
 	testMetric.Inc()
 
-	s := PromServerOpts{Handler: testHandler}.New(0, logger.Test(t))
+	s := &PromServer{Handler: testHandler, Logger: logger.Test(t)}
 	// check that port is not resolved yet
-	require.Equal(t, -1, s.Port())
+	require.Equal(t, -1, s.ResolvedPort())
 	require.NoError(t, s.Start())
 
-	url := fmt.Sprintf("http://localhost:%d/metrics", s.Port())
+	url := fmt.Sprintf("http://localhost:%d/metrics", s.ResolvedPort())
 	resp, err := http.Get(url) //nolint
 	require.NoError(t, err)
 	require.NoError(t, err, "endpoint %s", url)
@@ -42,9 +42,9 @@ func TestPromServer(t *testing.T) {
 	require.NoError(t, s.Close())
 }
 
-// Port is the resolved port and is only known after Start().
+// ResolvedPort is the resolved port and is only known after Start().
 // returns -1 before it is resolved or if there was an error during resolution.
-func (p *PromServer) Port() int {
+func (p *PromServer) ResolvedPort() int {
 	if p.tcpListener == nil {
 		return -1
 	}

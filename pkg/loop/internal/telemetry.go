@@ -51,7 +51,24 @@ func (t *telemetryEndpoint) SendLog(log []byte) {
 	}
 }
 
-func (t *telemetryClient) GenMonitoringEndpoint(contractID string, telemType string, network string, chainID string) commontypes.MonitoringEndpoint {
+// GenMonitoringEndpoint generates a new monitoring endpoint, returns nil if one cannot be generated
+func (t *telemetryClient) GenMonitoringEndpoint(contractID string, telemetryType string, network string, chainID string) commontypes.MonitoringEndpoint {
+	if contractID == "" {
+		t.lggr.Errorw("cannot generate monitoring endpoint, contractID is empty", "contractID", contractID, "telemetryType", telemetryType, "network", network, "chainID", chainID)
+		return nil
+	}
+	if telemetryType == "" {
+		t.lggr.Errorw("cannot generate monitoring endpoint, telemetryType is empty", "contractID", contractID, "telemetryType", telemetryType, "network", network, "chainID", chainID)
+		return nil
+	}
+	if network == "" {
+		t.lggr.Errorw("cannot generate monitoring endpoint, network is empty", "contractID", contractID, "telemetryType", telemetryType, "network", network, "chainID", chainID)
+		return nil
+	}
+	if chainID == "" {
+		t.lggr.Errorw("cannot generate monitoring endpoint, chainID is empty", "contractID", contractID, "telemetryType", telemetryType, "network", network, "chainID", chainID)
+		return nil
+	}
 	return &telemetryEndpoint{
 		grpc: t.grpc,
 		relayID: pb.RelayID{
@@ -59,7 +76,7 @@ func (t *telemetryClient) GenMonitoringEndpoint(contractID string, telemType str
 			ChainId: chainID,
 		},
 		contractID:    contractID,
-		telemetryType: telemType,
+		telemetryType: telemetryType,
 		lggr:          t.lggr,
 	}
 }
@@ -95,7 +112,7 @@ func (t *telemetryClient) Send(ctx context.Context, contractID string, telemetry
 	return nil
 }
 
-func newTelemetryClient(cc *grpc.ClientConn, lggr logger.Logger) *telemetryClient {
+func NewTelemetryClient(cc grpc.ClientConnInterface, lggr logger.Logger) *telemetryClient {
 	return &telemetryClient{grpc: pb.NewTelemetryClient(cc), lggr: lggr}
 }
 
@@ -103,7 +120,6 @@ var _ pb.TelemetryServer = (*telemetryServer)(nil)
 
 type telemetryServer struct {
 	pb.UnimplementedTelemetryServer
-	*brokerExt
 
 	impl      types.MonitoringEndpointGenerator
 	endpoints map[string]commontypes.MonitoringEndpoint
@@ -124,7 +140,7 @@ func (t *telemetryServer) getOrCreateEndpoint(m *pb.TelemetryMessage) (commontyp
 		return nil, errors.New("contractID cannot be empty")
 	}
 	if m.TelemetryType == "" {
-		return nil, errors.New("TelemetryType cannot be empty")
+		return nil, errors.New("telemetryType cannot be empty")
 	}
 	if m.RelayID == nil {
 		return nil, errors.New("RelayID cannot be nil")
@@ -146,4 +162,8 @@ func (t *telemetryServer) getOrCreateEndpoint(m *pb.TelemetryMessage) (commontyp
 
 func makeKey(m *pb.TelemetryMessage) string {
 	return fmt.Sprintf("%s_%s_%s_%s", m.RelayID.Network, m.RelayID.ChainId, m.ContractID, m.TelemetryType)
+}
+
+func NewTelemetryServer(impl types.MonitoringEndpointGenerator) *telemetryServer {
+	return &telemetryServer{impl: impl}
 }

@@ -26,13 +26,12 @@ type staticEndpoint struct {
 
 func (s staticEndpoint) SendLog(log []byte) {}
 
-func (s staticTelemetry) GenMonitoringEndpoint(contractID string, telemType string, network string, chainID string) commontypes.MonitoringEndpoint {
+func (s staticTelemetry) GenMonitoringEndpoint(network string, chainID string, contractID string, telemType string) commontypes.MonitoringEndpoint {
 	s.endpoints[fmt.Sprintf("%s_%s_%s_%s", contractID, telemType, network, chainID)] = staticEndpoint{}
 	return s.endpoints[fmt.Sprintf("%s_%s_%s_%s", contractID, telemType, network, chainID)]
 }
 
-type mockClientConn struct {
-}
+type mockClientConn struct{}
 
 func (m mockClientConn) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	return nil
@@ -115,7 +114,7 @@ func Telemetry(t *testing.T) {
 	}
 
 	for _, test := range sendTests {
-		err := c.Send(context.Background(), test.contractID, test.telemetryType, test.network, test.chainID, test.payload)
+		err := c.Send(context.Background(), test.network, test.chainID, test.contractID, test.telemetryType, test.payload)
 		if test.shouldError {
 			require.ErrorContains(t, err, test.error)
 		} else {
@@ -176,7 +175,7 @@ func Telemetry(t *testing.T) {
 	}
 
 	for _, test := range genMonitoringEndpointTests {
-		e := c.GenMonitoringEndpoint(test.contractID, test.telemetryType, test.network, test.chainID)
+		e := c.GenMonitoringEndpoint(test.network, test.chainID, test.contractID, test.telemetryType)
 		if test.shouldError {
 			require.Nil(t, e)
 			require.Equal(t, 1, ol.Len())

@@ -50,7 +50,7 @@ func (t *telemetryEndpoint) SendLog(log []byte) {
 }
 
 // GenMonitoringEndpoint generates a new monitoring endpoint, returns nil if one cannot be generated
-func (t *telemetryClient) GenMonitoringEndpoint(contractID string, telemetryType string, network string, chainID string) commontypes.MonitoringEndpoint {
+func (t *telemetryClient) GenMonitoringEndpoint(network string, chainID string, contractID string, telemetryType string) commontypes.MonitoringEndpoint {
 	if contractID == "" {
 		t.lggr.Errorw("cannot generate monitoring endpoint, contractID is empty", "contractID", contractID, "telemetryType", telemetryType, "network", network, "chainID", chainID)
 		return nil
@@ -80,7 +80,7 @@ func (t *telemetryClient) GenMonitoringEndpoint(contractID string, telemetryType
 }
 
 // Send sends payload to the desired endpoint based on network and chainID
-func (t *telemetryClient) Send(ctx context.Context, contractID string, telemetryType string, network string, chainID string, payload []byte) error {
+func (t *telemetryClient) Send(ctx context.Context, network string, chainID string, contractID string, telemetryType string, payload []byte) error {
 	if contractID == "" {
 		return errors.New("contractID cannot be empty")
 	}
@@ -154,7 +154,7 @@ func (t *telemetryServer) getOrCreateEndpoint(m *pb.TelemetryMessage) (commontyp
 	key := makeKey(m)
 	e, ok := t.endpoints[key]
 	if !ok {
-		e = t.impl.GenMonitoringEndpoint(m.ContractID, m.TelemetryType, m.RelayID.Network, m.RelayID.ChainId)
+		e = t.impl.GenMonitoringEndpoint(m.RelayID.Network, m.RelayID.ChainId, m.ContractID, m.TelemetryType)
 	}
 	return e, nil
 }

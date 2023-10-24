@@ -79,6 +79,7 @@ func (t *telemetryClient) GenMonitoringEndpoint(contractID string, telemetryType
 	}
 }
 
+// Send sends payload to the desired endpoint based on network and chainID
 func (t *telemetryClient) Send(ctx context.Context, contractID string, telemetryType string, network string, chainID string, payload []byte) error {
 	if contractID == "" {
 		return errors.New("contractID cannot be empty")

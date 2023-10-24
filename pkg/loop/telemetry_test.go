@@ -7,6 +7,5 @@ import (
 )
 
 func TestTelemetry(t *testing.T) {
-	test.TelemetryClient(t)
-	test.TelemetryServer(t)
+	test.Telemetry(t)
 }

@@ -20,8 +20,6 @@ var _ commontypes.MonitoringEndpoint = (*telemetryEndpoint)(nil)
 
 type TelemetryClient struct {
 	*telemetryClient
-
-	grpc pb.TelemetryClient
 }
 
 type telemetryClient struct {

@@ -286,7 +286,7 @@ message GetLatestValueRequest {
     BoundContract bc = 1;
     string method = 2;
     bytes params = 3;
-    bytes returnValues = 4;
+    bytes retVal = 4;
 }
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].

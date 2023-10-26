@@ -26,7 +26,12 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(reply.RetVal, retVal)
+
+	err = json.Unmarshal(reply.RetVal, retVal)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)

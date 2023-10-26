@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
@@ -15,22 +16,63 @@ type chainReaderClient struct {
 	grpc pb.ChainReaderClient
 }
 
+// enum of all known encoding formats for versioned data
+const (
+	SimpleJsonEncodingVersion = iota
+	/* ... */
+)
+
+// Version to be used for encoding ( version used for decoding is determined by data received )
+// These are separate constants in case we want to upgrade their data formats independently
+const ParamsCurrentEncodingVersion = SimpleJsonEncodingVersion
+const RetvalCurrentEncodingVersion = SimpleJsonEncodingVersion
+
+func encodeVersionedByteArray(data any, version int32) (*pb.VersionedByteArray, error) {
+	var jsonData []byte
+	var err error
+
+	switch version {
+	case SimpleJsonEncodingVersion:
+		jsonData, err = json.Marshal(data)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("Unsupported encoding version %d for data %v", version, data)
+	}
+
+	return &pb.VersionedByteArray{Version: SimpleJsonEncodingVersion, Data: jsonData}, nil
+}
+
+func decodeVersionedByteArray(res any, vData *pb.VersionedByteArray) error {
+	switch vData.Version {
+	case SimpleJsonEncodingVersion:
+		err := json.Unmarshal(vData.Data, res)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("Unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
+	}
+
+	return nil
+}
+
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
+	versionedParams, err := encodeVersionedByteArray(params, ParamsCurrentEncodingVersion)
+	if err != nil {
+		return err
+	}
+
 	boundContract := pb.BoundContract{Name: bc.Name, Address: bc.Address, Pending: bc.Pending}
-	jsonParams, err := json.Marshal(params)
+
+	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: versionedParams})
 	if err != nil {
 		return err
 	}
 
-	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: jsonParams})
-	if err != nil {
-		return err
-	}
+	err = decodeVersionedByteArray(retVal, reply.RetVal)
 
-	err = json.Unmarshal(reply.RetVal, retVal)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -42,26 +84,25 @@ type chainReaderServer struct {
 }
 
 func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	var params map[string]any
-	err := json.Unmarshal(request.Params, &params)
-	if err != nil {
-		return nil, err
-	}
-
 	var bc types.BoundContract
 	bc.Name = request.Bc.Name[:]
 	bc.Address = request.Bc.Address[:]
 	bc.Pending = request.Bc.Pending
 
+	var paramsMap map[string]any
+	err := decodeVersionedByteArray(&paramsMap, request.Params)
+	if err != nil {
+		return nil, err
+	}
+
 	var retVal map[string]any
-	err = c.impl.GetLatestValue(ctx, bc, request.Method, params, &retVal)
+	err = c.impl.GetLatestValue(ctx, bc, request.Method, paramsMap, &retVal)
 	if err != nil {
 		return nil, err
 	}
-	jsonRetVal, err := json.Marshal(retVal)
-	if err != nil {
-		return nil, err
-	}
+
+	jsonRetVal, err := encodeVersionedByteArray(&retVal, RetvalCurrentEncodingVersion)
+
 	return &pb.GetLatestValueReply{RetVal: jsonRetVal}, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -16,6 +17,10 @@ var _ types.PipelineRunnerService = (*pipelineRunnerServiceClient)(nil)
 type pipelineRunnerServiceClient struct {
 	*brokerExt
 	grpc pb.PipelineRunnerServiceClient
+}
+
+func newPipelineRunnerClient(cc grpc.ClientConnInterface) *pipelineRunnerServiceClient {
+	return &pipelineRunnerServiceClient{grpc: pb.NewPipelineRunnerServiceClient(cc)}
 }
 
 func (p pipelineRunnerServiceClient) ExecuteRun(ctx context.Context, spec string, vars types.Vars, options types.Options) ([]types.TaskResult, error) {

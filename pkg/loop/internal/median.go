@@ -172,8 +172,8 @@ var (
 
 type medianProviderClient struct {
 	*pluginProviderClient
-	medianContract     median.MedianContract
 	reportCodec        median.ReportCodec
+	medianContract     median.MedianContract
 	onchainConfigCodec median.OnchainConfigCodec
 	chainReader        types.ChainReader
 }

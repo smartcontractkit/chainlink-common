@@ -118,7 +118,7 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundCon
 	if err != nil {
 		return err
 	}
-	var ret *map[string]any
+
 	ret, ok := retVal.(*map[string]any)
 	if !ok {
 		return fmt.Errorf("Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", reflect.TypeOf(retVal), reflect.TypeOf(ret))

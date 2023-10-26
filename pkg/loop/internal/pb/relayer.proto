@@ -281,17 +281,22 @@ message QueryEventsRequest {}
 // TODO
 message QueryEventsReply {}
 
+message VersionedByteArray {
+    uint32 version = 1;
+    bytes data = 2;
+}
+
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueRequest {
     BoundContract bc = 1;
     string method = 2;
-    bytes params = 3;
-    bytes retVal = 4;
+    VersionedByteArray params = 3;
+    VersionedByteArray retVal = 4;
 }
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueReply {
-  bytes retVal = 1;
+  VersionedByteArray retVal = 1;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].

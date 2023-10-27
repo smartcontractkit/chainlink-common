@@ -71,9 +71,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 		return err
 	}
 
-	err = decodeVersionedByteArray(retVal, reply.RetVal)
-
-	return nil
+	return decodeVersionedByteArray(retVal, reply.RetVal)
 }
 
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
@@ -102,6 +100,9 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	}
 
 	jsonRetVal, err := encodeVersionedByteArray(&retVal, RetvalCurrentEncodingVersion)
+	if err != nil {
+		return nil, err
+	}
 
 	return &pb.GetLatestValueReply{RetVal: jsonRetVal}, nil
 }

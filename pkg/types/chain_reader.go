@@ -2,10 +2,10 @@ package types
 
 import (
 	"context"
-	"math/big"
 	"time"
 )
 
+/*
 type BigInt big.Int
 type String string
 
@@ -22,6 +22,7 @@ func (b *BigInt) bi() *BigInt {
 func (b String) s() String {
 	return b
 }
+*/
 
 type ChainReader interface {
 	//RegisterEventFilter(ctx context.Context, filterName string, filter EventFilter, startingBlock BlockID) error
@@ -59,9 +60,9 @@ type EventFilter struct {
 	Retention   time.Duration
 }
 
-type EventQuery struct {
-	FromBlock BlockID
-	ToBlock   BlockID
-	Filter    EventFilter
-	Pending   bool
-}
+//type EventQuery struct {
+//	FromBlock BlockID
+//	ToBlock   BlockID
+//	Filter    EventFilter
+//	Pending   bool
+//}

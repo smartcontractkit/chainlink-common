@@ -24,6 +24,24 @@ func (b String) s() String {
 }
 */
 
+type ErrorChainReaderUnsupported struct{}
+
+func (e ErrorChainReaderUnsupported) Error() string {
+	return "ChainReader is not supported by the relay"
+}
+
+type ErrorNoChainReaderInJobSpec struct{}
+
+func (e ErrorNoChainReaderInJobSpec) Error() string {
+	return "There is no ChainReader configuration defined in the job spec"
+}
+
+type ErrorChainReaderInvalidConfig struct{}
+
+func (e ErrorChainReaderInvalidConfig) Error() string {
+	return "Invalid ChainReader configuration"
+}
+
 type ChainReader interface {
 	//RegisterEventFilter(ctx context.Context, filterName string, filter EventFilter, startingBlock BlockID) error
 	//UnregisterEventFilter(ctx context.Context, filterName string) error

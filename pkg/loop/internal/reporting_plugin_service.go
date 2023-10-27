@@ -45,6 +45,9 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(ctx context.Con
 		pipelineRunnerID, pipelineRunnerRes, err := m.serveNew("PipelineRunner", func(s *grpc.Server) {
 			pb.RegisterPipelineRunnerServiceServer(s, &pipelineRunnerServiceServer{impl: pipelineRunner})
 		})
+		if err != nil {
+			return 0, nil, err
+		}
 		deps.Add(pipelineRunnerRes)
 
 		reply, err := m.reportingPluginService.NewReportingPluginFactory(ctx, &pb.NewReportingPluginFactoryRequest{

@@ -234,8 +234,8 @@ func (s StaticReportingPluginWithPluginProvider) NewReportingPluginFactory(ctx c
 	if err != nil {
 		return nil, fmt.Errorf("failed to Transmit")
 	}
-	if err := errorLog.SaveError(ctx, errMsg); err != nil {
-		return nil, fmt.Errorf("failed to save error: %w", err)
+	if err2 := errorLog.SaveError(ctx, errMsg); err2 != nil {
+		return nil, fmt.Errorf("failed to save error: %w", err2)
 	}
 	tr, err := pipelineRunner.ExecuteRun(ctx, spec, vars, options)
 	if err != nil {

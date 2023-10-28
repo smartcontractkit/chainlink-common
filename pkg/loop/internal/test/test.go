@@ -1,6 +1,8 @@
 package test
 
 import (
+	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -22,8 +24,23 @@ answer [type=sum values=<[ $(val), 2 ]>]
 answer;
 `
 
+type marshalableConfigDigest libocr.ConfigDigest
+
+func (c *marshalableConfigDigest) UnmarshalJSON(data []byte) error {
+	var bConfigDigest []byte
+	err := json.Unmarshal(data, &bConfigDigest)
+	if err != nil {
+		return err
+	}
+	if len(bConfigDigest) != 32 {
+		panic(fmt.Errorf("Expected ConfigDigest to be 32 bytes, got %d bytes", len(bConfigDigest)))
+	}
+	*c = [32]byte(bConfigDigest)
+	return nil
+}
+
 type LatestTransmissionDetails struct {
-	ConfigDigest libocr.ConfigDigest
+	ConfigDigest marshalableConfigDigest
 	Epoch        uint32
 	Round        uint8
 	LatestAnswer *big.Int

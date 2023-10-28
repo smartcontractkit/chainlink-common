@@ -19,7 +19,6 @@ type chainReaderClient struct {
 // enum of all known encoding formats for versioned data
 const (
 	SimpleJsonEncodingVersion = iota
-	/* ... */
 )
 
 // Version to be used for encoding ( version used for decoding is determined by data received )
@@ -27,7 +26,7 @@ const (
 const ParamsCurrentEncodingVersion = SimpleJsonEncodingVersion
 const RetvalCurrentEncodingVersion = SimpleJsonEncodingVersion
 
-func encodeVersionedByteArray(data any, version int32) (*pb.VersionedByteArray, error) {
+func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	var jsonData []byte
 	var err error
 
@@ -41,10 +40,10 @@ func encodeVersionedByteArray(data any, version int32) (*pb.VersionedByteArray, 
 		return nil, fmt.Errorf("Unsupported encoding version %d for data %v", version, data)
 	}
 
-	return &pb.VersionedByteArray{Version: SimpleJsonEncodingVersion, Data: jsonData}, nil
+	return &pb.VersionedBytes{Version: SimpleJsonEncodingVersion, Data: jsonData}, nil
 }
 
-func decodeVersionedByteArray(res any, vData *pb.VersionedByteArray) error {
+func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	switch vData.Version {
 	case SimpleJsonEncodingVersion:
 		err := json.Unmarshal(vData.Data, res)
@@ -59,7 +58,7 @@ func decodeVersionedByteArray(res any, vData *pb.VersionedByteArray) error {
 }
 
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
-	versionedParams, err := encodeVersionedByteArray(params, ParamsCurrentEncodingVersion)
+	versionedParams, err := encodeVersionedBytes(params, ParamsCurrentEncodingVersion)
 	if err != nil {
 		return err
 	}
@@ -71,7 +70,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 		return err
 	}
 
-	return decodeVersionedByteArray(retVal, reply.RetVal)
+	return decodeVersionedBytes(retVal, reply.RetVal)
 }
 
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
@@ -88,7 +87,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	bc.Pending = request.Bc.Pending
 
 	var paramsMap map[string]any
-	err := decodeVersionedByteArray(&paramsMap, request.Params)
+	err := decodeVersionedBytes(&paramsMap, request.Params)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +98,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 		return nil, err
 	}
 
-	jsonRetVal, err := encodeVersionedByteArray(&retVal, RetvalCurrentEncodingVersion)
+	jsonRetVal, err := encodeVersionedBytes(&retVal, RetvalCurrentEncodingVersion)
 	if err != nil {
 		return nil, err
 	}

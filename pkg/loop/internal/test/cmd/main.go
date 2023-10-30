@@ -73,7 +73,7 @@ func main() {
 			HandshakeConfig: loop.PluginRelayerHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginRelayerName: &loop.GRPCPluginRelayer{
-					PluginServer: relayertest.NewRelayerTester(staticChecks),
+					PluginServer: relayertest.NewPluginRelayer(lggr, staticChecks),
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh},
 				},
 			},
@@ -100,7 +100,7 @@ func main() {
 			HandshakeConfig: loop.PluginMedianHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginMedianName: &loop.GRPCPluginMedian{
-					PluginServer: mediantest.MedianFactoryServer,
+					PluginServer: mediantest.NewMedianFactoryServer(lggr),
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
@@ -122,8 +122,7 @@ func main() {
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.PluginProvider]{
-					//PluginServer: test.StaticReportingPluginWithPluginProvider{},
-					PluginServer: ocr2test.AgnosticProviderServer,
+					PluginServer: ocr2test.AgnosticProviderServer(lggr),
 
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
@@ -140,8 +139,7 @@ func main() {
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.MedianProvider]{
-					//PluginServer: test.StaticReportingPluginWithMedianProvider{},
-					PluginServer: ocr2test.MedianProviderServer,
+					PluginServer: ocr2test.MedianProviderServer(lggr),
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
 						StopCh: stopCh,
@@ -158,7 +156,7 @@ func main() {
 			HandshakeConfig: loop.PluginMercuryHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginMercuryName: &loop.GRPCPluginMercury{
-					PluginServer: mercurytest.FactoryServer,
+					PluginServer: mercurytest.FactoryServer(lggr),
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
@@ -172,7 +170,7 @@ func main() {
 			HandshakeConfig: loop.PluginCCIPExecutionHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.CCIPExecutionLOOPName: &loop.ExecutionLoop{
-					PluginServer: cciptest.ExecFactoryServer,
+					PluginServer: cciptest.ExecFactoryServer(lggr),
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
@@ -186,7 +184,7 @@ func main() {
 			HandshakeConfig: loop.PluginCCIPCommitHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.CCIPCommitLOOPName: &loop.CommitLoop{
-					PluginServer: cciptest.CommitFactoryServer,
+					PluginServer: cciptest.CommitFactoryServer(lggr),
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
@@ -199,7 +197,7 @@ func main() {
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				ocr3.PluginServiceName: &ocr3.GRPCService[types.PluginProvider]{
-					PluginServer: ocr3test.AgnosticPluginServer,
+					PluginServer: ocr3test.AgnosticPluginServer(lggr),
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
 						StopCh: stopCh,
@@ -215,7 +213,7 @@ func main() {
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				ocr3.PluginServiceName: &ocr3.GRPCService[types.MedianProvider]{
-					PluginServer: ocr3test.MedianServer,
+					PluginServer: ocr3test.MedianServer(lggr),
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
 						StopCh: stopCh,

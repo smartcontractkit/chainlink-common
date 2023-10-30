@@ -1,6 +1,7 @@
 package servicetest
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,5 +14,6 @@ func AssertHealthReportNames(t *testing.T, hp map[string]error, names ...string)
 	keys := maps.Keys(hp)
 	slices.Sort(keys)
 	slices.Sort(names)
-	assert.EqualValues(t, names, keys)
+	join := func(s []string) string { return strings.Join(s, "\n") }
+	assert.Equal(t, join(names), join(keys))
 }

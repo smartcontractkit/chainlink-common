@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -22,12 +23,13 @@ func TestStaticCommitStore(t *testing.T) {
 
 	// static test implementation is self consistent
 	ctx := context.Background()
-	assert.NoError(t, CommitStoreReader.Evaluate(ctx, CommitStoreReader))
+	csr := CommitStoreReader(logger.Test(t))
+	assert.NoError(t, csr.Evaluate(ctx, csr))
 
 	// error when the test implementation is evaluates something that differs from the static implementation
-	botched := CommitStoreReader
+	botched := CommitStoreReader(logger.Test(t))
 	botched.changeConfigResponse = "not the right conifg"
-	err := CommitStoreReader.Evaluate(ctx, botched)
+	err := csr.Evaluate(ctx, botched)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not the right conifg")
 }
@@ -52,24 +54,27 @@ func TestCommitStoreGRPC(t *testing.T) {
 // do not add client.Close to this test, test that from the driver test
 func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader) {
 	t.Run("ChangeConfig", func(t *testing.T) {
-		gotAddr, err := client.ChangeConfig(tests.Context(t), CommitStoreReader.changeConfigRequest.onchainConfig, CommitStoreReader.changeConfigRequest.offchainConfig)
+		csr := CommitStoreReader(logger.Test(t))
+		gotAddr, err := client.ChangeConfig(tests.Context(t), csr.changeConfigRequest.onchainConfig, csr.changeConfigRequest.offchainConfig)
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.changeConfigResponse, gotAddr)
+		assert.Equal(t, csr.changeConfigResponse, gotAddr)
 	})
 
 	t.Run("DecodeCommitReport", func(t *testing.T) {
-		report, err := client.DecodeCommitReport(tests.Context(t), CommitStoreReader.decodeCommitReportRequest)
+		csr := CommitStoreReader(logger.Test(t))
+		report, err := client.DecodeCommitReport(tests.Context(t), csr.decodeCommitReportRequest)
 		require.NoError(t, err)
-		if !reflect.DeepEqual(CommitStoreReader.decodeCommitReportResponse, report) {
-			t.Errorf("expected %v, got %v", CommitStoreReader.decodeCommitReportResponse, report)
+		if !reflect.DeepEqual(csr.decodeCommitReportResponse, report) {
+			t.Errorf("expected %v, got %v", csr.decodeCommitReportResponse, report)
 		}
 	})
 
 	// reuse the test data for the encode method
 	t.Run("EncodeCommtReport", func(t *testing.T) {
-		report, err := client.EncodeCommitReport(tests.Context(t), CommitStoreReader.decodeCommitReportResponse)
+		csr := CommitStoreReader(logger.Test(t))
+		report, err := client.EncodeCommitReport(tests.Context(t), csr.decodeCommitReportResponse)
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.decodeCommitReportRequest, report)
+		assert.Equal(t, csr.decodeCommitReportRequest, report)
 	})
 
 	// exercise all the gas price estimator methods
@@ -106,78 +111,82 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 	})
 
 	t.Run("GetAcceptedCommitReportGteTimestamp", func(t *testing.T) {
+		csr := CommitStoreReader(logger.Test(t))
 		report, err := client.GetAcceptedCommitReportsGteTimestamp(tests.Context(t),
-			CommitStoreReader.getAcceptedCommitReportsGteTimestampRequest.timestamp,
-			CommitStoreReader.getAcceptedCommitReportsGteTimestampRequest.confirmations)
+			csr.getAcceptedCommitReportsGteTimestampRequest.timestamp,
+			csr.getAcceptedCommitReportsGteTimestampRequest.confirmations)
 		require.NoError(t, err)
-		if !reflect.DeepEqual(CommitStoreReader.getAcceptedCommitReportsGteTimestampResponse, report) {
-			t.Errorf("expected %v, got %v", CommitStoreReader.getAcceptedCommitReportsGteTimestampResponse, report)
+		if !reflect.DeepEqual(csr.getAcceptedCommitReportsGteTimestampResponse, report) {
+			t.Errorf("expected %v, got %v", csr.getAcceptedCommitReportsGteTimestampResponse, report)
 		}
 	})
 
 	t.Run("GetCommitReportMatchingSeqNum", func(t *testing.T) {
+		csr := CommitStoreReader(logger.Test(t))
 		report, err := client.GetCommitReportMatchingSeqNum(tests.Context(t),
-			CommitStoreReader.getCommitReportMatchingSeqNumRequest.seqNum,
-			CommitStoreReader.getCommitReportMatchingSeqNumRequest.confirmations)
+			csr.getCommitReportMatchingSeqNumRequest.seqNum,
+			csr.getCommitReportMatchingSeqNumRequest.confirmations)
 		require.NoError(t, err)
 		// use the same response as the reportsGteTimestamp for simplicity
-		if !reflect.DeepEqual(CommitStoreReader.getAcceptedCommitReportsGteTimestampResponse, report) {
-			t.Errorf("expected %v, got %v", CommitStoreReader.getAcceptedCommitReportsGteTimestampRequest, report)
+		if !reflect.DeepEqual(csr.getAcceptedCommitReportsGteTimestampResponse, report) {
+			t.Errorf("expected %v, got %v", csr.getAcceptedCommitReportsGteTimestampRequest, report)
 		}
 	})
 
 	t.Run("GetCommitStoreStaticConfig", func(t *testing.T) {
 		config, err := client.GetCommitStoreStaticConfig(tests.Context(t))
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.getCommitStoreStaticConfigResponse, config)
+		assert.Equal(t, CommitStoreReader(logger.Test(t)).getCommitStoreStaticConfigResponse, config)
 	})
 
 	t.Run("GetExpectedNextSequenceNumber", func(t *testing.T) {
 		seq, err := client.GetExpectedNextSequenceNumber(tests.Context(t))
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.getExpectedNextSequenceNumberResponse, seq)
+		assert.Equal(t, CommitStoreReader(logger.Test(t)).getExpectedNextSequenceNumberResponse, seq)
 	})
 
 	t.Run("GetLatestPriceEpochAndRound", func(t *testing.T) {
 		got, err := client.GetLatestPriceEpochAndRound(tests.Context(t))
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.getLatestPriceEpochAndRoundResponse, got)
+		assert.Equal(t, CommitStoreReader(logger.Test(t)).getLatestPriceEpochAndRoundResponse, got)
 	})
 
 	t.Run("IsBlessed", func(t *testing.T) {
-		got, err := client.IsBlessed(tests.Context(t), CommitStoreReader.isBlessedRequest)
+		csr := CommitStoreReader(logger.Test(t))
+		got, err := client.IsBlessed(tests.Context(t), csr.isBlessedRequest)
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.isBlessedResponse, got)
+		assert.Equal(t, csr.isBlessedResponse, got)
 	})
 
 	t.Run("IsDestChainHealthy", func(t *testing.T) {
 		got, err := client.IsDestChainHealthy(tests.Context(t))
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.isDestChainHealthyResponse, got)
+		assert.Equal(t, CommitStoreReader(logger.Test(t)).isDestChainHealthyResponse, got)
 	})
 
 	t.Run("IsDown", func(t *testing.T) {
 		got, err := client.IsDown(tests.Context(t))
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.isDownResponse, got)
+		assert.Equal(t, CommitStoreReader(logger.Test(t)).isDownResponse, got)
 	})
 
 	t.Run("OffchainConfig", func(t *testing.T) {
 		config, err := client.OffchainConfig(tests.Context(t))
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.offchainConfigResponse, config)
+		assert.Equal(t, CommitStoreReader(logger.Test(t)).offchainConfigResponse, config)
 	})
 
 	t.Run("VerifyExecutionReport", func(t *testing.T) {
-		got, err := client.VerifyExecutionReport(tests.Context(t), CommitStoreReader.verifyExecutionReportRequest)
+		csr := CommitStoreReader(logger.Test(t))
+		got, err := client.VerifyExecutionReport(tests.Context(t), csr.verifyExecutionReportRequest)
 		require.NoError(t, err)
-		assert.Equal(t, CommitStoreReader.verifyExecutionReportResponse, got)
+		assert.Equal(t, csr.verifyExecutionReportResponse, got)
 	})
 }
 
 func setupCommitStoreServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.CommitStoreGRPCServer {
 	ctx := tests.Context(t)
-	commitProvider, err := ccip.NewCommitStoreReaderGRPCServer(ctx, CommitStoreReader, b)
+	commitProvider, err := ccip.NewCommitStoreReaderGRPCServer(ctx, CommitStoreReader(logger.Test(t)), b)
 	require.NoError(t, err)
 	ccippb.RegisterCommitStoreReaderServer(s, commitProvider)
 	return commitProvider

@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -49,6 +50,7 @@ type serverAdapter struct {
 }
 
 type ValidateConfigService interface {
+	services.Service
 	NewValidationService(ctx context.Context) (core.ValidationService, error)
 }
 
@@ -95,10 +97,9 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 
 func (g *GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if g.pluginClient == nil {
-		g.pluginClient = ocr3.NewReportingPluginServiceClient(broker, g.BrokerConfig, conn)
-	} else {
-		g.pluginClient.Refresh(broker, conn)
+		g.pluginClient = ocr3.NewReportingPluginServiceClient(g.BrokerConfig)
 	}
+	g.pluginClient.Refresh(broker, conn)
 
 	return core.OCR3ReportingPluginClient(g.pluginClient), nil
 }
@@ -108,5 +109,8 @@ func (g *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{reportingplugins.PluginServiceName: g},
 	}
-	return loop.ManagedGRPCClientConfig(c, g.BrokerConfig)
+	if g.pluginClient == nil {
+		g.pluginClient = ocr3.NewReportingPluginServiceClient(g.BrokerConfig)
+	}
+	return loop.ManagedGRPCClientConfig(c, g.pluginClient.BrokerConfig)
 }

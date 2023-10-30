@@ -8,13 +8,16 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
 // CommitStoreReader is a test implementation of the CommitStoreReader interface
-var CommitStoreReader = staticCommitStoreReader{
-	staticCommitStoreReaderConfig: staticCommitStoreReaderConfig{
+func CommitStoreReader(lggr logger.Logger) staticCommitStoreReader {
+	return newStaticCommitStoreReader(lggr, staticCommitStoreReaderConfig{
 		// change config test data
 		changeConfigRequest: changeConfigRequest{
 			onchainConfig:  []byte("onchainConfig"),
@@ -242,7 +245,7 @@ var CommitStoreReader = staticCommitStoreReader{
 			},
 			ProofFlagBits: big.NewInt(1),
 		},
-	},
+	})
 }
 
 type CommitStoreReaderEvaluator interface {
@@ -251,7 +254,16 @@ type CommitStoreReaderEvaluator interface {
 }
 
 type staticCommitStoreReader struct {
+	services.Service
 	staticCommitStoreReaderConfig
+}
+
+func newStaticCommitStoreReader(lggr logger.Logger, cfg staticCommitStoreReaderConfig) staticCommitStoreReader {
+	lggr = logger.Named(lggr, "staticCommitStoreReader")
+	return staticCommitStoreReader{
+		Service:                       test.NewStaticService(lggr),
+		staticCommitStoreReaderConfig: cfg,
+	}
 }
 
 // ChangeConfig implements CommitStoreReaderEvaluator.

@@ -176,24 +176,14 @@ func (UnimplementedContractReader) QueryKeys(ctx context.Context, keyQueries []C
 	return nil, UnimplementedError("ContractReader.QueryKeys unimplemented")
 }
 
-func (UnimplementedContractReader) Start(context.Context) error {
-	return UnimplementedError("ContractReader.Start unimplemented")
-}
+func (UnimplementedContractReader) Start(context.Context) error { return nil }
 
-func (UnimplementedContractReader) Close() error {
-	return UnimplementedError("ContractReader.Close unimplemented")
-}
+func (UnimplementedContractReader) Close() error { return nil }
 
-func (UnimplementedContractReader) HealthReport() map[string]error {
-	panic(UnimplementedError("ContractReader.HealthReport unimplemented"))
-}
+func (UnimplementedContractReader) HealthReport() map[string]error { return nil }
 
-func (UnimplementedContractReader) Name() string {
-	panic(UnimplementedError("ContractReader.Name unimplemented"))
-}
+func (UnimplementedContractReader) Name() string { return "UnimplementedContractReader" }
 
-func (UnimplementedContractReader) Ready() error {
-	return UnimplementedError("ContractReader.Ready unimplemented")
-}
+func (UnimplementedContractReader) Ready() error { return nil }
 
 func (UnimplementedContractReader) mustEmbedUnimplementedContractReader() {}

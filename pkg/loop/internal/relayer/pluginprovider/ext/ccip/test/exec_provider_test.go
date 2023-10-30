@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -20,21 +21,23 @@ func TestStaticExecProvider(t *testing.T) {
 	ctx := tests.Context(t)
 	t.Run("Self consistent Evaluate", func(t *testing.T) {
 		t.Parallel()
+		ep := ExecutionProvider(logger.Test(t))
 		// static test implementation is self consistent
-		assert.NoError(t, ExecutionProvider.Evaluate(ctx, ExecutionProvider))
+		assert.NoError(t, ep.Evaluate(ctx, ep))
 
 		// error when the test implementation evaluates something that differs from form itself
-		botched := ExecutionProvider
+		botched := ExecutionProvider(logger.Test(t))
 		botched.priceRegistryReader = staticPriceRegistryReader{}
-		err := ExecutionProvider.Evaluate(ctx, botched)
+		err := ep.Evaluate(ctx, botched)
 		require.Error(t, err)
 		var evalErr evaluationError
 		require.True(t, errors.As(err, &evalErr), "expected error to be an evaluationError")
 		assert.Equal(t, priceRegistryComponent, evalErr.component)
 	})
 	t.Run("Self consistent AssertEqual", func(t *testing.T) {
+		ep := ExecutionProvider(logger.Test(t))
 		// no parallel because the AssertEqual is parallel
-		ExecutionProvider.AssertEqual(ctx, t, ExecutionProvider)
+		ep.AssertEqual(ctx, t, ep)
 	})
 }
 
@@ -92,18 +95,18 @@ func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 	t.Run("SourceNativeToken", func(t *testing.T) {
 		token, err := client.SourceNativeToken(tests.Context(t), "ignored")
 		require.NoError(t, err)
-		assert.Equal(t, ExecutionProvider.sourceNativeTokenResponse, token)
+		assert.Equal(t, ExecutionProvider(logger.Test(t)).sourceNativeTokenResponse, token)
 	})
 
 	t.Run("GetTransactionStatus", func(t *testing.T) {
 		status, err := client.GetTransactionStatus(tests.Context(t), "ignored")
 		require.NoError(t, err)
-		assert.Equal(t, ExecutionProvider.transactionStatusResponse, status)
+		assert.Equal(t, ExecutionProvider(logger.Test(t)).transactionStatusResponse, status)
 	})
 }
 
 func setupExecProviderServer(t *testing.T, server *grpc.Server, b *loopnet.BrokerExt) *ccip.ExecProviderServer {
-	execProvider := ccip.NewExecProviderServer(ExecutionProvider, b)
+	execProvider := ccip.NewExecProviderServer(ExecutionProvider(logger.Test(t)), b)
 	ccippb.RegisterExecutionCustomHandlersServer(server, execProvider)
 	return execProvider
 }

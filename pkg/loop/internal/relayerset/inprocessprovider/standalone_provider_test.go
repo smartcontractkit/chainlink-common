@@ -11,6 +11,7 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset/inprocessprovider"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -19,7 +20,7 @@ import (
 func TestRegisterStandAloneProvider_Median(t *testing.T) {
 	s := grpc.NewServer()
 
-	p := ocr2test.AgnosticPluginProvider
+	p := ocr2test.AgnosticPluginProvider(logger.Test(t))
 	err := inprocessprovider.RegisterStandAloneProvider(s, p, "some-type-we-do-not-support")
 	require.ErrorContains(t, err, "unsupported stand alone provider")
 

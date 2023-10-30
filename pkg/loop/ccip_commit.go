@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -69,12 +70,16 @@ type CommitFactoryService struct {
 // NewCommitService returns a new [*CommitFactoryService].
 // cmd must return a new exec.Cmd each time it is called.
 func NewCommitService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.CCIPCommitProvider) *CommitFactoryService {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, services.HealthReporter, error) {
 		plug, ok := instance.(types.CCIPCommitFactoryGenerator)
 		if !ok {
-			return nil, fmt.Errorf("expected CCIPCommitFactoryGenerator but got %T", instance)
+			return nil, nil, fmt.Errorf("expected CCIPCommitFactoryGenerator but got %T", instance)
 		}
-		return plug.NewCommitFactory(ctx, provider)
+		factory, err := plug.NewCommitFactory(ctx, provider)
+		if err != nil {
+			return nil, nil, err
+		}
+		return factory, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "CCIPCommitService")

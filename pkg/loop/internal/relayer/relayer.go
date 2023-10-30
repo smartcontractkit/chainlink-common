@@ -33,14 +33,15 @@ var _ looptypes.PluginRelayer = (*PluginRelayerClient)(nil)
 
 type PluginRelayerClient struct {
 	*goplugin.PluginClient
+	*goplugin.ServiceClient
 
-	grpc pb.PluginRelayerClient
+	pluginRelayer pb.PluginRelayerClient
 }
 
 func NewPluginRelayerClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginRelayerClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginRelayerClient")
 	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
-	return &PluginRelayerClient{PluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
+	return &PluginRelayerClient{PluginClient: pc, pluginRelayer: pb.NewPluginRelayerClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
@@ -62,7 +63,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		}
 		deps.Add(capabilityRegistryResource)
 
-		reply, err := p.grpc.NewRelayer(ctx, &pb.NewRelayerRequest{
+		reply, err := p.pluginRelayer.NewRelayer(ctx, &pb.NewRelayerRequest{
 			Config:               config,
 			KeystoreID:           id,
 			CapabilityRegistryID: capabilityRegistryID,
@@ -84,6 +85,7 @@ type pluginRelayerServer struct {
 }
 
 func RegisterPluginRelayerServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl looptypes.PluginRelayer) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterPluginRelayerServer(server, newPluginRelayerServer(broker, brokerCfg, impl))
 	return nil
 }
@@ -191,7 +193,7 @@ type relayerClient struct {
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
-	b = b.WithName("ChainRelayerClient")
+	b = b.WithName("RelayerClient")
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 

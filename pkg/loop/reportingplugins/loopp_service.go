@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -43,13 +44,18 @@ func NewLOOPPService(
 	keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet,
 ) *LOOPPService {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, services.HealthReporter, error) {
 		plug, ok := instance.(core.ReportingPluginClient)
 		if !ok {
-			return nil, fmt.Errorf("expected GenericPluginClient but got %T", instance)
+			return nil, nil, fmt.Errorf("expected GenericPluginClient but got %T", instance)
 		}
-		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog, keyValueStore,
+		//TODo plug.Start(ctx)? (how to close?)
+		factory, err := plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog, keyValueStore,
 			relayerSet)
+		if err != nil {
+			return nil, nil, err
+		}
+		return factory, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "GenericService")
@@ -71,12 +77,16 @@ func NewLOOPPServiceValidation(
 	grpcOpts loop.GRPCOpts,
 	cmd func() *exec.Cmd,
 ) *LOOPPServiceValidation {
-	newService := func(ctx context.Context, instance any) (core.ValidationService, error) {
+	newService := func(ctx context.Context, instance any) (core.ValidationService, services.HealthReporter, error) {
 		plug, ok := instance.(core.ReportingPluginClient)
 		if !ok {
-			return nil, fmt.Errorf("expected ValidationServiceClient but got %T", instance)
+			return nil, nil, fmt.Errorf("expected ValidationServiceClient but got %T", instance)
 		}
-		return plug.NewValidationService(ctx)
+		srv, err := plug.NewValidationService(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		return srv, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "GenericService")

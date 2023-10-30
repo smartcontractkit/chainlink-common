@@ -18,10 +18,11 @@ import (
 func TestPluginRelayer(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(t, loop.PluginRelayerName,
 		&loop.GRPCPluginRelayer{
-			PluginServer: relayertest.NewRelayerTester(false),
+			PluginServer: relayertest.NewPluginRelayer(lggr, false),
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh}},

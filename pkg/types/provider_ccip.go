@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
@@ -31,10 +32,12 @@ type CCIPExecProvider interface {
 }
 
 type CCIPCommitFactoryGenerator interface {
+	services.Service
 	NewCommitFactory(ctx context.Context, provider CCIPCommitProvider) (ReportingPluginFactory, error)
 }
 
 type CCIPExecutionFactoryGenerator interface {
+	services.Service
 	NewExecutionFactory(ctx context.Context, srcProvider CCIPExecProvider, dstProvider CCIPExecProvider, srcChainID int64, dstChainID int64, sourceTokenAddress string) (ReportingPluginFactory, error)
 }
 type CCIPFactoryGenerator interface {

@@ -8,7 +8,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -24,23 +27,21 @@ type staticConfigProviderConfig struct {
 	contractConfigTracker testtypes.ContractConfigTrackerEvaluator
 }
 
+var _ ConfigProviderTester = staticConfigProvider{}
+
 // staticConfigProvider is a static implementation of ConfigProviderTester
 type staticConfigProvider struct {
+	services.Service
 	staticConfigProviderConfig
 }
 
-var _ ConfigProviderTester = staticConfigProvider{}
-
-// TODO validate start/Close calls?
-func (s staticConfigProvider) Start(ctx context.Context) error { return nil }
-
-func (s staticConfigProvider) Close() error { return nil }
-
-func (s staticConfigProvider) Ready() error { panic("unimplemented") }
-
-func (s staticConfigProvider) Name() string { panic("unimplemented") }
-
-func (s staticConfigProvider) HealthReport() map[string]error { panic("unimplemented") }
+func newStaticConfigProvider(lggr logger.Logger, cfg staticConfigProviderConfig) staticConfigProvider {
+	lggr = logger.Named(lggr, "staticConfigProvider")
+	return staticConfigProvider{
+		Service:                    test.NewStaticService(lggr),
+		staticConfigProviderConfig: cfg,
+	}
+}
 
 func (s staticConfigProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return s.offchainDigester

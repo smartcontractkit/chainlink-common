@@ -41,6 +41,7 @@ type GRPCPluginMedian struct {
 }
 
 func (p *GRPCPluginMedian) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
+	//TODO when to start PluginServer
 	return median.RegisterPluginMedianServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 

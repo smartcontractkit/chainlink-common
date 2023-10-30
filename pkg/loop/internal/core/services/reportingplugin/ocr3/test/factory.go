@@ -13,34 +13,35 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-var Factory = ocr3staticPluginFactory{
-	ReportingPluginConfig: ocr3reportingPluginConfig,
-	reportingPlugin:       ReportingPlugin,
+func Factory(lggr logger.Logger) ocr3StaticPluginFactory {
+	return newOCR3StatisPluginFactory(lggr, ocr3reportingPluginConfig, ReportingPlugin)
 }
 
 // OCR3
-type ocr3staticPluginFactory struct {
+type ocr3StaticPluginFactory struct {
+	services.Service
 	ocr3types.ReportingPluginConfig
 	reportingPlugin ocr3staticReportingPlugin
 }
 
-var _ core.OCR3ReportingPluginFactory = (*ocr3staticPluginFactory)(nil)
+var _ core.OCR3ReportingPluginFactory = (*ocr3StaticPluginFactory)(nil)
 
-func (o ocr3staticPluginFactory) Name() string { panic("implement me") }
+func newOCR3StatisPluginFactory(lggr logger.Logger, cfg ocr3types.ReportingPluginConfig, rp ocr3staticReportingPlugin) ocr3StaticPluginFactory {
+	return ocr3StaticPluginFactory{
+		Service:               test.NewStaticService(lggr),
+		ReportingPluginConfig: cfg,
+		reportingPlugin:       rp,
+	}
+}
 
-func (o ocr3staticPluginFactory) Start(ctx context.Context) error { return nil }
-
-func (o ocr3staticPluginFactory) Close() error { return nil }
-
-func (o ocr3staticPluginFactory) Ready() error { panic("implement me") }
-
-func (o ocr3staticPluginFactory) HealthReport() map[string]error { panic("implement me") }
-
-func (o ocr3staticPluginFactory) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+func (o ocr3StaticPluginFactory) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
 	err := o.equalConfig(config)
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("config mismatch: %w", err)
@@ -48,7 +49,7 @@ func (o ocr3staticPluginFactory) NewReportingPlugin(ctx context.Context, config 
 	return o.reportingPlugin, ocr3rpi, nil
 }
 
-func (o ocr3staticPluginFactory) equalConfig(other ocr3types.ReportingPluginConfig) error {
+func (o ocr3StaticPluginFactory) equalConfig(other ocr3types.ReportingPluginConfig) error {
 	if other.ConfigDigest != o.ConfigDigest {
 		return fmt.Errorf("expected ConfigDigest %x but got %x", o.ConfigDigest, other.ConfigDigest)
 	}
@@ -86,7 +87,7 @@ func (o ocr3staticPluginFactory) equalConfig(other ocr3types.ReportingPluginConf
 }
 
 func OCR3ReportingPluginFactory(t *testing.T, factory core.OCR3ReportingPluginFactory) {
-	expectedFactory := Factory
+	expectedFactory := Factory(logger.Test(t))
 	t.Run("OCR3ReportingPluginFactory", func(t *testing.T) {
 		ctx := tests.Context(t)
 		rp, gotRPI, err := factory.NewReportingPlugin(ctx, ocr3reportingPluginConfig)

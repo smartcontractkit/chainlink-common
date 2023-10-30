@@ -149,6 +149,7 @@ type reportingPluginServiceServer struct {
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.ReportingPluginClient) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
@@ -215,6 +216,11 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog,
 		keyValueStore, relayerSet)
 	if err != nil {
+		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, keyValueStoreRes, relayerSetRes)
+		return nil, err
+	}
+	//TODO start factory - when to close?
+	if err = factory.Start(ctx); err != nil {
 		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, keyValueStoreRes, relayerSetRes)
 		return nil, err
 	}

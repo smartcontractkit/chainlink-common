@@ -82,7 +82,7 @@ var (
 	chainID                   = "chain-id"
 	configDigest              = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
 	configDigestPrefix        = libocr.ConfigDigestPrefix(99)
-	latestTransmissionDetails = LatestTransmissionDetails{ConfigDigest: configDigest, Epoch: epoch, Round: round, Timestamp: time.Now()}
+	latestTransmissionDetails = LatestTransmissionDetails{ConfigDigest: marshalableConfigDigest(configDigest), Epoch: epoch, Round: round, Timestamp: latestTimestamp}
 	contractConfig            = libocr.ContractConfig{
 		ConfigDigest:          configDigest,
 		ConfigCount:           42,

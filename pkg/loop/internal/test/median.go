@@ -76,8 +76,9 @@ func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetLatestValue() on median provider: %w", err)
 	}
-	if gotTransmissionDetails != latestTransmissionDetails {
-		return nil, fmt.Errorf("expected LatestTransmissionDetails %v but got %v", gotTransmissionDetails, latestTransmissionDetails)
+
+	if !assert.ObjectsAreEqual(gotTransmissionDetails, latestTransmissionDetails) {
+		return nil, fmt.Errorf("GetLatestValue: expected %v but got %v", gotTransmissionDetails, latestTransmissionDetails)
 	}
 
 	ocd := provider.OffchainConfigDigester()

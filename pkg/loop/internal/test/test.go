@@ -97,7 +97,7 @@ var (
 	juelsPerFeeCoin = big.NewInt(1234)
 	onchainConfig   = median.OnchainConfig{Min: big.NewInt(-12), Max: big.NewInt(1234567890987654321)}
 	latestAnswer    = big.NewInt(-66)
-	latestTimestamp = time.Unix(1234567890, 987654321)
+	latestTimestamp = time.Unix(1234567890, 987654321).UTC()
 	medianValue     = big.NewInt(-1042)
 	nodes           = []types.NodeStatus{{
 		ChainID: "foo",

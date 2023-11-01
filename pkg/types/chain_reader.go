@@ -42,6 +42,36 @@ func (e ErrorChainReaderInvalidConfig) Error() string {
 	return "Invalid ChainReader configuration"
 }
 
+type InvalidEncodingError struct{}
+
+func (InvalidEncodingError) Error() string {
+	return "cannot decode bytes"
+}
+
+type InvalidTypeError struct{}
+
+func (InvalidTypeError) Error() string {
+	return "invalid type"
+}
+
+type FieldNotFoundError struct{}
+
+func (FieldNotFoundError) Error() string {
+	return "field not found"
+}
+
+type WrongNumberOfElements struct{}
+
+func (WrongNumberOfElements) Error() string {
+	return "wrong number of elements decoded"
+}
+
+type NotASliceError struct{}
+
+func (NotASliceError) Error() string {
+	return "input is not a slice or array"
+}
+
 type ChainReader interface {
 	//RegisterEventFilter(ctx context.Context, filterName string, filter EventFilter, startingBlock BlockID) error
 	//UnregisterEventFilter(ctx context.Context, filterName string) error
@@ -51,6 +81,7 @@ type ChainReader interface {
 	//
 	// returnVal should satisfy Marshaller interface.
 	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
+	Codec
 }
 
 type BoundContract struct {

@@ -2547,6 +2547,218 @@ func (x *GetLatestValueReply) GetRetVal() *VersionedBytes {
 	return nil
 }
 
+type GetEncodingRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Params   *VersionedBytes `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	ItemType string          `protobuf:"bytes,2,opt,name=itemType,proto3" json:"itemType,omitempty"`
+}
+
+func (x *GetEncodingRequest) Reset() {
+	*x = GetEncodingRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_relayer_proto_msgTypes[49]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetEncodingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEncodingRequest) ProtoMessage() {}
+
+func (x *GetEncodingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayer_proto_msgTypes[49]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEncodingRequest.ProtoReflect.Descriptor instead.
+func (*GetEncodingRequest) Descriptor() ([]byte, []int) {
+	return file_relayer_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *GetEncodingRequest) GetParams() *VersionedBytes {
+	if x != nil {
+		return x.Params
+	}
+	return nil
+}
+
+func (x *GetEncodingRequest) GetItemType() string {
+	if x != nil {
+		return x.ItemType
+	}
+	return ""
+}
+
+type GetEncodingResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RetVal []byte `protobuf:"bytes,1,opt,name=retVal,proto3" json:"retVal,omitempty"`
+}
+
+func (x *GetEncodingResponse) Reset() {
+	*x = GetEncodingResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_relayer_proto_msgTypes[50]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetEncodingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEncodingResponse) ProtoMessage() {}
+
+func (x *GetEncodingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_relayer_proto_msgTypes[50]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEncodingResponse.ProtoReflect.Descriptor instead.
+func (*GetEncodingResponse) Descriptor() ([]byte, []int) {
+	return file_relayer_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *GetEncodingResponse) GetRetVal() []byte {
+	if x != nil {
+		return x.RetVal
+	}
+	return nil
+}
+
+type GetDecodingRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Encoded    []byte `protobuf:"bytes,1,opt,name=encoded,proto3" json:"encoded,omitempty"`
+	ItemType   string `protobuf:"bytes,2,opt,name=itemType,proto3" json:"itemType,omitempty"`
+	ForceSplit bool   `protobuf:"varint,3,opt,name=forceSplit,proto3" json:"forceSplit,omitempty"`
+}
+
+func (x *GetDecodingRequest) Reset() {
+	*x = GetDecodingRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_relayer_proto_msgTypes[51]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetDecodingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDecodingRequest) ProtoMessage() {}
+
+func (x *GetDecodingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayer_proto_msgTypes[51]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDecodingRequest.ProtoReflect.Descriptor instead.
+func (*GetDecodingRequest) Descriptor() ([]byte, []int) {
+	return file_relayer_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *GetDecodingRequest) GetEncoded() []byte {
+	if x != nil {
+		return x.Encoded
+	}
+	return nil
+}
+
+func (x *GetDecodingRequest) GetItemType() string {
+	if x != nil {
+		return x.ItemType
+	}
+	return ""
+}
+
+func (x *GetDecodingRequest) GetForceSplit() bool {
+	if x != nil {
+		return x.ForceSplit
+	}
+	return false
+}
+
+type GetDecodingResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RetVal *VersionedBytes `protobuf:"bytes,1,opt,name=retVal,proto3" json:"retVal,omitempty"`
+}
+
+func (x *GetDecodingResponse) Reset() {
+	*x = GetDecodingResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_relayer_proto_msgTypes[52]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetDecodingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDecodingResponse) ProtoMessage() {}
+
+func (x *GetDecodingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_relayer_proto_msgTypes[52]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDecodingResponse.ProtoReflect.Descriptor instead.
+func (*GetDecodingResponse) Descriptor() ([]byte, []int) {
+	return file_relayer_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *GetDecodingResponse) GetRetVal() *VersionedBytes {
+	if x != nil {
+		return x.RetVal
+	}
+	return nil
+}
+
 // BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].
 type BoundContract struct {
 	state         protoimpl.MessageState
@@ -2561,7 +2773,7 @@ type BoundContract struct {
 func (x *BoundContract) Reset() {
 	*x = BoundContract{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_relayer_proto_msgTypes[49]
+		mi := &file_relayer_proto_msgTypes[53]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2574,7 +2786,7 @@ func (x *BoundContract) String() string {
 func (*BoundContract) ProtoMessage() {}
 
 func (x *BoundContract) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[49]
+	mi := &file_relayer_proto_msgTypes[53]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2587,7 +2799,7 @@ func (x *BoundContract) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoundContract.ProtoReflect.Descriptor instead.
 func (*BoundContract) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{49}
+	return file_relayer_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *BoundContract) GetAddress() string {
@@ -2623,7 +2835,7 @@ type NameReply struct {
 func (x *NameReply) Reset() {
 	*x = NameReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_relayer_proto_msgTypes[50]
+		mi := &file_relayer_proto_msgTypes[54]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2636,7 +2848,7 @@ func (x *NameReply) String() string {
 func (*NameReply) ProtoMessage() {}
 
 func (x *NameReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[50]
+	mi := &file_relayer_proto_msgTypes[54]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2649,7 +2861,7 @@ func (x *NameReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NameReply.ProtoReflect.Descriptor instead.
 func (*NameReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{50}
+	return file_relayer_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *NameReply) GetName() string {
@@ -2671,7 +2883,7 @@ type HealthReportReply struct {
 func (x *HealthReportReply) Reset() {
 	*x = HealthReportReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_relayer_proto_msgTypes[51]
+		mi := &file_relayer_proto_msgTypes[55]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2684,7 +2896,7 @@ func (x *HealthReportReply) String() string {
 func (*HealthReportReply) ProtoMessage() {}
 
 func (x *HealthReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[51]
+	mi := &file_relayer_proto_msgTypes[55]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2697,7 +2909,7 @@ func (x *HealthReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthReportReply.ProtoReflect.Descriptor instead.
 func (*HealthReportReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{51}
+	return file_relayer_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *HealthReportReply) GetHealthReport() map[string]string {
@@ -2720,7 +2932,7 @@ type BigInt struct {
 func (x *BigInt) Reset() {
 	*x = BigInt{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_relayer_proto_msgTypes[52]
+		mi := &file_relayer_proto_msgTypes[56]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2733,7 +2945,7 @@ func (x *BigInt) String() string {
 func (*BigInt) ProtoMessage() {}
 
 func (x *BigInt) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[52]
+	mi := &file_relayer_proto_msgTypes[56]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2746,7 +2958,7 @@ func (x *BigInt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BigInt.ProtoReflect.Descriptor instead.
 func (*BigInt) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{52}
+	return file_relayer_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *BigInt) GetNegative() bool {
@@ -2775,7 +2987,7 @@ type StarknetSignature struct {
 func (x *StarknetSignature) Reset() {
 	*x = StarknetSignature{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_relayer_proto_msgTypes[53]
+		mi := &file_relayer_proto_msgTypes[57]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2788,7 +3000,7 @@ func (x *StarknetSignature) String() string {
 func (*StarknetSignature) ProtoMessage() {}
 
 func (x *StarknetSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[53]
+	mi := &file_relayer_proto_msgTypes[57]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2801,7 +3013,7 @@ func (x *StarknetSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarknetSignature.ProtoReflect.Descriptor instead.
 func (*StarknetSignature) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{53}
+	return file_relayer_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *StarknetSignature) GetX() *BigInt {
@@ -2829,7 +3041,7 @@ type StarknetMessageHash struct {
 func (x *StarknetMessageHash) Reset() {
 	*x = StarknetMessageHash{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_relayer_proto_msgTypes[54]
+		mi := &file_relayer_proto_msgTypes[58]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2842,7 +3054,7 @@ func (x *StarknetMessageHash) String() string {
 func (*StarknetMessageHash) ProtoMessage() {}
 
 func (x *StarknetMessageHash) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[54]
+	mi := &file_relayer_proto_msgTypes[58]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2855,7 +3067,7 @@ func (x *StarknetMessageHash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarknetMessageHash.ProtoReflect.Descriptor instead.
 func (*StarknetMessageHash) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{54}
+	return file_relayer_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *StarknetMessageHash) GetHash() *BigInt {
@@ -3103,6 +3315,26 @@ var file_relayer_proto_rawDesc = []byte{
 	0x79, 0x12, 0x2c, 0x0a, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x14, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
 	0x65, 0x64, 0x42, 0x79, 0x74, 0x65, 0x73, 0x52, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x22,
+	0x5e, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2c, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x56, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x65, 0x64, 0x42, 0x79, 0x74, 0x65, 0x73, 0x52, 0x06, 0x70, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x69, 0x74, 0x65, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x69, 0x74, 0x65, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x22,
+	0x2d, 0x0a, 0x13, 0x47, 0x65, 0x74, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61, 0x6c,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x22, 0x6a,
+	0x0a, 0x12, 0x47, 0x65, 0x74, 0x44, 0x65, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x64, 0x12, 0x1a,
+	0x0a, 0x08, 0x69, 0x74, 0x65, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x08, 0x69, 0x74, 0x65, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x66, 0x6f,
+	0x72, 0x63, 0x65, 0x53, 0x70, 0x6c, 0x69, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a,
+	0x66, 0x6f, 0x72, 0x63, 0x65, 0x53, 0x70, 0x6c, 0x69, 0x74, 0x22, 0x43, 0x0a, 0x13, 0x47, 0x65,
+	0x74, 0x44, 0x65, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x2c, 0x0a, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x14, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x65, 0x64, 0x42, 0x79, 0x74, 0x65, 0x73, 0x52, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x22,
 	0x57, 0x0a, 0x0d, 0x42, 0x6f, 0x75, 0x6e, 0x64, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
 	0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
@@ -3219,8 +3451,8 @@ var file_relayer_proto_rawDesc = []byte{
 	0x72, 0x6f, 0x6d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x18, 0x2e, 0x6c, 0x6f, 0x6f,
 	0x70, 0x2e, 0x46, 0x72, 0x6f, 0x6d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x46, 0x72, 0x6f, 0x6d,
-	0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x32, 0xd6,
-	0x02, 0x0a, 0x0b, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x59,
+	0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x32, 0xde,
+	0x03, 0x0a, 0x0b, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x59,
 	0x0a, 0x13, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x46,
 	0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x20, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x52, 0x65, 0x67,
 	0x69, 0x73, 0x74, 0x65, 0x72, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72,
@@ -3241,27 +3473,36 @@ var file_relayer_proto_rawDesc = []byte{
 	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x61,
 	0x6c, 0x75, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x6c, 0x6f, 0x6f,
 	0x70, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65,
-	0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x32, 0xf5, 0x01, 0x0a, 0x07, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x12, 0x31, 0x0a, 0x04, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x16, 0x2e, 0x67, 0x6f,
-	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d,
-	0x70, 0x74, 0x79, 0x1a, 0x0f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x4e, 0x61, 0x6d, 0x65, 0x52,
-	0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x39, 0x0a, 0x05, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x12,
+	0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x42, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x45, 0x6e,
+	0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x18, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65,
+	0x74, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x19, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x45, 0x6e, 0x63, 0x6f, 0x64,
+	0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42, 0x0a, 0x0b, 0x47,
+	0x65, 0x74, 0x44, 0x65, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x18, 0x2e, 0x6c, 0x6f, 0x6f,
+	0x70, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x65, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x44,
+	0x65, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32,
+	0xf5, 0x01, 0x0a, 0x07, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x31, 0x0a, 0x04, 0x4e,
+	0x61, 0x6d, 0x65, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0f, 0x2e, 0x6c, 0x6f,
+	0x6f, 0x70, 0x2e, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x39,
+	0x0a, 0x05, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a,
 	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22,
-	0x00, 0x12, 0x39, 0x0a, 0x05, 0x52, 0x65, 0x61, 0x64, 0x79, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f,
+	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x39, 0x0a, 0x05, 0x52, 0x65, 0x61,
+	0x64, 0x79, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f,
 	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70,
-	0x74, 0x79, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x41, 0x0a, 0x0c,
-	0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x16, 0x2e, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45,
-	0x6d, 0x70, 0x74, 0x79, 0x1a, 0x17, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x48, 0x65, 0x61, 0x6c,
-	0x74, 0x68, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x42,
-	0x42, 0x5a, 0x40, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d,
-	0x61, 0x72, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63,
-	0x68, 0x61, 0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x2f, 0x70,
-	0x6b, 0x67, 0x2f, 0x6c, 0x6f, 0x6f, 0x70, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c,
-	0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x79, 0x22, 0x00, 0x12, 0x41, 0x0a, 0x0c, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x52, 0x65,
+	0x70, 0x6f, 0x72, 0x74, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x17, 0x2e, 0x6c,
+	0x6f, 0x6f, 0x70, 0x2e, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74,
+	0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x42, 0x42, 0x5a, 0x40, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72,
+	0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b,
+	0x2d, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x6c, 0x6f, 0x6f, 0x70, 0x2f,
+	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3276,7 +3517,7 @@ func file_relayer_proto_rawDescGZIP() []byte {
 	return file_relayer_proto_rawDescData
 }
 
-var file_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 56)
+var file_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
 var file_relayer_proto_goTypes = []interface{}{
 	(*NewRelayerRequest)(nil),                 // 0: loop.NewRelayerRequest
 	(*NewRelayerReply)(nil),                   // 1: loop.NewRelayerReply
@@ -3327,14 +3568,18 @@ var file_relayer_proto_goTypes = []interface{}{
 	(*VersionedBytes)(nil),                    // 46: loop.VersionedBytes
 	(*GetLatestValueRequest)(nil),             // 47: loop.GetLatestValueRequest
 	(*GetLatestValueReply)(nil),               // 48: loop.GetLatestValueReply
-	(*BoundContract)(nil),                     // 49: loop.BoundContract
-	(*NameReply)(nil),                         // 50: loop.NameReply
-	(*HealthReportReply)(nil),                 // 51: loop.HealthReportReply
-	(*BigInt)(nil),                            // 52: loop.BigInt
-	(*StarknetSignature)(nil),                 // 53: loop.StarknetSignature
-	(*StarknetMessageHash)(nil),               // 54: loop.StarknetMessageHash
-	nil,                                       // 55: loop.HealthReportReply.HealthReportEntry
-	(*emptypb.Empty)(nil),                     // 56: google.protobuf.Empty
+	(*GetEncodingRequest)(nil),                // 49: loop.GetEncodingRequest
+	(*GetEncodingResponse)(nil),               // 50: loop.GetEncodingResponse
+	(*GetDecodingRequest)(nil),                // 51: loop.GetDecodingRequest
+	(*GetDecodingResponse)(nil),               // 52: loop.GetDecodingResponse
+	(*BoundContract)(nil),                     // 53: loop.BoundContract
+	(*NameReply)(nil),                         // 54: loop.NameReply
+	(*HealthReportReply)(nil),                 // 55: loop.HealthReportReply
+	(*BigInt)(nil),                            // 56: loop.BigInt
+	(*StarknetSignature)(nil),                 // 57: loop.StarknetSignature
+	(*StarknetMessageHash)(nil),               // 58: loop.StarknetMessageHash
+	nil,                                       // 59: loop.HealthReportReply.HealthReportEntry
+	(*emptypb.Empty)(nil),                     // 60: google.protobuf.Empty
 }
 var file_relayer_proto_depIdxs = []int32{
 	5,  // 0: loop.NewPluginProviderRequest.relayArgs:type_name -> loop.RelayArgs
@@ -3342,76 +3587,82 @@ var file_relayer_proto_depIdxs = []int32{
 	5,  // 2: loop.NewConfigProviderRequest.relayArgs:type_name -> loop.RelayArgs
 	13, // 3: loop.GetChainStatusReply.chain:type_name -> loop.ChainStatus
 	16, // 4: loop.ListNodeStatusesReply.nodes:type_name -> loop.NodeStatus
-	52, // 5: loop.TransactionRequest.amount:type_name -> loop.BigInt
+	56, // 5: loop.TransactionRequest.amount:type_name -> loop.BigInt
 	31, // 6: loop.ObserveRequest.reportTimestamp:type_name -> loop.ReportTimestamp
-	52, // 7: loop.ObserveReply.value:type_name -> loop.BigInt
+	56, // 7: loop.ObserveReply.value:type_name -> loop.BigInt
 	20, // 8: loop.ConfigDigestRequest.contractConfig:type_name -> loop.ContractConfig
 	20, // 9: loop.LatestConfigReply.contractConfig:type_name -> loop.ContractConfig
 	31, // 10: loop.ReportContext.reportTimestamp:type_name -> loop.ReportTimestamp
 	32, // 11: loop.TransmitRequest.reportContext:type_name -> loop.ReportContext
 	33, // 12: loop.TransmitRequest.attributedOnchainSignatures:type_name -> loop.AttributedOnchainSignature
-	49, // 13: loop.GetLatestValueRequest.bc:type_name -> loop.BoundContract
+	53, // 13: loop.GetLatestValueRequest.bc:type_name -> loop.BoundContract
 	46, // 14: loop.GetLatestValueRequest.params:type_name -> loop.VersionedBytes
 	46, // 15: loop.GetLatestValueReply.retVal:type_name -> loop.VersionedBytes
-	55, // 16: loop.HealthReportReply.healthReport:type_name -> loop.HealthReportReply.HealthReportEntry
-	52, // 17: loop.StarknetSignature.x:type_name -> loop.BigInt
-	52, // 18: loop.StarknetSignature.y:type_name -> loop.BigInt
-	52, // 19: loop.StarknetMessageHash.hash:type_name -> loop.BigInt
-	0,  // 20: loop.PluginRelayer.NewRelayer:input_type -> loop.NewRelayerRequest
-	56, // 21: loop.Keystore.Accounts:input_type -> google.protobuf.Empty
-	3,  // 22: loop.Keystore.Sign:input_type -> loop.SignRequest
-	9,  // 23: loop.Relayer.NewConfigProvider:input_type -> loop.NewConfigProviderRequest
-	7,  // 24: loop.Relayer.NewPluginProvider:input_type -> loop.NewPluginProviderRequest
-	11, // 25: loop.Relayer.GetChainStatus:input_type -> loop.GetChainStatusRequest
-	14, // 26: loop.Relayer.ListNodeStatuses:input_type -> loop.ListNodeStatusesRequest
-	17, // 27: loop.Relayer.Transact:input_type -> loop.TransactionRequest
-	18, // 28: loop.DataSource.Observe:input_type -> loop.ObserveRequest
-	21, // 29: loop.OffchainConfigDigester.ConfigDigest:input_type -> loop.ConfigDigestRequest
-	23, // 30: loop.OffchainConfigDigester.ConfigDigestPrefix:input_type -> loop.ConfigDigestPrefixRequest
-	25, // 31: loop.ContractConfigTracker.LatestConfigDetails:input_type -> loop.LatestConfigDetailsRequest
-	27, // 32: loop.ContractConfigTracker.LatestConfig:input_type -> loop.LatestConfigRequest
-	29, // 33: loop.ContractConfigTracker.LatestBlockHeight:input_type -> loop.LatestBlockHeightRequest
-	34, // 34: loop.ContractTransmitter.Transmit:input_type -> loop.TransmitRequest
-	36, // 35: loop.ContractTransmitter.LatestConfigDigestAndEpoch:input_type -> loop.LatestConfigDigestAndEpochRequest
-	38, // 36: loop.ContractTransmitter.FromAccount:input_type -> loop.FromAccountRequest
-	40, // 37: loop.ChainReader.RegisterEventFilter:input_type -> loop.RegisterEventFilterRequest
-	42, // 38: loop.ChainReader.UnregisterEventFilter:input_type -> loop.UnregisterEventFilterRequest
-	44, // 39: loop.ChainReader.QueryEvents:input_type -> loop.QueryEventsRequest
-	47, // 40: loop.ChainReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
-	56, // 41: loop.Service.Name:input_type -> google.protobuf.Empty
-	56, // 42: loop.Service.Close:input_type -> google.protobuf.Empty
-	56, // 43: loop.Service.Ready:input_type -> google.protobuf.Empty
-	56, // 44: loop.Service.HealthReport:input_type -> google.protobuf.Empty
-	1,  // 45: loop.PluginRelayer.NewRelayer:output_type -> loop.NewRelayerReply
-	2,  // 46: loop.Keystore.Accounts:output_type -> loop.AccountsReply
-	4,  // 47: loop.Keystore.Sign:output_type -> loop.SignReply
-	10, // 48: loop.Relayer.NewConfigProvider:output_type -> loop.NewConfigProviderReply
-	8,  // 49: loop.Relayer.NewPluginProvider:output_type -> loop.NewPluginProviderReply
-	12, // 50: loop.Relayer.GetChainStatus:output_type -> loop.GetChainStatusReply
-	15, // 51: loop.Relayer.ListNodeStatuses:output_type -> loop.ListNodeStatusesReply
-	56, // 52: loop.Relayer.Transact:output_type -> google.protobuf.Empty
-	19, // 53: loop.DataSource.Observe:output_type -> loop.ObserveReply
-	22, // 54: loop.OffchainConfigDigester.ConfigDigest:output_type -> loop.ConfigDigestReply
-	24, // 55: loop.OffchainConfigDigester.ConfigDigestPrefix:output_type -> loop.ConfigDigestPrefixReply
-	26, // 56: loop.ContractConfigTracker.LatestConfigDetails:output_type -> loop.LatestConfigDetailsReply
-	28, // 57: loop.ContractConfigTracker.LatestConfig:output_type -> loop.LatestConfigReply
-	30, // 58: loop.ContractConfigTracker.LatestBlockHeight:output_type -> loop.LatestBlockHeightReply
-	35, // 59: loop.ContractTransmitter.Transmit:output_type -> loop.TransmitReply
-	37, // 60: loop.ContractTransmitter.LatestConfigDigestAndEpoch:output_type -> loop.LatestConfigDigestAndEpochReply
-	39, // 61: loop.ContractTransmitter.FromAccount:output_type -> loop.FromAccountReply
-	41, // 62: loop.ChainReader.RegisterEventFilter:output_type -> loop.RegisterEventFilterReply
-	41, // 63: loop.ChainReader.UnregisterEventFilter:output_type -> loop.RegisterEventFilterReply
-	45, // 64: loop.ChainReader.QueryEvents:output_type -> loop.QueryEventsReply
-	48, // 65: loop.ChainReader.GetLatestValue:output_type -> loop.GetLatestValueReply
-	50, // 66: loop.Service.Name:output_type -> loop.NameReply
-	56, // 67: loop.Service.Close:output_type -> google.protobuf.Empty
-	56, // 68: loop.Service.Ready:output_type -> google.protobuf.Empty
-	51, // 69: loop.Service.HealthReport:output_type -> loop.HealthReportReply
-	45, // [45:70] is the sub-list for method output_type
-	20, // [20:45] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	46, // 16: loop.GetEncodingRequest.params:type_name -> loop.VersionedBytes
+	46, // 17: loop.GetDecodingResponse.retVal:type_name -> loop.VersionedBytes
+	59, // 18: loop.HealthReportReply.healthReport:type_name -> loop.HealthReportReply.HealthReportEntry
+	56, // 19: loop.StarknetSignature.x:type_name -> loop.BigInt
+	56, // 20: loop.StarknetSignature.y:type_name -> loop.BigInt
+	56, // 21: loop.StarknetMessageHash.hash:type_name -> loop.BigInt
+	0,  // 22: loop.PluginRelayer.NewRelayer:input_type -> loop.NewRelayerRequest
+	60, // 23: loop.Keystore.Accounts:input_type -> google.protobuf.Empty
+	3,  // 24: loop.Keystore.Sign:input_type -> loop.SignRequest
+	9,  // 25: loop.Relayer.NewConfigProvider:input_type -> loop.NewConfigProviderRequest
+	7,  // 26: loop.Relayer.NewPluginProvider:input_type -> loop.NewPluginProviderRequest
+	11, // 27: loop.Relayer.GetChainStatus:input_type -> loop.GetChainStatusRequest
+	14, // 28: loop.Relayer.ListNodeStatuses:input_type -> loop.ListNodeStatusesRequest
+	17, // 29: loop.Relayer.Transact:input_type -> loop.TransactionRequest
+	18, // 30: loop.DataSource.Observe:input_type -> loop.ObserveRequest
+	21, // 31: loop.OffchainConfigDigester.ConfigDigest:input_type -> loop.ConfigDigestRequest
+	23, // 32: loop.OffchainConfigDigester.ConfigDigestPrefix:input_type -> loop.ConfigDigestPrefixRequest
+	25, // 33: loop.ContractConfigTracker.LatestConfigDetails:input_type -> loop.LatestConfigDetailsRequest
+	27, // 34: loop.ContractConfigTracker.LatestConfig:input_type -> loop.LatestConfigRequest
+	29, // 35: loop.ContractConfigTracker.LatestBlockHeight:input_type -> loop.LatestBlockHeightRequest
+	34, // 36: loop.ContractTransmitter.Transmit:input_type -> loop.TransmitRequest
+	36, // 37: loop.ContractTransmitter.LatestConfigDigestAndEpoch:input_type -> loop.LatestConfigDigestAndEpochRequest
+	38, // 38: loop.ContractTransmitter.FromAccount:input_type -> loop.FromAccountRequest
+	40, // 39: loop.ChainReader.RegisterEventFilter:input_type -> loop.RegisterEventFilterRequest
+	42, // 40: loop.ChainReader.UnregisterEventFilter:input_type -> loop.UnregisterEventFilterRequest
+	44, // 41: loop.ChainReader.QueryEvents:input_type -> loop.QueryEventsRequest
+	47, // 42: loop.ChainReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
+	49, // 43: loop.ChainReader.GetEncoding:input_type -> loop.GetEncodingRequest
+	51, // 44: loop.ChainReader.GetDecoding:input_type -> loop.GetDecodingRequest
+	60, // 45: loop.Service.Name:input_type -> google.protobuf.Empty
+	60, // 46: loop.Service.Close:input_type -> google.protobuf.Empty
+	60, // 47: loop.Service.Ready:input_type -> google.protobuf.Empty
+	60, // 48: loop.Service.HealthReport:input_type -> google.protobuf.Empty
+	1,  // 49: loop.PluginRelayer.NewRelayer:output_type -> loop.NewRelayerReply
+	2,  // 50: loop.Keystore.Accounts:output_type -> loop.AccountsReply
+	4,  // 51: loop.Keystore.Sign:output_type -> loop.SignReply
+	10, // 52: loop.Relayer.NewConfigProvider:output_type -> loop.NewConfigProviderReply
+	8,  // 53: loop.Relayer.NewPluginProvider:output_type -> loop.NewPluginProviderReply
+	12, // 54: loop.Relayer.GetChainStatus:output_type -> loop.GetChainStatusReply
+	15, // 55: loop.Relayer.ListNodeStatuses:output_type -> loop.ListNodeStatusesReply
+	60, // 56: loop.Relayer.Transact:output_type -> google.protobuf.Empty
+	19, // 57: loop.DataSource.Observe:output_type -> loop.ObserveReply
+	22, // 58: loop.OffchainConfigDigester.ConfigDigest:output_type -> loop.ConfigDigestReply
+	24, // 59: loop.OffchainConfigDigester.ConfigDigestPrefix:output_type -> loop.ConfigDigestPrefixReply
+	26, // 60: loop.ContractConfigTracker.LatestConfigDetails:output_type -> loop.LatestConfigDetailsReply
+	28, // 61: loop.ContractConfigTracker.LatestConfig:output_type -> loop.LatestConfigReply
+	30, // 62: loop.ContractConfigTracker.LatestBlockHeight:output_type -> loop.LatestBlockHeightReply
+	35, // 63: loop.ContractTransmitter.Transmit:output_type -> loop.TransmitReply
+	37, // 64: loop.ContractTransmitter.LatestConfigDigestAndEpoch:output_type -> loop.LatestConfigDigestAndEpochReply
+	39, // 65: loop.ContractTransmitter.FromAccount:output_type -> loop.FromAccountReply
+	41, // 66: loop.ChainReader.RegisterEventFilter:output_type -> loop.RegisterEventFilterReply
+	41, // 67: loop.ChainReader.UnregisterEventFilter:output_type -> loop.RegisterEventFilterReply
+	45, // 68: loop.ChainReader.QueryEvents:output_type -> loop.QueryEventsReply
+	48, // 69: loop.ChainReader.GetLatestValue:output_type -> loop.GetLatestValueReply
+	50, // 70: loop.ChainReader.GetEncoding:output_type -> loop.GetEncodingResponse
+	52, // 71: loop.ChainReader.GetDecoding:output_type -> loop.GetDecodingResponse
+	54, // 72: loop.Service.Name:output_type -> loop.NameReply
+	60, // 73: loop.Service.Close:output_type -> google.protobuf.Empty
+	60, // 74: loop.Service.Ready:output_type -> google.protobuf.Empty
+	55, // 75: loop.Service.HealthReport:output_type -> loop.HealthReportReply
+	49, // [49:76] is the sub-list for method output_type
+	22, // [22:49] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_relayer_proto_init() }
@@ -4009,7 +4260,7 @@ func file_relayer_proto_init() {
 			}
 		}
 		file_relayer_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BoundContract); i {
+			switch v := v.(*GetEncodingRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4021,7 +4272,7 @@ func file_relayer_proto_init() {
 			}
 		}
 		file_relayer_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NameReply); i {
+			switch v := v.(*GetEncodingResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4033,7 +4284,7 @@ func file_relayer_proto_init() {
 			}
 		}
 		file_relayer_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HealthReportReply); i {
+			switch v := v.(*GetDecodingRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4045,7 +4296,7 @@ func file_relayer_proto_init() {
 			}
 		}
 		file_relayer_proto_msgTypes[52].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BigInt); i {
+			switch v := v.(*GetDecodingResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4057,7 +4308,7 @@ func file_relayer_proto_init() {
 			}
 		}
 		file_relayer_proto_msgTypes[53].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StarknetSignature); i {
+			switch v := v.(*BoundContract); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4069,6 +4320,54 @@ func file_relayer_proto_init() {
 			}
 		}
 		file_relayer_proto_msgTypes[54].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NameReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_relayer_proto_msgTypes[55].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*HealthReportReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_relayer_proto_msgTypes[56].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BigInt); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_relayer_proto_msgTypes[57].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StarknetSignature); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_relayer_proto_msgTypes[58].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*StarknetMessageHash); i {
 			case 0:
 				return &v.state
@@ -4087,7 +4386,7 @@ func file_relayer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_relayer_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   56,
+			NumMessages:   60,
 			NumExtensions: 0,
 			NumServices:   9,
 		},

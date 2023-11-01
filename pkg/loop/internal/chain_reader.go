@@ -37,7 +37,7 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("Unsupported encoding version %d for data %v", version, data)
+		return nil, fmt.Errorf("unsupported encoding version %d for data %v", version, data)
 	}
 
 	return &pb.VersionedBytes{Version: SimpleJsonEncodingVersion, Data: jsonData}, nil
@@ -51,7 +51,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 			return err
 		}
 	default:
-		return fmt.Errorf("Unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
+		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
 	}
 
 	return nil

@@ -261,6 +261,8 @@ service ChainReader {
   rpc UnregisterEventFilter (UnregisterEventFilterRequest) returns (RegisterEventFilterReply) {}
   rpc QueryEvents (QueryEventsRequest) returns (QueryEventsReply) {}
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc GetEncoding(GetEncodingRequest) returns (GetEncodingResponse);
+  rpc GetDecoding(GetDecodingRequest) returns (GetDecodingResponse);
 }
 
 // TODO
@@ -297,6 +299,26 @@ message GetLatestValueRequest {
 message GetLatestValueReply {
   VersionedBytes retVal = 1;
 }
+
+message GetEncodingRequest {
+  VersionedBytes params = 1;
+  string itemType = 2;
+}
+
+message GetEncodingResponse {
+  bytes retVal = 1;
+}
+
+message GetDecodingRequest {
+  bytes encoded = 1;
+  string itemType = 2;
+  bool forceSplit = 3;
+}
+
+message GetDecodingResponse {
+  VersionedBytes retVal = 1;
+}
+
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].
 message BoundContract {

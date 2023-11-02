@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -92,6 +93,14 @@ func (s staticContractTransmitter) FromAccount() (libocr.Account, error) {
 
 type staticChainReader struct{}
 
+func (c staticChainReader) Encode(ctx context.Context, item any, itemType string) (libocr.Report, error) {
+	return nil, errors.New("not used for these test")
+}
+
+func (c staticChainReader) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
+	return errors.New("not used for these test")
+}
+
 func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
 	if !assert.ObjectsAreEqual(bc, boundContract) {
 		return fmt.Errorf("expected report context %v but got %v", boundContract, bc)
@@ -114,20 +123,19 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundCon
 		return fmt.Errorf("expected params %v but got %v", getLatestValueParams, gotParams)
 	}
 
-	jsonRet, err := json.Marshal(latestTransmissionDetails)
-	if err != nil {
-		return err
-	}
-
 	ret, ok := retVal.(*map[string]any)
 	if !ok {
 		return fmt.Errorf("Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", reflect.TypeOf(retVal), reflect.TypeOf(ret))
 	}
 
-	err = json.Unmarshal(jsonRet, ret)
-	if err != nil {
-		return err
+	if ret == nil {
+		return fmt.Errorf("retVal should not be nil")
 	}
 
+	(*ret)["ConfigDigest"] = latestTransmissionDetails.ConfigDigest
+	(*ret)["Epoch"] = latestTransmissionDetails.Epoch
+	(*ret)["Round"] = latestTransmissionDetails.Round
+	(*ret)["LatestAnswer"] = latestTransmissionDetails.LatestAnswer
+	(*ret)["Timestamp"] = latestTransmissionDetails.Timestamp
 	return nil
 }

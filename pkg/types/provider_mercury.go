@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+
 	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
 	v1 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v1"
 	v2 "github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury/v2"
@@ -17,4 +19,5 @@ type MercuryProvider interface {
 	ReportCodecV3() v3.ReportCodec
 	OnchainConfigCodec() mercury.OnchainConfigCodec
 	MercuryServerFetcher() mercury.MercuryServerFetcher
+	LatestTransmittedReport(ctx context.Context, feedID [32]byte) (report []byte, err error)
 }

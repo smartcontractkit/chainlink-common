@@ -34,6 +34,7 @@ type MercuryServerFetcher interface {
 
 type Transmitter interface {
 	MercuryServerFetcher
+	LatestTransmittedReport(ctx context.Context, feedID [32]byte) (report []byte, err error)
 	// NOTE: Mercury doesn't actually transmit on-chain, so there is no
 	// "contract" involved with the transmitter.
 	// - Transmit should be implemented and send to Mercury server

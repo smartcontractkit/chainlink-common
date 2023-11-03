@@ -263,6 +263,7 @@ service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
   rpc GetEncoding(GetEncodingRequest) returns (GetEncodingResponse);
   rpc GetDecoding(GetDecodingRequest) returns (GetDecodingResponse);
+  rpc GetMaxSize(GetMaxSizeRequest) returns (GetMaxSizeResponse);
 }
 
 // TODO
@@ -319,6 +320,15 @@ message GetDecodingResponse {
   VersionedBytes retVal = 1;
 }
 
+message GetMaxSizeRequest {
+  int32 n = 1;
+  string itemType = 2;
+  bool forEncoding = 3;
+}
+
+message GetMaxSizeResponse {
+  int32 sizeInBytes = 1;
+}
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].
 message BoundContract {

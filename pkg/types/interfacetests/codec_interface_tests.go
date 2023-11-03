@@ -181,6 +181,11 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			require.NoError(t, cr.GetLatestValue(ctx, bc, method, params, actual))
 			assert.Equal(t, &secondItem, actual)
 		},
+		"GetMaxEncodingSize returns errors for unknown types": func(t *testing.T) {
+			cr := tester.GetChainReader(t)
+			_, err := cr.GetMaxEncodingSize(ctx, 10, "not"+TestItemType)
+			assert.IsType(t, types.InvalidTypeError{}, err)
+		},
 	}
 
 	runTests(t, tester, tests)

@@ -2,17 +2,19 @@ package internal
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/test/bufconn"
 	"net"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 
 	"context"
+
 	"github.com/fxamacker/cbor/v2"
 	"github.com/mitchellh/mapstructure"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"

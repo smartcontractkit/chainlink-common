@@ -2,22 +2,23 @@ package loop
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"runtime/debug"
+	"time"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 )
@@ -57,9 +58,24 @@ func SetupTracing(config TracingConfig) error {
 		return nil
 	}
 
-	traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+
+	// Enough to shutdown the underlying connection since DialContext is used in blocking mode
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
+		// Note the use of insecure transport here. TLS is recommended in production.
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		// safe usage in this case https://github.com/grpc/grpc-go/blob/master/Documentation/anti-patterns.md#dialing-in-grpc
+		grpc.WithBlock(),
+	)
 	if err != nil {
-		return fmt.Errorf("creating stdout exporter: %w", err)
+		return err
+	}
+
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	if err != nil {
+		return err
 	}
 
 	var version string

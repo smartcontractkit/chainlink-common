@@ -66,8 +66,6 @@ func SetupTracing(config TracingConfig) error {
 	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
 		// Note the use of insecure transport here. TLS is recommended in production.
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		// safe usage in this case https://github.com/grpc/grpc-go/blob/master/Documentation/anti-patterns.md#dialing-in-grpc
-		grpc.WithBlock(),
 	)
 	if err != nil {
 		return err

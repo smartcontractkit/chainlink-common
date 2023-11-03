@@ -41,3 +41,16 @@ type Transmitter interface {
 	// - FromAccount() should return CSA public key
 	ocrtypes.ContractTransmitter
 }
+
+type ChainReader interface {
+	// Head returns the current chain head
+	Head(context.Context) (Block, error)
+	// LatestBlocks returns an ordered list of the latest specified number of blocks
+	LatestBlocks(context.Context, int) ([]Block, error)
+}
+
+type Block struct {
+	Number    uint64
+	Hash      []byte
+	Timestamp uint64
+}

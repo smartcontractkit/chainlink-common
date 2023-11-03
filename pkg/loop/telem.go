@@ -66,7 +66,7 @@ func SetupTracing(config TracingConfig) error {
 	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(config.CollectorTarget), otlptracegrpc.WithDialOption(
 		// Note the use of insecure transport here. TLS is recommended in production.
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-			conn, err := net.Dial("tcp", config.CollectorTarget)
+			conn, err := net.Dial("tcp", s)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to dial: %v", err)
 			}

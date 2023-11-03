@@ -2,6 +2,7 @@ package loop
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"runtime/debug"
 
@@ -10,14 +11,13 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
 )
@@ -57,16 +57,9 @@ func SetupTracing(config TracingConfig) error {
 		return nil
 	}
 
-	ctx := context.Background()
-
-	// Set up a trace exporter
-	// Shutting down the traceExporter will not shutdown the underlying connection.
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(config.CollectorTarget), otlptracegrpc.WithDialOption(
-		// Note the use of insecure transport here. TLS is recommended in production.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	))
+	traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
-		return err
+		return fmt.Errorf("creating stdout exporter: %w", err)
 	}
 
 	var version string

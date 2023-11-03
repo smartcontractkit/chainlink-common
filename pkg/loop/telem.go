@@ -2,6 +2,8 @@ package loop
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"os"
 	"runtime/debug"
 
@@ -63,6 +65,13 @@ func SetupTracing(config TracingConfig) error {
 	// Shutting down the traceExporter will not shutdown the underlying connection.
 	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(config.CollectorTarget), otlptracegrpc.WithDialOption(
 		// Note the use of insecure transport here. TLS is recommended in production.
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			conn, err := net.Dial("tcp", config.CollectorTarget)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to dial: %v", err)
+			}
+			return conn, err
+		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	))
 	if err != nil {

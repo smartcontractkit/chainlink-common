@@ -257,31 +257,10 @@ message FromAccountReply {
 }
 
 service ChainReader {
-  rpc RegisterEventFilter (RegisterEventFilterRequest) returns (RegisterEventFilterReply) {}
-  rpc UnregisterEventFilter (UnregisterEventFilterRequest) returns (RegisterEventFilterReply) {}
-  rpc QueryEvents (QueryEventsRequest) returns (QueryEventsReply) {}
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
   rpc GetEncoding(GetEncodingRequest) returns (GetEncodingResponse);
   rpc GetDecoding(GetDecodingRequest) returns (GetDecodingResponse);
 }
-
-// TODO
-message RegisterEventFilterRequest {}
-
-// TODO
-message RegisterEventFilterReply {}
-
-// TODO
-message UnregisterEventFilterRequest {}
-
-// TODO
-message UnregisterEventFilterReply {}
-
-// TODO
-message QueryEventsRequest {}
-
-// TODO
-message QueryEventsReply {}
 
 message VersionedBytes {
     uint32 version = 1;

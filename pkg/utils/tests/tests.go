@@ -47,7 +47,7 @@ func AssertEventually(t *testing.T, f func() bool) {
 
 // WaitWithTimeout waits for the channel to close (or receive anything) and
 // fatals the test if the default wait timeout is exceeded
-func WaitWithTimeout(t *testing.T, ch <-chan struct{}, failMsg string) {
+func RequireSignal(t *testing.T, ch <-chan struct{}, failMsg string) {
 	select {
 	case <-ch:
 	case <-time.After(WaitTimeout(t)):

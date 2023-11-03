@@ -45,7 +45,7 @@ func AssertEventually(t *testing.T, f func() bool) {
 	assert.Eventually(t, f, WaitTimeout(t), TestInterval/2)
 }
 
-// WaitWithTimeout waits for the channel to close (or receive anything) and
+// RequireSignal waits for the channel to close (or receive anything) and
 // fatals the test if the default wait timeout is exceeded
 func RequireSignal(t *testing.T, ch <-chan struct{}, failMsg string) {
 	select {

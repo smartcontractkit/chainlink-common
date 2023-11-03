@@ -7,29 +7,22 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-// WaitForLogMessage waits until at least one log message containing the
+// AssertLogEventually waits until at least one log message containing the
 // specified msg is emitted.
 // NOTE: This does not "pop" messages so it cannot be used multiple times to
-// check for new instances of the same msg. See WaitForLogMessageCount instead.
+// check for new instances of the same msg. See AssertLogCountEventually instead.
 //
 // Get a *observer.ObservedLogs like so:
 //
 //	observedZapCore, observedLogs := observer.New(zap.DebugLevel)
 //	lggr := logger.TestLogger(t, observedZapCore)
-func WaitForLogMessage(t *testing.T, observedLogs *observer.ObservedLogs, msg string) {
-	AssertEventually(t, func() bool {
-		for _, l := range observedLogs.All() {
-			if strings.Contains(l.Message, msg) {
-				return true
-			}
-		}
-		return false
-	})
+func AssertLogEventually(t *testing.T, observedLogs *observer.ObservedLogs, msg string) {
+	AssertLogCountEventually(t, observedLogs, msg, 1)
 }
 
-// WaitForLogMessageCount waits until at least count log message containing the
+// AssertLogCountEventually waits until at least count log message containing the
 // specified msg is emitted
-func WaitForLogMessageCount(t *testing.T, observedLogs *observer.ObservedLogs, msg string, count int) {
+func AssertLogCountEventually(t *testing.T, observedLogs *observer.ObservedLogs, msg string, count int) {
 	AssertEventually(t, func() bool {
 		i := 0
 		for _, l := range observedLogs.All() {

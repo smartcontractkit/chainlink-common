@@ -258,6 +258,17 @@ func runTests(t *testing.T, tester ChainReaderInterfaceTester, tests map[string]
 	}
 }
 
+type InnerTestStruct struct {
+	I int
+	S string
+	M map[string]int
+}
+
+type MidLevelTestStruct struct {
+	FixedBytes [2]byte
+	Inner      InnerTestStruct
+}
+
 type TestStruct struct {
 	Field          int32
 	DifferentField string
@@ -266,6 +277,7 @@ type TestStruct struct {
 	Account        []byte
 	Accounts       [][]byte
 	BigField       *big.Int
+	NestedStruct   MidLevelTestStruct
 }
 
 type LatestParams struct {
@@ -273,13 +285,25 @@ type LatestParams struct {
 }
 
 func CreateTestStruct(i int, accGen func(int) []byte) TestStruct {
+	s := fmt.Sprintf("field%v", i)
 	return TestStruct{
 		Field:          int32(i),
-		DifferentField: fmt.Sprintf("field%v", i),
+		DifferentField: s,
 		OracleId:       commontypes.OracleID(i + 1),
 		OracleIds:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
 		Account:        accGen(i + 3),
 		Accounts:       [][]byte{accGen(i + 4), accGen(i + 5)},
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
+		NestedStruct: MidLevelTestStruct{
+			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
+			Inner: InnerTestStruct{
+				I: i,
+				S: s,
+				M: map[string]int{
+					s:    i,
+					"hi": i + 1,
+				},
+			},
+		},
 	}
 }

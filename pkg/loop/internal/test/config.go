@@ -3,10 +3,8 @@ package test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
@@ -101,41 +99,28 @@ func (c staticChainReader) Decode(ctx context.Context, raw []byte, into any, ite
 	return errors.New("not used for these test")
 }
 
-func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
+func (f staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(bc, boundContract) {
 		return fmt.Errorf("expected report context %v but got %v", boundContract, bc)
 	}
 	if method != medianContractGenericMethod {
 		return fmt.Errorf("expected generic contract method %v but got %v", medianContractGenericMethod, method)
 	}
-
-	jsonParams, err := json.Marshal(params)
-	if err != nil {
-		return fmt.Errorf("Received non json-marshable params in GetLatestValue: %v", params)
-	}
-	var gotParams GetLatestValueParams
-	err = json.Unmarshal(jsonParams, &gotParams)
-	if err != nil {
-		return fmt.Errorf("Invalid params received in GetLatestValue, must be unmarshable into type %T", reflect.TypeOf(getLatestValueParams))
-	}
-
-	if !assert.ObjectsAreEqual(gotParams, getLatestValueParams) {
-		return fmt.Errorf("expected params %v but got %v", getLatestValueParams, gotParams)
-	}
-
-	ret, ok := retVal.(*map[string]any)
+	gotParams, ok := params.(*map[string]any)
 	if !ok {
-		return fmt.Errorf("Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", reflect.TypeOf(retVal), reflect.TypeOf(ret))
+		return fmt.Errorf("Invalid parameter type received in GetLatestValue. Expected %T but received %T", gotParams, params)
+	}
+	if (*gotParams)["param1"] != getLatestValueParams["param1"] || (*gotParams)["param2"] != getLatestValueParams["param2"] {
+		return fmt.Errorf("Wrong params value received in GetLatestValue. Expected %v but received %v", getLatestValueParams, *gotParams)
 	}
 
-	if ret == nil {
-		return fmt.Errorf("retVal should not be nil")
+	ret, ok := returnVal.(*map[string]any)
+	if !ok {
+		return fmt.Errorf("Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", ret, returnVal)
 	}
 
-	(*ret)["ConfigDigest"] = latestTransmissionDetails.ConfigDigest
-	(*ret)["Epoch"] = latestTransmissionDetails.Epoch
-	(*ret)["Round"] = latestTransmissionDetails.Round
-	(*ret)["LatestAnswer"] = latestTransmissionDetails.LatestAnswer
-	(*ret)["Timestamp"] = latestTransmissionDetails.Timestamp
+	(*ret)["ret1"] = latestValue["ret1"]
+	(*ret)["ret2"] = latestValue["ret2"]
+
 	return nil
 }

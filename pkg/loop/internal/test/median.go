@@ -70,15 +70,15 @@ type StaticPluginMedian struct{}
 
 func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	cr := provider.ChainReader()
-	var gotTransmissionDetails LatestTransmissionDetails
+	var gotLatestValue map[string]int
 
-	err := cr.GetLatestValue(ctx, boundContract, "LatestTransmissionDetails", getLatestValueParams, &gotTransmissionDetails)
+	err := cr.GetLatestValue(ctx, boundContract, medianContractGenericMethod, getLatestValueParams, &gotLatestValue)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetLatestValue() on median provider: %w", err)
 	}
 
-	if !assert.ObjectsAreEqual(gotTransmissionDetails, latestTransmissionDetails) {
-		return nil, fmt.Errorf("GetLatestValue: expected %v but got %v", gotTransmissionDetails, latestTransmissionDetails)
+	if !assert.ObjectsAreEqual(gotLatestValue, latestValue) {
+		return nil, fmt.Errorf("GetLatestValue: expected %v but got %v", gotLatestValue, latestValue)
 	}
 
 	ocd := provider.OffchainConfigDigester()

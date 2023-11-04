@@ -54,7 +54,7 @@ func (NotASliceError) Error() string {
 }
 
 type ChainReader interface {
-	// returnVal should satisfy Marshaller interface.
+	// returnVal should satisfy Marshaller interface
 	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
 	Codec
 }

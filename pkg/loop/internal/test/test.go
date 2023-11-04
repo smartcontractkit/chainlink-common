@@ -1,8 +1,6 @@
 package test
 
 import (
-	"encoding/json"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -23,34 +21,6 @@ const spec = `
 answer [type=sum values=<[ $(val), 2 ]>]
 answer;
 `
-
-type marshalableConfigDigest libocr.ConfigDigest
-
-func (c *marshalableConfigDigest) UnmarshalJSON(data []byte) error {
-	var bConfigDigest []byte
-	err := json.Unmarshal(data, &bConfigDigest)
-	if err != nil {
-		return err
-	}
-	if len(bConfigDigest) != 32 {
-		panic(fmt.Errorf("Expected ConfigDigest to be 32 bytes, got %d bytes", len(bConfigDigest)))
-	}
-	*c = [32]byte(bConfigDigest)
-	return nil
-}
-
-type LatestTransmissionDetails struct {
-	ConfigDigest marshalableConfigDigest
-	Epoch        uint32
-	Round        uint8
-	LatestAnswer *big.Int
-	Timestamp    time.Time
-}
-
-type GetLatestValueParams struct {
-	Param1 string
-	Param2 string
-}
 
 const (
 	account          = libocr.Account("testaccount")
@@ -79,11 +49,10 @@ var (
 		ID:     chainID,
 		Config: ConfigTOML,
 	}
-	chainID                   = "chain-id"
-	configDigest              = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
-	configDigestPrefix        = libocr.ConfigDigestPrefix(99)
-	latestTransmissionDetails = LatestTransmissionDetails{ConfigDigest: marshalableConfigDigest(configDigest), Epoch: epoch, Round: round, Timestamp: latestTimestamp}
-	contractConfig            = libocr.ContractConfig{
+	chainID            = "chain-id"
+	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
+	configDigestPrefix = libocr.ConfigDigestPrefix(99)
+	contractConfig     = libocr.ContractConfig{
 		ConfigDigest:          configDigest,
 		ConfigCount:           42,
 		Signers:               []libocr.OnchainPublicKey{[]byte{15: 1}},
@@ -178,12 +147,13 @@ URL = 'https://test.url'
 			Index: 0,
 		},
 	})
-	payload       = []byte("oops")
-	boundContract = types.BoundContract{
+	payload                     = []byte("oops")
+	medianContractGenericMethod = "LatestTransmissionDetails"
+	getLatestValueParams        = map[string]string{"param1": "value1", "param2": "value2"}
+	boundContract               = types.BoundContract{
 		Name:    "my median contract",
 		Address: "0xBbf078A8849D74653e36E6DBBdC7e1a35E657C26",
 		Pending: false,
 	}
-	medianContractGenericMethod = "LatestTransmissionDetails"
-	getLatestValueParams        = GetLatestValueParams{"value1", "value2"}
+	latestValue = map[string]int{"ret1": 1, "ret2": 2}
 )

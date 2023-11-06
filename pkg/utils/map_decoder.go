@@ -30,6 +30,10 @@ type mapDecoder struct {
 	hooks   []mapstructure.DecodeHookFunc
 }
 
+func (m *mapDecoder) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	return m.decoder.GetMaxDecodingSize(ctx, n, itemType)
+}
+
 func (m *mapDecoder) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
 	rInto := reflect.ValueOf(into)
 	if rInto.Kind() != reflect.Pointer {

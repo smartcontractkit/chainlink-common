@@ -143,6 +143,24 @@ func (c *chainReaderClient) Decode(ctx context.Context, raw []byte, into any, it
 	return decodeVersionedBytes(into, resp.RetVal)
 }
 
+func (c *chainReaderClient) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	res, err := c.grpc.GetMaxSize(ctx, &pb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: true})
+	if err != nil {
+		return 0, unwrapClientError(err)
+	}
+
+	return int(res.SizeInBytes), nil
+}
+
+func (c *chainReaderClient) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	res, err := c.grpc.GetMaxSize(ctx, &pb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: false})
+	if err != nil {
+		return 0, unwrapClientError(err)
+	}
+
+	return int(res.SizeInBytes), nil
+}
+
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
 
 type chainReaderServer struct {
@@ -214,6 +232,21 @@ func (c *chainReaderServer) GetDecoding(ctx context.Context, req *pb.GetDecoding
 
 	versionBytes, err := encodeVersionedBytes(encodedType, RetvalCurrentEncodingVersion)
 	return &pb.GetDecodingResponse{RetVal: versionBytes}, err
+}
+
+func (c *chainReaderServer) GetMaxSize(ctx context.Context, req *pb.GetMaxSizeRequest) (*pb.GetMaxSizeResponse, error) {
+	var sizeFn func(context.Context, int, string) (int, error)
+	if req.ForEncoding {
+		sizeFn = c.impl.GetMaxEncodingSize
+	} else {
+		sizeFn = c.impl.GetMaxDecodingSize
+	}
+
+	maxSize, err := sizeFn(ctx, int(req.N), req.ItemType)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetMaxSizeResponse{SizeInBytes: int32(maxSize)}, nil
 }
 
 func (c *chainReaderServer) RegisterEventFilter(ctx context.Context, in *pb.RegisterEventFilterRequest) (*pb.RegisterEventFilterReply, error) {

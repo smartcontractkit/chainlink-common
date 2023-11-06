@@ -91,6 +91,14 @@ func (s staticContractTransmitter) FromAccount() (libocr.Account, error) {
 
 type staticChainReader struct{}
 
+func (c staticChainReader) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	return 0, errors.New("not used for these test")
+}
+
+func (c staticChainReader) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	return 0, errors.New("not used for these test")
+}
+
 func (c staticChainReader) Encode(ctx context.Context, item any, itemType string) (libocr.Report, error) {
 	return nil, errors.New("not used for these test")
 }

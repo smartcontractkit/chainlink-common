@@ -16,7 +16,11 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
-const anyItemTypeForMapDecoder = "anything"
+const (
+	anyItemTypeForMapDecoder     = "anything"
+	anyNElementsForMapDecoder    = 10
+	anyDecodingSizeForMapDecoder = 200
+)
 
 var anyRawBytes = []byte("raw")
 
@@ -72,6 +76,16 @@ func TestMapDecoder(t *testing.T) {
 	t.Run("Decode returns an error for nil argument", func(t *testing.T) {
 		_, err := utils.DecoderFromMapDecoder(nil)
 		assert.Error(t, err)
+	})
+
+	t.Run("GetMaxDecodingSize delegates", func(t *testing.T) {
+		tmd := &testMapDecoder{}
+		decoder, err := utils.DecoderFromMapDecoder(tmd)
+		require.NoError(t, err)
+
+		maxSize, err := decoder.GetMaxDecodingSize(context.Background(), anyNElementsForMapDecoder, anyItemTypeForMapDecoder)
+		assert.NoError(t, err)
+		assert.Equal(t, anyDecodingSizeForMapDecoder, maxSize)
 	})
 }
 
@@ -231,6 +245,7 @@ type testMapDecoder struct {
 	resultMany   []map[string]any
 	correctRaw   bool
 	correctItem  bool
+	correctN     bool
 }
 
 func (t *testMapDecoder) DecodeSingle(ctx context.Context, raw []byte, itemType string) (map[string]any, error) {
@@ -243,6 +258,12 @@ func (t *testMapDecoder) DecodeMany(ctx context.Context, raw []byte, itemType st
 	t.correctRaw = reflect.DeepEqual(raw, anyRawBytes)
 	t.correctItem = itemType == anyItemTypeForMapDecoder
 	return t.resultMany, nil
+}
+
+func (t *testMapDecoder) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	t.correctN = anyNElementsForMapDecoder == n
+	t.correctItem = itemType == anyItemTypeForMapDecoder
+	return anyDecodingSizeForMapDecoder, nil
 }
 
 type mapTestType struct {

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"net"
 	"sync"
@@ -12,8 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-
-	"context"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/mitchellh/mapstructure"
@@ -102,6 +101,16 @@ func TestChainReaderClient(t *testing.T) {
 
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
+			assert.IsType(t, errorType, err)
+		})
+
+		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			_, err := client.GetMaxEncodingSize(ctx, 1, "anything")
+			assert.IsType(t, errorType, err)
+		})
+
+		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			_, err := client.GetMaxDecodingSize(ctx, 1, "anything")
 			assert.IsType(t, errorType, err)
 		})
 	}
@@ -204,6 +213,18 @@ type fakeCodecServer struct {
 	lock     *sync.Mutex
 }
 
+func (f *fakeCodecServer) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	return f.GetMaxEncodingSize(ctx, n, itemType)
+}
+
+func (f *fakeCodecServer) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	switch itemType {
+	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
+		return 1, nil
+	}
+	return 0, types.InvalidTypeError{}
+}
+
 func (f *fakeCodecServer) SetLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -272,6 +293,10 @@ func (e *errorServer) GetEncoding(context.Context, *pb.GetEncodingRequest) (*pb.
 }
 
 func (e *errorServer) GetDecoding(context.Context, *pb.GetDecodingRequest) (*pb.GetDecodingResponse, error) {
+	return nil, e.err
+}
+
+func (e *errorServer) GetMaxSize(context.Context, *pb.GetMaxSizeRequest) (*pb.GetMaxSizeResponse, error) {
 	return nil, e.err
 }
 

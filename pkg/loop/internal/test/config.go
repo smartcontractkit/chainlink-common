@@ -107,7 +107,7 @@ func (c staticChainReader) Decode(ctx context.Context, raw []byte, into any, ite
 	return errors.New("not used for these test")
 }
 
-func (f staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, returnVal any) error {
+func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(bc, boundContract) {
 		return fmt.Errorf("expected report context %v but got %v", boundContract, bc)
 	}

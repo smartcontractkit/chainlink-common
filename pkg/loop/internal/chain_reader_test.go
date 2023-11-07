@@ -143,6 +143,15 @@ type interfaceTester struct {
 
 const methodName = "method"
 
+var encoder = makeEncoder()
+
+func makeEncoder() cbor.EncMode {
+	opts := cbor.CoreDetEncOptions()
+	opts.Sort = cbor.SortCanonical
+	e, _ := opts.EncMode()
+	return e
+}
+
 func (it *interfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) (types.BoundContract, string) {
 	it.fs.SetLatestValue(testStruct)
 	return types.BoundContract{}, methodName
@@ -150,12 +159,12 @@ func (it *interfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) 
 
 func (it *interfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) ocrtypes.Report {
 	if request.TestOn == TestItemType {
-		bytes, err := cbor.Marshal(request.TestStructs[0])
+		bytes, err := encoder.Marshal(request.TestStructs[0])
 		require.NoError(t, err)
 		return bytes
 	}
 
-	bytes, err := cbor.Marshal(request.TestStructs)
+	bytes, err := encoder.Marshal(request.TestStructs)
 	require.NoError(t, err)
 	return bytes
 }
@@ -244,7 +253,7 @@ func (f *fakeCodecServer) Encode(_ context.Context, item any, itemType string) (
 	f.lastItem = item
 	switch itemType {
 	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
-		return cbor.Marshal(item)
+		return encoder.Marshal(item)
 	}
 	return nil, types.InvalidTypeError{}
 }

@@ -64,6 +64,61 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			require.NoError(t, codec.Decode(ctx, actualEncoding, &into, TestItemType))
 			assert.Equal(t, item, into)
 		},
+		"Encodes compatible types": func(t *testing.T) {
+			item := CreateTestStruct(0, tester.GetAccountBytes)
+			req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
+			resp := tester.EncodeFields(t, req)
+			compatibleItem := compatibleTestStruct{
+				Account:        item.Account,
+				Accounts:       item.Accounts,
+				BigField:       item.BigField,
+				DifferentField: item.DifferentField,
+				Field:          item.Field,
+				NestedStruct:   item.NestedStruct,
+				OracleId:       item.OracleId,
+				OracleIds:      item.OracleIds,
+			}
+
+			codec := tester.GetChainReader(t)
+			actualEncoding, err := codec.Encode(ctx, compatibleItem, TestItemType)
+			require.NoError(t, err)
+			assert.Equal(t, resp, actualEncoding)
+
+			into := TestStruct{}
+			require.NoError(t, codec.Decode(ctx, actualEncoding, &into, TestItemType))
+			assert.Equal(t, item, into)
+		},
+		"Encodes compatible maps": func(t *testing.T) {
+			item := CreateTestStruct(0, tester.GetAccountBytes)
+			req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
+			resp := tester.EncodeFields(t, req)
+			compatibleMap := map[string]any{
+				"Account":        item.Account,
+				"Accounts":       item.Accounts,
+				"BigField":       item.BigField,
+				"DifferentField": item.DifferentField,
+				"Field":          item.Field,
+				"NestedStruct": map[string]any{
+					// since we're testing compatibility, also use slice instead of array
+					"FixedBytes": item.NestedStruct.FixedBytes[:],
+					"Inner": map[string]any{
+						"I": item.NestedStruct.Inner.I,
+						"S": item.NestedStruct.Inner.S,
+					},
+				},
+				"OracleId":  item.OracleId,
+				"OracleIds": item.OracleIds,
+			}
+
+			codec := tester.GetChainReader(t)
+			actualEncoding, err := codec.Encode(ctx, compatibleMap, TestItemType)
+			require.NoError(t, err)
+			assert.Equal(t, resp, actualEncoding)
+
+			into := TestStruct{}
+			require.NoError(t, codec.Decode(ctx, actualEncoding, &into, TestItemType))
+			assert.Equal(t, item, into)
+		},
 		"Encodes and decodes a slice": func(t *testing.T) {
 			item1 := CreateTestStruct(0, tester.GetAccountBytes)
 			item2 := CreateTestStruct(1, tester.GetAccountBytes)
@@ -267,7 +322,6 @@ func runTests(t *testing.T, tester ChainReaderInterfaceTester, tests map[string]
 type InnerTestStruct struct {
 	I int
 	S string
-	M map[string]int
 }
 
 type MidLevelTestStruct struct {
@@ -284,6 +338,18 @@ type TestStruct struct {
 	Accounts       [][]byte
 	BigField       *big.Int
 	NestedStruct   MidLevelTestStruct
+}
+
+// compatibleTestStruct has fields in a different order
+type compatibleTestStruct struct {
+	Account        []byte
+	Accounts       [][]byte
+	BigField       *big.Int
+	DifferentField string
+	Field          int32
+	NestedStruct   MidLevelTestStruct
+	OracleId       commontypes.OracleID
+	OracleIds      [32]commontypes.OracleID
 }
 
 type LatestParams struct {
@@ -305,10 +371,6 @@ func CreateTestStruct(i int, accGen func(int) []byte) TestStruct {
 			Inner: InnerTestStruct{
 				I: i,
 				S: s,
-				M: map[string]int{
-					s:    i,
-					"hi": i + 1,
-				},
 			},
 		},
 	}

@@ -178,6 +178,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			assert.Equal(t, &firstItem, actual)
 
 			params.I = 2
+			actual = &TestStruct{}
 			require.NoError(t, cr.GetLatestValue(ctx, bc, method, params, actual))
 			assert.Equal(t, &secondItem, actual)
 		},

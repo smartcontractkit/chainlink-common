@@ -126,7 +126,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			assert.Equal(t, resp, actualEncoding)
 
 			var into [1]TestStruct
-			require.NoError(t, codec.Decode(ctx, actualEncoding, &into, TestItemArray2Type))
+			require.NoError(t, codec.Decode(ctx, actualEncoding, &into, TestItemArray1Type))
 			assert.Equal(t, items, into)
 		},
 		"Returns an error if type is undefined": func(t *testing.T) {

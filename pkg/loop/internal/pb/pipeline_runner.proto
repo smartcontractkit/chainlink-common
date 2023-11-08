@@ -17,14 +17,22 @@ message RunRequest {
   Options options = 3;
 }
 
+message Value {
+  string type = 1;
+  bytes value = 2;
+}
+
 message TaskResult {
   string id = 1;
   string type = 2;
-  google.protobuf.Value value = 3;
-  string error = 4;
-  bool has_error = 5;
-  bool is_terminal = 6;
-  int32 index = 7;
+  oneof value {
+    google.protobuf.Value primitive = 3; // TODO: naming
+    Value complex = 4;
+  }
+  string error = 5;
+  bool has_error = 6;
+  bool is_terminal = 7;
+  int32 index = 8;
 }
 
 message RunResponse {

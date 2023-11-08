@@ -2,11 +2,14 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
@@ -48,15 +51,36 @@ func (p pipelineRunnerServiceClient) ExecuteRun(ctx context.Context, spec string
 		if trr.HasError {
 			err = errors.New(trr.Error)
 		}
-		trs[i] = types.TaskResult{
-			ID:   trr.Id,
-			Type: trr.Type,
-			TaskValue: types.TaskValue{
-				Value:      trr.Value.AsInterface(),
+		var tv types.TaskValue
+		if trr.GetPrimitive() != nil {
+			tv = types.TaskValue{
+				Value:      trr.GetPrimitive().AsInterface(),
 				Error:      err,
 				IsTerminal: trr.IsTerminal,
-			},
-			Index: int(trr.Index),
+			}
+		} else {
+			c := trr.GetComplex()
+			var v interface{}
+			switch c.Type {
+			case "decimal.Decimal":
+				d := decimal.Zero
+				err = json.Unmarshal(c.Value, &d)
+				if err != nil {
+					return nil, err
+				}
+				v = d
+			}
+			tv = types.TaskValue{
+				Value:      v,
+				Error:      err,
+				IsTerminal: trr.IsTerminal,
+			}
+		}
+		trs[i] = types.TaskResult{
+			ID:        trr.Id,
+			Type:      trr.Type,
+			TaskValue: tv,
+			Index:     int(trr.Index),
 		}
 	}
 
@@ -86,25 +110,42 @@ func (p *pipelineRunnerServiceServer) ExecuteRun(ctx context.Context, rr *pb.Run
 
 	taskResults := make([]*pb.TaskResult, len(trs))
 	for i, trr := range trs {
-		v, err := structpb.NewValue(trr.Value)
-		if err != nil {
-			return nil, err
-		}
-
 		hasError := trr.Error != nil
 		errs := ""
 		if hasError {
 			errs = trr.Error.Error()
 		}
-		taskResults[i] = &pb.TaskResult{
+		tr := &pb.TaskResult{
 			Id:         trr.ID,
 			Type:       trr.Type,
-			Value:      v,
 			Error:      errs,
 			HasError:   hasError,
 			IsTerminal: trr.IsTerminal,
 			Index:      int32(trr.Index),
 		}
+		switch trr.Value.(type) {
+		case decimal.Decimal:
+			b, err := json.Marshal(trr.Value)
+			if err != nil {
+				return nil, err
+			}
+			tr.Value = &pb.TaskResult_Complex{
+				Complex: &pb.Value{
+					Type:  "decimal.Decimal",
+					Value: b,
+				},
+			}
+		default:
+			v, err := structpb.NewValue(trr.Value)
+			if err != nil {
+				return nil, err
+			}
+			tr.Value = &pb.TaskResult_Primitive{
+				Primitive: v,
+			}
+		}
+
+		taskResults[i] = tr
 	}
 
 	return &pb.RunResponse{

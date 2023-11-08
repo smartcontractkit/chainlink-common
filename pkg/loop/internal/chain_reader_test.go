@@ -30,7 +30,7 @@ func TestVersionedBytesFunctionsBadPaths(t *testing.T) {
 		invalidData := make(chan int)
 
 		_, err := encodeVersionedBytes(invalidData, SimpleJsonEncodingVersion)
-		if err == nil || err.Error() != expected.Error() {
+		if err == nil || !errors.Is(err, expected) {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
@@ -117,20 +117,22 @@ func TestChainReaderClient(t *testing.T) {
 
 	// make sure that errors come from client directly
 	es.err = nil
+	var invalidTypeErr types.InvalidTypeError
 
 	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
-		assert.IsType(t, types.InvalidTypeError{}, err)
+
+		assert.NotNil(t, errors.As(err, &invalidTypeErr))
 	})
 
 	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
 		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
-		assert.IsType(t, types.InvalidTypeError{}, err)
+		assert.NotNil(t, errors.As(err, &invalidTypeErr))
 	})
 
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
-		assert.IsType(t, types.InvalidTypeError{}, err)
+		assert.NotNil(t, errors.As(err, &invalidTypeErr))
 	})
 }
 

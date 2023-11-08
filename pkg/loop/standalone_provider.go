@@ -1,7 +1,6 @@
 package loop
 
 import (
-	"errors"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -17,11 +16,11 @@ func RegisterStandAloneProvider(s *grpc.Server, p types.PluginProvider, pType ty
 	case types.Median:
 		mp, ok := p.(types.MedianProvider)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected median provider got %T", p))
+			return fmt.Errorf("expected median provider got %T", p)
 		}
 		internal.RegisterStandAloneMedianProvider(s, mp)
 		return nil
 	default:
-		return errors.New(fmt.Sprintf("stand alone provider only supports median, got %q", pType))
+		return fmt.Errorf("stand alone provider only supports median, got %q", pType)
 	}
 }

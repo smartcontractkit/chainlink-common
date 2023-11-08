@@ -24,12 +24,12 @@ import (
 	. "github.com/smartcontractkit/chainlink-relay/pkg/types/interfacetests"
 )
 
-func TestVersionedBytesFunctionsBadPaths(t *testing.T) {
+func TestVersionedBytesFunctions(t *testing.T) {
 	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
 		expected := types.InvalidTypeError{}
 		invalidData := make(chan int)
 
-		_, err := encodeVersionedBytes(invalidData, SimpleJsonEncodingVersion)
+		_, err := encodeVersionedBytes(invalidData, JSONEncodingVersion)
 		if err == nil || !errors.Is(err, expected) {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
@@ -59,6 +59,36 @@ func TestVersionedBytesFunctionsBadPaths(t *testing.T) {
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
+	})
+
+	t.Run("detect json array with leading whitespace", func(t *testing.T) {
+		// Non-array with leading whitespace
+		versionedBytes := &pb.VersionedBytes{
+			Version: 0, // json
+			Data:    []byte("\n { 'key' : 'value' } "),
+		}
+		b, err := isArray(versionedBytes)
+		assert.NoError(t, err)
+		assert.False(t, b)
+		versionedBytesArray := &pb.VersionedBytes{
+			Version: 0, // json
+			Data:    []byte("\n [ 1, 2, 3 ] "),
+		}
+
+		// Array with leading whitespace
+		b, err = isArray(versionedBytesArray)
+		assert.NoError(t, err)
+		assert.True(t, b)
+
+		// All whitespace
+		versionedBytesAllWhitespace := &pb.VersionedBytes{
+			Version: 0, // json
+			Data:    []byte(" \t "),
+		}
+		b, err = isArray(versionedBytesAllWhitespace)
+		assert.NoError(t, err)
+		assert.False(t, b)
+
 	})
 }
 

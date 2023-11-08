@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -37,6 +38,8 @@ func (c *clientAdapter) ExecuteRun(ctx context.Context, in *pb.RunRequest, opts 
 }
 
 func TestPipelineRunnerService(t *testing.T) {
+	dec, err := decimal.NewFromString("1.03")
+	require.NoError(t, err)
 	originalResults := []types.TaskResult{
 		{
 			ID: "1",
@@ -49,6 +52,13 @@ func TestPipelineRunnerService(t *testing.T) {
 			ID: "2",
 			TaskValue: types.TaskValue{
 				Error: errors.New("Error task"),
+			},
+			Index: 1,
+		},
+		{
+			ID: "3",
+			TaskValue: types.TaskValue{
+				Value: dec,
 			},
 			Index: 1,
 		},

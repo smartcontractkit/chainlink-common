@@ -3,10 +3,15 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -44,19 +49,46 @@ func (p pipelineRunnerServiceClient) ExecuteRun(ctx context.Context, spec string
 
 	trs := make([]types.TaskResult, len(executeRunResult.Results))
 	for i, trr := range executeRunResult.Results {
-		var err error
+		var taskErr error
 		if trr.HasError {
-			err = errors.New(trr.Error)
+			taskErr = errors.New(trr.Error)
 		}
+
+		var v any
+		switch {
+		case trr.Value.MessageIs(&pb.Decimal{}):
+			d := &pb.Decimal{}
+			err := trr.Value.UnmarshalTo(d)
+			if err != nil {
+				return nil, err
+			}
+			dec, err := decimal.NewFromString(d.Decimal)
+			if err != nil {
+				return nil, err
+			}
+			v = dec
+		case trr.Value.MessageIs(&structpb.Value{}):
+			val := &structpb.Value{}
+			err := trr.Value.UnmarshalTo(val)
+			if err != nil {
+				return nil, err
+			}
+			v = val.AsInterface()
+		default:
+			return nil, fmt.Errorf("could not unmarshal value: %+v", trr.Value)
+		}
+
+		tv := types.TaskValue{
+			Value:      v,
+			Error:      taskErr,
+			IsTerminal: trr.IsTerminal,
+		}
+
 		trs[i] = types.TaskResult{
-			ID:   trr.Id,
-			Type: trr.Type,
-			TaskValue: types.TaskValue{
-				Value:      trr.Value.AsInterface(),
-				Error:      err,
-				IsTerminal: trr.IsTerminal,
-			},
-			Index: int(trr.Index),
+			ID:        trr.Id,
+			Type:      trr.Type,
+			TaskValue: tv,
+			Index:     int(trr.Index),
 		}
 	}
 
@@ -86,24 +118,37 @@ func (p *pipelineRunnerServiceServer) ExecuteRun(ctx context.Context, rr *pb.Run
 
 	taskResults := make([]*pb.TaskResult, len(trs))
 	for i, trr := range trs {
-		v, err := structpb.NewValue(trr.Value)
-		if err != nil {
-			return nil, err
-		}
-
 		hasError := trr.Error != nil
 		errs := ""
 		if hasError {
 			errs = trr.Error.Error()
 		}
+
+		var msg proto.Message
+		switch tv := trr.Value.(type) {
+		case decimal.Decimal:
+			msg = &pb.Decimal{Decimal: tv.String()}
+		default:
+			v, err := structpb.NewValue(trr.Value)
+			if err != nil {
+				return nil, err
+			}
+			msg = v
+		}
+
+		anyproto, err := anypb.New(msg)
+		if err != nil {
+			return nil, err
+		}
+
 		taskResults[i] = &pb.TaskResult{
 			Id:         trr.ID,
 			Type:       trr.Type,
-			Value:      v,
 			Error:      errs,
 			HasError:   hasError,
 			IsTerminal: trr.IsTerminal,
 			Index:      int32(trr.Index),
+			Value:      anyproto,
 		}
 	}
 

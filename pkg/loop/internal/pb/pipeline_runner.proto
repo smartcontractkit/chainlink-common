@@ -6,6 +6,7 @@ package loop;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
 
 message Options {
   google.protobuf.Duration max_task_duration = 2;
@@ -20,7 +21,7 @@ message RunRequest {
 message TaskResult {
   string id = 1;
   string type = 2;
-  google.protobuf.Value value = 3;
+  google.protobuf.Any value = 3;
   string error = 4;
   bool has_error = 5;
   bool is_terminal = 6;

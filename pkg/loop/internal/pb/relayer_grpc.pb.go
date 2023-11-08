@@ -1021,22 +1021,16 @@ var ContractTransmitter_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ChainReader_RegisterEventFilter_FullMethodName   = "/loop.ChainReader/RegisterEventFilter"
-	ChainReader_UnregisterEventFilter_FullMethodName = "/loop.ChainReader/UnregisterEventFilter"
-	ChainReader_QueryEvents_FullMethodName           = "/loop.ChainReader/QueryEvents"
-	ChainReader_GetLatestValue_FullMethodName        = "/loop.ChainReader/GetLatestValue"
-	ChainReader_GetEncoding_FullMethodName           = "/loop.ChainReader/GetEncoding"
-	ChainReader_GetDecoding_FullMethodName           = "/loop.ChainReader/GetDecoding"
-	ChainReader_GetMaxSize_FullMethodName            = "/loop.ChainReader/GetMaxSize"
+	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
+	ChainReader_GetEncoding_FullMethodName    = "/loop.ChainReader/GetEncoding"
+	ChainReader_GetDecoding_FullMethodName    = "/loop.ChainReader/GetDecoding"
+	ChainReader_GetMaxSize_FullMethodName     = "/loop.ChainReader/GetMaxSize"
 )
 
 // ChainReaderClient is the client API for ChainReader service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
-	RegisterEventFilter(ctx context.Context, in *RegisterEventFilterRequest, opts ...grpc.CallOption) (*RegisterEventFilterReply, error)
-	UnregisterEventFilter(ctx context.Context, in *UnregisterEventFilterRequest, opts ...grpc.CallOption) (*RegisterEventFilterReply, error)
-	QueryEvents(ctx context.Context, in *QueryEventsRequest, opts ...grpc.CallOption) (*QueryEventsReply, error)
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
 	GetEncoding(ctx context.Context, in *GetEncodingRequest, opts ...grpc.CallOption) (*GetEncodingResponse, error)
 	GetDecoding(ctx context.Context, in *GetDecodingRequest, opts ...grpc.CallOption) (*GetDecodingResponse, error)
@@ -1049,33 +1043,6 @@ type chainReaderClient struct {
 
 func NewChainReaderClient(cc grpc.ClientConnInterface) ChainReaderClient {
 	return &chainReaderClient{cc}
-}
-
-func (c *chainReaderClient) RegisterEventFilter(ctx context.Context, in *RegisterEventFilterRequest, opts ...grpc.CallOption) (*RegisterEventFilterReply, error) {
-	out := new(RegisterEventFilterReply)
-	err := c.cc.Invoke(ctx, ChainReader_RegisterEventFilter_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *chainReaderClient) UnregisterEventFilter(ctx context.Context, in *UnregisterEventFilterRequest, opts ...grpc.CallOption) (*RegisterEventFilterReply, error) {
-	out := new(RegisterEventFilterReply)
-	err := c.cc.Invoke(ctx, ChainReader_UnregisterEventFilter_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *chainReaderClient) QueryEvents(ctx context.Context, in *QueryEventsRequest, opts ...grpc.CallOption) (*QueryEventsReply, error) {
-	out := new(QueryEventsReply)
-	err := c.cc.Invoke(ctx, ChainReader_QueryEvents_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error) {
@@ -1118,9 +1085,6 @@ func (c *chainReaderClient) GetMaxSize(ctx context.Context, in *GetMaxSizeReques
 // All implementations must embed UnimplementedChainReaderServer
 // for forward compatibility
 type ChainReaderServer interface {
-	RegisterEventFilter(context.Context, *RegisterEventFilterRequest) (*RegisterEventFilterReply, error)
-	UnregisterEventFilter(context.Context, *UnregisterEventFilterRequest) (*RegisterEventFilterReply, error)
-	QueryEvents(context.Context, *QueryEventsRequest) (*QueryEventsReply, error)
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
 	GetEncoding(context.Context, *GetEncodingRequest) (*GetEncodingResponse, error)
 	GetDecoding(context.Context, *GetDecodingRequest) (*GetDecodingResponse, error)
@@ -1132,15 +1096,6 @@ type ChainReaderServer interface {
 type UnimplementedChainReaderServer struct {
 }
 
-func (UnimplementedChainReaderServer) RegisterEventFilter(context.Context, *RegisterEventFilterRequest) (*RegisterEventFilterReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterEventFilter not implemented")
-}
-func (UnimplementedChainReaderServer) UnregisterEventFilter(context.Context, *UnregisterEventFilterRequest) (*RegisterEventFilterReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnregisterEventFilter not implemented")
-}
-func (UnimplementedChainReaderServer) QueryEvents(context.Context, *QueryEventsRequest) (*QueryEventsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryEvents not implemented")
-}
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
 }
@@ -1164,60 +1119,6 @@ type UnsafeChainReaderServer interface {
 
 func RegisterChainReaderServer(s grpc.ServiceRegistrar, srv ChainReaderServer) {
 	s.RegisterService(&ChainReader_ServiceDesc, srv)
-}
-
-func _ChainReader_RegisterEventFilter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterEventFilterRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).RegisterEventFilter(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_RegisterEventFilter_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).RegisterEventFilter(ctx, req.(*RegisterEventFilterRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChainReader_UnregisterEventFilter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnregisterEventFilterRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).UnregisterEventFilter(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_UnregisterEventFilter_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).UnregisterEventFilter(ctx, req.(*UnregisterEventFilterRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChainReader_QueryEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryEventsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).QueryEvents(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_QueryEvents_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).QueryEvents(ctx, req.(*QueryEventsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _ChainReader_GetLatestValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1299,18 +1200,6 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.ChainReader",
 	HandlerType: (*ChainReaderServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "RegisterEventFilter",
-			Handler:    _ChainReader_RegisterEventFilter_Handler,
-		},
-		{
-			MethodName: "UnregisterEventFilter",
-			Handler:    _ChainReader_UnregisterEventFilter_Handler,
-		},
-		{
-			MethodName: "QueryEvents",
-			Handler:    _ChainReader_QueryEvents_Handler,
-		},
 		{
 			MethodName: "GetLatestValue",
 			Handler:    _ChainReader_GetLatestValue_Handler,

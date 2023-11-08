@@ -18,5 +18,5 @@ type Plugin = PluginProvider
 type PluginProvider interface {
 	ConfigProvider
 	ContractTransmitter() ocrtypes.ContractTransmitter
-	ChainReader() ChainReader
+	// Coming Soon:  ChainReader() ChainReader
 }

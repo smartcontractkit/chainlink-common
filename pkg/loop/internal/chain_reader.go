@@ -249,15 +249,15 @@ func (c *chainReaderServer) GetMaxSize(ctx context.Context, req *pb.GetMaxSizeRe
 	return &pb.GetMaxSizeResponse{SizeInBytes: int32(maxSize)}, nil
 }
 
-func (c *chainReaderServer) RegisterEventFilter(ctx context.Context, in *pb.RegisterEventFilterRequest) (*pb.RegisterEventFilterReply, error) {
-	return nil, nil
-}
-func (c *chainReaderServer) UnregisterEventFilter(ctx context.Context, in *pb.UnregisterEventFilterRequest) (*pb.RegisterEventFilterReply, error) {
-	return nil, nil
-}
-func (c *chainReaderServer) QueryEvents(ctx context.Context, in *pb.QueryEventsRequest) (*pb.QueryEventsReply, error) {
-	return nil, nil
-}
+//func (c *chainReaderServer) RegisterEventFilter(ctx context.Context, in *pb.RegisterEventFilterRequest) (*pb.RegisterEventFilterReply, error) {
+//	return nil, nil
+//}
+//func (c *chainReaderServer) UnregisterEventFilter(ctx context.Context, in *pb.UnregisterEventFilterRequest) (*pb.RegisterEventFilterReply, error) {
+//	return nil, nil
+//}
+//func (c *chainReaderServer) QueryEvents(ctx context.Context, in *pb.QueryEventsRequest) (*pb.QueryEventsReply, error) {
+//	return nil, nil
+//}
 
 func (c *chainReaderServer) getEncodedType(itemType string, forceArray bool, forEncoding bool) (any, error) {
 	if rc, ok := c.impl.(types.RemoteCodec); ok {

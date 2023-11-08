@@ -65,7 +65,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 				pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
 				pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 				pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
-				pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+				//pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
 				pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 				pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
 				pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})

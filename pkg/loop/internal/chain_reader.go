@@ -53,7 +53,7 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	}
 
 	if err != nil {
-		return nil, types.InvalidTypeError{}
+		return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
 	}
 	return &pb.VersionedBytes{Version: uint32(version), Data: bytes}, nil
 }
@@ -70,7 +70,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	}
 
 	if err != nil {
-		return types.InvalidTypeError{}
+		return fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
 	}
 	return nil
 }

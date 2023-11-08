@@ -24,23 +24,23 @@ type chainReaderClient struct {
 
 // enum of all known encoding formats for versioned data
 const (
-	SimpleJsonEncodingVersion = iota
-	CborEncodingVersion
+	JSONEncodingVersion = iota
+	CBOREncodingVersion
 )
 
 // Version to be used for encoding ( version used for decoding is determined by data received )
 // These are separate constants in case we want to upgrade their data formats independently
-const ParamsCurrentEncodingVersion = CborEncodingVersion
-const RetvalCurrentEncodingVersion = CborEncodingVersion
+const ParamsCurrentEncodingVersion = CBOREncodingVersion
+const RetvalCurrentEncodingVersion = CBOREncodingVersion
 
 func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	var bytes []byte
 	var err error
 
 	switch version {
-	case SimpleJsonEncodingVersion:
+	case JSONEncodingVersion:
 		bytes, err = json.Marshal(data)
-	case CborEncodingVersion:
+	case CBOREncodingVersion:
 		enco := cbor.CoreDetEncOptions()
 		enco.Time = cbor.TimeRFC3339Nano
 		var enc cbor.EncMode
@@ -62,9 +62,9 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	var err error
 	switch vData.Version {
-	case SimpleJsonEncodingVersion:
+	case JSONEncodingVersion:
 		err = json.Unmarshal(vData.Data, res)
-	case CborEncodingVersion:
+	case CBOREncodingVersion:
 		err = cbor.Unmarshal(vData.Data, res)
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
@@ -80,7 +80,7 @@ func isArray(vData *pb.VersionedBytes) (bool, error) {
 	data := vData.Data
 	if len(data) > 0 {
 		switch vData.Version {
-		case SimpleJsonEncodingVersion:
+		case JSONEncodingVersion:
 			i := int(0)
 			for ; i < len(data); i++ {
 				if !unicode.IsSpace(rune(data[i])) {
@@ -88,7 +88,7 @@ func isArray(vData *pb.VersionedBytes) (bool, error) {
 				}
 			}
 			return i == len(data) || data[i] == '[', nil
-		case CborEncodingVersion:
+		case CBOREncodingVersion:
 
 			// Major type for array in CBOR is 4 which is 100 in binary.
 			// So, we are checking if the first 3 bits are 100.

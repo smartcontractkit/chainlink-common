@@ -43,8 +43,6 @@ type Transmitter interface {
 }
 
 type ChainReader interface {
-	// Head returns the current chain head
-	Head(context.Context) (Block, error)
 	// LatestBlocks returns an ordered list of the latest specified number of blocks
 	LatestBlocks(context.Context, int) ([]Block, error)
 }

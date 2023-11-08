@@ -44,10 +44,10 @@ type Transmitter interface {
 
 type ChainReader interface {
 	// LatestBlocks returns an ordered list of the latest specified number of blocks
-	LatestBlocks(context.Context, int) ([]Block, error)
+	LatestBlocks(context.Context, int) ([]Head, error)
 }
 
-type Block struct {
+type Head struct {
 	Number    uint64
 	Hash      []byte
 	Timestamp uint64

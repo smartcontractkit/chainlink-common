@@ -87,7 +87,7 @@ func isArray(vData *pb.VersionedBytes) (bool, error) {
 					break
 				}
 			}
-			return i == len(data) || data[i] == '[', nil
+			return i < len(data) && data[i] == '[', nil
 		case CBOREncodingVersion:
 
 			// Major type for array in CBOR is 4 which is 100 in binary.

@@ -184,7 +184,7 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-func (it *interfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) (types.BoundContract, string) {
+func (it *interfaceTester) SetLatestValue(t *testing.T, ctx context.Context, testStruct *TestStruct) (types.BoundContract, string) {
 	it.fs.SetLatestValue(testStruct)
 	return types.BoundContract{}, methodName
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"unicode"
 
 	"github.com/fxamacker/cbor/v2"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
@@ -80,7 +81,13 @@ func isArray(vData *pb.VersionedBytes) (bool, error) {
 	if len(data) > 0 {
 		switch vData.Version {
 		case SimpleJsonEncodingVersion:
-			return data[0] == '[', nil
+			i := int(0)
+			for ; i < len(data); i++ {
+				if !unicode.IsSpace(rune(data[i])) {
+					break
+				}
+			}
+			return i == len(data) || data[i] == '[', nil
 		case CborEncodingVersion:
 
 			// Major type for array in CBOR is 4 which is 100 in binary.

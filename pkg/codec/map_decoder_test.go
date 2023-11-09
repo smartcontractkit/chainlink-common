@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/codec"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 const (
@@ -34,7 +34,7 @@ func TestMapDecoder(t *testing.T) {
 		anyValue2 := 122
 		anySingleResult := map[string]any{field1: anyValue1, field2: anyValue2}
 		tmd := &testMapDecoder{resultSingle: anySingleResult}
-		decoder, err := codec.DecoderFromMapDecoder(tmd)
+		decoder, err := utils.DecoderFromMapDecoder(tmd)
 		assert.NoError(t, err)
 
 		err = decoder.Decode(context.Background(), anyRawBytes, item, anyItemTypeForMapDecoder)
@@ -57,7 +57,7 @@ func TestMapDecoder(t *testing.T) {
 		anyValue2 := 13
 		anySingleResult := map[string]any{field1: anyValue1, field2: anyValue2}
 		tmd := &testMapDecoder{resultSingle: anySingleResult}
-		decoder, err := codec.DecoderFromMapDecoder(tmd)
+		decoder, err := utils.DecoderFromMapDecoder(tmd)
 		assert.NoError(t, err)
 
 		err = decoder.Decode(context.Background(), anyRawBytes, item, anyItemTypeForMapDecoder)
@@ -74,13 +74,13 @@ func TestMapDecoder(t *testing.T) {
 	})
 
 	t.Run("Decode returns an error for nil argument", func(t *testing.T) {
-		_, err := codec.DecoderFromMapDecoder(nil)
+		_, err := utils.DecoderFromMapDecoder(nil)
 		assert.Error(t, err)
 	})
 
 	t.Run("GetMaxDecodingSize delegates", func(t *testing.T) {
 		tmd := &testMapDecoder{}
-		decoder, err := codec.DecoderFromMapDecoder(tmd)
+		decoder, err := utils.DecoderFromMapDecoder(tmd)
 		require.NoError(t, err)
 
 		maxSize, err := decoder.GetMaxDecodingSize(context.Background(), anyNElementsForMapDecoder, anyItemTypeForMapDecoder)
@@ -98,19 +98,19 @@ func TestVerifyFieldMaps(t *testing.T) {
 		anyKey2: 2,
 	}
 	t.Run("returns nil if fields match", func(t *testing.T) {
-		assert.NoError(t, codec.VerifyFieldMaps([]string{anyKey1, anyKey2}, input))
+		assert.NoError(t, utils.VerifyFieldMaps([]string{anyKey1, anyKey2}, input))
 	})
 
 	t.Run("returns error if field is missing", func(t *testing.T) {
-		assert.IsType(t, types.InvalidEncodingError{}, codec.VerifyFieldMaps([]string{anyKey1, anyKey2, "missing"}, input))
+		assert.IsType(t, types.InvalidEncodingError{}, utils.VerifyFieldMaps([]string{anyKey1, anyKey2, "missing"}, input))
 	})
 
 	t.Run("returns error for extra key", func(t *testing.T) {
-		assert.IsType(t, types.InvalidEncodingError{}, codec.VerifyFieldMaps([]string{anyKey1}, input))
+		assert.IsType(t, types.InvalidEncodingError{}, utils.VerifyFieldMaps([]string{anyKey1}, input))
 	})
 
 	t.Run("returns error if keys do not match", func(t *testing.T) {
-		assert.IsType(t, types.InvalidEncodingError{}, codec.VerifyFieldMaps([]string{anyKey1, "new key"}, input))
+		assert.IsType(t, types.InvalidEncodingError{}, utils.VerifyFieldMaps([]string{anyKey1, "new key"}, input))
 	})
 }
 
@@ -134,7 +134,7 @@ func TestBigIntHook(t *testing.T) {
 	for _, intType := range intTypes {
 		t.Run(fmt.Sprintf("Fits conversion %v", intType.Type), func(t *testing.T) {
 			anyValidNumber := big.NewInt(5)
-			result, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, anyValidNumber)
+			result, err := utils.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, anyValidNumber)
 			require.NoError(t, err)
 			require.IsType(t, reflect.New(intType.Type).Elem().Interface(), result)
 			if intType.Min.Cmp(big.NewInt(0)) == 0 {
@@ -150,20 +150,20 @@ func TestBigIntHook(t *testing.T) {
 
 		t.Run("Overflow return an error "+intType.Type.String(), func(t *testing.T) {
 			bigger := new(big.Int).Add(intType.Max, big.NewInt(1))
-			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
+			_, err := utils.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
 			assert.IsType(t, types.InvalidTypeError{}, err)
 		})
 
 		t.Run("Underflow return an error "+intType.Type.String(), func(t *testing.T) {
 			smaller := new(big.Int).Sub(intType.Min, big.NewInt(1))
-			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
+			_, err := utils.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
 			assert.IsType(t, types.InvalidTypeError{}, err)
 		})
 
 		t.Run("Converts from "+intType.Type.String(), func(t *testing.T) {
 			anyValidNumber := int64(5)
 			asType := reflect.ValueOf(anyValidNumber).Convert(intType.Type).Interface()
-			result, err := codec.BigIntHook(intType.Type, reflect.TypeOf((*big.Int)(nil)), asType)
+			result, err := utils.BigIntHook(intType.Type, reflect.TypeOf((*big.Int)(nil)), asType)
 			require.NoError(t, err)
 			bi, ok := result.(*big.Int)
 			require.True(t, ok)
@@ -173,7 +173,7 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Converts from string", func(t *testing.T) {
 		anyNumber := int64(5)
-		result, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), strconv.FormatInt(anyNumber, 10))
+		result, err := utils.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), strconv.FormatInt(anyNumber, 10))
 		require.NoError(t, err)
 		bi, ok := result.(*big.Int)
 		require.True(t, ok)
@@ -182,13 +182,13 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Converts to string", func(t *testing.T) {
 		anyNumber := int64(5)
-		result, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), reflect.TypeOf(""), big.NewInt(anyNumber))
+		result, err := utils.BigIntHook(reflect.TypeOf((*big.Int)(nil)), reflect.TypeOf(""), big.NewInt(anyNumber))
 		require.NoError(t, err)
 		assert.Equal(t, strconv.FormatInt(anyNumber, 10), result)
 	})
 
 	t.Run("Errors for invalid string", func(t *testing.T) {
-		_, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
+		_, err := utils.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
 		require.IsType(t, types.InvalidTypeError{}, err)
 	})
 }
@@ -206,7 +206,7 @@ func runSliceArrayDecodeTest(t *testing.T, item any) {
 	}
 	// template is being used to provide the types
 	tmd := &testMapDecoder{resultMany: anyManyResult}
-	decoder, err := codec.DecoderFromMapDecoder(tmd)
+	decoder, err := utils.DecoderFromMapDecoder(tmd)
 	assert.NoError(t, err)
 
 	err = decoder.Decode(context.Background(), anyRawBytes, item, anyItemTypeForMapDecoder)
@@ -228,7 +228,7 @@ func testWrongArraySize(t *testing.T, item any) {
 		{field1: anyValue2, field2: anyValue1},
 	}
 	tmd := &testMapDecoder{resultMany: anyManyResult}
-	decoder, err := codec.DecoderFromMapDecoder(tmd)
+	decoder, err := utils.DecoderFromMapDecoder(tmd)
 	assert.NoError(t, err)
 
 	err = decoder.Decode(context.Background(), anyRawBytes, item, anyItemTypeForMapDecoder)

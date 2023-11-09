@@ -2,7 +2,6 @@ package loop
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"os"
 	"runtime/debug"
@@ -39,6 +38,9 @@ type TracingConfig struct {
 
 	// SamplingRatio is the ratio of traces to sample. 1.0 means sample all traces.
 	SamplingRatio float64
+
+	// OnDialError is called when the dialer fails, providing an opportunity to log.
+	OnDialError func(error)
 }
 
 // NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
@@ -70,7 +72,7 @@ func SetupTracing(config TracingConfig) error {
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 			conn, err := net.Dial("tcp", s)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to dial: %v", err)
+				config.OnDialError(err)
 			}
 			return conn, err
 		}))

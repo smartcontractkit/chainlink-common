@@ -1,4 +1,4 @@
-package utils_test
+package codec_test
 
 import (
 	"math"
@@ -9,25 +9,25 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/smartcontractkit/chainlink-relay/pkg/codec"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
 )
 
 func TestFitsInNBitsSigned(t *testing.T) {
 	t.Parallel()
 	t.Run("Fits", func(t *testing.T) {
 		bi := big.NewInt(math.MaxInt16)
-		assert.True(t, utils.FitsInNBitsSigned(16, bi))
+		assert.True(t, codec.FitsInNBitsSigned(16, bi))
 	})
 
 	t.Run("Too large", func(t *testing.T) {
 		bi := big.NewInt(math.MaxInt16 + 1)
-		assert.False(t, utils.FitsInNBitsSigned(16, bi))
+		assert.False(t, codec.FitsInNBitsSigned(16, bi))
 	})
 
 	t.Run("Too small", func(t *testing.T) {
 		bi := big.NewInt(math.MinInt16 - 1)
-		assert.False(t, utils.FitsInNBitsSigned(16, bi))
+		assert.False(t, codec.FitsInNBitsSigned(16, bi))
 	})
 }
 
@@ -41,7 +41,7 @@ func TestMergeValueFields(t *testing.T) {
 			{"Foo": int32(4), "Bar": "You?"},
 		}
 
-		output, err := utils.MergeValueFields(input)
+		output, err := codec.MergeValueFields(input)
 		require.NoError(t, err)
 
 		expected := map[string]any{
@@ -57,7 +57,7 @@ func TestMergeValueFields(t *testing.T) {
 			{"Zap": 2, "Foo": int32(2), "Bar": "How"},
 		}
 
-		_, err := utils.MergeValueFields(input)
+		_, err := codec.MergeValueFields(input)
 
 		assert.IsType(t, types.InvalidTypeError{}, err)
 	})
@@ -68,7 +68,7 @@ func TestMergeValueFields(t *testing.T) {
 			{"Foo": int32(2), "Bar": int32(3)},
 		}
 
-		_, err := utils.MergeValueFields(input)
+		_, err := codec.MergeValueFields(input)
 
 		assert.IsType(t, types.InvalidTypeError{}, err)
 	})
@@ -82,7 +82,7 @@ func TestSplitValueField(t *testing.T) {
 			"Bar": [4]string{"Hi", "How", "Are", "You?"},
 		}
 
-		output, err := utils.SplitValueFields(input)
+		output, err := codec.SplitValueFields(input)
 		require.NoError(t, err)
 
 		expected := []map[string]any{
@@ -100,7 +100,7 @@ func TestSplitValueField(t *testing.T) {
 			"Bar": []string{"Hi", "How", "Are", "You?"},
 		}
 
-		_, err := utils.SplitValueFields(input)
+		_, err := codec.SplitValueFields(input)
 		assert.IsType(t, types.InvalidTypeError{}, err)
 	})
 
@@ -110,7 +110,7 @@ func TestSplitValueField(t *testing.T) {
 			"Bar": []string{"Hi", "How", "Are", "You?"},
 		}
 
-		_, err := utils.SplitValueFields(input)
+		_, err := codec.SplitValueFields(input)
 		assert.IsType(t, types.NotASliceError{}, err)
 	})
 }

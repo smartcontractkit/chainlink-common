@@ -76,3 +76,5 @@ replace (
 	// until merged upstream: https://github.com/mwitkow/grpc-proxy/pull/69
 	github.com/mwitkow/grpc-proxy => github.com/smartcontractkit/grpc-proxy v0.0.0-20230731113816-f1be6620749f
 )
+
+replace github.com/smartcontractkit/chainlink-starknet => github.com/ferglor/chainlink-starknet v0.0.0-20231110152807-cce55b086cfa

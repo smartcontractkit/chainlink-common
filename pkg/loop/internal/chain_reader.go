@@ -4,8 +4,6 @@ import (
 	"context"
 	jsonv1 "encoding/json"
 	"fmt"
-	"reflect"
-	"unicode"
 
 	jsonv2 "github.com/go-json-experiment/json"
 
@@ -89,33 +87,6 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
-func isArray(vData *pb.VersionedBytes) (bool, error) {
-	data := vData.Data
-	if len(data) > 0 {
-		switch vData.Version {
-		case JSONEncodingVersion1:
-			fallthrough
-		case JSONEncodingVersion2:
-			i := int(0)
-			for ; i < len(data); i++ {
-				if !unicode.IsSpace(rune(data[i])) {
-					break
-				}
-			}
-			return i < len(data) && data[i] == '[', nil
-		case CBOREncodingVersion:
-
-			// Major type for array in CBOR is 4 which is 100 in binary.
-			// So, we are checking if the first 3 bits are 100.
-			return data[0]>>5 == 4, nil
-		default:
-			return false, fmt.Errorf("Unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
-		}
-	}
-
-	return false, nil
-}
-
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
 	versionedParams, err := encodeVersionedBytes(params, ParamsCurrentEncodingVersion)
 	if err != nil {
@@ -151,11 +122,9 @@ func (c *chainReaderClient) Encode(ctx context.Context, item any, itemType strin
 }
 
 func (c *chainReaderClient) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
-	k := reflect.ValueOf(into).Kind()
 	request := &pb.GetDecodingRequest{
-		Encoded:    raw,
-		ItemType:   itemType,
-		ForceSplit: k == reflect.Array || k == reflect.Slice,
+		Encoded:  raw,
+		ItemType: itemType,
 	}
 	resp, err := c.grpc.GetDecoding(ctx, request)
 	if err != nil {
@@ -196,7 +165,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	bc.Address = request.Bc.Address[:]
 	bc.Pending = request.Bc.Pending
 
-	params, err := c.getEncodedType(request.Method, false, true)
+	params, err := c.getEncodedType(request.Method, true)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +174,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 		return nil, err
 	}
 
-	retVal, err := c.getEncodedType(request.Method, false, false)
+	retVal, err := c.getEncodedType(request.Method, false)
 	if err != nil {
 		return nil, err
 	}
@@ -223,12 +192,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 }
 
 func (c *chainReaderServer) GetEncoding(ctx context.Context, req *pb.GetEncodingRequest) (*pb.GetEncodingResponse, error) {
-	forceArray, err := isArray(req.Params)
-	if err != nil {
-		return nil, err
-	}
-
-	encodedType, err := c.getEncodedType(req.ItemType, forceArray, true)
+	encodedType, err := c.getEncodedType(req.ItemType, true)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +206,7 @@ func (c *chainReaderServer) GetEncoding(ctx context.Context, req *pb.GetEncoding
 }
 
 func (c *chainReaderServer) GetDecoding(ctx context.Context, req *pb.GetDecodingRequest) (*pb.GetDecodingResponse, error) {
-	encodedType, err := c.getEncodedType(req.ItemType, req.ForceSplit, false)
+	encodedType, err := c.getEncodedType(req.ItemType, false)
 	if err != nil {
 		return nil, err
 	}
@@ -271,9 +235,9 @@ func (c *chainReaderServer) GetMaxSize(ctx context.Context, req *pb.GetMaxSizeRe
 	return &pb.GetMaxSizeResponse{SizeInBytes: int32(maxSize)}, nil
 }
 
-func (c *chainReaderServer) getEncodedType(itemType string, forceArray bool, forEncoding bool) (any, error) {
+func (c *chainReaderServer) getEncodedType(itemType string, forEncoding bool) (any, error) {
 	if rc, ok := c.impl.(types.RemoteCodec); ok {
-		return rc.CreateType(itemType, forceArray, forEncoding)
+		return rc.CreateType(itemType, forEncoding)
 	}
 
 	return &map[string]any{}, nil

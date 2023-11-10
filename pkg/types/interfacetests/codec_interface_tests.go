@@ -37,13 +37,15 @@ type ChainReaderInterfaceTester interface {
 	// Any setup required for this should be done in Setup.
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
 	SetLatestValue(t *testing.T, ctx context.Context, testStruct *TestStruct) (types.BoundContract, string)
+	GetPrimitiveContract(t *testing.T, ctx context.Context) (types.BoundContract, string)
 }
 
 const (
-	TestItemType       = "TestItem"
-	TestItemSliceType  = "TestItemSliceType"
-	TestItemArray1Type = "TestItemArray1Type"
-	TestItemArray2Type = "TestItemArray2Type"
+	TestItemType                    = "TestItem"
+	TestItemSliceType               = "TestItemSliceType"
+	TestItemArray1Type              = "TestItemArray1Type"
+	TestItemArray2Type              = "TestItemArray2Type"
+	AnyValueToReadWithoutAnArgument = uint64(3)
 )
 
 // RunChainReaderInterfaceTests uses TestStruct and TestStructWithSpecialFields
@@ -236,6 +238,16 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			actual = &TestStruct{}
 			require.NoError(t, cr.GetLatestValue(ctx, bc, method, params, actual))
 			assert.Equal(t, &secondItem, actual)
+		},
+		"Get latest value without arguments and with primitive return": func(t *testing.T) {
+			bc, method := tester.GetPrimitiveContract(t, ctx)
+
+			cr := tester.GetChainReader(t)
+
+			var prim uint64
+			require.NoError(t, cr.GetLatestValue(ctx, bc, method, nil, &prim))
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
 		},
 		"GetMaxEncodingSize returns errors for unknown types": func(t *testing.T) {
 			cr := tester.GetChainReader(t)

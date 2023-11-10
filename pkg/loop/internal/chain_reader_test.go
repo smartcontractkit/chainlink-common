@@ -173,7 +173,10 @@ type interfaceTester struct {
 	fs     *fakeCodecServer
 }
 
-const methodName = "method"
+const (
+	argMethodName   = "method"
+	emptyMethodName = "empty"
+)
 
 var encoder = makeEncoder()
 
@@ -186,7 +189,11 @@ func makeEncoder() cbor.EncMode {
 
 func (it *interfaceTester) SetLatestValue(t *testing.T, ctx context.Context, testStruct *TestStruct) (types.BoundContract, string) {
 	it.fs.SetLatestValue(testStruct)
-	return types.BoundContract{}, methodName
+	return types.BoundContract{}, argMethodName
+}
+
+func (it *interfaceTester) GetPrimitiveContract(t *testing.T, ctx context.Context) (types.BoundContract, string) {
+	return types.BoundContract{}, emptyMethodName
 }
 
 func (it *interfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) ocrtypes.Report {
@@ -272,7 +279,14 @@ func (f *fakeCodecServer) SetLatestValue(ts *TestStruct) {
 	f.latest = append(f.latest, *ts)
 }
 
-func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, _ string, params, returnVal any) error {
+func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, method string, params, returnVal any) error {
+	if method == emptyMethodName {
+		r := returnVal.(*uint64)
+		*r = AnyValueToReadWithoutAnArgument
+		return nil
+	} else if method != argMethodName {
+		return errors.New("unknown method " + method)
+	}
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	lp := params.(*LatestParams)
@@ -308,11 +322,14 @@ func (f *fakeCodecServer) CreateType(itemType string, _, isEncode bool) (any, er
 		return &[2]TestStruct{}, nil
 	case TestItemArray1Type:
 		return &[1]TestStruct{}, nil
-	case methodName:
+	case argMethodName:
 		if isEncode {
 			return &LatestParams{}, nil
 		}
 		return &TestStruct{}, nil
+	case emptyMethodName:
+		tmp := uint64(0)
+		return &tmp, nil
 	}
 
 	return nil, types.InvalidTypeError{}

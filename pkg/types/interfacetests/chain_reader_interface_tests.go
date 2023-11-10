@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,15 +37,23 @@ type ChainReaderInterfaceTester interface {
 	// SetLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
-	SetLatestValue(t *testing.T, testStruct *TestStruct) (types.BoundContract, string)
+	SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract
+	GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract
+	GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract
 }
 
 const (
-	TestItemType       = "TestItem"
-	TestItemSliceType  = "TestItemSliceType"
-	TestItemArray1Type = "TestItemArray1Type"
-	TestItemArray2Type = "TestItemArray2Type"
+	TestItemType                                = "TestItem"
+	TestItemSliceType                           = "TestItemSliceType"
+	TestItemArray1Type                          = "TestItemArray1Type"
+	TestItemArray2Type                          = "TestItemArray2Type"
+	AnyValueToReadWithoutAnArgument             = uint64(3)
+	MethodTakingLatestParamsReturningTestStruct = "GetLatestValues"
+	MethodReturningUint64                       = "GetPrimitiveValue"
+	MethodReturningUint64Slice                  = "GetSliceValue"
 )
+
+var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 
 // RunChainReaderInterfaceTests uses TestStruct and TestStructWithSpecialFields
 func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
@@ -168,7 +177,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			require.NoError(t, codec.Decode(ctx, actualEncoding, &into, TestItemArray2Type))
 			assert.Equal(t, items, into)
 		},
-		"Encodes and decodes a arrays with one element": func(t *testing.T) {
+		"Encodes and decodes an arrays with one element": func(t *testing.T) {
 			item1 := CreateTestStruct(0, tester.GetAccountBytes)
 			items := [1]TestStruct{item1}
 			req := &EncodeRequest{TestStructs: items[:], TestOn: TestItemArray1Type}
@@ -204,7 +213,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			codec := tester.GetChainReader(t)
 
 			_, err := codec.Encode(ctx, items, TestItemArray2Type)
-			assert.IsType(t, types.InvalidTypeError{}, err)
+			assert.IsType(t, types.WrongNumberOfElements{}, err)
 		},
 		"Returns an error encoding if arrays are the too large to encode": func(t *testing.T) {
 			if !tester.IncludeArrayEncodingSizeEnforcement() {
@@ -217,25 +226,45 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			codec := tester.GetChainReader(t)
 
 			_, err := codec.Encode(ctx, items, TestItemArray1Type)
-			assert.IsType(t, types.InvalidTypeError{}, err)
+			assert.IsType(t, types.WrongNumberOfElements{}, err)
 		},
 		"Gets the latest value": func(t *testing.T) {
 			firstItem := CreateTestStruct(0, tester.GetAccountBytes)
-			bc, method := tester.SetLatestValue(t, &firstItem)
+			bc := tester.SetLatestValue(ctx, t, &firstItem)
 			secondItem := CreateTestStruct(1, tester.GetAccountBytes)
-			tester.SetLatestValue(t, &secondItem)
+			tester.SetLatestValue(ctx, t, &secondItem)
 
 			cr := tester.GetChainReader(t)
 			actual := &TestStruct{}
 			params := &LatestParams{I: 1}
 
-			require.NoError(t, cr.GetLatestValue(ctx, bc, method, params, actual))
+			require.NoError(t, cr.GetLatestValue(ctx, bc, MethodTakingLatestParamsReturningTestStruct, params, actual))
 			assert.Equal(t, &firstItem, actual)
 
 			params.I = 2
 			actual = &TestStruct{}
-			require.NoError(t, cr.GetLatestValue(ctx, bc, method, params, actual))
+			require.NoError(t, cr.GetLatestValue(ctx, bc, MethodTakingLatestParamsReturningTestStruct, params, actual))
 			assert.Equal(t, &secondItem, actual)
+		},
+		"Get latest value without arguments and with primitive return": func(t *testing.T) {
+			bc := tester.GetPrimitiveContract(ctx, t)
+
+			cr := tester.GetChainReader(t)
+
+			var prim uint64
+			require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningUint64, nil, &prim))
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
+		},
+		"Get latest value without arguments and with slice return": func(t *testing.T) {
+			bc := tester.GetSliceContract(ctx, t)
+
+			cr := tester.GetChainReader(t)
+
+			var slice []uint64
+			require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningUint64Slice, nil, &slice))
+
+			assert.Equal(t, AnySliceToReadWithoutAnArgument, slice)
 		},
 		"GetMaxEncodingSize returns errors for unknown types": func(t *testing.T) {
 			cr := tester.GetChainReader(t)
@@ -310,11 +339,19 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester ChainReaderI
 }
 
 func runTests(t *testing.T, tester ChainReaderInterfaceTester, tests map[string]func(t *testing.T)) {
-	for name, test := range tests {
+	// Order the tests for consistancy
+	testNames := make([]string, 0, len(tests))
+	for name := range tests {
+		testNames = append(testNames, name)
+	}
+	sort.Strings(testNames)
+
+	for i := 0; i < len(testNames); i++ {
+		name := testNames[i]
 		t.Run(name, func(t *testing.T) {
 			tester.Setup(t)
 			defer func() { tester.Teardown(t) }()
-			test(t)
+			tests[name](t)
 		})
 	}
 }

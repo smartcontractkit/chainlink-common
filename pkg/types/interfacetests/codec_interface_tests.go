@@ -36,7 +36,7 @@ type ChainReaderInterfaceTester interface {
 	// SetLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
-	SetLatestValue(t *testing.T, testStruct *TestStruct) (types.BoundContract, string)
+	SetLatestValue(t *testing.T, ctx context.Context, testStruct *TestStruct) (types.BoundContract, string)
 }
 
 const (
@@ -221,9 +221,9 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 		},
 		"Gets the latest value": func(t *testing.T) {
 			firstItem := CreateTestStruct(0, tester.GetAccountBytes)
-			bc, method := tester.SetLatestValue(t, &firstItem)
+			bc, method := tester.SetLatestValue(t, ctx, &firstItem)
 			secondItem := CreateTestStruct(1, tester.GetAccountBytes)
-			tester.SetLatestValue(t, &secondItem)
+			tester.SetLatestValue(t, ctx, &secondItem)
 
 			cr := tester.GetChainReader(t)
 			actual := &TestStruct{}

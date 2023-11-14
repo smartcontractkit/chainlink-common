@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -14,6 +16,7 @@ const (
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
 	envTracingSamplingRatio   = "CL_TRACING_SAMPLING_RATIO"
 	envTracingAttribute       = "CL_TRACING_ATTRIBUTE_"
+	envTracingTLSCertPath     = "CL_TRACING_TLS_CERT_PATH"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -24,6 +27,7 @@ type EnvConfig struct {
 	TracingEnabled         bool
 	TracingCollectorTarget string
 	TracingSamplingRatio   float64
+	TracingTLSCertPath     string
 	TracingAttributes      map[string]string
 }
 
@@ -34,6 +38,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		envTracingEnabled:         strconv.FormatBool(e.TracingEnabled),
 		envTracingCollectorTarget: e.TracingCollectorTarget,
 		envTracingSamplingRatio:   strconv.FormatFloat(e.TracingSamplingRatio, 'f', -1, 64),
+		envTracingTLSCertPath:     e.TracingTLSCertPath,
 	}
 
 	for k, v := range e.TracingAttributes {
@@ -67,6 +72,10 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TracingAttributes = getTracingAttributes()
 		e.TracingSamplingRatio = getTracingSamplingRatio()
+		e.TracingTLSCertPath, err = getTLSCertPath()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -113,4 +122,17 @@ func getTracingSamplingRatio() float64 {
 		return 0.0
 	}
 	return samplingRatio
+}
+
+// getTLSCertPath parses and validates the CL_TRACING_TLS_CERT_PATH environment variable.
+func getTLSCertPath() (string, error) {
+	// empty string is valid; signals to use insecure credentials
+	tracingTLSCertPath := os.Getenv(envTracingTLSCertPath)
+
+	_, err := credentials.NewClientTLSFromFile(tracingTLSCertPath, "")
+	if err != nil {
+		return "", err
+	}
+
+	return tracingTLSCertPath, nil
 }

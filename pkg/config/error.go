@@ -40,6 +40,15 @@ func (e ErrEmpty) Error() string {
 	return fmt.Sprintf("%s: empty: %s", e.Name, e.Msg)
 }
 
+type ErrIncluded struct {
+	Name string
+	Msg  string
+}
+
+func (e ErrIncluded) Error() string {
+	return fmt.Sprintf("%s: included: %s", e.Name, e.Msg)
+}
+
 type KeyNotFoundError struct {
 	ID      string
 	KeyType string

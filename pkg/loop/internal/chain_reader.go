@@ -40,6 +40,9 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	switch version {
 	case JSONEncodingVersion:
 		bytes, err = json.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
+		}
 	case CBOREncodingVersion:
 		enco := cbor.CoreDetEncOptions()
 		enco.Time = cbor.TimeRFC3339Nano
@@ -49,13 +52,13 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 			return nil, err
 		}
 		bytes, err = enc.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
+		}
 	default:
 		return nil, fmt.Errorf("unsupported encoding version %d for data %v", version, data)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
-	}
 	return &pb.VersionedBytes{Version: uint32(version), Data: bytes}, nil
 }
 

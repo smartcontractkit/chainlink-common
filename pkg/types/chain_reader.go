@@ -5,23 +5,7 @@ import (
 	"time"
 )
 
-type ErrorChainReaderUnsupported struct{}
-
-func (e ErrorChainReaderUnsupported) Error() string {
-	return "ChainReader is not supported by the relay"
-}
-
-type ErrorNoChainReaderInJobSpec struct{}
-
-func (e ErrorNoChainReaderInJobSpec) Error() string {
-	return "There is no ChainReader configuration defined in the job spec"
-}
-
-type ErrorChainReaderInvalidConfig struct{}
-
-func (e ErrorChainReaderInvalidConfig) Error() string {
-	return "Invalid ChainReader configuration"
-}
+// Errors exposed to product plugins
 
 type InvalidEncodingError struct{}
 
@@ -51,6 +35,26 @@ type NotASliceError struct{}
 
 func (NotASliceError) Error() string {
 	return "input is not a slice or array"
+}
+
+// Errors used only by relay plugins
+
+type ErrorChainReaderUnsupported struct{}
+
+func (e ErrorChainReaderUnsupported) Error() string {
+	return "ChainReader is not supported by the relay"
+}
+
+type ErrorNoChainReaderInJobSpec struct{}
+
+func (e ErrorNoChainReaderInJobSpec) Error() string {
+	return "There is no ChainReader configuration defined in the job spec"
+}
+
+type ErrorChainReaderInvalidConfig struct{}
+
+func (e ErrorChainReaderInvalidConfig) Error() string {
+	return "Invalid ChainReader configuration"
 }
 
 type ChainReader interface {

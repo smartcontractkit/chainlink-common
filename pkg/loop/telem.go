@@ -58,7 +58,7 @@ func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
 
 // SetupTracing initializes open telemetry with the provided config.
 // It sets the global trace provider and opens a connection to the configured collector.
-func SetupTracing(config TracingConfig) error {
+func SetupTracing(config TracingConfig) (err error) {
 	if !config.Enabled {
 		return nil
 	}
@@ -69,7 +69,10 @@ func SetupTracing(config TracingConfig) error {
 
 	var creds credentials.TransportCredentials
 	if config.TLSCertPath != "" {
-		creds, _ = credentials.NewClientTLSFromFile(config.TLSCertPath, "")
+		creds, err = credentials.NewClientTLSFromFile(config.TLSCertPath, "")
+		if err != nil {
+			return err
+		}
 	} else {
 		creds = insecure.NewCredentials()
 	}

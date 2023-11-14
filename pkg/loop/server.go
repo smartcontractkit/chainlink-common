@@ -74,8 +74,7 @@ func (s *Server) start() error {
 		SamplingRatio:   envCfg.TracingSamplingRatio,
 		TLSCertPath:     envCfg.TracingTLSCertPath,
 		NodeAttributes:  envCfg.TracingAttributes,
-
-		OnDialError: func(err error) { s.Logger.Errorw("Failed to dial", "err", err) },
+		OnDialError:     func(err error) { s.Logger.Errorw("Failed to dial", "err", err) },
 	}); err != nil {
 		// non blocking to server start
 		s.Logger.Errorf("Failed to setup tracing: %s", err)

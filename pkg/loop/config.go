@@ -6,8 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -72,10 +70,7 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TracingAttributes = getTracingAttributes()
 		e.TracingSamplingRatio = getTracingSamplingRatio()
-		e.TracingTLSCertPath, err = getTLSCertPath()
-		if err != nil {
-			return err
-		}
+		e.TracingTLSCertPath = getTLSCertPath()
 	}
 	return nil
 }
@@ -124,15 +119,7 @@ func getTracingSamplingRatio() float64 {
 	return samplingRatio
 }
 
-// getTLSCertPath parses and validates the CL_TRACING_TLS_CERT_PATH environment variable.
-func getTLSCertPath() (string, error) {
-	// empty string is valid; signals to use insecure credentials
-	tracingTLSCertPath := os.Getenv(envTracingTLSCertPath)
-
-	_, err := credentials.NewClientTLSFromFile(tracingTLSCertPath, "")
-	if err != nil {
-		return "", err
-	}
-
-	return tracingTLSCertPath, nil
+// getTLSCertPath parses the CL_TRACING_TLS_CERT_PATH environment variable.
+func getTLSCertPath() string {
+	return os.Getenv(envTracingTLSCertPath)
 }

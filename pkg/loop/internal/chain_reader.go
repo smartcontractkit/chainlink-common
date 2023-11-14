@@ -2,10 +2,12 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
 	"fmt"
 	"reflect"
 	"unicode"
+
+	jsonv2 "github.com/go-json-experiment/json"
 
 	"github.com/fxamacker/cbor/v2"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
@@ -24,7 +26,8 @@ type chainReaderClient struct {
 
 // enum of all known encoding formats for versioned data
 const (
-	JSONEncodingVersion = iota
+	JSONEncodingVersion1 = iota
+	JSONEncodingVersion2
 	CBOREncodingVersion
 )
 
@@ -38,8 +41,13 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	var err error
 
 	switch version {
-	case JSONEncodingVersion:
-		bytes, err = json.Marshal(data)
+	case JSONEncodingVersion1:
+		bytes, err = jsonv1.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
+		}
+	case JSONEncodingVersion2:
+		bytes, err = jsonv2.Marshal(data)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
 		}
@@ -65,8 +73,10 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	var err error
 	switch vData.Version {
-	case JSONEncodingVersion:
-		err = json.Unmarshal(vData.Data, res)
+	case JSONEncodingVersion1:
+		err = jsonv1.Unmarshal(vData.Data, res)
+	case JSONEncodingVersion2:
+		err = jsonv2.Unmarshal(vData.Data, res)
 	case CBOREncodingVersion:
 		err = cbor.Unmarshal(vData.Data, res)
 	default:
@@ -83,7 +93,9 @@ func isArray(vData *pb.VersionedBytes) (bool, error) {
 	data := vData.Data
 	if len(data) > 0 {
 		switch vData.Version {
-		case JSONEncodingVersion:
+		case JSONEncodingVersion1:
+			fallthrough
+		case JSONEncodingVersion2:
 			i := int(0)
 			for ; i < len(data); i++ {
 				if !unicode.IsSpace(rune(data[i])) {

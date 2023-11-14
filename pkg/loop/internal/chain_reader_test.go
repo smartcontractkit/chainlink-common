@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"testing"
@@ -25,23 +26,24 @@ import (
 )
 
 func TestVersionedBytesFunctions(t *testing.T) {
+	const unsupportedVer = 25913
 	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
 		expected := types.InvalidTypeError{}
 		invalidData := make(chan int)
 
-		_, err := encodeVersionedBytes(invalidData, JSONEncodingVersion)
+		_, err := encodeVersionedBytes(invalidData, JSONEncodingVersion2)
 		if err == nil || !errors.Is(err, expected) {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
 
 	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
-		expected := errors.New("unsupported encoding version 2 for data map[key:value]")
+		expected := fmt.Errorf("unsupported encoding version %d for data map[key:value]", unsupportedVer)
 		data := map[string]interface{}{
 			"key": "value",
 		}
 
-		_, err := encodeVersionedBytes(data, 2)
+		_, err := encodeVersionedBytes(data, unsupportedVer)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
@@ -49,9 +51,9 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 	t.Run("DecodeVersionedBytes", func(t *testing.T) {
 		var decodedData map[string]interface{}
-		expected := errors.New("unsupported encoding version 2 for versionedData [97 98 99 100 102]")
+		expected := fmt.Errorf("unsupported encoding version %d for versionedData [97 98 99 100 102]", unsupportedVer)
 		versionedBytes := &pb.VersionedBytes{
-			Version: 2, // Unsupported version
+			Version: unsupportedVer, // Unsupported version
 			Data:    []byte("abcdf"),
 		}
 

@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 	"runtime/debug"
-	"time"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -64,8 +63,6 @@ func SetupTracing(config TracingConfig) (err error) {
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
 
 	var creds credentials.TransportCredentials
 	if config.TLSCertPath != "" {

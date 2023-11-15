@@ -1,6 +1,6 @@
 package bytes
 
-// IsQuoted checks if the first and last characters are either " or '.
+// HasQuotes checks if the first and last characters are either " or '.
 func HasQuotes(input []byte) bool {
 	return len(input) >= 2 &&
 		((input[0] == '"' && input[len(input)-1] == '"') ||

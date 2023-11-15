@@ -81,11 +81,11 @@ func SetupTracing(config TracingConfig) (err error) {
 		// Note the potential use of insecure transport here. TLS is recommended in production.
 		grpc.WithTransportCredentials(creds),
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-			conn, err := net.Dial("tcp", s)
-			if err != nil {
-				config.OnDialError(err)
+			conn, err2 := net.Dial("tcp", s)
+			if err2 != nil {
+				config.OnDialError(err2)
 			}
-			return conn, err
+			return conn, err2
 		}))
 	if err != nil {
 		return err

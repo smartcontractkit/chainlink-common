@@ -53,5 +53,4 @@ type Relayer interface {
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
-	NewOCR2KeepersProvider(rargs RelayArgs, pargs PluginArgs) (OCR2KeepersProvider, error)
 }

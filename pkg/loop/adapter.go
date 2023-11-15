@@ -39,6 +39,10 @@ func (r *RelayerAdapter) NewFunctionsProvider(ctx context.Context, rargs types.R
 	return r.Relayer.NewFunctionsProvider(rargs, pargs)
 }
 
+func (r *RelayerAdapter) NewOCR2KeepersProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.OCR2KeepersProvider, error) {
+	return r.Relayer.NewOCR2KeepersProvider(rargs, pargs)
+}
+
 func (r *RelayerAdapter) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
 	return nil, fmt.Errorf("unexpected call to NewPluginProvider: did you forget to wrap RelayerAdapter in a relayerServerAdapter?")
 }

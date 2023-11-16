@@ -258,9 +258,6 @@ message FromAccountReply {
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
-  rpc GetEncoding(GetEncodingRequest) returns (GetEncodingResponse);
-  rpc GetDecoding(GetDecodingRequest) returns (GetDecodingResponse);
-  rpc GetMaxSize(GetMaxSizeRequest) returns (GetMaxSizeResponse);
 }
 
 message VersionedBytes {
@@ -278,35 +275,6 @@ message GetLatestValueRequest {
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueReply {
   VersionedBytes retVal = 1;
-}
-
-message GetEncodingRequest {
-  VersionedBytes params = 1;
-  string itemType = 2;
-}
-
-message GetEncodingResponse {
-  bytes retVal = 1;
-}
-
-message GetDecodingRequest {
-  bytes encoded = 1;
-  string itemType = 2;
-  bool forceSplit = 3;
-}
-
-message GetDecodingResponse {
-  VersionedBytes retVal = 1;
-}
-
-message GetMaxSizeRequest {
-  int32 n = 1;
-  string itemType = 2;
-  bool forEncoding = 3;
-}
-
-message GetMaxSizeResponse {
-  int32 sizeInBytes = 1;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].

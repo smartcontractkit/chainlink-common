@@ -8,7 +8,6 @@ import (
 	jsonv2 "github.com/go-json-experiment/json"
 
 	"github.com/fxamacker/cbor/v2"
-	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
@@ -96,7 +95,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 
 	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: versionedParams})
 	if err != nil {
-		return unwrapClientError(err)
+		return types.UnwrapClientError(err)
 	}
 
 	return decodeVersionedBytes(retVal, reply.RetVal)
@@ -133,11 +132,4 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	}
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
-}
-
-func unwrapClientError(err error) error {
-	if s, ok := status.FromError(err); ok {
-		return types.ErrChainReader(s.String())
-	}
-	return err
 }

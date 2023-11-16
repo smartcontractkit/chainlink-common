@@ -1022,9 +1022,6 @@ var ContractTransmitter_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
-	ChainReader_GetEncoding_FullMethodName    = "/loop.ChainReader/GetEncoding"
-	ChainReader_GetDecoding_FullMethodName    = "/loop.ChainReader/GetDecoding"
-	ChainReader_GetMaxSize_FullMethodName     = "/loop.ChainReader/GetMaxSize"
 )
 
 // ChainReaderClient is the client API for ChainReader service.
@@ -1032,9 +1029,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
-	GetEncoding(ctx context.Context, in *GetEncodingRequest, opts ...grpc.CallOption) (*GetEncodingResponse, error)
-	GetDecoding(ctx context.Context, in *GetDecodingRequest, opts ...grpc.CallOption) (*GetDecodingResponse, error)
-	GetMaxSize(ctx context.Context, in *GetMaxSizeRequest, opts ...grpc.CallOption) (*GetMaxSizeResponse, error)
 }
 
 type chainReaderClient struct {
@@ -1054,41 +1048,11 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestVal
 	return out, nil
 }
 
-func (c *chainReaderClient) GetEncoding(ctx context.Context, in *GetEncodingRequest, opts ...grpc.CallOption) (*GetEncodingResponse, error) {
-	out := new(GetEncodingResponse)
-	err := c.cc.Invoke(ctx, ChainReader_GetEncoding_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *chainReaderClient) GetDecoding(ctx context.Context, in *GetDecodingRequest, opts ...grpc.CallOption) (*GetDecodingResponse, error) {
-	out := new(GetDecodingResponse)
-	err := c.cc.Invoke(ctx, ChainReader_GetDecoding_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *chainReaderClient) GetMaxSize(ctx context.Context, in *GetMaxSizeRequest, opts ...grpc.CallOption) (*GetMaxSizeResponse, error) {
-	out := new(GetMaxSizeResponse)
-	err := c.cc.Invoke(ctx, ChainReader_GetMaxSize_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ChainReaderServer is the server API for ChainReader service.
 // All implementations must embed UnimplementedChainReaderServer
 // for forward compatibility
 type ChainReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
-	GetEncoding(context.Context, *GetEncodingRequest) (*GetEncodingResponse, error)
-	GetDecoding(context.Context, *GetDecodingRequest) (*GetDecodingResponse, error)
-	GetMaxSize(context.Context, *GetMaxSizeRequest) (*GetMaxSizeResponse, error)
 	mustEmbedUnimplementedChainReaderServer()
 }
 
@@ -1098,15 +1062,6 @@ type UnimplementedChainReaderServer struct {
 
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
-}
-func (UnimplementedChainReaderServer) GetEncoding(context.Context, *GetEncodingRequest) (*GetEncodingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEncoding not implemented")
-}
-func (UnimplementedChainReaderServer) GetDecoding(context.Context, *GetDecodingRequest) (*GetDecodingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetDecoding not implemented")
-}
-func (UnimplementedChainReaderServer) GetMaxSize(context.Context, *GetMaxSizeRequest) (*GetMaxSizeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMaxSize not implemented")
 }
 func (UnimplementedChainReaderServer) mustEmbedUnimplementedChainReaderServer() {}
 
@@ -1139,60 +1094,6 @@ func _ChainReader_GetLatestValue_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ChainReader_GetEncoding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEncodingRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).GetEncoding(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_GetEncoding_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).GetEncoding(ctx, req.(*GetEncodingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChainReader_GetDecoding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetDecodingRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).GetDecoding(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_GetDecoding_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).GetDecoding(ctx, req.(*GetDecodingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChainReader_GetMaxSize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetMaxSizeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).GetMaxSize(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_GetMaxSize_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).GetMaxSize(ctx, req.(*GetMaxSizeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ChainReader_ServiceDesc is the grpc.ServiceDesc for ChainReader service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1204,17 +1105,169 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetLatestValue",
 			Handler:    _ChainReader_GetLatestValue_Handler,
 		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "relayer.proto",
+}
+
+const (
+	Codec_GetEncoding_FullMethodName = "/loop.Codec/GetEncoding"
+	Codec_GetDecoding_FullMethodName = "/loop.Codec/GetDecoding"
+	Codec_GetMaxSize_FullMethodName  = "/loop.Codec/GetMaxSize"
+)
+
+// CodecClient is the client API for Codec service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type CodecClient interface {
+	GetEncoding(ctx context.Context, in *GetEncodingRequest, opts ...grpc.CallOption) (*GetEncodingResponse, error)
+	GetDecoding(ctx context.Context, in *GetDecodingRequest, opts ...grpc.CallOption) (*GetDecodingResponse, error)
+	GetMaxSize(ctx context.Context, in *GetMaxSizeRequest, opts ...grpc.CallOption) (*GetMaxSizeResponse, error)
+}
+
+type codecClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCodecClient(cc grpc.ClientConnInterface) CodecClient {
+	return &codecClient{cc}
+}
+
+func (c *codecClient) GetEncoding(ctx context.Context, in *GetEncodingRequest, opts ...grpc.CallOption) (*GetEncodingResponse, error) {
+	out := new(GetEncodingResponse)
+	err := c.cc.Invoke(ctx, Codec_GetEncoding_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *codecClient) GetDecoding(ctx context.Context, in *GetDecodingRequest, opts ...grpc.CallOption) (*GetDecodingResponse, error) {
+	out := new(GetDecodingResponse)
+	err := c.cc.Invoke(ctx, Codec_GetDecoding_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *codecClient) GetMaxSize(ctx context.Context, in *GetMaxSizeRequest, opts ...grpc.CallOption) (*GetMaxSizeResponse, error) {
+	out := new(GetMaxSizeResponse)
+	err := c.cc.Invoke(ctx, Codec_GetMaxSize_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// CodecServer is the server API for Codec service.
+// All implementations must embed UnimplementedCodecServer
+// for forward compatibility
+type CodecServer interface {
+	GetEncoding(context.Context, *GetEncodingRequest) (*GetEncodingResponse, error)
+	GetDecoding(context.Context, *GetDecodingRequest) (*GetDecodingResponse, error)
+	GetMaxSize(context.Context, *GetMaxSizeRequest) (*GetMaxSizeResponse, error)
+	mustEmbedUnimplementedCodecServer()
+}
+
+// UnimplementedCodecServer must be embedded to have forward compatible implementations.
+type UnimplementedCodecServer struct {
+}
+
+func (UnimplementedCodecServer) GetEncoding(context.Context, *GetEncodingRequest) (*GetEncodingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEncoding not implemented")
+}
+func (UnimplementedCodecServer) GetDecoding(context.Context, *GetDecodingRequest) (*GetDecodingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDecoding not implemented")
+}
+func (UnimplementedCodecServer) GetMaxSize(context.Context, *GetMaxSizeRequest) (*GetMaxSizeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMaxSize not implemented")
+}
+func (UnimplementedCodecServer) mustEmbedUnimplementedCodecServer() {}
+
+// UnsafeCodecServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CodecServer will
+// result in compilation errors.
+type UnsafeCodecServer interface {
+	mustEmbedUnimplementedCodecServer()
+}
+
+func RegisterCodecServer(s grpc.ServiceRegistrar, srv CodecServer) {
+	s.RegisterService(&Codec_ServiceDesc, srv)
+}
+
+func _Codec_GetEncoding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEncodingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CodecServer).GetEncoding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Codec_GetEncoding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CodecServer).GetEncoding(ctx, req.(*GetEncodingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Codec_GetDecoding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDecodingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CodecServer).GetDecoding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Codec_GetDecoding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CodecServer).GetDecoding(ctx, req.(*GetDecodingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Codec_GetMaxSize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMaxSizeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CodecServer).GetMaxSize(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Codec_GetMaxSize_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CodecServer).GetMaxSize(ctx, req.(*GetMaxSizeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Codec_ServiceDesc is the grpc.ServiceDesc for Codec service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Codec_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.Codec",
+	HandlerType: (*CodecServer)(nil),
+	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetEncoding",
-			Handler:    _ChainReader_GetEncoding_Handler,
+			Handler:    _Codec_GetEncoding_Handler,
 		},
 		{
 			MethodName: "GetDecoding",
-			Handler:    _ChainReader_GetDecoding_Handler,
+			Handler:    _Codec_GetDecoding_Handler,
 		},
 		{
 			MethodName: "GetMaxSize",
-			Handler:    _ChainReader_GetMaxSize_Handler,
+			Handler:    _Codec_GetMaxSize_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

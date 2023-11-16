@@ -4,22 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"sync"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
 
-	"github.com/fxamacker/cbor/v2"
-	"github.com/mitchellh/mapstructure"
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/types"
 	. "github.com/smartcontractkit/chainlink-relay/pkg/types/interfacetests"
@@ -65,11 +60,11 @@ func TestVersionedBytesFunctions(t *testing.T) {
 }
 
 func TestChainReaderClient(t *testing.T) {
-	RunChainReaderInterfaceTests(t, &interfaceTester{})
+	RunChainReaderInterfaceTests(t, &chainReaderInterfaceTester{chainReader: &fakeChainReader{lock: &sync.Mutex{}}})
 
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
-	es := &errorServer{}
+	es := &chainReaderErrServer{}
 	pb.RegisterChainReaderServer(s, es)
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -79,40 +74,13 @@ func TestChainReaderClient(t *testing.T) {
 	defer s.Stop()
 	conn := connFromLis(t, lis)
 	client := &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
-	ctx := context.Background()
-
-	errorTypes := []error{
-		types.InvalidEncodingError{},
-		types.InvalidTypeError{},
-		types.FieldNotFoundError{},
-		types.WrongNumberOfElements{},
-		types.NotASliceError{},
-	}
+	ctx := tests.Context(t)
 
 	for _, errorType := range errorTypes {
 		es.err = errorType
-		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.Encode(ctx, "any", "doesnotmatter")
-			assert.IsType(t, errorType, err)
-		})
-
-		t.Run("Decode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.Encode(ctx, "any", "doesnotmatter")
-			assert.IsType(t, errorType, err)
-		})
 
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
-			assert.IsType(t, errorType, err)
-		})
-
-		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.GetMaxEncodingSize(ctx, 1, "anything")
-			assert.IsType(t, errorType, err)
-		})
-
-		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.GetMaxDecodingSize(ctx, 1, "anything")
 			assert.IsType(t, errorType, err)
 		})
 	}
@@ -121,28 +89,10 @@ func TestChainReaderClient(t *testing.T) {
 	es.err = nil
 	var invalidTypeErr types.InvalidTypeError
 
-	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
-
-		assert.NotNil(t, errors.As(err, &invalidTypeErr))
-	})
-
-	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
-		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
-		assert.NotNil(t, errors.As(err, &invalidTypeErr))
-	})
-
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
 		assert.NotNil(t, errors.As(err, &invalidTypeErr))
 	})
-}
-
-type interfaceTester struct {
-	lis    *bufconn.Listener
-	server *grpc.Server
-	conn   *grpc.ClientConn
-	fs     *fakeCodecServer
 }
 
 var encoder = makeEncoder()
@@ -154,71 +104,32 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-func (it *interfaceTester) SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract {
-	it.fs.SetLatestValue(testStruct)
+type chainReaderInterfaceTester struct {
+	interfaceTesterBase
+	chainReader *fakeChainReader
+}
+
+func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
+	it.setupHook = func(s *grpc.Server) {
+		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.chainReader})
+	}
+	it.interfaceTesterBase.Setup(t)
+}
+
+func (it *chainReaderInterfaceTester) SetLatestValue(_ context.Context, _ *testing.T, testStruct *TestStruct) types.BoundContract {
+	it.chainReader.SetLatestValue(testStruct)
 	return types.BoundContract{}
 }
 
-func (it *interfaceTester) GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract {
+func (it *chainReaderInterfaceTester) GetPrimitiveContract(_ context.Context, _ *testing.T) types.BoundContract {
 	return types.BoundContract{}
 }
 
-func (it *interfaceTester) GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract {
+func (it *chainReaderInterfaceTester) GetSliceContract(_ context.Context, _ *testing.T) types.BoundContract {
 	return types.BoundContract{}
 }
 
-func (it *interfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) ocrtypes.Report {
-	if request.TestOn == TestItemType {
-		bytes, err := encoder.Marshal(request.TestStructs[0])
-		require.NoError(t, err)
-		return bytes
-	}
-
-	bytes, err := encoder.Marshal(request.TestStructs)
-	require.NoError(t, err)
-	return bytes
-}
-
-func (it *interfaceTester) GetAccountBytes(_ int) []byte {
-	return []byte{1, 2, 3}
-}
-
-func (it *interfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
-	return false
-}
-
-func (it *interfaceTester) Setup(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	it.lis = lis
-	it.fs = &fakeCodecServer{lock: &sync.Mutex{}}
-	s := grpc.NewServer()
-	pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.fs})
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			panic(err)
-		}
-	}()
-}
-
-func (it *interfaceTester) Teardown(t *testing.T) {
-	if it.server != nil {
-		it.server.Stop()
-	}
-
-	if it.conn != nil {
-		require.NoError(t, it.conn.Close())
-	}
-
-	it.lis = nil
-	it.server = nil
-	it.conn = nil
-}
-
-func (it *interfaceTester) Name() string {
-	return "relay client"
-}
-
-func (it *interfaceTester) GetChainReader(t *testing.T) types.ChainReader {
+func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 	if it.conn == nil {
 		it.conn = connFromLis(t, it.lis)
 	}
@@ -226,31 +137,19 @@ func (it *interfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 	return &chainReaderClient{grpc: pb.NewChainReaderClient(it.conn)}
 }
 
-type fakeCodecServer struct {
-	lastItem any
-	latest   []TestStruct
-	lock     *sync.Mutex
+type fakeChainReader struct {
+	fakeTypeProvider
+	latest []TestStruct
+	lock   *sync.Mutex
 }
 
-func (f *fakeCodecServer) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
-	return f.GetMaxEncodingSize(ctx, n, itemType)
-}
-
-func (f *fakeCodecServer) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
-	switch itemType {
-	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
-		return 1, nil
-	}
-	return 0, types.InvalidTypeError{}
-}
-
-func (f *fakeCodecServer) SetLatestValue(ts *TestStruct) {
+func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.latest = append(f.latest, *ts)
 }
 
-func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, method string, params, returnVal any) error {
+func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContract, method string, params, returnVal any) error {
 	if method == MethodReturningUint64 {
 		r := returnVal.(*uint64)
 		*r = AnyValueToReadWithoutAnArgument
@@ -271,95 +170,11 @@ func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContr
 	return nil
 }
 
-func (f *fakeCodecServer) Encode(_ context.Context, item any, itemType string) (ocrtypes.Report, error) {
-	f.lastItem = item
-	switch itemType {
-	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
-		return encoder.Marshal(item)
-	}
-	return nil, types.InvalidTypeError{}
-}
-
-func (f *fakeCodecServer) Decode(_ context.Context, raw []byte, into any, itemType string) error {
-	switch itemType {
-	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
-		return mapstructure.Decode(f.lastItem, into)
-	}
-	return types.InvalidTypeError{}
-}
-
-func (f *fakeCodecServer) CreateType(itemType string, isEncode bool) (any, error) {
-	switch itemType {
-	case TestItemType:
-		return &TestStruct{}, nil
-	case TestItemSliceType:
-		return &[]TestStruct{}, nil
-	case TestItemArray2Type:
-		return &[2]TestStruct{}, nil
-	case TestItemArray1Type:
-		return &[1]TestStruct{}, nil
-	case MethodTakingLatestParamsReturningTestStruct:
-		if isEncode {
-			return &LatestParams{}, nil
-		}
-		return &TestStruct{}, nil
-	case MethodReturningUint64:
-		tmp := uint64(0)
-		return &tmp, nil
-	case MethodReturningUint64Slice:
-		var tmp []uint64
-		return &tmp, nil
-	}
-
-	return nil, types.InvalidTypeError{}
-}
-
-var _ types.RemoteCodec = &fakeCodecServer{}
-
-type errorServer struct {
+type chainReaderErrServer struct {
 	err error
 	pb.UnimplementedChainReaderServer
 }
 
-func (e *errorServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+func (e *chainReaderErrServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
 	return nil, e.err
-}
-
-func (e *errorServer) GetEncoding(context.Context, *pb.GetEncodingRequest) (*pb.GetEncodingResponse, error) {
-	return nil, e.err
-}
-
-func (e *errorServer) GetDecoding(context.Context, *pb.GetDecodingRequest) (*pb.GetDecodingResponse, error) {
-	return nil, e.err
-}
-
-func (e *errorServer) GetMaxSize(context.Context, *pb.GetMaxSizeRequest) (*pb.GetMaxSizeResponse, error) {
-	return nil, e.err
-}
-
-func connFromLis(t *testing.T, lis *bufconn.Listener) *grpc.ClientConn {
-	conn, err := grpc.Dial("bufnet",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock())
-	require.NoError(t, err)
-	return conn
-}
-
-type cannotEncode struct{}
-
-func (*cannotEncode) MarshalBinary() ([]byte, error) {
-	return nil, errors.New("nope")
-}
-
-func (*cannotEncode) UnmarshalBinary() error {
-	return errors.New("nope")
-}
-
-func (*cannotEncode) MarshalText() ([]byte, error) {
-	return nil, errors.New("nope")
-}
-
-func (*cannotEncode) UnmarshalText() error {
-	return errors.New("nope")
 }

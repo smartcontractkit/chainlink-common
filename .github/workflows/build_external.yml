@@ -37,7 +37,7 @@ jobs:
         with:
           push_tag: ""
           cl_repo: smartcontractkit/chainlink
-          cl_ref: BCF-2612-ChainReader-EVM-POC
+          cl_ref: develop
           dep_relay_sha: ${{ github.event.pull_request.head.sha }}
   solana-build-relay:
     environment: integration

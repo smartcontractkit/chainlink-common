@@ -16,6 +16,8 @@ import (
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
 
 	"github.com/fxamacker/cbor/v2"
+	"github.com/mitchellh/mapstructure"
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -60,6 +62,36 @@ func TestVersionedBytesFunctions(t *testing.T) {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
+
+	t.Run("detect json array with leading whitespace", func(t *testing.T) {
+		// Non-array with leading whitespace
+		versionedBytes := &pb.VersionedBytes{
+			Version: 0, // json
+			Data:    []byte("\n { 'key' : 'value' } "),
+		}
+		b, err := isArray(versionedBytes)
+		assert.NoError(t, err)
+		assert.False(t, b)
+		versionedBytesArray := &pb.VersionedBytes{
+			Version: 0, // json
+			Data:    []byte("\n [ 1, 2, 3 ] "),
+		}
+
+		// Array with leading whitespace
+		b, err = isArray(versionedBytesArray)
+		assert.NoError(t, err)
+		assert.True(t, b)
+
+		// All whitespace
+		versionedBytesAllWhitespace := &pb.VersionedBytes{
+			Version: 0, // json
+			Data:    []byte(" \t "),
+		}
+		b, err = isArray(versionedBytesAllWhitespace)
+		assert.NoError(t, err)
+		assert.False(t, b)
+
+	})
 }
 
 func TestChainReaderClient(t *testing.T) {
@@ -80,14 +112,37 @@ func TestChainReaderClient(t *testing.T) {
 	ctx := context.Background()
 
 	errorTypes := []error{
+		types.InvalidEncodingError{},
 		types.InvalidTypeError{},
 		types.FieldNotFoundError{},
+		types.WrongNumberOfElements{},
+		types.NotASliceError{},
 	}
 
 	for _, errorType := range errorTypes {
 		es.err = errorType
+		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			_, err := client.Encode(ctx, "any", "doesnotmatter")
+			assert.IsType(t, errorType, err)
+		})
+
+		t.Run("Decode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			_, err := client.Encode(ctx, "any", "doesnotmatter")
+			assert.IsType(t, errorType, err)
+		})
+
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
+			assert.IsType(t, errorType, err)
+		})
+
+		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			_, err := client.GetMaxEncodingSize(ctx, 1, "anything")
+			assert.IsType(t, errorType, err)
+		})
+
+		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			_, err := client.GetMaxDecodingSize(ctx, 1, "anything")
 			assert.IsType(t, errorType, err)
 		})
 	}
@@ -95,6 +150,18 @@ func TestChainReaderClient(t *testing.T) {
 	// make sure that errors come from client directly
 	es.err = nil
 	var invalidTypeErr types.InvalidTypeError
+
+	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
+
+		assert.NotNil(t, errors.As(err, &invalidTypeErr))
+	})
+
+	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
+		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
+		assert.NotNil(t, errors.As(err, &invalidTypeErr))
+	})
+
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
 		assert.NotNil(t, errors.As(err, &invalidTypeErr))
@@ -108,6 +175,8 @@ type interfaceTester struct {
 	fs     *fakeCodecServer
 }
 
+const methodName = "method"
+
 var encoder = makeEncoder()
 
 func makeEncoder() cbor.EncMode {
@@ -117,21 +186,29 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-func (it *interfaceTester) SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract {
+func (it *interfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) (types.BoundContract, string) {
 	it.fs.SetLatestValue(testStruct)
-	return types.BoundContract{}
+	return types.BoundContract{}, methodName
 }
 
-func (it *interfaceTester) GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract {
-	return types.BoundContract{}
-}
+func (it *interfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) ocrtypes.Report {
+	if request.TestOn == TestItemType {
+		bytes, err := encoder.Marshal(request.TestStructs[0])
+		require.NoError(t, err)
+		return bytes
+	}
 
-func (it *interfaceTester) GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract {
-	return types.BoundContract{}
+	bytes, err := encoder.Marshal(request.TestStructs)
+	require.NoError(t, err)
+	return bytes
 }
 
 func (it *interfaceTester) GetAccountBytes(_ int) []byte {
 	return []byte{1, 2, 3}
+}
+
+func (it *interfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
+	return false
 }
 
 func (it *interfaceTester) Setup(t *testing.T) {
@@ -179,25 +256,25 @@ type fakeCodecServer struct {
 	lock     *sync.Mutex
 }
 
+func (f *fakeCodecServer) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	return f.GetMaxEncodingSize(ctx, n, itemType)
+}
+
+func (f *fakeCodecServer) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	switch itemType {
+	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
+		return 1, nil
+	}
+	return 0, types.InvalidTypeError{}
+}
+
 func (f *fakeCodecServer) SetLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.latest = append(f.latest, *ts)
 }
 
-func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, method string, params, returnVal any) error {
-	if method == MethodReturningUint64 {
-		r := returnVal.(*uint64)
-		*r = AnyValueToReadWithoutAnArgument
-		return nil
-	} else if method == MethodReturningUint64Slice {
-		r := returnVal.(*[]uint64)
-		*r = AnySliceToReadWithoutAnArgument
-		return nil
-	} else if method != MethodTakingLatestParamsReturningTestStruct {
-		return errors.New("unknown method " + method)
-	}
-
+func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, _ string, params, returnVal any) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	lp := params.(*LatestParams)
@@ -206,12 +283,63 @@ func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContr
 	return nil
 }
 
+func (f *fakeCodecServer) Encode(_ context.Context, item any, itemType string) (ocrtypes.Report, error) {
+	f.lastItem = item
+	switch itemType {
+	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
+		return encoder.Marshal(item)
+	}
+	return nil, types.InvalidTypeError{}
+}
+
+func (f *fakeCodecServer) Decode(_ context.Context, raw []byte, into any, itemType string) error {
+	switch itemType {
+	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
+		return mapstructure.Decode(f.lastItem, into)
+	}
+	return types.InvalidTypeError{}
+}
+
+func (f *fakeCodecServer) CreateType(itemType string, _, isEncode bool) (any, error) {
+	switch itemType {
+	case TestItemType:
+		return &TestStruct{}, nil
+	case TestItemSliceType:
+		return &[]TestStruct{}, nil
+	case TestItemArray2Type:
+		return &[2]TestStruct{}, nil
+	case TestItemArray1Type:
+		return &[1]TestStruct{}, nil
+	case methodName:
+		if isEncode {
+			return &LatestParams{}, nil
+		}
+		return &TestStruct{}, nil
+	}
+
+	return nil, types.InvalidTypeError{}
+}
+
+var _ types.RemoteCodec = &fakeCodecServer{}
+
 type errorServer struct {
 	err error
 	pb.UnimplementedChainReaderServer
 }
 
 func (e *errorServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	return nil, e.err
+}
+
+func (e *errorServer) GetEncoding(context.Context, *pb.GetEncodingRequest) (*pb.GetEncodingResponse, error) {
+	return nil, e.err
+}
+
+func (e *errorServer) GetDecoding(context.Context, *pb.GetDecodingRequest) (*pb.GetDecodingResponse, error) {
+	return nil, e.err
+}
+
+func (e *errorServer) GetMaxSize(context.Context, *pb.GetMaxSizeRequest) (*pb.GetMaxSizeResponse, error) {
 	return nil, e.err
 }
 

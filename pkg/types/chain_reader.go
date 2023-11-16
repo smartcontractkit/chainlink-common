@@ -7,17 +7,14 @@ import (
 
 // Errors exposed to product plugins
 
-type InvalidTypeError struct{}
+type ErrChainReader string
 
-func (InvalidTypeError) Error() string {
-	return "invalid type"
-}
+func (e ErrChainReader) Error() string { return string(e) }
 
-type FieldNotFoundError struct{}
-
-func (FieldNotFoundError) Error() string {
-	return "field not found"
-}
+const (
+	ErrInvalidType   = ErrChainReader("invalid type")
+	ErrFieldNotFound = ErrChainReader("field not found")
+)
 
 // Errors used only by relay plugins
 

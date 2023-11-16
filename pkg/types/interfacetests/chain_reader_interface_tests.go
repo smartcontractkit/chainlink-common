@@ -16,8 +16,7 @@ import (
 )
 
 type ChainReaderInterfaceTester interface {
-	Setup(t *testing.T)
-	Teardown(t *testing.T)
+	Setup(t *testing.T) func(t *testing.T)
 	Name() string
 	GetAccountBytes(i int) []byte
 	GetChainReader(t *testing.T) types.ChainReader
@@ -74,8 +73,8 @@ func runTests(t *testing.T, tester ChainReaderInterfaceTester, tests map[string]
 	for i := 0; i < len(testNames); i++ {
 		name := testNames[i]
 		t.Run(name, func(t *testing.T) {
-			tester.Setup(t)
-			defer func() { tester.Teardown(t) }()
+			tearDown := tester.Setup(t)
+			defer func() { tearDown(t) }()
 			tests[name](t)
 		})
 	}

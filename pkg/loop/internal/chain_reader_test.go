@@ -135,7 +135,7 @@ func (it *interfaceTester) GetAccountBytes(_ int) []byte {
 	return []byte{1, 2, 3}
 }
 
-func (it *interfaceTester) Setup(t *testing.T) {
+func (it *interfaceTester) Setup(t *testing.T) func(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	it.lis = lis
 	it.fs = &fakeCodecServer{lock: &sync.Mutex{}}
@@ -143,23 +143,23 @@ func (it *interfaceTester) Setup(t *testing.T) {
 	pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.fs})
 	go func() {
 		if err := s.Serve(lis); err != nil {
-			panic(err)
+			t.Fatal(err)
 		}
 	}()
-}
 
-func (it *interfaceTester) Teardown(t *testing.T) {
-	if it.server != nil {
-		it.server.Stop()
+	return func(t *testing.T) {
+		if it.server != nil {
+			it.server.Stop()
+		}
+
+		if it.conn != nil {
+			require.NoError(t, it.conn.Close())
+		}
+
+		it.lis = nil
+		it.server = nil
+		it.conn = nil
 	}
-
-	if it.conn != nil {
-		require.NoError(t, it.conn.Close())
-	}
-
-	it.lis = nil
-	it.server = nil
-	it.conn = nil
 }
 
 func (it *interfaceTester) Name() string {

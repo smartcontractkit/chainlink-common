@@ -18,10 +18,17 @@ jobs:
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
       
       - name: Run golangci-lint
-        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --tests=false --exclude-use-default --timeout=5m0s --out-format json > golangci-lint-results.json \;
+        run: docker run --rm -v ${{ github.workspace }}:/app -w /app golangci/golangci-lint:v1.54.2 golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 --out-format json > golangci-lint-results.json || true
 
       - name: Check golangci-lint JSON report for errors
-        run: if jq -e '.Issues[]' golangci-lint-results.json > /dev/null; then exit 1; else echo "No issues found"; fi
+        run: | 
+          if jq -e '.Issues | length > 0' golangci-lint-results.json; then
+              echo "Lint issues found:" 
+              jq '.Issues[] | "\(.FromLinter): \(.Pos.Filename):\(.Pos.Line) \(.Text)"' golangci-lint-results.json
+              exit 1
+          else 
+              echo "No issues found"
+          fi
 
       - name: Upload golangci-lint JSON report
         if: always()

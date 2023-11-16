@@ -42,7 +42,7 @@ jobs:
           workflow: golangci_lint.yml
           workflow_conclusion: ""
           name_is_regexp: true
-          name: golangci-lint-report
+          name: golangci-lint-json-report
           if_no_artifact_found: warn
 
       - name: Download Go PKG test reports
@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           echo "sonarqube_coverage_report_paths=$(find -type f -name '*coverage.out' -printf "%p,")" >> $GITHUB_OUTPUT
-          echo "sonarqube_golangci_report_paths=$(find -type f -name 'golangci-lint-report.xml' -printf "%p,")" >> $GITHUB_OUTPUT
+          echo "sonarqube_golangci_report_paths=$(find -type f -name 'golangci-lint-results.json' -printf "%p,")" >> $GITHUB_OUTPUT
           
       - name: SonarQube Scan
         if: always()

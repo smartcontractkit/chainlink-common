@@ -17,17 +17,15 @@ jobs:
       - name: Install golangci-lint
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
       
-      # go.work makes it necessary to run linter manually
       - name: Run golangci-lint
-        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s --out-format checkstyle:golangci-lint-report.xml \;
-      
-      - name: Check golangci-lint report for errors
-        run: find . -name "golangci-lint-report.xml" -exec grep "error" {} + && exit 1 || true
+        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s --out-format json > golangci-lint-results.json \;
 
-      - name: Upload golangci-lint report
+      - name: Check golangci-lint JSON report for errors
+        run: if jq -e '.Issues[]' golangci-lint-results.json > /dev/null; then exit 1; else echo "No issues found"; fi
+
+      - name: Upload golangci-lint JSON report
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: golangci-lint-report
-          path: |
-            ./golangci-lint-report.xml
+          name: golangci-lint-json-report
+          path: ./golangci-lint-results.json

@@ -5,6 +5,7 @@ type SugaredLogger interface {
 	Logger
 	// AssumptionViolation variants log at error level with the message prefix "AssumptionViolation: ".
 	AssumptionViolationf(format string, vals ...interface{})
+	AssumptionViolationw(format string, vals ...interface{})
 	// ErrorIf logs the error if present.
 	ErrorIf(err error, msg string)
 	// ErrorIfFn calls fn() and logs any returned error along with msg.

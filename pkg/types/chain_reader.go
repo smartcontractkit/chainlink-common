@@ -51,7 +51,7 @@ type BoundContract struct {
 }
 
 type Event struct {
-	ChainId           string
+	ChainID           string
 	EventIndexInBlock string
 	Address           string
 	TxHash            string

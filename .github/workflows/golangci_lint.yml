@@ -18,7 +18,7 @@ jobs:
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
       
       - name: Run golangci-lint
-        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s --out-format json > golangci-lint-results.json \;
+        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --tests=false --exclude-use-default --timeout=5m0s --out-format json > golangci-lint-results.json \;
 
       - name: Check golangci-lint JSON report for errors
         run: if jq -e '.Issues[]' golangci-lint-results.json > /dev/null; then exit 1; else echo "No issues found"; fi

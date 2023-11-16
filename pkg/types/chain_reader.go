@@ -3,18 +3,27 @@ package types
 import (
 	"context"
 	"time"
+
+	"google.golang.org/grpc/status"
 )
 
 // Errors exposed to product plugins
 
-type ErrChainReader string
+type errChainReader string
 
-func (e ErrChainReader) Error() string { return string(e) }
+func (e errChainReader) Error() string { return string(e) }
 
 const (
-	ErrInvalidType   = ErrChainReader("invalid type")
-	ErrFieldNotFound = ErrChainReader("field not found")
+	ErrInvalidType   = errChainReader("invalid type")
+	ErrFieldNotFound = errChainReader("field not found")
 )
+
+func UnwrapClientError(err error) error {
+	if s, ok := status.FromError(err); ok {
+		return errChainReader(s.String())
+	}
+	return err
+}
 
 // Errors used only by relay plugins
 

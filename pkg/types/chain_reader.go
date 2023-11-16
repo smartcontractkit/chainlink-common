@@ -7,12 +7,6 @@ import (
 
 // Errors exposed to product plugins
 
-type InvalidEncodingError struct{}
-
-func (InvalidEncodingError) Error() string {
-	return "cannot decode bytes"
-}
-
 type InvalidTypeError struct{}
 
 func (InvalidTypeError) Error() string {
@@ -23,18 +17,6 @@ type FieldNotFoundError struct{}
 
 func (FieldNotFoundError) Error() string {
 	return "field not found"
-}
-
-type WrongNumberOfElements struct{}
-
-func (WrongNumberOfElements) Error() string {
-	return "wrong number of elements decoded"
-}
-
-type NotASliceError struct{}
-
-func (NotASliceError) Error() string {
-	return "input is not a slice or array"
 }
 
 // Errors used only by relay plugins
@@ -60,7 +42,6 @@ func (e ErrorChainReaderInvalidConfig) Error() string {
 type ChainReader interface {
 	// returnVal should satisfy Marshaller interface
 	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
-	Codec
 }
 
 type BoundContract struct {

@@ -74,7 +74,7 @@ func TestNamed(t *testing.T) {
 		},
 		{
 			expectedName: "prod",
-			logger:       Named(prod, "prod"),
+			logger:        Named(prod, "prod"),
 		},
 		{
 			expectedName: "initialized",

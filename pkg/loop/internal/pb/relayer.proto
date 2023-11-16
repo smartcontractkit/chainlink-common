@@ -292,7 +292,6 @@ message GetEncodingResponse {
 message GetDecodingRequest {
   bytes encoded = 1;
   string itemType = 2;
-  bool forceSplit = 3;
 }
 
 message GetDecodingResponse {

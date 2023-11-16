@@ -62,36 +62,6 @@ func TestVersionedBytesFunctions(t *testing.T) {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
-
-	t.Run("detect json array with leading whitespace", func(t *testing.T) {
-		// Non-array with leading whitespace
-		versionedBytes := &pb.VersionedBytes{
-			Version: 0, // json
-			Data:    []byte("\n { 'key' : 'value' } "),
-		}
-		b, err := isArray(versionedBytes)
-		assert.NoError(t, err)
-		assert.False(t, b)
-		versionedBytesArray := &pb.VersionedBytes{
-			Version: 0, // json
-			Data:    []byte("\n [ 1, 2, 3 ] "),
-		}
-
-		// Array with leading whitespace
-		b, err = isArray(versionedBytesArray)
-		assert.NoError(t, err)
-		assert.True(t, b)
-
-		// All whitespace
-		versionedBytesAllWhitespace := &pb.VersionedBytes{
-			Version: 0, // json
-			Data:    []byte(" \t "),
-		}
-		b, err = isArray(versionedBytesAllWhitespace)
-		assert.NoError(t, err)
-		assert.False(t, b)
-
-	})
 }
 
 func TestChainReaderClient(t *testing.T) {
@@ -175,8 +145,6 @@ type interfaceTester struct {
 	fs     *fakeCodecServer
 }
 
-const methodName = "method"
-
 var encoder = makeEncoder()
 
 func makeEncoder() cbor.EncMode {
@@ -186,9 +154,17 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-func (it *interfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) (types.BoundContract, string) {
+func (it *interfaceTester) SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract {
 	it.fs.SetLatestValue(testStruct)
-	return types.BoundContract{}, methodName
+	return types.BoundContract{}
+}
+
+func (it *interfaceTester) GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract {
+	return types.BoundContract{}
+}
+
+func (it *interfaceTester) GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract {
+	return types.BoundContract{}
 }
 
 func (it *interfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) ocrtypes.Report {
@@ -274,7 +250,19 @@ func (f *fakeCodecServer) SetLatestValue(ts *TestStruct) {
 	f.latest = append(f.latest, *ts)
 }
 
-func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, _ string, params, returnVal any) error {
+func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, method string, params, returnVal any) error {
+	if method == MethodReturningUint64 {
+		r := returnVal.(*uint64)
+		*r = AnyValueToReadWithoutAnArgument
+		return nil
+	} else if method == MethodReturningUint64Slice {
+		r := returnVal.(*[]uint64)
+		*r = AnySliceToReadWithoutAnArgument
+		return nil
+	} else if method != MethodTakingLatestParamsReturningTestStruct {
+		return errors.New("unknown method " + method)
+	}
+
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	lp := params.(*LatestParams)
@@ -300,7 +288,7 @@ func (f *fakeCodecServer) Decode(_ context.Context, raw []byte, into any, itemTy
 	return types.InvalidTypeError{}
 }
 
-func (f *fakeCodecServer) CreateType(itemType string, _, isEncode bool) (any, error) {
+func (f *fakeCodecServer) CreateType(itemType string, isEncode bool) (any, error) {
 	switch itemType {
 	case TestItemType:
 		return &TestStruct{}, nil
@@ -310,11 +298,17 @@ func (f *fakeCodecServer) CreateType(itemType string, _, isEncode bool) (any, er
 		return &[2]TestStruct{}, nil
 	case TestItemArray1Type:
 		return &[1]TestStruct{}, nil
-	case methodName:
+	case MethodTakingLatestParamsReturningTestStruct:
 		if isEncode {
 			return &LatestParams{}, nil
 		}
 		return &TestStruct{}, nil
+	case MethodReturningUint64:
+		tmp := uint64(0)
+		return &tmp, nil
+	case MethodReturningUint64Slice:
+		var tmp []uint64
+		return &tmp, nil
 	}
 
 	return nil, types.InvalidTypeError{}

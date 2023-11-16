@@ -2,6 +2,7 @@ package loop
 
 import (
 	"context"
+	"net"
 	"os"
 	"runtime/debug"
 
@@ -17,6 +18,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
@@ -36,6 +38,12 @@ type TracingConfig struct {
 
 	// SamplingRatio is the ratio of traces to sample. 1.0 means sample all traces.
 	SamplingRatio float64
+
+	// TLSCertPath is the path to the TLS certificate to use when connecting to the collector.
+	TLSCertPath string
+
+	// OnDialError is called when the dialer fails, providing an opportunity to log.
+	OnDialError func(error)
 }
 
 // NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
@@ -49,22 +57,38 @@ func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
 
 // SetupTracing initializes open telemetry with the provided config.
 // It sets the global trace provider and opens a connection to the configured collector.
-// There is no transport security between the node and OTEL collector.
-// While this is the case, it is recommended to only deploy nodes and the OTEL collector on the same network.
-// TODO: BCF-2703
-func SetupTracing(config TracingConfig) error {
+func SetupTracing(config TracingConfig) (err error) {
 	if !config.Enabled {
 		return nil
 	}
 
 	ctx := context.Background()
 
-	// Set up a trace exporter
-	// Shutting down the traceExporter will not shutdown the underlying connection.
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(config.CollectorTarget), otlptracegrpc.WithDialOption(
-		// Note the use of insecure transport here. TLS is recommended in production.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	))
+	var creds credentials.TransportCredentials
+	if config.TLSCertPath != "" {
+		creds, err = credentials.NewClientTLSFromFile(config.TLSCertPath, "")
+		if err != nil {
+			return err
+		}
+	} else {
+		creds = insecure.NewCredentials()
+	}
+
+	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
+		// Note the potential use of insecure transport here. TLS is recommended in production.
+		grpc.WithTransportCredentials(creds),
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			conn, err2 := net.Dial("tcp", s)
+			if err2 != nil {
+				config.OnDialError(err2)
+			}
+			return conn, err2
+		}))
+	if err != nil {
+		return err
+	}
+
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
 		return err
 	}

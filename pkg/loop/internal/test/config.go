@@ -99,7 +99,7 @@ func (c staticChainReader) GetMaxDecodingSize(ctx context.Context, n int, itemTy
 	return 0, errors.New("not used for these test")
 }
 
-func (c staticChainReader) Encode(ctx context.Context, item any, itemType string) (libocr.Report, error) {
+func (c staticChainReader) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
 	return nil, errors.New("not used for these test")
 }
 

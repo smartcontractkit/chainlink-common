@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"google.golang.org/grpc/status"
@@ -25,25 +26,7 @@ func UnwrapClientError(err error) error {
 	return err
 }
 
-// Errors used only by relay plugins
-
-type ErrorChainReaderUnsupported struct{}
-
-func (e ErrorChainReaderUnsupported) Error() string {
-	return "ChainReader is not supported by the relay"
-}
-
-type ErrorNoChainReaderInJobSpec struct{}
-
-func (e ErrorNoChainReaderInJobSpec) Error() string {
-	return "There is no ChainReader configuration defined in the job spec"
-}
-
 var ErrInvalidConfig = errors.New("invalid configuration")
-
-func (e ErrorChainReaderInvalidConfig) Error() string {
-	return "Invalid ChainReader configuration"
-}
 
 type ChainReader interface {
 	// returnVal should satisfy Marshaller interface

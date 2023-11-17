@@ -321,6 +321,10 @@ func (s StaticMedianProvider) ChainReader() types.ChainReader {
 	return staticChainReader{}
 }
 
+func (s StaticMedianProvider) Codec() types.Codec {
+	return staticCodec{}
+}
+
 type staticReportCodec struct{}
 
 func (s staticReportCodec) BuildReport(os []median.ParsedAttributedObservation) (libocr.Report, error) {

@@ -258,6 +258,9 @@ message FromAccountReply {
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+}
+
+service Codec {
   rpc GetEncoding(GetEncodingRequest) returns (GetEncodingResponse);
   rpc GetDecoding(GetDecodingRequest) returns (GetDecodingResponse);
   rpc GetMaxSize(GetMaxSizeRequest) returns (GetMaxSizeResponse);

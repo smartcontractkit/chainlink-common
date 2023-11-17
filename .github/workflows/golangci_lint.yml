@@ -20,7 +20,7 @@ jobs:
       - name: Run golangci-lint
         run: docker run --rm -v ${{ github.workspace }}:/app -w /app golangci/golangci-lint:v1.54.2 golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 --out-format checkstyle:golangci-lint-results.xml,json:golangci-lint-results.json || true
 
-      - name: Check golangci-lint JSON report for errors
+      - name: Check golangci-lint report for errors
         run: | 
           if jq -e '.Issues | length > 0' golangci-lint-results.json; then
               echo "Lint issues found:" 

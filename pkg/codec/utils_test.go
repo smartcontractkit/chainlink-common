@@ -1,6 +1,7 @@
 package codec_test
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -11,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/codec"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/codec"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 func TestFitsInNBitsSigned(t *testing.T) {
@@ -70,13 +71,13 @@ func TestBigIntHook(t *testing.T) {
 		t.Run("Overflow return an error "+intType.Type.String(), func(t *testing.T) {
 			bigger := new(big.Int).Add(intType.Max, big.NewInt(1))
 			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
-			assert.IsType(t, types.InvalidTypeError{}, err)
+			assert.True(t, errors.Is(err, types.ErrInvalidType))
 		})
 
 		t.Run("Underflow return an error "+intType.Type.String(), func(t *testing.T) {
 			smaller := new(big.Int).Sub(intType.Min, big.NewInt(1))
 			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
-			assert.IsType(t, types.InvalidTypeError{}, err)
+			assert.True(t, errors.Is(err, types.ErrInvalidType))
 		})
 
 		t.Run("Converts from "+intType.Type.String(), func(t *testing.T) {
@@ -108,7 +109,7 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Errors for invalid string", func(t *testing.T) {
 		_, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
-		require.IsType(t, types.InvalidTypeError{}, err)
+		require.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 }
 
@@ -127,13 +128,13 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1, 2, 3}
 		_, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.IsType(t, types.WrongNumberOfElements{}, err)
+		assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
 	})
 
 	t.Run("Too small slice returns error", func(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1}
 		_, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.IsType(t, types.WrongNumberOfElements{}, err)
+		assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
 	})
 }

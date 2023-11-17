@@ -6,16 +6,15 @@ import (
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	. "github.com/smartcontractkit/chainlink-relay/pkg/types/interfacetests"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestCodecClient(t *testing.T) {
@@ -39,38 +38,36 @@ func TestCodecClient(t *testing.T) {
 		es.err = errorType
 		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := client.Encode(ctx, "any", "doesnotmatter")
-			assert.IsType(t, errorType, err)
+			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("Decode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := client.Encode(ctx, "any", "doesnotmatter")
-			assert.IsType(t, errorType, err)
+			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := client.GetMaxEncodingSize(ctx, 1, "anything")
-			assert.IsType(t, errorType, err)
+			assert.True(t, errors.Is(err, errorType))
 		})
 
-		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+		t.Run("GetMaxDecodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := client.GetMaxDecodingSize(ctx, 1, "anything")
-			assert.IsType(t, errorType, err)
+			assert.True(t, errors.Is(err, errorType))
 		})
 	}
 
 	// make sure that errors come from client directly
 	es.err = nil
-	var invalidTypeErr types.InvalidTypeError
-
 	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
 
-		assert.NotNil(t, errors.As(err, &invalidTypeErr))
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
-		err := client.Decode(ctx, []byte("does not matter"), &cannotEncode{}, "")
-		assert.NotNil(t, errors.As(err, &invalidTypeErr))
+		err := client.Decode(ctx, []byte("does not matter"), &cannotEncode{}, TestItemType)
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 }
 
@@ -108,10 +105,10 @@ func (f *fakeCodec) GetMaxEncodingSize(_ context.Context, _ int, itemType string
 	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
 		return 1, nil
 	}
-	return 0, types.InvalidTypeError{}
+	return 0, types.ErrInvalidType
 }
 
-func (it *codecInterfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) ocrtypes.Report {
+func (it *codecInterfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) []byte {
 	if request.TestOn == TestItemType {
 		bytes, err := encoder.Marshal(request.TestStructs[0])
 		require.NoError(t, err)
@@ -127,13 +124,13 @@ func (it *codecInterfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
 	return false
 }
 
-func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) (ocrtypes.Report, error) {
+func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) ([]byte, error) {
 	f.lastItem = item
 	switch itemType {
 	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
 		return encoder.Marshal(item)
 	}
-	return nil, types.InvalidTypeError{}
+	return nil, types.ErrInvalidType
 }
 
 func (f *fakeCodec) Decode(_ context.Context, _ []byte, into any, itemType string) error {
@@ -141,7 +138,7 @@ func (f *fakeCodec) Decode(_ context.Context, _ []byte, into any, itemType strin
 	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
 		return mapstructure.Decode(f.lastItem, into)
 	}
-	return types.InvalidTypeError{}
+	return types.ErrInvalidType
 }
 
 type codecErrServer struct {
@@ -154,7 +151,8 @@ func (e *codecErrServer) GetEncoding(context.Context, *pb.GetEncodingRequest) (*
 }
 
 func (e *codecErrServer) GetDecoding(context.Context, *pb.GetDecodingRequest) (*pb.GetDecodingResponse, error) {
-	return nil, e.err
+	anyResp := &pb.GetDecodingResponse{RetVal: &pb.VersionedBytes{Version: CBOREncodingVersion, Data: []byte{1, 2, 3}}}
+	return anyResp, e.err
 }
 
 func (e *codecErrServer) GetMaxSize(context.Context, *pb.GetMaxSizeRequest) (*pb.GetMaxSizeResponse, error) {

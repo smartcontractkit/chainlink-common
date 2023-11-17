@@ -3,15 +3,17 @@ package internal
 import (
 	"context"
 	jsonv1 "encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 
 	jsonv2 "github.com/go-json-experiment/json"
 
 	"github.com/fxamacker/cbor/v2"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ types.ChainReader = (*chainReaderClient)(nil)
@@ -41,12 +43,12 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	case JSONEncodingVersion1:
 		bytes, err = jsonv1.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	case JSONEncodingVersion2:
 		bytes, err = jsonv2.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	case CBOREncodingVersion:
 		enco := cbor.CoreDetEncOptions()
@@ -58,10 +60,10 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 		}
 		bytes, err = enc.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	default:
-		return nil, fmt.Errorf("unsupported encoding version %d for data %v", version, data)
+		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
 	}
 
 	return &pb.VersionedBytes{Version: uint32(version), Data: bytes}, nil
@@ -81,7 +83,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("%w: %w", types.InvalidTypeError{}, err)
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}
 	return nil
 }
@@ -96,7 +98,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 
 	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: versionedParams})
 	if err != nil {
-		return unwrapClientError(err)
+		return types.UnwrapClientError(err)
 	}
 
 	return decodeVersionedBytes(retVal, reply.RetVal)
@@ -150,19 +152,32 @@ func getEncodedType(itemType string, possibleTypeProvider any, forEncoding bool)
 }
 
 func unwrapClientError(err error) error {
-	if s, ok := status.FromError(err); ok {
-		switch s.Message() {
-		case types.InvalidEncodingError{}.Error():
-			return types.InvalidEncodingError{}
-		case types.InvalidTypeError{}.Error():
-			return types.InvalidTypeError{}
-		case types.FieldNotFoundError{}.Error():
-			return types.FieldNotFoundError{}
-		case types.WrongNumberOfElements{}.Error():
-			return types.WrongNumberOfElements{}
-		case types.NotASliceError{}.Error():
-			return types.NotASliceError{}
+	if err == nil {
+		return nil
+	}
+	errTypes := []error{
+		types.ErrInvalidType,
+		types.ErrFieldNotFound,
+		types.ErrInvalidEncoding,
+		types.ErrWrongNumberOfElements,
+		types.ErrNotASlice,
+		types.ErrUnknown,
+	}
+
+	s, ok := status.FromError(err)
+	if !ok {
+		return fmt.Errorf("%w: %w", types.ErrUnknown, err)
+	}
+
+	msg := s.Message()
+	for _, etype := range errTypes {
+		if msg == etype.Error() {
+			return etype
+		} else if strings.HasPrefix(msg, etype.Error()+":") {
+			rest := strings.SplitN(msg, ":", 2)[1]
+			return fmt.Errorf("%w: %w", etype, errors.New(rest))
 		}
 	}
-	return err
+
+	return fmt.Errorf("%w: %w", types.ErrUnknown, err)
 }

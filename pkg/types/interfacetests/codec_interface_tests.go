@@ -1,14 +1,14 @@
 package interfacetests
 
 import (
+	"errors"
 	"testing"
 
-	ocrTypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type EncodeRequest struct {
@@ -20,7 +20,7 @@ type EncodeRequest struct {
 
 type CodecInterfaceTester interface {
 	BasicTester
-	EncodeFields(t *testing.T, request *EncodeRequest) ocrTypes.Report
+	EncodeFields(t *testing.T, request *EncodeRequest) []byte
 	GetCodec(t *testing.T) types.Codec
 
 	// IncludeArrayEncodingSizeEnforcement is here in case there's no way to have fixed arrays in the encoded values
@@ -199,10 +199,10 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, item, "NOT"+TestItemType)
-				assert.IsType(t, types.InvalidTypeError{}, err)
+				assert.True(t, errors.Is(err, types.ErrInvalidType))
 
 				err = codec.Decode(ctx, []byte(""), item, "NOT"+TestItemType)
-				assert.IsType(t, types.InvalidTypeError{}, err)
+				assert.True(t, errors.Is(err, types.ErrInvalidType))
 			},
 		},
 		{
@@ -217,7 +217,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, items, TestItemArray2Type)
-				assert.IsType(t, types.WrongNumberOfElements{}, err)
+				assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
 			},
 		},
 		{
@@ -233,7 +233,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, items, TestItemArray1Type)
-				assert.IsType(t, types.WrongNumberOfElements{}, err)
+				assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
 			},
 		},
 		{
@@ -241,7 +241,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 			test: func(t *testing.T) {
 				cr := tester.GetCodec(t)
 				_, err := cr.GetMaxEncodingSize(ctx, 10, "not"+TestItemType)
-				assert.IsType(t, types.InvalidTypeError{}, err)
+				assert.True(t, errors.Is(err, types.ErrInvalidType))
 			},
 		},
 	}
@@ -269,7 +269,7 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &item, TestItemType)
-				assert.IsType(t, types.InvalidEncodingError{}, err)
+				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
 			},
 		},
 		{
@@ -284,7 +284,7 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &item, TestItemType)
-				assert.IsType(t, types.InvalidEncodingError{}, err)
+				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
 			},
 		},
 		{
@@ -299,7 +299,7 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &items, TestItemSliceType)
-				assert.IsType(t, types.InvalidEncodingError{}, err)
+				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
 			},
 		},
 		{
@@ -314,7 +314,7 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &items, TestItemSliceType)
-				assert.IsType(t, types.InvalidEncodingError{}, err)
+				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
 			},
 		},
 	}

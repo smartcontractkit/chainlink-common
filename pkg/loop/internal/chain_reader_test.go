@@ -11,29 +11,27 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
 	"google.golang.org/grpc"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	. "github.com/smartcontractkit/chainlink-relay/pkg/types/interfacetests"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
 	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
-		expected := types.InvalidTypeError{}
 		invalidData := make(chan int)
 
 		_, err := encodeVersionedBytes(invalidData, JSONEncodingVersion2)
-		if err == nil || !errors.Is(err, expected) {
-			t.Errorf("expected error: %s, but got: %v", expected, err)
-		}
+
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
-		expected := fmt.Errorf("unsupported encoding version %d for data map[key:value]", unsupportedVer)
+		expected := fmt.Errorf("%w: unsupported encoding version %d for data map[key:value]", types.ErrInvalidEncoding, unsupportedVer)
 		data := map[string]interface{}{
 			"key": "value",
 		}
@@ -87,11 +85,9 @@ func TestChainReaderClient(t *testing.T) {
 
 	// make sure that errors come from client directly
 	es.err = nil
-	var invalidTypeErr types.InvalidTypeError
-
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
-		assert.NotNil(t, errors.As(err, &invalidTypeErr))
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 }
 

@@ -30,7 +30,7 @@ jobs:
               echo "No issues found"
           fi
 
-      - name: Upload golangci-lint JSON report
+      - name: Upload golangci-lint report
         if: always()
         uses: actions/upload-artifact@v3
         with:

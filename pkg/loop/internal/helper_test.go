@@ -11,17 +11,16 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-
-	. "github.com/smartcontractkit/chainlink-relay/pkg/types/interfacetests"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 
 var errorTypes = []error{
-	types.InvalidEncodingError{},
-	types.InvalidTypeError{},
-	types.FieldNotFoundError{},
-	types.WrongNumberOfElements{},
-	types.NotASliceError{},
+	types.ErrInvalidEncoding,
+	types.ErrInvalidType,
+	types.ErrFieldNotFound,
+	types.ErrWrongNumberOfElements,
+	types.ErrNotASlice,
 }
 
 func connFromLis(t *testing.T, lis *bufconn.Listener) *grpc.ClientConn {
@@ -117,5 +116,5 @@ func (fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) 
 		return &tmp, nil
 	}
 
-	return nil, types.InvalidTypeError{}
+	return nil, types.ErrInvalidType
 }

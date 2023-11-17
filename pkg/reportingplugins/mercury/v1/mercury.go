@@ -15,14 +15,14 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/reportingplugins/mercury"
+	"github.com/smartcontractkit/chainlink-common/pkg/reportingplugins/mercury"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // MaxAllowedBlocks indicates the maximum len of LatestBlocks in any given observation.
 // observations that violate this will be discarded
-const MaxAllowedBlocks = 10
+const MaxAllowedBlocks = 5
 
 // Mercury-specific reporting plugin, based off of median:
 // https://github.com/smartcontractkit/offchain-reporting/blob/master/lib/offchainreporting2/reportingplugin/median/median.go
@@ -229,6 +229,14 @@ func (rp *reportingPlugin) Observation(ctx context.Context, repts ocrtypes.Repor
 
 	if len(obsErrors) > 0 {
 		rp.logger.Warnw(fmt.Sprintf("Observe failed %d/6 observations", len(obsErrors)), "err", errors.Join(obsErrors...))
+	}
+
+	p.LatestBlocks = make([]*BlockProto, len(obs.LatestBlocks))
+	for i, b := range obs.LatestBlocks {
+		p.LatestBlocks[i] = &BlockProto{Num: b.Num, Hash: []byte(b.Hash), Ts: b.Ts}
+	}
+	if len(p.LatestBlocks) == 0 {
+		rp.logger.Warn("Observation had no LatestBlocks")
 	}
 
 	return proto.Marshal(&p)

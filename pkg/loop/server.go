@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // NewStartedServer returns a started Server.
@@ -71,8 +71,10 @@ func (s *Server) start() error {
 	if err := SetupTracing(TracingConfig{
 		Enabled:         envCfg.TracingEnabled,
 		CollectorTarget: envCfg.TracingCollectorTarget,
-		NodeAttributes:  envCfg.TracingAttributes,
 		SamplingRatio:   envCfg.TracingSamplingRatio,
+		TLSCertPath:     envCfg.TracingTLSCertPath,
+		NodeAttributes:  envCfg.TracingAttributes,
+		OnDialError:     func(err error) { s.Logger.Errorw("Failed to dial", "err", err) },
 	}); err != nil {
 		// non blocking to server start
 		s.Logger.Errorf("Failed to setup tracing: %s", err)

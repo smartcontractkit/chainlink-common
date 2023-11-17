@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type staticConfigProvider struct{}
@@ -99,7 +99,7 @@ func (c staticCodec) GetMaxDecodingSize(ctx context.Context, n int, itemType str
 	return 0, errors.New("not used for these test")
 }
 
-func (c staticCodec) Encode(ctx context.Context, item any, itemType string) (libocr.Report, error) {
+func (c staticCodec) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
 	return nil, errors.New("not used for these test")
 }
 

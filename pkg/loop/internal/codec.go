@@ -3,10 +3,8 @@ package internal
 import (
 	"context"
 
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ types.Codec = (*codecClient)(nil)
@@ -16,7 +14,7 @@ type codecClient struct {
 	grpc pb.CodecClient
 }
 
-func (c *codecClient) Encode(ctx context.Context, item any, itemType string) (libocr.Report, error) {
+func (c *codecClient) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
 	versionedParams, err := encodeVersionedBytes(item, ParamsCurrentEncodingVersion)
 	if err != nil {
 		return nil, err

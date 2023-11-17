@@ -147,7 +147,7 @@ func (it *interfaceTester) Setup(t *testing.T) func(t *testing.T) {
 		}
 	}()
 
-	return func(t *testing.T) {
+	t.Cleanup(func() {
 		if it.server != nil {
 			it.server.Stop()
 		}
@@ -159,7 +159,7 @@ func (it *interfaceTester) Setup(t *testing.T) func(t *testing.T) {
 		it.lis = nil
 		it.server = nil
 		it.conn = nil
-	}
+	})
 }
 
 func (it *interfaceTester) Name() string {

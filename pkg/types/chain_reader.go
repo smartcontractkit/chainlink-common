@@ -39,7 +39,7 @@ func (e ErrorNoChainReaderInJobSpec) Error() string {
 	return "There is no ChainReader configuration defined in the job spec"
 }
 
-type ErrorChainReaderInvalidConfig struct{}
+var ErrInvalidConfig = errors.New("invalid configuration")
 
 func (e ErrorChainReaderInvalidConfig) Error() string {
 	return "Invalid ChainReader configuration"

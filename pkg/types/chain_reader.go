@@ -7,17 +7,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Errors exposed to product plugins
-
 type errChainReader string
 
 func (e errChainReader) Error() string { return string(e) }
 
 const (
-	ErrInvalidType   = errChainReader("invalid type")
-	ErrFieldNotFound = errChainReader("field not found")
-	ErrInvalidConfig = errChainReader("invalid configuration")
-	ErrUnsupported   = errChainReader("unsupported")
+	InvalidTypeError   = errChainReader("invalid type")
+	FieldNotFoundError = errChainReader("field not found")
+	InvalidConfigError = errChainReader("invalid configuration")
+	UnsupportedError   = errChainReader("unsupported")
 )
 
 func UnwrapClientError(err error) error {

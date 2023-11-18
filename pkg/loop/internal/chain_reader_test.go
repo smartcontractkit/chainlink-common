@@ -135,7 +135,7 @@ func (it *interfaceTester) GetAccountBytes(_ int) []byte {
 	return []byte{1, 2, 3}
 }
 
-func (it *interfaceTester) Setup(t *testing.T) func(t *testing.T) {
+func (it *interfaceTester) Setup(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	it.lis = lis
 	it.fs = &fakeCodecServer{lock: &sync.Mutex{}}

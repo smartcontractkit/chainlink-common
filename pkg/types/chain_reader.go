@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"google.golang.org/grpc/status"
@@ -17,6 +16,8 @@ func (e errChainReader) Error() string { return string(e) }
 const (
 	ErrInvalidType   = errChainReader("invalid type")
 	ErrFieldNotFound = errChainReader("field not found")
+	ErrInvalidConfig = errChainReader("invalid configuration")
+	ErrUnsupported   = errChainReader("unsupported")
 )
 
 func UnwrapClientError(err error) error {
@@ -25,8 +26,6 @@ func UnwrapClientError(err error) error {
 	}
 	return err
 }
-
-var ErrInvalidConfig = errors.New("invalid configuration")
 
 type ChainReader interface {
 	// returnVal should satisfy Marshaller interface

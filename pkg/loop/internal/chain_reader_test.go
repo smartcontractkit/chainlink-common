@@ -14,14 +14,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 
 	"github.com/fxamacker/cbor/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	. "github.com/smartcontractkit/chainlink-relay/pkg/types/interfacetests"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 
 func TestVersionedBytesFunctions(t *testing.T) {

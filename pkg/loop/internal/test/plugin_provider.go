@@ -5,7 +5,7 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type StaticPluginProvider struct{}

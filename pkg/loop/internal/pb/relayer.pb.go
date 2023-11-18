@@ -2201,7 +2201,7 @@ func (x *VersionedBytes) GetData() []byte {
 	return nil
 }
 
-// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
+// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 type GetLatestValueRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2265,7 +2265,7 @@ func (x *GetLatestValueRequest) GetParams() *VersionedBytes {
 	return nil
 }
 
-// GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
+// GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 type GetLatestValueReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2313,7 +2313,7 @@ func (x *GetLatestValueReply) GetRetVal() *VersionedBytes {
 	return nil
 }
 
-// BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].
+// BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].
 type BoundContract struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -265,19 +265,19 @@ message VersionedBytes {
     bytes data = 2;
 }
 
-// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
+// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueRequest {
     BoundContract bc = 1;
     string method = 2;
     VersionedBytes params = 3;
 }
 
-// GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-relay/pkg/types.ChainReader.GetLatestValue].
+// GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueReply {
   VersionedBytes retVal = 1;
 }
 
-// BoundContract represents a [github.com/smartcontractkit/chainlink-relay/pkg/types.BoundContract].
+// BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].
 message BoundContract {
     string address = 1;
     string name = 2;

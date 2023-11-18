@@ -9,8 +9,8 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ types.ChainReader = (*chainReaderClient)(nil)

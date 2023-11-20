@@ -70,12 +70,16 @@ func TestChainReaderClient(t *testing.T) {
 	s := grpc.NewServer()
 	es := &errorServer{}
 	pb.RegisterChainReaderServer(s, es)
+
+	chSrv := make(chan error)
 	go func() {
-		if err := s.Serve(lis); err != nil {
-			panic(err)
-		}
+		chSrv <- s.Serve(lis)
 	}()
-	defer s.Stop()
+	defer func() {
+		s.Stop()
+		err := <-chSrv
+		assert.NoError(t, err)
+	}()
 	conn := connFromLis(t, lis)
 	client := &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
 	ctx := context.Background()

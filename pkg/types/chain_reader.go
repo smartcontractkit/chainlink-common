@@ -30,7 +30,10 @@ func UnwrapClientError(err error) error {
 }
 
 type ChainReader interface {
-	// returnVal should satisfy Marshaller interface
+	// The params argument of GetLatestValue() can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig. It must be a pointer which can be passed into
+	// json.Marshal(). Typically would be either an anonymous map such as `map[string]any{"baz": 42, "test": true}}` or something which implements the `MarshalJSON()` method (satisfying `Marshaller` interface).
+	//
+	// returnVal should be a pointer which can be passed to json.Marshal()
 	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
 }
 

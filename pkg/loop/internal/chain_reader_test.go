@@ -27,7 +27,7 @@ import (
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
 	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
-		expected := types.InvalidTypeError
+		expected := types.ErrInvalidType
 		invalidData := make(chan int)
 
 		_, err := encodeVersionedBytes(invalidData, JSONEncodingVersion2)
@@ -81,8 +81,8 @@ func TestChainReaderClient(t *testing.T) {
 	ctx := context.Background()
 
 	errorTypes := []error{
-		types.InvalidTypeError,
-		types.FieldNotFoundError,
+		types.ErrInvalidType,
+		types.ErrFieldNotFound,
 	}
 
 	for _, errorType := range errorTypes {
@@ -95,7 +95,7 @@ func TestChainReaderClient(t *testing.T) {
 
 	// make sure that errors come from client directly
 	es.err = nil
-	invalidTypeErr := types.InvalidTypeError
+	invalidTypeErr := types.ErrInvalidType
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
 		assert.NotNil(t, errors.As(err, &invalidTypeErr))

@@ -40,12 +40,12 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	case JSONEncodingVersion1:
 		bytes, err = jsonv1.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError, err)
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	case JSONEncodingVersion2:
 		bytes, err = jsonv2.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError, err)
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	case CBOREncodingVersion:
 		enco := cbor.CoreDetEncOptions()
@@ -57,7 +57,7 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 		}
 		bytes, err = enc.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.InvalidTypeError, err)
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported encoding version %d for data %v", version, data)
@@ -80,7 +80,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("%w: %w", types.InvalidTypeError, err)
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}
 	return nil
 }

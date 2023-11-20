@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -22,7 +23,7 @@ const (
 func UnwrapClientError(err error) error {
 	if s, ok := status.FromError(err); ok {
 		if s.Code() == codes.Unimplemented {
-			return errors.ErrUnsupported
+			return fmt.Errorf("%s : %w", s.String(), errors.ErrUnsupported)
 		}
 		return chainReaderError(s.String())
 	}

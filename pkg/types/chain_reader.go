@@ -2,25 +2,29 @@ package types
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type errChainReader string
+type chainReaderError string
 
-func (e errChainReader) Error() string { return string(e) }
+func (e chainReaderError) Error() string { return string(e) }
 
 const (
-	InvalidTypeError   = errChainReader("invalid type")
-	FieldNotFoundError = errChainReader("field not found")
-	InvalidConfigError = errChainReader("invalid configuration")
-	UnsupportedError   = errChainReader("unsupported")
+	ErrInvalidType   = chainReaderError("invalid type")
+	ErrFieldNotFound = chainReaderError("field not found")
+	ErrInvalidConfig = chainReaderError("invalid configuration")
 )
 
 func UnwrapClientError(err error) error {
 	if s, ok := status.FromError(err); ok {
-		return errChainReader(s.String())
+		if s.Code() == codes.Unimplemented {
+			return errors.ErrUnsupported
+		}
+		return chainReaderError(s.String())
 	}
 	return err
 }

@@ -42,7 +42,7 @@ jobs:
           workflow: golangci_lint.yml
           workflow_conclusion: ""
           name_is_regexp: true
-          name: golangci-lint-report
+          name: golangci-lint-results
           if_no_artifact_found: warn
 
       - name: Download Go PKG test reports

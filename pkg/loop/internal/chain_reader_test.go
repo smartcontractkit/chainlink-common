@@ -139,21 +139,27 @@ func (it *interfaceTester) Setup(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	it.lis = lis
 	it.fs = &fakeCodecServer{lock: &sync.Mutex{}}
-	s := grpc.NewServer()
-	pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.fs})
+	it.server = grpc.NewServer()
+	pb.RegisterChainReaderServer(it.server, &chainReaderServer{impl: it.fs})
 	go func() {
-		if err := s.Serve(lis); err != nil {
-			t.Fatal(err)
+		if err := it.server.Serve(lis); err != nil {
+			t.Error(err)
 		}
+	}()
+
+	srvCh := make(chan error)
+	go func() {
+		srvCh <- it.server.Serve(lis)
 	}()
 
 	t.Cleanup(func() {
 		if it.server != nil {
 			it.server.Stop()
+			err := <-srvCh
+			assert.NoError(t, err)
 		}
-
 		if it.conn != nil {
-			require.NoError(t, it.conn.Close())
+			assert.NoError(t, it.conn.Close())
 		}
 
 		it.lis = nil

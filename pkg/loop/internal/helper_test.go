@@ -18,7 +18,6 @@ import (
 var errorTypes = []error{
 	types.ErrInvalidEncoding,
 	types.ErrInvalidType,
-	types.ErrFieldNotFound,
 	types.ErrWrongNumberOfElements,
 	types.ErrNotASlice,
 }

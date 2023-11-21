@@ -1,4 +1,4 @@
-package json
+package sqlutil
 
 import (
 	"database/sql/driver"

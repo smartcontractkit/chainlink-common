@@ -10,6 +10,8 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/stretchr/testify/require"
@@ -85,8 +87,8 @@ func TestChainReaderClient(t *testing.T) {
 	ctx := context.Background()
 
 	errorTypes := []error{
+		fmt.Errorf("%w: some particular reason", errors.ErrUnsupported),
 		types.ErrInvalidType,
-		types.ErrFieldNotFound,
 	}
 
 	for _, errorType := range errorTypes {
@@ -214,6 +216,9 @@ type errorServer struct {
 }
 
 func (e *errorServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	if errors.Is(e.err, errors.ErrUnsupported) {
+		return nil, status.Error(codes.Unimplemented, e.err.Error()) // Add status code Unimplemented
+	}
 	return nil, e.err
 }
 

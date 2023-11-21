@@ -3,9 +3,12 @@ package internal
 import (
 	"context"
 	jsonv1 "encoding/json"
+	"errors"
 	"fmt"
 
 	jsonv2 "github.com/go-json-experiment/json"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/fxamacker/cbor/v2"
 
@@ -122,7 +125,9 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 
 	retVal := &map[string]any{}
 	err := c.impl.GetLatestValue(ctx, bc, request.Method, params, retVal)
-	if err != nil {
+	if errors.Is(err, errors.ErrUnsupported) {
+		return nil, status.Error(codes.Unimplemented, err.Error())
+	} else if err != nil {
 		return nil, err
 	}
 

@@ -15,31 +15,40 @@ import (
 func TestRenamer(t *testing.T) {
 	renamer := codec.Renamer{Fields: map[string]string{"A": "X", "C": "Z"}}
 	invalidRenamer := codec.Renamer{Fields: map[string]string{"W": "X", "C": "Z"}}
-	t.Run("AdjustForInput renames fields keeping structure", func(t *testing.T) {
-		inputType, err := renamer.AdjustForInput(reflect.TypeOf(renamerTestStruct{}))
+	t.Run("RetypeForInput renames fields keeping structure", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assertBasicTransform(t, inputType)
 	})
 
-	t.Run("AdjustForInput works on slices", func(t *testing.T) {
-		inputType, err := renamer.AdjustForInput(reflect.TypeOf([]renamerTestStruct{}))
+	t.Run("RetypeForInput works on slices", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf([]renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, inputType.Kind())
 		assertBasicTransform(t, inputType.Elem())
 	})
 
-	t.Run("AdjustForInput works on pointers", func(t *testing.T) {
-		inputType, err := renamer.AdjustForInput(reflect.TypeOf(&renamerTestStruct{}))
+	t.Run("RetypeForInput works on pointers", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
 		assertBasicTransform(t, inputType.Elem())
 	})
 
-	t.Run("AdjustForInput works on arrays", func(t *testing.T) {
-		inputType, err := renamer.AdjustForInput(reflect.TypeOf([2]renamerTestStruct{}))
+	t.Run("RetypeForInput works on pointers to non structs", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&[]renamerTestStruct{}))
+		require.NoError(t, err)
+
+		assert.Equal(t, reflect.Pointer, inputType.Kind())
+		assert.Equal(t, reflect.Slice, inputType.Elem().Kind())
+		assertBasicTransform(t, inputType.Elem().Elem())
+	})
+
+	t.Run("RetypeForInput works on arrays", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf([2]renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Array, inputType.Kind())
@@ -47,13 +56,13 @@ func TestRenamer(t *testing.T) {
 		assertBasicTransform(t, inputType.Elem())
 	})
 
-	t.Run("AdjustForInput returns exception if a field is not on the type", func(t *testing.T) {
-		_, err := invalidRenamer.AdjustForInput(reflect.TypeOf(renamerTestStruct{}))
+	t.Run("RetypeForInput returns exception if a field is not on the type", func(t *testing.T) {
+		_, err := invalidRenamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("TransformInput works on structs", func(t *testing.T) {
-		inputType, err := renamer.AdjustForInput(reflect.TypeOf(renamerTestStruct{}))
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(inputType))
 		iInput.FieldByName("X").SetString("foo")
@@ -72,13 +81,13 @@ func TestRenamer(t *testing.T) {
 		assert.Equal(t, expected, output)
 	})
 
-	t.Run("TransformInput returns error if input type does not have all the fields", func(t *testing.T) {
+	t.Run("TransformInput returns error if input type was not from TransformInput", func(t *testing.T) {
 		_, err := invalidRenamer.TransformInput(renamerTestStruct{})
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("TransformInput returns struct with renamed fields", func(t *testing.T) {
-		inputType, err := renamer.AdjustForInput(reflect.TypeOf(renamerTestStruct{}))
+	t.Run("TransformInput works on pointers", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.New(inputType)
 		iInput := reflect.Indirect(rInput)
@@ -86,7 +95,7 @@ func TestRenamer(t *testing.T) {
 		iInput.FieldByName("B").SetInt(10)
 		iInput.FieldByName("Z").SetInt(20)
 
-		output, err := renamer.TransformInput(rInput)
+		output, err := renamer.TransformInput(rInput.Interface())
 
 		require.NoError(t, err)
 
@@ -103,12 +112,102 @@ func TestRenamer(t *testing.T) {
 		assert.Equal(t, expected, output)
 	})
 
-	t.Run("TransformInput works on slices", func(t *testing.T) {
-		assert.Fail(t, "Not written yet")
+	t.Run("TransformInput works on slices by creating a new slice and converting elements", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf([]renamerTestStruct{}))
+		require.NoError(t, err)
+		rInput := reflect.MakeSlice(inputType, 2, 2)
+		iInput := rInput.Index(0)
+		iInput.FieldByName("X").SetString("foo")
+		iInput.FieldByName("B").SetInt(10)
+		iInput.FieldByName("Z").SetInt(20)
+		iInput = rInput.Index(1)
+		iInput.FieldByName("X").SetString("baz")
+		iInput.FieldByName("B").SetInt(15)
+		iInput.FieldByName("Z").SetInt(25)
+
+		output, err := renamer.TransformInput(rInput.Interface())
+
+		require.NoError(t, err)
+
+		expected := []renamerTestStruct{
+			{
+				A: "foo",
+				B: 10,
+				C: 20,
+			},
+			{
+				A: "baz",
+				B: 15,
+				C: 25,
+			},
+		}
+		assert.Equal(t, expected, output)
+	})
+
+	t.Run("TransformInput works on pointers to non structs", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf([]renamerTestStruct{}))
+		require.NoError(t, err)
+		rInput := reflect.New(inputType)
+		rElm := reflect.MakeSlice(inputType, 2, 2)
+		iElm := rElm.Index(0)
+		iElm.FieldByName("X").SetString("foo")
+		iElm.FieldByName("B").SetInt(10)
+		iElm.FieldByName("Z").SetInt(20)
+		iElm = rElm.Index(1)
+		iElm.FieldByName("X").SetString("baz")
+		iElm.FieldByName("B").SetInt(15)
+		iElm.FieldByName("Z").SetInt(25)
+		reflect.Indirect(rInput).Set(rElm)
+
+		output, err := renamer.TransformInput(rInput.Interface())
+
+		require.NoError(t, err)
+
+		expected := &[]renamerTestStruct{
+			{
+				A: "foo",
+				B: 10,
+				C: 20,
+			},
+			{
+				A: "baz",
+				B: 15,
+				C: 25,
+			},
+		}
+		assert.Equal(t, expected, output)
 	})
 
 	t.Run("TransformInput works on arrays", func(t *testing.T) {
-		assert.Fail(t, "Not written yet")
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf([2]renamerTestStruct{}))
+		require.NoError(t, err)
+		rInput := reflect.New(inputType).Elem()
+		iInput := rInput.Index(0)
+		iInput.FieldByName("X").SetString("foo")
+		iInput.FieldByName("B").SetInt(10)
+		iInput.FieldByName("Z").SetInt(20)
+		iInput = rInput.Index(1)
+		iInput.FieldByName("X").SetString("baz")
+		iInput.FieldByName("B").SetInt(15)
+		iInput.FieldByName("Z").SetInt(25)
+
+		output, err := renamer.TransformInput(rInput.Interface())
+
+		require.NoError(t, err)
+
+		expected := [2]renamerTestStruct{
+			{
+				A: "foo",
+				B: 10,
+				C: 20,
+			},
+			{
+				A: "baz",
+				B: 15,
+				C: 25,
+			},
+		}
+		assert.Equal(t, expected, output)
 	})
 }
 

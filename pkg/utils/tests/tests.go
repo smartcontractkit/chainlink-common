@@ -8,18 +8,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Context(t *testing.T) context.Context {
-	ctx := context.Background()
+func Context(tb testing.TB) (ctx context.Context) {
+	ctx = context.Background()
 	var cancel func()
 
-	if d, ok := t.Deadline(); ok {
-		ctx, cancel = context.WithDeadline(ctx, d)
-	} else {
-		ctx, cancel = context.WithCancel(ctx)
+	t, isTest := tb.(interface {
+		Deadline() (deadline time.Time, ok bool)
+	})
+	if isTest {
+		d, hasDeadline := t.Deadline()
+		if hasDeadline {
+			ctx, cancel = context.WithDeadline(ctx, d)
+			tb.Cleanup(cancel)
+			return
+		}
 	}
 
-	t.Cleanup(cancel)
-	return ctx
+	ctx, cancel = context.WithCancel(ctx)
+	tb.Cleanup(cancel)
+	return
 }
 
 // DefaultWaitTimeout is the default wait timeout. If you have a *testing.T, use WaitTimeout instead.

@@ -16,14 +16,13 @@ func (e chainReaderError) Error() string { return string(e) }
 
 const (
 	ErrInvalidType   = chainReaderError("invalid type")
-	ErrFieldNotFound = chainReaderError("field not found")
 	ErrInvalidConfig = chainReaderError("invalid configuration")
 )
 
 func UnwrapClientError(err error) error {
 	if s, ok := status.FromError(err); ok {
 		if s.Code() == codes.Unimplemented {
-			return fmt.Errorf("%s : %w", s.String(), errors.ErrUnsupported)
+			return fmt.Errorf("%w : %s", errors.ErrUnsupported, s.String())
 		}
 		return chainReaderError(s.String())
 	}

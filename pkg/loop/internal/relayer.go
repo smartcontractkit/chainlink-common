@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -201,6 +203,9 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 			},
 		})
 		if err != nil {
+			if rargs.ProviderType == string(types.Median) {
+				return 0, nil, types.UnwrapClientError(err)
+			}
 			return 0, nil, err
 		}
 		return reply.PluginProviderID, nil, nil
@@ -349,11 +354,14 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
 	i, ok := r.impl.(MedianProvider)
 	if !ok {
-		return 0, errors.New("median not supported")
+		return 0, status.Error(codes.Unimplemented, "median not supported")
 	}
 
 	provider, err := i.NewMedianProvider(ctx, relayArgs, pluginArgs)
 	if err != nil {
+		if errors.Is(err, errors.ErrUnsupported) {
+			return 0, status.Error(codes.Unimplemented, err.Error())
+		}
 		return 0, err
 	}
 	err = provider.Start(ctx)

@@ -23,8 +23,9 @@ func UnwrapClientError(err error) error {
 	if s, ok := status.FromError(err); ok {
 		if s.Code() == codes.Unimplemented {
 			return fmt.Errorf("%w : %s", errors.ErrUnsupported, s.String())
+		} else if s.Code() == codes.Unknown { // Only unwrap custom errors we return, leave alone any other gRPC generated error codes
+			return chainReaderError(s.String())
 		}
-		return chainReaderError(s.String())
 	}
 	return err
 }

@@ -6,59 +6,23 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-type Renamer struct {
-	Fields            map[string]string
-	outputToInputType map[reflect.Type]reflect.Type
-	inputToOutputType map[reflect.Type]reflect.Type
+func NewRenamer(fields map[string]string) Modifier {
+	m := &renamer{
+		modifierBase: modifierBase[string]{
+			Fields:            fields,
+			outputToInputType: map[reflect.Type]reflect.Type{},
+			inputToOutputType: map[reflect.Type]reflect.Type{},
+		},
+	}
+	m.modifyFieldForInput = func(field *reflect.StructField, newName string) { field.Name = newName }
+	return m
 }
 
-func (r *Renamer) RetypeForInput(outputType reflect.Type) (reflect.Type, error) {
-	if r.Fields == nil || len(r.Fields) == 0 {
-		return outputType, nil
-	}
-
-	if r.outputToInputType == nil {
-		r.outputToInputType = map[reflect.Type]reflect.Type{}
-		r.inputToOutputType = map[reflect.Type]reflect.Type{}
-	}
-
-	if cached, ok := r.outputToInputType[outputType]; ok {
-		return cached, nil
-	}
-
-	switch outputType.Kind() {
-	case reflect.Pointer:
-		if elm, err := r.RetypeForInput(outputType.Elem()); err == nil {
-			ptr := reflect.PointerTo(elm)
-			r.outputToInputType[outputType] = ptr
-			r.inputToOutputType[ptr] = outputType
-			return ptr, nil
-		}
-		return nil, types.ErrInvalidType
-	case reflect.Slice:
-		if elm, err := r.RetypeForInput(outputType.Elem()); err == nil {
-			sliceType := reflect.SliceOf(elm)
-			r.outputToInputType[outputType] = sliceType
-			r.inputToOutputType[sliceType] = outputType
-			return sliceType, nil
-		}
-		return nil, types.ErrInvalidType
-	case reflect.Array:
-		if elm, err := r.RetypeForInput(outputType.Elem()); err == nil {
-			arrayType := reflect.ArrayOf(outputType.Len(), elm)
-			r.outputToInputType[outputType] = arrayType
-			r.inputToOutputType[arrayType] = outputType
-			return arrayType, nil
-		}
-		return nil, types.ErrInvalidType
-	case reflect.Struct:
-		return r.getRenameType(outputType)
-	}
-
-	return nil, types.ErrInvalidType
+type renamer struct {
+	modifierBase[string]
 }
 
-func (r *Renamer) TransformOutput(output any) (any, error) {
+func (r *renamer) TransformOutput(output any) (any, error) {
 	rOutput, err := transform(r.outputToInputType, reflect.ValueOf(output))
 	if err != nil {
 		return nil, err
@@ -66,7 +30,7 @@ func (r *Renamer) TransformOutput(output any) (any, error) {
 	return rOutput.Interface(), nil
 }
 
-func (r *Renamer) TransformInput(input any) (any, error) {
+func (r *renamer) TransformInput(input any) (any, error) {
 	rOutput, err := transform(r.inputToOutputType, reflect.ValueOf(input))
 	if err != nil {
 		return nil, err
@@ -74,34 +38,16 @@ func (r *Renamer) TransformInput(input any) (any, error) {
 	return rOutput.Interface(), nil
 }
 
-func (r *Renamer) getRenameType(outputType reflect.Type) (reflect.Type, error) {
-	numFields := outputType.NumField()
-	allFields := make([]reflect.StructField, numFields)
-	numRenamed := 0
-	for i := 0; i < numFields; i++ {
-		tmp := outputType.Field(i)
-		if newName, ok := r.Fields[tmp.Name]; ok {
-			numRenamed++
-			tmp.Name = newName
-		}
-		allFields[i] = tmp
-	}
-
-	if numRenamed != len(r.Fields) {
-		return nil, types.ErrInvalidType
-	}
-
-	newStruct := reflect.StructOf(allFields)
-	r.outputToInputType[outputType] = newStruct
-	r.inputToOutputType[newStruct] = outputType
-	return newStruct, nil
-}
-
 func transform(typeMap map[reflect.Type]reflect.Type, rInput reflect.Value) (reflect.Value, error) {
 	toType, ok := typeMap[rInput.Type()]
 	if !ok {
 		return reflect.Value{}, types.ErrInvalidType
 	}
+
+	if toType == rInput.Type() {
+		return rInput, nil
+	}
+
 	switch rInput.Kind() {
 	case reflect.Pointer:
 		return transformPointer(toType, rInput)
@@ -153,5 +99,3 @@ func transformStruct(toType reflect.Type, rInput reflect.Value) (reflect.Value, 
 	changed := reflect.NewAt(toType, ptr.UnsafePointer()).Elem()
 	return changed, nil
 }
-
-var _ Modifier = &Renamer{}

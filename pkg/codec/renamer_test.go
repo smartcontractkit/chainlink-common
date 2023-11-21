@@ -13,13 +13,13 @@ import (
 )
 
 func TestRenamer(t *testing.T) {
-	renamer := codec.Renamer{Fields: map[string]string{"A": "X", "C": "Z"}}
-	invalidRenamer := codec.Renamer{Fields: map[string]string{"W": "X", "C": "Z"}}
+	renamer := codec.NewRenamer(map[string]string{"A": "X", "C": "Z"})
+	invalidRenamer := codec.NewRenamer(map[string]string{"W": "X", "C": "Z"})
 	t.Run("RetypeForInput renames fields keeping structure", func(t *testing.T) {
 		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
 
-		assertBasicTransform(t, inputType)
+		assertBasicRenameTransform(t, inputType)
 	})
 
 	t.Run("RetypeForInput works on slices", func(t *testing.T) {
@@ -27,7 +27,7 @@ func TestRenamer(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, inputType.Kind())
-		assertBasicTransform(t, inputType.Elem())
+		assertBasicRenameTransform(t, inputType.Elem())
 	})
 
 	t.Run("RetypeForInput works on pointers", func(t *testing.T) {
@@ -35,7 +35,7 @@ func TestRenamer(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
-		assertBasicTransform(t, inputType.Elem())
+		assertBasicRenameTransform(t, inputType.Elem())
 	})
 
 	t.Run("RetypeForInput works on pointers to non structs", func(t *testing.T) {
@@ -44,7 +44,7 @@ func TestRenamer(t *testing.T) {
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
 		assert.Equal(t, reflect.Slice, inputType.Elem().Kind())
-		assertBasicTransform(t, inputType.Elem().Elem())
+		assertBasicRenameTransform(t, inputType.Elem().Elem())
 	})
 
 	t.Run("RetypeForInput works on arrays", func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestRenamer(t *testing.T) {
 
 		assert.Equal(t, reflect.Array, inputType.Kind())
 		assert.Equal(t, 2, inputType.Len())
-		assertBasicTransform(t, inputType.Elem())
+		assertBasicRenameTransform(t, inputType.Elem())
 	})
 
 	t.Run("RetypeForInput returns exception if a field is not on the type", func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestRenamer(t *testing.T) {
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("TransformInput works on structs", func(t *testing.T) {
+	t.Run("TransformInput and TransformOutput works on structs", func(t *testing.T) {
 		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(inputType))
@@ -79,17 +79,20 @@ func TestRenamer(t *testing.T) {
 			C: 20,
 		}
 		assert.Equal(t, expected, output)
+		newInput, err := renamer.TransformOutput(output)
+		require.NoError(t, err)
+		assert.Equal(t, iInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput returns error if input type was not from TransformInput", func(t *testing.T) {
+	t.Run("TransformInput and TransformOutput returns error if input type was not from TransformInput", func(t *testing.T) {
 		_, err := invalidRenamer.TransformInput(renamerTestStruct{})
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("TransformInput works on pointers", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
+	t.Run("TransformInput and TransformOutput works on pointers", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&renamerTestStruct{}))
 		require.NoError(t, err)
-		rInput := reflect.New(inputType)
+		rInput := reflect.New(inputType.Elem())
 		iInput := reflect.Indirect(rInput)
 		iInput.FieldByName("X").SetString("foo")
 		iInput.FieldByName("B").SetInt(10)
@@ -110,9 +113,12 @@ func TestRenamer(t *testing.T) {
 		iInput.FieldByName("X").SetString("Z")
 		expected.A = "Z"
 		assert.Equal(t, expected, output)
+		newInput, err := renamer.TransformOutput(output)
+		require.NoError(t, err)
+		assert.Same(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput works on slices by creating a new slice and converting elements", func(t *testing.T) {
+	t.Run("TransformInput and TransformOutput works on slices by creating a new slice and converting elements", func(t *testing.T) {
 		inputType, err := renamer.RetypeForInput(reflect.TypeOf([]renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
@@ -142,13 +148,17 @@ func TestRenamer(t *testing.T) {
 			},
 		}
 		assert.Equal(t, expected, output)
+
+		newInput, err := renamer.TransformOutput(output)
+		require.NoError(t, err)
+		assert.Equal(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput works on pointers to non structs", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf([]renamerTestStruct{}))
+	t.Run("TransformInput and TransformOutput works on pointers to non structs", func(t *testing.T) {
+		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&[]renamerTestStruct{}))
 		require.NoError(t, err)
-		rInput := reflect.New(inputType)
-		rElm := reflect.MakeSlice(inputType, 2, 2)
+		rInput := reflect.New(inputType.Elem())
+		rElm := reflect.MakeSlice(inputType.Elem(), 2, 2)
 		iElm := rElm.Index(0)
 		iElm.FieldByName("X").SetString("foo")
 		iElm.FieldByName("B").SetInt(10)
@@ -176,9 +186,13 @@ func TestRenamer(t *testing.T) {
 			},
 		}
 		assert.Equal(t, expected, output)
+
+		newInput, err := renamer.TransformOutput(output)
+		require.NoError(t, err)
+		assert.Equal(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput works on arrays", func(t *testing.T) {
+	t.Run("TransformInput and TransformOutput works on arrays", func(t *testing.T) {
 		inputType, err := renamer.RetypeForInput(reflect.TypeOf([2]renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.New(inputType).Elem()
@@ -208,10 +222,14 @@ func TestRenamer(t *testing.T) {
 			},
 		}
 		assert.Equal(t, expected, output)
+
+		newInput, err := renamer.TransformOutput(output)
+		require.NoError(t, err)
+		assert.Equal(t, rInput.Interface(), newInput)
 	})
 }
 
-func assertBasicTransform(t *testing.T, inputType reflect.Type) {
+func assertBasicRenameTransform(t *testing.T, inputType reflect.Type) {
 	require.Equal(t, 3, inputType.NumField())
 	f0 := inputType.Field(0)
 	assert.Equal(t, "X", f0.Name)

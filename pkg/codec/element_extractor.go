@@ -1,7 +1,9 @@
 package codec
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -35,120 +37,181 @@ type elementExtractor struct {
 }
 
 func (e *elementExtractor) TransformInput(input any) (any, error) {
-	rInput := reflect.ValueOf(input)
-
-	toType, ok := e.inputToOutputType[rInput.Type()]
-	if !ok {
-		return reflect.Value{}, types.ErrInvalidType
-	}
-
-	switch rInput.Kind() {
-	case reflect.Pointer:
-		// This doesn't work for non-structs
-		into := reflect.New(toType.Elem())
-		err := e.extractElements(input, into.Interface())
-		return into.Interface(), err
-	case reflect.Struct:
-		into := reflect.New(toType)
-		err := e.extractElements(input, into.Interface())
-		return into.Elem().Interface(), err
-	case reflect.Slice, reflect.Array:
-		return nil, nil
-	}
-
-	return reflect.Value{}, types.ErrInvalidType
+	return e.transform(input, e.inputToOutputType, extractMap)
 }
 
 func (e *elementExtractor) TransformOutput(output any) (any, error) {
-	rOutput := reflect.ValueOf(output)
+	return e.transform(output, e.outputToInputType, expandMap)
+}
 
-	toType, ok := e.outputToInputType[rOutput.Type()]
+type mapAction func(extractMap map[string]any, key string, elementLocation ElementExtractorLocation) error
+
+func (e *elementExtractor) transform(item any, typeMap map[reflect.Type]reflect.Type, fn mapAction) (any, error) {
+	rItem := reflect.ValueOf(item)
+
+	toType, ok := typeMap[rItem.Type()]
 	if !ok {
 		return reflect.Value{}, types.ErrInvalidType
 	}
 
-	switch rOutput.Kind() {
+	switch rItem.Kind() {
 	case reflect.Pointer:
-		// This doesn't work for non-structs
-		into := reflect.New(toType.Elem())
-		err := e.expandElements(output, into.Interface())
-		return into.Interface(), err
+		elm := rItem.Elem()
+		if elm.Kind() == reflect.Struct {
+			into := reflect.New(toType.Elem())
+			err := e.changeElements(item, into.Interface(), fn)
+			return into.Interface(), err
+		}
+		
+		tmp, err := e.transform(elm.Interface(), typeMap, fn)
+		result := reflect.New(toType.Elem())
+		reflect.Indirect(result).Set(reflect.ValueOf(tmp))
+		return result.Interface(), err
 	case reflect.Struct:
 		into := reflect.New(toType)
-		err := e.expandElements(output, into.Interface())
+		err := e.changeElements(item, into.Interface(), fn)
 		return into.Elem().Interface(), err
-	case reflect.Slice, reflect.Array:
-		return nil, nil
+	case reflect.Slice:
+		length := rItem.Len()
+		into := reflect.MakeSlice(toType, length, length)
+		err := e.doMany(rItem, into, fn)
+		return into.Interface(), err
+	case reflect.Array:
+		into := reflect.New(toType).Elem()
+		err := e.doMany(rItem, into, fn)
+		return into.Interface(), err
 	}
 
 	return reflect.Value{}, types.ErrInvalidType
 }
 
-func (e *elementExtractor) extractElements(input, output any) error {
+func (e *elementExtractor) changeElements(src, dest any, fn mapAction) error {
 	valueMapping := map[string]any{}
-	if err := mapstructure.Decode(input, &valueMapping); err != nil {
+	if err := mapstructure.Decode(src, &valueMapping); err != nil {
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+	}
+
+	if err := e.doForMapElements(valueMapping, fn); err != nil {
 		return err
 	}
 
-	if err := e.extractElementsInMap(valueMapping); err != nil {
-		return err
+	if err := mapstructure.Decode(&valueMapping, &dest); err != nil {
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}
-
-	return mapstructure.Decode(&valueMapping, &output)
+	return nil
 }
 
-func (e *elementExtractor) extractElementsInMap(valueMapping map[string]any) error {
+func (e *elementExtractor) doForMapElements(valueMapping map[string]any, fn mapAction) error {
 	for key, elementLocation := range e.Fields {
-		item, ok := valueMapping[key]
-		if !ok {
-			return types.ErrInvalidType
-		} else if item == nil {
-			continue
+		path := strings.Split(key, ".")
+		name := path[len(path)-1]
+		path = path[:len(path)-1]
+		extractMaps, err := getMapsFromPath(valueMapping, path)
+		if err != nil {
+			return err
 		}
 
-		rItem := reflect.ValueOf(item)
-		switch rItem.Kind() {
-		case reflect.Array, reflect.Slice:
-		default:
-			return types.ErrInvalidType
-		}
-
-		if rItem.Len() == 0 {
-			valueMapping[key] = nil
-			continue
-		}
-
-		switch elementLocation {
-		case FirstElementLocation:
-			valueMapping[key] = rItem.Index(0).Interface()
-		case MiddleElementLocation:
-			valueMapping[key] = rItem.Index(rItem.Len() / 2).Interface()
-		case LastElementLocation:
-			valueMapping[key] = rItem.Index(rItem.Len() - 1).Interface()
+		for _, m := range extractMaps {
+			if err = fn(m, name, elementLocation); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func (e *elementExtractor) expandElements(input, output any) error {
-	valueMapping := map[string]any{}
-	if err := mapstructure.Decode(input, &valueMapping); err != nil {
-		return err
+func extractMap(extractMap map[string]any, key string, elementLocation ElementExtractorLocation) error {
+	item, ok := extractMap[key]
+	if !ok {
+		return fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)
+	} else if item == nil {
+		return nil
 	}
 
-	for key, _ := range e.Fields {
-		item, ok := valueMapping[key]
-		if !ok {
-			return types.ErrInvalidType
-		} else if item == nil {
-			continue
+	rItem := reflect.ValueOf(item)
+	switch rItem.Kind() {
+	case reflect.Array, reflect.Slice:
+	default:
+		return types.ErrInvalidType
+	}
+
+	if rItem.Len() == 0 {
+		extractMap[key] = nil
+		return nil
+	}
+
+	switch elementLocation {
+	case FirstElementLocation:
+		extractMap[key] = rItem.Index(0).Interface()
+	case MiddleElementLocation:
+		extractMap[key] = rItem.Index(rItem.Len() / 2).Interface()
+	case LastElementLocation:
+		extractMap[key] = rItem.Index(rItem.Len() - 1).Interface()
+	}
+
+	return nil
+}
+
+func expandMap(extractMap map[string]any, key string, _ ElementExtractorLocation) error {
+	item, ok := extractMap[key]
+	if !ok {
+		return types.ErrInvalidType
+	} else if item == nil {
+		return nil
+	}
+
+	rItem := reflect.ValueOf(item)
+	slice := reflect.MakeSlice(reflect.SliceOf(rItem.Type()), 1, 1)
+	slice.Index(0).Set(rItem)
+	extractMap[key] = slice.Interface()
+	return nil
+}
+
+func getMapsFromPath(valueMapping map[string]any, path []string) ([]map[string]any, error) {
+	extractMaps := []map[string]any{valueMapping}
+	for _, p := range path {
+		tmp := make([]map[string]any, 0, len(extractMaps))
+		for _, extractMap := range extractMaps {
+			item, ok := extractMap[p]
+			if !ok {
+				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, strings.Join(path, "."))
+			}
+
+			iItem := reflect.ValueOf(item)
+			switch iItem.Kind() {
+			case reflect.Array, reflect.Slice:
+				length := iItem.Len()
+				maps := make([]map[string]any, length)
+				for i := 0; i < length; i++ {
+					if err := mapstructure.Decode(iItem.Index(i).Interface(), &maps[i]); err != nil {
+						return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+					}
+				}
+				extractMap[p] = maps
+				tmp = append(tmp, maps...)
+			default:
+				var m map[string]any
+				if err := mapstructure.Decode(item, &m); err != nil {
+					return nil, types.ErrInvalidType
+				}
+				extractMap[p] = m
+				tmp = append(tmp, m)
+			}
 		}
-
-		rItem := reflect.ValueOf(item)
-		slice := reflect.MakeSlice(reflect.SliceOf(rItem.Type()), 1, 1)
-		slice.Index(0).Set(rItem)
-		valueMapping[key] = slice.Interface()
+		extractMaps = tmp
 	}
+	return extractMaps, nil
+}
 
-	return mapstructure.Decode(&valueMapping, output)
+func (e *elementExtractor) doMany(rInput, rOutput reflect.Value, fn mapAction) error {
+	length := rInput.Len()
+	for i := 0; i < length; i++ {
+		// Make sure the index is addressable
+		tmp := rOutput.Index(i).Interface()
+		if err := e.changeElements(rInput.Index(i).Interface(), &tmp, fn); err != nil {
+			return err
+		}
+		rOutput.Index(i).Set(reflect.ValueOf(tmp))
+	}
+	return nil
 }

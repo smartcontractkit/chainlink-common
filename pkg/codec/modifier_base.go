@@ -2,6 +2,8 @@ package codec
 
 import (
 	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -50,31 +52,54 @@ func (m *modifierBase[T]) RetypeForInput(outputType reflect.Type) (reflect.Type,
 		}
 		return nil, types.ErrInvalidType
 	case reflect.Struct:
-		return m.getRenameType(outputType)
+		return m.getStructType(outputType)
 	}
 
 	return nil, types.ErrInvalidType
 }
 
-func (m *modifierBase[T]) getRenameType(outputType reflect.Type) (reflect.Type, error) {
-	numFields := outputType.NumField()
-	allFields := make([]reflect.StructField, numFields)
-	numModified := 0
-	for i := 0; i < numFields; i++ {
-		tmp := outputType.Field(i)
-		if change, ok := m.Fields[tmp.Name]; ok {
-			numModified++
-			m.modifyFieldForInput(&tmp, change)
+func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, error) {
+	filedLocations, err := getFieldIndices(outputType)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range m.subkeysFirst() {
+		parts := strings.Split(key, ".")
+		fieldName := parts[len(parts)-1]
+		parts = parts[:len(parts)-1]
+		curLocations := filedLocations
+		for _, part := range parts {
+			var err error
+			if curLocations, err = curLocations.populateSubFields(part); err != nil {
+				return nil, err
+			}
 		}
-		allFields[i] = tmp
+
+		// If a subkey has been modified, update the underlying types first
+		curLocations.updateTypeFromSubkeyMods(fieldName)
+		field, err := curLocations.fieldByName(fieldName)
+		if err != nil {
+			return nil, err
+		}
+
+		m.modifyFieldForInput(field, m.Fields[key])
 	}
 
-	if numModified != len(m.Fields) {
-		return nil, types.ErrInvalidType
-	}
-
-	newStruct := reflect.StructOf(allFields)
+	newStruct := filedLocations.makeNewType()
 	m.outputToInputType[outputType] = newStruct
 	m.inputToOutputType[newStruct] = outputType
 	return newStruct, nil
+}
+
+// subkeysFirst returns a list of keys that will always have a sub-key before the key if both are present
+func (m *modifierBase[T]) subkeysFirst() []string {
+	orderedKeys := make([]string, 0, len(m.Fields))
+	for k, _ := range m.Fields {
+		orderedKeys = append(orderedKeys, k)
+	}
+	sort.Slice(orderedKeys, func(i, j int) bool {
+		return orderedKeys[i] > orderedKeys[j]
+	})
+	return orderedKeys
 }

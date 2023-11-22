@@ -15,6 +15,7 @@ import (
 func TestRenamer(t *testing.T) {
 	renamer := codec.NewRenamer(map[string]string{"A": "X", "C": "Z"})
 	invalidRenamer := codec.NewRenamer(map[string]string{"W": "X", "C": "Z"})
+	nestedRenamer := codec.NewRenamer(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z", "B": "Y"})
 	t.Run("RetypeForInput renames fields keeping structure", func(t *testing.T) {
 		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
@@ -59,6 +60,25 @@ func TestRenamer(t *testing.T) {
 	t.Run("RetypeForInput returns exception if a field is not on the type", func(t *testing.T) {
 		_, err := invalidRenamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
+	})
+
+	t.Run("RetypeForInput works on nested fields even if the field itself is renamed", func(t *testing.T) {
+		inputType, err := nestedRenamer.RetypeForInput(reflect.TypeOf(renameNesting{}))
+		require.NoError(t, err)
+		assert.Equal(t, 4, inputType.NumField())
+		f0 := inputType.Field(0)
+		assert.Equal(t, "X", f0.Name)
+		assert.Equal(t, reflect.TypeOf(""), f0.Type)
+		f1 := inputType.Field(1)
+		assert.Equal(t, "Y", f1.Name)
+		assertBasicRenameTransform(t, f1.Type)
+		f2 := inputType.Field(2)
+		assert.Equal(t, "C", f2.Name)
+		assert.Equal(t, reflect.Slice, f2.Type.Kind())
+		assertBasicRenameTransform(t, f2.Type.Elem())
+		f3 := inputType.Field(3)
+		assert.Equal(t, "D", f3.Name)
+		assert.Equal(t, reflect.TypeOf(""), f3.Type)
 	})
 
 	t.Run("TransformInput and TransformOutput works on structs", func(t *testing.T) {
@@ -227,6 +247,61 @@ func TestRenamer(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
+
+	t.Run("TransformInput and TransformOutput works on nested fields even if the field itself is renamed", func(t *testing.T) {
+		inputType, err := nestedRenamer.RetypeForInput(reflect.TypeOf(renameNesting{}))
+		require.NoError(t, err)
+		iInput := reflect.Indirect(reflect.New(inputType))
+
+		iInput.FieldByName("X").SetString("foo")
+		rY := iInput.FieldByName("Y")
+		rY.FieldByName("X").SetString("foo")
+		rY.FieldByName("B").SetInt(10)
+		rY.FieldByName("Z").SetInt(20)
+
+		rC := iInput.FieldByName("C")
+		rC.Set(reflect.MakeSlice(rC.Type(), 2, 2))
+		iElm := rC.Index(0)
+		iElm.FieldByName("X").SetString("foo")
+		iElm.FieldByName("B").SetInt(10)
+		iElm.FieldByName("Z").SetInt(20)
+		iElm = rC.Index(1)
+		iElm.FieldByName("X").SetString("baz")
+		iElm.FieldByName("B").SetInt(15)
+		iElm.FieldByName("Z").SetInt(25)
+
+		iInput.FieldByName("D").SetString("bar")
+
+		output, err := nestedRenamer.TransformInput(iInput.Interface())
+
+		require.NoError(t, err)
+
+		expected := renameNesting{
+			A: "foo",
+			B: renamerTestStruct{
+				A: "foo",
+				B: 10,
+				C: 20,
+			},
+			C: []renamerTestStruct{
+				{
+					A: "foo",
+					B: 10,
+					C: 20,
+				},
+				{
+					A: "baz",
+					B: 15,
+					C: 25,
+				},
+			},
+			D: "bar",
+		}
+		assert.Equal(t, expected, output)
+		newInput, err := nestedRenamer.TransformOutput(output)
+		require.NoError(t, err)
+		assert.Equal(t, iInput.Interface(), newInput)
+	})
 }
 
 func assertBasicRenameTransform(t *testing.T, inputType reflect.Type) {
@@ -246,4 +321,11 @@ type renamerTestStruct struct {
 	A string
 	B int64
 	C int64
+}
+
+type renameNesting struct {
+	A string
+	B renamerTestStruct
+	C []renamerTestStruct
+	D string
 }

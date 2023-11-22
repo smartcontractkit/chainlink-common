@@ -16,7 +16,6 @@ func (e errCodecAndChainReader) Error() string { return string(e) }
 
 const (
 	ErrInvalidType           = errCodecAndChainReader("invalid type")
-	ErrFieldNotFound         = errCodecAndChainReader("field not found")
 	ErrInvalidEncoding       = errCodecAndChainReader("invalid encoding")
 	ErrWrongNumberOfElements = errCodecAndChainReader("wrong number of elements in slice")
 	ErrNotASlice             = errCodecAndChainReader("element is not a slice")

@@ -155,7 +155,6 @@ func unwrapClientError(err error) error {
 	}
 	errTypes := []error{
 		types.ErrInvalidType,
-		types.ErrFieldNotFound,
 		types.ErrInvalidEncoding,
 		types.ErrWrongNumberOfElements,
 		types.ErrNotASlice,

@@ -22,8 +22,8 @@ func NewElementExtractor(fields map[string]ElementExtractorLocation) Modifier {
 	m := &elementExtractor{
 		modifierBase: modifierBase[ElementExtractorLocation]{
 			Fields:            fields,
-			outputToInputType: map[reflect.Type]reflect.Type{},
-			inputToOutputType: map[reflect.Type]reflect.Type{},
+			onToOffChainType:  map[reflect.Type]reflect.Type{},
+			offToOneChainType: map[reflect.Type]reflect.Type{},
 		},
 	}
 	m.modifyFieldForInput = func(field *reflect.StructField, _ ElementExtractorLocation) {
@@ -36,12 +36,12 @@ type elementExtractor struct {
 	modifierBase[ElementExtractorLocation]
 }
 
-func (e *elementExtractor) TransformInput(input any) (any, error) {
-	return e.transform(input, e.inputToOutputType, extractMap)
+func (e *elementExtractor) TransformForOnChain(input any) (any, error) {
+	return e.transform(input, e.offToOneChainType, extractMap)
 }
 
-func (e *elementExtractor) TransformOutput(output any) (any, error) {
-	return e.transform(output, e.outputToInputType, expandMap)
+func (e *elementExtractor) TransformForOffChain(output any) (any, error) {
+	return e.transform(output, e.onToOffChainType, expandMap)
 }
 
 type mapAction func(extractMap map[string]any, key string, elementLocation ElementExtractorLocation) error
@@ -62,7 +62,7 @@ func (e *elementExtractor) transform(item any, typeMap map[reflect.Type]reflect.
 			err := e.changeElements(item, into.Interface(), fn)
 			return into.Interface(), err
 		}
-		
+
 		tmp, err := e.transform(elm.Interface(), typeMap, fn)
 		result := reflect.New(toType.Elem())
 		reflect.Indirect(result).Set(reflect.ValueOf(tmp))

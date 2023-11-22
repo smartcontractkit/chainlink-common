@@ -10,49 +10,49 @@ import (
 
 type modifierBase[T any] struct {
 	Fields              map[string]T
-	outputToInputType   map[reflect.Type]reflect.Type
-	inputToOutputType   map[reflect.Type]reflect.Type
+	onToOffChainType    map[reflect.Type]reflect.Type
+	offToOneChainType   map[reflect.Type]reflect.Type
 	modifyFieldForInput func(outputField *reflect.StructField, change T)
 }
 
-func (m *modifierBase[T]) RetypeForInput(outputType reflect.Type) (reflect.Type, error) {
+func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, error) {
 	if m.Fields == nil || len(m.Fields) == 0 {
-		m.inputToOutputType[outputType] = outputType
-		m.outputToInputType[outputType] = outputType
-		return outputType, nil
+		m.offToOneChainType[onChainType] = onChainType
+		m.onToOffChainType[onChainType] = onChainType
+		return onChainType, nil
 	}
 
-	if cached, ok := m.outputToInputType[outputType]; ok {
+	if cached, ok := m.onToOffChainType[onChainType]; ok {
 		return cached, nil
 	}
 
-	switch outputType.Kind() {
+	switch onChainType.Kind() {
 	case reflect.Pointer:
-		if elm, err := m.RetypeForInput(outputType.Elem()); err == nil {
+		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
 			ptr := reflect.PointerTo(elm)
-			m.outputToInputType[outputType] = ptr
-			m.inputToOutputType[ptr] = outputType
+			m.onToOffChainType[onChainType] = ptr
+			m.offToOneChainType[ptr] = onChainType
 			return ptr, nil
 		}
 		return nil, types.ErrInvalidType
 	case reflect.Slice:
-		if elm, err := m.RetypeForInput(outputType.Elem()); err == nil {
+		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
 			sliceType := reflect.SliceOf(elm)
-			m.outputToInputType[outputType] = sliceType
-			m.inputToOutputType[sliceType] = outputType
+			m.onToOffChainType[onChainType] = sliceType
+			m.offToOneChainType[sliceType] = onChainType
 			return sliceType, nil
 		}
 		return nil, types.ErrInvalidType
 	case reflect.Array:
-		if elm, err := m.RetypeForInput(outputType.Elem()); err == nil {
-			arrayType := reflect.ArrayOf(outputType.Len(), elm)
-			m.outputToInputType[outputType] = arrayType
-			m.inputToOutputType[arrayType] = outputType
+		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
+			arrayType := reflect.ArrayOf(onChainType.Len(), elm)
+			m.onToOffChainType[onChainType] = arrayType
+			m.offToOneChainType[arrayType] = onChainType
 			return arrayType, nil
 		}
 		return nil, types.ErrInvalidType
 	case reflect.Struct:
-		return m.getStructType(outputType)
+		return m.getStructType(onChainType)
 	}
 
 	return nil, types.ErrInvalidType
@@ -87,8 +87,8 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 	}
 
 	newStruct := filedLocations.makeNewType()
-	m.outputToInputType[outputType] = newStruct
-	m.inputToOutputType[newStruct] = outputType
+	m.onToOffChainType[outputType] = newStruct
+	m.offToOneChainType[newStruct] = outputType
 	return newStruct, nil
 }
 

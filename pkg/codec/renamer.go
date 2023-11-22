@@ -10,8 +10,8 @@ func NewRenamer(fields map[string]string) Modifier {
 	m := &renamer{
 		modifierBase: modifierBase[string]{
 			Fields:            fields,
-			outputToInputType: map[reflect.Type]reflect.Type{},
-			inputToOutputType: map[reflect.Type]reflect.Type{},
+			onToOffChainType:  map[reflect.Type]reflect.Type{},
+			offToOneChainType: map[reflect.Type]reflect.Type{},
 		},
 	}
 	m.modifyFieldForInput = func(field *reflect.StructField, newName string) { field.Name = newName }
@@ -22,16 +22,16 @@ type renamer struct {
 	modifierBase[string]
 }
 
-func (r *renamer) TransformOutput(output any) (any, error) {
-	rOutput, err := transform(r.outputToInputType, reflect.ValueOf(output))
+func (r *renamer) TransformForOffChain(output any) (any, error) {
+	rOutput, err := transform(r.onToOffChainType, reflect.ValueOf(output))
 	if err != nil {
 		return nil, err
 	}
 	return rOutput.Interface(), nil
 }
 
-func (r *renamer) TransformInput(input any) (any, error) {
-	rOutput, err := transform(r.inputToOutputType, reflect.ValueOf(input))
+func (r *renamer) TransformForOnChain(input any) (any, error) {
+	rOutput, err := transform(r.offToOneChainType, reflect.ValueOf(input))
 	if err != nil {
 		return nil, err
 	}

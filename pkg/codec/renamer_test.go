@@ -16,31 +16,31 @@ func TestRenamer(t *testing.T) {
 	renamer := codec.NewRenamer(map[string]string{"A": "X", "C": "Z"})
 	invalidRenamer := codec.NewRenamer(map[string]string{"W": "X", "C": "Z"})
 	nestedRenamer := codec.NewRenamer(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z", "B": "Y"})
-	t.Run("RetypeForInput renames fields keeping structure", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
+	t.Run("RetypeForOffChain renames fields keeping structure", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assertBasicRenameTransform(t, inputType)
 	})
 
-	t.Run("RetypeForInput works on slices", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf([]renamerTestStruct{}))
+	t.Run("RetypeForOffChain works on slices", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf([]renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, inputType.Kind())
 		assertBasicRenameTransform(t, inputType.Elem())
 	})
 
-	t.Run("RetypeForInput works on pointers", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&renamerTestStruct{}))
+	t.Run("RetypeForOffChain works on pointers", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf(&renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
 		assertBasicRenameTransform(t, inputType.Elem())
 	})
 
-	t.Run("RetypeForInput works on pointers to non structs", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&[]renamerTestStruct{}))
+	t.Run("RetypeForOffChain works on pointers to non structs", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf(&[]renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
@@ -48,8 +48,8 @@ func TestRenamer(t *testing.T) {
 		assertBasicRenameTransform(t, inputType.Elem().Elem())
 	})
 
-	t.Run("RetypeForInput works on arrays", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf([2]renamerTestStruct{}))
+	t.Run("RetypeForOffChain works on arrays", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf([2]renamerTestStruct{}))
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Array, inputType.Kind())
@@ -57,13 +57,13 @@ func TestRenamer(t *testing.T) {
 		assertBasicRenameTransform(t, inputType.Elem())
 	})
 
-	t.Run("RetypeForInput returns exception if a field is not on the type", func(t *testing.T) {
-		_, err := invalidRenamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
+	t.Run("RetypeForOffChain returns exception if a field is not on the type", func(t *testing.T) {
+		_, err := invalidRenamer.RetypeForOffChain(reflect.TypeOf(renamerTestStruct{}))
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("RetypeForInput works on nested fields even if the field itself is renamed", func(t *testing.T) {
-		inputType, err := nestedRenamer.RetypeForInput(reflect.TypeOf(renameNesting{}))
+	t.Run("RetypeForOffChain works on nested fields even if the field itself is renamed", func(t *testing.T) {
+		inputType, err := nestedRenamer.RetypeForOffChain(reflect.TypeOf(renameNesting{}))
 		require.NoError(t, err)
 		assert.Equal(t, 4, inputType.NumField())
 		f0 := inputType.Field(0)
@@ -81,15 +81,15 @@ func TestRenamer(t *testing.T) {
 		assert.Equal(t, reflect.TypeOf(""), f3.Type)
 	})
 
-	t.Run("TransformInput and TransformOutput works on structs", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf(renamerTestStruct{}))
+	t.Run("TransformForOnChain and TransformForOffChain works on structs", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf(renamerTestStruct{}))
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(inputType))
 		iInput.FieldByName("X").SetString("foo")
 		iInput.FieldByName("B").SetInt(10)
 		iInput.FieldByName("Z").SetInt(20)
 
-		output, err := renamer.TransformInput(iInput.Interface())
+		output, err := renamer.TransformForOnChain(iInput.Interface())
 
 		require.NoError(t, err)
 
@@ -99,18 +99,18 @@ func TestRenamer(t *testing.T) {
 			C: 20,
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := renamer.TransformOutput(output)
+		newInput, err := renamer.TransformForOffChain(output)
 		require.NoError(t, err)
 		assert.Equal(t, iInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput and TransformOutput returns error if input type was not from TransformInput", func(t *testing.T) {
-		_, err := invalidRenamer.TransformInput(renamerTestStruct{})
+	t.Run("TransformForOnChain and TransformForOffChain returns error if input type was not from TransformForOnChain", func(t *testing.T) {
+		_, err := invalidRenamer.TransformForOnChain(renamerTestStruct{})
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("TransformInput and TransformOutput works on pointers", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&renamerTestStruct{}))
+	t.Run("TransformForOnChain and TransformForOffChain works on pointers", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf(&renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		iInput := reflect.Indirect(rInput)
@@ -118,7 +118,7 @@ func TestRenamer(t *testing.T) {
 		iInput.FieldByName("B").SetInt(10)
 		iInput.FieldByName("Z").SetInt(20)
 
-		output, err := renamer.TransformInput(rInput.Interface())
+		output, err := renamer.TransformForOnChain(rInput.Interface())
 
 		require.NoError(t, err)
 
@@ -133,13 +133,13 @@ func TestRenamer(t *testing.T) {
 		iInput.FieldByName("X").SetString("Z")
 		expected.A = "Z"
 		assert.Equal(t, expected, output)
-		newInput, err := renamer.TransformOutput(output)
+		newInput, err := renamer.TransformForOffChain(output)
 		require.NoError(t, err)
 		assert.Same(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput and TransformOutput works on slices by creating a new slice and converting elements", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf([]renamerTestStruct{}))
+	t.Run("TransformForOnChain and TransformForOffChain works on slices by creating a new slice and converting elements", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf([]renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
 		iInput := rInput.Index(0)
@@ -151,7 +151,7 @@ func TestRenamer(t *testing.T) {
 		iInput.FieldByName("B").SetInt(15)
 		iInput.FieldByName("Z").SetInt(25)
 
-		output, err := renamer.TransformInput(rInput.Interface())
+		output, err := renamer.TransformForOnChain(rInput.Interface())
 
 		require.NoError(t, err)
 
@@ -169,13 +169,13 @@ func TestRenamer(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := renamer.TransformOutput(output)
+		newInput, err := renamer.TransformForOffChain(output)
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput and TransformOutput works on pointers to non structs", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf(&[]renamerTestStruct{}))
+	t.Run("TransformForOnChain and TransformForOffChain works on pointers to non structs", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf(&[]renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		rElm := reflect.MakeSlice(inputType.Elem(), 2, 2)
@@ -189,7 +189,7 @@ func TestRenamer(t *testing.T) {
 		iElm.FieldByName("Z").SetInt(25)
 		reflect.Indirect(rInput).Set(rElm)
 
-		output, err := renamer.TransformInput(rInput.Interface())
+		output, err := renamer.TransformForOnChain(rInput.Interface())
 
 		require.NoError(t, err)
 
@@ -207,13 +207,13 @@ func TestRenamer(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := renamer.TransformOutput(output)
+		newInput, err := renamer.TransformForOffChain(output)
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput and TransformOutput works on arrays", func(t *testing.T) {
-		inputType, err := renamer.RetypeForInput(reflect.TypeOf([2]renamerTestStruct{}))
+	t.Run("TransformForOnChain and TransformForOffChain works on arrays", func(t *testing.T) {
+		inputType, err := renamer.RetypeForOffChain(reflect.TypeOf([2]renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.New(inputType).Elem()
 		iInput := rInput.Index(0)
@@ -225,7 +225,7 @@ func TestRenamer(t *testing.T) {
 		iInput.FieldByName("B").SetInt(15)
 		iInput.FieldByName("Z").SetInt(25)
 
-		output, err := renamer.TransformInput(rInput.Interface())
+		output, err := renamer.TransformForOnChain(rInput.Interface())
 
 		require.NoError(t, err)
 
@@ -243,13 +243,13 @@ func TestRenamer(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := renamer.TransformOutput(output)
+		newInput, err := renamer.TransformForOffChain(output)
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformInput and TransformOutput works on nested fields even if the field itself is renamed", func(t *testing.T) {
-		inputType, err := nestedRenamer.RetypeForInput(reflect.TypeOf(renameNesting{}))
+	t.Run("TransformForOnChain and TransformForOffChain works on nested fields even if the field itself is renamed", func(t *testing.T) {
+		inputType, err := nestedRenamer.RetypeForOffChain(reflect.TypeOf(renameNesting{}))
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(inputType))
 
@@ -272,7 +272,7 @@ func TestRenamer(t *testing.T) {
 
 		iInput.FieldByName("D").SetString("bar")
 
-		output, err := nestedRenamer.TransformInput(iInput.Interface())
+		output, err := nestedRenamer.TransformForOnChain(iInput.Interface())
 
 		require.NoError(t, err)
 
@@ -298,7 +298,7 @@ func TestRenamer(t *testing.T) {
 			D: "bar",
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := nestedRenamer.TransformOutput(output)
+		newInput, err := nestedRenamer.TransformForOffChain(output)
 		require.NoError(t, err)
 		assert.Equal(t, iInput.Interface(), newInput)
 	})

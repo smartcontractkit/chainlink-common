@@ -3,14 +3,10 @@ package internal
 import (
 	"context"
 	jsonv1 "encoding/json"
-	"errors"
 	"fmt"
 
-	jsonv2 "github.com/go-json-experiment/json"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/fxamacker/cbor/v2"
+	jsonv2 "github.com/go-json-experiment/json"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -125,9 +121,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 
 	retVal := &map[string]any{}
 	err := c.impl.GetLatestValue(ctx, bc, request.Method, params, retVal)
-	if errors.Is(err, errors.ErrUnsupported) {
-		return nil, status.Error(codes.Unimplemented, err.Error())
-	} else if err != nil {
+	if err != nil {
 		return nil, err
 	}
 

@@ -203,9 +203,6 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 			},
 		})
 		if err != nil {
-			if rargs.ProviderType == string(types.Median) {
-				return 0, nil, types.UnwrapClientError(err)
-			}
 			return 0, nil, err
 		}
 		return reply.PluginProviderID, nil, nil
@@ -359,9 +356,6 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 
 	provider, err := i.NewMedianProvider(ctx, relayArgs, pluginArgs)
 	if err != nil {
-		if errors.Is(err, errors.ErrUnsupported) {
-			return 0, status.Error(codes.Unimplemented, err.Error())
-		}
 		return 0, err
 	}
 	err = provider.Start(ctx)

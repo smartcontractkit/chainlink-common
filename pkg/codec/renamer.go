@@ -9,7 +9,7 @@ import (
 func NewRenamer(fields map[string]string) Modifier {
 	m := &renamer{
 		modifierBase: modifierBase[string]{
-			Fields:            fields,
+			fields:            fields,
 			onToOffChainType:  map[reflect.Type]reflect.Type{},
 			offToOneChainType: map[reflect.Type]reflect.Type{},
 		},

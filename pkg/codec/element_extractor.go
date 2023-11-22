@@ -21,7 +21,7 @@ const (
 func NewElementExtractor(fields map[string]ElementExtractorLocation) Modifier {
 	m := &elementExtractor{
 		modifierBase: modifierBase[ElementExtractorLocation]{
-			Fields:            fields,
+			fields:            fields,
 			onToOffChainType:  map[reflect.Type]reflect.Type{},
 			offToOneChainType: map[reflect.Type]reflect.Type{},
 		},
@@ -102,7 +102,7 @@ func (e *elementExtractor) changeElements(src, dest any, fn mapAction) error {
 }
 
 func (e *elementExtractor) doForMapElements(valueMapping map[string]any, fn mapAction) error {
-	for key, elementLocation := range e.Fields {
+	for key, elementLocation := range e.fields {
 		path := strings.Split(key, ".")
 		name := path[len(path)-1]
 		path = path[:len(path)-1]
@@ -165,42 +165,6 @@ func expandMap(extractMap map[string]any, key string, _ ElementExtractorLocation
 	slice.Index(0).Set(rItem)
 	extractMap[key] = slice.Interface()
 	return nil
-}
-
-func getMapsFromPath(valueMapping map[string]any, path []string) ([]map[string]any, error) {
-	extractMaps := []map[string]any{valueMapping}
-	for _, p := range path {
-		tmp := make([]map[string]any, 0, len(extractMaps))
-		for _, extractMap := range extractMaps {
-			item, ok := extractMap[p]
-			if !ok {
-				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, strings.Join(path, "."))
-			}
-
-			iItem := reflect.ValueOf(item)
-			switch iItem.Kind() {
-			case reflect.Array, reflect.Slice:
-				length := iItem.Len()
-				maps := make([]map[string]any, length)
-				for i := 0; i < length; i++ {
-					if err := mapstructure.Decode(iItem.Index(i).Interface(), &maps[i]); err != nil {
-						return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-					}
-				}
-				extractMap[p] = maps
-				tmp = append(tmp, maps...)
-			default:
-				var m map[string]any
-				if err := mapstructure.Decode(item, &m); err != nil {
-					return nil, types.ErrInvalidType
-				}
-				extractMap[p] = m
-				tmp = append(tmp, m)
-			}
-		}
-		extractMaps = tmp
-	}
-	return extractMaps, nil
 }
 
 func (e *elementExtractor) doMany(rInput, rOutput reflect.Value, fn mapAction) error {

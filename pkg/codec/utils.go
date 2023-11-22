@@ -5,6 +5,9 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+	"strings"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -131,4 +134,40 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 	}
 
 	return data, nil
+}
+
+func getMapsFromPath(valueMapping map[string]any, path []string) ([]map[string]any, error) {
+	extractMaps := []map[string]any{valueMapping}
+	for _, p := range path {
+		tmp := make([]map[string]any, 0, len(extractMaps))
+		for _, extractMap := range extractMaps {
+			item, ok := extractMap[p]
+			if !ok {
+				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, strings.Join(path, "."))
+			}
+
+			iItem := reflect.ValueOf(item)
+			switch iItem.Kind() {
+			case reflect.Array, reflect.Slice:
+				length := iItem.Len()
+				maps := make([]map[string]any, length)
+				for i := 0; i < length; i++ {
+					if err := mapstructure.Decode(iItem.Index(i).Interface(), &maps[i]); err != nil {
+						return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+					}
+				}
+				extractMap[p] = maps
+				tmp = append(tmp, maps...)
+			default:
+				var m map[string]any
+				if err := mapstructure.Decode(item, &m); err != nil {
+					return nil, types.ErrInvalidType
+				}
+				extractMap[p] = m
+				tmp = append(tmp, m)
+			}
+		}
+		extractMaps = tmp
+	}
+	return extractMaps, nil
 }

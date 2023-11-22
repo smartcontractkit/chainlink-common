@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -9,14 +10,15 @@ import (
 )
 
 type modifierBase[T any] struct {
-	Fields              map[string]T
+	fields              map[string]T
 	onToOffChainType    map[reflect.Type]reflect.Type
 	offToOneChainType   map[reflect.Type]reflect.Type
 	modifyFieldForInput func(outputField *reflect.StructField, change T)
+	addFieldForInput    func(name string, change T) reflect.StructField
 }
 
 func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, error) {
-	if m.Fields == nil || len(m.Fields) == 0 {
+	if m.fields == nil || len(m.fields) == 0 {
 		m.offToOneChainType[onChainType] = onChainType
 		m.onToOffChainType[onChainType] = onChainType
 		return onChainType, nil
@@ -78,12 +80,14 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 
 		// If a subkey has been modified, update the underlying types first
 		curLocations.updateTypeFromSubkeyMods(fieldName)
-		field, err := curLocations.fieldByName(fieldName)
-		if err != nil {
-			return nil, err
+		if field, ok := curLocations.fieldByName(fieldName); ok {
+			m.modifyFieldForInput(field, m.fields[key])
+		} else {
+			if m.addFieldForInput == nil {
+				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)
+			}
+			curLocations.addNewField(m.addFieldForInput(key, m.fields[key]))
 		}
-
-		m.modifyFieldForInput(field, m.Fields[key])
 	}
 
 	newStruct := filedLocations.makeNewType()
@@ -94,8 +98,8 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 
 // subkeysFirst returns a list of keys that will always have a sub-key before the key if both are present
 func (m *modifierBase[T]) subkeysFirst() []string {
-	orderedKeys := make([]string, 0, len(m.Fields))
-	for k, _ := range m.Fields {
+	orderedKeys := make([]string, 0, len(m.fields))
+	for k, _ := range m.fields {
 		orderedKeys = append(orderedKeys, k)
 	}
 	sort.Slice(orderedKeys, func(i, j int) bool {

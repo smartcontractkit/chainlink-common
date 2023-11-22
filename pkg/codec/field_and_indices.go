@@ -46,11 +46,11 @@ func getFieldIndices(inputType reflect.Type) (*fieldsAndIndices, error) {
 	}, nil
 }
 
-func (f *fieldsAndIndices) fieldByName(name string) (*reflect.StructField, error) {
+func (f *fieldsAndIndices) fieldByName(name string) (*reflect.StructField, bool) {
 	if index, ok := f.Indices[name]; ok {
-		return &f.fields[index], nil
+		return &f.fields[index], true
 	}
-	return nil, types.ErrInvalidType
+	return nil, false
 }
 
 func (f *fieldsAndIndices) populateSubFields(field string) (*fieldsAndIndices, error) {
@@ -80,4 +80,9 @@ func (f *fieldsAndIndices) updateTypeFromSubkeyMods(key string) {
 		f.fields[f.Indices[key]].Type = subField.makeNewType()
 		delete(f.subFields, key)
 	}
+}
+
+func (f *fieldsAndIndices) addNewField(field reflect.StructField) {
+	f.fields = append(f.fields, field)
+	f.Indices[field.Name] = len(f.fields) - 1
 }

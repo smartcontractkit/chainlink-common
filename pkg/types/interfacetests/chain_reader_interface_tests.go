@@ -92,8 +92,8 @@ type MidLevelTestStruct struct {
 type TestStruct struct {
 	Field          int32
 	DifferentField string
-	OracleId       commontypes.OracleID
-	OracleIds      [32]commontypes.OracleID
+	OracleID       commontypes.OracleID
+	OracleIDs      [32]commontypes.OracleID
 	Account        []byte
 	Accounts       [][]byte
 	BigField       *big.Int
@@ -109,8 +109,8 @@ func CreateTestStruct(i int, accGen func(int) []byte) TestStruct {
 	return TestStruct{
 		Field:          int32(i),
 		DifferentField: s,
-		OracleId:       commontypes.OracleID(i + 1),
-		OracleIds:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
+		OracleID:       commontypes.OracleID(i + 1),
+		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
 		Account:        accGen(i + 3),
 		Accounts:       [][]byte{accGen(i + 4), accGen(i + 5)},
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),

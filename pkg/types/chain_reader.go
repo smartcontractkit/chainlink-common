@@ -29,7 +29,7 @@ func UnwrapClientError(err error) error {
 type ChainReader interface {
 	// GetLatestValue gets the latest value....
 	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig. It must encode as an object via [json.Marshal].
-	// Typically, would be either an anonymous map such as `map[string]any{"baz": 42, "test": true}}`, a struct with `json` tags, or something which implements [json.Marshaller].
+	// Typically, would be either an anonymous map such as `map[string]any{"baz": 42, "test": true}}`, a struct with `json` tags, or something which implements [json.Marshaler].
 	//
 	// returnVal must [json.Unmarshal] as an object, and so should be a map, struct, or implement the [json.Unmarshaler] interface.
 	//

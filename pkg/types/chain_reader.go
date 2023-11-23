@@ -45,8 +45,6 @@ type ChainReader interface {
 	// 		err = cr.GetLatestValue(ctx, bc, "method", ProductParams{Arg:1}, &resp)
 	// 		return
 	//  }
-	//
-	// returnVal should be a pointer which can be passed to json.Marshal()
 	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
 }
 

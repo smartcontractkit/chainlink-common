@@ -9,12 +9,15 @@ import (
 func NewRenamer(fields map[string]string) Modifier {
 	m := &renamer{
 		modifierBase: modifierBase[string]{
-			fields:            fields,
-			onToOffChainType:  map[reflect.Type]reflect.Type{},
-			offToOneChainType: map[reflect.Type]reflect.Type{},
+			fields:           fields,
+			onToOffChainType: map[reflect.Type]reflect.Type{},
+			offToOnChainType: map[reflect.Type]reflect.Type{},
 		},
 	}
-	m.modifyFieldForInput = func(field *reflect.StructField, newName string) { field.Name = newName }
+	m.modifyFieldForInput = func(field *reflect.StructField, _, newName string) error {
+		field.Name = newName
+		return nil
+	}
 	return m
 }
 
@@ -23,7 +26,7 @@ type renamer struct {
 }
 
 func (r *renamer) TransformForOffChain(output any) (any, error) {
-	rOutput, err := transform(r.onToOffChainType, reflect.ValueOf(output))
+	rOutput, err := renameTransform(r.onToOffChainType, reflect.ValueOf(output))
 	if err != nil {
 		return nil, err
 	}
@@ -31,14 +34,14 @@ func (r *renamer) TransformForOffChain(output any) (any, error) {
 }
 
 func (r *renamer) TransformForOnChain(input any) (any, error) {
-	rOutput, err := transform(r.offToOneChainType, reflect.ValueOf(input))
+	rOutput, err := renameTransform(r.offToOnChainType, reflect.ValueOf(input))
 	if err != nil {
 		return nil, err
 	}
 	return rOutput.Interface(), nil
 }
 
-func transform(typeMap map[reflect.Type]reflect.Type, rInput reflect.Value) (reflect.Value, error) {
+func renameTransform(typeMap map[reflect.Type]reflect.Type, rInput reflect.Value) (reflect.Value, error) {
 	toType, ok := typeMap[rInput.Type()]
 	if !ok {
 		return reflect.Value{}, types.ErrInvalidType

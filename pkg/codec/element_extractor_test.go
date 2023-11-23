@@ -103,7 +103,7 @@ func TestElementExtractor(t *testing.T) {
 			D: 30,
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := extractor.TransformForOffChain(output)
+		newInput, err := extractor.TransformForOffChain(expected)
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A"}))
@@ -138,7 +138,7 @@ func TestElementExtractor(t *testing.T) {
 			D: 30,
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := extractor.TransformForOffChain(output)
+		newInput, err := extractor.TransformForOffChain(expected)
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A"}))
@@ -182,7 +182,7 @@ func TestElementExtractor(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := extractor.TransformForOffChain(output)
+		newInput, err := extractor.TransformForOffChain(expected)
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
@@ -232,7 +232,7 @@ func TestElementExtractor(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := extractor.TransformForOffChain(output)
+		newInput, err := extractor.TransformForOffChain(expected)
 		require.NoError(t, err)
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{25}))
@@ -279,7 +279,7 @@ func TestElementExtractor(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := extractor.TransformForOffChain(output)
+		newInput, err := extractor.TransformForOffChain(expected)
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
@@ -359,7 +359,7 @@ func TestElementExtractor(t *testing.T) {
 
 		assert.Equal(t, expected, output)
 
-		newInput, err := nestedExtractor.TransformForOffChain(output)
+		newInput, err := nestedExtractor.TransformForOffChain(expected)
 		require.NoError(t, err)
 
 		// Lossy modification

@@ -6,20 +6,22 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type modifierBase[T any] struct {
 	fields              map[string]T
 	onToOffChainType    map[reflect.Type]reflect.Type
-	offToOneChainType   map[reflect.Type]reflect.Type
-	modifyFieldForInput func(outputField *reflect.StructField, change T)
+	offToOnChainType    map[reflect.Type]reflect.Type
+	modifyFieldForInput func(outputField *reflect.StructField, fullPath string, change T) error
 	addFieldForInput    func(name string, change T) reflect.StructField
 }
 
 func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, error) {
 	if m.fields == nil || len(m.fields) == 0 {
-		m.offToOneChainType[onChainType] = onChainType
+		m.offToOnChainType[onChainType] = onChainType
 		m.onToOffChainType[onChainType] = onChainType
 		return onChainType, nil
 	}
@@ -33,7 +35,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.T
 		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
 			ptr := reflect.PointerTo(elm)
 			m.onToOffChainType[onChainType] = ptr
-			m.offToOneChainType[ptr] = onChainType
+			m.offToOnChainType[ptr] = onChainType
 			return ptr, nil
 		}
 		return nil, types.ErrInvalidType
@@ -41,7 +43,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.T
 		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
 			sliceType := reflect.SliceOf(elm)
 			m.onToOffChainType[onChainType] = sliceType
-			m.offToOneChainType[sliceType] = onChainType
+			m.offToOnChainType[sliceType] = onChainType
 			return sliceType, nil
 		}
 		return nil, types.ErrInvalidType
@@ -49,7 +51,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.T
 		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
 			arrayType := reflect.ArrayOf(onChainType.Len(), elm)
 			m.onToOffChainType[onChainType] = arrayType
-			m.offToOneChainType[arrayType] = onChainType
+			m.offToOnChainType[arrayType] = onChainType
 			return arrayType, nil
 		}
 		return nil, types.ErrInvalidType
@@ -81,7 +83,9 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 		// If a subkey has been modified, update the underlying types first
 		curLocations.updateTypeFromSubkeyMods(fieldName)
 		if field, ok := curLocations.fieldByName(fieldName); ok {
-			m.modifyFieldForInput(field, m.fields[key])
+			if err = m.modifyFieldForInput(field, key, m.fields[key]); err != nil {
+				return nil, err
+			}
 		} else {
 			if m.addFieldForInput == nil {
 				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)
@@ -92,18 +96,124 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 
 	newStruct := filedLocations.makeNewType()
 	m.onToOffChainType[outputType] = newStruct
-	m.offToOneChainType[newStruct] = outputType
+	m.offToOnChainType[newStruct] = outputType
 	return newStruct, nil
 }
 
 // subkeysFirst returns a list of keys that will always have a sub-key before the key if both are present
 func (m *modifierBase[T]) subkeysFirst() []string {
 	orderedKeys := make([]string, 0, len(m.fields))
-	for k, _ := range m.fields {
+	for k := range m.fields {
 		orderedKeys = append(orderedKeys, k)
 	}
+
 	sort.Slice(orderedKeys, func(i, j int) bool {
 		return orderedKeys[i] > orderedKeys[j]
 	})
+
 	return orderedKeys
+}
+
+type mapAction[T any] func(extractMap map[string]any, key string, element T) error
+
+func transformWithMaps[T any](
+	item any,
+	typeMap map[reflect.Type]reflect.Type,
+	fields map[string]T,
+	fn mapAction[T],
+	hooks ...mapstructure.DecodeHookFunc) (any, error) {
+	rItem := reflect.ValueOf(item)
+
+	toType, ok := typeMap[rItem.Type()]
+	if !ok {
+		return reflect.Value{}, types.ErrInvalidType
+	}
+
+	switch rItem.Kind() {
+	case reflect.Pointer:
+		elm := rItem.Elem()
+		if elm.Kind() == reflect.Struct {
+			into := reflect.New(toType.Elem())
+			err := changeElements(item, into.Interface(), fields, fn, hooks)
+			return into.Interface(), err
+		}
+
+		tmp, err := transformWithMaps(elm.Interface(), typeMap, fields, fn)
+		result := reflect.New(toType.Elem())
+		reflect.Indirect(result).Set(reflect.ValueOf(tmp))
+		return result.Interface(), err
+	case reflect.Struct:
+		into := reflect.New(toType)
+		err := changeElements(item, into.Interface(), fields, fn, hooks)
+		return into.Elem().Interface(), err
+	case reflect.Slice:
+		length := rItem.Len()
+		into := reflect.MakeSlice(toType, length, length)
+		err := doMany(rItem, into, fields, fn, hooks)
+		return into.Interface(), err
+	case reflect.Array:
+		into := reflect.New(toType).Elem()
+		err := doMany(rItem, into, fields, fn, hooks)
+		return into.Interface(), err
+	}
+
+	return reflect.Value{}, types.ErrInvalidType
+}
+
+func doMany[T any](rInput, rOutput reflect.Value, fields map[string]T, fn mapAction[T], hooks []mapstructure.DecodeHookFunc) error {
+	length := rInput.Len()
+	for i := 0; i < length; i++ {
+		// Make sure the index is addressable
+		tmp := rOutput.Index(i).Interface()
+		if err := changeElements(rInput.Index(i).Interface(), &tmp, fields, fn, hooks); err != nil {
+			return err
+		}
+		rOutput.Index(i).Set(reflect.ValueOf(tmp))
+	}
+	return nil
+}
+
+func changeElements[T any](src, dest any, fields map[string]T, fn mapAction[T], hooks []mapstructure.DecodeHookFunc) error {
+	valueMapping := map[string]any{}
+	if err := mapstructure.Decode(src, &valueMapping); err != nil {
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+	}
+
+	if err := doForMapElements(valueMapping, fields, fn); err != nil {
+		return err
+	}
+
+	conf := &mapstructure.DecoderConfig{Result: &dest}
+	if len(hooks) != 0 {
+		conf.DecodeHook = mapstructure.ComposeDecodeHookFunc(hooks...)
+	}
+
+	hookedDecoder, err := mapstructure.NewDecoder(conf)
+	if err != nil {
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+	}
+
+	if err = hookedDecoder.Decode(valueMapping); err != nil {
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+	}
+	return nil
+}
+
+func doForMapElements[T any](valueMapping map[string]any, fields map[string]T, fn mapAction[T]) error {
+	for key, value := range fields {
+		path := strings.Split(key, ".")
+		name := path[len(path)-1]
+		path = path[:len(path)-1]
+		extractMaps, err := getMapsFromPath(valueMapping, path)
+		if err != nil {
+			return err
+		}
+
+		for _, em := range extractMaps {
+			if err = fn(em, name, value); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

@@ -136,8 +136,8 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 	return data, nil
 }
 
-func getMapsFromPath(valueMapping map[string]any, path []string) ([]map[string]any, error) {
-	extractMaps := []map[string]any{valueMapping}
+func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, error) {
+	extractMaps := []map[string]any{valueMap}
 	for _, p := range path {
 		tmp := make([]map[string]any, 0, len(extractMaps))
 		for _, extractMap := range extractMaps {

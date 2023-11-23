@@ -99,7 +99,7 @@ func TestRenamer(t *testing.T) {
 			C: 20,
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := renamer.TransformForOffChain(output)
+		newInput, err := renamer.TransformForOffChain(expected)
 		require.NoError(t, err)
 		assert.Equal(t, iOffchain.Interface(), newInput)
 	})
@@ -169,7 +169,7 @@ func TestRenamer(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := renamer.TransformForOffChain(output)
+		newInput, err := renamer.TransformForOffChain(expected)
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
@@ -207,7 +207,7 @@ func TestRenamer(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := renamer.TransformForOffChain(output)
+		newInput, err := renamer.TransformForOffChain(expected)
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
@@ -243,7 +243,7 @@ func TestRenamer(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := renamer.TransformForOffChain(output)
+		newInput, err := renamer.TransformForOffChain(expected)
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
@@ -298,7 +298,7 @@ func TestRenamer(t *testing.T) {
 			D: "bar",
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := nestedRenamer.TransformForOffChain(output)
+		newInput, err := nestedRenamer.TransformForOffChain(expected)
 		require.NoError(t, err)
 		assert.Equal(t, iOffchain.Interface(), newInput)
 	})

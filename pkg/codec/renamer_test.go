@@ -138,7 +138,7 @@ func TestRenamer(t *testing.T) {
 		assert.Same(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformForOnChain and TransformForOffChain works on slices by creating a new slice and converting elements", func(t *testing.T) {
+	t.Run("TransformForOnChain and TransformForOffChain works on slices", func(t *testing.T) {
 		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([]renamerTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(offChainType, 2, 2)
@@ -165,6 +165,68 @@ func TestRenamer(t *testing.T) {
 				A: "baz",
 				B: 15,
 				C: 25,
+			},
+		}
+		assert.Equal(t, expected, output)
+
+		newInput, err := renamer.TransformForOffChain(expected)
+		require.NoError(t, err)
+		assert.Equal(t, rInput.Interface(), newInput)
+	})
+
+	t.Run("TransformForOnChain and TransformForOffChain works on nested slices", func(t *testing.T) {
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([][]renamerTestStruct{}))
+		require.NoError(t, err)
+		rInput := reflect.MakeSlice(offChainType, 2, 2)
+		rOuter := rInput.Index(0)
+		rOuter.Set(reflect.MakeSlice(rOuter.Type(), 2, 2))
+		iOffchain := rOuter.Index(0)
+		iOffchain.FieldByName("X").SetString("foo")
+		iOffchain.FieldByName("B").SetInt(10)
+		iOffchain.FieldByName("Z").SetInt(20)
+		iOffchain = rOuter.Index(1)
+		iOffchain.FieldByName("X").SetString("baz")
+		iOffchain.FieldByName("B").SetInt(15)
+		iOffchain.FieldByName("Z").SetInt(25)
+		rOuter = rInput.Index(1)
+		rOuter.Set(reflect.MakeSlice(rOuter.Type(), 2, 2))
+		iOffchain = rOuter.Index(0)
+		iOffchain.FieldByName("X").SetString("fooz")
+		iOffchain.FieldByName("B").SetInt(100)
+		iOffchain.FieldByName("Z").SetInt(200)
+		iOffchain = rOuter.Index(1)
+		iOffchain.FieldByName("X").SetString("bazz")
+		iOffchain.FieldByName("B").SetInt(150)
+		iOffchain.FieldByName("Z").SetInt(250)
+
+		output, err := renamer.TransformForOnChain(rInput.Interface())
+
+		require.NoError(t, err)
+
+		expected := [][]renamerTestStruct{
+			{
+				{
+					A: "foo",
+					B: 10,
+					C: 20,
+				},
+				{
+					A: "baz",
+					B: 15,
+					C: 25,
+				},
+			},
+			{
+				{
+					A: "fooz",
+					B: 100,
+					C: 200,
+				},
+				{
+					A: "bazz",
+					B: 150,
+					C: 250,
+				},
 			},
 		}
 		assert.Equal(t, expected, output)

@@ -156,7 +156,7 @@ func TestHardCoder(t *testing.T) {
 		assert.Equal(t, rInput.Interface(), actual)
 	})
 
-	t.Run("TransformForOnChain and TransformForOffChain works on slices by creating a new slice and converting elements", func(t *testing.T) {
+	t.Run("TransformForOnChain and TransformForOffChain works on slices", func(t *testing.T) {
 		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(onChainType))
 		require.NoError(t, err)
 
@@ -188,6 +188,65 @@ func TestHardCoder(t *testing.T) {
 
 		addOffChainAndOnChainHardCodedValues(rInput.Index(0))
 		addOffChainAndOnChainHardCodedValues(rInput.Index(1))
+		assert.Equal(t, rInput.Interface(), actual)
+	})
+
+	t.Run("TransformForOnChain and TransformForOffChain works on slices of slices", func(t *testing.T) {
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(reflect.SliceOf(onChainType)))
+		require.NoError(t, err)
+
+		rInput := reflect.MakeSlice(offChainType, 2, 2)
+		iOuter := rInput.Index(0)
+		iOuter.Set(reflect.MakeSlice(iOuter.Type(), 2, 2))
+		iElm := iOuter.Index(0)
+		iElm.FieldByName("B").SetInt(1)
+		iElm = iOuter.Index(1)
+		iElm.FieldByName("B").SetInt(2)
+		iOuter = rInput.Index(1)
+		iOuter.Set(reflect.MakeSlice(iOuter.Type(), 2, 2))
+		iElm = iOuter.Index(0)
+		iElm.FieldByName("B").SetInt(10)
+		iElm = iOuter.Index(1)
+		iElm.FieldByName("B").SetInt(20)
+
+		actual, err := hardCoder.TransformForOnChain(rInput.Interface())
+		require.NoError(t, err)
+
+		expected := [][]hardCodedTestStruct{
+			{
+				{
+					A: "Foo",
+					B: 1,
+					C: []int32{2, 3},
+				},
+				{
+					A: "Foo",
+					B: 2,
+					C: []int32{2, 3},
+				},
+			},
+			{
+				{
+					A: "Foo",
+					B: 10,
+					C: []int32{2, 3},
+				},
+				{
+					A: "Foo",
+					B: 20,
+					C: []int32{2, 3},
+				},
+			},
+		}
+		assert.Equal(t, expected, actual)
+
+		actual, err = hardCoder.TransformForOffChain(expected)
+		require.NoError(t, err)
+
+		addOffChainAndOnChainHardCodedValues(rInput.Index(0).Index(0))
+		addOffChainAndOnChainHardCodedValues(rInput.Index(0).Index(1))
+		addOffChainAndOnChainHardCodedValues(rInput.Index(1).Index(0))
+		addOffChainAndOnChainHardCodedValues(rInput.Index(1).Index(1))
 		assert.Equal(t, rInput.Interface(), actual)
 	})
 

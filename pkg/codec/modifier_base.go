@@ -140,32 +140,45 @@ func transformWithMaps[T any](
 		return reflect.Value{}, types.ErrInvalidType
 	}
 
+	rOutput, err := transformWithMapsHelper(rItem, toType, fields, fn, hooks)
+	if err != nil {
+		return reflect.Value{}, err
+	}
+	return rOutput.Interface(), nil
+}
+
+func transformWithMapsHelper[T any](
+	rItem reflect.Value,
+	toType reflect.Type,
+	fields map[string]T,
+	fn mapAction[T],
+	hooks []mapstructure.DecodeHookFunc) (reflect.Value, error) {
 	switch rItem.Kind() {
 	case reflect.Pointer:
 		elm := rItem.Elem()
 		if elm.Kind() == reflect.Struct {
 			into := reflect.New(toType.Elem())
-			err := changeElements(item, into.Interface(), fields, fn, hooks)
-			return into.Interface(), err
+			err := changeElements(rItem.Interface(), into.Interface(), fields, fn, hooks)
+			return into, err
 		}
 
-		tmp, err := transformWithMaps(elm.Interface(), typeMap, fields, fn)
+		tmp, err := transformWithMapsHelper(elm, toType.Elem(), fields, fn, hooks)
 		result := reflect.New(toType.Elem())
-		reflect.Indirect(result).Set(reflect.ValueOf(tmp))
-		return result.Interface(), err
+		reflect.Indirect(result).Set(tmp)
+		return result, err
 	case reflect.Struct:
 		into := reflect.New(toType)
-		err := changeElements(item, into.Interface(), fields, fn, hooks)
-		return into.Elem().Interface(), err
+		err := changeElements(rItem.Interface(), into.Interface(), fields, fn, hooks)
+		return into.Elem(), err
 	case reflect.Slice:
 		length := rItem.Len()
 		into := reflect.MakeSlice(toType, length, length)
 		err := doMany(rItem, into, fields, fn, hooks)
-		return into.Interface(), err
+		return into, err
 	case reflect.Array:
 		into := reflect.New(toType).Elem()
 		err := doMany(rItem, into, fields, fn, hooks)
-		return into.Interface(), err
+		return into, err
 	}
 
 	return reflect.Value{}, types.ErrInvalidType
@@ -174,12 +187,14 @@ func transformWithMaps[T any](
 func doMany[T any](rInput, rOutput reflect.Value, fields map[string]T, fn mapAction[T], hooks []mapstructure.DecodeHookFunc) error {
 	length := rInput.Len()
 	for i := 0; i < length; i++ {
-		// Make sure the index is addressable
-		tmp := rOutput.Index(i).Interface()
-		if err := changeElements(rInput.Index(i).Interface(), &tmp, fields, fn, hooks); err != nil {
+		// Make sure the items are addressable
+		inTmp := rInput.Index(i)
+		outTmp := rOutput.Index(i)
+		output, err := transformWithMapsHelper(inTmp, outTmp.Type(), fields, fn, hooks)
+		if err != nil {
 			return err
 		}
-		rOutput.Index(i).Set(reflect.ValueOf(tmp))
+		outTmp.Set(output)
 	}
 	return nil
 }

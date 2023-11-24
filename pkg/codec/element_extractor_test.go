@@ -147,7 +147,7 @@ func TestElementExtractor(t *testing.T) {
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformForOnChain and TransformForOffChain works on slices by creating a new slice and converting elements", func(t *testing.T) {
+	t.Run("TransformForOnChain and TransformForOffChain works on slices", func(t *testing.T) {
 		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]elementExtractorTestStruct{}))
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
@@ -192,6 +192,96 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A"}))
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{20}))
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{30}))
+		assert.Equal(t, rInput.Interface(), newInput)
+	})
+
+	t.Run("TransformForOnChain and TransformForOffChain works on nested slices", func(t *testing.T) {
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([][]elementExtractorTestStruct{}))
+		require.NoError(t, err)
+		rInput := reflect.MakeSlice(inputType, 2, 2)
+		rOuter := rInput.Index(0)
+		rOuter.Set(reflect.MakeSlice(rOuter.Type(), 2, 2))
+		iInput := rOuter.Index(0)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A", "B", "C"}))
+		iInput.FieldByName("B").SetInt(10)
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{15, 20, 35}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{10, 20, 30}))
+		iInput = rOuter.Index(1)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az", "Bz", "Cz"}))
+		iInput.FieldByName("B").SetInt(15)
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{15, 25, 35}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{10, 20, 35}))
+		rOuter = rInput.Index(1)
+		rOuter.Set(reflect.MakeSlice(rOuter.Type(), 2, 2))
+		iInput = rOuter.Index(0)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az", "Bz", "Cz"}))
+		iInput.FieldByName("B").SetInt(100)
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{150, 200, 350}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{100, 200, 300}))
+		iInput = rOuter.Index(1)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Azz", "Bzz", "Czz"}))
+		iInput.FieldByName("B").SetInt(150)
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{150, 250, 350}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{100, 200, 350}))
+
+		output, err := extractor.TransformForOnChain(rInput.Interface())
+
+		require.NoError(t, err)
+
+		expected := [][]elementExtractorTestStruct{
+			{
+				{
+					A: "A",
+					B: 10,
+					C: 20,
+					D: 30,
+				},
+				{
+					A: "Az",
+					B: 15,
+					C: 25,
+					D: 35,
+				},
+			},
+			{
+				{
+					A: "Az",
+					B: 100,
+					C: 200,
+					D: 300,
+				},
+				{
+					A: "Azz",
+					B: 150,
+					C: 250,
+					D: 350,
+				},
+			},
+		}
+		assert.Equal(t, expected, output)
+
+		newInput, err := extractor.TransformForOffChain(expected)
+		require.NoError(t, err)
+		// Lossy modification
+		rOuter = rInput.Index(0)
+		iInput = rOuter.Index(0)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A"}))
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{20}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{30}))
+		iInput = rOuter.Index(1)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{25}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{35}))
+		rOuter = rInput.Index(1)
+		iInput = rOuter.Index(0)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{200}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{300}))
+		iInput = rOuter.Index(1)
+		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Azz"}))
+		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{250}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{350}))
+
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
 

@@ -15,7 +15,7 @@ jobs:
           go-version: '1.21'
       
       - name: Install golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
       
       - name: Run golangci-lint
         run: docker run --rm -v ${{ github.workspace }}:/app -w /app golangci/golangci-lint:v1.54.2 golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 --out-format checkstyle:golangci-lint-results.xml,json:golangci-lint-results.json || true

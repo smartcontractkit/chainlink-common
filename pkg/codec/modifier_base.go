@@ -90,7 +90,7 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 			if m.addFieldForInput == nil {
 				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)
 			}
-			curLocations.addNewField(m.addFieldForInput(key, m.fields[key]))
+			curLocations.addNewField(m.addFieldForInput(fieldName, m.fields[key]))
 		}
 	}
 
@@ -111,6 +111,17 @@ func (m *modifierBase[T]) subkeysFirst() []string {
 		return orderedKeys[i] > orderedKeys[j]
 	})
 
+	return orderedKeys
+}
+
+// subkeysLast returns a list of keys that will always have a sub-key after the key if both are present
+func subkeysLast[T any](fields map[string]T) []string {
+	orderedKeys := make([]string, 0, len(fields))
+	for k := range fields {
+		orderedKeys = append(orderedKeys, k)
+	}
+
+	sort.Strings(orderedKeys)
 	return orderedKeys
 }
 

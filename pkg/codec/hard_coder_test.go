@@ -15,11 +15,22 @@ import (
 var onChainType = reflect.TypeOf(hardCodedTestStruct{})
 
 func TestHardCoder(t *testing.T) {
-	hardCoder := codec.NewHardCoder(map[string]any{"A": "Foo", "C": []int32{2, 3}}, map[string]any{"Z": "Bar", "Q": []struct {
+	hardCoder, err := codec.NewHardCoder(map[string]any{"A": "Foo", "C": []int32{2, 3}}, map[string]any{"Z": "Bar", "Q": []struct {
 		A int
 		B string
 	}{{1, "a"}, {2, "b"}}})
-	replacingHardCoder := codec.NewHardCoder(map[string]any{"A": "two"}, map[string]any{"A": int64(2), "Q": []int32{4, 5}})
+	require.NoError(t, err)
+	replacingHardCoder, err := codec.NewHardCoder(map[string]any{"A": "two"}, map[string]any{"A": int64(2), "Q": []int32{4, 5}})
+	require.NoError(t, err)
+
+	t.Run("NewHardCoder returns error if key and subkey are in a map", func(t *testing.T) {
+		_, err := codec.NewHardCoder(map[string]any{"A.Z": "Foo", "A": hardCodedTestStruct{A: "Z"}}, map[string]any{})
+		assert.True(t, errors.Is(err, types.ErrInvalidConfig))
+
+		_, err = codec.NewHardCoder(map[string]any{}, map[string]any{"A.Z": "Foo", "A": hardCodedTestStruct{A: "Z"}})
+		assert.True(t, errors.Is(err, types.ErrInvalidConfig))
+	})
+
 	t.Run("RetypeForOffChain adds fields to struct", func(t *testing.T) {
 		offChainType, err := hardCoder.RetypeForOffChain(onChainType)
 		require.NoError(t, err)
@@ -77,8 +88,9 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain returns error is existing field type is changed and not hard coded both ways", func(t *testing.T) {
-		invalidHardCoder := codec.NewHardCoder(map[string]any{}, map[string]any{"A": int64(2), "Q": []int32{4, 5}})
-		_, err := invalidHardCoder.RetypeForOffChain(onChainType)
+		invalidHardCoder, err := codec.NewHardCoder(map[string]any{}, map[string]any{"A": int64(2), "Q": []int32{4, 5}})
+		require.NoError(t, err)
+		_, err = invalidHardCoder.RetypeForOffChain(onChainType)
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
@@ -140,7 +152,7 @@ func TestHardCoder(t *testing.T) {
 
 		actual, err = hardCoder.TransformForOffChain(expected)
 		require.NoError(t, err)
-		addOutputHardCodedValues(iInput)
+		addOffChainAndOnChainHardCodedValues(iInput)
 		assert.Equal(t, rInput.Interface(), actual)
 	})
 
@@ -174,8 +186,8 @@ func TestHardCoder(t *testing.T) {
 		actual, err = hardCoder.TransformForOffChain(expected)
 		require.NoError(t, err)
 
-		addOutputHardCodedValues(rInput.Index(0))
-		addOutputHardCodedValues(rInput.Index(1))
+		addOffChainAndOnChainHardCodedValues(rInput.Index(0))
+		addOffChainAndOnChainHardCodedValues(rInput.Index(1))
 		assert.Equal(t, rInput.Interface(), actual)
 	})
 
@@ -211,8 +223,8 @@ func TestHardCoder(t *testing.T) {
 		actual, err = hardCoder.TransformForOffChain(expected)
 		require.NoError(t, err)
 
-		addOutputHardCodedValues(sInput.Index(0))
-		addOutputHardCodedValues(sInput.Index(1))
+		addOffChainAndOnChainHardCodedValues(sInput.Index(0))
+		addOffChainAndOnChainHardCodedValues(sInput.Index(1))
 		assert.Equal(t, rInput.Interface(), actual)
 	})
 
@@ -246,28 +258,31 @@ func TestHardCoder(t *testing.T) {
 		actual, err = hardCoder.TransformForOffChain(expected)
 		require.NoError(t, err)
 
-		addOutputHardCodedValues(rInput.Index(0))
-		addOutputHardCodedValues(rInput.Index(1))
+		addOffChainAndOnChainHardCodedValues(rInput.Index(0))
+		addOffChainAndOnChainHardCodedValues(rInput.Index(1))
 		assert.Equal(t, rInput.Interface(), actual)
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on nested fields", func(t *testing.T) {
-		nestedHardCoder := codec.NewHardCoder(map[string]any{
-			"A": "Top",
-			"B": valuesForHardCodedStruct{
-				A: "Foo",
-				C: []int32{2, 3},
-			},
-			"C": valuesForHardCodedStruct{
-				A: "Foo",
-				C: []int32{2, 3},
-			},
+		nestedHardCoder, err := codec.NewHardCoder(map[string]any{
+			"A":   "Top",
+			"B.A": "Foo",
+			"B.C": []int32{2, 3},
+			"C.A": "Foo",
+			"C.C": []int32{2, 3},
 		}, map[string]any{
-			"Z": "Bar", "Q": []struct {
+			"B.Z": "Bar",
+			"B.Q": []struct {
+				A int
+				B string
+			}{{1, "a"}, {2, "b"}},
+			"C.Z": "Bar",
+			"C.Q": []struct {
 				A int
 				B string
 			}{{1, "a"}, {2, "b"}},
 		})
+		require.NoError(t, err)
 
 		offChainType, err := nestedHardCoder.RetypeForOffChain(reflect.TypeOf(nestedHardCodedTestStruct{}))
 		require.NoError(t, err)
@@ -303,6 +318,7 @@ func TestHardCoder(t *testing.T) {
 					C: []int32{2, 3},
 				},
 			},
+			D: 1,
 		}
 
 		assert.Equal(t, expected, actual)
@@ -311,9 +327,9 @@ func TestHardCoder(t *testing.T) {
 		require.NoError(t, err)
 
 		iInput.FieldByName("A").SetString("Top")
-		addOutputHardCodedValues(iB)
-		addOutputHardCodedValues(iC.Index(0))
-		addOutputHardCodedValues(iC.Index(1))
+		addOffChainAndOnChainHardCodedValues(iB)
+		addOffChainAndOnChainHardCodedValues(iC.Index(0))
+		addOffChainAndOnChainHardCodedValues(iC.Index(1))
 		assert.Equal(t, iInput.Interface(), actual)
 	})
 
@@ -340,13 +356,12 @@ func TestHardCoder(t *testing.T) {
 
 		assert.Equal(t, iInput.Interface(), actual)
 	})
-
-	t.Run("TransformForOnChain respects hooks", func(t *testing.T) {
-		t.Skip("TODO")
-	})
 }
 
-func addOutputHardCodedValues(iInput reflect.Value) {
+// Since we're using the on-chain values that have their hard-coded values set to
+// transform back to the off-chain values, the on-chain values will be set in the off-chain
+// as well unless it's overwritten.
+func addOffChainAndOnChainHardCodedValues(iInput reflect.Value) {
 	iInput.FieldByName("A").SetString("Foo")
 	iInput.FieldByName("C").Set(reflect.ValueOf([]int32{2, 3}))
 	iInput.FieldByName("Z").SetString("Bar")
@@ -413,9 +428,4 @@ type nestedHardCodedTestStruct struct {
 	B hardCodedTestStruct
 	C []hardCodedTestStruct
 	D int32
-}
-
-type valuesForHardCodedStruct struct {
-	A string
-	C []int32
 }

@@ -3,13 +3,20 @@ package codec
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func NewHardCoder(onChain map[string]any, offChain map[string]any) Modifier {
+func NewHardCoder(onChain map[string]any, offChain map[string]any) (Modifier, error) {
+	if err := verifyHardCodeKeys(onChain); err != nil {
+		return nil, err
+	} else if err = verifyHardCodeKeys(offChain); err != nil {
+		return nil, err
+	}
+
 	m := &onChainHardCoder{
 		modifierBase: modifierBase[any]{
 			fields:           offChain,
@@ -36,12 +43,28 @@ func NewHardCoder(onChain map[string]any, offChain map[string]any) Modifier {
 			Type: reflect.TypeOf(value),
 		}
 	}
-	return m
+	return m, nil
 }
 
 type onChainHardCoder struct {
 	modifierBase[any]
 	onChain map[string]any
+}
+
+func verifyHardCodeKeys(values map[string]any) error {
+	seen := map[string]bool{}
+	for _, k := range subkeysLast(values) {
+		parts := strings.Split(k, ".")
+		on := ""
+		for _, part := range parts {
+			on += part
+			if seen[on] {
+				return fmt.Errorf("%w: key %s and %s cannot both be present", types.ErrInvalidConfig, on, k)
+			}
+			seen[on] = true
+		}
+	}
+	return nil
 }
 
 func (o *onChainHardCoder) TransformForOnChain(offChainValue any) (any, error) {
@@ -53,15 +76,6 @@ func (o *onChainHardCoder) TransformForOffChain(onChainValue any) (any, error) {
 }
 
 func hardCode(extractMap map[string]any, key string, item any) error {
-	if val, ok := extractMap[key]; ok {
-		if m, ok := val.(map[string]any); ok && len(m) != 0 {
-			fmt.Println("HERE WE ARE")
-		} else if ms, ok := val.([]map[string]any); ok {
-			fmt.Println(ms)
-		} else if reflect.Zero(reflect.TypeOf(val)).Interface() != val {
-			fmt.Println("HERE WE ARE")
-		}
-	}
 	extractMap[key] = item
 	return nil
 }

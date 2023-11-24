@@ -31,7 +31,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Build the image
-        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@8a907cec94e1387136509c1a9a8f12ad3db2863a
+        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@92d419a58f250e724aed8bc917e25230ab951a39
         env:
           GH_TOKEN: ${{ github.token }}
         with:

@@ -5,28 +5,28 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type ModifiersConfig []ModifierConfig
 
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
-	var rawDeserialized []map[string]json.RawMessage
+	var rawDeserialized []json.RawMessage
 	if err := json.Unmarshal(data, &rawDeserialized); err != nil {
 		return err
-	}
-
-	for _, d := range rawDeserialized {
-		for k, v := range d {
-			delete(d, k)
-			d[strings.ToLower(k)] = v
-		}
 	}
 
 	*m = make([]ModifierConfig, len(rawDeserialized))
 
 	for i, d := range rawDeserialized {
-		mType := ModifierType(strings.ToLower(string(d["type"])))
+		t := typer{}
+		if err := json.Unmarshal(d, &t); err != nil {
+			return fmt.Errorf("%w: %w", types.ErrInvalidConfig, err)
+		}
+
+		mType := ModifierType(strings.ToLower(t.Type))
 		switch mType {
 		case RenameModifier:
 			(*m)[i] = &RenameModifierConfig{}
@@ -40,15 +40,17 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
 
-		// json.Unmarshal(d, (*m)[i])
+		if err := json.Unmarshal(d, (*m)[i]); err != nil {
+			return fmt.Errorf("%w: %w", types.ErrInvalidConfig, err)
+		}
 	}
 	return nil
 }
 
-func (m *ModifiersConfig) ToModifier() (Modifier, error) {
+func (m *ModifiersConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	modifier := make(ChainModifier, len(*m))
 	for i, c := range *m {
-		mod, err := c.ToModifier()
+		mod, err := c.ToModifier(onChainHooks...)
 		if err != nil {
 			return nil, err
 		}
@@ -67,38 +69,48 @@ const (
 )
 
 type ModifierConfig interface {
-	ToModifier() (Modifier, error)
+	ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error)
 }
 
 type RenameModifierConfig struct {
 	Fields map[string]string
 }
 
-func (*RenameModifierConfig) ToModifier() (Modifier, error) {
-	return nil, nil
+func (r *RenameModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewRenamer(r.Fields), nil
 }
 
 type DropModifierConfig struct {
 	Fields []string
 }
 
-func (*DropModifierConfig) ToModifier() (Modifier, error) {
-	return nil, nil
+func (d *DropModifierConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	fields := map[string]string{}
+	for i, f := range d.Fields {
+		// using a private variable will make the field not serialize, essentially dropping the field
+		fields[f] = fmt.Sprintf("dropFieldPrivateName%d", i)
+	}
+
+	return NewRenamer(fields), nil
 }
 
 type ElementExtractorConfig struct {
 	Extractions map[string]ElementExtractorLocation
 }
 
-func (*ElementExtractorConfig) ToModifier() (Modifier, error) {
-	return nil, nil
+func (e *ElementExtractorConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewElementExtractor(e.Extractions), nil
 }
 
 type HardCodeConfig struct {
-	OffChainValues map[string]any
 	OnChainValues  map[string]any
+	OffChainValues map[string]any
 }
 
-func (*HardCodeConfig) ToModifier() (Modifier, error) {
-	return nil, nil
+func (h *HardCodeConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewHardCoder(h.OnChainValues, h.OffChainValues, onChainHooks...)
+}
+
+type typer struct {
+	Type string
 }

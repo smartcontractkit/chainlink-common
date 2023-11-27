@@ -60,9 +60,11 @@ func TestModifiersConfig(t *testing.T) {
 	actualMap := map[string]any{}
 	err = json.Unmarshal(b, &actualMap)
 
+	// when decoding to actualMap, the types are lost
+	// the tests for the actual modifiers verify the types are correct
 	expectedMap := map[string]any{
-		"Z": []int{1},
-		"B": 2,
+		"Z": []any{float64(1)},
+		"B": float64(2),
 	}
 
 	assert.Equal(t, expectedMap, actualMap)

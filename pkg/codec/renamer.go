@@ -2,9 +2,12 @@ package codec
 
 import (
 	"reflect"
+	"unicode"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
+
+var pkgPath = reflect.TypeOf(renamer{}).PkgPath()
 
 func NewRenamer(fields map[string]string) Modifier {
 	m := &renamer{
@@ -16,6 +19,9 @@ func NewRenamer(fields map[string]string) Modifier {
 	}
 	m.modifyFieldForInput = func(field *reflect.StructField, _, newName string) error {
 		field.Name = newName
+		if unicode.IsLower(rune(field.Name[0])) {
+			field.PkgPath = pkgPath
+		}
 		return nil
 	}
 	return m

@@ -89,25 +89,23 @@ func (s staticContractTransmitter) FromAccount() (libocr.Account, error) {
 	return account, nil
 }
 
-type staticCodec struct{}
+type staticChainReader struct{}
 
-func (c staticCodec) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
+func (c staticChainReader) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
 	return 0, errors.New("not used for these test")
 }
 
-func (c staticCodec) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+func (c staticChainReader) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
 	return 0, errors.New("not used for these test")
 }
 
-func (c staticCodec) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
+func (c staticChainReader) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
 	return nil, errors.New("not used for these test")
 }
 
-func (c staticCodec) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
+func (c staticChainReader) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
 	return errors.New("not used for these test")
 }
-
-type staticChainReader struct{}
 
 func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(bc, boundContract) {

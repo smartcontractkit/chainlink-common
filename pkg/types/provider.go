@@ -19,5 +19,4 @@ type PluginProvider interface {
 	ConfigProvider
 	ContractTransmitter() ocrtypes.ContractTransmitter
 	ChainReader() ChainReader
-	Codec() Codec
 }

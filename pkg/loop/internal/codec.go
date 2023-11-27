@@ -15,7 +15,7 @@ type codecClient struct {
 }
 
 func (c *codecClient) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
-	versionedParams, err := encodeVersionedBytes(item, ParamsCurrentEncodingVersion)
+	versionedParams, err := encodeVersionedBytes(item, CurrentEncodingVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (c *codecServer) GetDecoding(ctx context.Context, req *pb.GetDecodingReques
 		return nil, err
 	}
 
-	versionBytes, err := encodeVersionedBytes(encodedType, RetvalCurrentEncodingVersion)
+	versionBytes, err := encodeVersionedBytes(encodedType, CurrentEncodingVersion)
 	return &pb.GetDecodingResponse{RetVal: versionBytes}, err
 }
 

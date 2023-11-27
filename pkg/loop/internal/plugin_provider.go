@@ -12,7 +12,6 @@ type pluginProviderClient struct {
 	*configProviderClient
 	contractTransmitter libocr.ContractTransmitter
 	chainReader         types.ChainReader
-	codec               types.Codec
 }
 
 func (p *pluginProviderClient) ClientConn() grpc.ClientConnInterface { return p.cc }
@@ -36,8 +35,4 @@ func (p PluginProviderServer) ConnToProvider(conn grpc.ClientConnInterface, brok
 
 func (p *pluginProviderClient) ChainReader() types.ChainReader {
 	return p.chainReader
-}
-
-func (p *pluginProviderClient) Codec() types.Codec {
-	return p.codec
 }

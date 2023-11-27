@@ -15,8 +15,8 @@ type modifierBase[T any] struct {
 	fields              map[string]T
 	onToOffChainType    map[reflect.Type]reflect.Type
 	offToOnChainType    map[reflect.Type]reflect.Type
-	modifyFieldForInput func(outputField *reflect.StructField, fullPath string, change T) error
-	addFieldForInput    func(name string, change T) reflect.StructField
+	modifyFieldForInput func(pkgPath string, outputField *reflect.StructField, fullPath string, change T) error
+	addFieldForInput    func(pkgPath, name string, change T) reflect.StructField
 }
 
 func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, error) {
@@ -82,14 +82,14 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 		// If a subkey has been modified, update the underlying types first
 		curLocations.updateTypeFromSubkeyMods(fieldName)
 		if field, ok := curLocations.fieldByName(fieldName); ok {
-			if err = m.modifyFieldForInput(field, key, m.fields[key]); err != nil {
+			if err = m.modifyFieldForInput(curLocations.pkgPath, field, key, m.fields[key]); err != nil {
 				return nil, err
 			}
 		} else {
 			if m.addFieldForInput == nil {
 				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)
 			}
-			curLocations.addNewField(m.addFieldForInput(fieldName, m.fields[key]))
+			curLocations.addNewField(m.addFieldForInput(curLocations.pkgPath, fieldName, m.fields[key]))
 		}
 	}
 

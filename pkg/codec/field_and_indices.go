@@ -7,6 +7,7 @@ import (
 )
 
 type fieldsAndIndices struct {
+	pkgPath   string
 	fields    []reflect.StructField
 	Indices   map[string]int
 	subFields map[string]*fieldsAndIndices
@@ -39,6 +40,7 @@ func getFieldIndices(inputType reflect.Type) (*fieldsAndIndices, error) {
 	}
 
 	return &fieldsAndIndices{
+		pkgPath:   inputType.PkgPath(),
 		fields:    fields,
 		Indices:   Indices,
 		subFields: map[string]*fieldsAndIndices{},

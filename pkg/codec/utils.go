@@ -5,6 +5,9 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+	"strings"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -131,4 +134,48 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 	}
 
 	return data, nil
+}
+
+// getMapsFromPath takes a valueMap that represents a struct in a map.
+// The key is the field name and the value is either the raw value of the field or a map[string]any representing a nested struct.
+// The path is the fields to navigate to.  If any field in the path is a slice or array, multiple maps will be returned.
+// It is expected that the final field represents a struct, or a slice/array/pointer to one.
+// Example:
+// valueMap = map[string]any{"A": map[string]any{"B" : []Foo{{C : 10, D : 100}, {C : 20, D : 200}}}}
+// path = []string{"A", "B"}
+// returns []map[string]any{{"C" : 10, "D" : 100}, {"C" : 20, "D" : 200}}, nil
+func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, error) {
+	extractMaps := []map[string]any{valueMap}
+	for n, p := range path {
+		tmp := make([]map[string]any, 0, len(extractMaps))
+		for _, extractMap := range extractMaps {
+			item, ok := extractMap[p]
+			if !ok {
+				return nil, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, strings.Join(path[:n+1], "."))
+			}
+
+			iItem := reflect.ValueOf(item)
+			switch iItem.Kind() {
+			case reflect.Array, reflect.Slice:
+				length := iItem.Len()
+				maps := make([]map[string]any, length)
+				for i := 0; i < length; i++ {
+					if err := mapstructure.Decode(iItem.Index(i).Interface(), &maps[i]); err != nil {
+						return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+					}
+				}
+				extractMap[p] = maps
+				tmp = append(tmp, maps...)
+			default:
+				var m map[string]any
+				if err := mapstructure.Decode(item, &m); err != nil {
+					return nil, types.ErrInvalidType
+				}
+				extractMap[p] = m
+				tmp = append(tmp, m)
+			}
+		}
+		extractMaps = tmp
+	}
+	return extractMaps, nil
 }

@@ -6,9 +6,16 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func Context(tb testing.TB) (ctx context.Context) {
+type TestingT interface {
+	require.TestingT
+	Helper()
+	Cleanup(func())
+}
+
+func Context(tb TestingT) (ctx context.Context) {
 	ctx = context.Background()
 	var cancel func()
 

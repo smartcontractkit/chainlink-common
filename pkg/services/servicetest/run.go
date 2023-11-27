@@ -3,10 +3,8 @@ package servicetest
 import (
 	"context"
 	"errors"
-	"testing"
+	"fmt"
 	"time"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +18,14 @@ type Runnable interface {
 	Close() error
 }
 
+type TestingT interface {
+	require.TestingT
+	Helper()
+	Cleanup(func())
+}
+
 // Run fails tb if the service fails to start or close.
-func Run(tb testing.TB, s Runnable) {
+func Run(tb TestingT, s Runnable) {
 	tb.Helper()
 	require.NoError(tb, s.Start(tests.Context(tb)), "service failed to start")
 	tb.Cleanup(func() { assert.NoError(tb, s.Close(), "error closing service") })
@@ -30,7 +34,7 @@ func Run(tb testing.TB, s Runnable) {
 // RunHealthy fails tb if the service fails to start, close, is never ready, or is ever unhealthy (based on periodic checks).
 //   - after starting, readiness will always be checked at least once, before closing
 //   - if ever ready, then health will be checked at least once, before closing
-func RunHealthy(tb testing.TB, s services.Service) {
+func RunHealthy(tb TestingT, s services.Service) {
 	tb.Helper()
 	Run(tb, s)
 
@@ -41,7 +45,13 @@ func RunHealthy(tb testing.TB, s services.Service) {
 	})
 	go func() {
 		defer close(done)
-		hp := func() error { return errors.Join(maps.Values(s.HealthReport())...) }
+		hp := func() (err error) {
+			for k, v := range s.HealthReport() {
+				err = errors.Join(err, fmt.Errorf("%s: %w", k, v))
+			}
+			fmt.Println("Health report: ", err)
+			return
+		}
 		for s.Ready() != nil {
 			select {
 			case <-done:

@@ -2,49 +2,38 @@ package types
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type ChainReaderError string
+// Errors exposed to product plugins
 
-func (e ChainReaderError) Error() string { return string(e) }
+type errCodecAndChainReader string
+
+func (e errCodecAndChainReader) Error() string { return string(e) }
 
 const (
-	ErrInvalidType   = ChainReaderError("invalid type")
-	ErrInvalidConfig = ChainReaderError("invalid configuration")
+	ErrInvalidType           = errCodecAndChainReader("invalid type")
+	ErrFieldNotFound         = errCodecAndChainReader("field not found")
+	ErrInvalidEncoding       = errCodecAndChainReader("invalid encoding")
+	ErrWrongNumberOfElements = errCodecAndChainReader("wrong number of elements in slice")
+	ErrNotASlice             = errCodecAndChainReader("element is not a slice")
+	ErrUnknown               = errCodecAndChainReader("unknown error")
 )
 
 func UnwrapClientError(err error) error {
 	if s, ok := status.FromError(err); ok {
-		if s.Code() == codes.Unknown { // Only unwrap custom errors we return, leave alone any other gRPC generated error codes
-			return ChainReaderError(s.String())
-		}
+		return errCodecAndChainReader(s.String())
 	}
 	return err
 }
 
+var ErrInvalidConfig = errors.New("invalid configuration")
+
 type ChainReader interface {
-	// GetLatestValue gets the latest value....
-	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig. It must encode as an object via [json.Marshal].
-	// Typically, would be either an anonymous map such as `map[string]any{"baz": 42, "test": true}}`, a struct with `json` tags, or something which implements [json.Marshaler].
-	//
-	// returnVal must [json.Unmarshal] as an object, and so should be a map, struct, or implement the [json.Unmarshaler] interface.
-	//
-	// Example use:
-	//  type ProductParams struct {
-	// 		Arg int `json:"arg"`
-	//  }
-	//  type ProductReturn struct {
-	// 		Foo string `json:"foo"`
-	// 		Bar *big.Int `json:"bar"`
-	//  }
-	//  func do(ctx context.Context, cr ChainReader) (resp ProductReturn, err error) {
-	// 		err = cr.GetLatestValue(ctx, bc, "method", ProductParams{Arg:1}, &resp)
-	// 		return
-	//  }
+	// returnVal should satisfy Marshaller interface
 	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
 }
 

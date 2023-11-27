@@ -3,10 +3,14 @@ package internal
 import (
 	"context"
 	jsonv1 "encoding/json"
+	"errors"
 	"fmt"
+	"strings"
+
+	jsonv2 "github.com/go-json-experiment/json"
 
 	"github.com/fxamacker/cbor/v2"
-	jsonv2 "github.com/go-json-experiment/json"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -57,7 +61,7 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	default:
-		return nil, fmt.Errorf("unsupported encoding version %d for data %v", version, data)
+		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
 	}
 
 	return &pb.VersionedBytes{Version: uint32(version), Data: bytes}, nil
@@ -111,14 +115,20 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	bc.Address = request.Bc.Address[:]
 	bc.Pending = request.Bc.Pending
 
-	params := &map[string]any{}
-
-	if err := decodeVersionedBytes(params, request.Params); err != nil {
+	params, err := getEncodedType(request.Method, c.impl, true)
+	if err != nil {
 		return nil, err
 	}
 
-	retVal := &map[string]any{}
-	err := c.impl.GetLatestValue(ctx, bc, request.Method, params, retVal)
+	if err = decodeVersionedBytes(params, request.Params); err != nil {
+		return nil, err
+	}
+
+	retVal, err := getEncodedType(request.Method, c.impl, false)
+	if err != nil {
+		return nil, err
+	}
+	err = c.impl.GetLatestValue(ctx, bc, request.Method, params, retVal)
 	if err != nil {
 		return nil, err
 	}
@@ -129,4 +139,43 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	}
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
+}
+
+func getEncodedType(itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
+	if rc, ok := possibleTypeProvider.(types.TypeProvider); ok {
+		return rc.CreateType(itemType, forEncoding)
+	}
+
+	return &map[string]any{}, nil
+}
+
+func unwrapClientError(err error) error {
+	if err == nil {
+		return nil
+	}
+	errTypes := []error{
+		types.ErrInvalidType,
+		types.ErrFieldNotFound,
+		types.ErrInvalidEncoding,
+		types.ErrWrongNumberOfElements,
+		types.ErrNotASlice,
+		types.ErrUnknown,
+	}
+
+	s, ok := status.FromError(err)
+	if !ok {
+		return fmt.Errorf("%w: %w", types.ErrUnknown, err)
+	}
+
+	msg := s.Message()
+	for _, etype := range errTypes {
+		if msg == etype.Error() {
+			return etype
+		} else if strings.HasPrefix(msg, etype.Error()+":") {
+			rest := strings.SplitN(msg, ":", 2)[1]
+			return fmt.Errorf("%w: %w", etype, errors.New(rest))
+		}
+	}
+
+	return fmt.Errorf("%w: %w", types.ErrUnknown, err)
 }

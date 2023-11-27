@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -414,6 +415,26 @@ func TestHardCoder(t *testing.T) {
 		iInput.FieldByName("Q").Set(reflect.ValueOf([]int32{4, 5}))
 
 		assert.Equal(t, iInput.Interface(), actual)
+	})
+
+	t.Run("TransformForOnChain respect hooks", func(t *testing.T) {
+		var hook mapstructure.DecodeHookFunc = func(from, to reflect.Kind, val interface{}) (any, error) {
+			if to == reflect.Int32 {
+				return int32(123), nil
+			}
+			return val, nil
+		}
+		hookedHardCoder, err := codec.NewHardCoder(map[string]any{"B": "Z"}, map[string]any{}, hook)
+		require.NoError(t, err)
+
+		offChainType, err := hookedHardCoder.RetypeForOffChain(onChainType)
+		require.NoError(t, err)
+
+		offChain := reflect.Indirect(reflect.New(offChainType)).Interface()
+		onChain, err := hookedHardCoder.TransformForOnChain(offChain)
+		require.NoError(t, err)
+
+		assert.Equal(t, hardCodedTestStruct{B: 123}, onChain)
 	})
 }
 

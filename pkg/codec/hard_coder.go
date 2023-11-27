@@ -10,12 +10,16 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func NewHardCoder(onChain map[string]any, offChain map[string]any) (Modifier, error) {
+func NewHardCoder(onChain map[string]any, offChain map[string]any, hooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	if err := verifyHardCodeKeys(onChain); err != nil {
 		return nil, err
 	} else if err = verifyHardCodeKeys(offChain); err != nil {
 		return nil, err
 	}
+
+	myHooks := make([]mapstructure.DecodeHookFunc, len(hooks)+1)
+	copy(myHooks, hooks)
+	myHooks[len(hooks)] = hardCodeManyHook
 
 	m := &onChainHardCoder{
 		modifierBase: modifierBase[any]{
@@ -24,6 +28,7 @@ func NewHardCoder(onChain map[string]any, offChain map[string]any) (Modifier, er
 			offToOnChainType: map[reflect.Type]reflect.Type{},
 		},
 		onChain: onChain,
+		hooks:   myHooks,
 	}
 	m.modifyFieldForInput = func(field *reflect.StructField, key string, v any) error {
 		// if we are typing it differently, we need to make sure it's hard-coded the other way
@@ -49,6 +54,7 @@ func NewHardCoder(onChain map[string]any, offChain map[string]any) (Modifier, er
 type onChainHardCoder struct {
 	modifierBase[any]
 	onChain map[string]any
+	hooks   []mapstructure.DecodeHookFunc
 }
 
 func verifyHardCodeKeys(values map[string]any) error {
@@ -68,7 +74,7 @@ func verifyHardCodeKeys(values map[string]any) error {
 }
 
 func (o *onChainHardCoder) TransformForOnChain(offChainValue any) (any, error) {
-	return transformWithMaps(offChainValue, o.offToOnChainType, o.onChain, hardCode, hardCodeManyHook)
+	return transformWithMaps(offChainValue, o.offToOnChainType, o.onChain, hardCode, o.hooks...)
 }
 
 func (o *onChainHardCoder) TransformForOffChain(onChainValue any) (any, error) {

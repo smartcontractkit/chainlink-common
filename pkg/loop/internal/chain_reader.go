@@ -26,10 +26,8 @@ const (
 	CBOREncodingVersion
 )
 
-// Version to be used for encoding ( version used for decoding is determined by data received )
-// These are separate constants in case we want to upgrade their data formats independently
-const ParamsCurrentEncodingVersion = CBOREncodingVersion
-const RetvalCurrentEncodingVersion = CBOREncodingVersion
+// Version to be used for encoding (version used for decoding is determined by data received)
+const CurrentEncodingVersion = CBOREncodingVersion
 
 func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	var bytes []byte
@@ -85,7 +83,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 }
 
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
-	versionedParams, err := encodeVersionedBytes(params, ParamsCurrentEncodingVersion)
+	versionedParams, err := encodeVersionedBytes(params, CurrentEncodingVersion)
 	if err != nil {
 		return err
 	}
@@ -125,7 +123,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 		return nil, err
 	}
 
-	encodedRetVal, err := encodeVersionedBytes(retVal, RetvalCurrentEncodingVersion)
+	encodedRetVal, err := encodeVersionedBytes(retVal, CurrentEncodingVersion)
 	if err != nil {
 		return nil, err
 	}

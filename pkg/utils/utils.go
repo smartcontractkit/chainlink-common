@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jpillora/backoff"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -54,5 +55,4 @@ func NewRedialBackoff() backoff.Backoff {
 		Max:    15 * time.Second,
 		Jitter: true,
 	}
-
 }

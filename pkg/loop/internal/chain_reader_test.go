@@ -4,19 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"sync"
 	"testing"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/test/bufconn"
-	"github.com/fxamacker/cbor/v2"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+
+	"google.golang.org/grpc"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
@@ -24,17 +23,15 @@ import (
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
 	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
-		expected := types.ErrInvalidType
 		invalidData := make(chan int)
 
 		_, err := encodeVersionedBytes(invalidData, JSONEncodingVersion2)
-		if err == nil || !errors.Is(err, expected) {
-			t.Errorf("expected error: %s, but got: %v", expected, err)
-		}
+
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
-		expected := fmt.Errorf("unsupported encoding version %d for data map[key:value]", unsupportedVer)
+		expected := fmt.Errorf("%w: unsupported encoding version %d for data map[key:value]", types.ErrInvalidEncoding, unsupportedVer)
 		data := map[string]interface{}{
 			"key": "value",
 		}
@@ -61,53 +58,37 @@ func TestVersionedBytesFunctions(t *testing.T) {
 }
 
 func TestChainReaderClient(t *testing.T) {
-	RunChainReaderInterfaceTests(t, &interfaceTester{})
+	RunChainReaderInterfaceTests(t, &chainReaderInterfaceTester{chainReader: &fakeChainReader{lock: &sync.Mutex{}}})
 
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
-	es := &errorServer{}
+	es := &chainReaderErrServer{}
 	pb.RegisterChainReaderServer(s, es)
-
-	chSrv := make(chan error)
 	go func() {
-		chSrv <- s.Serve(lis)
+		if err := s.Serve(lis); err != nil {
+			panic(err)
+		}
 	}()
-	defer func() {
-		s.Stop()
-		err := <-chSrv
-		assert.NoError(t, err)
-	}()
+	defer s.Stop()
 	conn := connFromLis(t, lis)
 	client := &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
-	ctx := context.Background()
-
-	errorTypes := []error{
-		fmt.Errorf("%w: ChainReader config doesn't match abi", types.ErrInvalidConfig),
-		types.ErrInvalidType,
-	}
+	ctx := tests.Context(t)
 
 	for _, errorType := range errorTypes {
 		es.err = errorType
+
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
-			assert.IsType(t, types.ChainReaderError(errorType.Error()), err)
+			assert.IsType(t, errorType, err)
 		})
 	}
 
 	// make sure that errors come from client directly
 	es.err = nil
-	invalidTypeErr := types.ErrInvalidType
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
-		assert.NotNil(t, errors.As(err, &invalidTypeErr))
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
-}
-
-type interfaceTester struct {
-	lis    *bufconn.Listener
-	server *grpc.Server
-	conn   *grpc.ClientConn
-	fs     *fakeCodecServer
 }
 
 var encoder = makeEncoder()
@@ -119,61 +100,32 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-func (it *interfaceTester) SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract {
-	it.fs.SetLatestValue(testStruct)
+type chainReaderInterfaceTester struct {
+	interfaceTesterBase
+	chainReader *fakeChainReader
+}
+
+func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
+	it.setupHook = func(s *grpc.Server) {
+		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.chainReader})
+	}
+	it.interfaceTesterBase.Setup(t)
+}
+
+func (it *chainReaderInterfaceTester) SetLatestValue(_ context.Context, _ *testing.T, testStruct *TestStruct) types.BoundContract {
+	it.chainReader.SetLatestValue(testStruct)
 	return types.BoundContract{}
 }
 
-func (it *interfaceTester) GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract {
+func (it *chainReaderInterfaceTester) GetPrimitiveContract(_ context.Context, _ *testing.T) types.BoundContract {
 	return types.BoundContract{}
 }
 
-func (it *interfaceTester) GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract {
+func (it *chainReaderInterfaceTester) GetSliceContract(_ context.Context, _ *testing.T) types.BoundContract {
 	return types.BoundContract{}
 }
 
-func (it *interfaceTester) GetAccountBytes(_ int) []byte {
-	return []byte{1, 2, 3}
-}
-
-func (it *interfaceTester) Setup(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	it.lis = lis
-	it.fs = &fakeCodecServer{lock: &sync.Mutex{}}
-	it.server = grpc.NewServer()
-	pb.RegisterChainReaderServer(it.server, &chainReaderServer{impl: it.fs})
-	go func() {
-		if err := it.server.Serve(lis); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	srvCh := make(chan error)
-	go func() {
-		srvCh <- it.server.Serve(lis)
-	}()
-
-	t.Cleanup(func() {
-		if it.server != nil {
-			it.server.Stop()
-			err := <-srvCh
-			assert.NoError(t, err)
-		}
-		if it.conn != nil {
-			assert.NoError(t, it.conn.Close())
-		}
-
-		it.lis = nil
-		it.server = nil
-		it.conn = nil
-	})
-}
-
-func (it *interfaceTester) Name() string {
-	return "relay client"
-}
-
-func (it *interfaceTester) GetChainReader(t *testing.T) types.ChainReader {
+func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 	if it.conn == nil {
 		it.conn = connFromLis(t, it.lis)
 	}
@@ -181,62 +133,44 @@ func (it *interfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 	return &chainReaderClient{grpc: pb.NewChainReaderClient(it.conn)}
 }
 
-type fakeCodecServer struct {
-	lastItem any
-	latest   []TestStruct
-	lock     *sync.Mutex
+type fakeChainReader struct {
+	fakeTypeProvider
+	latest []TestStruct
+	lock   *sync.Mutex
 }
 
-func (f *fakeCodecServer) SetLatestValue(ts *TestStruct) {
+func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.latest = append(f.latest, *ts)
 }
 
-func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, method string, params, returnVal any) error {
-	if method != MethodTakingLatestParamsReturningTestStruct {
+func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContract, method string, params, returnVal any) error {
+	if method == MethodReturningUint64 {
+		r := returnVal.(*uint64)
+		*r = AnyValueToReadWithoutAnArgument
+		return nil
+	} else if method == MethodReturningUint64Slice {
+		r := returnVal.(*[]uint64)
+		*r = AnySliceToReadWithoutAnArgument
+		return nil
+	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)
 	}
 
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	lp := params.(*map[string]interface{})
-	i := (*lp)["I"].(uint64)
-	return mapstructure.Decode(f.latest[i-1], returnVal)
+	lp := params.(*LatestParams)
+	rv := returnVal.(*TestStruct)
+	*rv = f.latest[lp.I-1]
+	return nil
 }
 
-type errorServer struct {
+type chainReaderErrServer struct {
 	err error
 	pb.UnimplementedChainReaderServer
 }
 
-func (e *errorServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+func (e *chainReaderErrServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
 	return nil, e.err
-}
-
-func connFromLis(t *testing.T, lis *bufconn.Listener) *grpc.ClientConn {
-	conn, err := grpc.Dial("bufnet",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock())
-	require.NoError(t, err)
-	return conn
-}
-
-type cannotEncode struct{}
-
-func (*cannotEncode) MarshalBinary() ([]byte, error) {
-	return nil, errors.New("nope")
-}
-
-func (*cannotEncode) UnmarshalBinary() error {
-	return errors.New("nope")
-}
-
-func (*cannotEncode) MarshalText() ([]byte, error) {
-	return nil, errors.New("nope")
-}
-
-func (*cannotEncode) UnmarshalText() error {
-	return errors.New("nope")
 }

@@ -176,6 +176,7 @@ type medianProviderClient struct {
 	medianContract     median.MedianContract
 	onchainConfigCodec median.OnchainConfigCodec
 	chainReader        types.ChainReader
+	codec              types.Codec
 }
 
 func (m *medianProviderClient) ClientConn() grpc.ClientConnInterface { return m.cc }
@@ -186,6 +187,7 @@ func newMedianProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *medianP
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(m.cc)}
 	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(m.cc)}
 	m.chainReader = &chainReaderClient{b, pb.NewChainReaderClient(m.cc)}
+	m.codec = &codecClient{b, pb.NewCodecClient(m.cc)}
 	return m
 }
 
@@ -203,6 +205,10 @@ func (m *medianProviderClient) OnchainConfigCodec() median.OnchainConfigCodec {
 
 func (m *medianProviderClient) ChainReader() types.ChainReader {
 	return m.chainReader
+}
+
+func (m *medianProviderClient) Codec() types.Codec {
+	return m.codec
 }
 
 var _ median.ReportCodec = (*reportCodecClient)(nil)

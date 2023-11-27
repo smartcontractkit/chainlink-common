@@ -30,8 +30,3 @@ type Codec interface {
 type TypeProvider interface {
 	CreateType(itemType string, forEncoding bool) (any, error)
 }
-
-type RemoteCodec interface {
-	Codec
-	TypeProvider
-}

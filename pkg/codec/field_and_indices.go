@@ -39,8 +39,13 @@ func getFieldIndices(inputType reflect.Type) (*fieldsAndIndices, error) {
 		fields[i] = field
 	}
 
+	pkgPath := inputType.PkgPath()
+	// types created by reflection may not have a pkgPath
+	if pkgPath == "" {
+		pkgPath = "github.com/smartcontractkit/chainlink-common/pkg/codec"
+	}
 	return &fieldsAndIndices{
-		pkgPath:   inputType.PkgPath(),
+		pkgPath:   pkgPath,
 		fields:    fields,
 		Indices:   Indices,
 		subFields: map[string]*fieldsAndIndices{},

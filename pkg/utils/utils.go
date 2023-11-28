@@ -56,3 +56,8 @@ func NewRedialBackoff() backoff.Backoff {
 		Jitter: true,
 	}
 }
+
+func IsZero[C comparable](val C) bool {
+	var zero C
+	return zero == val
+}

@@ -8,13 +8,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/test/bufconn"
-	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -82,7 +82,8 @@ func TestChainReaderClient(t *testing.T) {
 	ctx := context.Background()
 
 	errorTypes := []error{
-		fmt.Errorf("%w: ChainReader config doesn't match abi", types.ErrInvalidConfig),
+		types.ErrChainReaderConfigMissing,
+		types.InvalidArgumentError(fmt.Errorf("%w: ChainReader config doesn't match abi", types.ErrInvalidConfig).Error()),
 		types.ErrInvalidType,
 	}
 
@@ -90,7 +91,7 @@ func TestChainReaderClient(t *testing.T) {
 		es.err = errorType
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
-			assert.IsType(t, types.ChainReaderError(errorType.Error()), err)
+			assert.ErrorIs(t, err, errorType)
 		})
 	}
 

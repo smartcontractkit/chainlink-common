@@ -8,19 +8,19 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type ChainReaderError string
-
-func (e ChainReaderError) Error() string { return string(e) }
-
 const (
-	ErrInvalidType   = ChainReaderError("invalid type")
-	ErrInvalidConfig = ChainReaderError("invalid configuration")
+	ErrInvalidType              = InvalidArgumentError("invalid type")
+	ErrInvalidConfig            = InvalidArgumentError("invalid configuration")
+	ErrChainReaderConfigMissing = UnimplementedError("ChainReader entry missing from RelayConfig")
 )
 
 func UnwrapClientError(err error) error {
 	if s, ok := status.FromError(err); ok {
-		if s.Code() == codes.Unknown { // Only unwrap custom errors we return, leave alone any other gRPC generated error codes
-			return ChainReaderError(s.String())
+		switch s.Code() {
+		case codes.Unimplemented:
+			return UnimplementedError(s.Message())
+		case codes.InvalidArgument:
+			return InvalidArgumentError(s.Message())
 		}
 	}
 	return err

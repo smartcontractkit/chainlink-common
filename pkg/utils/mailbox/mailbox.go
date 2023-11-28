@@ -22,18 +22,18 @@ type Mailbox[T any] struct {
 	onCloseFn func()
 }
 
-// NewHighCapacityMailbox create a new mailbox with a capacity
+// NewHighCapacity create a new mailbox with a capacity
 // that is better able to handle e.g. large log replays.
-func NewHighCapacityMailbox[T any]() *Mailbox[T] {
-	return NewMailbox[T](100_000)
+func NewHighCapacity[T any]() *Mailbox[T] {
+	return New[T](100_000)
 }
 
-// NewSingleMailbox returns a new Mailbox with capacity one.
-func NewSingleMailbox[T any]() *Mailbox[T] { return NewMailbox[T](1) }
+// NewSingle returns a new Mailbox with capacity one.
+func NewSingle[T any]() *Mailbox[T] { return New[T](1) }
 
-// NewMailbox creates a new mailbox instance. If name is non-empty, it must be unique and calling Start will launch
+// New creates a new mailbox instance. If name is non-empty, it must be unique and calling Start will launch
 // prometheus metric monitor that periodically reports mailbox load until Close() is called.
-func NewMailbox[T any](capacity uint64) *Mailbox[T] {
+func New[T any](capacity uint64) *Mailbox[T] {
 	queueCap := capacity
 	if queueCap == 0 {
 		queueCap = 100

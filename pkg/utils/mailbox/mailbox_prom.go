@@ -23,7 +23,7 @@ var mailboxLoad = promauto.NewGaugeVec(prometheus.GaugeOpts{
 
 const mailboxPromInterval = 5 * time.Second
 
-type MailboxMonitor struct {
+type Monitor struct {
 	services.StateMachine
 	appID string
 
@@ -32,14 +32,14 @@ type MailboxMonitor struct {
 	done      chan struct{}
 }
 
-func NewMailboxMonitor(appID string) *MailboxMonitor {
-	return &MailboxMonitor{appID: appID}
+func NewMonitor(appID string) *Monitor {
+	return &Monitor{appID: appID}
 }
 
-func (m *MailboxMonitor) Name() string { return "MailboxMonitor" }
+func (m *Monitor) Name() string { return "Monitor" }
 
-func (m *MailboxMonitor) Start(context.Context) error {
-	return m.StartOnce("MailboxMonitor", func() error {
+func (m *Monitor) Start(context.Context) error {
+	return m.StartOnce("Monitor", func() error {
 		t := time.NewTicker(utils.WithJitter(mailboxPromInterval))
 		ctx, cancel := context.WithCancel(context.Background())
 		m.stop = func() {
@@ -52,19 +52,19 @@ func (m *MailboxMonitor) Start(context.Context) error {
 	})
 }
 
-func (m *MailboxMonitor) Close() error {
-	return m.StopOnce("MailboxMonitor", func() error {
+func (m *Monitor) Close() error {
+	return m.StopOnce("Monitor", func() error {
 		m.stop()
 		<-m.done
 		return nil
 	})
 }
 
-func (m *MailboxMonitor) HealthReport() map[string]error {
+func (m *Monitor) HealthReport() map[string]error {
 	return map[string]error{m.Name(): m.Healthy()}
 }
 
-func (m *MailboxMonitor) monitorLoop(ctx context.Context, c <-chan time.Time) {
+func (m *Monitor) monitorLoop(ctx context.Context, c <-chan time.Time) {
 	defer close(m.done)
 	for {
 		select {
@@ -87,7 +87,7 @@ type mailbox interface {
 	onClose(func())
 }
 
-func (m *MailboxMonitor) Monitor(mb mailbox, name ...string) {
+func (m *Monitor) Monitor(mb mailbox, name ...string) {
 	n := strings.Join(name, ".")
 	m.mailboxes.Store(n, mb)
 	mb.onClose(func() { m.mailboxes.Delete(n) })

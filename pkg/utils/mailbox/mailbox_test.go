@@ -13,7 +13,7 @@ func TestMailbox(t *testing.T) {
 	)
 
 	const capacity = 10
-	m := NewMailbox[int](capacity)
+	m := New[int](capacity)
 
 	// Queue deliveries
 	for i, d := range toDeliver {
@@ -54,7 +54,7 @@ func TestMailbox_RetrieveAll(t *testing.T) {
 	)
 
 	const capacity = 10
-	m := NewMailbox[int](capacity)
+	m := New[int](capacity)
 
 	// Queue deliveries
 	for i, d := range toDeliver {
@@ -76,7 +76,7 @@ func TestMailbox_RetrieveLatestAndClear(t *testing.T) {
 	)
 
 	const capacity = 10
-	m := NewMailbox[int](capacity)
+	m := New[int](capacity)
 
 	// Queue deliveries
 	for i, d := range toDeliver {
@@ -93,7 +93,7 @@ func TestMailbox_RetrieveLatestAndClear(t *testing.T) {
 }
 
 func TestMailbox_NoEmptyReceivesWhenCapacityIsTwo(t *testing.T) {
-	m := NewMailbox[int](2)
+	m := New[int](2)
 
 	var (
 		recvd         []int
@@ -143,7 +143,7 @@ func TestMailbox_load(t *testing.T) {
 		{"nine", 9, []int{1, 2, 3}, 100.0 / 3.0, 2, 100.0 / 9.0, true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			m := NewMailbox[int](tt.capacity)
+			m := New[int](tt.capacity)
 
 			// Queue deliveries
 			for i, d := range tt.deliver {

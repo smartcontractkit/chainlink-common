@@ -1,4 +1,4 @@
-package utils
+package mailbox
 
 import (
 	"context"

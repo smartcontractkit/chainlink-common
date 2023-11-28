@@ -6,8 +6,6 @@ import (
 	mrand "math/rand"
 	"time"
 
-	"github.com/jpillora/backoff"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -45,16 +43,6 @@ func ContextWithDeadlineFn(ctx context.Context, deadlineFn func(orig time.Time) 
 		}
 	}
 	return ctx, cancel
-}
-
-// NewRedialBackoff is a standard backoff to use for redialling or reconnecting to
-// unreachable network endpoints
-func NewRedialBackoff() backoff.Backoff {
-	return backoff.Backoff{
-		Min:    1 * time.Second,
-		Max:    15 * time.Second,
-		Jitter: true,
-	}
 }
 
 func IsZero[C comparable](val C) bool {

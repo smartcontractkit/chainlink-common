@@ -51,9 +51,9 @@ func IsZero[C comparable](val C) bool {
 	return zero == val
 }
 
-// AddHexPrefix adds the prefix (0x) to a given hex string.
-func AddHexPrefix(str string) string {
-	if len(str) < 2 || len(str) > 1 && strings.ToLower(str[0:2]) != "0x" {
+// EnsureHexPrefix adds the prefix (0x) to a given hex string.
+func EnsureHexPrefix(str string) string {
+	if !strings.HasPrefix(str, "0x") {
 		str = "0x" + str
 	}
 	return str

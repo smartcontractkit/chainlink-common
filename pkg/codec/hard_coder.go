@@ -30,7 +30,7 @@ func NewHardCoder(onChain map[string]any, offChain map[string]any, hooks ...maps
 		onChain: onChain,
 		hooks:   myHooks,
 	}
-	m.modifyFieldForInput = func(field *reflect.StructField, key string, v any) error {
+	m.modifyFieldForInput = func(_ string, field *reflect.StructField, key string, v any) error {
 		// if we are typing it differently, we need to make sure it's hard-coded the other way
 		newType := reflect.TypeOf(v)
 		if _, ok := m.onChain[key]; !ok && field.Type != newType {
@@ -42,7 +42,7 @@ func NewHardCoder(onChain map[string]any, offChain map[string]any, hooks ...maps
 		field.Type = newType
 		return nil
 	}
-	m.addFieldForInput = func(key string, value any) reflect.StructField {
+	m.addFieldForInput = func(_, key string, value any) reflect.StructField {
 		return reflect.StructField{
 			Name: key,
 			Type: reflect.TypeOf(value),

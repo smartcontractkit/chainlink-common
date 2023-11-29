@@ -3,9 +3,6 @@ package types
 import (
 	"context"
 	"time"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -13,18 +10,6 @@ const (
 	ErrInvalidConfig            = InvalidArgumentError("invalid configuration")
 	ErrChainReaderConfigMissing = UnimplementedError("ChainReader entry missing from RelayConfig")
 )
-
-func UnwrapClientError(err error) error {
-	if s, ok := status.FromError(err); ok {
-		switch s.Code() {
-		case codes.Unimplemented:
-			return UnimplementedError(s.Message())
-		case codes.InvalidArgument:
-			return InvalidArgumentError(s.Message())
-		}
-	}
-	return err
-}
 
 type ChainReader interface {
 	// GetLatestValue gets the latest value....

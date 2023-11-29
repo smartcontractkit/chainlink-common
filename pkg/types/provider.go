@@ -1,6 +1,8 @@
 package types
 
 import (
+	"strings"
+
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,8 +39,12 @@ func (e InvalidArgumentError) Error() string {
 	return string(e)
 }
 
-func (e InvalidArgumentError) GRPCStatus() *status.Status {
-	return status.New(codes.InvalidArgument, e.Error())
+func (e InvalidArgumentError) Is(target error) bool {
+	if e == target {
+		return true
+	}
+
+	return grpcErrorHasTypeAndMessage(target, string(e), codes.InvalidArgument)
 }
 
 type UnimplementedError string
@@ -47,6 +53,26 @@ func (e UnimplementedError) Error() string {
 	return string(e)
 }
 
-func (e UnimplementedError) GRPCStatus() *status.Status {
-	return status.New(codes.Unimplemented, e.Error())
+func (e UnimplementedError) Is(target error) bool {
+	if e == target {
+		return true
+	}
+
+	return grpcErrorHasTypeAndMessage(target, string(e), codes.Unimplemented)
+}
+
+func grpcErrorHasTypeAndMessage(target error, msg string, code codes.Code) bool {
+	s, ok := status.FromError(target)
+	if !ok || s.Code() != code {
+		return false
+	}
+
+	errs := strings.Split(s.Message(), ":")
+	for _, err := range errs {
+		if strings.Trim(err, " ") == msg {
+			return true
+		}
+	}
+
+	return false
 }

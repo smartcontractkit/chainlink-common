@@ -39,6 +39,10 @@ func (e InvalidArgumentError) Error() string {
 	return string(e)
 }
 
+func (e InvalidArgumentError) GRPCStatus() *status.Status {
+	return status.New(codes.InvalidArgument, e.Error())
+}
+
 func (e InvalidArgumentError) Is(target error) bool {
 	if e == target {
 		return true
@@ -51,6 +55,10 @@ type UnimplementedError string
 
 func (e UnimplementedError) Error() string {
 	return string(e)
+}
+
+func (e UnimplementedError) GRPCStatus() *status.Status {
+	return status.New(codes.Unimplemented, e.Error())
 }
 
 func (e UnimplementedError) Is(target error) bool {

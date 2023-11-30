@@ -42,12 +42,11 @@ func (i *Uint32) UnmarshalJSON(data []byte) error {
 		// Unmarshal again, directly to value, to avoid intermediate float64
 		err = json.Unmarshal(data, &i.Uint32)
 	case string:
-		str := string(x)
-		if len(str) == 0 {
+		if len(x) == 0 {
 			i.Valid = false
 			return nil
 		}
-		i.Uint32, err = parse(str)
+		i.Uint32, err = parse(x)
 	case nil:
 		i.Valid = false
 		return nil

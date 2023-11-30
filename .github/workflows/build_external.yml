@@ -39,7 +39,7 @@ jobs:
           go get github.com/smartcontractkit/chainlink-common/...
           go mod tidy
       - name: Build the image
-        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@re-2096/fix-ci-chainlink-common
+        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@v2.3.0
         env:
           GH_TOKEN: ${{ github.token }}
         with:

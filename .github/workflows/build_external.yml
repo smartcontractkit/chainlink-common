@@ -46,7 +46,7 @@ jobs:
           push_tag: ""
           cl_repo: smartcontractkit/chainlink
           cl_ref: develop
-          cl_docker_context: ../chainlink
+          should_checkout: true
   solana-build-relay:
     environment: integration
     permissions:

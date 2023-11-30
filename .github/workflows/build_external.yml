@@ -32,7 +32,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Replace chainlink-common deps
         run: |
-          go get github.com/smartcontractkit/chainlink-common
+          go get github.com/smartcontractkit/chainlink-common/...
           go mod tidy
       - name: Build the image
         uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@8a907cec94e1387136509c1a9a8f12ad3db2863a

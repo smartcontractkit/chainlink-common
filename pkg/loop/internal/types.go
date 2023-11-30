@@ -22,6 +22,10 @@ type FunctionsProvider interface {
 	NewFunctionsProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.FunctionsProvider, error)
 }
 
+type OCR2KeepersProvider interface {
+	NewOCR2KeepersProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.OCR2KeepersProvider, error)
+}
+
 // Relayer extends [types.Relayer] and includes [context.Context]s.
 type Relayer interface {
 	types.ChainService

@@ -39,13 +39,14 @@ jobs:
           go get github.com/smartcontractkit/chainlink-common/...
           go mod tidy
       - name: Build the image
-        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@8a907cec94e1387136509c1a9a8f12ad3db2863a
+        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@0284702058b8d89774fad584b90c0eb83b4e3d1a
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           push_tag: ""
           cl_repo: smartcontractkit/chainlink
           cl_ref: develop
+          cl_docker_context: ../chainlink
   solana-build-relay:
     environment: integration
     permissions:

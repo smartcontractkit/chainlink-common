@@ -179,3 +179,12 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 	}
 	return extractMaps, nil
 }
+
+func addr(value reflect.Value) reflect.Value {
+	if value.CanAddr() {
+		return value.Addr()
+	}
+	tmp := reflect.New(value.Type())
+	tmp.Elem().Set(value)
+	return tmp
+}

@@ -92,7 +92,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 
 	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: versionedParams})
 	if err != nil {
-		return types.UnwrapClientError(err)
+		return err
 	}
 
 	return decodeVersionedBytes(retVal, reply.RetVal)

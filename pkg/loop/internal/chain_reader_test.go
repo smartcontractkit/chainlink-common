@@ -81,17 +81,29 @@ func TestChainReaderClient(t *testing.T) {
 	client := &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
 	ctx := context.Background()
 
-	errorTypes := []error{
-		types.ErrChainReaderConfigMissing,
-		types.InvalidArgumentError(fmt.Errorf("%w: ChainReader config doesn't match abi", types.ErrInvalidConfig).Error()),
-		types.ErrInvalidType,
+	type testCase struct {
+		errType error
+		errMsg  string
 	}
 
-	for _, errorType := range errorTypes {
-		es.err = errorType
-		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+	testCases := []testCase{
+		{types.ErrChainReaderConfigMissing, ""},
+		{types.ErrInvalidConfig, "ChainReader config doesn't match abi"},
+		{types.ErrInvalidType, "wrong length"},
+	}
+
+	for _, tc := range testCases {
+		_, ok := tc.errType.(error)
+		require.True(t, ok)
+		if tc.errMsg != "" {
+			es.err = fmt.Errorf("%w: %s", tc.errType, tc.errMsg)
+		} else {
+			es.err = tc.errType
+		}
+
+		t.Run("GetLatestValue unwraps errors from server "+tc.errType.Error(), func(t *testing.T) {
 			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
-			assert.ErrorIs(t, err, errorType)
+			assert.ErrorIs(t, tc.errType, err) // Note: our custom error type must be first arg, otherwise gRPC's Is() is called instead of ours
 		})
 	}
 
@@ -100,7 +112,7 @@ func TestChainReaderClient(t *testing.T) {
 	invalidTypeErr := types.ErrInvalidType
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
-		assert.NotNil(t, errors.As(err, &invalidTypeErr))
+		assert.ErrorIs(t, err, &invalidTypeErr)
 	})
 }
 

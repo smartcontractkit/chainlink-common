@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strconv"
 	"testing"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -14,6 +16,7 @@ import (
 )
 
 var anyTestBytes = []byte("any test bytes")
+var anyNilBytes = []byte("nil")
 
 const anyMaxEncodingSize = 100
 const anyMaxDecodingSize = 50
@@ -25,21 +28,16 @@ const anyForEncoding = true
 
 func TestModifierCodec(t *testing.T) {
 	ctx := context.Background()
-	mod, err := codec.NewModifierCodec(&testCodec{}, &testTypeProvider{}, testModifier{})
+	mod, err := codec.NewModifierCodec(&testCodec{}, testModifier{})
 	require.NoError(t, err)
 
 	t.Run("Nil codec returns error", func(t *testing.T) {
-		_, err := codec.NewModifierCodec(nil, &testTypeProvider{}, testModifier{})
-		assert.Error(t, err)
-	})
-
-	t.Run("Nil type provider returns error", func(t *testing.T) {
-		_, err := codec.NewModifierCodec(&testCodec{}, nil, testModifier{})
+		_, err := codec.NewModifierCodec(nil, testModifier{})
 		assert.Error(t, err)
 	})
 
 	t.Run("Nil modifier returns error", func(t *testing.T) {
-		_, err := codec.NewModifierCodec(&testCodec{}, &testTypeProvider{}, nil)
+		_, err := codec.NewModifierCodec(&testCodec{}, nil)
 		assert.Error(t, err)
 	})
 
@@ -51,7 +49,14 @@ func TestModifierCodec(t *testing.T) {
 	})
 
 	t.Run("Encode works on compatible types", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, modifierCodecOffChainCompatibleType{Z: anyValue}, anyItemType)
+		encoded, err := mod.Encode(ctx, ModifierCodecOffChainCompatibleType{Z: anyValue}, anyItemType)
+
+		require.NoError(t, err)
+		assert.Equal(t, anyTestBytes, encoded)
+	})
+
+	t.Run("Encode works on compatible squashed types", func(t *testing.T) {
+		encoded, err := mod.Encode(ctx, modifierCodecOffChainSquashCompatibleType{ModifierCodecOffChainCompatibleType{Z: anyValue}}, anyItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
@@ -72,20 +77,20 @@ func TestModifierCodec(t *testing.T) {
 	})
 
 	t.Run("Encode works on compatible slices", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, &[]modifierCodecOffChainCompatibleType{{Z: anyValue}, {Z: anyValue + 1}}, anySliceItemType)
+		encoded, err := mod.Encode(ctx, &[]ModifierCodecOffChainCompatibleType{{Z: anyValue}, {Z: anyValue + 1}}, anySliceItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
 	})
 
 	t.Run("Decode calls modifiers then decodes", func(t *testing.T) {
-		decoded := &modifierCodecOffChainCompatibleType{}
+		decoded := &ModifierCodecOffChainCompatibleType{}
 		require.NoError(t, mod.Decode(ctx, anyTestBytes, decoded, anyItemType))
 		assert.Equal(t, anyValue, decoded.Z)
 	})
 
 	t.Run("Decode works on slices", func(t *testing.T) {
-		decoded := &[]modifierCodecOffChainCompatibleType{}
+		decoded := &[]ModifierCodecOffChainCompatibleType{}
 		require.NoError(t, mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType))
 		assert.Equal(t, len(*decoded), anyValue)
 		for i, d := range *decoded {
@@ -155,21 +160,26 @@ func TestModifierCodec(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, anyMaxDecodingSize, size)
 	})
-}
 
-type testTypeProvider struct{}
+	t.Run("codec respects hooks", func(t *testing.T) {
+		var hook mapstructure.DecodeHookFunc = func(from, to reflect.Value) (any, error) {
+			if to.Kind() == reflect.String && from.Kind() == reflect.Int {
+				return strconv.FormatInt(from.Int(), 10), nil
+			}
+			return from.Interface(), nil
+		}
+		mod, err := codec.NewModifierCodec(&testCodec{}, testModifier{}, hook)
+		require.NoError(t, err)
+		decoded := &modifierCodecDiffType{}
+		require.NoError(t, mod.Decode(ctx, anyTestBytes, decoded, anyItemType))
+		assert.Equal(t, "5", decoded.Z)
+	})
 
-func (t *testTypeProvider) CreateType(itemType string, _ bool) (any, error) {
-	switch itemType {
-	case anyItemType:
-		return &modifierCodecChainType{}, nil
-	case anySliceItemType:
-		return &[]modifierCodecChainType{}, nil
-	case anyNonPointerSliceItemType:
-		return []modifierCodecChainType{}, nil
-	default:
-		return nil, types.ErrInvalidType
-	}
+	t.Run("encode works wil nil input", func(t *testing.T) {
+		actual, err := mod.Encode(ctx, nil, anyItemType)
+		require.NoError(t, err)
+		assert.Equal(t, anyNilBytes, actual)
+	})
 }
 
 type modifierCodecChainType struct {
@@ -180,13 +190,26 @@ type modifierCodecOffChainType struct {
 	Z int
 }
 
-type modifierCodecOffChainCompatibleType struct {
+// ModifierCodecOffChainCompatibleType is public so it can be squashed
+type ModifierCodecOffChainCompatibleType struct {
 	Z int
+}
+
+type modifierCodecOffChainSquashCompatibleType struct {
+	ModifierCodecOffChainCompatibleType
+}
+
+type modifierCodecDiffType struct {
+	Z string
 }
 
 type testCodec struct{}
 
 func (t *testCodec) Encode(_ context.Context, item any, itemType string) ([]byte, error) {
+	if item == nil && itemType == anyItemType {
+		return anyNilBytes, nil
+	}
+
 	switch itemType {
 	case anyItemType:
 		if item.(*modifierCodecChainType).A != anyValue {
@@ -257,9 +280,22 @@ func (t *testCodec) GetMaxDecodingSize(_ context.Context, n int, itemType string
 	return anyMaxDecodingSize, nil
 }
 
+func (t *testCodec) CreateType(itemType string, _ bool) (any, error) {
+	switch itemType {
+	case anyItemType:
+		return &modifierCodecChainType{}, nil
+	case anySliceItemType:
+		return &[]modifierCodecChainType{}, nil
+	case anyNonPointerSliceItemType:
+		return []modifierCodecChainType{}, nil
+	default:
+		return nil, types.ErrInvalidType
+	}
+}
+
 type testModifier struct{}
 
-func (testModifier) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, error) {
+func (testModifier) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
 	switch onChainType {
 	case reflect.TypeOf(&modifierCodecChainType{}):
 		return reflect.TypeOf(&modifierCodecOffChainType{}), nil
@@ -272,7 +308,7 @@ func (testModifier) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, e
 	}
 }
 
-func (t testModifier) TransformForOnChain(offChainValue any) (any, error) {
+func (t testModifier) TransformForOnChain(offChainValue any, itemType string) (any, error) {
 	offChain, ok := offChainValue.(*modifierCodecOffChainType)
 	if !ok {
 		slice, ok := offChainValue.(*[]modifierCodecOffChainType)
@@ -291,7 +327,7 @@ func (t testModifier) TransformForOnChain(offChainValue any) (any, error) {
 	return &modifierCodecChainType{A: offChain.Z}, nil
 }
 
-func (t testModifier) TransformForOffChain(onChainValue any) (any, error) {
+func (t testModifier) TransformForOffChain(onChainValue any, itemType string) (any, error) {
 	onChain, ok := onChainValue.(*modifierCodecChainType)
 	if !ok {
 		slice, ok := onChainValue.(*[]modifierCodecChainType)

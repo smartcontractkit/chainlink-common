@@ -49,6 +49,11 @@ type TestStruct struct {
 	NestedStruct   MidLevelTestStruct
 }
 
+type TestStructWithExtraField struct {
+	TestStruct
+	ExtraField int
+}
+
 // compatibleTestStruct has fields in a different order
 type compatibleTestStruct struct {
 	Account        []byte

@@ -57,8 +57,10 @@ type interfaceTesterBase struct {
 	setupHook func(server *grpc.Server)
 }
 
+var anyAccountBytes = []byte{1, 2, 3}
+
 func (it *interfaceTesterBase) GetAccountBytes(_ int) []byte {
-	return []byte{1, 2, 3}
+	return anyAccountBytes
 }
 
 func (it *interfaceTesterBase) Setup(t *testing.T) {
@@ -114,6 +116,11 @@ func (fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) 
 	case MethodReturningUint64Slice:
 		var tmp []uint64
 		return &tmp, nil
+	case MethodReturningSeenStruct, TestItemWithConfigExtra:
+		if isEncode {
+			return &TestStruct{}, nil
+		}
+		return &TestStructWithExtraField{}, nil
 	}
 
 	return nil, types.ErrInvalidType

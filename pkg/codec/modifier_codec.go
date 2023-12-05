@@ -11,7 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func NewModifierCodec(codec types.CodecTypeProvider, modifier Modifier) (types.Codec, error) {
+func NewModifierCodec(codec types.CodecTypeProvider, modifier Modifier, hooks ...mapstructure.DecodeHookFunc) (types.CodecTypeProvider, error) {
 	if codec == nil || modifier == nil {
 		return nil, errors.New("inputs must not be nil")
 	}
@@ -19,6 +19,7 @@ func NewModifierCodec(codec types.CodecTypeProvider, modifier Modifier) (types.C
 	return &modifierCodec{
 		codec:    codec,
 		modifier: modifier,
+		hook:     mapstructure.ComposeDecodeHookFunc(hooks...),
 	}, nil
 }
 
@@ -27,6 +28,7 @@ var _ types.TypeProvider = &modifierCodec{}
 type modifierCodec struct {
 	codec    types.CodecTypeProvider
 	modifier Modifier
+	hook     mapstructure.DecodeHookFunc
 }
 
 func (m *modifierCodec) CreateType(itemType string, forEncoding bool) (any, error) {
@@ -36,7 +38,7 @@ func (m *modifierCodec) CreateType(itemType string, forEncoding bool) (any, erro
 	}
 
 	ot := reflect.TypeOf(t)
-	nt, err := m.modifier.RetypeForOffChain(ot)
+	nt, err := m.modifier.RetypeForOffChain(ot, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +50,10 @@ func (m *modifierCodec) CreateType(itemType string, forEncoding bool) (any, erro
 }
 
 func (m *modifierCodec) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
+	if item == nil {
+		return m.codec.Encode(ctx, item, itemType)
+	}
+
 	offChainItem, err := m.CreateType(itemType, true)
 	if err != nil {
 		return nil, err
@@ -64,11 +70,11 @@ func (m *modifierCodec) Encode(ctx context.Context, item any, itemType string) (
 		offChainItem = rOffChainItem.Interface()
 	}
 
-	if err = convert(rItem, rOffChainItem); err != nil {
+	if err = convert(rItem, rOffChainItem, m.hook); err != nil {
 		return nil, err
 	}
 
-	onChainItem, err := m.modifier.TransformForOnChain(offChainItem)
+	onChainItem, err := m.modifier.TransformForOnChain(offChainItem, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -93,19 +99,19 @@ func (m *modifierCodec) Decode(ctx context.Context, raw []byte, into any, itemTy
 	if err = m.codec.Decode(ctx, raw, onChain, itemType); err != nil {
 		return err
 	}
-	offChain, err := m.modifier.TransformForOffChain(onChain)
+	offChain, err := m.modifier.TransformForOffChain(onChain, itemType)
 	if err != nil {
 		return err
 	}
 
-	return convert(reflect.ValueOf(offChain), rInto)
+	return convert(reflect.ValueOf(offChain), rInto, m.hook)
 }
 
 func (m *modifierCodec) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
 	return m.codec.GetMaxDecodingSize(ctx, n, itemType)
 }
 
-func convert(from, to reflect.Value) error {
+func convert(from, to reflect.Value, hook mapstructure.DecodeHookFunc) error {
 	if from.Type() == to.Type() && from.Kind() == reflect.Pointer {
 		// Types are the same, just copy the element.
 		//  The variable itself may not be addressable
@@ -121,9 +127,9 @@ func convert(from, to reflect.Value) error {
 		// Pointers can be decoded directly with mapstructure if they are not a pointer to one of these kinds.
 		// If they are, use recursion to set the pointer's elements the same.
 		case reflect.Array, reflect.Slice, reflect.Pointer:
-			return convert(iFrom, reflect.Indirect(to))
+			return convert(iFrom, reflect.Indirect(to), hook)
 		default:
-			return mapstructure.Decode(from.Interface(), to.Interface())
+			return decodeWithHook(from.Interface(), to.Interface(), hook)
 		}
 	case reflect.Array, reflect.Slice:
 		switch to.Kind() {
@@ -132,25 +138,27 @@ func convert(from, to reflect.Value) error {
 			if from.Len() != to.Len() {
 				return types.ErrWrongNumberOfElements
 			}
-			return convertSliceOrArray(from, to)
+			return convertSliceOrArray(from, to, hook)
 		case reflect.Slice:
 			// A slice may not be initialized yet, make the right number of elements to copy to
 			length := from.Len()
 			to.Set(reflect.MakeSlice(to.Type(), length, length))
-			return convertSliceOrArray(from, to)
+			return convertSliceOrArray(from, to, hook)
+		case reflect.Pointer:
+			return convert(from, reflect.Indirect(to), hook)
 		default:
 			return types.ErrInvalidType
 		}
 	default:
-		return mapstructure.Decode(from.Interface(), to.Interface())
+		return decodeWithHook(from.Interface(), to.Interface(), hook)
 	}
 }
 
-func convertSliceOrArray(from, to reflect.Value) error {
+func convertSliceOrArray(from, to reflect.Value, hook mapstructure.DecodeHookFunc) error {
 	switch from.Kind() {
 	case reflect.Array, reflect.Slice:
 		for i := 0; i < from.Len(); i++ {
-			if err := convert(addr(from.Index(i)), addr(to.Index(i))); err != nil {
+			if err := convert(addr(from.Index(i)), addr(to.Index(i)), hook); err != nil {
 				return err
 			}
 		}
@@ -158,4 +166,16 @@ func convertSliceOrArray(from, to reflect.Value) error {
 	default:
 		return types.ErrInvalidType
 	}
+}
+
+func decodeWithHook(input, output any, hook mapstructure.DecodeHookFunc) error {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: hook,
+		Result:     output,
+		Squash:     true,
+	})
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(input)
 }

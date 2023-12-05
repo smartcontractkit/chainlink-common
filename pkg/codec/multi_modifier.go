@@ -6,15 +6,15 @@ import (
 
 type MultiModifier []Modifier
 
-func (c MultiModifier) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, error) {
-	return forEach(c, onChainType, Modifier.RetypeForOffChain)
+func (c MultiModifier) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
+	return forEach(c, onChainType, itemType, Modifier.RetypeForOffChain)
 }
 
-func (c MultiModifier) TransformForOnChain(offChainValue any) (any, error) {
+func (c MultiModifier) TransformForOnChain(offChainValue any, itemType string) (any, error) {
 	onChainValue := offChainValue
 	for i := len(c) - 1; i >= 0; i-- {
 		var err error
-		if onChainValue, err = c[i].TransformForOnChain(onChainValue); err != nil {
+		if onChainValue, err = c[i].TransformForOnChain(onChainValue, itemType); err != nil {
 			return nil, err
 		}
 	}
@@ -22,15 +22,15 @@ func (c MultiModifier) TransformForOnChain(offChainValue any) (any, error) {
 	return onChainValue, nil
 }
 
-func (c MultiModifier) TransformForOffChain(onChainValue any) (any, error) {
-	return forEach(c, onChainValue, Modifier.TransformForOffChain)
+func (c MultiModifier) TransformForOffChain(onChainValue any, itemType string) (any, error) {
+	return forEach(c, onChainValue, itemType, Modifier.TransformForOffChain)
 }
 
-func forEach[T any](c MultiModifier, input T, fn func(Modifier, T) (T, error)) (T, error) {
+func forEach[T any](c MultiModifier, input T, itemType string, fn func(Modifier, T, string) (T, error)) (T, error) {
 	output := input
 	for _, m := range c {
 		var err error
-		if output, err = fn(m, output); err != nil {
+		if output, err = fn(m, output, itemType); err != nil {
 			return output, err
 		}
 	}

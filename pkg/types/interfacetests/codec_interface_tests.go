@@ -28,10 +28,11 @@ type CodecInterfaceTester interface {
 }
 
 const (
-	TestItemType       = "TestItem"
-	TestItemSliceType  = "TestItemSliceType"
-	TestItemArray1Type = "TestItemArray1Type"
-	TestItemArray2Type = "TestItemArray2Type"
+	TestItemType            = "TestItem"
+	TestItemSliceType       = "TestItemSliceType"
+	TestItemArray1Type      = "TestItemArray1Type"
+	TestItemArray2Type      = "TestItemArray2Type"
+	TestItemWithConfigExtra = "TestItemWithConfigExtra"
 )
 
 func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
@@ -242,6 +243,41 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				cr := tester.GetCodec(t)
 				_, err := cr.GetMaxEncodingSize(ctx, 10, "not"+TestItemType)
 				assert.True(t, errors.Is(err, types.ErrInvalidType))
+			},
+		},
+		{
+			name: "Decode respects config",
+			test: func(t *testing.T) {
+				cr := tester.GetCodec(t)
+				original := CreateTestStruct(0, tester)
+				bytes, err := cr.Encode(ctx, original, TestItemType)
+				require.NoError(t, err)
+
+				decoded := &TestStructWithExtraField{}
+				require.NoError(t, cr.Decode(ctx, bytes, decoded, TestItemWithConfigExtra))
+
+				expected := &TestStructWithExtraField{
+					ExtraField: AnyExtraValue,
+					TestStruct: original,
+				}
+				assert.Equal(t, expected, decoded)
+			},
+		},
+		{
+			name: "Encode respects config",
+			test: func(t *testing.T) {
+				cr := tester.GetCodec(t)
+				modified := CreateTestStruct(0, tester)
+				modified.BigField = nil
+				modified.Account = nil
+				actual, err := cr.Encode(ctx, modified, TestItemWithConfigExtra)
+				require.NoError(t, err)
+
+				original := CreateTestStruct(0, tester)
+				expected, err := cr.Encode(ctx, original, TestItemType)
+				require.NoError(t, err)
+
+				assert.Equal(t, expected, actual)
 			},
 		},
 	}

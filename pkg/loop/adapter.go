@@ -39,8 +39,8 @@ func (r *RelayerAdapter) NewFunctionsProvider(ctx context.Context, rargs types.R
 	return r.Relayer.NewFunctionsProvider(rargs, pargs)
 }
 
-func (r *RelayerAdapter) NewOCR2KeepersProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.OCR2KeepersProvider, error) {
-	return r.Relayer.NewOCR2KeepersProvider(rargs, pargs)
+func (r *RelayerAdapter) NewAutomationProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.AutomationProvider, error) {
+	return r.Relayer.NewAutomationProvider(rargs, pargs)
 }
 
 func (r *RelayerAdapter) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {

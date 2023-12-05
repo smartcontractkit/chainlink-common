@@ -1,6 +1,7 @@
 package types
 
 import (
+	"slices"
 	"strings"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
@@ -76,7 +77,7 @@ func grpcErrorHasTypeAndMessage(target error, msg string, code codes.Code) bool 
 	}
 
 	errs := strings.Split(s.Message(), ":")
-	return slices.ContainsFunc(errs, func(err error) bool {
-		return strings.Trim(err, " ") == msg 
-	}
+	return slices.ContainsFunc(errs, func(err string) bool {
+		return strings.Trim(err, " ") == msg
+	})
 }

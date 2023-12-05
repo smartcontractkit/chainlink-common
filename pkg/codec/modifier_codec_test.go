@@ -309,9 +309,3 @@ func (t testModifier) TransformForOffChain(onChainValue any) (any, error) {
 	}
 	return &modifierCodecOffChainType{Z: onChain.A}, nil
 }
-
-type invalidTypeProvider struct{}
-
-func (i invalidTypeProvider) CreateType(_ string, _ bool) (any, error) {
-	return nil, types.ErrInvalidType
-}

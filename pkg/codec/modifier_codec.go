@@ -11,28 +11,26 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func NewModifierCodec(codec types.Codec, typeProvider types.TypeProvider, modifier Modifier) (types.Codec, error) {
-	if codec == nil || typeProvider == nil || modifier == nil {
+func NewModifierCodec(codec types.CodecTypeProvider, modifier Modifier) (types.Codec, error) {
+	if codec == nil || modifier == nil {
 		return nil, errors.New("inputs must not be nil")
 	}
 
 	return &modifierCodec{
-		codec:        codec,
-		typeProvider: typeProvider,
-		modifier:     modifier,
+		codec:    codec,
+		modifier: modifier,
 	}, nil
 }
 
 var _ types.TypeProvider = &modifierCodec{}
 
 type modifierCodec struct {
-	codec        types.Codec
-	typeProvider types.TypeProvider
-	modifier     Modifier
+	codec    types.CodecTypeProvider
+	modifier Modifier
 }
 
 func (m *modifierCodec) CreateType(itemType string, forEncoding bool) (any, error) {
-	t, err := m.typeProvider.CreateType(itemType, forEncoding)
+	t, err := m.codec.CreateType(itemType, forEncoding)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +85,7 @@ func (m *modifierCodec) Decode(ctx context.Context, raw []byte, into any, itemTy
 		return fmt.Errorf("%w: into must be a pointer", types.ErrInvalidType)
 	}
 
-	onChain, err := m.typeProvider.CreateType(itemType, false)
+	onChain, err := m.codec.CreateType(itemType, false)
 	if err != nil {
 		return err
 	}

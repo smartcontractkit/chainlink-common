@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type ChainReaderInterfaceTester interface {
@@ -37,7 +38,7 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 
 // RunChainReaderInterfaceTests uses TestStruct and TestStructWithSpecialFields
 func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
-	ctx := context.Background()
+	ctx := tests.Context(t)
 	tests := map[string]func(t *testing.T){
 		"Gets the latest value": func(t *testing.T) {
 			firstItem := CreateTestStruct(0, tester.GetAccountBytes)

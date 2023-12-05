@@ -76,11 +76,7 @@ func grpcErrorHasTypeAndMessage(target error, msg string, code codes.Code) bool 
 	}
 
 	errs := strings.Split(s.Message(), ":")
-	for _, err := range errs {
-		if strings.Trim(err, " ") == msg {
-			return true
-		}
+	return slices.ContainsFunc(errs, func(err error) bool {
+		return strings.Trim(err, " ") == msg 
 	}
-
-	return false
 }

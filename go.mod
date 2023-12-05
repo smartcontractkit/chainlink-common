@@ -3,11 +3,10 @@ module github.com/smartcontractkit/chainlink-common
 go 1.21
 
 require (
-	github.com/confluentinc/confluent-kafka-go v1.9.2
-	github.com/ethereum/go-ethereum v1.10.26
-	github.com/getsentry/sentry-go v0.25.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
+	github.com/ethereum/go-ethereum v1.10.26
 	github.com/fxamacker/cbor/v2 v2.5.0
+	github.com/getsentry/sentry-go v0.25.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
 	github.com/google/uuid v1.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
@@ -70,7 +69,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.18.0 // indirect
 	go.opentelemetry.io/otel/metric v1.19.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect

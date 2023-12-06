@@ -164,7 +164,7 @@ func isErrTerminal(err error) bool {
 	return false
 }
 
-func wrapRpcErr(err error) error {
+func wrapRPCErr(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -183,5 +183,4 @@ func (w wrappedError) Error() string {
 func (w wrappedError) Is(target error) bool {
 	s := status.Convert(target)
 	return w.status.Code() == s.Code() && strings.Contains(s.Message(), w.status.Message())
-
 }

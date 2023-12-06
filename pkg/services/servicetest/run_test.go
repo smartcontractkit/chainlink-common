@@ -32,7 +32,6 @@ func TestRunHealthy(t *testing.T) {
 			assert.Equal(t, test.expFail, failed)
 		})
 	}
-
 }
 
 func runFake(fn func(t TestingT)) ([]string, bool) {

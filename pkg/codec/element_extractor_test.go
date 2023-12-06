@@ -18,14 +18,14 @@ func TestElementExtractor(t *testing.T) {
 	invalidExtractor := codec.NewElementExtractor(map[string]codec.ElementExtractorLocation{"A": codec.FirstElementLocation, "W": codec.MiddleElementLocation})
 	nestedExtractor := codec.NewElementExtractor(map[string]codec.ElementExtractorLocation{"A": codec.FirstElementLocation, "B.A": codec.FirstElementLocation, "B.C": codec.MiddleElementLocation, "B.D": codec.LastElementLocation, "C.A": codec.FirstElementLocation, "C.C": codec.MiddleElementLocation, "C.D": codec.LastElementLocation, "B": codec.LastElementLocation})
 	t.Run("RetypeForOffChain gets non-slice type", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 
 		assertBasicElementExtractTransform(t, inputType)
 	})
 
 	t.Run("RetypeForOffChain works on slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, inputType.Kind())
@@ -33,7 +33,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on pointers", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
@@ -41,7 +41,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on pointers to non structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
@@ -50,7 +50,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on arrays", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Array, inputType.Kind())
@@ -59,12 +59,12 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain returns exception if a field is not on the type", func(t *testing.T) {
-		_, err := invalidExtractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}))
+		_, err := invalidExtractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}), "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("RetypeForOffChain works on nested fields even if the field itself is also extracted", func(t *testing.T) {
-		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedElementExtractorTestStruct{}))
+		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedElementExtractorTestStruct{}), "")
 		fmt.Printf("%+v\n", inputType)
 		require.NoError(t, err)
 		assert.Equal(t, 4, inputType.NumField())
@@ -84,7 +84,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(inputType))
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A", "B", "C"}))
@@ -92,7 +92,7 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{15, 20, 35}))
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{10, 20, 30}))
 
-		output, err := extractor.TransformForOnChain(iInput.Interface())
+		output, err := extractor.TransformForOnChain(iInput.Interface(), "")
 
 		require.NoError(t, err)
 
@@ -103,7 +103,7 @@ func TestElementExtractor(t *testing.T) {
 			D: 30,
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := extractor.TransformForOffChain(expected)
+		newInput, err := extractor.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A"}))
@@ -113,14 +113,14 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain returns error if input type was not from TransformForOnChain", func(t *testing.T) {
-		_, err := invalidExtractor.TransformForOnChain(elementExtractorTestStruct{})
+		_, err := invalidExtractor.TransformForOnChain(elementExtractorTestStruct{}, "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
-		_, err = invalidExtractor.TransformForOffChain(elementExtractorTestStruct{})
+		_, err = invalidExtractor.TransformForOffChain(elementExtractorTestStruct{}, "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		iInput := reflect.Indirect(rInput)
@@ -129,7 +129,7 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{15, 20, 35}))
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{10, 20, 30}))
 
-		output, err := extractor.TransformForOnChain(rInput.Interface())
+		output, err := extractor.TransformForOnChain(rInput.Interface(), "")
 
 		require.NoError(t, err)
 
@@ -140,7 +140,7 @@ func TestElementExtractor(t *testing.T) {
 			D: 30,
 		}
 		assert.Equal(t, expected, output)
-		newInput, err := extractor.TransformForOffChain(expected)
+		newInput, err := extractor.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A"}))
@@ -150,7 +150,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
 		iInput := rInput.Index(0)
@@ -164,7 +164,7 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{15, 25, 35}))
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{10, 20, 35}))
 
-		output, err := extractor.TransformForOnChain(rInput.Interface())
+		output, err := extractor.TransformForOnChain(rInput.Interface(), "")
 
 		require.NoError(t, err)
 
@@ -184,7 +184,7 @@ func TestElementExtractor(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := extractor.TransformForOffChain(expected)
+		newInput, err := extractor.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
@@ -198,7 +198,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on nested slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([][]elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([][]elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
 		rOuter := rInput.Index(0)
@@ -226,7 +226,7 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{150, 250, 350}))
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{100, 200, 350}))
 
-		output, err := extractor.TransformForOnChain(rInput.Interface())
+		output, err := extractor.TransformForOnChain(rInput.Interface(), "")
 
 		require.NoError(t, err)
 
@@ -262,7 +262,7 @@ func TestElementExtractor(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := extractor.TransformForOffChain(expected)
+		newInput, err := extractor.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		// Lossy modification
 		rOuter = rInput.Index(0)
@@ -288,7 +288,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers to non structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		rElm := reflect.MakeSlice(inputType.Elem(), 2, 2)
@@ -304,7 +304,7 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{10, 20, 35}))
 		reflect.Indirect(rInput).Set(rElm)
 
-		output, err := extractor.TransformForOnChain(rInput.Interface())
+		output, err := extractor.TransformForOnChain(rInput.Interface(), "")
 
 		require.NoError(t, err)
 
@@ -324,7 +324,7 @@ func TestElementExtractor(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := extractor.TransformForOffChain(expected)
+		newInput, err := extractor.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{25}))
@@ -337,7 +337,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on arrays", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]elementExtractorTestStruct{}))
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType).Elem()
 		iInput := rInput.Index(0)
@@ -351,7 +351,7 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{15, 25, 35}))
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{10, 20, 35}))
 
-		output, err := extractor.TransformForOnChain(rInput.Interface())
+		output, err := extractor.TransformForOnChain(rInput.Interface(), "")
 
 		require.NoError(t, err)
 
@@ -371,7 +371,7 @@ func TestElementExtractor(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 
-		newInput, err := extractor.TransformForOffChain(expected)
+		newInput, err := extractor.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		// Lossy modification
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"Az"}))
@@ -385,7 +385,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on nested fields even if the field itself is also extracted", func(t *testing.T) {
-		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedElementExtractorTestStruct{}))
+		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedElementExtractorTestStruct{}), "")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(inputType))
@@ -421,7 +421,7 @@ func TestElementExtractor(t *testing.T) {
 
 		iInput.FieldByName("D").SetString("bar")
 
-		output, err := nestedExtractor.TransformForOnChain(iInput.Interface())
+		output, err := nestedExtractor.TransformForOnChain(iInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := nestedElementExtractorTestStruct{
@@ -451,7 +451,7 @@ func TestElementExtractor(t *testing.T) {
 
 		assert.Equal(t, expected, output)
 
-		newInput, err := nestedExtractor.TransformForOffChain(expected)
+		newInput, err := nestedExtractor.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 
 		// Lossy modification

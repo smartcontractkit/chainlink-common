@@ -35,12 +35,12 @@ type elementExtractor struct {
 	modifierBase[ElementExtractorLocation]
 }
 
-func (e *elementExtractor) TransformForOnChain(input any) (any, error) {
-	return transformWithMaps(input, e.offToOnChainType, e.fields, extractMap)
+func (e *elementExtractor) TransformForOnChain(offChainValue any, _ string) (any, error) {
+	return transformWithMaps(offChainValue, e.offToOnChainType, e.fields, extractMap)
 }
 
-func (e *elementExtractor) TransformForOffChain(output any) (any, error) {
-	return transformWithMaps(output, e.onToOffChainType, e.fields, expandMap)
+func (e *elementExtractor) TransformForOffChain(onChainValue any, _ string) (any, error) {
+	return transformWithMaps(onChainValue, e.onToOffChainType, e.fields, expandMap)
 }
 
 func extractMap(extractMap map[string]any, key string, elementLocation ElementExtractorLocation) error {

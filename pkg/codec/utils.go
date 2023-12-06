@@ -128,6 +128,14 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 	// [2]int{} would not work. This seems to lenient, but can be discussed.
 	if from.Kind() == reflect.Slice && to.Kind() == reflect.Array {
 		slice := reflect.ValueOf(data)
+
+		// The use case here is that values may be added later (eg hard-coded mod)
+		// Additionally, if you want to zero out in the plugin may not know the size
+		// This allows the array to be zeroed out when the slice is empty to account for these use cases.
+		if slice.Len() == 0 {
+			return reflect.MakeSlice(slice.Type(), to.Len(), to.Len()).Interface(), nil
+		}
+
 		if slice.Len() != to.Len() {
 			return nil, fmt.Errorf("%w: expected size %v got %v", types.ErrWrongNumberOfElements, to.Len(), slice.Len())
 		}

@@ -19,7 +19,7 @@ type modifierBase[T any] struct {
 	addFieldForInput    func(pkgPath, name string, change T) reflect.StructField
 }
 
-func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.Type, error) {
+func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
 	if m.fields == nil || len(m.fields) == 0 {
 		m.offToOnChainType[onChainType] = onChainType
 		m.onToOffChainType[onChainType] = onChainType
@@ -32,7 +32,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.T
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
-		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
+		if elm, err := m.RetypeForOffChain(onChainType.Elem(), ""); err == nil {
 			ptr := reflect.PointerTo(elm)
 			m.onToOffChainType[onChainType] = ptr
 			m.offToOnChainType[ptr] = onChainType
@@ -40,7 +40,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.T
 		}
 		return nil, types.ErrInvalidType
 	case reflect.Slice:
-		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
+		if elm, err := m.RetypeForOffChain(onChainType.Elem(), ""); err == nil {
 			sliceType := reflect.SliceOf(elm)
 			m.onToOffChainType[onChainType] = sliceType
 			m.offToOnChainType[sliceType] = onChainType
@@ -48,7 +48,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type) (reflect.T
 		}
 		return nil, types.ErrInvalidType
 	case reflect.Array:
-		if elm, err := m.RetypeForOffChain(onChainType.Elem()); err == nil {
+		if elm, err := m.RetypeForOffChain(onChainType.Elem(), ""); err == nil {
 			arrayType := reflect.ArrayOf(onChainType.Len(), elm)
 			m.onToOffChainType[onChainType] = arrayType
 			m.offToOnChainType[arrayType] = onChainType
@@ -208,7 +208,7 @@ func changeElements[T any](src, dest any, fields map[string]T, fn mapAction[T], 
 		return err
 	}
 
-	conf := &mapstructure.DecoderConfig{Result: &dest}
+	conf := &mapstructure.DecoderConfig{Result: &dest, Squash: true}
 	if len(hooks) != 0 {
 		conf.DecodeHook = mapstructure.ComposeDecodeHookFunc(hooks...)
 	}

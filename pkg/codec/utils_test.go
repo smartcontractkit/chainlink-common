@@ -137,4 +137,14 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 		_, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
 		assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
 	})
+
+	t.Run("Empty slices are treated as ok to allow unset values", func(t *testing.T) {
+		to := reflect.TypeOf([2]int64{})
+		var data []int64
+		res, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
+		assert.NoError(t, err)
+
+		// Mapstructure will convert slices to arrays, all we need in this hook is to pass it along
+		assert.Equal(t, []int64{0, 0}, res)
+	})
 }

@@ -33,20 +33,20 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain adds fields to struct", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(onChainType)
+		offChainType, err := hardCoder.RetypeForOffChain(onChainType, "")
 		require.NoError(t, err)
 		assertBasicHardCodedType(t, offChainType)
 	})
 
 	t.Run("RetypeForOffChain adds fields to pointers", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(onChainType))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(onChainType), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Ptr, offChainType.Kind())
 		assertBasicHardCodedType(t, offChainType.Elem())
 	})
 
 	t.Run("RetypeForOffChain adds fields to pointers of non-structs", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(reflect.SliceOf(onChainType)))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(reflect.SliceOf(onChainType)), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		assert.Equal(t, reflect.Slice, offChainType.Elem().Kind())
@@ -54,7 +54,7 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain adds fields to slices", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(onChainType))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(onChainType), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Slice, offChainType.Kind())
 		assertBasicHardCodedType(t, offChainType.Elem())
@@ -62,7 +62,7 @@ func TestHardCoder(t *testing.T) {
 
 	t.Run("RetypeForOffChain adds fields to arrays", func(t *testing.T) {
 		anyArrayLen := 3
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.ArrayOf(anyArrayLen, onChainType))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.ArrayOf(anyArrayLen, onChainType), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Array, offChainType.Kind())
 		assert.Equal(t, anyArrayLen, offChainType.Len())
@@ -70,7 +70,7 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain replaces already existing field", func(t *testing.T) {
-		offChainType, err := replacingHardCoder.RetypeForOffChain(onChainType)
+		offChainType, err := replacingHardCoder.RetypeForOffChain(onChainType, "")
 		require.NoError(t, err)
 		require.Equal(t, onChainType.NumField()+1, offChainType.NumField())
 		for i := 0; i < onChainType.NumField(); i++ {
@@ -91,18 +91,18 @@ func TestHardCoder(t *testing.T) {
 	t.Run("RetypeForOffChain returns error is existing field type is changed and not hard coded both ways", func(t *testing.T) {
 		invalidHardCoder, err := codec.NewHardCoder(map[string]any{}, map[string]any{"A": int64(2), "Q": []int32{4, 5}})
 		require.NoError(t, err)
-		_, err = invalidHardCoder.RetypeForOffChain(onChainType)
+		_, err = invalidHardCoder.RetypeForOffChain(onChainType, "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on structs", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(onChainType)
+		offChainType, err := hardCoder.RetypeForOffChain(onChainType, "")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(offChainType))
 		iInput.FieldByName("B").SetInt(1)
 
-		actual, err := hardCoder.TransformForOnChain(iInput.Interface())
+		actual, err := hardCoder.TransformForOnChain(iInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := hardCodedTestStruct{
@@ -112,7 +112,7 @@ func TestHardCoder(t *testing.T) {
 		}
 		assert.Equal(t, expected, actual)
 
-		actual, err = hardCoder.TransformForOffChain(expected)
+		actual, err = hardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		iInput.FieldByName("A").SetString("Foo")
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int32{2, 3}))
@@ -129,19 +129,19 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain returns error if input type was not from TransformForOnChain", func(t *testing.T) {
-		_, err := hardCoder.TransformForOnChain(hardCodedTestStruct{})
+		_, err := hardCoder.TransformForOnChain(hardCodedTestStruct{}, "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(onChainType))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(onChainType), "")
 		require.NoError(t, err)
 
 		rInput := reflect.New(offChainType.Elem())
 		iInput := reflect.Indirect(rInput)
 		iInput.FieldByName("B").SetInt(1)
 
-		actual, err := hardCoder.TransformForOnChain(rInput.Interface())
+		actual, err := hardCoder.TransformForOnChain(rInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := &hardCodedTestStruct{
@@ -151,14 +151,14 @@ func TestHardCoder(t *testing.T) {
 		}
 		assert.Equal(t, expected, actual)
 
-		actual, err = hardCoder.TransformForOffChain(expected)
+		actual, err = hardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		addOffChainAndOnChainHardCodedValues(iInput)
 		assert.Equal(t, rInput.Interface(), actual)
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on slices", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(onChainType))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(onChainType), "")
 		require.NoError(t, err)
 
 		rInput := reflect.MakeSlice(offChainType, 2, 2)
@@ -167,7 +167,7 @@ func TestHardCoder(t *testing.T) {
 		iElm = rInput.Index(1)
 		iElm.FieldByName("B").SetInt(2)
 
-		actual, err := hardCoder.TransformForOnChain(rInput.Interface())
+		actual, err := hardCoder.TransformForOnChain(rInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := []hardCodedTestStruct{
@@ -184,7 +184,7 @@ func TestHardCoder(t *testing.T) {
 		}
 		assert.Equal(t, expected, actual)
 
-		actual, err = hardCoder.TransformForOffChain(expected)
+		actual, err = hardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 
 		addOffChainAndOnChainHardCodedValues(rInput.Index(0))
@@ -193,7 +193,7 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on slices of slices", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(reflect.SliceOf(onChainType)))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.SliceOf(reflect.SliceOf(onChainType)), "")
 		require.NoError(t, err)
 
 		rInput := reflect.MakeSlice(offChainType, 2, 2)
@@ -210,7 +210,7 @@ func TestHardCoder(t *testing.T) {
 		iElm = iOuter.Index(1)
 		iElm.FieldByName("B").SetInt(20)
 
-		actual, err := hardCoder.TransformForOnChain(rInput.Interface())
+		actual, err := hardCoder.TransformForOnChain(rInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := [][]hardCodedTestStruct{
@@ -241,7 +241,7 @@ func TestHardCoder(t *testing.T) {
 		}
 		assert.Equal(t, expected, actual)
 
-		actual, err = hardCoder.TransformForOffChain(expected)
+		actual, err = hardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 
 		addOffChainAndOnChainHardCodedValues(rInput.Index(0).Index(0))
@@ -252,7 +252,7 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers to non structs", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(reflect.SliceOf(onChainType)))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.PointerTo(reflect.SliceOf(onChainType)), "")
 		require.NoError(t, err)
 
 		rInput := reflect.New(offChainType.Elem())
@@ -263,7 +263,7 @@ func TestHardCoder(t *testing.T) {
 		iElm.FieldByName("B").SetInt(2)
 		reflect.Indirect(rInput).Set(sInput)
 
-		actual, err := hardCoder.TransformForOnChain(rInput.Interface())
+		actual, err := hardCoder.TransformForOnChain(rInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := &[]hardCodedTestStruct{
@@ -280,7 +280,7 @@ func TestHardCoder(t *testing.T) {
 		}
 		assert.Equal(t, expected, actual)
 
-		actual, err = hardCoder.TransformForOffChain(expected)
+		actual, err = hardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 
 		addOffChainAndOnChainHardCodedValues(sInput.Index(0))
@@ -289,7 +289,7 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on arrays", func(t *testing.T) {
-		offChainType, err := hardCoder.RetypeForOffChain(reflect.ArrayOf(2, onChainType))
+		offChainType, err := hardCoder.RetypeForOffChain(reflect.ArrayOf(2, onChainType), "")
 		require.NoError(t, err)
 
 		rInput := reflect.New(offChainType).Elem()
@@ -298,7 +298,7 @@ func TestHardCoder(t *testing.T) {
 		iElm = rInput.Index(1)
 		iElm.FieldByName("B").SetInt(2)
 
-		actual, err := hardCoder.TransformForOnChain(rInput.Interface())
+		actual, err := hardCoder.TransformForOnChain(rInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := [2]hardCodedTestStruct{
@@ -315,7 +315,7 @@ func TestHardCoder(t *testing.T) {
 		}
 		assert.Equal(t, expected, actual)
 
-		actual, err = hardCoder.TransformForOffChain(expected)
+		actual, err = hardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 
 		addOffChainAndOnChainHardCodedValues(rInput.Index(0))
@@ -344,7 +344,7 @@ func TestHardCoder(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		offChainType, err := nestedHardCoder.RetypeForOffChain(reflect.TypeOf(nestedHardCodedTestStruct{}))
+		offChainType, err := nestedHardCoder.RetypeForOffChain(reflect.TypeOf(nestedHardCodedTestStruct{}), "")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(offChainType))
@@ -356,7 +356,7 @@ func TestHardCoder(t *testing.T) {
 		iC.Index(1).FieldByName("B").SetInt(3)
 		iInput.FieldByName("D").SetInt(1)
 
-		actual, err := nestedHardCoder.TransformForOnChain(iInput.Interface())
+		actual, err := nestedHardCoder.TransformForOnChain(iInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := nestedHardCodedTestStruct{
@@ -383,7 +383,7 @@ func TestHardCoder(t *testing.T) {
 
 		assert.Equal(t, expected, actual)
 
-		actual, err = nestedHardCoder.TransformForOffChain(expected)
+		actual, err = nestedHardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 
 		iInput.FieldByName("A").SetString("Top")
@@ -394,12 +394,12 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works for replaced type", func(t *testing.T) {
-		offChainType, err := replacingHardCoder.RetypeForOffChain(onChainType)
+		offChainType, err := replacingHardCoder.RetypeForOffChain(onChainType, "")
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(offChainType))
 		iInput.FieldByName("B").SetInt(1)
 
-		actual, err := replacingHardCoder.TransformForOnChain(iInput.Interface())
+		actual, err := replacingHardCoder.TransformForOnChain(iInput.Interface(), "")
 		require.NoError(t, err)
 
 		expected := hardCodedTestStruct{
@@ -409,7 +409,7 @@ func TestHardCoder(t *testing.T) {
 
 		assert.Equal(t, expected, actual)
 
-		actual, err = replacingHardCoder.TransformForOffChain(expected)
+		actual, err = replacingHardCoder.TransformForOffChain(expected, "")
 		require.NoError(t, err)
 		iInput.FieldByName("A").SetInt(2)
 		iInput.FieldByName("Q").Set(reflect.ValueOf([]int32{4, 5}))
@@ -427,11 +427,11 @@ func TestHardCoder(t *testing.T) {
 		hookedHardCoder, err := codec.NewHardCoder(map[string]any{"B": "Z"}, map[string]any{}, hook)
 		require.NoError(t, err)
 
-		offChainType, err := hookedHardCoder.RetypeForOffChain(onChainType)
+		offChainType, err := hookedHardCoder.RetypeForOffChain(onChainType, "")
 		require.NoError(t, err)
 
 		offChain := reflect.Indirect(reflect.New(offChainType)).Interface()
-		onChain, err := hookedHardCoder.TransformForOnChain(offChain)
+		onChain, err := hookedHardCoder.TransformForOnChain(offChain, "")
 		require.NoError(t, err)
 
 		assert.Equal(t, hardCodedTestStruct{B: 123}, onChain)

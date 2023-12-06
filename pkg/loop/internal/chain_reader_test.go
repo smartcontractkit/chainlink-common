@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 	"testing"
 
@@ -125,6 +126,10 @@ func (it *chainReaderInterfaceTester) GetSliceContract(_ context.Context, _ *tes
 	return types.BoundContract{}
 }
 
+func (it *chainReaderInterfaceTester) GetReturnSeenContract(ctx context.Context, t *testing.T) types.BoundContract {
+	return types.BoundContract{}
+}
+
 func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 	if it.conn == nil {
 		it.conn = connFromLis(t, it.lis)
@@ -153,6 +158,14 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContrac
 	} else if method == MethodReturningUint64Slice {
 		r := returnVal.(*[]uint64)
 		*r = AnySliceToReadWithoutAnArgument
+		return nil
+	} else if method == MethodReturningSeenStruct {
+		pv := params.(*TestStruct)
+		rv := returnVal.(*TestStructWithExtraField)
+		rv.TestStruct = *pv
+		rv.ExtraField = AnyExtraValue
+		rv.Account = anyAccountBytes
+		rv.BigField = big.NewInt(2)
 		return nil
 	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)

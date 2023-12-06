@@ -21,6 +21,7 @@ type ChainReaderInterfaceTester interface {
 	SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract
 	GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract
 	GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract
+	GetReturnSeenContract(ctx context.Context, t *testing.T) types.BoundContract
 }
 
 const (
@@ -28,9 +29,12 @@ const (
 	MethodTakingLatestParamsReturningTestStruct = "GetLatestValues"
 	MethodReturningUint64                       = "GetPrimitiveValue"
 	MethodReturningUint64Slice                  = "GetSliceValue"
+	MethodReturningSeenStruct                   = "GetSeenStruct"
 )
 
 var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
+
+const AnyExtraValue = 3
 
 func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
 	ctx := tests.Context(t)
@@ -80,6 +84,29 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 				require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningUint64Slice, nil, &slice))
 
 				assert.Equal(t, AnySliceToReadWithoutAnArgument, slice)
+			},
+		},
+		{
+			name: "Get latest value wraps config with modifiers using its own mapstructure overrides",
+			test: func(t *testing.T) {
+				testStruct := CreateTestStruct(0, tester)
+				testStruct.BigField = nil
+				testStruct.Account = nil
+
+				tester.Setup(t)
+
+				cr := tester.GetChainReader(t)
+				bc := tester.GetReturnSeenContract(ctx, t)
+
+				actual := &TestStructWithExtraField{}
+				require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningSeenStruct, testStruct, actual))
+
+				expected := &TestStructWithExtraField{
+					ExtraField: AnyExtraValue,
+					TestStruct: CreateTestStruct(0, tester),
+				}
+
+				assert.Equal(t, expected, actual)
 			},
 		},
 	}

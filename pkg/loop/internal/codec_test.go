@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"math/big"
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
@@ -127,6 +128,11 @@ func (it *codecInterfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
 func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) ([]byte, error) {
 	f.lastItem = item
 	switch itemType {
+	case TestItemWithConfigExtra:
+		ts := item.(*TestStruct)
+		ts.Account = anyAccountBytes
+		ts.BigField = big.NewInt(2)
+		return encoder.Marshal(ts)
 	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
 		return encoder.Marshal(item)
 	}
@@ -135,6 +141,18 @@ func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) ([]byte
 
 func (f *fakeCodec) Decode(_ context.Context, _ []byte, into any, itemType string) error {
 	switch itemType {
+	case TestItemWithConfigExtra:
+		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Squash: true, Result: into})
+		if err != nil {
+			return err
+		}
+
+		if err = decoder.Decode(f.lastItem); err != nil {
+			return err
+		}
+		extra := into.(*TestStructWithExtraField)
+		extra.ExtraField = AnyExtraValue
+		return nil
 	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
 		return mapstructure.Decode(f.lastItem, into)
 	}

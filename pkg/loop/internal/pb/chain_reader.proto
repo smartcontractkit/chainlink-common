@@ -4,6 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
+
 import "codec.proto";
 
 service ChainReader {

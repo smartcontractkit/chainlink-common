@@ -26,7 +26,7 @@ func (c *codecClient) Encode(ctx context.Context, item any, itemType string) ([]
 	})
 
 	if err != nil {
-		return nil, unwrapClientError(err)
+		return nil, wrapRpcErr(err)
 	}
 
 	return reply.RetVal, nil
@@ -39,7 +39,7 @@ func (c *codecClient) Decode(ctx context.Context, raw []byte, into any, itemType
 	}
 	resp, err := c.grpc.GetDecoding(ctx, request)
 	if err != nil {
-		return unwrapClientError(err)
+		return wrapRpcErr(err)
 	}
 
 	return decodeVersionedBytes(into, resp.RetVal)
@@ -48,7 +48,7 @@ func (c *codecClient) Decode(ctx context.Context, raw []byte, into any, itemType
 func (c *codecClient) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
 	res, err := c.grpc.GetMaxSize(ctx, &pb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: true})
 	if err != nil {
-		return 0, unwrapClientError(err)
+		return 0, wrapRpcErr(err)
 	}
 
 	return int(res.SizeInBytes), nil
@@ -57,7 +57,7 @@ func (c *codecClient) GetMaxEncodingSize(ctx context.Context, n int, itemType st
 func (c *codecClient) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
 	res, err := c.grpc.GetMaxSize(ctx, &pb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: false})
 	if err != nil {
-		return 0, unwrapClientError(err)
+		return 0, wrapRpcErr(err)
 	}
 
 	return int(res.SizeInBytes), nil

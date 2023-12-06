@@ -4,6 +4,13 @@ import (
 	"context"
 )
 
+const (
+	ErrFieldNotFound         = InvalidArgumentError("field not found")
+	ErrInvalidEncoding       = InvalidArgumentError("invalid encoding")
+	ErrWrongNumberOfElements = InvalidArgumentError("wrong number of elements in slice")
+	ErrNotASlice             = InvalidArgumentError("element is not a slice")
+)
+
 type Encoder interface {
 	Encode(ctx context.Context, item any, itemType string) ([]byte, error)
 	// GetMaxEncodingSize returns the max size in bytes if n elements are supplied for all top level dynamically sized elements.
@@ -31,7 +38,7 @@ type TypeProvider interface {
 	CreateType(itemType string, forEncoding bool) (any, error)
 }
 
-type CodecTypeProvider interface {
+type RemoteCodec interface {
 	Codec
 	TypeProvider
 }

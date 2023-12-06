@@ -80,7 +80,7 @@ func TestChainReaderClient(t *testing.T) {
 
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
-			assert.IsType(t, errorType, err)
+			assert.True(t, errors.Is(err, errorType))
 		})
 	}
 

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -161,4 +162,26 @@ func isErrTerminal(err error) bool {
 		return false
 	}
 	return false
+}
+
+func wrapRpcErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	return &wrappedError{err: err, status: status.Convert(err)}
+}
+
+type wrappedError struct {
+	err    error
+	status *status.Status
+}
+
+func (w wrappedError) Error() string {
+	return w.err.Error()
+}
+
+func (w wrappedError) Is(target error) bool {
+	s := status.Convert(target)
+	return w.status.Code() == s.Code() && strings.Contains(s.Message(), w.status.Message())
+
 }

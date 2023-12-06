@@ -235,7 +235,7 @@ func (t *testCodec) GetMaxEncodingSize(_ context.Context, n int, itemType string
 	}
 
 	if n != anyValue {
-		return 0, types.ErrUnknown
+		return 0, types.ErrInvalidEncoding
 	}
 
 	return anyMaxEncodingSize, nil
@@ -274,7 +274,7 @@ func (t *testCodec) GetMaxDecodingSize(_ context.Context, n int, itemType string
 	}
 
 	if n != anyValue {
-		return 0, types.ErrUnknown
+		return 0, types.ErrInvalidEncoding
 	}
 
 	return anyMaxDecodingSize, nil

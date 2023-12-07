@@ -106,7 +106,7 @@ type chainReaderInterfaceTester struct {
 	chainReader *fakeChainReader
 }
 
-func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
+func (it *chainReaderInterfaceTester) Setup(_ context.Context, t *testing.T) {
 	it.setupHook = func(s *grpc.Server) {
 		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.chainReader})
 	}
@@ -130,7 +130,7 @@ func (it *chainReaderInterfaceTester) GetReturnSeenContract(ctx context.Context,
 	return types.BoundContract{}
 }
 
-func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
+func (it *chainReaderInterfaceTester) GetChainReader(ctx context.Context, t *testing.T) types.ChainReader {
 	if it.conn == nil {
 		it.conn = connFromLis(t, it.lis)
 	}
@@ -138,16 +138,22 @@ func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainRe
 	return &chainReaderClient{grpc: pb.NewChainReaderClient(it.conn)}
 }
 
+func (it *chainReaderInterfaceTester) TriggerEvent(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract {
+	it.chainReader.SetTrigger(testStruct)
+	return types.BoundContract{}
+}
+
 type fakeChainReader struct {
 	fakeTypeProvider
-	latest []TestStruct
-	lock   *sync.Mutex
+	stored      []TestStruct
+	lock        *sync.Mutex
+	lastTrigger TestStruct
 }
 
 func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.latest = append(f.latest, *ts)
+	f.stored = append(f.stored, *ts)
 }
 
 func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContract, method string, params, returnVal any) error {
@@ -167,6 +173,11 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContrac
 		rv.Account = anyAccountBytes
 		rv.BigField = big.NewInt(2)
 		return nil
+	} else if method == EventName {
+		f.lock.Lock()
+		defer f.lock.Unlock()
+		*returnVal.(*TestStruct) = f.lastTrigger
+		return nil
 	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)
 	}
@@ -175,8 +186,14 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContrac
 	defer f.lock.Unlock()
 	lp := params.(*LatestParams)
 	rv := returnVal.(*TestStruct)
-	*rv = f.latest[lp.I-1]
+	*rv = f.stored[lp.I-1]
 	return nil
+}
+
+func (f *fakeChainReader) SetTrigger(testStruct *TestStruct) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.lastTrigger = *testStruct
 }
 
 type chainReaderErrServer struct {

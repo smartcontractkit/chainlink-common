@@ -121,6 +121,11 @@ func (fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) 
 			return &TestStruct{}, nil
 		}
 		return &TestStructWithExtraField{}, nil
+	case EventName:
+		if isEncode {
+			return &struct{}{}, nil
+		}
+		return &TestStruct{}, nil
 	}
 
 	return nil, types.ErrInvalidType

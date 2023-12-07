@@ -2,7 +2,9 @@ package interfacetests
 
 import (
 	"context"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +15,7 @@ import (
 
 type ChainReaderInterfaceTester interface {
 	BasicTester
-	GetChainReader(t *testing.T) types.ChainReader
+	GetChainReader(ctx context.Context, t *testing.T) types.ChainReader
 
 	// SetLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
@@ -22,6 +24,7 @@ type ChainReaderInterfaceTester interface {
 	GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract
 	GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract
 	GetReturnSeenContract(ctx context.Context, t *testing.T) types.BoundContract
+	TriggerEvent(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract
 }
 
 const (
@@ -30,6 +33,7 @@ const (
 	MethodReturningUint64                       = "GetPrimitiveValue"
 	MethodReturningUint64Slice                  = "GetSliceValue"
 	MethodReturningSeenStruct                   = "GetSeenStruct"
+	EventName                                   = "SomeEvent"
 )
 
 var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
@@ -47,7 +51,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 				secondItem := CreateTestStruct(1, tester)
 				tester.SetLatestValue(ctx, t, &secondItem)
 
-				cr := tester.GetChainReader(t)
+				cr := tester.GetChainReader(ctx, t)
 				actual := &TestStruct{}
 				params := &LatestParams{I: 1}
 
@@ -65,7 +69,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			test: func(t *testing.T) {
 				bc := tester.GetPrimitiveContract(ctx, t)
 
-				cr := tester.GetChainReader(t)
+				cr := tester.GetChainReader(ctx, t)
 
 				var prim uint64
 				require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningUint64, nil, &prim))
@@ -78,7 +82,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			test: func(t *testing.T) {
 				bc := tester.GetSliceContract(ctx, t)
 
-				cr := tester.GetChainReader(t)
+				cr := tester.GetChainReader(ctx, t)
 
 				var slice []uint64
 				require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningUint64Slice, nil, &slice))
@@ -93,9 +97,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 				testStruct.BigField = nil
 				testStruct.Account = nil
 
-				tester.Setup(t)
-
-				cr := tester.GetChainReader(t)
+				cr := tester.GetChainReader(ctx, t)
 				bc := tester.GetReturnSeenContract(ctx, t)
 
 				actual := &TestStructWithExtraField{}
@@ -109,6 +111,24 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 				assert.Equal(t, expected, actual)
 			},
 		},
+		{
+			name: "Get latest value gets latest event",
+			test: func(t *testing.T) {
+				cr := tester.GetChainReader(ctx, t)
+				ts := CreateTestStruct(0, tester)
+				bc := tester.TriggerEvent(ctx, t, &ts)
+				ts = CreateTestStruct(1, tester)
+				tester.TriggerEvent(ctx, t, &ts)
+
+				result := &TestStruct{}
+				assert.Eventually(t, func() bool {
+					err := cr.GetLatestValue(ctx, bc, EventName, nil, &result)
+					return err == nil && reflect.DeepEqual(result, &ts)
+				}, time.Second*20, time.Millisecond*10)
+
+				assert.Equal(t, &ts, result)
+			},
+		},
 	}
-	runTests(t, tester, tests)
+	runTests(ctx, t, tester, tests)
 }

@@ -32,52 +32,53 @@ func TestModifierCodec(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Nil codec returns error", func(t *testing.T) {
-		_, err := codec.NewModifierCodec(nil, testModifier{})
+		_, err = codec.NewModifierCodec(nil, testModifier{})
 		assert.Error(t, err)
 	})
 
 	t.Run("Nil modifier returns error", func(t *testing.T) {
-		_, err := codec.NewModifierCodec(&testCodec{}, nil)
+		_, err = codec.NewModifierCodec(&testCodec{}, nil)
 		assert.Error(t, err)
 	})
 
+	var encoded []byte
 	t.Run("Encode calls modifiers then encodes", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, &modifierCodecOffChainType{Z: anyValue}, anyItemType)
+		encoded, err = mod.Encode(ctx, &modifierCodecOffChainType{Z: anyValue}, anyItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
 	})
 
 	t.Run("Encode works on compatible types", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, ModifierCodecOffChainCompatibleType{Z: anyValue}, anyItemType)
+		encoded, err = mod.Encode(ctx, ModifierCodecOffChainCompatibleType{Z: anyValue}, anyItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
 	})
 
 	t.Run("Encode works on compatible squashed types", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, modifierCodecOffChainSquashCompatibleType{ModifierCodecOffChainCompatibleType{Z: anyValue}}, anyItemType)
+		encoded, err = mod.Encode(ctx, modifierCodecOffChainSquashCompatibleType{ModifierCodecOffChainCompatibleType{Z: anyValue}}, anyItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
 	})
 
 	t.Run("Encode works on slices", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, &[]modifierCodecOffChainType{{Z: anyValue}, {Z: anyValue + 1}}, anySliceItemType)
+		encoded, err = mod.Encode(ctx, &[]modifierCodecOffChainType{{Z: anyValue}, {Z: anyValue + 1}}, anySliceItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
 	})
 
 	t.Run("Encode works on slices without a pointer", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, []modifierCodecOffChainType{{Z: anyValue}, {Z: anyValue + 1}}, anyNonPointerSliceItemType)
+		encoded, err = mod.Encode(ctx, []modifierCodecOffChainType{{Z: anyValue}, {Z: anyValue + 1}}, anyNonPointerSliceItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
 	})
 
 	t.Run("Encode works on compatible slices", func(t *testing.T) {
-		encoded, err := mod.Encode(ctx, &[]ModifierCodecOffChainCompatibleType{{Z: anyValue}, {Z: anyValue + 1}}, anySliceItemType)
+		encoded, err = mod.Encode(ctx, &[]ModifierCodecOffChainCompatibleType{{Z: anyValue}, {Z: anyValue + 1}}, anySliceItemType)
 
 		require.NoError(t, err)
 		assert.Equal(t, anyTestBytes, encoded)
@@ -138,8 +139,9 @@ func TestModifierCodec(t *testing.T) {
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
+	var actual any
 	t.Run("CreateType returns modified type", func(t *testing.T) {
-		actual, err := mod.(types.TypeProvider).CreateType(anyItemType, anyForEncoding)
+		actual, err = mod.(types.TypeProvider).CreateType(anyItemType, anyForEncoding)
 		require.NoError(t, err)
 		assert.Equal(t, reflect.TypeOf(&modifierCodecOffChainType{}), reflect.TypeOf(actual))
 	})
@@ -149,14 +151,15 @@ func TestModifierCodec(t *testing.T) {
 		assert.Equal(t, types.ErrInvalidType, err)
 	})
 
+	var size int
 	t.Run("GetMaxEncodingSize delegates", func(t *testing.T) {
-		size, err := mod.GetMaxEncodingSize(ctx, anyValue, anyItemType)
+		size, err = mod.GetMaxEncodingSize(ctx, anyValue, anyItemType)
 		require.NoError(t, err)
 		assert.Equal(t, anyMaxEncodingSize, size)
 	})
 
 	t.Run("GetMaxDecodingSize delegates", func(t *testing.T) {
-		size, err := mod.GetMaxDecodingSize(ctx, anyValue, anyItemType)
+		size, err = mod.GetMaxDecodingSize(ctx, anyValue, anyItemType)
 		require.NoError(t, err)
 		assert.Equal(t, anyMaxDecodingSize, size)
 	})
@@ -168,15 +171,17 @@ func TestModifierCodec(t *testing.T) {
 			}
 			return from.Interface(), nil
 		}
-		mod, err := codec.NewModifierCodec(&testCodec{}, testModifier{}, hook)
+
+		var hookMod types.RemoteCodec
+		hookMod, err = codec.NewModifierCodec(&testCodec{}, testModifier{}, hook)
 		require.NoError(t, err)
 		decoded := &modifierCodecDiffType{}
-		require.NoError(t, mod.Decode(ctx, anyTestBytes, decoded, anyItemType))
+		require.NoError(t, hookMod.Decode(ctx, anyTestBytes, decoded, anyItemType))
 		assert.Equal(t, "5", decoded.Z)
 	})
 
 	t.Run("encode works wil nil input", func(t *testing.T) {
-		actual, err := mod.Encode(ctx, nil, anyItemType)
+		actual, err = mod.Encode(ctx, nil, anyItemType)
 		require.NoError(t, err)
 		assert.Equal(t, anyNilBytes, actual)
 	})
@@ -235,7 +240,7 @@ func (t *testCodec) GetMaxEncodingSize(_ context.Context, n int, itemType string
 	}
 
 	if n != anyValue {
-		return 0, types.ErrUnknown
+		return 0, types.ErrInvalidEncoding
 	}
 
 	return anyMaxEncodingSize, nil
@@ -274,7 +279,7 @@ func (t *testCodec) GetMaxDecodingSize(_ context.Context, n int, itemType string
 	}
 
 	if n != anyValue {
-		return 0, types.ErrUnknown
+		return 0, types.ErrInvalidEncoding
 	}
 
 	return anyMaxDecodingSize, nil

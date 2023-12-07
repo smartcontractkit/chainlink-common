@@ -110,6 +110,5 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			},
 		},
 	}
-
 	runTests(t, tester, tests)
 }

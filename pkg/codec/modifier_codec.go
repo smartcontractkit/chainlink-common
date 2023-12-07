@@ -11,7 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func NewModifierCodec(codec types.CodecTypeProvider, modifier Modifier, hooks ...mapstructure.DecodeHookFunc) (types.CodecTypeProvider, error) {
+func NewModifierCodec(codec types.RemoteCodec, modifier Modifier, hooks ...mapstructure.DecodeHookFunc) (types.RemoteCodec, error) {
 	if codec == nil || modifier == nil {
 		return nil, errors.New("inputs must not be nil")
 	}
@@ -26,7 +26,7 @@ func NewModifierCodec(codec types.CodecTypeProvider, modifier Modifier, hooks ..
 var _ types.TypeProvider = &modifierCodec{}
 
 type modifierCodec struct {
-	codec    types.CodecTypeProvider
+	codec    types.RemoteCodec
 	modifier Modifier
 	hook     mapstructure.DecodeHookFunc
 }

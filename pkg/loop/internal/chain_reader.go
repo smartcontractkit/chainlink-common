@@ -3,14 +3,11 @@ package internal
 import (
 	"context"
 	jsonv1 "encoding/json"
-	"errors"
 	"fmt"
-	"strings"
 
 	jsonv2 "github.com/go-json-experiment/json"
 
 	"github.com/fxamacker/cbor/v2"
-	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -96,7 +93,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 
 	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: versionedParams})
 	if err != nil {
-		return types.UnwrapClientError(err)
+		return wrapRPCErr(err)
 	}
 
 	return decodeVersionedBytes(retVal, reply.RetVal)
@@ -147,35 +144,4 @@ func getEncodedType(itemType string, possibleTypeProvider any, forEncoding bool)
 	}
 
 	return &map[string]any{}, nil
-}
-
-func unwrapClientError(err error) error {
-	if err == nil {
-		return nil
-	}
-	errTypes := []error{
-		types.ErrInvalidType,
-		types.ErrFieldNotFound,
-		types.ErrInvalidEncoding,
-		types.ErrWrongNumberOfElements,
-		types.ErrNotASlice,
-		types.ErrUnknown,
-	}
-
-	s, ok := status.FromError(err)
-	if !ok {
-		return fmt.Errorf("%w: %w", types.ErrUnknown, err)
-	}
-
-	msg := s.Message()
-	for _, etype := range errTypes {
-		if msg == etype.Error() {
-			return etype
-		} else if strings.HasPrefix(msg, etype.Error()+":") {
-			rest := strings.SplitN(msg, ":", 2)[1]
-			return fmt.Errorf("%w: %w", etype, errors.New(rest))
-		}
-	}
-
-	return fmt.Errorf("%w: %w", types.ErrUnknown, err)
 }

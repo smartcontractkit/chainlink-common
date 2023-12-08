@@ -77,7 +77,7 @@ type codecInterfaceTester struct {
 	codec *fakeCodec
 }
 
-func (it *codecInterfaceTester) Setup(t *testing.T) {
+func (it *codecInterfaceTester) Setup(_ context.Context, t *testing.T) {
 	it.setupHook = func(s *grpc.Server) {
 		pb.RegisterCodecServer(s, &codecServer{impl: it.codec})
 	}

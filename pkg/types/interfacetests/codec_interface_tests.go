@@ -281,7 +281,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 			},
 		},
 	}
-	runTests(t, tester, tests)
+	runTests(ctx, t, tester, tests)
 }
 
 // RunChainReaderWithStrictArgsInterfaceTest is meant to be used by codecs that don't pad
@@ -355,5 +355,5 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 		},
 	}
 
-	runTests(t, tester, tests)
+	runTests(ctx, t, tester, tests)
 }

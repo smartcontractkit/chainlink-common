@@ -71,6 +71,34 @@ func (e UnimplementedError) Is(target error) bool {
 	return grpcErrorHasTypeAndMessage(target, string(e), codes.Unimplemented)
 }
 
+type InternalError string
+
+func (e InternalError) Error() string {
+	return string(e)
+}
+
+func (e InternalError) GRPCStatus() *status.Status {
+	return status.New(codes.Internal, e.Error())
+}
+
+func (e InternalError) Is(target error) bool {
+	if e == target {
+		return true
+	}
+
+	return grpcErrorHasTypeAndMessage(target, string(e), codes.Unimplemented)
+}
+
+type NotFoundError string
+
+func (e NotFoundError) Error() string {
+	return string(e)
+}
+
+func (e NotFoundError) GRPCStatus() *status.Status {
+	return status.New(codes.NotFound, e.Error())
+}
+
 func grpcErrorHasTypeAndMessage(target error, msg string, code codes.Code) bool {
 	s, ok := status.FromError(target)
 	if !ok || s.Code() != code {

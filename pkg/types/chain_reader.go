@@ -11,6 +11,8 @@ const (
 	ErrInvalidType              = InvalidArgumentError("invalid type")
 	ErrInvalidConfig            = InvalidArgumentError("invalid configuration")
 	ErrChainReaderConfigMissing = UnimplementedError("ChainReader entry missing from RelayConfig")
+	ErrInternal                 = InternalError("internal error")
+	ErrNotFound                 = NotFoundError("not found")
 )
 
 type ChainReader interface {

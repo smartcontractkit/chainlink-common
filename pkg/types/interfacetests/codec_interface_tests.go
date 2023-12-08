@@ -36,11 +36,11 @@ const (
 )
 
 func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
-	ctx := tests.Context(t)
 	tests := []testcase{
 		{
 			name: "Encodes and decodes a single item",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item := CreateTestStruct(0, tester)
 				req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
 				resp := tester.EncodeFields(t, req)
@@ -58,6 +58,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Encodes compatible types",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item := CreateTestStruct(0, tester)
 				req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
 				resp := tester.EncodeFields(t, req)
@@ -85,6 +86,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Encodes compatible maps",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item := CreateTestStruct(0, tester)
 				req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
 				resp := tester.EncodeFields(t, req)
@@ -119,6 +121,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Encodes and decodes a slice",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item1 := CreateTestStruct(0, tester)
 				item2 := CreateTestStruct(1, tester)
 				items := []TestStruct{item1, item2}
@@ -138,6 +141,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Encodes and decodes a slices with one element",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item1 := CreateTestStruct(0, tester)
 				items := []TestStruct{item1}
 				req := &EncodeRequest{TestStructs: items, TestOn: TestItemSliceType}
@@ -157,6 +161,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Encodes and decodes an array",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item1 := CreateTestStruct(0, tester)
 				item2 := CreateTestStruct(1, tester)
 				items := [2]TestStruct{item1, item2}
@@ -177,6 +182,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Encodes and decodes an arrays with one element",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item1 := CreateTestStruct(0, tester)
 				items := [1]TestStruct{item1}
 				req := &EncodeRequest{TestStructs: items[:], TestOn: TestItemArray1Type}
@@ -196,6 +202,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Returns an error if type is undefined",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item := CreateTestStruct(0, tester)
 				codec := tester.GetCodec(t)
 
@@ -209,6 +216,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Returns an error encoding if arrays are the too small to encode",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				if !tester.IncludeArrayEncodingSizeEnforcement() {
 					return
 				}
@@ -224,6 +232,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Returns an error encoding if arrays are the too large to encode",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				if !tester.IncludeArrayEncodingSizeEnforcement() {
 					return
 				}
@@ -240,6 +249,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "GetMaxEncodingSize returns errors for unknown types",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				cr := tester.GetCodec(t)
 				_, err := cr.GetMaxEncodingSize(ctx, 10, "not"+TestItemType)
 				assert.True(t, errors.Is(err, types.ErrInvalidType))
@@ -248,6 +258,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Decode respects config",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				cr := tester.GetCodec(t)
 				original := CreateTestStruct(0, tester)
 				bytes, err := cr.Encode(ctx, original, TestItemType)
@@ -266,6 +277,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 		{
 			name: "Encode respects config",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				cr := tester.GetCodec(t)
 				modified := CreateTestStruct(0, tester)
 				modified.BigField = nil
@@ -281,7 +293,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 			},
 		},
 	}
-	runTests(ctx, t, tester, tests)
+	runTests(t, tester, tests)
 }
 
 // RunChainReaderWithStrictArgsInterfaceTest is meant to be used by codecs that don't pad
@@ -289,13 +301,13 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 // Padding makes that harder/impossible to verify for come codecs.
 // However, the extra verification is nice to have when possible.
 func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfaceTester) {
-	ctx := tests.Context(t)
 	RunCodecInterfaceTests(t, tester)
 
 	tests := []testcase{
 		{
 			name: "Gives an error decoding extra fields on an item",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item := CreateTestStruct(0, tester)
 				req := &EncodeRequest{
 					TestStructs: []TestStruct{item},
@@ -311,6 +323,7 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 		{
 			name: "Gives an error decoding missing fields on an item",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				item := CreateTestStruct(0, tester)
 				req := &EncodeRequest{
 					TestStructs:  []TestStruct{item},
@@ -326,6 +339,7 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 		{
 			name: "Gives an error decoding extra fields on a slice",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				items := []TestStruct{CreateTestStruct(0, tester)}
 				req := &EncodeRequest{
 					TestStructs: items,
@@ -341,6 +355,7 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 		{
 			name: "Gives an error decoding missing fields on an slice",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				items := []TestStruct{CreateTestStruct(0, tester)}
 				req := &EncodeRequest{
 					TestStructs:  items,
@@ -355,5 +370,5 @@ func RunChainReaderWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfa
 		},
 	}
 
-	runTests(ctx, t, tester, tests)
+	runTests(t, tester, tests)
 }

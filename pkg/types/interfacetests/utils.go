@@ -1,7 +1,6 @@
 package interfacetests
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"testing"
@@ -10,7 +9,7 @@ import (
 )
 
 type BasicTester interface {
-	Setup(ctx context.Context, t *testing.T)
+	Setup(t *testing.T)
 	Name() string
 	GetAccountBytes(i int) []byte
 }
@@ -20,10 +19,10 @@ type testcase struct {
 	test func(t *testing.T)
 }
 
-func runTests(ctx context.Context, t *testing.T, tester BasicTester, tests []testcase) {
+func runTests(t *testing.T, tester BasicTester, tests []testcase) {
 	for _, test := range tests {
 		t.Run(test.name+" for "+tester.Name(), func(t *testing.T) {
-			tester.Setup(ctx, t)
+			tester.Setup(t)
 			test.test(t)
 		})
 	}

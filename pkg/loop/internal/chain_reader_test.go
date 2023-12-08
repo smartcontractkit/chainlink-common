@@ -106,31 +106,31 @@ type chainReaderInterfaceTester struct {
 	chainReader *fakeChainReader
 }
 
-func (it *chainReaderInterfaceTester) Setup(_ context.Context, t *testing.T) {
+func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
 	it.setupHook = func(s *grpc.Server) {
 		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.chainReader})
 	}
 	it.interfaceTesterBase.Setup(t)
 }
 
-func (it *chainReaderInterfaceTester) SetLatestValue(_ context.Context, _ *testing.T, testStruct *TestStruct) types.BoundContract {
+func (it *chainReaderInterfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) types.BoundContract {
 	it.chainReader.SetLatestValue(testStruct)
 	return types.BoundContract{}
 }
 
-func (it *chainReaderInterfaceTester) GetPrimitiveContract(_ context.Context, _ *testing.T) types.BoundContract {
+func (it *chainReaderInterfaceTester) GetPrimitiveContract(_ *testing.T) types.BoundContract {
 	return types.BoundContract{}
 }
 
-func (it *chainReaderInterfaceTester) GetSliceContract(_ context.Context, _ *testing.T) types.BoundContract {
+func (it *chainReaderInterfaceTester) GetSliceContract(_ *testing.T) types.BoundContract {
 	return types.BoundContract{}
 }
 
-func (it *chainReaderInterfaceTester) GetReturnSeenContract(ctx context.Context, t *testing.T) types.BoundContract {
+func (it *chainReaderInterfaceTester) GetReturnSeenContract(_ *testing.T) types.BoundContract {
 	return types.BoundContract{}
 }
 
-func (it *chainReaderInterfaceTester) GetChainReader(ctx context.Context, t *testing.T) types.ChainReader {
+func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 	if it.conn == nil {
 		it.conn = connFromLis(t, it.lis)
 	}
@@ -138,7 +138,7 @@ func (it *chainReaderInterfaceTester) GetChainReader(ctx context.Context, t *tes
 	return &chainReaderClient{grpc: pb.NewChainReaderClient(it.conn)}
 }
 
-func (it *chainReaderInterfaceTester) TriggerEvent(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract {
+func (it *chainReaderInterfaceTester) TriggerEvent(_ *testing.T, testStruct *TestStruct) types.BoundContract {
 	it.chainReader.SetTrigger(testStruct)
 	return types.BoundContract{}
 }

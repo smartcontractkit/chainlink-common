@@ -1,7 +1,6 @@
 package interfacetests
 
 import (
-	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -15,16 +14,16 @@ import (
 
 type ChainReaderInterfaceTester interface {
 	BasicTester
-	GetChainReader(ctx context.Context, t *testing.T) types.ChainReader
+	GetChainReader(t *testing.T) types.ChainReader
 
 	// SetLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
-	SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract
-	GetPrimitiveContract(ctx context.Context, t *testing.T) types.BoundContract
-	GetSliceContract(ctx context.Context, t *testing.T) types.BoundContract
-	GetReturnSeenContract(ctx context.Context, t *testing.T) types.BoundContract
-	TriggerEvent(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract
+	SetLatestValue(t *testing.T, testStruct *TestStruct) types.BoundContract
+	GetPrimitiveContract(t *testing.T) types.BoundContract
+	GetSliceContract(t *testing.T) types.BoundContract
+	GetReturnSeenContract(t *testing.T) types.BoundContract
+	TriggerEvent(t *testing.T, testStruct *TestStruct) types.BoundContract
 }
 
 const (
@@ -41,17 +40,17 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 const AnyExtraValue = 3
 
 func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
-	ctx := tests.Context(t)
 	tests := []testcase{
 		{
 			name: "Gets the latest value",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				firstItem := CreateTestStruct(0, tester)
-				bc := tester.SetLatestValue(ctx, t, &firstItem)
+				bc := tester.SetLatestValue(t, &firstItem)
 				secondItem := CreateTestStruct(1, tester)
-				tester.SetLatestValue(ctx, t, &secondItem)
+				tester.SetLatestValue(t, &secondItem)
 
-				cr := tester.GetChainReader(ctx, t)
+				cr := tester.GetChainReader(t)
 				actual := &TestStruct{}
 				params := &LatestParams{I: 1}
 
@@ -67,9 +66,10 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 		{
 			name: "Get latest value without arguments and with primitive return",
 			test: func(t *testing.T) {
-				bc := tester.GetPrimitiveContract(ctx, t)
+				ctx := tests.Context(t)
+				bc := tester.GetPrimitiveContract(t)
 
-				cr := tester.GetChainReader(ctx, t)
+				cr := tester.GetChainReader(t)
 
 				var prim uint64
 				require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningUint64, nil, &prim))
@@ -80,9 +80,10 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 		{
 			name: "Get latest value without arguments and with slice return",
 			test: func(t *testing.T) {
-				bc := tester.GetSliceContract(ctx, t)
+				ctx := tests.Context(t)
+				bc := tester.GetSliceContract(t)
 
-				cr := tester.GetChainReader(ctx, t)
+				cr := tester.GetChainReader(t)
 
 				var slice []uint64
 				require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningUint64Slice, nil, &slice))
@@ -93,12 +94,13 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 		{
 			name: "Get latest value wraps config with modifiers using its own mapstructure overrides",
 			test: func(t *testing.T) {
+				ctx := tests.Context(t)
 				testStruct := CreateTestStruct(0, tester)
 				testStruct.BigField = nil
 				testStruct.Account = nil
 
-				cr := tester.GetChainReader(ctx, t)
-				bc := tester.GetReturnSeenContract(ctx, t)
+				cr := tester.GetChainReader(t)
+				bc := tester.GetReturnSeenContract(t)
 
 				actual := &TestStructWithExtraField{}
 				require.NoError(t, cr.GetLatestValue(ctx, bc, MethodReturningSeenStruct, testStruct, actual))
@@ -114,11 +116,12 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 		{
 			name: "Get latest value gets latest event",
 			test: func(t *testing.T) {
-				cr := tester.GetChainReader(ctx, t)
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
 				ts := CreateTestStruct(0, tester)
-				bc := tester.TriggerEvent(ctx, t, &ts)
+				bc := tester.TriggerEvent(t, &ts)
 				ts = CreateTestStruct(1, tester)
-				tester.TriggerEvent(ctx, t, &ts)
+				tester.TriggerEvent(t, &ts)
 
 				result := &TestStruct{}
 				assert.Eventually(t, func() bool {
@@ -130,5 +133,5 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			},
 		},
 	}
-	runTests(ctx, t, tester, tests)
+	runTests(t, tester, tests)
 }

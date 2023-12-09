@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	ChainReader_Enabled_FullMethodName        = "/loop.ChainReader/Enabled"
 	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
 )
 
@@ -26,6 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
+	Enabled(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChainReaderEnabledReply, error)
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
 }
 
@@ -35,6 +38,15 @@ type chainReaderClient struct {
 
 func NewChainReaderClient(cc grpc.ClientConnInterface) ChainReaderClient {
 	return &chainReaderClient{cc}
+}
+
+func (c *chainReaderClient) Enabled(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChainReaderEnabledReply, error) {
+	out := new(ChainReaderEnabledReply)
+	err := c.cc.Invoke(ctx, ChainReader_Enabled_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error) {
@@ -50,6 +62,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestVal
 // All implementations must embed UnimplementedChainReaderServer
 // for forward compatibility
 type ChainReaderServer interface {
+	Enabled(context.Context, *emptypb.Empty) (*ChainReaderEnabledReply, error)
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
 	mustEmbedUnimplementedChainReaderServer()
 }
@@ -58,6 +71,9 @@ type ChainReaderServer interface {
 type UnimplementedChainReaderServer struct {
 }
 
+func (UnimplementedChainReaderServer) Enabled(context.Context, *emptypb.Empty) (*ChainReaderEnabledReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Enabled not implemented")
+}
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
 }
@@ -72,6 +88,24 @@ type UnsafeChainReaderServer interface {
 
 func RegisterChainReaderServer(s grpc.ServiceRegistrar, srv ChainReaderServer) {
 	s.RegisterService(&ChainReader_ServiceDesc, srv)
+}
+
+func _ChainReader_Enabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainReaderServer).Enabled(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainReader_Enabled_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainReaderServer).Enabled(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ChainReader_GetLatestValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -99,6 +133,10 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.ChainReader",
 	HandlerType: (*ChainReaderServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Enabled",
+			Handler:    _ChainReader_Enabled_Handler,
+		},
 		{
 			MethodName: "GetLatestValue",
 			Handler:    _ChainReader_GetLatestValue_Handler,

@@ -12,6 +12,7 @@ const (
 )
 
 type ChainReader interface {
+	Enabled(ctx context.Context) (bool, error)
 	// GetLatestValue gets the latest value....
 	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig. It must encode as an object via [json.Marshal].
 	// Typically, would be either an anonymous map such as `map[string]any{"baz": 42, "test": true}}`, a struct with `json` tags, or something which implements [json.Marshaler].
@@ -30,6 +31,7 @@ type ChainReader interface {
 	// 		err = cr.GetLatestValue(ctx, bc, "method", ProductParams{Arg:1}, &resp)
 	// 		return
 	//  }
+	// returnVal should satisfy Marshaller interface
 	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
 }
 

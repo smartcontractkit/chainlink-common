@@ -4,15 +4,12 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
+import "codec.proto";
 import "google/protobuf/empty.proto";
 
 service ChainReader {
+  rpc Enabled (google.protobuf.Empty) returns (ChainReaderEnabledReply) {}
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
-}
-
-message VersionedBytes {
-  uint32 version = 1;
-  bytes data = 2;
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
@@ -32,4 +29,8 @@ message BoundContract {
   string address = 1;
   string name = 2;
   bool pending = 3;
+}
+
+message ChainReaderEnabledReply {
+  bool enabled = 1;
 }

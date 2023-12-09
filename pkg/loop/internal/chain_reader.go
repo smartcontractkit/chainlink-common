@@ -8,6 +8,8 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	jsonv2 "github.com/go-json-experiment/json"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -98,6 +100,14 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundCo
 	return decodeVersionedBytes(retVal, reply.RetVal)
 }
 
+func (c *chainReaderClient) Enabled(ctx context.Context) (bool, error) {
+	reply, err := c.grpc.Enabled(ctx, &emptypb.Empty{})
+	if err != nil {
+		return false, err
+	}
+	return reply.Enabled, err
+}
+
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
 
 type chainReaderServer struct {
@@ -129,4 +139,21 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	}
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
+}
+
+func (c *chainReaderServer) Enabled(ctx context.Context, _ *emptypb.Empty) (*pb.ChainReaderEnabledReply, error) {
+	var reply pb.ChainReaderEnabledReply
+	enabled, err := c.impl.Enabled(ctx)
+	if err != nil || !enabled {
+		reply.Enabled = true
+	}
+	return &reply, nil
+}
+
+func getEncodedType(itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
+	if rc, ok := possibleTypeProvider.(types.TypeProvider); ok {
+		return rc.CreateType(itemType, forEncoding)
+	}
+
+	return &map[string]any{}, nil
 }

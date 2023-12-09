@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"context"
+
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
@@ -26,7 +28,13 @@ func (p *pluginProviderClient) ContractTransmitter() libocr.ContractTransmitter 
 	return p.contractTransmitter
 }
 
-type PluginProviderServer struct{}
+func (p *pluginProviderClient) Codec() types.Codec {
+	return p.codec
+}
+
+type PluginProviderServer struct {
+	impl types.PluginProvider
+}
 
 func (p PluginProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker Broker, brokerCfg BrokerConfig) types.PluginProvider {
 	be := &brokerExt{broker: broker, BrokerConfig: brokerCfg}
@@ -34,5 +42,9 @@ func (p PluginProviderServer) ConnToProvider(conn grpc.ClientConnInterface, brok
 }
 
 func (p *pluginProviderClient) ChainReader() types.ChainReader {
+	enabled, err := p.chainReader.Enabled(context.Background())
+	if err != nil || !enabled {
+		return nil
+	}
 	return p.chainReader
 }

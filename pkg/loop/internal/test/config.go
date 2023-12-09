@@ -132,3 +132,7 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, bc types.BoundCon
 
 	return nil
 }
+
+func (c staticChainReader) Enabled(ctx context.Context) (bool, error) {
+	return true, nil
+}

@@ -218,6 +218,10 @@ func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContr
 	return mapstructure.Decode(f.latest[i-1], returnVal)
 }
 
+func (c *fakeCodecServer) Enabled(ctx context.Context) (bool, error) {
+	return true, nil
+}
+
 type errorServer struct {
 	err error
 	pb.UnimplementedChainReaderServer
@@ -225,6 +229,10 @@ type errorServer struct {
 
 func (e *errorServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
 	return nil, e.err
+}
+
+func (c *errorServer) Enabled(ctx context.Context) (bool, error) {
+	return true, nil
 }
 
 func connFromLis(t *testing.T, lis *bufconn.Listener) *grpc.ClientConn {

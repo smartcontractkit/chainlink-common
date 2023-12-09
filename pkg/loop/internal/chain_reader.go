@@ -112,7 +112,8 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	bc.Address = request.Bc.Address[:]
 	bc.Pending = request.Bc.Pending
 
-	params, err := getEncodedType(request.Method, c.impl, true)
+	contractName := request.Bc.Name
+	params, err := getContractEncodedType(contractName, request.Method, c.impl, true)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 		return nil, err
 	}
 
-	retVal, err := getEncodedType(request.Method, c.impl, false)
+	retVal, err := getContractEncodedType(contractName, request.Method, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
@@ -138,9 +139,9 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }
 
-func getEncodedType(itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
-	if rc, ok := possibleTypeProvider.(types.TypeProvider); ok {
-		return rc.CreateType(itemType, forEncoding)
+func getContractEncodedType(contractName, itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
+	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
+		return ctp.CreateContractType(contractName, itemType, forEncoding)
 	}
 
 	return &map[string]any{}, nil

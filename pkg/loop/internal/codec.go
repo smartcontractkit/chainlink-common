@@ -113,3 +113,11 @@ func (c *codecServer) GetMaxSize(ctx context.Context, req *pb.GetMaxSizeRequest)
 	}
 	return &pb.GetMaxSizeResponse{SizeInBytes: int32(maxSize)}, nil
 }
+
+func getEncodedType(itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
+	if tp, ok := possibleTypeProvider.(types.TypeProvider); ok {
+		return tp.CreateType(itemType, forEncoding)
+	}
+
+	return &map[string]any{}, nil
+}

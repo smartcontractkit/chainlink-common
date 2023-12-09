@@ -140,7 +140,7 @@ func TestModifierCodec(t *testing.T) {
 	})
 
 	var actual any
-	t.Run("CreateType returns modified type", func(t *testing.T) {
+	t.Run("CreateContractType returns modified type", func(t *testing.T) {
 		actual, err = mod.(types.TypeProvider).CreateType(anyItemType, anyForEncoding)
 		require.NoError(t, err)
 		assert.Equal(t, reflect.TypeOf(&modifierCodecOffChainType{}), reflect.TypeOf(actual))

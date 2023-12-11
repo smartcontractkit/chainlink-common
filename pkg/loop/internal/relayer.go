@@ -372,8 +372,14 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 		pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
 		pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 		pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
-		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
-		pb.RegisterCodecServer(s, &codecServer{impl: provider.Codec()})
+		if provider.ChainReader() != nil {
+			pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+		}
+
+		if provider.Codec() != nil {
+			pb.RegisterCodecServer(s, &codecServer{impl: provider.Codec()})
+		}
+
 		pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
 	}, providerRes)
 	if err != nil {

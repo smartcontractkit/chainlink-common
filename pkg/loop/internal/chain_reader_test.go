@@ -10,7 +10,8 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -59,27 +60,19 @@ func TestVersionedBytesFunctions(t *testing.T) {
 }
 
 func TestChainReaderClient(t *testing.T) {
-	RunChainReaderInterfaceTests(t, &chainReaderInterfaceTester{chainReader: &fakeChainReader{lock: &sync.Mutex{}}})
+	fake := &fakeChainReader{}
+	RunChainReaderInterfaceTests(t, &chainReaderInterfaceTester{chainReader: &chainReaderServer{impl: fake}, fake: fake})
 
-	lis := bufconn.Listen(1024 * 1024)
-	s := grpc.NewServer()
 	es := &chainReaderErrServer{}
-	pb.RegisterChainReaderServer(s, es)
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			panic(err)
-		}
-	}()
-	defer s.Stop()
-	conn := connFromLis(t, lis)
-	client := &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
-	ctx := tests.Context(t)
+	errTester := &chainReaderInterfaceTester{chainReader: es}
+	errTester.Setup(t)
+	chainReader := errTester.GetChainReader(t)
 
 	for _, errorType := range errorTypes {
 		es.err = errorType
-
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			err := client.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
+			ctx := tests.Context(t)
+			err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
@@ -87,8 +80,19 @@ func TestChainReaderClient(t *testing.T) {
 	// make sure that errors come from client directly
 	es.err = nil
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
+		ctx := tests.Context(t)
+		err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
+	})
+
+	t.Run("nil reader should return unimplemented", func(t *testing.T) {
+		ctx := tests.Context(t)
+		nilTester := &chainReaderInterfaceTester{chainReader: nil}
+		nilTester.Setup(t)
+		nilCr := nilTester.GetChainReader(t)
+
+		err := nilCr.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 	})
 }
 
@@ -103,18 +107,22 @@ func makeEncoder() cbor.EncMode {
 
 type chainReaderInterfaceTester struct {
 	interfaceTesterBase
-	chainReader *fakeChainReader
+	chainReader pb.ChainReaderServer
+	fake        *fakeChainReader
 }
 
 func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
 	it.setupHook = func(s *grpc.Server) {
-		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: it.chainReader})
+		if it.chainReader != nil {
+			pb.RegisterChainReaderServer(s, it.chainReader)
+		}
 	}
+
 	it.interfaceTesterBase.Setup(t)
 }
 
 func (it *chainReaderInterfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) string {
-	it.chainReader.SetLatestValue(testStruct)
+	it.fake.SetLatestValue(testStruct)
 	return ""
 }
 
@@ -143,14 +151,14 @@ func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainRe
 }
 
 func (it *chainReaderInterfaceTester) TriggerEvent(_ *testing.T, testStruct *TestStruct) string {
-	it.chainReader.SetTrigger(testStruct)
+	it.fake.SetTrigger(testStruct)
 	return ""
 }
 
 type fakeChainReader struct {
 	fakeTypeProvider
 	stored      []TestStruct
-	lock        *sync.Mutex
+	lock        sync.Mutex
 	lastTrigger TestStruct
 }
 

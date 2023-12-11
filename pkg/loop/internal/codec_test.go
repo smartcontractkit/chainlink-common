@@ -10,7 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -19,41 +20,32 @@ import (
 )
 
 func TestCodecClient(t *testing.T) {
-	RunCodecInterfaceTests(t, &codecInterfaceTester{codec: &fakeCodec{}})
+	RunCodecInterfaceTests(t, &codecInterfaceTester{srv: &codecServer{impl: &fakeCodec{}}})
 
-	lis := bufconn.Listen(1024 * 1024)
-	s := grpc.NewServer()
 	es := &codecErrServer{}
-	pb.RegisterCodecServer(s, es)
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			panic(err)
-		}
-	}()
-	defer s.Stop()
-	conn := connFromLis(t, lis)
-	client := &codecClient{grpc: pb.NewCodecClient(conn)}
-	ctx := tests.Context(t)
+	esTester := &codecInterfaceTester{srv: es}
+	esTester.Setup(t)
+	codec := esTester.GetCodec(t)
 
 	for _, errorType := range errorTypes {
 		es.err = errorType
 		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.Encode(ctx, "any", "doesnotmatter")
+			_, err := codec.Encode(tests.Context(t), "any", "doesnotmatter")
 			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("Decode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.Encode(ctx, "any", "doesnotmatter")
+			_, err := codec.Encode(tests.Context(t), "any", "doesnotmatter")
 			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.GetMaxEncodingSize(ctx, 1, "anything")
+			_, err := codec.GetMaxEncodingSize(tests.Context(t), 1, "anything")
 			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("GetMaxDecodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := client.GetMaxDecodingSize(ctx, 1, "anything")
+			_, err := codec.GetMaxDecodingSize(tests.Context(t), 1, "anything")
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
@@ -61,25 +53,47 @@ func TestCodecClient(t *testing.T) {
 	// make sure that errors come from client directly
 	es.err = nil
 	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		_, err := client.Encode(ctx, &cannotEncode{}, "doesnotmatter")
-
+		_, err := codec.Encode(tests.Context(t), &cannotEncode{}, "doesnotmatter")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
-		err := client.Decode(ctx, []byte("does not matter"), &cannotEncode{}, TestItemType)
+		err := codec.Decode(tests.Context(t), []byte("does not matter"), &cannotEncode{}, TestItemType)
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
+	})
+
+	t.Run("Nil codec returns unimplemented", func(t *testing.T) {
+		ctx := tests.Context(t)
+		nilTester := &codecInterfaceTester{srv: nil}
+		nilTester.Setup(t)
+		nilCodec := nilTester.GetCodec(t)
+
+		item := &TestStruct{}
+
+		_, err := nilCodec.Encode(ctx, item, TestItemType)
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+
+		err = nilCodec.Decode(ctx, []byte("does not matter"), &item, TestItemType)
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+
+		_, err = nilCodec.GetMaxEncodingSize(ctx, 1, TestItemType)
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+
+		_, err = nilCodec.GetMaxDecodingSize(ctx, 1, TestItemType)
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 	})
 }
 
 type codecInterfaceTester struct {
 	interfaceTesterBase
-	codec *fakeCodec
+	srv pb.CodecServer
 }
 
 func (it *codecInterfaceTester) Setup(t *testing.T) {
 	it.setupHook = func(s *grpc.Server) {
-		pb.RegisterCodecServer(s, &codecServer{impl: it.codec})
+		if it.srv != nil {
+			pb.RegisterCodecServer(s, it.srv)
+		}
 	}
 	it.interfaceTesterBase.Setup(t)
 }

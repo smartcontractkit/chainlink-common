@@ -95,7 +95,11 @@ func (it *interfaceTesterBase) Name() string {
 
 type fakeTypeProvider struct{}
 
-func (fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
+func (f fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
+	return f.CreateContractType("", itemType, isEncode)
+}
+
+func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
 	switch itemType {
 	case TestItemType:
 		return &TestStruct{}, nil
@@ -110,7 +114,7 @@ func (fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) 
 			return &LatestParams{}, nil
 		}
 		return &TestStruct{}, nil
-	case MethodReturningUint64:
+	case MethodReturningUint64, DifferentMethodReturningUint64:
 		tmp := uint64(0)
 		return &tmp, nil
 	case MethodReturningUint64Slice:

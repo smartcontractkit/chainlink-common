@@ -113,21 +113,25 @@ func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
 	it.interfaceTesterBase.Setup(t)
 }
 
-func (it *chainReaderInterfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) types.BoundContract {
+func (it *chainReaderInterfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) string {
 	it.chainReader.SetLatestValue(testStruct)
-	return types.BoundContract{}
+	return ""
 }
 
-func (it *chainReaderInterfaceTester) GetPrimitiveContract(_ *testing.T) types.BoundContract {
-	return types.BoundContract{}
+func (it *chainReaderInterfaceTester) GetPrimitiveContract(_ *testing.T) string {
+	return ""
 }
 
-func (it *chainReaderInterfaceTester) GetSliceContract(_ *testing.T) types.BoundContract {
-	return types.BoundContract{}
+func (it *chainReaderInterfaceTester) GetDifferentPrimitiveContract(_ *testing.T) string {
+	return ""
 }
 
-func (it *chainReaderInterfaceTester) GetReturnSeenContract(_ *testing.T) types.BoundContract {
-	return types.BoundContract{}
+func (it *chainReaderInterfaceTester) GetSliceContract(_ *testing.T) string {
+	return ""
+}
+
+func (it *chainReaderInterfaceTester) GetReturnSeenContract(_ *testing.T) string {
+	return ""
 }
 
 func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
@@ -138,9 +142,9 @@ func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainRe
 	return &chainReaderClient{grpc: pb.NewChainReaderClient(it.conn)}
 }
 
-func (it *chainReaderInterfaceTester) TriggerEvent(_ *testing.T, testStruct *TestStruct) types.BoundContract {
+func (it *chainReaderInterfaceTester) TriggerEvent(_ *testing.T, testStruct *TestStruct) string {
 	it.chainReader.SetTrigger(testStruct)
-	return types.BoundContract{}
+	return ""
 }
 
 type fakeChainReader struct {
@@ -156,10 +160,15 @@ func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.stored = append(f.stored, *ts)
 }
 
-func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContract, method string, params, returnVal any) error {
+func (f *fakeChainReader) GetLatestValue(_ context.Context, bc types.BoundContract, method string, params, returnVal any) error {
 	if method == MethodReturningUint64 {
 		r := returnVal.(*uint64)
-		*r = AnyValueToReadWithoutAnArgument
+		if bc.Name == AnyContractName {
+			*r = AnyValueToReadWithoutAnArgument
+		} else {
+			*r = AnyDifferentValueToReadWithoutAnArgument
+		}
+
 		return nil
 	} else if method == MethodReturningUint64Slice {
 		r := returnVal.(*[]uint64)
@@ -177,6 +186,10 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, _ types.BoundContrac
 		f.lock.Lock()
 		defer f.lock.Unlock()
 		*returnVal.(*TestStruct) = f.lastTrigger
+		return nil
+	} else if method == DifferentMethodReturningUint64 {
+		r := returnVal.(*uint64)
+		*r = AnyDifferentValueToReadWithoutAnArgument
 		return nil
 	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)

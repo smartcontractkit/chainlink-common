@@ -176,11 +176,15 @@ type wrappedError struct {
 	status *status.Status
 }
 
-func (w wrappedError) Error() string {
+func (w *wrappedError) Error() string {
 	return w.err.Error()
 }
 
-func (w wrappedError) Is(target error) bool {
+func (w *wrappedError) Is(target error) bool {
 	s := status.Convert(target)
 	return w.status.Code() == s.Code() && strings.Contains(s.Message(), w.status.Message())
+}
+
+func (w *wrappedError) GRPCStatus() *status.Status {
+	return w.status
 }

@@ -58,3 +58,8 @@ func EnsureHexPrefix(str string) string {
 	}
 	return str
 }
+
+// HasHexPrefix returns true if the string starts with 0x.
+func HasHexPrefix(str string) bool {
+	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
+}

@@ -34,7 +34,7 @@ type ChainReader interface {
 	// 		err = cr.GetLatestValue(ctx, bc, "method", ProductParams{Arg:1}, &resp)
 	// 		return
 	//  }
-	GetLatestValue(ctx context.Context, bc BoundContract, method string, params, returnVal any) error
+	GetLatestValue(ctx context.Context, contractName string, method string, params, returnVal any) error
 }
 
 type BoundContract struct {

@@ -72,7 +72,7 @@ func TestChainReaderClient(t *testing.T) {
 		es.err = errorType
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			ctx := tests.Context(t)
-			err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
+			err := chainReader.GetLatestValue(ctx, "", "method", "anything", "anything")
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
@@ -81,7 +81,7 @@ func TestChainReaderClient(t *testing.T) {
 	es.err = nil
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		ctx := tests.Context(t)
-		err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
+		err := chainReader.GetLatestValue(ctx, "", "method", &cannotEncode{}, &TestStruct{})
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
@@ -91,7 +91,7 @@ func TestChainReaderClient(t *testing.T) {
 		nilTester.Setup(t)
 		nilCr := nilTester.GetChainReader(t)
 
-		err := nilCr.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
+		err := nilCr.GetLatestValue(ctx, "", "method", "anything", "anything")
 		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 	})
 }
@@ -121,13 +121,8 @@ func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
 	it.interfaceTesterBase.Setup(t)
 }
 
-func (it *chainReaderInterfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) string {
+func (it *chainReaderInterfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) {
 	it.fake.SetLatestValue(testStruct)
-	return ""
-}
-
-func (it *chainReaderInterfaceTester) GetPrimitiveContract(_ *testing.T) string {
-	return ""
 }
 
 func (it *chainReaderInterfaceTester) GetDifferentPrimitiveContract(_ *testing.T) string {
@@ -150,9 +145,8 @@ func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainRe
 	return &chainReaderClient{grpc: pb.NewChainReaderClient(it.conn)}
 }
 
-func (it *chainReaderInterfaceTester) TriggerEvent(_ *testing.T, testStruct *TestStruct) string {
+func (it *chainReaderInterfaceTester) TriggerEvent(_ *testing.T, testStruct *TestStruct) {
 	it.fake.SetTrigger(testStruct)
-	return ""
 }
 
 type fakeChainReader struct {
@@ -168,10 +162,10 @@ func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.stored = append(f.stored, *ts)
 }
 
-func (f *fakeChainReader) GetLatestValue(_ context.Context, bc types.BoundContract, method string, params, returnVal any) error {
+func (f *fakeChainReader) GetLatestValue(_ context.Context, name, method string, params, returnVal any) error {
 	if method == MethodReturningUint64 {
 		r := returnVal.(*uint64)
-		if bc.Name == AnyContractName {
+		if name == AnyContractName {
 			*r = AnyValueToReadWithoutAnArgument
 		} else {
 			*r = AnyDifferentValueToReadWithoutAnArgument

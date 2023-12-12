@@ -68,11 +68,11 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           comment=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json body -q '.body')
-          core_ref=$(echo $comment | grep -oP 'solana ref: \K\S+' || true)
+          solana_ref=$(echo $comment | grep -oP 'solana ref: \K\S+' || true)
           if [ ! -z "$solana_ref" ]; then
             echo "CUSTOM_SOLANA_REF=${solana_ref}" >> "${GITHUB_ENV}"
           else 
-            echo "CUSTOM_CORE_REF=develop" >> "${GITHUB_ENV}"
+            echo "CUSTOM_SOLANA_REF=develop" >> "${GITHUB_ENV}"
           fi
       - name: Collect Metrics
         id: collect-gha-metrics
@@ -113,11 +113,11 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           comment=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json body -q '.body')
-          core_ref=$(echo $comment | grep -oP 'starknet ref: \K\S+' || true)
+          starknet_ref=$(echo $comment | grep -oP 'starknet ref: \K\S+' || true)
           if [ ! -z "$starknet_ref" ]; then
             echo "CUSTOM_STARKNET_REF=${starknet_ref}" >> "${GITHUB_ENV}"
           else 
-            echo "CUSTOM_CORE_REF=develop" >> "${GITHUB_ENV}"
+            echo "CUSTOM_STARKNET_REF=develop" >> "${GITHUB_ENV}"
           fi
       - name: Collect Metrics
         id: collect-gha-metrics

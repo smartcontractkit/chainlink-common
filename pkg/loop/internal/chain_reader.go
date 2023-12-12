@@ -83,15 +83,13 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
-func (c *chainReaderClient) GetLatestValue(ctx context.Context, bc types.BoundContract, method string, params, retVal any) error {
+func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
 	versionedParams, err := encodeVersionedBytes(params, CurrentEncodingVersion)
 	if err != nil {
 		return err
 	}
 
-	boundContract := pb.BoundContract{Name: bc.Name, Address: bc.Address, Pending: bc.Pending}
-
-	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{Bc: &boundContract, Method: method, Params: versionedParams})
+	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams})
 	if err != nil {
 		return wrapRPCErr(err)
 	}
@@ -107,12 +105,7 @@ type chainReaderServer struct {
 }
 
 func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	var bc types.BoundContract
-	bc.Name = request.Bc.Name[:]
-	bc.Address = request.Bc.Address[:]
-	bc.Pending = request.Bc.Pending
-
-	contractName := request.Bc.Name
+	contractName := request.ContractName
 	params, err := getContractEncodedType(contractName, request.Method, c.impl, true)
 	if err != nil {
 		return nil, err
@@ -126,7 +119,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	if err != nil {
 		return nil, err
 	}
-	err = c.impl.GetLatestValue(ctx, bc, request.Method, params, retVal)
+	err = c.impl.GetLatestValue(ctx, contractName, request.Method, params, retVal)
 	if err != nil {
 		return nil, err
 	}

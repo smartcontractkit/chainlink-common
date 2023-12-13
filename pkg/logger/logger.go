@@ -86,7 +86,7 @@ func testObserved(tb testing.TB, lvl zapcore.Level) (*zap.SugaredLogger, *observ
 	observe := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
 		return zapcore.NewTee(c, oCore)
 	})
-	return zaptest.NewLogger(tb, zaptest.WrapOptions(observe)).Sugar(), logs
+	return zaptest.NewLogger(tb, zaptest.WrapOptions(observe, zap.AddCaller())).Sugar(), logs
 }
 
 // Nop returns a no-op Logger.
@@ -181,53 +181,26 @@ func Helper(l Logger, skip int) Logger {
 	return l
 }
 
-// Critical emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+// Deprecated: instead use [SugaredLogger.Critical]:
+//
+//	Sugared(l).Critical(args...)
 func Critical(l Logger, args ...interface{}) {
-	switch t := l.(type) {
-	case *logger:
-		t.DPanic(args...)
-		return
-	}
-	c, ok := l.(interface {
-		Critical(args ...interface{})
-	})
-	if ok {
-		c.Critical(args...)
-		return
-	}
-	l.Error(append([]any{"[crit] "}, args...)...)
+	s := &sugared{Logger: l, h: Helper(l, 2)}
+	s.Critical(args...)
 }
 
-// Criticalf emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+// Deprecated: instead use [SugaredLogger.Criticalf]:
+//
+//	Sugared(l).Criticalf(args...)
 func Criticalf(l Logger, format string, values ...interface{}) {
-	switch t := l.(type) {
-	case *logger:
-		t.DPanicf(format, values...)
-		return
-	}
-	c, ok := l.(interface {
-		Criticalf(format string, values ...interface{})
-	})
-	if ok {
-		c.Criticalf(format, values...)
-		return
-	}
-	l.Errorf("[crit] "+format, values...)
+	s := &sugared{Logger: l, h: Helper(l, 2)}
+	s.Criticalf(format, values...)
 }
 
-// Criticalw emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+// Deprecated: instead use [SugaredLogger.Criticalw]:
+//
+//	Sugared(l).Criticalw(args...)
 func Criticalw(l Logger, msg string, keysAndValues ...interface{}) {
-	switch t := l.(type) {
-	case *logger:
-		t.DPanicw(msg, keysAndValues...)
-		return
-	}
-	c, ok := l.(interface {
-		Criticalw(msg string, keysAndValues ...interface{})
-	})
-	if ok {
-		c.Criticalw(msg, keysAndValues...)
-		return
-	}
-	l.Errorw("[crit] "+msg, keysAndValues...)
+	s := &sugared{Logger: l, h: Helper(l, 2)}
+	s.Criticalw(msg, keysAndValues...)
 }

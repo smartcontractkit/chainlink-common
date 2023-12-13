@@ -18,7 +18,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
+	test "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 
 func TestVersionedBytesFunctions(t *testing.T) {
@@ -61,7 +61,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 }
 
 func TestChainReaderClient(t *testing.T) {
-	RunChainReaderInterfaceTests(t, &interfaceTester{})
+	test.RunChainReaderInterfaceTests(t, &interfaceTester{})
 
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
@@ -111,7 +111,7 @@ func TestChainReaderClient(t *testing.T) {
 	es.err = nil
 	invalidTypeErr := types.ErrInvalidType
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
+		err := client.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &test.TestStruct{})
 		assert.ErrorIs(t, err, &invalidTypeErr)
 	})
 }
@@ -132,7 +132,7 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-func (it *interfaceTester) SetLatestValue(ctx context.Context, t *testing.T, testStruct *TestStruct) types.BoundContract {
+func (it *interfaceTester) SetLatestValue(ctx context.Context, t *testing.T, testStruct *test.TestStruct) types.BoundContract {
 	it.fs.SetLatestValue(testStruct)
 	return types.BoundContract{}
 }
@@ -196,18 +196,18 @@ func (it *interfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 
 type fakeCodecServer struct {
 	lastItem any
-	latest   []TestStruct
+	latest   []test.TestStruct
 	lock     *sync.Mutex
 }
 
-func (f *fakeCodecServer) SetLatestValue(ts *TestStruct) {
+func (f *fakeCodecServer) SetLatestValue(ts *test.TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.latest = append(f.latest, *ts)
 }
 
 func (f *fakeCodecServer) GetLatestValue(ctx context.Context, _ types.BoundContract, method string, params, returnVal any) error {
-	if method != MethodTakingLatestParamsReturningTestStruct {
+	if method != test.MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)
 	}
 

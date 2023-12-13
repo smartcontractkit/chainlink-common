@@ -34,3 +34,18 @@ const (
 	// RunStatusCompleted is used for when a run has successfully completed execution.
 	RunStatusCompleted RunStatus = "completed"
 )
+
+// Completed returns true if the status is RunStatusCompleted.
+func (s RunStatus) Completed() bool {
+	return s == RunStatusCompleted
+}
+
+// Errored returns true if the status is RunStatusErrored.
+func (s RunStatus) Errored() bool {
+	return s == RunStatusErrored
+}
+
+// Finished returns true if the status is final and can't be changed.
+func (s RunStatus) Finished() bool {
+	return s.Completed() || s.Errored()
+}

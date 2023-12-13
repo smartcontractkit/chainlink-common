@@ -84,6 +84,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 }
 
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
+	c.Logger.Info("!!!!!!!!!!\nCLIENT:\n%s.%s.%#v\n!!!!!!!!!!\n", contractName, method, params)
 	versionedParams, err := encodeVersionedBytes(params, CurrentEncodingVersion)
 	if err != nil {
 		return err
@@ -105,6 +106,7 @@ type chainReaderServer struct {
 }
 
 func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	fmt.Printf("!!!!!!!!!!\nSERVER:\n%s.%s.%#v\n!!!!!!!!!!\n", request.ContractName, request.Method, request.Params)
 	contractName := request.ContractName
 	params, err := getContractEncodedType(contractName, request.Method, c.impl, true)
 	if err != nil {

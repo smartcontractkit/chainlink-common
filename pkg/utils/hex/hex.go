@@ -16,17 +16,17 @@ func EnsurePrefix(str string) string {
 	return str
 }
 
-// ToBig parses the given hex string or panics if it is invalid.
-func ToBig(s string) *big.Int {
+// ToBig parses the given hex string and returns error if it is invalid.
+func ToBig(s string) (*big.Int, error) {
 	n, ok := new(big.Int).SetString(s, 16)
 	if !ok {
-		panic(fmt.Errorf(`failed to convert "%s" as hex to big.Int`, s))
+		return nil, fmt.Errorf(`failed to convert "%s" as hex to big.Int`, s)
 	}
-	return n
+	return n, nil
 }
 
-// RemovePrefix removes the prefix (0x) of a given hex string.
-func RemovePrefix(str string) string {
+// TrimPrefix removes the prefix (0x) of a given hex string.
+func TrimPrefix(str string) string {
 	if HasPrefix(str) {
 		return str[2:]
 	}
@@ -41,7 +41,7 @@ func HasPrefix(str string) bool {
 // TryParse parses the given hex string to bytes,
 // it can return error if the hex string is invalid.
 // Follows the semantic of ethereum's FromHex.
-func TryParse(s string) (b []byte, err error) {
+func DecodeString(s string) (b []byte, err error) {
 	if !HasPrefix(s) {
 		err = errors.New("hex string must have 0x prefix")
 	} else {

@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -111,6 +112,13 @@ func TestBigIntHook(t *testing.T) {
 		_, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
 		require.IsType(t, types.ErrInvalidType, err)
 	})
+
+	t.Run("Not a big int returns the input data", func(t *testing.T) {
+		input := "foo"
+		result, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
+		require.NoError(t, err)
+		assert.Equal(t, input, result)
+	})
 }
 
 func TestSliceToArrayVerifySizeHook(t *testing.T) {
@@ -146,5 +154,55 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 
 		// Mapstructure will convert slices to arrays, all we need in this hook is to pass it along
 		assert.Equal(t, []int64{0, 0}, res)
+	})
+
+	t.Run("Not a slice returns the input data", func(t *testing.T) {
+		input := "foo"
+		result, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
+		require.NoError(t, err)
+		assert.Equal(t, input, result)
+	})
+}
+
+func TestEpochToTimeHook(t *testing.T) {
+	anyTime := int64(math.MaxInt8 - 40)
+	testTime := time.Unix(anyTime, 0)
+	testValues := []any{
+		int(anyTime),
+		uint(anyTime),
+		int8(anyTime),
+		uint8(anyTime),
+		int16(anyTime),
+		uint16(anyTime),
+		int32(anyTime),
+		uint32(anyTime),
+		anyTime,
+		uint64(anyTime),
+	}
+
+	t.Run("converts epoch to time", func(t *testing.T) {
+		for _, testValue := range testValues {
+			t.Run(fmt.Sprintf("%T", testValue), func(t *testing.T) {
+				actual, err := codec.EpochToTimeHook(reflect.TypeOf(testValue), reflect.TypeOf(testTime), testValue)
+				require.NoError(t, err)
+				assert.Equal(t, testTime, actual)
+			})
+		}
+	})
+
+	t.Run("Converts timestamps to integer type", func(t *testing.T) {
+		for _, testValue := range testValues {
+			t.Run(fmt.Sprintf("%T", testValue), func(t *testing.T) {
+				actual, err := codec.EpochToTimeHook(reflect.TypeOf(testTime), reflect.TypeOf(testValue), testTime)
+				require.NoError(t, err)
+				assert.Equal(t, testValue, actual)
+			})
+		}
+	})
+
+	t.Run("returns data for non time types", func(t *testing.T) {
+		actual, err := codec.EpochToTimeHook(reflect.TypeOf(""), reflect.TypeOf(0), "foo")
+		require.NoError(t, err)
+		assert.Equal(t, "foo", actual)
 	})
 }

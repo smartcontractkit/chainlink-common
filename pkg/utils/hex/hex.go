@@ -16,8 +16,8 @@ func EnsurePrefix(str string) string {
 	return str
 }
 
-// ToBig parses the given hex string and returns error if it is invalid.
-func ToBig(s string) (*big.Int, error) {
+// ParseBig parses the given hex string and returns error if it is invalid.
+func ParseBig(s string) (*big.Int, error) {
 	n, ok := new(big.Int).SetString(s, 16)
 	if !ok {
 		return nil, fmt.Errorf(`failed to convert "%s" as hex to big.Int`, s)
@@ -38,7 +38,7 @@ func HasPrefix(str string) bool {
 	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }
 
-// TryParse parses the given hex string to bytes,
+// DecodeString parses the given hex string to bytes,
 // it can return error if the hex string is invalid.
 // Follows the semantic of ethereum's FromHex.
 func DecodeString(s string) (b []byte, err error) {

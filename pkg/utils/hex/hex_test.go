@@ -7,6 +7,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestParseBig(t *testing.T) {
+	t.Parallel()
+
+	t.Run("parses successfully", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := hex.ParseBig("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns error", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := hex.ParseBig("0xabc")
+		assert.Error(t, err)
+	})
+}
+
 func TestTrimPrefix(t *testing.T) {
 	t.Parallel()
 

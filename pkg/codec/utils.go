@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -139,6 +140,18 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 		if slice.Len() != to.Len() {
 			return nil, fmt.Errorf("%w: expected size %v got %v", types.ErrWrongNumberOfElements, to.Len(), slice.Len())
 		}
+	}
+
+	return data, nil
+}
+
+func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) {
+	i64 := reflect.TypeOf(int64(0))
+	if to == reflect.TypeOf(time.Time{}) && from.ConvertibleTo(i64) {
+		return time.Unix(reflect.ValueOf(data).Convert(i64).Int(), 0), nil
+	} else if from == reflect.TypeOf(time.Time{}) && to.ConvertibleTo(i64) {
+		unix := data.(time.Time).Unix()
+		return reflect.ValueOf(unix).Convert(to).Interface(), nil
 	}
 
 	return data, nil

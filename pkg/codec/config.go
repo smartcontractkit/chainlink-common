@@ -15,7 +15,8 @@ type ModifiersConfig []ModifierConfig
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 	var rawDeserialized []json.RawMessage
 	if err := json.Unmarshal(data, &rawDeserialized); err != nil {
-		return err
+		fmt.Printf("!!!!!!!!\nUnmarshalJSON err\n%v\n!!!!!!!!", string(data))
+		return fmt.Errorf("%w: %w", types.ErrInvalidConfig, err)
 	}
 
 	*m = make([]ModifierConfig, len(rawDeserialized))

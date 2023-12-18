@@ -59,7 +59,6 @@ func EnsureHexPrefix(str string) string {
 		str = "0x" + str
 	}
 	return str
-
 }
 
 // JustError takes a tuple and returns the last entry, the error.
@@ -79,4 +78,14 @@ func WrapIfError(err *error, msg string) {
 	if *err != nil {
 		*err = errors.Wrap(*err, msg)
 	}
+}
+
+// AllEqual returns true iff all the provided elements are equal to each other.
+func AllEqual[T comparable](elems ...T) bool {
+	for i := 1; i < len(elems); i++ {
+		if elems[i] != elems[0] {
+			return false
+		}
+	}
+	return true
 }

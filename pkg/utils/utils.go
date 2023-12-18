@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -57,4 +59,24 @@ func EnsureHexPrefix(str string) string {
 		str = "0x" + str
 	}
 	return str
+
+}
+
+// JustError takes a tuple and returns the last entry, the error.
+func JustError(_ interface{}, err error) error {
+	return err
+}
+
+// WrapIfError decorates an error with the given message.  It is intended to
+// be used with `defer` statements, like so:
+//
+//	func SomeFunction() (err error) {
+//	    defer WrapIfError(&err, "error in SomeFunction:")
+//
+//	    ...
+//	}
+func WrapIfError(err *error, msg string) {
+	if *err != nil {
+		*err = errors.Wrap(*err, msg)
+	}
 }

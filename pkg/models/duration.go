@@ -2,7 +2,9 @@ package models
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 )
 

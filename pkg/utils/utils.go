@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	mrand "math/rand"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -79,4 +80,48 @@ func AllEqual[T comparable](elems ...T) bool {
 		}
 	}
 	return true
+}
+
+// WaitGroupChan creates a channel that closes when the provided sync.WaitGroup is done.
+func WaitGroupChan(wg *sync.WaitGroup) <-chan struct{} {
+	chAwait := make(chan struct{})
+	go func() {
+		defer close(chAwait)
+		wg.Wait()
+	}()
+	return chAwait
+}
+
+// DependentAwaiter contains Dependent funcs
+type DependentAwaiter interface {
+	AwaitDependents() <-chan struct{}
+	AddDependents(n int)
+	DependentReady()
+}
+
+type dependentAwaiter struct {
+	wg *sync.WaitGroup
+	ch <-chan struct{}
+}
+
+// NewDependentAwaiter creates a new DependentAwaiter
+func NewDependentAwaiter() DependentAwaiter {
+	return &dependentAwaiter{
+		wg: &sync.WaitGroup{},
+	}
+}
+
+func (da *dependentAwaiter) AwaitDependents() <-chan struct{} {
+	if da.ch == nil {
+		da.ch = WaitGroupChan(da.wg)
+	}
+	return da.ch
+}
+
+func (da *dependentAwaiter) AddDependents(n int) {
+	da.wg.Add(n)
+}
+
+func (da *dependentAwaiter) DependentReady() {
+	da.wg.Done()
 }

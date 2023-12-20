@@ -109,6 +109,10 @@ func (c staticCodec) Decode(ctx context.Context, raw []byte, into any, itemType 
 
 type staticChainReader struct{}
 
+func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
+	return nil
+}
+
 func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(cn, contractName) {
 		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, contractName, cn)

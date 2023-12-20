@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -77,6 +78,15 @@ func TestChainReaderClient(t *testing.T) {
 		})
 	}
 
+	for _, errorType := range errorTypes {
+		es.err = errorType
+		t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			ctx := tests.Context(t)
+			err := chainReader.Bind(ctx, []types.BoundContract{{Name: "name", Address: "address"}})
+			assert.True(t, errors.Is(err, errorType))
+		})
+	}
+
 	// make sure that errors come from client directly
 	es.err = nil
 	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
@@ -109,6 +119,13 @@ type chainReaderInterfaceTester struct {
 	interfaceTesterBase
 	chainReader pb.ChainReaderServer
 	fake        *fakeChainReader
+}
+
+func (it *chainReaderInterfaceTester) GetBindings(t *testing.T) []types.BoundContract {
+	return []types.BoundContract{
+		{Name: AnyContractName, Address: AnyContractName},
+		{Name: AnySecondContractName, Address: AnySecondContractName},
+	}
 }
 
 func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
@@ -154,6 +171,10 @@ type fakeChainReader struct {
 	stored      []TestStruct
 	lock        sync.Mutex
 	lastTrigger TestStruct
+}
+
+func (f *fakeChainReader) Bind(context.Context, []types.BoundContract) error {
+	return nil
 }
 
 func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
@@ -217,5 +238,9 @@ type chainReaderErrServer struct {
 }
 
 func (e *chainReaderErrServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	return nil, e.err
+}
+
+func (e *chainReaderErrServer) Bind(context.Context, *pb.BindRequest) (*emptypb.Empty, error) {
 	return nil, e.err
 }

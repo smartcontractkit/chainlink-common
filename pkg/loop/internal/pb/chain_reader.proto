@@ -5,9 +5,11 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "codec.proto";
+import "google/protobuf/empty.proto";
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
@@ -20,6 +22,10 @@ message GetLatestValueRequest {
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueReply {
   VersionedBytes retVal = 1;
+}
+
+message BindRequest {
+  repeated BoundContract bindings = 1;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

@@ -21,6 +21,7 @@ type ChainReaderInterfaceTester interface {
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
 	SetLatestValue(t *testing.T, testStruct *TestStruct)
 	TriggerEvent(t *testing.T, testStruct *TestStruct)
+	GetBindings(t *testing.T) []types.BoundContract
 }
 
 const (
@@ -52,6 +53,8 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 				tester.SetLatestValue(t, &secondItem)
 
 				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
 				actual := &TestStruct{}
 				params := &LatestParams{I: 1}
 
@@ -69,6 +72,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				var prim uint64
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningUint64, nil, &prim))
@@ -81,6 +85,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				var prim uint64
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, DifferentMethodReturningUint64, nil, &prim))
@@ -93,6 +98,14 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
+				bindings := tester.GetBindings(t)
+				seenAddrs := map[string]bool{}
+				for _, binding := range bindings {
+					assert.False(t, seenAddrs[binding.Address])
+					seenAddrs[binding.Address] = true
+				}
+
+				require.NoError(t, cr.Bind(ctx, bindings))
 
 				var prim uint64
 				require.NoError(t, cr.GetLatestValue(ctx, AnySecondContractName, MethodReturningUint64, nil, &prim))
@@ -105,6 +118,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				var slice []uint64
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningUint64Slice, nil, &slice))
@@ -120,6 +134,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 				testStruct.BigField = nil
 				testStruct.Account = nil
 				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				actual := &TestStructWithExtraField{}
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningSeenStruct, testStruct, actual))
@@ -137,6 +152,7 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 				ts := CreateTestStruct(0, tester)
 				tester.TriggerEvent(t, &ts)
 				ts = CreateTestStruct(1, tester)

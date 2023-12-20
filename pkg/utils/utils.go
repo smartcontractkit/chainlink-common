@@ -67,7 +67,7 @@ func JustError(_ interface{}, err error) error {
 //	}
 func WrapIfError(err *error, msg string) {
 	if *err != nil {
-		*err = fmt.Errorf("%s : %w", msg, *err)
+		*err = fmt.Errorf("%s: %w", msg, *err)
 	}
 }
 

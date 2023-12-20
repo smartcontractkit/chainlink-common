@@ -38,37 +38,73 @@ func TestModifiersConfig(t *testing.T) {
         }
     }
 ]`
-	conf := &codec.ModifiersConfig{}
-	err := conf.UnmarshalJSON([]byte(jsonConfig))
-	require.NoError(t, err)
-	modifier, err := conf.ToModifier()
-	require.NoError(t, err)
 
-	_, err = modifier.RetypeForOffChain(reflect.TypeOf(ModifiersConfigOnChainTestStruct{}), "")
-	require.NoError(t, err)
+	lowerJsonConfig := `[
+    {
+        "type": "extract element",
+        "extractions": {
+            "a": "first element"
+        }
+    },
+    {
+        "type": "rename",
+        "fields": {
+            "a": "z"
+        }
+    },
+    {
+        "type": "drop",
+        "fields": [
+            "c"
+        ]
+    },
+    {
+        "type": "hard code",
+        "offChainValues": {
+            "b": 2
+        }
+    }
+]`
 
-	onChain := ModifiersConfigOnChainTestStruct{
-		A: 1,
-		C: 100,
+	for _, test := range []struct{ name, json string }{
+		{"exact", jsonConfig},
+		// Used to allow config to match on-chain names/convention
+		{"lowercase", lowerJsonConfig},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			conf := &codec.ModifiersConfig{}
+			err := conf.UnmarshalJSON([]byte(test.json))
+			require.NoError(t, err)
+			modifier, err := conf.ToModifier()
+			require.NoError(t, err)
+
+			_, err = modifier.RetypeForOffChain(reflect.TypeOf(ModifiersConfigOnChainTestStruct{}), "")
+			require.NoError(t, err)
+
+			onChain := ModifiersConfigOnChainTestStruct{
+				A: 1,
+				C: 100,
+			}
+
+			offChain, err := modifier.TransformForOffChain(onChain, "")
+			require.NoError(t, err)
+
+			b, err := json.Marshal(offChain)
+			require.NoError(t, err)
+			actualMap := map[string]any{}
+			err = json.Unmarshal(b, &actualMap)
+			require.NoError(t, err)
+
+			// when decoding to actualMap, the types are lost
+			// the tests for the actual modifiers verify the types are correct
+			expectedMap := map[string]any{
+				"Z": []any{float64(1)},
+				"B": float64(2),
+			}
+
+			assert.Equal(t, expectedMap, actualMap)
+		})
 	}
-
-	offChain, err := modifier.TransformForOffChain(onChain, "")
-	require.NoError(t, err)
-
-	b, err := json.Marshal(offChain)
-	require.NoError(t, err)
-	actualMap := map[string]any{}
-	err = json.Unmarshal(b, &actualMap)
-	require.NoError(t, err)
-
-	// when decoding to actualMap, the types are lost
-	// the tests for the actual modifiers verify the types are correct
-	expectedMap := map[string]any{
-		"Z": []any{float64(1)},
-		"B": float64(2),
-	}
-
-	assert.Equal(t, expectedMap, actualMap)
 }
 
 type ModifiersConfigOnChainTestStruct struct {

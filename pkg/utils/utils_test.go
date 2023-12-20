@@ -1,14 +1,26 @@
 package utils_test
 
 import (
+	"errors"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 )
+
+func TestWrapIfError(t *testing.T) {
+	t.Parallel()
+
+	t.Run("wraps error", func(t *testing.T) {
+		err := errors.New("this is an error")
+		utils.WrapIfError(&err, "wrapped message")
+		assert.Equal(t, "wrapped message: this is an error", err.Error())
+	})
+}
 
 func TestAllEqual(t *testing.T) {
 	t.Parallel()

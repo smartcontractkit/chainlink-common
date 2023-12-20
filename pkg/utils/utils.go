@@ -2,12 +2,11 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"math"
 	mrand "math/rand"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -68,7 +67,7 @@ func JustError(_ interface{}, err error) error {
 //	}
 func WrapIfError(err *error, msg string) {
 	if *err != nil {
-		*err = errors.Wrap(*err, msg)
+		*err = fmt.Errorf("%s : %w", msg, *err)
 	}
 }
 

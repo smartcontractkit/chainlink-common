@@ -7,20 +7,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// SleeperTask represents a task that waits in the background to process some work.
-type SleeperTask interface {
-	Stop() error
-	WakeUp()
-	WakeUpIfStarted()
-}
-
 // Worker is a simple interface that represents some work to do repeatedly
 type Worker interface {
 	Work()
 	Name() string
 }
 
-type sleeperTask struct {
+// SleeperTask represents a task that waits in the background to process some work.
+type SleeperTask struct {
 	services.StateMachine
 	worker     Worker
 	chQueue    chan struct{}
@@ -37,8 +31,8 @@ type sleeperTask struct {
 // immediately after it is finished. For this reason you should take care to
 // make sure that Worker is idempotent.
 // WakeUp does not block.
-func NewSleeperTask(worker Worker) SleeperTask {
-	s := &sleeperTask{
+func NewSleeperTask(worker Worker) *SleeperTask {
+	s := &SleeperTask{
 		worker:     worker,
 		chQueue:    make(chan struct{}, 1),
 		chStop:     make(chan struct{}),
@@ -55,7 +49,7 @@ func NewSleeperTask(worker Worker) SleeperTask {
 }
 
 // Stop stops the SleeperTask
-func (s *sleeperTask) Stop() error {
+func (s *SleeperTask) Stop() error {
 	return s.StopOnce("SleeperTask-"+s.worker.Name(), func() error {
 		close(s.chStop)
 		select {
@@ -67,7 +61,7 @@ func (s *sleeperTask) Stop() error {
 	})
 }
 
-func (s *sleeperTask) WakeUpIfStarted() {
+func (s *SleeperTask) WakeUpIfStarted() {
 	s.IfStarted(func() {
 		select {
 		case s.chQueue <- struct{}{}:
@@ -77,7 +71,7 @@ func (s *sleeperTask) WakeUpIfStarted() {
 }
 
 // WakeUp wakes up the sleeper task, asking it to execute its Worker.
-func (s *sleeperTask) WakeUp() {
+func (s *SleeperTask) WakeUp() {
 	if !s.IfStarted(func() {
 		select {
 		case s.chQueue <- struct{}{}:
@@ -88,7 +82,7 @@ func (s *sleeperTask) WakeUp() {
 	}
 }
 
-func (s *sleeperTask) workDone() {
+func (s *SleeperTask) workDone() {
 	select {
 	case s.chWorkDone <- struct{}{}:
 	default:
@@ -97,11 +91,11 @@ func (s *sleeperTask) workDone() {
 
 // WorkDone isn't part of the SleeperTask interface, but can be
 // useful in tests to assert that the work has been done.
-func (s *sleeperTask) WorkDone() <-chan struct{} {
+func (s *SleeperTask) WorkDone() <-chan struct{} {
 	return s.chWorkDone
 }
 
-func (s *sleeperTask) workerLoop() {
+func (s *SleeperTask) workerLoop() {
 	defer close(s.chDone)
 
 	for {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -77,6 +78,10 @@ type RenameModifierConfig struct {
 }
 
 func (r *RenameModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	for k, v := range r.Fields {
+		delete(r.Fields, k)
+		r.Fields[upperFirstCharacter(k)] = upperFirstCharacter(v)
+	}
 	return NewRenamer(r.Fields), nil
 }
 
@@ -88,7 +93,7 @@ func (d *DropModifierConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookF
 	fields := map[string]string{}
 	for i, f := range d.Fields {
 		// using a private variable will make the field not serialize, essentially dropping the field
-		fields[f] = fmt.Sprintf("dropFieldPrivateName%d", i)
+		fields[upperFirstCharacter(f)] = fmt.Sprintf("dropFieldPrivateName%d", i)
 	}
 
 	return NewRenamer(fields), nil
@@ -99,6 +104,7 @@ type ElementExtractorConfig struct {
 }
 
 func (e *ElementExtractorConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	mapKeyToUpperFirst(e.Extractions)
 	return NewElementExtractor(e.Extractions), nil
 }
 
@@ -108,9 +114,29 @@ type HardCodeConfig struct {
 }
 
 func (h *HardCodeConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	mapKeyToUpperFirst(h.OnChainValues)
+	mapKeyToUpperFirst(h.OffChainValues)
 	return NewHardCoder(h.OnChainValues, h.OffChainValues, onChainHooks...)
 }
 
 type typer struct {
 	Type string
+}
+
+func upperFirstCharacter(s string) string {
+	parts := strings.Split(s, ".")
+	for i, p := range parts {
+		r := []rune(p)
+		r[0] = unicode.ToUpper(r[0])
+		parts[i] = string(r)
+	}
+
+	return strings.Join(parts, ".")
+}
+
+func mapKeyToUpperFirst[T any](m map[string]T) {
+	for k, v := range m {
+		delete(m, k)
+		m[upperFirstCharacter(k)] = v
+	}
 }

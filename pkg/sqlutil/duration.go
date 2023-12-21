@@ -1,4 +1,4 @@
-package models
+package sqlutil
 
 import (
 	"database/sql/driver"

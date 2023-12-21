@@ -1,0 +1,130 @@
+package bigendian
+
+import (
+    "encoding/binary"
+    "fmt"
+    "reflect"
+    "math/big"
+
+    "github.com/smartcontractkit/chainlink-common/pkg/types"
+    "github.com/smartcontractkit/chainlink-common/pkg/codec/encodings"
+)
+
+{{ range . }}
+type Int{{.}} struct{}
+
+var _ encodings.TypeCodec = Int{{.}}{}
+
+func (Int{{.}}) Encode(value any, into []byte) ([]byte, error) {
+    v, ok := value.(int{{.}})
+    if !ok {
+        return nil, fmt.Errorf("%w: %T is not an int{{.}}", types.ErrInvalidType, value)
+    }
+
+    {{- if eq . 8 }}
+    return append(into, byte(v)), nil
+    {{- else }}
+    return binary.BigEndian.AppendUint{{.}}(into, uint{{.}}(v)), nil
+    {{- end }}
+}
+
+func (Int{{.}}) Decode(encoded []byte) (any, []byte, error) {
+    {{- if eq . 8 }}
+    ui, remaining, err := encodings.SafeDecode[uint8](encoded, 1, func (encoded []byte ) byte { return encoded[0] } )
+    return int{{.}}(ui), remaining, err
+    {{- else }}
+    ui, remaining, err := encodings.SafeDecode[uint{{.}}](encoded, {{.}}/8, binary.BigEndian.Uint{{.}})
+    return int{{.}}(ui), remaining, err
+    {{- end }}
+}
+
+func (Int{{.}}) GetType() reflect.Type {
+    return reflect.TypeOf(int{{.}}(0))
+}
+
+func (Int{{.}}) Size(int) (int, error) {
+    return {{.}}/8, nil
+}
+
+func (Int{{.}}) FixedSize() (int, error) {
+    return {{.}}/8, nil
+}
+
+type Uint{{.}} struct{}
+
+var _ encodings.TypeCodec = Uint{{.}}{}
+
+func (Uint{{.}}) Encode(value any, into []byte) ([]byte, error) {
+    v, ok := value.(uint{{.}})
+    if !ok {
+        return nil, fmt.Errorf("%w: %T is not an uint{{.}}", types.ErrInvalidType, value)
+    }
+
+    {{- if eq . 8 }}
+    return append(into, v), nil
+    {{- else }}
+    return binary.BigEndian.AppendUint{{.}}(into, v), nil
+    {{- end }}
+}
+
+func (Uint{{.}}) Decode(encoded []byte) (any, []byte, error) {
+    {{- if eq . 8 }}
+    return encodings.SafeDecode[uint8](encoded, 1, func (encoded []byte ) byte { return encoded[0] } )
+    {{- else }}
+    return encodings.SafeDecode[uint{{.}}](encoded, {{.}}/8, binary.BigEndian.Uint{{.}})
+    {{- end }}
+}
+
+func (Uint{{.}}) GetType() reflect.Type {
+    return reflect.TypeOf(uint{{.}}(0))
+}
+
+func (Uint{{.}}) Size(int) (int, error) {
+    return {{.}}/8, nil
+}
+
+func (Uint{{.}}) FixedSize() (int, error) {
+    return {{.}}/8, nil
+}
+
+{{ end }}
+
+func GetIntTypeCodecByByteSize(size int) (encodings.TypeCodec, error) {
+    switch size {
+    {{- range . }}
+    case {{ . }} / 8:
+        return &intCodec{
+            codec: Int{{ . }}{},
+            toInt: func(v any) int { return int(v.(int{{ . }})) },
+            fromInt: func(v int)any { return int{{ . }}(v) },
+        }, nil
+    {{- end }}
+    default:
+       c, err := NewBigInt(size, true)
+       return &intCodec{
+         codec: c,
+         toInt: func(v any) int { return int(v.(*big.Int).Int64()) },
+         fromInt: func(v int)any { return big.NewInt(int64(v)) },
+     }, err
+    }
+}
+
+func GetUintTypeCodecByByteSize(size int) (encodings.TypeCodec, error) {
+    switch size {
+    {{- range . }}
+    case {{ . }} / 8:
+        return &uintCodec{
+            codec: Uint{{ . }}{},
+            toUint: func(v any) uint { return uint(v.(uint{{ . }})) },
+            fromUint: func(v uint)any { return uint{{ . }}(v) },
+        }, nil
+    {{- end }}
+    default:
+        c, err := NewBigInt(size, false)
+        return &uintCodec{
+           codec: c,
+           toUint: func(v any) uint { return uint(v.(*big.Int).Uint64()) },
+           fromUint: func(v uint)any { return new(big.Int).SetUint64(uint64(v)) },
+       }, err
+    }
+}

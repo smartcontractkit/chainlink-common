@@ -231,6 +231,7 @@ func changeElements[T any](src, dest any, fields map[string]T, fn mapAction[T], 
 		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}
 
+	fmt.Printf("%T\n%T\n", src, dest)
 	if err = hookedDecoder.Decode(valueMapping); err != nil {
 		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}

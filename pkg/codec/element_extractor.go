@@ -55,7 +55,7 @@ func extractMap(extractMap map[string]any, key string, elementLocation ElementEx
 	switch rItem.Kind() {
 	case reflect.Array, reflect.Slice:
 	default:
-		return types.ErrInvalidType
+		return fmt.Errorf("%w: %s is not a slice or array", types.ErrInvalidType, key)
 	}
 
 	if rItem.Len() == 0 {
@@ -78,7 +78,7 @@ func extractMap(extractMap map[string]any, key string, elementLocation ElementEx
 func expandMap(extractMap map[string]any, key string, _ ElementExtractorLocation) error {
 	item, ok := extractMap[key]
 	if !ok {
-		return types.ErrInvalidType
+		return fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)
 	} else if item == nil {
 		return nil
 	}

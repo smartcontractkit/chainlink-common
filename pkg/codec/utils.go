@@ -53,7 +53,7 @@ func BigIntHook(_, to reflect.Type, data any) (any, error) {
 		case string:
 			_, ok := bigInt.SetString(v, 10)
 			if !ok {
-				return nil, types.ErrInvalidType
+				return nil, fmt.Errorf("%w: cannot decode %s as big int", types.ErrInvalidType, v)
 			}
 		default:
 			return data, nil
@@ -68,52 +68,52 @@ func BigIntHook(_, to reflect.Type, data any) (any, error) {
 			if FitsInNBitsSigned(strconv.IntSize, bi) {
 				return int(bi.Int64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: can not %s fit into int", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(int8(0)):
 			if FitsInNBitsSigned(8, bi) {
 				return int8(bi.Int64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into int8", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(int16(0)):
 			if FitsInNBitsSigned(16, bi) {
 				return int16(bi.Int64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into int16", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(int32(0)):
 			if FitsInNBitsSigned(32, bi) {
 				return int32(bi.Int64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into int32 ", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(int64(0)):
 			if FitsInNBitsSigned(64, bi) {
 				return bi.Int64(), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into int64 ", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(uint(0)):
 			if bi.Sign() >= 0 && bi.BitLen() <= strconv.IntSize {
 				return uint(bi.Uint64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into uint", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(uint8(0)):
 			if bi.Sign() >= 0 && bi.BitLen() <= 8 {
 				return uint8(bi.Uint64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into uint8", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(uint16(0)):
 			if bi.Sign() >= 0 && bi.BitLen() <= 16 {
 				return uint16(bi.Uint64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into uint16", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(uint32(0)):
 			if bi.Sign() >= 0 && bi.BitLen() <= 32 {
 				return uint32(bi.Uint64()), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into uint32", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(uint64(0)):
 			if bi.Sign() >= 0 && bi.BitLen() <= 64 {
 				return bi.Uint64(), nil
 			}
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot fit %s into uint64", types.ErrInvalidType, bi.String())
 		case reflect.TypeOf(""):
 			return bi.String(), nil
 		default:
@@ -190,7 +190,7 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 			default:
 				var m map[string]any
 				if err := mapstructure.Decode(item, &m); err != nil {
-					return nil, types.ErrInvalidType
+					return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 				}
 				extractMap[p] = m
 				tmp = append(tmp, m)

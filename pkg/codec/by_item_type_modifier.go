@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -23,7 +24,7 @@ type byItemTypeModifier struct {
 func (b *byItemTypeModifier) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
 	mod, ok := b.modByitemType[itemType]
 	if !ok {
-		return nil, types.ErrInvalidType
+		return nil, fmt.Errorf("%w: cannot find modifier for %s", types.ErrInvalidType, itemType)
 	}
 
 	return mod.RetypeForOffChain(onChainType, itemType)
@@ -41,7 +42,7 @@ func (b *byItemTypeModifier) transform(
 	val any, itemType string, transform func(Modifier, any, string) (any, error)) (any, error) {
 	mod, ok := b.modByitemType[itemType]
 	if !ok {
-		return nil, types.ErrInvalidType
+		return nil, fmt.Errorf("%w: cannot find modifier for %s", types.ErrInvalidType, itemType)
 	}
 
 	return transform(mod, val, itemType)

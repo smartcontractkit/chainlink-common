@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -26,7 +27,7 @@ func getFieldIndices(inputType reflect.Type) (*fieldsAndIndices, error) {
 		case reflect.Array:
 			typeTransform = func(t reflect.Type) reflect.Type { return reflect.ArrayOf(inputType.Len(), tmp(t)) }
 		default:
-			return nil, types.ErrInvalidType
+			return nil, fmt.Errorf("%w: cannot get field index from kind %v", types.ErrInvalidType, inputType.Kind())
 		}
 	}
 	length := inputType.NumField()
@@ -72,7 +73,7 @@ func (f *fieldsAndIndices) populateSubFields(field string) (*fieldsAndIndices, e
 		return fi, nil
 	}
 
-	return nil, types.ErrInvalidType
+	return nil, fmt.Errorf("%w: cannot find field %s", types.ErrInvalidType, field)
 }
 
 func (f *fieldsAndIndices) makeNewType() reflect.Type {

@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"fmt"
 	"reflect"
 	"unicode"
 
@@ -48,7 +49,7 @@ func (r *renamer) TransformForOnChain(offChainValue any, _ string) (any, error) 
 func renameTransform(typeMap map[reflect.Type]reflect.Type, rInput reflect.Value) (reflect.Value, error) {
 	toType, ok := typeMap[rInput.Type()]
 	if !ok {
-		return reflect.Value{}, types.ErrInvalidType
+		return reflect.Value{}, fmt.Errorf("%w: cannot rename unknown type %v", types.ErrInvalidType, toType)
 	}
 
 	if toType == rInput.Type() {
@@ -61,7 +62,7 @@ func renameTransform(typeMap map[reflect.Type]reflect.Type, rInput reflect.Value
 	case reflect.Struct, reflect.Slice, reflect.Array:
 		return transformNonPointer(toType, rInput)
 	default:
-		return reflect.Value{}, types.ErrInvalidType
+		return reflect.Value{}, fmt.Errorf("%w: cannot rename kind %v", types.ErrInvalidType, rInput.Kind())
 	}
 }
 

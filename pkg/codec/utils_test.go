@@ -72,13 +72,13 @@ func TestBigIntHook(t *testing.T) {
 		t.Run("Overflow return an error "+intType.Type.String(), func(t *testing.T) {
 			bigger := new(big.Int).Add(intType.Max, big.NewInt(1))
 			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
-			assert.IsType(t, types.ErrInvalidType, err)
+			assert.True(t, errors.Is(err, types.ErrInvalidType))
 		})
 
 		t.Run("Underflow return an error "+intType.Type.String(), func(t *testing.T) {
 			smaller := new(big.Int).Sub(intType.Min, big.NewInt(1))
 			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
-			assert.IsType(t, types.ErrInvalidType, err)
+			assert.True(t, errors.Is(err, types.ErrInvalidType))
 		})
 
 		t.Run("Converts from "+intType.Type.String(), func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Errors for invalid string", func(t *testing.T) {
 		_, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
-		require.IsType(t, types.ErrInvalidType, err)
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("Not a big int returns the input data", func(t *testing.T) {

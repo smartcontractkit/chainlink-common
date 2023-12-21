@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	jsonv2 "github.com/go-json-experiment/json"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/fxamacker/cbor/v2"
 
@@ -97,6 +98,15 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 	return decodeVersionedBytes(retVal, reply.RetVal)
 }
 
+func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundContract) error {
+	pbBindings := make([]*pb.BoundContract, len(bindings))
+	for i, b := range bindings {
+		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+	}
+	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
+	return wrapRPCErr(err)
+}
+
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
 
 type chainReaderServer struct {
@@ -130,6 +140,15 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	}
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
+}
+
+func (c *chainReaderServer) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
+	tBindings := make([]types.BoundContract, len(bindings.Bindings))
+	for i, b := range bindings.Bindings {
+		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+	}
+
+	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)
 }
 
 func getContractEncodedType(contractName, itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {

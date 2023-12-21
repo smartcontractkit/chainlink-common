@@ -35,6 +35,10 @@ type ChainReader interface {
 	// 		return
 	//  }
 	GetLatestValue(ctx context.Context, contractName string, method string, params, returnVal any) error
+
+	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
+	// contract is not known by the ChainReader, or if the address is invalid
+	Bind(ctx context.Context, bindings []BoundContract) error
 }
 
 type BoundContract struct {

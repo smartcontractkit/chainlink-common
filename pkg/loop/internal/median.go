@@ -195,9 +195,9 @@ func newMedianProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *medianP
 	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(m.cc)}
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(m.cc)}
 	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(m.cc)}
-	anyRetVal := 10
 
 	maybeCr := &chainReaderClient{b, pb.NewChainReaderClient(m.cc)}
+	var anyRetVal int
 	err := maybeCr.GetLatestValue(context.Background(), "", "", nil, &anyRetVal)
 	if status.Convert(err).Code() != codes.Unimplemented {
 		m.chainReader = maybeCr

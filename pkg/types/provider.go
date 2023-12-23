@@ -99,6 +99,14 @@ func (e NotFoundError) GRPCStatus() *status.Status {
 	return status.New(codes.NotFound, e.Error())
 }
 
+func (e NotFoundError) Is(target error) bool {
+	if e == target {
+		return true
+	}
+
+	return grpcErrorHasTypeAndMessage(target, string(e), codes.NotFound)
+}
+
 func grpcErrorHasTypeAndMessage(target error, msg string, code codes.Code) bool {
 	s, ok := status.FromError(target)
 	if !ok || s.Code() != code {

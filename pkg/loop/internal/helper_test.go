@@ -21,6 +21,7 @@ var errorTypes = []error{
 	types.ErrFieldNotFound,
 	types.ErrWrongNumberOfElements,
 	types.ErrNotASlice,
+	types.ErrNotFound,
 }
 
 func connFromLis(t *testing.T, lis *bufconn.Listener) *grpc.ClientConn {

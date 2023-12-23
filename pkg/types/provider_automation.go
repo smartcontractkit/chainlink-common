@@ -12,5 +12,7 @@ type AutomationProvider interface {
 	UpkeepStateStore() automation.UpkeepStateStore
 	LogEventProvider() automation.LogEventProvider
 	LogRecoverer() automation.LogRecoverer
+	Encoder() automation.Encoder
 	UpkeepProvider() automation.ConditionalUpkeepProvider
+	PayloadBuilder() automation.PayloadBuilder
 }

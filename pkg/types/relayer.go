@@ -22,7 +22,7 @@ type RelayArgs struct {
 	New                bool // Whether this is a first time job add.
 	RelayConfig        []byte
 	ProviderType       string
-	MercuryCredentials MercuryCredentials
+	MercuryCredentials *MercuryCredentials
 }
 
 type MercuryCredentials struct {

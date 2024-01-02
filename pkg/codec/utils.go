@@ -1,10 +1,5 @@
 package codec
 
-// [math/big.Int]: https://pkg.go.dev/math/big#Int
-// [time.Time]: https://pkg.go.dev/time#Time
-// [time.Unix]: https://pkg.go.dev/time#Unix
-// [time.Time.Unix]: https://pkg.go.dev/time#Time.Unix
-
 import (
 	"fmt"
 	"math/big"

@@ -136,14 +136,14 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1, 2, 3}
 		_, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
+		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
 	})
 
 	t.Run("Too small slice returns error", func(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1}
 		_, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
+		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
 	})
 
 	t.Run("Empty slices are treated as ok to allow unset values", func(t *testing.T) {

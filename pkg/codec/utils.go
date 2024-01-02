@@ -1,5 +1,10 @@
 package codec
 
+// [math/big.Int]: https://pkg.go.dev/math/big#Int
+// [time.Time]: https://pkg.go.dev/time#Time
+// [time.Unix]: https://pkg.go.dev/time#Unix
+// [time.Time.Unix]: https://pkg.go.dev/time#Time.Unix
+
 import (
 	"fmt"
 	"math/big"
@@ -13,6 +18,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+// FitsInNBitsSigned returns if the [*math/big.Int] can fit in n bits as a signed integer.
+// Namely, if it's in the range [-2^(n-1), 2^(n-1) - 1]
 func FitsInNBitsSigned(n int, bi *big.Int) bool {
 	if bi.Sign() < 0 {
 		bi = new(big.Int).Neg(bi)
@@ -21,6 +28,8 @@ func FitsInNBitsSigned(n int, bi *big.Int) bool {
 	return bi.BitLen() <= n-1
 }
 
+// BigIntHook is a mapstructure hook that converts number types to *[math/big.Int] and vice versa.
+// Float values are cast to an int64 before being converted to a *[math/big.Int].
 func BigIntHook(_, to reflect.Type, data any) (any, error) {
 	if to == reflect.TypeOf(&big.Int{}) {
 		bigInt := big.NewInt(0)
@@ -124,6 +133,9 @@ func BigIntHook(_, to reflect.Type, data any) (any, error) {
 	return data, nil
 }
 
+// SliceToArrayVerifySizeHook is a mapstructure hook that verifies if a slice is being assigned to an array,
+// it will have the same number of elements. The default in mapstructure is to allow the slice to be smaller
+// and will zero out the remaining elements in that case.
 func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (any, error) {
 	// By default, if the array is bigger it'll still work. (ie []int{1, 2, 3} => [4]int{} works with 0 at the end
 	// [2]int{} would not work. This seems to lenient, but can be discussed.
@@ -138,13 +150,15 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 		}
 
 		if slice.Len() != to.Len() {
-			return nil, fmt.Errorf("%w: expected size %v got %v", types.ErrWrongNumberOfElements, to.Len(), slice.Len())
+			return nil, fmt.Errorf("%w: expected size %v got %v", types.ErrSliceWrongLen, to.Len(), slice.Len())
 		}
 	}
 
 	return data, nil
 }
 
+// EpochToTimeHook is a mapstructure hook that converts a unix epoch to a [time.Time] and vice versa.
+// To do this, [time.Unix] and [time.Time.Unix] are used.
 func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) {
 	i64 := reflect.TypeOf(int64(0))
 	if to == reflect.TypeOf(time.Time{}) && from.ConvertibleTo(i64) {

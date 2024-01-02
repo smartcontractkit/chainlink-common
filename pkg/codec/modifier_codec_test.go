@@ -27,6 +27,8 @@ const anyValue = 5
 const anyForEncoding = true
 
 func TestModifierCodec(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	mod, err := codec.NewModifierCodec(&testCodec{}, testModifier{})
 	require.NoError(t, err)
@@ -126,7 +128,7 @@ func TestModifierCodec(t *testing.T) {
 
 	t.Run("Decode returns error arrays with wrong number of elements", func(t *testing.T) {
 		decoded := &[3]modifierCodecOffChainType{}
-		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrWrongNumberOfElements))
+		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrSliceWrongLen))
 	})
 
 	t.Run("Decode returns error for incompatible type", func(t *testing.T) {
@@ -300,7 +302,7 @@ func (t *testCodec) CreateType(itemType string, _ bool) (any, error) {
 
 type testModifier struct{}
 
-func (testModifier) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
+func (testModifier) RetypeForOffChain(onChainType reflect.Type, _ string) (reflect.Type, error) {
 	switch onChainType {
 	case reflect.TypeOf(&modifierCodecChainType{}):
 		return reflect.TypeOf(&modifierCodecOffChainType{}), nil
@@ -313,7 +315,7 @@ func (testModifier) RetypeForOffChain(onChainType reflect.Type, itemType string)
 	}
 }
 
-func (t testModifier) TransformForOnChain(offChainValue any, itemType string) (any, error) {
+func (t testModifier) TransformForOnChain(offChainValue any, _ string) (any, error) {
 	offChain, ok := offChainValue.(*modifierCodecOffChainType)
 	if !ok {
 		slice, ok := offChainValue.(*[]modifierCodecOffChainType)
@@ -332,7 +334,7 @@ func (t testModifier) TransformForOnChain(offChainValue any, itemType string) (a
 	return &modifierCodecChainType{A: offChain.Z}, nil
 }
 
-func (t testModifier) TransformForOffChain(onChainValue any, itemType string) (any, error) {
+func (t testModifier) TransformForOffChain(onChainValue any, _ string) (any, error) {
 	onChain, ok := onChainValue.(*modifierCodecChainType)
 	if !ok {
 		slice, ok := onChainValue.(*[]modifierCodecChainType)

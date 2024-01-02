@@ -7,13 +7,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func NewByItemTypeModifier(modByitemType map[string]Modifier) (Modifier, error) {
-	if modByitemType == nil {
-		modByitemType = map[string]Modifier{}
+// NewByItemTypeModifier returns a Modifier that uses modByItemType to determine which Modifier to use for a given itemType.
+func NewByItemTypeModifier(modByItemType map[string]Modifier) (Modifier, error) {
+	if modByItemType == nil {
+		modByItemType = map[string]Modifier{}
 	}
 
 	return &byItemTypeModifier{
-		modByitemType: modByitemType,
+		modByitemType: modByItemType,
 	}, nil
 }
 

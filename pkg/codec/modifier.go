@@ -4,6 +4,8 @@ import (
 	"reflect"
 )
 
+// Modifier allows you to modify the off-chain type to be used on-chain, and vice-versa.
+// A modifier is set up by retyping the on-chain type to a type used off-chain.
 type Modifier interface {
 	RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error)
 

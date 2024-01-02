@@ -11,10 +11,14 @@ import (
 )
 
 func TestMultiModifier(t *testing.T) {
-	testType := reflect.TypeOf(chainModifierTestStruct{})
+	t.Parallel()
+
+	type testStruct struct{ A int }
+	testType := reflect.TypeOf(testStruct{})
 	mod1 := codec.NewRenamer(map[string]string{"A": "B"})
 	mod2 := codec.NewRenamer(map[string]string{"B": "C"})
 	chainMod := codec.MultiModifier{mod1, mod2}
+
 	t.Run("RetypeForOffChain chains modifiers", func(t *testing.T) {
 		offChain, err := chainMod.RetypeForOffChain(testType, "")
 		require.NoError(t, err)
@@ -29,7 +33,7 @@ func TestMultiModifier(t *testing.T) {
 		_, err := chainMod.RetypeForOffChain(testType, "")
 		require.NoError(t, err)
 
-		input := chainModifierTestStruct{A: 100}
+		input := testStruct{A: 100}
 		actual, err := chainMod.TransformForOffChain(input, "")
 		require.NoError(t, err)
 
@@ -49,11 +53,7 @@ func TestMultiModifier(t *testing.T) {
 		actual, err := chainMod.TransformForOnChain(input.Interface(), "")
 		require.NoError(t, err)
 
-		expected := chainModifierTestStruct{A: 100}
+		expected := testStruct{A: 100}
 		assert.Equal(t, expected, actual)
 	})
-}
-
-type chainModifierTestStruct struct {
-	A int
 }

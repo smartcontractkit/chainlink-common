@@ -6,7 +6,6 @@ import (
 )
 
 // Errors exposed to product plugins
-
 const (
 	ErrInvalidType              = InvalidArgumentError("invalid type")
 	ErrInvalidConfig            = InvalidArgumentError("invalid configuration")

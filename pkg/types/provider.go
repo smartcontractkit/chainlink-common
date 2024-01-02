@@ -35,6 +35,7 @@ type PluginProvider interface {
 // to a single string, making it difficult for the client to respond to different categories
 // of errors in different ways. This lessons the need for doing our own custom parsing of
 // error strings.
+
 type InvalidArgumentError string
 
 func (e InvalidArgumentError) Error() string {

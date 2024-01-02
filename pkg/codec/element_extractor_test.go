@@ -18,18 +18,33 @@ func TestElementExtractor(t *testing.T) {
 	first := codec.ElementExtractorLocationFirst
 	middle := codec.ElementExtractorLocationMiddle
 	last := codec.ElementExtractorLocationLast
+
+	type testStruct struct {
+		A string
+		B int64
+		C int64
+		D uint64
+	}
+
+	type nestedTestStruct struct {
+		A string
+		B testStruct
+		C []testStruct
+		D string
+	}
+
 	extractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "C": &middle, "D": &last})
 	invalidExtractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "W": &middle})
 	nestedExtractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "B.A": &first, "B.C": &middle, "B.D": &last, "C.A": &first, "C.C": &middle, "C.D": &last, "B": &last})
 	t.Run("RetypeForOffChain gets non-slice type", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
 
 		assertBasicElementExtractTransform(t, inputType)
 	})
 
 	t.Run("RetypeForOffChain works on slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, inputType.Kind())
@@ -37,7 +52,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on pointers", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
@@ -45,7 +60,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on pointers to non structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
@@ -54,7 +69,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on arrays", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Array, inputType.Kind())
@@ -63,12 +78,12 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain returns exception if a field is not on the type", func(t *testing.T) {
-		_, err := invalidExtractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}), "")
+		_, err := invalidExtractor.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("RetypeForOffChain works on nested fields even if the field itself is also extracted", func(t *testing.T) {
-		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedElementExtractorTestStruct{}), "")
+		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		fmt.Printf("%+v\n", inputType)
 		require.NoError(t, err)
 		assert.Equal(t, 4, inputType.NumField())
@@ -88,7 +103,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(inputType))
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A", "B", "C"}))
@@ -100,7 +115,7 @@ func TestElementExtractor(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := elementExtractorTestStruct{
+		expected := testStruct{
 			A: "A",
 			B: 10,
 			C: 20,
@@ -117,14 +132,14 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain returns error if input type was not from TransformForOnChain", func(t *testing.T) {
-		_, err := invalidExtractor.TransformForOnChain(elementExtractorTestStruct{}, "")
+		_, err := invalidExtractor.TransformForOnChain(testStruct{}, "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
-		_, err = invalidExtractor.TransformForOffChain(elementExtractorTestStruct{}, "")
+		_, err = invalidExtractor.TransformForOffChain(testStruct{}, "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		iInput := reflect.Indirect(rInput)
@@ -137,7 +152,7 @@ func TestElementExtractor(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := &elementExtractorTestStruct{
+		expected := &testStruct{
 			A: "A",
 			B: 10,
 			C: 20,
@@ -154,7 +169,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
 		iInput := rInput.Index(0)
@@ -172,7 +187,7 @@ func TestElementExtractor(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := []elementExtractorTestStruct{
+		expected := []testStruct{
 			{
 				A: "A",
 				B: 10,
@@ -202,7 +217,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on nested slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([][]elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([][]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
 		rOuter := rInput.Index(0)
@@ -234,7 +249,7 @@ func TestElementExtractor(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := [][]elementExtractorTestStruct{
+		expected := [][]testStruct{
 			{
 				{
 					A: "A",
@@ -292,7 +307,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers to non structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(&[]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		rElm := reflect.MakeSlice(inputType.Elem(), 2, 2)
@@ -312,7 +327,7 @@ func TestElementExtractor(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := &[]elementExtractorTestStruct{
+		expected := &[]testStruct{
 			{
 				A: "A",
 				B: 10,
@@ -341,7 +356,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on arrays", func(t *testing.T) {
-		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]elementExtractorTestStruct{}), "")
+		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf([2]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType).Elem()
 		iInput := rInput.Index(0)
@@ -359,7 +374,7 @@ func TestElementExtractor(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := [2]elementExtractorTestStruct{
+		expected := [2]testStruct{
 			{
 				A: "A",
 				B: 10,
@@ -389,7 +404,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on nested fields even if the field itself is also extracted", func(t *testing.T) {
-		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedElementExtractorTestStruct{}), "")
+		inputType, err := nestedExtractor.RetypeForOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(inputType))
@@ -428,15 +443,15 @@ func TestElementExtractor(t *testing.T) {
 		output, err := nestedExtractor.TransformForOnChain(iInput.Interface(), "")
 		require.NoError(t, err)
 
-		expected := nestedElementExtractorTestStruct{
+		expected := nestedTestStruct{
 			A: "A",
-			B: elementExtractorTestStruct{
+			B: testStruct{
 				A: "A",
 				B: 10,
 				C: 20,
 				D: 30,
 			},
-			C: []elementExtractorTestStruct{
+			C: []testStruct{
 				{
 					A: "A",
 					B: 10,
@@ -508,18 +523,4 @@ func assertBasicElementExtractTransform(t *testing.T, inputType reflect.Type) {
 	f3 := inputType.Field(3)
 	assert.Equal(t, "D", f3.Name)
 	assert.Equal(t, reflect.TypeOf([]uint64{}), f3.Type)
-}
-
-type elementExtractorTestStruct struct {
-	A string
-	B int64
-	C int64
-	D uint64
-}
-
-type nestedElementExtractorTestStruct struct {
-	A string
-	B elementExtractorTestStruct
-	C []elementExtractorTestStruct
-	D string
 }

@@ -5,10 +5,10 @@ import (
 )
 
 const (
-	ErrFieldNotFound         = InvalidArgumentError("field not found")
-	ErrInvalidEncoding       = InvalidArgumentError("invalid encoding")
-	ErrWrongNumberOfElements = InvalidArgumentError("wrong number of elements in slice")
-	ErrNotASlice             = InvalidArgumentError("element is not a slice")
+	ErrFieldNotFound   = InvalidArgumentError("field not found")
+	ErrInvalidEncoding = InvalidArgumentError("invalid encoding")
+	ErrSliceWrongLen   = InvalidArgumentError("slice is wrong length")
+	ErrNotASlice       = InvalidArgumentError("element is not a slice")
 )
 
 type Encoder interface {

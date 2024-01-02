@@ -11,6 +11,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+// NewModifierCodec returns a codec that calls the modifier before calling codec functions.
+// hooks are applied to the mapstructure decoding when Encode or Decode is called.
 func NewModifierCodec(codec types.RemoteCodec, modifier Modifier, hooks ...mapstructure.DecodeHookFunc) (types.RemoteCodec, error) {
 	if codec == nil || modifier == nil {
 		return nil, errors.New("inputs must not be nil")
@@ -136,7 +138,7 @@ func convert(from, to reflect.Value, hook mapstructure.DecodeHookFunc) error {
 		// Arrays and slices can't be encoded to a map, so convert each element individually.
 		case reflect.Array:
 			if from.Len() != to.Len() {
-				return types.ErrWrongNumberOfElements
+				return types.ErrSliceWrongLen
 			}
 			return convertSliceOrArray(from, to, hook)
 		case reflect.Slice:

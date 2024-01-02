@@ -10,6 +10,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+// NewHardCoder creates a modifier that will hard-code values for on-chain and off-chain types
+// The modifier will override any values of the same name, if you need an overwritten value to be used in a different field,
+// NewRenamer must be used before NewHardCoder.
 func NewHardCoder(onChain map[string]any, offChain map[string]any, hooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	if err := verifyHardCodeKeys(onChain); err != nil {
 		return nil, err

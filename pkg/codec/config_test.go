@@ -12,28 +12,33 @@ import (
 )
 
 func TestModifiersConfig(t *testing.T) {
+	type testStruct struct {
+		A int
+		C int
+	}
+
 	jsonConfig := `[
     {
-        "type": "extract element",
-        "extractions": {
+        "type": "Extract Element",
+        "Extractions": {
             "A": "First"
         }
     },
     {
-        "type": "rename",
-        "fields": {
+        "Type": "Rename",
+        "Fields": {
             "A": "Z"
         }
     },
     {
-        "type": "drop",
-        "fields": [
+        "Type": "Drop",
+        "Fields": [
             "C"
         ]
     },
     {
-        "type": "hard code",
-        "offChainValues": {
+        "Type": "Hard Code",
+        "OffChainValues": {
             "B": 2
         }
     }
@@ -78,10 +83,10 @@ func TestModifiersConfig(t *testing.T) {
 			modifier, err := conf.ToModifier()
 			require.NoError(t, err)
 
-			_, err = modifier.RetypeForOffChain(reflect.TypeOf(ModifiersConfigOnChainTestStruct{}), "")
+			_, err = modifier.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
 			require.NoError(t, err)
 
-			onChain := ModifiersConfigOnChainTestStruct{
+			onChain := testStruct{
 				A: 1,
 				C: 100,
 			}
@@ -105,9 +110,4 @@ func TestModifiersConfig(t *testing.T) {
 			assert.Equal(t, expectedMap, actualMap)
 		})
 	}
-}
-
-type ModifiersConfigOnChainTestStruct struct {
-	A int
-	C int
 }

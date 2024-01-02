@@ -13,18 +13,33 @@ import (
 )
 
 func TestRenamer(t *testing.T) {
+	t.Parallel()
+
+	type testStruct struct {
+		A string
+		B int64
+		C int64
+	}
+
+	type nestedTestStruct struct {
+		A string
+		B testStruct
+		C []testStruct
+		D string
+	}
+
 	renamer := codec.NewRenamer(map[string]string{"A": "X", "C": "Z"})
 	invalidRenamer := codec.NewRenamer(map[string]string{"W": "X", "C": "Z"})
 	nestedRenamer := codec.NewRenamer(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z", "B": "Y"})
 	t.Run("RetypeForOffChain renames fields keeping structure", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
 
 		assertBasicRenameTransform(t, offChainType)
 	})
 
 	t.Run("RetypeForOffChain works on slices", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([]renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([]testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, offChainType.Kind())
@@ -32,7 +47,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on pointers", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, offChainType.Kind())
@@ -40,7 +55,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on pointers to non structs", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&[]renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&[]testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, offChainType.Kind())
@@ -49,7 +64,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain works on arrays", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([2]renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([2]testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Array, offChainType.Kind())
@@ -58,12 +73,12 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("RetypeForOffChain returns exception if a field is not on the type", func(t *testing.T) {
-		_, err := invalidRenamer.RetypeForOffChain(reflect.TypeOf(renamerTestStruct{}), "")
+		_, err := invalidRenamer.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("RetypeForOffChain works on nested fields even if the field itself is renamed", func(t *testing.T) {
-		offChainType, err := nestedRenamer.RetypeForOffChain(reflect.TypeOf(renameNesting{}), "")
+		offChainType, err := nestedRenamer.RetypeForOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
 		assert.Equal(t, 4, offChainType.NumField())
 		f0 := offChainType.Field(0)
@@ -82,7 +97,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on structs", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
 		iOffchain := reflect.Indirect(reflect.New(offChainType))
 		iOffchain.FieldByName("X").SetString("foo")
@@ -93,7 +108,7 @@ func TestRenamer(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := renamerTestStruct{
+		expected := testStruct{
 			A: "foo",
 			B: 10,
 			C: 20,
@@ -105,12 +120,12 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain returns error if input type was not from TransformForOnChain", func(t *testing.T) {
-		_, err := invalidRenamer.TransformForOnChain(renamerTestStruct{}, "")
+		_, err := invalidRenamer.TransformForOnChain(testStruct{}, "")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(offChainType.Elem())
 		iOffchain := reflect.Indirect(rInput)
@@ -122,7 +137,7 @@ func TestRenamer(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := &renamerTestStruct{
+		expected := &testStruct{
 			A: "foo",
 			B: 10,
 			C: 20,
@@ -139,7 +154,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on slices", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([]renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(offChainType, 2, 2)
 		iOffchain := rInput.Index(0)
@@ -155,7 +170,7 @@ func TestRenamer(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := []renamerTestStruct{
+		expected := []testStruct{
 			{
 				A: "foo",
 				B: 10,
@@ -175,7 +190,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on nested slices", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([][]renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([][]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(offChainType, 2, 2)
 		rOuter := rInput.Index(0)
@@ -203,7 +218,7 @@ func TestRenamer(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := [][]renamerTestStruct{
+		expected := [][]testStruct{
 			{
 				{
 					A: "foo",
@@ -237,7 +252,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on pointers to non structs", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&[]renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf(&[]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(offChainType.Elem())
 		rElm := reflect.MakeSlice(offChainType.Elem(), 2, 2)
@@ -255,7 +270,7 @@ func TestRenamer(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := &[]renamerTestStruct{
+		expected := &[]testStruct{
 			{
 				A: "foo",
 				B: 10,
@@ -275,7 +290,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on arrays", func(t *testing.T) {
-		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([2]renamerTestStruct{}), "")
+		offChainType, err := renamer.RetypeForOffChain(reflect.TypeOf([2]testStruct{}), "")
 		require.NoError(t, err)
 		rInput := reflect.New(offChainType).Elem()
 		iOffchain := rInput.Index(0)
@@ -291,7 +306,7 @@ func TestRenamer(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := [2]renamerTestStruct{
+		expected := [2]testStruct{
 			{
 				A: "foo",
 				B: 10,
@@ -311,7 +326,7 @@ func TestRenamer(t *testing.T) {
 	})
 
 	t.Run("TransformForOnChain and TransformForOffChain works on nested fields even if the field itself is renamed", func(t *testing.T) {
-		offChainType, err := nestedRenamer.RetypeForOffChain(reflect.TypeOf(renameNesting{}), "")
+		offChainType, err := nestedRenamer.RetypeForOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
 		iOffchain := reflect.Indirect(reflect.New(offChainType))
 
@@ -338,14 +353,14 @@ func TestRenamer(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expected := renameNesting{
+		expected := nestedTestStruct{
 			A: "foo",
-			B: renamerTestStruct{
+			B: testStruct{
 				A: "foo",
 				B: 10,
 				C: 20,
 			},
-			C: []renamerTestStruct{
+			C: []testStruct{
 				{
 					A: "foo",
 					B: 10,
@@ -377,17 +392,4 @@ func assertBasicRenameTransform(t *testing.T, offChainType reflect.Type) {
 	f2 := offChainType.Field(2)
 	assert.Equal(t, "Z", f2.Name)
 	assert.Equal(t, reflect.TypeOf(int64(0)), f2.Type)
-}
-
-type renamerTestStruct struct {
-	A string
-	B int64
-	C int64
-}
-
-type renameNesting struct {
-	A string
-	B renamerTestStruct
-	C []renamerTestStruct
-	D string
 }

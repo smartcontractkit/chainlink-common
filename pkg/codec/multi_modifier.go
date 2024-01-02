@@ -4,6 +4,7 @@ import (
 	"reflect"
 )
 
+// MultiModifier is a Modifier that applies each element for the slice in-order (reverse order for TransformForOnChain).
 type MultiModifier []Modifier
 
 func (c MultiModifier) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {

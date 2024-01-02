@@ -226,7 +226,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, items, TestItemArray2Type)
-				assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
+				assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
 			},
 		},
 		{
@@ -243,7 +243,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, items, TestItemArray1Type)
-				assert.True(t, errors.Is(err, types.ErrWrongNumberOfElements))
+				assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
 			},
 		},
 		{

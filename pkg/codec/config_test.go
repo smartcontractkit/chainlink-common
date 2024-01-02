@@ -16,7 +16,7 @@ func TestModifiersConfig(t *testing.T) {
     {
         "type": "extract element",
         "extractions": {
-            "A": "first element"
+            "A": "First"
         }
     },
     {
@@ -43,7 +43,7 @@ func TestModifiersConfig(t *testing.T) {
     {
         "type": "extract element",
         "extractions": {
-            "a": "first element"
+            "a": "first"
         }
     },
     {

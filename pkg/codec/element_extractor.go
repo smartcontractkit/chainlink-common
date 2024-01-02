@@ -1,29 +1,64 @@
 package codec
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-type ElementExtractorLocation string
+type ElementExtractorLocation int
 
 const (
-	FirstElementLocation  ElementExtractorLocation = "first element"
-	MiddleElementLocation ElementExtractorLocation = "middle element"
-	LastElementLocation   ElementExtractorLocation = "last element"
+	ElementExtractorLocationFirst ElementExtractorLocation = iota
+	ElementExtractorLocationMiddle
+	ElementExtractorLocationLast
+	ElementExtractorLocationDefault = ElementExtractorLocationMiddle
 )
 
-func NewElementExtractor(fields map[string]ElementExtractorLocation) Modifier {
+func (e *ElementExtractorLocation) MarshalJSON() ([]byte, error) {
+	switch *e {
+	case ElementExtractorLocationFirst:
+		return json.Marshal("first")
+	case ElementExtractorLocationMiddle:
+		return json.Marshal("middle")
+	case ElementExtractorLocationLast:
+		return json.Marshal("last")
+	default:
+		return nil, fmt.Errorf("%w: %d", types.ErrInvalidType, *e)
+	}
+}
+
+func (e *ElementExtractorLocation) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+
+	switch strings.ToLower(s) {
+	case "first":
+		*e = ElementExtractorLocationFirst
+	case "middle":
+		*e = ElementExtractorLocationMiddle
+	case "last":
+		*e = ElementExtractorLocationLast
+	default:
+		return fmt.Errorf("%w: %s", types.ErrInvalidType, s)
+	}
+	return nil
+}
+
+func NewElementExtractor(fields map[string]*ElementExtractorLocation) Modifier {
 	m := &elementExtractor{
-		modifierBase: modifierBase[ElementExtractorLocation]{
+		modifierBase: modifierBase[*ElementExtractorLocation]{
 			fields:           fields,
 			onToOffChainType: map[reflect.Type]reflect.Type{},
 			offToOnChainType: map[reflect.Type]reflect.Type{},
 		},
 	}
-	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, _ ElementExtractorLocation) error {
+	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, _ *ElementExtractorLocation) error {
 		field.Type = reflect.SliceOf(field.Type)
 		return nil
 	}
@@ -32,7 +67,7 @@ func NewElementExtractor(fields map[string]ElementExtractorLocation) Modifier {
 }
 
 type elementExtractor struct {
-	modifierBase[ElementExtractorLocation]
+	modifierBase[*ElementExtractorLocation]
 }
 
 func (e *elementExtractor) TransformForOnChain(offChainValue any, _ string) (any, error) {
@@ -43,12 +78,17 @@ func (e *elementExtractor) TransformForOffChain(onChainValue any, _ string) (any
 	return transformWithMaps(onChainValue, e.onToOffChainType, e.fields, expandMap)
 }
 
-func extractMap(extractMap map[string]any, key string, elementLocation ElementExtractorLocation) error {
+func extractMap(extractMap map[string]any, key string, elementLocation *ElementExtractorLocation) error {
 	item, ok := extractMap[key]
 	if !ok {
 		return fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)
 	} else if item == nil {
 		return nil
+	}
+
+	if elementLocation == nil {
+		tmp := ElementExtractorLocationDefault
+		elementLocation = &tmp
 	}
 
 	rItem := reflect.ValueOf(item)
@@ -63,19 +103,19 @@ func extractMap(extractMap map[string]any, key string, elementLocation ElementEx
 		return nil
 	}
 
-	switch elementLocation {
-	case FirstElementLocation:
+	switch *elementLocation {
+	case ElementExtractorLocationFirst:
 		extractMap[key] = rItem.Index(0).Interface()
-	case MiddleElementLocation:
+	case ElementExtractorLocationMiddle:
 		extractMap[key] = rItem.Index(rItem.Len() / 2).Interface()
-	case LastElementLocation:
+	case ElementExtractorLocationLast:
 		extractMap[key] = rItem.Index(rItem.Len() - 1).Interface()
 	}
 
 	return nil
 }
 
-func expandMap(extractMap map[string]any, key string, _ ElementExtractorLocation) error {
+func expandMap(extractMap map[string]any, key string, _ *ElementExtractorLocation) error {
 	item, ok := extractMap[key]
 	if !ok {
 		return fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, key)

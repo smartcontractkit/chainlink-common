@@ -100,7 +100,7 @@ func (d *DropModifierConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookF
 }
 
 type ElementExtractorConfig struct {
-	Extractions map[string]ElementExtractorLocation
+	Extractions map[string]*ElementExtractorLocation
 }
 
 func (e *ElementExtractorConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {

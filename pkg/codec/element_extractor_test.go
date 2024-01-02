@@ -1,6 +1,7 @@
 package codec_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -14,9 +15,12 @@ import (
 )
 
 func TestElementExtractor(t *testing.T) {
-	extractor := codec.NewElementExtractor(map[string]codec.ElementExtractorLocation{"A": codec.FirstElementLocation, "C": codec.MiddleElementLocation, "D": codec.LastElementLocation})
-	invalidExtractor := codec.NewElementExtractor(map[string]codec.ElementExtractorLocation{"A": codec.FirstElementLocation, "W": codec.MiddleElementLocation})
-	nestedExtractor := codec.NewElementExtractor(map[string]codec.ElementExtractorLocation{"A": codec.FirstElementLocation, "B.A": codec.FirstElementLocation, "B.C": codec.MiddleElementLocation, "B.D": codec.LastElementLocation, "C.A": codec.FirstElementLocation, "C.C": codec.MiddleElementLocation, "C.D": codec.LastElementLocation, "B": codec.LastElementLocation})
+	first := codec.ElementExtractorLocationFirst
+	middle := codec.ElementExtractorLocationMiddle
+	last := codec.ElementExtractorLocationLast
+	extractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "C": &middle, "D": &last})
+	invalidExtractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "W": &middle})
+	nestedExtractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "B.A": &first, "B.C": &middle, "B.D": &last, "C.A": &first, "C.C": &middle, "C.D": &last, "B": &last})
 	t.Run("RetypeForOffChain gets non-slice type", func(t *testing.T) {
 		inputType, err := extractor.RetypeForOffChain(reflect.TypeOf(elementExtractorTestStruct{}), "")
 		require.NoError(t, err)
@@ -472,6 +476,22 @@ func TestElementExtractor(t *testing.T) {
 		rElm.FieldByName("D").Set(reflect.ValueOf([]uint64{35}))
 		assert.Equal(t, iInput.Interface(), newInput)
 	})
+
+	for _, test := range []struct {
+		location codec.ElementExtractorLocation
+	}{
+		{location: codec.ElementExtractorLocationFirst},
+		{location: codec.ElementExtractorLocationMiddle},
+		{location: codec.ElementExtractorLocationLast},
+	} {
+		t.Run("Json encoding works", func(t *testing.T) {
+			b, err := json.Marshal(&test.location)
+			require.NoError(t, err)
+			var actual codec.ElementExtractorLocation
+			require.NoError(t, json.Unmarshal(b, &actual))
+			assert.Equal(t, test.location, actual)
+		})
+	}
 }
 
 func assertBasicElementExtractTransform(t *testing.T, inputType reflect.Type) {

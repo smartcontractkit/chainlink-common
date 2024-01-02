@@ -13,7 +13,7 @@ import (
 )
 
 func TestByTypeModifier(t *testing.T) {
-	anyitemType := "anything"
+	const anyitemType = "anything"
 	modifierCodecChainMod := codec.NewRenamer(map[string]string{"A": "B"})
 	mod, err := codec.NewByItemTypeModifier(map[string]codec.Modifier{anyitemType: modifierCodecChainMod})
 	require.NoError(t, err)

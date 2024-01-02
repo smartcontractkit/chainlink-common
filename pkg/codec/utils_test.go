@@ -1,4 +1,4 @@
-package codec_test
+package codec
 
 import (
 	"errors"
@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -21,17 +20,17 @@ func TestFitsInNBitsSigned(t *testing.T) {
 	t.Parallel()
 	t.Run("Fits", func(t *testing.T) {
 		bi := big.NewInt(math.MaxInt16)
-		assert.True(t, codec.FitsInNBitsSigned(16, bi))
+		assert.True(t, FitsInNBitsSigned(16, bi))
 	})
 
 	t.Run("Too large", func(t *testing.T) {
 		bi := big.NewInt(math.MaxInt16 + 1)
-		assert.False(t, codec.FitsInNBitsSigned(16, bi))
+		assert.False(t, FitsInNBitsSigned(16, bi))
 	})
 
 	t.Run("Too small", func(t *testing.T) {
 		bi := big.NewInt(math.MinInt16 - 1)
-		assert.False(t, codec.FitsInNBitsSigned(16, bi))
+		assert.False(t, FitsInNBitsSigned(16, bi))
 	})
 }
 
@@ -55,7 +54,7 @@ func TestBigIntHook(t *testing.T) {
 	for _, intType := range intTypes {
 		t.Run(fmt.Sprintf("Fits conversion %v", intType.Type), func(t *testing.T) {
 			anyValidNumber := big.NewInt(5)
-			result, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, anyValidNumber)
+			result, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, anyValidNumber)
 			require.NoError(t, err)
 			require.IsType(t, reflect.New(intType.Type).Elem().Interface(), result)
 			if intType.Min.Cmp(big.NewInt(0)) == 0 {
@@ -71,20 +70,20 @@ func TestBigIntHook(t *testing.T) {
 
 		t.Run("Overflow return an error "+intType.Type.String(), func(t *testing.T) {
 			bigger := new(big.Int).Add(intType.Max, big.NewInt(1))
-			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
+			_, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
 			assert.True(t, errors.Is(err, types.ErrInvalidType))
 		})
 
 		t.Run("Underflow return an error "+intType.Type.String(), func(t *testing.T) {
 			smaller := new(big.Int).Sub(intType.Min, big.NewInt(1))
-			_, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
+			_, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
 			assert.True(t, errors.Is(err, types.ErrInvalidType))
 		})
 
 		t.Run("Converts from "+intType.Type.String(), func(t *testing.T) {
 			anyValidNumber := int64(5)
 			asType := reflect.ValueOf(anyValidNumber).Convert(intType.Type).Interface()
-			result, err := codec.BigIntHook(intType.Type, reflect.TypeOf((*big.Int)(nil)), asType)
+			result, err := BigIntHook(intType.Type, reflect.TypeOf((*big.Int)(nil)), asType)
 			require.NoError(t, err)
 			bi, ok := result.(*big.Int)
 			require.True(t, ok)
@@ -94,7 +93,7 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Converts from string", func(t *testing.T) {
 		anyNumber := int64(5)
-		result, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), strconv.FormatInt(anyNumber, 10))
+		result, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), strconv.FormatInt(anyNumber, 10))
 		require.NoError(t, err)
 		bi, ok := result.(*big.Int)
 		require.True(t, ok)
@@ -103,19 +102,19 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Converts to string", func(t *testing.T) {
 		anyNumber := int64(5)
-		result, err := codec.BigIntHook(reflect.TypeOf((*big.Int)(nil)), reflect.TypeOf(""), big.NewInt(anyNumber))
+		result, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), reflect.TypeOf(""), big.NewInt(anyNumber))
 		require.NoError(t, err)
 		assert.Equal(t, strconv.FormatInt(anyNumber, 10), result)
 	})
 
 	t.Run("Errors for invalid string", func(t *testing.T) {
-		_, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
+		_, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("Not a big int returns the input data", func(t *testing.T) {
 		input := "foo"
-		result, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
+		result, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
 		require.NoError(t, err)
 		assert.Equal(t, input, result)
 	})
@@ -125,7 +124,7 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 	t.Run("correct size slice converts", func(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1, 2}
-		res, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
+		res, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
 		assert.NoError(t, err)
 
 		// Mapstructure will convert slices to arrays, all we need in this hook is to pass it along
@@ -135,21 +134,21 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 	t.Run("Too large slice returns error", func(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1, 2, 3}
-		_, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
+		_, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
 		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
 	})
 
 	t.Run("Too small slice returns error", func(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1}
-		_, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
+		_, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
 		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
 	})
 
 	t.Run("Empty slices are treated as ok to allow unset values", func(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		var data []int64
-		res, err := codec.SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
+		res, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
 		assert.NoError(t, err)
 
 		// Mapstructure will convert slices to arrays, all we need in this hook is to pass it along
@@ -158,7 +157,7 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 
 	t.Run("Not a slice returns the input data", func(t *testing.T) {
 		input := "foo"
-		result, err := codec.BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
+		result, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
 		require.NoError(t, err)
 		assert.Equal(t, input, result)
 	})
@@ -183,7 +182,7 @@ func TestEpochToTimeHook(t *testing.T) {
 	t.Run("converts epoch to time", func(t *testing.T) {
 		for _, testValue := range testValues {
 			t.Run(fmt.Sprintf("%T", testValue), func(t *testing.T) {
-				actual, err := codec.EpochToTimeHook(reflect.TypeOf(testValue), reflect.TypeOf(testTime), testValue)
+				actual, err := epochToTimeHook(reflect.TypeOf(testValue), reflect.TypeOf(testTime), testValue)
 				require.NoError(t, err)
 				assert.Equal(t, testTime, actual)
 			})
@@ -193,7 +192,7 @@ func TestEpochToTimeHook(t *testing.T) {
 	t.Run("Converts timestamps to integer type", func(t *testing.T) {
 		for _, testValue := range testValues {
 			t.Run(fmt.Sprintf("%T", testValue), func(t *testing.T) {
-				actual, err := codec.EpochToTimeHook(reflect.TypeOf(testTime), reflect.TypeOf(testValue), testTime)
+				actual, err := epochToTimeHook(reflect.TypeOf(testTime), reflect.TypeOf(testValue), testTime)
 				require.NoError(t, err)
 				assert.Equal(t, testValue, actual)
 			})
@@ -201,7 +200,7 @@ func TestEpochToTimeHook(t *testing.T) {
 	})
 
 	t.Run("returns data for non time types", func(t *testing.T) {
-		actual, err := codec.EpochToTimeHook(reflect.TypeOf(""), reflect.TypeOf(0), "foo")
+		actual, err := epochToTimeHook(reflect.TypeOf(""), reflect.TypeOf(0), "foo")
 		require.NoError(t, err)
 		assert.Equal(t, "foo", actual)
 	})

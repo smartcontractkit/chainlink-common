@@ -32,33 +32,39 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type, itemType s
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
-		if elm, err := m.RetypeForOffChain(onChainType.Elem(), ""); err == nil {
-			ptr := reflect.PointerTo(elm)
-			m.onToOffChainType[onChainType] = ptr
-			m.offToOnChainType[ptr] = onChainType
-			return ptr, nil
+		elm, err := m.RetypeForOffChain(onChainType.Elem(), "")
+		if err != nil {
+			return nil, err
 		}
-		return nil, types.ErrInvalidType
+
+		ptr := reflect.PointerTo(elm)
+		m.onToOffChainType[onChainType] = ptr
+		m.offToOnChainType[ptr] = onChainType
+		return ptr, nil
 	case reflect.Slice:
-		if elm, err := m.RetypeForOffChain(onChainType.Elem(), ""); err == nil {
-			sliceType := reflect.SliceOf(elm)
-			m.onToOffChainType[onChainType] = sliceType
-			m.offToOnChainType[sliceType] = onChainType
-			return sliceType, nil
+		elm, err := m.RetypeForOffChain(onChainType.Elem(), "")
+		if err != nil {
+			return nil, err
 		}
-		return nil, types.ErrInvalidType
+
+		sliceType := reflect.SliceOf(elm)
+		m.onToOffChainType[onChainType] = sliceType
+		m.offToOnChainType[sliceType] = onChainType
+		return sliceType, nil
 	case reflect.Array:
-		if elm, err := m.RetypeForOffChain(onChainType.Elem(), ""); err == nil {
-			arrayType := reflect.ArrayOf(onChainType.Len(), elm)
-			m.onToOffChainType[onChainType] = arrayType
-			m.offToOnChainType[arrayType] = onChainType
-			return arrayType, nil
+		elm, err := m.RetypeForOffChain(onChainType.Elem(), "")
+		if err != nil {
+			return nil, err
 		}
-		return nil, types.ErrInvalidType
+
+		arrayType := reflect.ArrayOf(onChainType.Len(), elm)
+		m.onToOffChainType[onChainType] = arrayType
+		m.offToOnChainType[arrayType] = onChainType
+		return arrayType, nil
 	case reflect.Struct:
 		return m.getStructType(onChainType)
 	default:
-		return nil, types.ErrInvalidType
+		return nil, fmt.Errorf("%w: cannot retype the kind %v", types.ErrInvalidType, onChainType.Kind())
 	}
 }
 
@@ -136,7 +142,7 @@ func transformWithMaps[T any](
 
 	toType, ok := typeMap[rItem.Type()]
 	if !ok {
-		return reflect.Value{}, types.ErrInvalidType
+		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
 	}
 
 	rOutput, err := transformWithMapsHelper(rItem, toType, fields, fn, hooks)
@@ -179,7 +185,7 @@ func transformWithMapsHelper[T any](
 		err := doMany(rItem, into, fields, fn, hooks)
 		return into, err
 	default:
-		return reflect.Value{}, types.ErrInvalidType
+		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
 	}
 }
 

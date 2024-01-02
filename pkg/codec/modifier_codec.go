@@ -147,7 +147,7 @@ func convert(from, to reflect.Value, hook mapstructure.DecodeHookFunc) error {
 		case reflect.Pointer:
 			return convert(from, reflect.Indirect(to), hook)
 		default:
-			return types.ErrInvalidType
+			return fmt.Errorf("%w: cannot convert the kind %v", types.ErrInvalidType, to.Kind())
 		}
 	default:
 		return decodeWithHook(from.Interface(), to.Interface(), hook)
@@ -164,7 +164,7 @@ func convertSliceOrArray(from, to reflect.Value, hook mapstructure.DecodeHookFun
 		}
 		return nil
 	default:
-		return types.ErrInvalidType
+		return fmt.Errorf("%w: expected array or slice to convert got kind %s", types.ErrInvalidType, from.Kind())
 	}
 }
 

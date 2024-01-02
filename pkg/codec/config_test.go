@@ -39,7 +39,7 @@ func TestModifiersConfig(t *testing.T) {
     }
 ]`
 
-	lowerJsonConfig := `[
+	lowerJSONConfig := `[
     {
         "type": "extract element",
         "extractions": {
@@ -69,7 +69,7 @@ func TestModifiersConfig(t *testing.T) {
 	for _, test := range []struct{ name, json string }{
 		{"exact", jsonConfig},
 		// Used to allow config to match on-chain names/convention
-		{"lowercase", lowerJsonConfig},
+		{"lowercase", lowerJSONConfig},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			conf := &codec.ModifiersConfig{}

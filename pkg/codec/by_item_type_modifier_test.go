@@ -1,6 +1,7 @@
 package codec_test
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -38,12 +39,12 @@ func TestByTypeModifier(t *testing.T) {
 
 	t.Run("Returns error if modifier isn't found", func(t *testing.T) {
 		_, err := mod.RetypeForOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
-		assert.Equal(t, types.ErrInvalidType, err)
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 
 		_, err = mod.TransformForOnChain(&modifierCodecChainType{}, "different")
-		assert.Equal(t, types.ErrInvalidType, err)
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 
 		_, err = mod.TransformForOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
-		assert.Equal(t, types.ErrInvalidType, err)
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 }

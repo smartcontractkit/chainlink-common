@@ -86,7 +86,7 @@ func (e InternalError) Is(target error) bool {
 		return true
 	}
 
-	return grpcErrorHasTypeAndMessage(target, string(e), codes.Unimplemented)
+	return grpcErrorHasTypeAndMessage(target, string(e), codes.Internal)
 }
 
 type NotFoundError string

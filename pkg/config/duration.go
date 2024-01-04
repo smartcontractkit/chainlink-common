@@ -27,28 +27,13 @@ func MustNewDuration(d time.Duration) *Duration {
 	return &rv
 }
 
-func MakeDuration(d time.Duration) (Duration, error) {
-	if d < time.Duration(0) {
-		return Duration{}, fmt.Errorf("cannot make negative time duration: %s", d)
-	}
-	return Duration{d: d}, nil
-}
-
 func ParseDuration(s string) (Duration, error) {
 	d, err := time.ParseDuration(s)
 	if err != nil {
 		return Duration{}, err
 	}
 
-	return MakeDuration(d)
-}
-
-func MustMakeDuration(d time.Duration) Duration {
-	rv, err := MakeDuration(d)
-	if err != nil {
-		panic(err)
-	}
-	return rv
+	return NewDuration(d)
 }
 
 func (d Duration) Duration() time.Duration {
@@ -90,7 +75,7 @@ func (d *Duration) UnmarshalJSON(input []byte) error {
 	if err != nil {
 		return err
 	}
-	*d, err = MakeDuration(v)
+	*d, err = NewDuration(v)
 	if err != nil {
 		return err
 	}
@@ -100,7 +85,7 @@ func (d *Duration) UnmarshalJSON(input []byte) error {
 func (d *Duration) Scan(v interface{}) (err error) {
 	switch tv := v.(type) {
 	case int64:
-		*d, err = MakeDuration(time.Duration(tv))
+		*d, err = NewDuration(time.Duration(tv))
 		return err
 	default:
 		return errors.Errorf(`don't know how to parse "%s" of type %T as a `+
@@ -123,7 +108,7 @@ func (d *Duration) UnmarshalText(input []byte) error {
 	if err != nil {
 		return err
 	}
-	pd, err := MakeDuration(v)
+	pd, err := NewDuration(v)
 	if err != nil {
 		return err
 	}

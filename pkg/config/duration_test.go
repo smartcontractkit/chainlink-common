@@ -15,11 +15,11 @@ func TestDuration_MarshalJSON(t *testing.T) {
 		input Duration
 		want  string
 	}{
-		{"zero", MustMakeDuration(0), `"0s"`},
-		{"one second", MustMakeDuration(time.Second), `"1s"`},
-		{"one minute", MustMakeDuration(time.Minute), `"1m0s"`},
-		{"one hour", MustMakeDuration(time.Hour), `"1h0m0s"`},
-		{"one hour thirty minutes", MustMakeDuration(time.Hour + 30*time.Minute), `"1h30m0s"`},
+		{"zero", *MustNewDuration(0), `"0s"`},
+		{"one second", *MustNewDuration(time.Second), `"1s"`},
+		{"one minute", *MustNewDuration(time.Minute), `"1m0s"`},
+		{"one hour", *MustNewDuration(time.Hour), `"1h0m0s"`},
+		{"one hour thirty minutes", *MustNewDuration(time.Hour + 30*time.Minute), `"1h30m0s"`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestDuration_MarshalJSON(t *testing.T) {
 func TestDuration_Scan_Value(t *testing.T) {
 	t.Parallel()
 
-	d := MustMakeDuration(100)
+	d := MustNewDuration(100)
 	require.NotNil(t, d)
 
 	d.Duration()
@@ -41,7 +41,7 @@ func TestDuration_Scan_Value(t *testing.T) {
 	val, err := d.Value()
 	require.NoError(t, err)
 
-	dNew := MustMakeDuration(0)
+	dNew := MustNewDuration(0)
 	err = dNew.Scan(val)
 	require.NoError(t, err)
 
@@ -51,13 +51,13 @@ func TestDuration_Scan_Value(t *testing.T) {
 func TestDuration_MarshalJSON_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 
-	d := MustMakeDuration(100)
+	d := MustNewDuration(100)
 	require.NotNil(t, d)
 
 	json, err := d.MarshalJSON()
 	require.NoError(t, err)
 
-	dNew := MustMakeDuration(0)
+	dNew := MustNewDuration(0)
 	err = dNew.UnmarshalJSON(json)
 	require.NoError(t, err)
 

@@ -1,4 +1,4 @@
-package sqlutil
+package config
 
 import (
 	"encoding/json"

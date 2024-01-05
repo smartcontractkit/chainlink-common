@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 )
 
 var _ grpc.ClientConnInterface = (*atomicClient)(nil)
@@ -119,7 +120,7 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 		c.cc, err = c.dial(id)
 		if err != nil {
 			if ctx.Err() != nil {
-				lggr.Errorw("Client dial failed", "err", ErrConnDial{Name: c.name, ID: id, Err: err})
+				lggr.Errorw("Client dial failed", "err", common.ErrConnDial{Name: c.name, ID: id, Err: err})
 			}
 			c.closeAll(c.deps...)
 			return false

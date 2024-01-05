@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 )
 
@@ -108,7 +109,7 @@ func (b *brokerExt) serve(name string, server *grpc.Server, deps ...resource) (u
 	lis, err := b.broker.Accept(id)
 	if err != nil {
 		b.closeAll(deps...)
-		return 0, resource{}, ErrConnAccept{Name: name, ID: id, Err: err}
+		return 0, resource{}, common.ErrConnAccept{Name: name, ID: id, Err: err}
 	}
 
 	var wg sync.WaitGroup

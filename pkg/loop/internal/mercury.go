@@ -7,6 +7,7 @@ import (
 
 	"github.com/mwitkow/grpc-proxy/proxy"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -57,8 +58,7 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 	newMercuryClientFn := func(ctx context.Context) (id uint32, deps resources, err error) {
 		// the local resources for mercury are the DataSource
 		dataSourceID, dsRes, err := c.serveNew("DataSource", func(s *grpc.Server) {
-			// TODO this doesn't compile b/c dataSourceServer is median specific. need internal versioned mercury package internal/mercury/v3/datasource.go ...
-			mercury_v3_pb.RegisterDataSourceServer(s, &dataSourceServer{impl: dataSource})
+			mercury_v3_pb.RegisterDataSourceServer(s, mercury_v3_internal.NewDataSourceServer(dataSource))
 		})
 		if err != nil {
 			return 0, nil, err
@@ -92,25 +92,15 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 		deps.Add(providerRes)
 
 		reply, err := c.mercury.NewMercuryV3Factory(ctx, &mercury_pb.NewMercuryV3FactoryRequest{
-			ProviderId:   providerID,
-			DataSourceId: dataSourceID,
+			MercuryProviderID: providerID,
+			DataSourceV3ID:    dataSourceID,
 		})
 		if err != nil {
 			return 0, nil, err
 		}
-		return reply.Id, deps, nil
+		return reply.MercuryV3FactoryID, deps, nil
 	}
 
 	cc := c.newClientConn("MercuryV3Factory", newMercuryClientFn)
 	return newReportingPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
-}
-
-// initializeLocalResources initializes the resources that are local to the client process.
-func (c *MercuryAdapterClient) initializeLocalResources(ctx context.Context) (resources, error) {
-	// the local resources for mercury are the DataSource
-}
-
-// initializeProxableResources initializes the resources that be may proxied by the client process to external resources.
-func (c *MercuryAdapterClient) initializeProxableResources(ctx context.Context) (resources, error) {
-	panic("TODO")
 }

@@ -12,7 +12,7 @@ import (
 	//ocr_types "github.com/smartcontractkit/libocr/offchainreporting/types"
 	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 )
@@ -29,7 +29,7 @@ func newDataSourceClient(cc grpc.ClientConnInterface) *DataSourceClient {
 
 func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (mercury_v3_types.Observation, error) {
 	reply, err := d.grpc.Observe(ctx, &mercury_v3_pb.ObserveRequest{
-		ReportTimestamp: internal.PbReportTimestamp(timestamp),
+		ReportTimestamp: common.PbReportTimestamp(timestamp),
 	})
 	if err != nil {
 		return mercury_v3_types.Observation{}, err
@@ -38,16 +38,20 @@ func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types
 	return observation(reply), nil
 }
 
-var _ mercury_v3_pb.DataSourceServer = (*dataSourceServer)(nil)
+var _ mercury_v3_pb.DataSourceServer = (*DataSourceServer)(nil)
 
-type dataSourceServer struct {
+type DataSourceServer struct {
 	mercury_v3_pb.UnimplementedDataSourceServer
 
 	impl mercury_v3_types.DataSource
 }
 
-func (d *dataSourceServer) Observe(ctx context.Context, request *mercury_v3_pb.ObserveRequest) (*mercury_v3_pb.ObserveResponse, error) {
-	timestamp, err := internal.ReportTimestamp(request.ReportTimestamp)
+func NewDataSourceServer(impl mercury_v3_types.DataSource) *DataSourceServer {
+	return &DataSourceServer{impl: impl}
+}
+
+func (d *DataSourceServer) Observe(ctx context.Context, request *mercury_v3_pb.ObserveRequest) (*mercury_v3_pb.ObserveResponse, error) {
+	timestamp, err := common.ReportTimestamp(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}

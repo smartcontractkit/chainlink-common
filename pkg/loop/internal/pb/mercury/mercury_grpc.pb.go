@@ -32,9 +32,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MercuryAdapterClient interface {
-	NewMercuryV1Factory(ctx context.Context, in *NewMecuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMecuryV1FactoryReply, error)
-	NewMercuryV2Factory(ctx context.Context, in *NewMecuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMecuryV2FactoryReply, error)
-	NewMercuryV3Factory(ctx context.Context, in *NewMecuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMecuryV3FactoryReply, error)
+	NewMercuryV1Factory(ctx context.Context, in *NewMercuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV1FactoryReply, error)
+	NewMercuryV2Factory(ctx context.Context, in *NewMercuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV2FactoryReply, error)
+	NewMercuryV3Factory(ctx context.Context, in *NewMercuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV3FactoryReply, error)
 }
 
 type mercuryAdapterClient struct {
@@ -45,8 +45,8 @@ func NewMercuryAdapterClient(cc grpc.ClientConnInterface) MercuryAdapterClient {
 	return &mercuryAdapterClient{cc}
 }
 
-func (c *mercuryAdapterClient) NewMercuryV1Factory(ctx context.Context, in *NewMecuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMecuryV1FactoryReply, error) {
-	out := new(NewMecuryV1FactoryReply)
+func (c *mercuryAdapterClient) NewMercuryV1Factory(ctx context.Context, in *NewMercuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV1FactoryReply, error) {
+	out := new(NewMercuryV1FactoryReply)
 	err := c.cc.Invoke(ctx, MercuryAdapter_NewMercuryV1Factory_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -54,8 +54,8 @@ func (c *mercuryAdapterClient) NewMercuryV1Factory(ctx context.Context, in *NewM
 	return out, nil
 }
 
-func (c *mercuryAdapterClient) NewMercuryV2Factory(ctx context.Context, in *NewMecuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMecuryV2FactoryReply, error) {
-	out := new(NewMecuryV2FactoryReply)
+func (c *mercuryAdapterClient) NewMercuryV2Factory(ctx context.Context, in *NewMercuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV2FactoryReply, error) {
+	out := new(NewMercuryV2FactoryReply)
 	err := c.cc.Invoke(ctx, MercuryAdapter_NewMercuryV2Factory_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -63,8 +63,8 @@ func (c *mercuryAdapterClient) NewMercuryV2Factory(ctx context.Context, in *NewM
 	return out, nil
 }
 
-func (c *mercuryAdapterClient) NewMercuryV3Factory(ctx context.Context, in *NewMecuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMecuryV3FactoryReply, error) {
-	out := new(NewMecuryV3FactoryReply)
+func (c *mercuryAdapterClient) NewMercuryV3Factory(ctx context.Context, in *NewMercuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV3FactoryReply, error) {
+	out := new(NewMercuryV3FactoryReply)
 	err := c.cc.Invoke(ctx, MercuryAdapter_NewMercuryV3Factory_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -76,9 +76,9 @@ func (c *mercuryAdapterClient) NewMercuryV3Factory(ctx context.Context, in *NewM
 // All implementations must embed UnimplementedMercuryAdapterServer
 // for forward compatibility
 type MercuryAdapterServer interface {
-	NewMercuryV1Factory(context.Context, *NewMecuryV1FactoryRequest) (*NewMecuryV1FactoryReply, error)
-	NewMercuryV2Factory(context.Context, *NewMecuryV2FactoryRequest) (*NewMecuryV2FactoryReply, error)
-	NewMercuryV3Factory(context.Context, *NewMecuryV3FactoryRequest) (*NewMecuryV3FactoryReply, error)
+	NewMercuryV1Factory(context.Context, *NewMercuryV1FactoryRequest) (*NewMercuryV1FactoryReply, error)
+	NewMercuryV2Factory(context.Context, *NewMercuryV2FactoryRequest) (*NewMercuryV2FactoryReply, error)
+	NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryReply, error)
 	mustEmbedUnimplementedMercuryAdapterServer()
 }
 
@@ -86,13 +86,13 @@ type MercuryAdapterServer interface {
 type UnimplementedMercuryAdapterServer struct {
 }
 
-func (UnimplementedMercuryAdapterServer) NewMercuryV1Factory(context.Context, *NewMecuryV1FactoryRequest) (*NewMecuryV1FactoryReply, error) {
+func (UnimplementedMercuryAdapterServer) NewMercuryV1Factory(context.Context, *NewMercuryV1FactoryRequest) (*NewMercuryV1FactoryReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV1Factory not implemented")
 }
-func (UnimplementedMercuryAdapterServer) NewMercuryV2Factory(context.Context, *NewMecuryV2FactoryRequest) (*NewMecuryV2FactoryReply, error) {
+func (UnimplementedMercuryAdapterServer) NewMercuryV2Factory(context.Context, *NewMercuryV2FactoryRequest) (*NewMercuryV2FactoryReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV2Factory not implemented")
 }
-func (UnimplementedMercuryAdapterServer) NewMercuryV3Factory(context.Context, *NewMecuryV3FactoryRequest) (*NewMecuryV3FactoryReply, error) {
+func (UnimplementedMercuryAdapterServer) NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV3Factory not implemented")
 }
 func (UnimplementedMercuryAdapterServer) mustEmbedUnimplementedMercuryAdapterServer() {}
@@ -109,7 +109,7 @@ func RegisterMercuryAdapterServer(s grpc.ServiceRegistrar, srv MercuryAdapterSer
 }
 
 func _MercuryAdapter_NewMercuryV1Factory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewMecuryV1FactoryRequest)
+	in := new(NewMercuryV1FactoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -121,13 +121,13 @@ func _MercuryAdapter_NewMercuryV1Factory_Handler(srv interface{}, ctx context.Co
 		FullMethod: MercuryAdapter_NewMercuryV1Factory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MercuryAdapterServer).NewMercuryV1Factory(ctx, req.(*NewMecuryV1FactoryRequest))
+		return srv.(MercuryAdapterServer).NewMercuryV1Factory(ctx, req.(*NewMercuryV1FactoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MercuryAdapter_NewMercuryV2Factory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewMecuryV2FactoryRequest)
+	in := new(NewMercuryV2FactoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -139,13 +139,13 @@ func _MercuryAdapter_NewMercuryV2Factory_Handler(srv interface{}, ctx context.Co
 		FullMethod: MercuryAdapter_NewMercuryV2Factory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MercuryAdapterServer).NewMercuryV2Factory(ctx, req.(*NewMecuryV2FactoryRequest))
+		return srv.(MercuryAdapterServer).NewMercuryV2Factory(ctx, req.(*NewMercuryV2FactoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MercuryAdapter_NewMercuryV3Factory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewMecuryV3FactoryRequest)
+	in := new(NewMercuryV3FactoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func _MercuryAdapter_NewMercuryV3Factory_Handler(srv interface{}, ctx context.Co
 		FullMethod: MercuryAdapter_NewMercuryV3Factory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MercuryAdapterServer).NewMercuryV3Factory(ctx, req.(*NewMecuryV3FactoryRequest))
+		return srv.(MercuryAdapterServer).NewMercuryV3Factory(ctx, req.(*NewMercuryV3FactoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

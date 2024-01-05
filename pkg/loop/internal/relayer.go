@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -75,7 +76,7 @@ func newPluginRelayerServer(broker Broker, brokerCfg BrokerConfig, impl PluginRe
 func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRelayerRequest) (*pb.NewRelayerReply, error) {
 	ksConn, err := p.dial(request.KeystoreID)
 	if err != nil {
-		return nil, ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
+		return nil, common.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
 	}
 	ksRes := resource{ksConn, "Keystore"}
 	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn))

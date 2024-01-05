@@ -1,8 +1,8 @@
 syntax = "proto3";
 // this is it's own package to avoid name collision with median types like OnchainConfig and BuildReport
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/datasource/v1";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3;mercury_v3_pb";
 
-package loop.internal.pb.mercury.datasource.v1;
+package loop.internal.pb.mercury.v3;
 
 
 // the generate file in this dir specifies the import path of the relative proto files
@@ -33,11 +33,9 @@ message Observation {
     BigInt benchmarkPrice = 1; // TODO: WARNING: this is a pointer in the Observation struct
     BigInt bid = 2; // TODO: WARNING: this is a pointer in the Observation struct
     BigInt ask = 3; // TODO: WARNING: this is a pointer in the Observation struct
-    int64 currentBlockNum = 4;
-    bytes currentBlockHash = 5;
-    uint64 currentBlockTimestamp = 6;
-    repeated Block latestBlocks = 7;
-    int64 maxFinalizedBlockNumber = 8;
+    int64 maxFinalizedTimestamp = 4;
+    BigInt linkPrice =5;
+    BigInt nativePrice = 6;
 }
 // ObserveResponse is the response payload for the Observe method, which is a gRPC adapter for output arguments of [pkg/types/mercury/v1/DataSource.Observe]
 message ObserveResponse {

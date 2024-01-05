@@ -43,9 +43,11 @@ message NewMecuryV3FactoryReply {
 message NewMecuryV1FactoryRequest {
   uint32 mercuryProviderID = 1;
   uint32 dataSourceV1ID = 2; // id of the data source server for this factory instance
+/*
   uint32 onChainConfigID = 3; 
   uint32 reportingCodecV1ID = 4;
   uint32 loggerID = 5; // TODO: how to get a logger to the factory? is this analogous to the errorLogID in the median? i would think not...
+*/
 }
 
 // NewMedianFactoryRequest has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewMedianFactory].
@@ -55,9 +57,11 @@ message NewMecuryV1FactoryReply {
 message NewMecuryV2FactoryRequest {
   uint32 mercuryProviderID = 1;
   uint32 dataSourceV2ID = 2; // id of the data source server for this factory instance
+ /*
   uint32 onChainConfigID = 3; 
   uint32 reportingCodecV2ID = 4;
   uint32 loggerID = 5; // TODO: how to get a logger to the factory? is this analogous to the errorLogID in the median? i would think not...
+*/
 }
 
 // NewMedianFactoryRequest has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewMedianFactory].
@@ -70,28 +74,28 @@ service OnChainConfigCodec {
   rpc Decode (DecodeOnchainConfigRequest) returns (DecodeOnchainConfigReply) {}
 }
 
-// OnchainConfig is a gRPC adapter for the OnchainConfig struct [pkg/types/mercury/v3/OnchainConfig].
+// OnchainConfig is a gRPC adapter for the OnchainConfig struct [pkg/types/mercury/OnchainConfig].
 message OnchainConfig {
   BigInt min = 1; // TODO: WARNING this is a pointer in OnchainConfigCodec
   BigInt max = 2; // TODO: WARNING this is a pointer in OnchainConfigCodec
 }
 
-// EncodeOnchainConfigRequest has arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/OnchainConfigCodec.Encode].
+// EncodeOnchainConfigRequest is gRPC adapter for the inputs arguments of [pkg/types/mercury/OnchainConfig.Encode].
 message EncodeOnchainConfigRequest {
   OnchainConfig onchainConfig = 1;
 }
 
-// EncodeOnchainConfigReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/OnchainConfigCodec.Encode].
+// EncodeOnchainConfigReply is gRPC adapter for the return values of [pkg/types/mercury/OnchainConfig.Encode].
 message EncodeOnchainConfigReply {
   bytes onchainConfig = 1;
 }
 
-// DecodeOnchainConfigRequest has arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/OnchainConfigCodec.Decode].
+// DecodeOnchainConfigRequest is gRPC adapter for the inputs arguments of [pkg/types/mercury/OnchainConfig.Decode].
 message DecodeOnchainConfigRequest {
   bytes onchainConfig = 1;
 }
 
-// DecodeOnchainConfigReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/OnchainConfigCodec.Decode].
+// DecodeOnchainConfigReply has is gRPC adapter for the return values of [pkg/types/mercury/OnchainConfig.Decode].
 message DecodeOnchainConfigReply {
   OnchainConfig onchainConfig = 1;
 }
@@ -115,12 +119,12 @@ message ReportFields {
   BigInt ask = 8; // TODO: WARNING this is a pointer in ReportFields
 }
 
-// BuildReportRequest has arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.BuildReport].
+// BuildReportRequest is gRPC adapter for the inputs arguments of [pkg/types/mercury/v3/ReportCodec.BuildReport].
 message BuildReportRequest {
   ReportFields reportFields = 1;
 } 
 
-// BuildReportReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.BuildReport].
+// BuildReportReply is gRPC adapter for the return values of [pkg/types/mercury/v3/ReportCodec.BuildReport].
 message BuildReportReply {
   bytes report = 1;
 }

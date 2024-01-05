@@ -37,6 +37,8 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &HardCodeConfig{}
 		case ExtractElementModifierType:
 			(*m)[i] = &ElementExtractorConfig{}
+		case EpochToTimeModifierType:
+			(*m)[i] = &EpochToTimeModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -67,6 +69,7 @@ const (
 	DropModifier               ModifierType = "drop"
 	HardCodeModifier           ModifierType = "hard code"
 	ExtractElementModifierType ModifierType = "extract element"
+	EpochToTimeModifierType    ModifierType = "epoch to time"
 )
 
 type ModifierConfig interface {
@@ -117,6 +120,17 @@ func (h *HardCodeConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc)
 	mapKeyToUpperFirst(h.OnChainValues)
 	mapKeyToUpperFirst(h.OffChainValues)
 	return NewHardCoder(h.OnChainValues, h.OffChainValues, onChainHooks...)
+}
+
+type EpochToTimeModifierConfig struct {
+	Fields []string
+}
+
+func (e *EpochToTimeModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	for i, f := range e.Fields {
+		e.Fields[i] = upperFirstCharacter(f)
+	}
+	return NewEpochToTimeModifier(e.Fields), nil
 }
 
 type typer struct {

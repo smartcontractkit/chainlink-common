@@ -152,18 +152,47 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 	return data, nil
 }
 
-// EpochToTimeHook is a mapstructure hook that converts a unix epoch to a [time.Time] and vice versa.
+var i64Type = reflect.TypeOf(int64(0))
+var timeType = reflect.TypeOf(time.Time{})
+var timePtrType = reflect.PointerTo(timeType)
+var biType = reflect.TypeOf(&big.Int{})
+
+// epochToTimeHook is a mapstructure hook that converts a unix epoch to a [time.Time] and vice versa.
 // To do this, [time.Unix] and [time.Time.Unix] are used.
-func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) {
-	i64 := reflect.TypeOf(int64(0))
-	if to == reflect.TypeOf(time.Time{}) && from.ConvertibleTo(i64) {
-		return time.Unix(reflect.ValueOf(data).Convert(i64).Int(), 0), nil
-	} else if from == reflect.TypeOf(time.Time{}) && to.ConvertibleTo(i64) {
-		unix := data.(time.Time).Unix()
-		return reflect.ValueOf(unix).Convert(to).Interface(), nil
+func epochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) {
+	if to == timeType {
+		return convertToTime(from, data), nil
+	} else if to == timePtrType {
+		if t, ok := convertToTime(from, data).(time.Time); ok {
+			return &t, nil
+		}
+	} else if tData, ok := data.(time.Time); ok {
+		return convertToEpoch(to, tData), nil
+	} else if tData, ok := data.(*time.Time); ok {
+		return convertToEpoch(to, *tData), nil
 	}
 
 	return data, nil
+}
+
+func convertToTime(from reflect.Type, data any) any {
+	if from.ConvertibleTo(i64Type) {
+		return time.Unix(reflect.ValueOf(data).Convert(i64Type).Int(), 0)
+	} else if from.ConvertibleTo(biType) {
+		return time.Unix(reflect.ValueOf(data).Convert(biType).Interface().(*big.Int).Int64(), 0)
+	}
+
+	return data
+}
+
+func convertToEpoch(to reflect.Type, data time.Time) any {
+	if to.ConvertibleTo(i64Type) {
+		return reflect.ValueOf(data.Unix()).Convert(to).Interface()
+	} else if to.ConvertibleTo(biType) {
+		return reflect.ValueOf(big.NewInt(data.Unix())).Convert(to).Interface()
+	}
+
+	return data
 }
 
 // getMapsFromPath takes a valueMap that represents a struct in a map.

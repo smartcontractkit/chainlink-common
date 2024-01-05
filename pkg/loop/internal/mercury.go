@@ -73,7 +73,7 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 		if grpcProvider, ok := provider.(GRPCClientConn); ok {
 			providerID, providerRes, err = c.serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
-			providerID, providerRes, err = c.serveNew("MedianProvider", func(s *grpc.Server) {
+			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
 				// this doesn't compile b/c there is a mixture of common and specific types. need to
 				// figure out what can be reused from common and what needs to be mercury-specific.
 				mercury_pb.RegisterServiceServer(s, &serviceServer{srv: provider})

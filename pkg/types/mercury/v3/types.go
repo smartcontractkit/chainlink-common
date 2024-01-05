@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/smartcontractkit/libocr/offchainreporting/types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
@@ -56,7 +55,11 @@ type DataSource interface {
 	//
 	// Important: Observe should not perform any potentially time-consuming
 	// actions like database access, once the context passed has expired.
-	Observe(ctx context.Context, repts types.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (Observation, error)
+
+	// TODO/WARNING: the type of repts is ocrtypes.ReportTimestamp, but the type of the
+	// argument to Observe is types.ReportTimestamp. the underlying struct is the same, but
+	// updated here to be self-consistent.
+	Observe(ctx context.Context, repts ocrtypes.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (Observation, error)
 }
 
 type Observation struct {

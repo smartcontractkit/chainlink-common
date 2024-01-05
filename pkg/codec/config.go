@@ -3,6 +3,7 @@ package codec
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"unicode"
 
@@ -11,12 +12,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// ModifiersConfig unmarshals as a list of [ModifierConfig] by using a field called Type
+// ModifiersConfig unmarshalls as a list of [ModifierConfig] by using a field called Type
 // The values available for Type are case-insensitive and the config they require are below:
 // - rename -> [RenameModifierConfig]
 // - drop -> [DropModifierConfig]
-// - hard code -> [HardCodeConfig]
-// - extract element -> [ElementExtractorConfig]
+// - hard code -> [HardCodeModifierConfig]
+// - extract element -> [ElementExtractorModifierConfig]
 // - epoch to time -> [EpochToTimeModifierConfig]
 type ModifiersConfig []ModifierConfig
 
@@ -36,15 +37,15 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 
 		mType := ModifierType(strings.ToLower(t.Type))
 		switch mType {
-		case RenameModifier:
+		case ModifierRename:
 			(*m)[i] = &RenameModifierConfig{}
-		case DropModifier:
+		case ModifierDrop:
 			(*m)[i] = &DropModifierConfig{}
-		case HardCodeModifier:
-			(*m)[i] = &HardCodeConfig{}
-		case ExtractElementModifierType:
-			(*m)[i] = &ElementExtractorConfig{}
-		case EpochToTimeModifierType:
+		case ModifierHardCode:
+			(*m)[i] = &HardCodeModifierConfig{}
+		case ModifierExtractElement:
+			(*m)[i] = &ElementExtractorModifierConfig{}
+		case ModifierEpochToTime:
 			(*m)[i] = &EpochToTimeModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
@@ -72,11 +73,11 @@ func (m *ModifiersConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc
 type ModifierType string
 
 const (
-	RenameModifier             ModifierType = "rename"
-	DropModifier               ModifierType = "drop"
-	HardCodeModifier           ModifierType = "hard code"
-	ExtractElementModifierType ModifierType = "extract element"
-	EpochToTimeModifierType    ModifierType = "epoch to time"
+	ModifierRename         ModifierType = "rename"
+	ModifierDrop           ModifierType = "drop"
+	ModifierHardCode       ModifierType = "hard code"
+	ModifierExtractElement ModifierType = "extract element"
+	ModifierEpochToTime    ModifierType = "epoch to time"
 )
 
 type ModifierConfig interface {
@@ -98,6 +99,13 @@ func (r *RenameModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Mod
 	return NewRenamer(r.Fields), nil
 }
 
+func (r *RenameModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[RenameModifierConfig]{
+		Type: ModifierRename,
+		T:    r,
+	})
+}
+
 // DropModifierConfig drops all fields listed.  The casing of the first character is ignored to allow compatibility.
 // Note that unused fields are ignored by [types.Codec].
 // This is only required if you want to rename a field to an already used name.
@@ -107,7 +115,7 @@ type DropModifierConfig struct {
 	Fields []string
 }
 
-func (d *DropModifierConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+func (d *DropModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	fields := map[string]string{}
 	for i, f := range d.Fields {
 		// using a private variable will make the field not serialize, essentially dropping the field
@@ -117,28 +125,49 @@ func (d *DropModifierConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookF
 	return NewRenamer(fields), nil
 }
 
-// ElementExtractorConfig is used to extract an element from a slice or array
-type ElementExtractorConfig struct {
+func (d *DropModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[DropModifierConfig]{
+		Type: ModifierDrop,
+		T:    d,
+	})
+}
+
+// ElementExtractorModifierConfig is used to extract an element from a slice or array
+type ElementExtractorModifierConfig struct {
 	// Key is the name of the field to extract from and the value is which element to extract.
 	Extractions map[string]*ElementExtractorLocation
 }
 
-func (e *ElementExtractorConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+func (e *ElementExtractorModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	mapKeyToUpperFirst(e.Extractions)
 	return NewElementExtractor(e.Extractions), nil
 }
 
-// HardCodeConfig is used to hard code values into the map.
+func (e *ElementExtractorModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[ElementExtractorModifierConfig]{
+		Type: ModifierExtractElement,
+		T:    e,
+	})
+}
+
+// HardCodeModifierConfig is used to hard code values into the map.
 // Note that hard-coding values will override other values.
-type HardCodeConfig struct {
+type HardCodeModifierConfig struct {
 	OnChainValues  map[string]any
 	OffChainValues map[string]any
 }
 
-func (h *HardCodeConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+func (h *HardCodeModifierConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	mapKeyToUpperFirst(h.OnChainValues)
 	mapKeyToUpperFirst(h.OffChainValues)
 	return NewHardCoder(h.OnChainValues, h.OffChainValues, onChainHooks...)
+}
+
+func (h *HardCodeModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[HardCodeModifierConfig]{
+		Type: ModifierHardCode,
+		T:    h,
+	})
 }
 
 // EpochToTimeModifierConfig is used to convert epoch seconds as uint64 fields on-chain to time.Time
@@ -151,6 +180,13 @@ func (e *EpochToTimeModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc)
 		e.Fields[i] = upperFirstCharacter(f)
 	}
 	return NewEpochToTimeModifier(e.Fields), nil
+}
+
+func (e *EpochToTimeModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[EpochToTimeModifierConfig]{
+		Type: ModifierEpochToTime,
+		T:    e,
+	})
 }
 
 type typer struct {
@@ -173,4 +209,26 @@ func mapKeyToUpperFirst[T any](m map[string]T) {
 		delete(m, k)
 		m[upperFirstCharacter(k)] = v
 	}
+}
+
+type modifierMarshaller[T any] struct {
+	Type ModifierType
+	T    *T
+}
+
+func (h *modifierMarshaller[T]) MarshalJSON() ([]byte, error) {
+	v := reflect.Indirect(reflect.ValueOf(h.T))
+	t := v.Type()
+
+	m := map[string]interface{}{
+		"Type": h.Type,
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i).Interface()
+		m[field.Name] = value
+	}
+
+	return json.Marshal(m)
 }

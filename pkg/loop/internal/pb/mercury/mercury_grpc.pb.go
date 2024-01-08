@@ -187,290 +187,126 @@ var MercuryAdapter_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	OnChainConfigCodec_Encode_FullMethodName = "/loop.internal.pb.mercury.OnChainConfigCodec/Encode"
-	OnChainConfigCodec_Decode_FullMethodName = "/loop.internal.pb.mercury.OnChainConfigCodec/Decode"
+	OnchainConfigCodec_Encode_FullMethodName = "/loop.internal.pb.mercury.OnchainConfigCodec/Encode"
+	OnchainConfigCodec_Decode_FullMethodName = "/loop.internal.pb.mercury.OnchainConfigCodec/Decode"
 )
 
-// OnChainConfigCodecClient is the client API for OnChainConfigCodec service.
+// OnchainConfigCodecClient is the client API for OnchainConfigCodec service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type OnChainConfigCodecClient interface {
+type OnchainConfigCodecClient interface {
 	Encode(ctx context.Context, in *EncodeOnchainConfigRequest, opts ...grpc.CallOption) (*EncodeOnchainConfigReply, error)
 	Decode(ctx context.Context, in *DecodeOnchainConfigRequest, opts ...grpc.CallOption) (*DecodeOnchainConfigReply, error)
 }
 
-type onChainConfigCodecClient struct {
+type onchainConfigCodecClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewOnChainConfigCodecClient(cc grpc.ClientConnInterface) OnChainConfigCodecClient {
-	return &onChainConfigCodecClient{cc}
+func NewOnchainConfigCodecClient(cc grpc.ClientConnInterface) OnchainConfigCodecClient {
+	return &onchainConfigCodecClient{cc}
 }
 
-func (c *onChainConfigCodecClient) Encode(ctx context.Context, in *EncodeOnchainConfigRequest, opts ...grpc.CallOption) (*EncodeOnchainConfigReply, error) {
+func (c *onchainConfigCodecClient) Encode(ctx context.Context, in *EncodeOnchainConfigRequest, opts ...grpc.CallOption) (*EncodeOnchainConfigReply, error) {
 	out := new(EncodeOnchainConfigReply)
-	err := c.cc.Invoke(ctx, OnChainConfigCodec_Encode_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, OnchainConfigCodec_Encode_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *onChainConfigCodecClient) Decode(ctx context.Context, in *DecodeOnchainConfigRequest, opts ...grpc.CallOption) (*DecodeOnchainConfigReply, error) {
+func (c *onchainConfigCodecClient) Decode(ctx context.Context, in *DecodeOnchainConfigRequest, opts ...grpc.CallOption) (*DecodeOnchainConfigReply, error) {
 	out := new(DecodeOnchainConfigReply)
-	err := c.cc.Invoke(ctx, OnChainConfigCodec_Decode_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, OnchainConfigCodec_Decode_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// OnChainConfigCodecServer is the server API for OnChainConfigCodec service.
-// All implementations must embed UnimplementedOnChainConfigCodecServer
+// OnchainConfigCodecServer is the server API for OnchainConfigCodec service.
+// All implementations must embed UnimplementedOnchainConfigCodecServer
 // for forward compatibility
-type OnChainConfigCodecServer interface {
+type OnchainConfigCodecServer interface {
 	Encode(context.Context, *EncodeOnchainConfigRequest) (*EncodeOnchainConfigReply, error)
 	Decode(context.Context, *DecodeOnchainConfigRequest) (*DecodeOnchainConfigReply, error)
-	mustEmbedUnimplementedOnChainConfigCodecServer()
+	mustEmbedUnimplementedOnchainConfigCodecServer()
 }
 
-// UnimplementedOnChainConfigCodecServer must be embedded to have forward compatible implementations.
-type UnimplementedOnChainConfigCodecServer struct {
+// UnimplementedOnchainConfigCodecServer must be embedded to have forward compatible implementations.
+type UnimplementedOnchainConfigCodecServer struct {
 }
 
-func (UnimplementedOnChainConfigCodecServer) Encode(context.Context, *EncodeOnchainConfigRequest) (*EncodeOnchainConfigReply, error) {
+func (UnimplementedOnchainConfigCodecServer) Encode(context.Context, *EncodeOnchainConfigRequest) (*EncodeOnchainConfigReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Encode not implemented")
 }
-func (UnimplementedOnChainConfigCodecServer) Decode(context.Context, *DecodeOnchainConfigRequest) (*DecodeOnchainConfigReply, error) {
+func (UnimplementedOnchainConfigCodecServer) Decode(context.Context, *DecodeOnchainConfigRequest) (*DecodeOnchainConfigReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Decode not implemented")
 }
-func (UnimplementedOnChainConfigCodecServer) mustEmbedUnimplementedOnChainConfigCodecServer() {}
+func (UnimplementedOnchainConfigCodecServer) mustEmbedUnimplementedOnchainConfigCodecServer() {}
 
-// UnsafeOnChainConfigCodecServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to OnChainConfigCodecServer will
+// UnsafeOnchainConfigCodecServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to OnchainConfigCodecServer will
 // result in compilation errors.
-type UnsafeOnChainConfigCodecServer interface {
-	mustEmbedUnimplementedOnChainConfigCodecServer()
+type UnsafeOnchainConfigCodecServer interface {
+	mustEmbedUnimplementedOnchainConfigCodecServer()
 }
 
-func RegisterOnChainConfigCodecServer(s grpc.ServiceRegistrar, srv OnChainConfigCodecServer) {
-	s.RegisterService(&OnChainConfigCodec_ServiceDesc, srv)
+func RegisterOnchainConfigCodecServer(s grpc.ServiceRegistrar, srv OnchainConfigCodecServer) {
+	s.RegisterService(&OnchainConfigCodec_ServiceDesc, srv)
 }
 
-func _OnChainConfigCodec_Encode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _OnchainConfigCodec_Encode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EncodeOnchainConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OnChainConfigCodecServer).Encode(ctx, in)
+		return srv.(OnchainConfigCodecServer).Encode(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: OnChainConfigCodec_Encode_FullMethodName,
+		FullMethod: OnchainConfigCodec_Encode_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OnChainConfigCodecServer).Encode(ctx, req.(*EncodeOnchainConfigRequest))
+		return srv.(OnchainConfigCodecServer).Encode(ctx, req.(*EncodeOnchainConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OnChainConfigCodec_Decode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _OnchainConfigCodec_Decode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DecodeOnchainConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OnChainConfigCodecServer).Decode(ctx, in)
+		return srv.(OnchainConfigCodecServer).Decode(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: OnChainConfigCodec_Decode_FullMethodName,
+		FullMethod: OnchainConfigCodec_Decode_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OnChainConfigCodecServer).Decode(ctx, req.(*DecodeOnchainConfigRequest))
+		return srv.(OnchainConfigCodecServer).Decode(ctx, req.(*DecodeOnchainConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// OnChainConfigCodec_ServiceDesc is the grpc.ServiceDesc for OnChainConfigCodec service.
+// OnchainConfigCodec_ServiceDesc is the grpc.ServiceDesc for OnchainConfigCodec service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var OnChainConfigCodec_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.internal.pb.mercury.OnChainConfigCodec",
-	HandlerType: (*OnChainConfigCodecServer)(nil),
+var OnchainConfigCodec_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.internal.pb.mercury.OnchainConfigCodec",
+	HandlerType: (*OnchainConfigCodecServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Encode",
-			Handler:    _OnChainConfigCodec_Encode_Handler,
+			Handler:    _OnchainConfigCodec_Encode_Handler,
 		},
 		{
 			MethodName: "Decode",
-			Handler:    _OnChainConfigCodec_Decode_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury.proto",
-}
-
-const (
-	ReportCodec_BuildReport_FullMethodName                    = "/loop.internal.pb.mercury.ReportCodec/BuildReport"
-	ReportCodec_MaxReportLength_FullMethodName                = "/loop.internal.pb.mercury.ReportCodec/MaxReportLength"
-	ReportCodec_ObservationTimestampFromReport_FullMethodName = "/loop.internal.pb.mercury.ReportCodec/ObservationTimestampFromReport"
-)
-
-// ReportCodecClient is the client API for ReportCodec service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ReportCodecClient interface {
-	BuildReport(ctx context.Context, in *BuildReportRequest, opts ...grpc.CallOption) (*BuildReportReply, error)
-	MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error)
-	ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportReply, error)
-}
-
-type reportCodecClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewReportCodecClient(cc grpc.ClientConnInterface) ReportCodecClient {
-	return &reportCodecClient{cc}
-}
-
-func (c *reportCodecClient) BuildReport(ctx context.Context, in *BuildReportRequest, opts ...grpc.CallOption) (*BuildReportReply, error) {
-	out := new(BuildReportReply)
-	err := c.cc.Invoke(ctx, ReportCodec_BuildReport_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reportCodecClient) MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error) {
-	out := new(MaxReportLengthReply)
-	err := c.cc.Invoke(ctx, ReportCodec_MaxReportLength_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reportCodecClient) ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportReply, error) {
-	out := new(ObservationTimestampFromReportReply)
-	err := c.cc.Invoke(ctx, ReportCodec_ObservationTimestampFromReport_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ReportCodecServer is the server API for ReportCodec service.
-// All implementations must embed UnimplementedReportCodecServer
-// for forward compatibility
-type ReportCodecServer interface {
-	BuildReport(context.Context, *BuildReportRequest) (*BuildReportReply, error)
-	MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error)
-	ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportReply, error)
-	mustEmbedUnimplementedReportCodecServer()
-}
-
-// UnimplementedReportCodecServer must be embedded to have forward compatible implementations.
-type UnimplementedReportCodecServer struct {
-}
-
-func (UnimplementedReportCodecServer) BuildReport(context.Context, *BuildReportRequest) (*BuildReportReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
-}
-func (UnimplementedReportCodecServer) MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
-}
-func (UnimplementedReportCodecServer) ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ObservationTimestampFromReport not implemented")
-}
-func (UnimplementedReportCodecServer) mustEmbedUnimplementedReportCodecServer() {}
-
-// UnsafeReportCodecServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ReportCodecServer will
-// result in compilation errors.
-type UnsafeReportCodecServer interface {
-	mustEmbedUnimplementedReportCodecServer()
-}
-
-func RegisterReportCodecServer(s grpc.ServiceRegistrar, srv ReportCodecServer) {
-	s.RegisterService(&ReportCodec_ServiceDesc, srv)
-}
-
-func _ReportCodec_BuildReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BuildReportRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReportCodecServer).BuildReport(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReportCodec_BuildReport_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecServer).BuildReport(ctx, req.(*BuildReportRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ReportCodec_MaxReportLength_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MaxReportLengthRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReportCodecServer).MaxReportLength(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReportCodec_MaxReportLength_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecServer).MaxReportLength(ctx, req.(*MaxReportLengthRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ReportCodec_ObservationTimestampFromReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ObservationTimestampFromReportRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReportCodecServer).ObservationTimestampFromReport(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReportCodec_ObservationTimestampFromReport_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecServer).ObservationTimestampFromReport(ctx, req.(*ObservationTimestampFromReportRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// ReportCodec_ServiceDesc is the grpc.ServiceDesc for ReportCodec service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var ReportCodec_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.internal.pb.mercury.ReportCodec",
-	HandlerType: (*ReportCodecServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "BuildReport",
-			Handler:    _ReportCodec_BuildReport_Handler,
-		},
-		{
-			MethodName: "MaxReportLength",
-			Handler:    _ReportCodec_MaxReportLength_Handler,
-		},
-		{
-			MethodName: "ObservationTimestampFromReport",
-			Handler:    _ReportCodec_ObservationTimestampFromReport_Handler,
+			Handler:    _OnchainConfigCodec_Decode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

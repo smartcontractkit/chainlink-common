@@ -7,7 +7,9 @@ import (
 
 	"github.com/mwitkow/grpc-proxy/proxy"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
 	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -76,14 +78,13 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
 				// this doesn't compile b/c there is a mixture of common and specific types. need to
 				// figure out what can be reused from common and what needs to be mercury-specific.
-				mercury_pb.RegisterServiceServer(s, &serviceServer{srv: provider})
-				mercury_pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
-				mercury_pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
-				mercury_pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
-				mercury_pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
-				mercury_pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
-				mercury_pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
-				mercury_pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
+				pb.RegisterServiceServer(s, &serviceServer{srv: provider})
+				pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
+				pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
+				pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+				//pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+				mercury_v3_pb.RegisterReportCodecServer(s, mercury_v3_internal.NewReportCodecServer(reportCodec))
+				mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(occ))
 			})
 		}
 		if err != nil {

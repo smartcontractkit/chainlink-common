@@ -69,7 +69,7 @@ message NewMercuryV2FactoryReply {
   uint32 mercuryV2FactoryID = 1;
 }
 // OnchainConfigCodec is a gRPC adapter for the OnchainConfigCodec interface [pkg/types/mercury/v3/OnchainConfigCodec].
-service OnChainConfigCodec {
+service OnchainConfigCodec {
   rpc Encode(EncodeOnchainConfigRequest) returns (EncodeOnchainConfigReply) {}
   rpc Decode (DecodeOnchainConfigRequest) returns (DecodeOnchainConfigReply) {}
 }
@@ -100,30 +100,7 @@ message DecodeOnchainConfigReply {
   OnchainConfig onchainConfig = 1;
 }
 
-// ReportCodec is a gRPC adapter for the ReportCodec interface [pkg/types/mercury/v3/ReportCodec].
-service ReportCodec {
-  rpc BuildReport (BuildReportRequest) returns (BuildReportReply) {}
-  rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthReply) {}
-  rpc ObservationTimestampFromReport (ObservationTimestampFromReportRequest) returns (ObservationTimestampFromReportReply) {}
-}
-
-// ReportFields is a gRPC adapter for the ReportFields struct [pkg/types/mercury/v3/ReportFields].
-message ReportFields {
-  uint32 validFromTimestamp = 1; // TODO: use google.protobuf.Timestamp? uint32 is the base type in ReportFields [pkg/types/mercury/v3/ReportFields]
-  uint32 timestamp = 2; // same as above
-  BigInt nativeFee = 3; // TODO: WARNING this is a pointer in ReportFields
-  BigInt linkFee = 4; // TODO: WARNING this is a pointer in ReportFields
-  uint32 expiresAt = 5; // TODO: timestamp?
-  BigInt benchmarkPrice = 6; // TODO: WARNING this is a pointer in ReportFields
-  BigInt bid = 7; // TODO: WARNING this is a pointer in ReportFields
-  BigInt ask = 8; // TODO: WARNING this is a pointer in ReportFields
-}
-
-// BuildReportRequest is gRPC adapter for the inputs arguments of [pkg/types/mercury/v3/ReportCodec.BuildReport].
-message BuildReportRequest {
-  ReportFields reportFields = 1;
-} 
-
+//TODO: these are common fields for all versions of the report codec, but the report codec is versioned
 // BuildReportReply is gRPC adapter for the return values of [pkg/types/mercury/v3/ReportCodec.BuildReport].
 message BuildReportReply {
   bytes report = 1;
@@ -147,6 +124,7 @@ message ObservationTimestampFromReportRequest {
 message ObservationTimestampFromReportReply {
   uint32 timestamp = 1; // TODO: WARNING this is a uint32 in ReportCodec interface
 }
+
 
 /*
 extensions of the relayer interface [pkg/types/provider_mercury.go]

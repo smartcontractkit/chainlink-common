@@ -136,7 +136,7 @@ type MercuryProvider interface {
 	ReportCodecV2() v2.ReportCodec
 	ReportCodecV3() v3.ReportCodec
 	OnchainConfigCodec() mercury.OnchainConfigCodec
-	MercuryServerFetcher() mercury.ServerFetcher
+	ServerFetcher() mercury.ServerFetcher
 	MercuryChainReader() mercury.ChainReader
 }
 */
@@ -211,37 +211,37 @@ message BuildReportReplyV2 {
 
 // NOTE: shared implementation for MaxReportLengthRequest and MaxReportLengthReply and ObservationTimestampFromReportRequest and ObservationTimestampFromReportReply
 
-// MercuryServerFetcher is a gRPC adapter for the MercuryServerFetcher interface [pkg/types/mercury/v3/MercuryServerFetcher].
-service MercuryServerFetcher {
+// ServerFetcher is a gRPC adapter for the ServerFetcher interface [pkg/types/mercury/v3/ServerFetcher].
+service ServerFetcher {
   rpc FetchInitialMaxFinalizedBlockNumber (FetchInitialMaxFinalizedBlockNumberRequest) returns (FetchInitialMaxFinalizedBlockNumberReply) {}
   rpc LatestPrice (LatestPriceRequest) returns (LatestPriceReply) {}
   rpc LatestTimestamp( LatestTimestampRequest) returns (LatestTimestampReply) {}
 }
 
-// FetchInitialMaxFinalizedBlockNumberRequest is gRPC adapter for [pkg/types/mercury/MercuryServerFetcher.FetchInitialMaxFinalizedBlockNumber].
+// FetchInitialMaxFinalizedBlockNumberRequest is gRPC adapter for [pkg/types/mercury/ServerFetcher.FetchInitialMaxFinalizedBlockNumber].
 message FetchInitialMaxFinalizedBlockNumberRequest {
 }
 
-// FetchInitialMaxFinalizedBlockNumberReply is gRPC adapter for [pkg/types/mercury/MercuryServerFetcher.FetchInitialMaxFinalizedBlockNumber].
+// FetchInitialMaxFinalizedBlockNumberReply is gRPC adapter for [pkg/types/mercury/ServerFetcher.FetchInitialMaxFinalizedBlockNumber].
 message FetchInitialMaxFinalizedBlockNumberReply {
-  int64 initialMaxFinalizedBlockNumber = 1; // TODO: WARNING this is a pointer in MercuryServerFetcher interface
+  int64 initialMaxFinalizedBlockNumber = 1; // TODO: WARNING this is a pointer in ServerFetcher interface
 }
 
-// LatestPriceRequest is gRPC adapter for [pkg/types/mercury/MercuryServerFetcher.LatestPrice].
+// LatestPriceRequest is gRPC adapter for [pkg/types/mercury/ServerFetcher.LatestPrice].
 message LatestPriceRequest {
-  bytes feedID = 1; // WARNING: this must be [32]byte in MercuryServerFetcher interface
+  bytes feedID = 1; // WARNING: this must be [32]byte in ServerFetcher interface
 }
 
-// LatestPriceReply is gRPC adapter for [pkg/types/mercury/MercuryServerFetcher.LatestPrice].
+// LatestPriceReply is gRPC adapter for [pkg/types/mercury/ServerFetcher.LatestPrice].
 message LatestPriceReply {
-  BigInt latestPrice = 1; // TODO: WARNING this is a pointer in MercuryServerFetcher interface
+  BigInt latestPrice = 1; // TODO: WARNING this is a pointer in ServerFetcher interface
 }
 
-// LatestTimestampRequest is gRPC adapter for [pkg/types/mercury/MercuryServerFetcher.LatestTimestamp].
+// LatestTimestampRequest is gRPC adapter for [pkg/types/mercury/ServerFetcher.LatestTimestamp].
 message LatestTimestampRequest {
 }
 
-// LatestTimestampReply is gRPC adapter for [pkg/types/mercury/MercuryServerFetcher.LatestTimestamp].
+// LatestTimestampReply is gRPC adapter for [pkg/types/mercury/ServerFetcher.LatestTimestamp].
 message LatestTimestampReply {
   int64 latestTimestamp = 1;
 }

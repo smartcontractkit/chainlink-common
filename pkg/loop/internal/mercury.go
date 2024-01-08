@@ -76,15 +76,28 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 			providerID, providerRes, err = c.serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
-				// this doesn't compile b/c there is a mixture of common and specific types. need to
-				// figure out what can be reused from common and what needs to be mercury-specific.
+
+				// PluginProvider resources [pkg/types/provider/PluginProvider]
 				pb.RegisterServiceServer(s, &serviceServer{srv: provider})
 				pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
 				pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 				pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+				// TODO the [pkg/types/provider/PluginProvider] defines a ChainReader() method, but the mercury
+				// doesn't have one of these... panic? return unimplemented? return nil?
 				//pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
-				mercury_v3_pb.RegisterReportCodecServer(s, mercury_v3_internal.NewReportCodecServer(reportCodec))
+
+				// Interface extensions defined in [pkg/types/MercuryProvider]
+
 				mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(occ))
+				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
+				// given that this is a v3 factory, we should only need to handle v3 report codec.
+				// maybe panic if the report codec is not v3?
+				mercury_v3_pb.RegisterReportCodecServer(s, mercury_v3_internal.NewReportCodecServer(reportCodec))
+
+				mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
+				mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
+				mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
+				mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
 			})
 		}
 		if err != nil {

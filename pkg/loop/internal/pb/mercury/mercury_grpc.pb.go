@@ -642,163 +642,163 @@ var ReportCodecV2_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	MercuryServerFetcher_FetchInitialMaxFinalizedBlockNumber_FullMethodName = "/loop.internal.pb.mercury.MercuryServerFetcher/FetchInitialMaxFinalizedBlockNumber"
-	MercuryServerFetcher_LatestPrice_FullMethodName                         = "/loop.internal.pb.mercury.MercuryServerFetcher/LatestPrice"
-	MercuryServerFetcher_LatestTimestamp_FullMethodName                     = "/loop.internal.pb.mercury.MercuryServerFetcher/LatestTimestamp"
+	ServerFetcher_FetchInitialMaxFinalizedBlockNumber_FullMethodName = "/loop.internal.pb.mercury.ServerFetcher/FetchInitialMaxFinalizedBlockNumber"
+	ServerFetcher_LatestPrice_FullMethodName                         = "/loop.internal.pb.mercury.ServerFetcher/LatestPrice"
+	ServerFetcher_LatestTimestamp_FullMethodName                     = "/loop.internal.pb.mercury.ServerFetcher/LatestTimestamp"
 )
 
-// MercuryServerFetcherClient is the client API for MercuryServerFetcher service.
+// ServerFetcherClient is the client API for ServerFetcher service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type MercuryServerFetcherClient interface {
+type ServerFetcherClient interface {
 	FetchInitialMaxFinalizedBlockNumber(ctx context.Context, in *FetchInitialMaxFinalizedBlockNumberRequest, opts ...grpc.CallOption) (*FetchInitialMaxFinalizedBlockNumberReply, error)
 	LatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceReply, error)
 	LatestTimestamp(ctx context.Context, in *LatestTimestampRequest, opts ...grpc.CallOption) (*LatestTimestampReply, error)
 }
 
-type mercuryServerFetcherClient struct {
+type serverFetcherClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewMercuryServerFetcherClient(cc grpc.ClientConnInterface) MercuryServerFetcherClient {
-	return &mercuryServerFetcherClient{cc}
+func NewServerFetcherClient(cc grpc.ClientConnInterface) ServerFetcherClient {
+	return &serverFetcherClient{cc}
 }
 
-func (c *mercuryServerFetcherClient) FetchInitialMaxFinalizedBlockNumber(ctx context.Context, in *FetchInitialMaxFinalizedBlockNumberRequest, opts ...grpc.CallOption) (*FetchInitialMaxFinalizedBlockNumberReply, error) {
+func (c *serverFetcherClient) FetchInitialMaxFinalizedBlockNumber(ctx context.Context, in *FetchInitialMaxFinalizedBlockNumberRequest, opts ...grpc.CallOption) (*FetchInitialMaxFinalizedBlockNumberReply, error) {
 	out := new(FetchInitialMaxFinalizedBlockNumberReply)
-	err := c.cc.Invoke(ctx, MercuryServerFetcher_FetchInitialMaxFinalizedBlockNumber_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, ServerFetcher_FetchInitialMaxFinalizedBlockNumber_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mercuryServerFetcherClient) LatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceReply, error) {
+func (c *serverFetcherClient) LatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceReply, error) {
 	out := new(LatestPriceReply)
-	err := c.cc.Invoke(ctx, MercuryServerFetcher_LatestPrice_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, ServerFetcher_LatestPrice_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mercuryServerFetcherClient) LatestTimestamp(ctx context.Context, in *LatestTimestampRequest, opts ...grpc.CallOption) (*LatestTimestampReply, error) {
+func (c *serverFetcherClient) LatestTimestamp(ctx context.Context, in *LatestTimestampRequest, opts ...grpc.CallOption) (*LatestTimestampReply, error) {
 	out := new(LatestTimestampReply)
-	err := c.cc.Invoke(ctx, MercuryServerFetcher_LatestTimestamp_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, ServerFetcher_LatestTimestamp_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// MercuryServerFetcherServer is the server API for MercuryServerFetcher service.
-// All implementations must embed UnimplementedMercuryServerFetcherServer
+// ServerFetcherServer is the server API for ServerFetcher service.
+// All implementations must embed UnimplementedServerFetcherServer
 // for forward compatibility
-type MercuryServerFetcherServer interface {
+type ServerFetcherServer interface {
 	FetchInitialMaxFinalizedBlockNumber(context.Context, *FetchInitialMaxFinalizedBlockNumberRequest) (*FetchInitialMaxFinalizedBlockNumberReply, error)
 	LatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceReply, error)
 	LatestTimestamp(context.Context, *LatestTimestampRequest) (*LatestTimestampReply, error)
-	mustEmbedUnimplementedMercuryServerFetcherServer()
+	mustEmbedUnimplementedServerFetcherServer()
 }
 
-// UnimplementedMercuryServerFetcherServer must be embedded to have forward compatible implementations.
-type UnimplementedMercuryServerFetcherServer struct {
+// UnimplementedServerFetcherServer must be embedded to have forward compatible implementations.
+type UnimplementedServerFetcherServer struct {
 }
 
-func (UnimplementedMercuryServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(context.Context, *FetchInitialMaxFinalizedBlockNumberRequest) (*FetchInitialMaxFinalizedBlockNumberReply, error) {
+func (UnimplementedServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(context.Context, *FetchInitialMaxFinalizedBlockNumberRequest) (*FetchInitialMaxFinalizedBlockNumberReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchInitialMaxFinalizedBlockNumber not implemented")
 }
-func (UnimplementedMercuryServerFetcherServer) LatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceReply, error) {
+func (UnimplementedServerFetcherServer) LatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestPrice not implemented")
 }
-func (UnimplementedMercuryServerFetcherServer) LatestTimestamp(context.Context, *LatestTimestampRequest) (*LatestTimestampReply, error) {
+func (UnimplementedServerFetcherServer) LatestTimestamp(context.Context, *LatestTimestampRequest) (*LatestTimestampReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestTimestamp not implemented")
 }
-func (UnimplementedMercuryServerFetcherServer) mustEmbedUnimplementedMercuryServerFetcherServer() {}
+func (UnimplementedServerFetcherServer) mustEmbedUnimplementedServerFetcherServer() {}
 
-// UnsafeMercuryServerFetcherServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to MercuryServerFetcherServer will
+// UnsafeServerFetcherServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ServerFetcherServer will
 // result in compilation errors.
-type UnsafeMercuryServerFetcherServer interface {
-	mustEmbedUnimplementedMercuryServerFetcherServer()
+type UnsafeServerFetcherServer interface {
+	mustEmbedUnimplementedServerFetcherServer()
 }
 
-func RegisterMercuryServerFetcherServer(s grpc.ServiceRegistrar, srv MercuryServerFetcherServer) {
-	s.RegisterService(&MercuryServerFetcher_ServiceDesc, srv)
+func RegisterServerFetcherServer(s grpc.ServiceRegistrar, srv ServerFetcherServer) {
+	s.RegisterService(&ServerFetcher_ServiceDesc, srv)
 }
 
-func _MercuryServerFetcher_FetchInitialMaxFinalizedBlockNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServerFetcher_FetchInitialMaxFinalizedBlockNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FetchInitialMaxFinalizedBlockNumberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MercuryServerFetcherServer).FetchInitialMaxFinalizedBlockNumber(ctx, in)
+		return srv.(ServerFetcherServer).FetchInitialMaxFinalizedBlockNumber(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MercuryServerFetcher_FetchInitialMaxFinalizedBlockNumber_FullMethodName,
+		FullMethod: ServerFetcher_FetchInitialMaxFinalizedBlockNumber_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MercuryServerFetcherServer).FetchInitialMaxFinalizedBlockNumber(ctx, req.(*FetchInitialMaxFinalizedBlockNumberRequest))
+		return srv.(ServerFetcherServer).FetchInitialMaxFinalizedBlockNumber(ctx, req.(*FetchInitialMaxFinalizedBlockNumberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MercuryServerFetcher_LatestPrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServerFetcher_LatestPrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LatestPriceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MercuryServerFetcherServer).LatestPrice(ctx, in)
+		return srv.(ServerFetcherServer).LatestPrice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MercuryServerFetcher_LatestPrice_FullMethodName,
+		FullMethod: ServerFetcher_LatestPrice_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MercuryServerFetcherServer).LatestPrice(ctx, req.(*LatestPriceRequest))
+		return srv.(ServerFetcherServer).LatestPrice(ctx, req.(*LatestPriceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MercuryServerFetcher_LatestTimestamp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServerFetcher_LatestTimestamp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LatestTimestampRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MercuryServerFetcherServer).LatestTimestamp(ctx, in)
+		return srv.(ServerFetcherServer).LatestTimestamp(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MercuryServerFetcher_LatestTimestamp_FullMethodName,
+		FullMethod: ServerFetcher_LatestTimestamp_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MercuryServerFetcherServer).LatestTimestamp(ctx, req.(*LatestTimestampRequest))
+		return srv.(ServerFetcherServer).LatestTimestamp(ctx, req.(*LatestTimestampRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// MercuryServerFetcher_ServiceDesc is the grpc.ServiceDesc for MercuryServerFetcher service.
+// ServerFetcher_ServiceDesc is the grpc.ServiceDesc for ServerFetcher service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var MercuryServerFetcher_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.internal.pb.mercury.MercuryServerFetcher",
-	HandlerType: (*MercuryServerFetcherServer)(nil),
+var ServerFetcher_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.internal.pb.mercury.ServerFetcher",
+	HandlerType: (*ServerFetcherServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "FetchInitialMaxFinalizedBlockNumber",
-			Handler:    _MercuryServerFetcher_FetchInitialMaxFinalizedBlockNumber_Handler,
+			Handler:    _ServerFetcher_FetchInitialMaxFinalizedBlockNumber_Handler,
 		},
 		{
 			MethodName: "LatestPrice",
-			Handler:    _MercuryServerFetcher_LatestPrice_Handler,
+			Handler:    _ServerFetcher_LatestPrice_Handler,
 		},
 		{
 			MethodName: "LatestTimestamp",
-			Handler:    _MercuryServerFetcher_LatestTimestamp_Handler,
+			Handler:    _ServerFetcher_LatestTimestamp_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

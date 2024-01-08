@@ -5,8 +5,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	//ocr_types "github.com/smartcontractkit/libocr/offchainreporting/types"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"

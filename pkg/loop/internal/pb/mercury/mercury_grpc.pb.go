@@ -12,6 +12,7 @@ package mercury_pb
 
 import (
 	context "context"
+	v3 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -307,6 +308,170 @@ var OnchainConfigCodec_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Decode",
 			Handler:    _OnchainConfigCodec_Decode_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "mercury.proto",
+}
+
+const (
+	ReportCodecV3_BuildReport_FullMethodName                    = "/loop.internal.pb.mercury.ReportCodecV3/BuildReport"
+	ReportCodecV3_MaxReportLength_FullMethodName                = "/loop.internal.pb.mercury.ReportCodecV3/MaxReportLength"
+	ReportCodecV3_ObservationTimestampFromReport_FullMethodName = "/loop.internal.pb.mercury.ReportCodecV3/ObservationTimestampFromReport"
+)
+
+// ReportCodecV3Client is the client API for ReportCodecV3 service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ReportCodecV3Client interface {
+	BuildReport(ctx context.Context, in *v3.BuildReportRequest, opts ...grpc.CallOption) (*v3.BuildReportReply, error)
+	MaxReportLength(ctx context.Context, in *v3.MaxReportLengthRequest, opts ...grpc.CallOption) (*v3.MaxReportLengthReply, error)
+	ObservationTimestampFromReport(ctx context.Context, in *v3.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v3.ObservationTimestampFromReportReply, error)
+}
+
+type reportCodecV3Client struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewReportCodecV3Client(cc grpc.ClientConnInterface) ReportCodecV3Client {
+	return &reportCodecV3Client{cc}
+}
+
+func (c *reportCodecV3Client) BuildReport(ctx context.Context, in *v3.BuildReportRequest, opts ...grpc.CallOption) (*v3.BuildReportReply, error) {
+	out := new(v3.BuildReportReply)
+	err := c.cc.Invoke(ctx, ReportCodecV3_BuildReport_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportCodecV3Client) MaxReportLength(ctx context.Context, in *v3.MaxReportLengthRequest, opts ...grpc.CallOption) (*v3.MaxReportLengthReply, error) {
+	out := new(v3.MaxReportLengthReply)
+	err := c.cc.Invoke(ctx, ReportCodecV3_MaxReportLength_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportCodecV3Client) ObservationTimestampFromReport(ctx context.Context, in *v3.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v3.ObservationTimestampFromReportReply, error) {
+	out := new(v3.ObservationTimestampFromReportReply)
+	err := c.cc.Invoke(ctx, ReportCodecV3_ObservationTimestampFromReport_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ReportCodecV3Server is the server API for ReportCodecV3 service.
+// All implementations must embed UnimplementedReportCodecV3Server
+// for forward compatibility
+type ReportCodecV3Server interface {
+	BuildReport(context.Context, *v3.BuildReportRequest) (*v3.BuildReportReply, error)
+	MaxReportLength(context.Context, *v3.MaxReportLengthRequest) (*v3.MaxReportLengthReply, error)
+	ObservationTimestampFromReport(context.Context, *v3.ObservationTimestampFromReportRequest) (*v3.ObservationTimestampFromReportReply, error)
+	mustEmbedUnimplementedReportCodecV3Server()
+}
+
+// UnimplementedReportCodecV3Server must be embedded to have forward compatible implementations.
+type UnimplementedReportCodecV3Server struct {
+}
+
+func (UnimplementedReportCodecV3Server) BuildReport(context.Context, *v3.BuildReportRequest) (*v3.BuildReportReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
+}
+func (UnimplementedReportCodecV3Server) MaxReportLength(context.Context, *v3.MaxReportLengthRequest) (*v3.MaxReportLengthReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
+}
+func (UnimplementedReportCodecV3Server) ObservationTimestampFromReport(context.Context, *v3.ObservationTimestampFromReportRequest) (*v3.ObservationTimestampFromReportReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ObservationTimestampFromReport not implemented")
+}
+func (UnimplementedReportCodecV3Server) mustEmbedUnimplementedReportCodecV3Server() {}
+
+// UnsafeReportCodecV3Server may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ReportCodecV3Server will
+// result in compilation errors.
+type UnsafeReportCodecV3Server interface {
+	mustEmbedUnimplementedReportCodecV3Server()
+}
+
+func RegisterReportCodecV3Server(s grpc.ServiceRegistrar, srv ReportCodecV3Server) {
+	s.RegisterService(&ReportCodecV3_ServiceDesc, srv)
+}
+
+func _ReportCodecV3_BuildReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v3.BuildReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportCodecV3Server).BuildReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportCodecV3_BuildReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportCodecV3Server).BuildReport(ctx, req.(*v3.BuildReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportCodecV3_MaxReportLength_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v3.MaxReportLengthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportCodecV3Server).MaxReportLength(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportCodecV3_MaxReportLength_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportCodecV3Server).MaxReportLength(ctx, req.(*v3.MaxReportLengthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportCodecV3_ObservationTimestampFromReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v3.ObservationTimestampFromReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportCodecV3Server).ObservationTimestampFromReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportCodecV3_ObservationTimestampFromReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportCodecV3Server).ObservationTimestampFromReport(ctx, req.(*v3.ObservationTimestampFromReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ReportCodecV3_ServiceDesc is the grpc.ServiceDesc for ReportCodecV3 service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ReportCodecV3_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.internal.pb.mercury.ReportCodecV3",
+	HandlerType: (*ReportCodecV3Server)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "BuildReport",
+			Handler:    _ReportCodecV3_BuildReport_Handler,
+		},
+		{
+			MethodName: "MaxReportLength",
+			Handler:    _ReportCodecV3_MaxReportLength_Handler,
+		},
+		{
+			MethodName: "ObservationTimestampFromReport",
+			Handler:    _ReportCodecV3_ObservationTimestampFromReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

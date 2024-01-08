@@ -8,6 +8,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 // naive attempt: import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayer.proto"; and `../relayer.proto` did not work
 package loop.internal.pb.mercury; // related to above, seems to need to have loop package
 import "relayer.proto";
+import "v3/reportcodec.proto";
 
 service MercuryAdapter {
   rpc NewMercuryV1Factory (NewMercuryV1FactoryRequest) returns (NewMercuryV1FactoryReply) {}
@@ -98,6 +99,14 @@ message DecodeOnchainConfigRequest {
 // DecodeOnchainConfigReply has is gRPC adapter for the return values of [pkg/types/mercury/OnchainConfig.Decode].
 message DecodeOnchainConfigReply {
   OnchainConfig onchainConfig = 1;
+}
+
+// handle the report codec versions ; the v3 is implemented above. TODO: is this the right way to do this?
+service ReportCodecV3 {
+  rpc BuildReport (loop.internal.pb.mercury.v3.BuildReportRequest) returns (loop.internal.pb.mercury.v3.BuildReportReply) {}
+  rpc MaxReportLength (loop.internal.pb.mercury.v3.MaxReportLengthRequest) returns (loop.internal.pb.mercury.v3.MaxReportLengthReply) {}
+  rpc ObservationTimestampFromReport (loop.internal.pb.mercury.v3.ObservationTimestampFromReportRequest) returns (loop.internal.pb.mercury.v3.ObservationTimestampFromReportReply) {}
+
 }
 
 //TODO: these are common fields for all versions of the report codec, but the report codec is versioned

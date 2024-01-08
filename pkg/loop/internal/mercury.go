@@ -92,7 +92,8 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
 				// given that this is a v3 factory, we should only need to handle v3 report codec.
 				// maybe panic if the report codec is not v3?
-				mercury_v3_pb.RegisterReportCodecServer(s, mercury_v3_internal.NewReportCodecServer(reportCodec))
+				reportCodecServer := mercury_v3_internal.NewReportCodecServer(provider.ReportCodecV3())
+				mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(reportCodecServer))
 
 				mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
 				mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})

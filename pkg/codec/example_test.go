@@ -20,20 +20,20 @@ const (
 	anyModifiedStructTypeName = "SecondItem"
 )
 
-var _ types.RemoteCodec = &ExampleStructJsonCodec{}
+var _ types.RemoteCodec = &ExampleStructJSONCodec{}
 
-type ExampleStructJsonCodec struct{}
+type ExampleStructJSONCodec struct{}
 
-func (ExampleStructJsonCodec) Encode(_ context.Context, item any, _ string) ([]byte, error) {
+func (ExampleStructJSONCodec) Encode(_ context.Context, item any, _ string) ([]byte, error) {
 	return json.Marshal(item)
 }
 
-func (ExampleStructJsonCodec) GetMaxEncodingSize(_ context.Context, n int, _ string) (int, error) {
+func (ExampleStructJSONCodec) GetMaxEncodingSize(_ context.Context, n int, _ string) (int, error) {
 	// not used in the example, and not really valid for json.
 	return math.MaxInt32, nil
 }
 
-func (ExampleStructJsonCodec) Decode(_ context.Context, raw []byte, into any, _ string) error {
+func (ExampleStructJSONCodec) Decode(_ context.Context, raw []byte, into any, _ string) error {
 	err := json.Unmarshal(raw, into)
 	if err != nil {
 		return fmt.Errorf("%w: %s", types.ErrInvalidType, err)
@@ -41,12 +41,12 @@ func (ExampleStructJsonCodec) Decode(_ context.Context, raw []byte, into any, _ 
 	return nil
 }
 
-func (ExampleStructJsonCodec) GetMaxDecodingSize(ctx context.Context, n int, _ string) (int, error) {
+func (ExampleStructJSONCodec) GetMaxDecodingSize(ctx context.Context, n int, _ string) (int, error) {
 	// not used in the example, and not really valid for json.
 	return math.MaxInt32, nil
 }
 
-func (ExampleStructJsonCodec) CreateType(_ string, _ bool) (any, error) {
+func (ExampleStructJSONCodec) CreateType(_ string, _ bool) (any, error) {
 	// parameters here are unused in the example, but can be used to determine what type to expect.
 	// this allows remote execution to know how to decode the incoming message
 	// and for [codec.NewModifierCodec] to know what type to expect for intermediate phases.
@@ -90,7 +90,7 @@ func Example() {
 		return
 	}
 
-	c, err := codec.NewModifierCodec(&ExampleStructJsonCodec{}, mods)
+	c, err := codec.NewModifierCodec(&ExampleStructJSONCodec{}, mods)
 	if err != nil {
 		fmt.Println(err)
 		return

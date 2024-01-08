@@ -107,14 +107,14 @@ func Example() {
 
 	ctx := context.Background()
 	b, err := c.Encode(ctx, input, anyUnmodifiedTypeName)
-	fmt.Println(string(b))
+	fmt.Println("Encoded: " + string(b))
 
 	output := &OnChainStruct{}
 	if err = c.Decode(ctx, b, output, anyUnmodifiedTypeName); err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(reflect.DeepEqual(input, output))
+	fmt.Printf("Decoded the same: %v\n", reflect.DeepEqual(input, output))
 
 	anyTimeEpoch := int64(631515600)
 	t := time.Unix(anyTimeEpoch, 0)
@@ -131,7 +131,7 @@ func Example() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(string(b))
+	fmt.Println("Encoded with modifications: " + string(b))
 
 	output2 := &OffChainStruct{}
 	if err = c.Decode(ctx, b, output2, anyModifiedStructTypeName); err != nil {
@@ -143,12 +143,12 @@ func Example() {
 
 	// Only the middle value was extracted, so decoding can only provide a single value back.
 	expected.Dd = []string{"great example"}
-	fmt.Println(reflect.DeepEqual(&expected, output2))
+	fmt.Printf("Decoded wih modifications as expected: %v\n", reflect.DeepEqual(&expected, output2))
 	// Output:
-	// {"Aa":10,"Bb":"20","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
-	// true
-	// {"Aa":10,"Bb":"","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
-	// true
+	// Encoded: {"Aa":10,"Bb":"20","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
+	// Decoded the same: true
+	// Encoded with modifications: {"Aa":10,"Bb":"","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
+	// Decoded wih modifications as expected: true
 }
 
 func createModsFromConfig() (codec.Modifier, error) {

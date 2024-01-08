@@ -31,7 +31,7 @@ type ChainReader interface {
 	// 		Bar *big.Int `json:"bar"`
 	//  }
 	//  func do(ctx context.Context, cr ChainReader) (resp ProductReturn, err error) {
-	// 		err = cr.GetLatestValue(ctx, "FooContract", "GetProduct", ProductParams{Id:1}, &resp)
+	// 		err = cr.GetLatestValue(ctx, "FooContract", "GetProduct", ProductParams{ID:1}, &resp)
 	// 		return
 	//  }
 	//

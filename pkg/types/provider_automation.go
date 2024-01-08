@@ -6,13 +6,12 @@ import "github.com/smartcontractkit/chainlink-common/pkg/types/automation"
 type AutomationProvider interface {
 	PluginProvider
 	Registry() automation.Registry
+	Encoder() automation.Encoder
 	TransmitEventProvider() automation.EventProvider
 	BlockSubscriber() automation.BlockSubscriber
 	PayloadBuilder() automation.PayloadBuilder
 	UpkeepStateStore() automation.UpkeepStateStore
 	LogEventProvider() automation.LogEventProvider
 	LogRecoverer() automation.LogRecoverer
-	Encoder() automation.Encoder
 	UpkeepProvider() automation.ConditionalUpkeepProvider
-	PayloadBuilder() automation.PayloadBuilder
 }

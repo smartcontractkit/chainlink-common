@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"reflect"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/codec"
@@ -114,7 +113,7 @@ func Example() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("Decoded the same: %v\n", reflect.DeepEqual(input, output))
+	fmt.Printf("Decoded: %+v\n", output)
 
 	anyTimeEpoch := int64(631515600)
 	t := time.Unix(anyTimeEpoch, 0)
@@ -139,16 +138,12 @@ func Example() {
 		return
 	}
 
-	expected := *modifedInput
-
-	// Only the middle value was extracted, so decoding can only provide a single value back.
-	expected.Dd = []string{"great example"}
-	fmt.Printf("Decoded wih modifications as expected: %v\n", reflect.DeepEqual(&expected, output2))
+	fmt.Printf("Decoded wih modifications: %+v\n", output2)
 	// Output:
 	// Encoded: {"Aa":10,"Bb":"20","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
-	// Decoded the same: true
+	// Decoded: &{Aa:10 Bb:20 Cc:true Dd:great example Ee:631515600 Ff:dog}
 	// Encoded with modifications: {"Aa":10,"Bb":"","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
-	// Decoded wih modifications as expected: true
+	// Decoded wih modifications: &{Bb:10 Cc:true Dd:[great example] Ee:1990-01-05 05:00:00 +0000 UTC Zz:foo}
 }
 
 func createModsFromConfig() (codec.Modifier, error) {

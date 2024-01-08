@@ -177,9 +177,9 @@ func epochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) 
 
 func convertToTime(from reflect.Type, data any) any {
 	if from.ConvertibleTo(i64Type) {
-		return time.Unix(reflect.ValueOf(data).Convert(i64Type).Int(), 0)
+		return time.Unix(reflect.ValueOf(data).Convert(i64Type).Int(), 0).UTC()
 	} else if from.ConvertibleTo(biType) {
-		return time.Unix(reflect.ValueOf(data).Convert(biType).Interface().(*big.Int).Int64(), 0)
+		return time.Unix(reflect.ValueOf(data).Convert(biType).Interface().(*big.Int).Int64(), 0).UTC()
 	}
 
 	return data

@@ -9,6 +9,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+// ElementExtractorLocation is used to determine which element to extract from a slice or array.
+// The default is ElementExtractorLocationMiddle, which will extract the middle element.
+// valid json values are "first", "middle", and "last".
 type ElementExtractorLocation int
 
 const (

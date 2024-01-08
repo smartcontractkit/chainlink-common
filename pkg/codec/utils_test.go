@@ -165,7 +165,7 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 
 func TestEpochToTimeHook(t *testing.T) {
 	anyTime := int64(math.MaxInt8 - 40)
-	testTime := time.Unix(anyTime, 0)
+	testTime := time.Unix(anyTime, 0).UTC()
 	testValues := []any{
 		int(anyTime),
 		uint(anyTime),

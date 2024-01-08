@@ -122,4 +122,34 @@ func TestModifiersConfig(t *testing.T) {
 			assert.Equal(t, expectedMap, actualMap)
 		})
 	}
+
+	t.Run("Config is serialized so that the config type is included for deserializing with ModifiersConfig", func(t *testing.T) {
+		anyLocation := codec.ElementExtractorLocationFirst
+		configs := codec.ModifiersConfig{
+			&codec.RenameModifierConfig{
+				Fields: map[string]string{"A": "Z"},
+			},
+			&codec.DropModifierConfig{
+				Fields: []string{"C"},
+			},
+			&codec.HardCodeModifierConfig{
+				OffChainValues: map[string]any{"C": "Z"},
+				OnChainValues:  map[string]any{"Q": "foo"},
+			},
+			&codec.ElementExtractorModifierConfig{
+				Extractions: map[string]*codec.ElementExtractorLocation{"A": &anyLocation},
+			},
+			&codec.EpochToTimeModifierConfig{
+				Fields: []string{"T"},
+			},
+		}
+
+		b, err := json.Marshal(&configs)
+		require.NoError(t, err)
+
+		var actualConfigs codec.ModifiersConfig
+		err = json.Unmarshal(b, &actualConfigs)
+		require.NoError(t, err)
+		assert.Equal(t, configs, actualConfigs)
+	})
 }

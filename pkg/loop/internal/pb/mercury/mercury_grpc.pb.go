@@ -12,6 +12,8 @@ package mercury_pb
 
 import (
 	context "context"
+	v1 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1"
+	v2 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v2"
 	v3 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -488,9 +490,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReportCodecV1Client interface {
-	BuildReport(ctx context.Context, in *BuildReportRequestV1, opts ...grpc.CallOption) (*BuildReportReplyV1, error)
-	MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error)
-	CurrentBlockNumFromReport(ctx context.Context, in *CurrentBlockNumFromReportRequest, opts ...grpc.CallOption) (*CurrentBlockNumFromReportResponse, error)
+	BuildReport(ctx context.Context, in *v1.BuildReportRequest, opts ...grpc.CallOption) (*v1.BuildReportReply, error)
+	MaxReportLength(ctx context.Context, in *v1.MaxReportLengthRequest, opts ...grpc.CallOption) (*v1.MaxReportLengthReply, error)
+	CurrentBlockNumFromReport(ctx context.Context, in *v1.CurrentBlockNumFromReportRequest, opts ...grpc.CallOption) (*v1.CurrentBlockNumFromReportResponse, error)
 }
 
 type reportCodecV1Client struct {
@@ -501,8 +503,8 @@ func NewReportCodecV1Client(cc grpc.ClientConnInterface) ReportCodecV1Client {
 	return &reportCodecV1Client{cc}
 }
 
-func (c *reportCodecV1Client) BuildReport(ctx context.Context, in *BuildReportRequestV1, opts ...grpc.CallOption) (*BuildReportReplyV1, error) {
-	out := new(BuildReportReplyV1)
+func (c *reportCodecV1Client) BuildReport(ctx context.Context, in *v1.BuildReportRequest, opts ...grpc.CallOption) (*v1.BuildReportReply, error) {
+	out := new(v1.BuildReportReply)
 	err := c.cc.Invoke(ctx, ReportCodecV1_BuildReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -510,8 +512,8 @@ func (c *reportCodecV1Client) BuildReport(ctx context.Context, in *BuildReportRe
 	return out, nil
 }
 
-func (c *reportCodecV1Client) MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error) {
-	out := new(MaxReportLengthReply)
+func (c *reportCodecV1Client) MaxReportLength(ctx context.Context, in *v1.MaxReportLengthRequest, opts ...grpc.CallOption) (*v1.MaxReportLengthReply, error) {
+	out := new(v1.MaxReportLengthReply)
 	err := c.cc.Invoke(ctx, ReportCodecV1_MaxReportLength_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -519,8 +521,8 @@ func (c *reportCodecV1Client) MaxReportLength(ctx context.Context, in *MaxReport
 	return out, nil
 }
 
-func (c *reportCodecV1Client) CurrentBlockNumFromReport(ctx context.Context, in *CurrentBlockNumFromReportRequest, opts ...grpc.CallOption) (*CurrentBlockNumFromReportResponse, error) {
-	out := new(CurrentBlockNumFromReportResponse)
+func (c *reportCodecV1Client) CurrentBlockNumFromReport(ctx context.Context, in *v1.CurrentBlockNumFromReportRequest, opts ...grpc.CallOption) (*v1.CurrentBlockNumFromReportResponse, error) {
+	out := new(v1.CurrentBlockNumFromReportResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV1_CurrentBlockNumFromReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -532,9 +534,9 @@ func (c *reportCodecV1Client) CurrentBlockNumFromReport(ctx context.Context, in 
 // All implementations must embed UnimplementedReportCodecV1Server
 // for forward compatibility
 type ReportCodecV1Server interface {
-	BuildReport(context.Context, *BuildReportRequestV1) (*BuildReportReplyV1, error)
-	MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error)
-	CurrentBlockNumFromReport(context.Context, *CurrentBlockNumFromReportRequest) (*CurrentBlockNumFromReportResponse, error)
+	BuildReport(context.Context, *v1.BuildReportRequest) (*v1.BuildReportReply, error)
+	MaxReportLength(context.Context, *v1.MaxReportLengthRequest) (*v1.MaxReportLengthReply, error)
+	CurrentBlockNumFromReport(context.Context, *v1.CurrentBlockNumFromReportRequest) (*v1.CurrentBlockNumFromReportResponse, error)
 	mustEmbedUnimplementedReportCodecV1Server()
 }
 
@@ -542,13 +544,13 @@ type ReportCodecV1Server interface {
 type UnimplementedReportCodecV1Server struct {
 }
 
-func (UnimplementedReportCodecV1Server) BuildReport(context.Context, *BuildReportRequestV1) (*BuildReportReplyV1, error) {
+func (UnimplementedReportCodecV1Server) BuildReport(context.Context, *v1.BuildReportRequest) (*v1.BuildReportReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
 }
-func (UnimplementedReportCodecV1Server) MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error) {
+func (UnimplementedReportCodecV1Server) MaxReportLength(context.Context, *v1.MaxReportLengthRequest) (*v1.MaxReportLengthReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
 }
-func (UnimplementedReportCodecV1Server) CurrentBlockNumFromReport(context.Context, *CurrentBlockNumFromReportRequest) (*CurrentBlockNumFromReportResponse, error) {
+func (UnimplementedReportCodecV1Server) CurrentBlockNumFromReport(context.Context, *v1.CurrentBlockNumFromReportRequest) (*v1.CurrentBlockNumFromReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CurrentBlockNumFromReport not implemented")
 }
 func (UnimplementedReportCodecV1Server) mustEmbedUnimplementedReportCodecV1Server() {}
@@ -565,7 +567,7 @@ func RegisterReportCodecV1Server(s grpc.ServiceRegistrar, srv ReportCodecV1Serve
 }
 
 func _ReportCodecV1_BuildReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BuildReportRequestV1)
+	in := new(v1.BuildReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -577,13 +579,13 @@ func _ReportCodecV1_BuildReport_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: ReportCodecV1_BuildReport_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecV1Server).BuildReport(ctx, req.(*BuildReportRequestV1))
+		return srv.(ReportCodecV1Server).BuildReport(ctx, req.(*v1.BuildReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ReportCodecV1_MaxReportLength_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MaxReportLengthRequest)
+	in := new(v1.MaxReportLengthRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -595,13 +597,13 @@ func _ReportCodecV1_MaxReportLength_Handler(srv interface{}, ctx context.Context
 		FullMethod: ReportCodecV1_MaxReportLength_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecV1Server).MaxReportLength(ctx, req.(*MaxReportLengthRequest))
+		return srv.(ReportCodecV1Server).MaxReportLength(ctx, req.(*v1.MaxReportLengthRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ReportCodecV1_CurrentBlockNumFromReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CurrentBlockNumFromReportRequest)
+	in := new(v1.CurrentBlockNumFromReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -613,7 +615,7 @@ func _ReportCodecV1_CurrentBlockNumFromReport_Handler(srv interface{}, ctx conte
 		FullMethod: ReportCodecV1_CurrentBlockNumFromReport_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecV1Server).CurrentBlockNumFromReport(ctx, req.(*CurrentBlockNumFromReportRequest))
+		return srv.(ReportCodecV1Server).CurrentBlockNumFromReport(ctx, req.(*v1.CurrentBlockNumFromReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -652,9 +654,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReportCodecV2Client interface {
-	BuildReport(ctx context.Context, in *BuildReportRequestV2, opts ...grpc.CallOption) (*BuildReportReplyV2, error)
-	MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error)
-	ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportReply, error)
+	BuildReport(ctx context.Context, in *v2.BuildReportRequest, opts ...grpc.CallOption) (*v2.BuildReportReply, error)
+	MaxReportLength(ctx context.Context, in *v2.MaxReportLengthRequest, opts ...grpc.CallOption) (*v2.MaxReportLengthReply, error)
+	ObservationTimestampFromReport(ctx context.Context, in *v2.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v2.ObservationTimestampFromReportReply, error)
 }
 
 type reportCodecV2Client struct {
@@ -665,8 +667,8 @@ func NewReportCodecV2Client(cc grpc.ClientConnInterface) ReportCodecV2Client {
 	return &reportCodecV2Client{cc}
 }
 
-func (c *reportCodecV2Client) BuildReport(ctx context.Context, in *BuildReportRequestV2, opts ...grpc.CallOption) (*BuildReportReplyV2, error) {
-	out := new(BuildReportReplyV2)
+func (c *reportCodecV2Client) BuildReport(ctx context.Context, in *v2.BuildReportRequest, opts ...grpc.CallOption) (*v2.BuildReportReply, error) {
+	out := new(v2.BuildReportReply)
 	err := c.cc.Invoke(ctx, ReportCodecV2_BuildReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -674,8 +676,8 @@ func (c *reportCodecV2Client) BuildReport(ctx context.Context, in *BuildReportRe
 	return out, nil
 }
 
-func (c *reportCodecV2Client) MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error) {
-	out := new(MaxReportLengthReply)
+func (c *reportCodecV2Client) MaxReportLength(ctx context.Context, in *v2.MaxReportLengthRequest, opts ...grpc.CallOption) (*v2.MaxReportLengthReply, error) {
+	out := new(v2.MaxReportLengthReply)
 	err := c.cc.Invoke(ctx, ReportCodecV2_MaxReportLength_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -683,8 +685,8 @@ func (c *reportCodecV2Client) MaxReportLength(ctx context.Context, in *MaxReport
 	return out, nil
 }
 
-func (c *reportCodecV2Client) ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportReply, error) {
-	out := new(ObservationTimestampFromReportReply)
+func (c *reportCodecV2Client) ObservationTimestampFromReport(ctx context.Context, in *v2.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v2.ObservationTimestampFromReportReply, error) {
+	out := new(v2.ObservationTimestampFromReportReply)
 	err := c.cc.Invoke(ctx, ReportCodecV2_ObservationTimestampFromReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -696,9 +698,9 @@ func (c *reportCodecV2Client) ObservationTimestampFromReport(ctx context.Context
 // All implementations must embed UnimplementedReportCodecV2Server
 // for forward compatibility
 type ReportCodecV2Server interface {
-	BuildReport(context.Context, *BuildReportRequestV2) (*BuildReportReplyV2, error)
-	MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error)
-	ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportReply, error)
+	BuildReport(context.Context, *v2.BuildReportRequest) (*v2.BuildReportReply, error)
+	MaxReportLength(context.Context, *v2.MaxReportLengthRequest) (*v2.MaxReportLengthReply, error)
+	ObservationTimestampFromReport(context.Context, *v2.ObservationTimestampFromReportRequest) (*v2.ObservationTimestampFromReportReply, error)
 	mustEmbedUnimplementedReportCodecV2Server()
 }
 
@@ -706,13 +708,13 @@ type ReportCodecV2Server interface {
 type UnimplementedReportCodecV2Server struct {
 }
 
-func (UnimplementedReportCodecV2Server) BuildReport(context.Context, *BuildReportRequestV2) (*BuildReportReplyV2, error) {
+func (UnimplementedReportCodecV2Server) BuildReport(context.Context, *v2.BuildReportRequest) (*v2.BuildReportReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
 }
-func (UnimplementedReportCodecV2Server) MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error) {
+func (UnimplementedReportCodecV2Server) MaxReportLength(context.Context, *v2.MaxReportLengthRequest) (*v2.MaxReportLengthReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
 }
-func (UnimplementedReportCodecV2Server) ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportReply, error) {
+func (UnimplementedReportCodecV2Server) ObservationTimestampFromReport(context.Context, *v2.ObservationTimestampFromReportRequest) (*v2.ObservationTimestampFromReportReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObservationTimestampFromReport not implemented")
 }
 func (UnimplementedReportCodecV2Server) mustEmbedUnimplementedReportCodecV2Server() {}
@@ -729,7 +731,7 @@ func RegisterReportCodecV2Server(s grpc.ServiceRegistrar, srv ReportCodecV2Serve
 }
 
 func _ReportCodecV2_BuildReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BuildReportRequestV2)
+	in := new(v2.BuildReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -741,13 +743,13 @@ func _ReportCodecV2_BuildReport_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: ReportCodecV2_BuildReport_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecV2Server).BuildReport(ctx, req.(*BuildReportRequestV2))
+		return srv.(ReportCodecV2Server).BuildReport(ctx, req.(*v2.BuildReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ReportCodecV2_MaxReportLength_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MaxReportLengthRequest)
+	in := new(v2.MaxReportLengthRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -759,13 +761,13 @@ func _ReportCodecV2_MaxReportLength_Handler(srv interface{}, ctx context.Context
 		FullMethod: ReportCodecV2_MaxReportLength_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecV2Server).MaxReportLength(ctx, req.(*MaxReportLengthRequest))
+		return srv.(ReportCodecV2Server).MaxReportLength(ctx, req.(*v2.MaxReportLengthRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ReportCodecV2_ObservationTimestampFromReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ObservationTimestampFromReportRequest)
+	in := new(v2.ObservationTimestampFromReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -777,7 +779,7 @@ func _ReportCodecV2_ObservationTimestampFromReport_Handler(srv interface{}, ctx 
 		FullMethod: ReportCodecV2_ObservationTimestampFromReport_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportCodecV2Server).ObservationTimestampFromReport(ctx, req.(*ObservationTimestampFromReportRequest))
+		return srv.(ReportCodecV2Server).ObservationTimestampFromReport(ctx, req.(*v2.ObservationTimestampFromReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

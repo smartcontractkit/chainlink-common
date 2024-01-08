@@ -8,7 +8,10 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 // naive attempt: import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayer.proto"; and `../relayer.proto` did not work
 package loop.internal.pb.mercury; // related to above, seems to need to have loop package
 import "relayer.proto";
+import "v1/reportcodec.proto";
+import "v2/reportcodec.proto";
 import "v3/reportcodec.proto";
+
 
 service MercuryAdapter {
   rpc NewMercuryV1Factory (NewMercuryV1FactoryRequest) returns (NewMercuryV1FactoryReply) {}
@@ -109,31 +112,6 @@ service ReportCodecV3 {
 
 }
 
-//TODO: these are common fields for all versions of the report codec, but the report codec is versioned
-// BuildReportReply is gRPC adapter for the return values of [pkg/types/mercury/v3/ReportCodec.BuildReport].
-message BuildReportReply {
-  bytes report = 1;
-}
-
-// MaxReportLengthRequest has arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
-message MaxReportLengthRequest {
-  uint64 numOracles = 1; // TODO: WARNING this is a int in ReportCodec interface
-}
-
-// MaxReportLengthReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
-message MaxReportLengthReply {
-  uint64 maxReportLength = 1; //TODO: WARNING this is a int in ReportCodec interface
-}
-
-// ObservationTimestampFromReportRequest has arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.ObservationTimestampFromReport].
-message ObservationTimestampFromReportRequest {
-  bytes report = 1;
-}
-//ObservationTimestampFromReportReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.ObservationTimestampFromReport].
-message ObservationTimestampFromReportReply {
-  uint32 timestamp = 1; // TODO: WARNING this is a uint32 in ReportCodec interface
-}
-
 
 /*
 extensions of the relayer interface [pkg/types/provider_mercury.go]
@@ -152,73 +130,18 @@ type MercuryProvider interface {
 
 // handle the report codec versions < 3; the v3 is implemented above. TODO: is this the right way to do this?
 service ReportCodecV1 {
-  rpc BuildReport (BuildReportRequestV1) returns (BuildReportReplyV1) {}
-  rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthReply) {}
-  rpc CurrentBlockNumFromReport (CurrentBlockNumFromReportRequest) returns (CurrentBlockNumFromReportResponse) {}
-}
-
-// ReportFieldsV1 is gRPC wrapper for struct [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportFields].
-message ReportFieldsV1 {
-  uint32 timestamp =1; // TODO: timestamp?
-  BigInt benchmarkPrice = 2; // TODO: WARNING this is a pointer in ReportFields
-  BigInt bid = 3; // TODO: WARNING this is a pointer in ReportFields
-  BigInt ask = 4; // TODO: WARNING this is a pointer in ReportFields
-  int64 currentBlockNum = 5;
-  bytes currentBlockHash = 6;
-  int64 validFromBlockNum = 7;
-  uint64 currentBlockTimestamp = 8; // TODO: timestamp?
-}
-
-// BuildReportRequestV1 is gRPC adapter for [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.BuildReport].
-message BuildReportRequestV1 {
-  ReportFieldsV1 reportFields = 1;
-}
-
-// BuildReportReplyV1 has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.BuildReport].
-message BuildReportReplyV1 {
-  bytes report = 1;
-}
-
-// NOTE: shared implementation for MaxReportLengthRequest and MaxReportLengthReply
-
-// CurrentBlockNumFromReportRequest is gRPC adapter for [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.CurrentBlockNumFromReport].
-message CurrentBlockNumFromReportRequest {
-  bytes report = 1;
-}
-
-// CurrentBlockNumFromReportResponse is gRPC adapter for [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.CurrentBlockNumFromReport].
-message CurrentBlockNumFromReportResponse {
-  int64 currentBlockNum = 1;
+  rpc BuildReport (loop.internal.pb.mercury.v1.BuildReportRequest) returns (loop.internal.pb.mercury.v1.BuildReportReply) {}
+  rpc MaxReportLength (loop.internal.pb.mercury.v1.MaxReportLengthRequest) returns (loop.internal.pb.mercury.v1.MaxReportLengthReply) {}
+  rpc CurrentBlockNumFromReport (loop.internal.pb.mercury.v1.CurrentBlockNumFromReportRequest) returns (loop.internal.pb.mercury.v1.CurrentBlockNumFromReportResponse) {}
 }
 
 // ReportCodecV2 is gRPC adapter for the ReportCodec interface [pkg/types/mercury/v2/ReportCodec].
 service ReportCodecV2 {
-  rpc BuildReport (BuildReportRequestV2) returns (BuildReportReplyV2) {}
-  rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthReply) {}
-  rpc ObservationTimestampFromReport (ObservationTimestampFromReportRequest) returns (ObservationTimestampFromReportReply) {}
-}
+  rpc BuildReport (loop.internal.pb.mercury.v2.BuildReportRequest) returns (loop.internal.pb.mercury.v2.BuildReportReply) {}
+  rpc MaxReportLength (loop.internal.pb.mercury.v2.MaxReportLengthRequest) returns (loop.internal.pb.mercury.v2.MaxReportLengthReply) {}
+  rpc ObservationTimestampFromReport (loop.internal.pb.mercury.v2.ObservationTimestampFromReportRequest) returns (loop.internal.pb.mercury.v2.ObservationTimestampFromReportReply) {}
 
-// ReportFieldsV2 is gRPC wrapper for struct [github.com/smartcontractkit/chainlink-data-streams/mercury/v2/ReportFields].
-message ReportFieldsV2 {
-  uint32 validFromTimestamp =1; // TODO: timestamp?
-  uint32 timestamp =2; // TODO: timestamp?
-  BigInt nativeFee = 3; // TODO: WARNING this is a pointer in ReportFields
-  BigInt linkFee = 4; // TODO: WARNING this is a pointer in ReportFields
-  uint32 expiresAt = 5; // TODO: timestamp?
-  BigInt benchmarkPrice = 6; // TODO: WARNING this is a pointer in ReportFields
 }
-
-// BuildReportRequestV2 is gRPC adapter for [github.com/smartcontractkit/chainlink-data-streams/mercury/v2/ReportCodec.BuildReport].
-message BuildReportRequestV2 {
-  ReportFieldsV2 reportFields = 1;
-}
-
-// BuildReportReplyV2 has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v2/ReportCodec.BuildReport].
-message BuildReportReplyV2 {
-  bytes report = 1;
-}
-
-// NOTE: shared implementation for MaxReportLengthRequest and MaxReportLengthReply and ObservationTimestampFromReportRequest and ObservationTimestampFromReportReply
 
 // ServerFetcher is a gRPC adapter for the ServerFetcher interface [pkg/types/mercury/v3/ServerFetcher].
 service ServerFetcher {

@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: v1/datasource.proto
+// source: datasource.proto
 
-package v1
+package mercury_v1_pb
 
 import (
 	context "context"
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	DataSource_Observe_FullMethodName = "/loop.internal.pb.mercury.datasource.v1.DataSource/Observe"
+	DataSource_Observe_FullMethodName = "/loop.internal.pb.mercury.v1.DataSource/Observe"
 )
 
 // DataSourceClient is the client API for DataSource service.
@@ -96,7 +96,7 @@ func _DataSource_Observe_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var DataSource_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.internal.pb.mercury.datasource.v1.DataSource",
+	ServiceName: "loop.internal.pb.mercury.v1.DataSource",
 	HandlerType: (*DataSourceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -105,5 +105,5 @@ var DataSource_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "v1/datasource.proto",
+	Metadata: "datasource.proto",
 }

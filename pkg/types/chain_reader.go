@@ -24,7 +24,7 @@ type ChainReader interface {
 	//
 	// Example use:
 	//  type ProductParams struct {
-	// 		Id int `json:"arg"`
+	// 		ID int `json:"id"`
 	//  }
 	//  type ProductReturn struct {
 	// 		Foo string `json:"foo"`

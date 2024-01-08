@@ -24,16 +24,16 @@ var _ types.RemoteCodec = &ExampleStructJsonCodec{}
 
 type ExampleStructJsonCodec struct{}
 
-func (j ExampleStructJsonCodec) Encode(_ context.Context, item any, _ string) ([]byte, error) {
+func (ExampleStructJsonCodec) Encode(_ context.Context, item any, _ string) ([]byte, error) {
 	return json.Marshal(item)
 }
 
-func (j ExampleStructJsonCodec) GetMaxEncodingSize(_ context.Context, n int, _ string) (int, error) {
+func (ExampleStructJsonCodec) GetMaxEncodingSize(_ context.Context, n int, _ string) (int, error) {
 	// not used in the example, and not really valid for json.
 	return math.MaxInt32, nil
 }
 
-func (j ExampleStructJsonCodec) Decode(_ context.Context, raw []byte, into any, _ string) error {
+func (ExampleStructJsonCodec) Decode(_ context.Context, raw []byte, into any, _ string) error {
 	err := json.Unmarshal(raw, into)
 	if err != nil {
 		return fmt.Errorf("%w: %s", types.ErrInvalidType, err)
@@ -41,12 +41,12 @@ func (j ExampleStructJsonCodec) Decode(_ context.Context, raw []byte, into any, 
 	return nil
 }
 
-func (j ExampleStructJsonCodec) GetMaxDecodingSize(ctx context.Context, n int, _ string) (int, error) {
+func (ExampleStructJsonCodec) GetMaxDecodingSize(ctx context.Context, n int, _ string) (int, error) {
 	// not used in the example, and not really valid for json.
 	return math.MaxInt32, nil
 }
 
-func (j ExampleStructJsonCodec) CreateType(_ string, _ bool) (any, error) {
+func (ExampleStructJsonCodec) CreateType(_ string, _ bool) (any, error) {
 	// parameters here are unused in the example, but can be used to determine what type to expect.
 	// this allows remote execution to know how to decode the incoming message
 	// and for [codec.NewModifierCodec] to know what type to expect for intermediate phases.
@@ -84,23 +84,18 @@ type OffChainStruct struct {
 // Example demonstrates how to use the codec package.
 // It will make use of each [Modifier] provided in the package, along with their config.
 func Example() {
-	mods := createModsFromConfig()
+	mods, err := createModsFromConfig()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	c, err := codec.NewModifierCodec(&ExampleStructJsonCodec{}, mods)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
-	writeAndReadUnmodified(c)
 
-	writeAndReadModified(c)
-	// Output:
-	// {"Aa":10,"Bb":"20","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
-	// true
-	// {"Aa":10,"Bb":"","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
-	// true
-}
-
-func writeAndReadUnmodified(c types.Codec) {
 	input := &OnChainStruct{
 		Aa: 10,
 		Bb: "20",
@@ -116,12 +111,11 @@ func writeAndReadUnmodified(c types.Codec) {
 
 	output := &OnChainStruct{}
 	if err = c.Decode(ctx, b, output, anyUnmodifiedTypeName); err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 	fmt.Println(reflect.DeepEqual(input, output))
-}
 
-func writeAndReadModified(c types.RemoteCodec) {
 	anyTimeEpoch := int64(631515600)
 	t := time.Unix(anyTimeEpoch, 0)
 	modifedInput := &OffChainStruct{
@@ -132,36 +126,40 @@ func writeAndReadModified(c types.RemoteCodec) {
 		Zz: "foo",
 	}
 
-	ctx := context.Background()
-	b, err := c.Encode(ctx, modifedInput, anyModifiedStructTypeName)
+	b, err = c.Encode(ctx, modifedInput, anyModifiedStructTypeName)
 	if err != nil {
-		panic(err)
-
+		fmt.Println(err)
+		return
 	}
 	fmt.Println(string(b))
 
-	output := &OffChainStruct{}
-	if err = c.Decode(ctx, b, output, anyModifiedStructTypeName); err != nil {
-		panic(err)
+	output2 := &OffChainStruct{}
+	if err = c.Decode(ctx, b, output2, anyModifiedStructTypeName); err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	expected := *modifedInput
 
 	// Only the middle value was extracted, so decoding can only provide a single value back.
 	expected.Dd = []string{"great example"}
-	fmt.Println(reflect.DeepEqual(&expected, output))
+	fmt.Println(reflect.DeepEqual(&expected, output2))
+	// Output:
+	// {"Aa":10,"Bb":"20","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
+	// true
+	// {"Aa":10,"Bb":"","Cc":true,"Dd":"great example","Ee":631515600,"Ff":"dog"}
+	// true
 }
 
-func createModsFromConfig() codec.Modifier {
+func createModsFromConfig() (codec.Modifier, error) {
 	modifierConfig := &codec.ModifiersConfig{}
-	err := json.Unmarshal([]byte(config), modifierConfig)
-	if err != nil {
-		panic(err)
+	if err := json.Unmarshal([]byte(config), modifierConfig); err != nil {
+		return nil, err
 	}
 
 	mod, err := modifierConfig.ToModifier()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	modByItemType := map[string]codec.Modifier{
@@ -169,9 +167,5 @@ func createModsFromConfig() codec.Modifier {
 		anyUnmodifiedTypeName:     codec.MultiModifier{},
 	}
 
-	mods, err := codec.NewByItemTypeModifier(modByItemType)
-	if err != nil {
-		panic(err)
-	}
-	return mods
+	return codec.NewByItemTypeModifier(modByItemType)
 }

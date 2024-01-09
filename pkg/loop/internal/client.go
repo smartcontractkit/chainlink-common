@@ -182,7 +182,7 @@ func (w *wrappedError) Error() string {
 
 func (w *wrappedError) Is(target error) bool {
 	s := status.Convert(target)
-	return w.status.Code() == s.Code() && strings.Contains(s.Message(), w.status.Message())
+	return w.status.Code() == s.Code() && strings.Contains(w.status.Message(), s.Message())
 }
 
 func (w *wrappedError) GRPCStatus() *status.Status {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,6 +56,11 @@ func TestVersionedBytesFunctions(t *testing.T) {
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
+	})
+
+	t.Run("DecodeVersionedBytes skips decoding if result is nil", func(t *testing.T) {
+		err := decodeVersionedBytes(nil, &pb.VersionedBytes{Version: CurrentEncodingVersion})
+		require.NoError(t, err)
 	})
 }
 

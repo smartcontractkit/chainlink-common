@@ -66,6 +66,16 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 }
 
 func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
+	// Nothing to decode to, this happens when there's no input for a read
+	if res == nil {
+		switch vData.Version {
+		case JSONEncodingVersion1, JSONEncodingVersion2, CBOREncodingVersion:
+			return nil
+		default:
+			return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
+		}
+	}
+
 	var err error
 	switch vData.Version {
 	case JSONEncodingVersion1:

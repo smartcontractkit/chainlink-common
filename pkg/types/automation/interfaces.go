@@ -2,6 +2,7 @@ package automation
 
 import (
 	"context"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"io"
 )
 
@@ -25,11 +26,7 @@ type Registry interface {
 }
 
 type EventProvider interface {
-	Name() string
-	Start(_ context.Context) error
-	Close() error
-	Ready() error
-	HealthReport() map[string]error
+	services.Service
 	GetLatestEvents(ctx context.Context) ([]TransmitEvent, error)
 }
 

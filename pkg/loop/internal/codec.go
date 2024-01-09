@@ -3,11 +3,19 @@ package internal
 import (
 	"context"
 
+	"google.golang.org/grpc"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ types.Codec = (*codecClient)(nil)
+
+// NewCodecTestClient is a test client for [types.Codec]
+// internal users should instantiate a client directly and set all private fields
+func NewCodecTestClient(conn *grpc.ClientConn) types.Codec {
+	return &codecClient{grpc: pb.NewCodecClient(conn)}
+}
 
 type codecClient struct {
 	*brokerExt
@@ -15,7 +23,7 @@ type codecClient struct {
 }
 
 func (c *codecClient) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
-	versionedParams, err := encodeVersionedBytes(item, CurrentEncodingVersion)
+	versionedParams, err := EncodeVersionedBytes(item, CurrentEncodingVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +50,7 @@ func (c *codecClient) Decode(ctx context.Context, raw []byte, into any, itemType
 		return wrapRPCErr(err)
 	}
 
-	return decodeVersionedBytes(into, resp.RetVal)
+	return DecodeVersionedBytes(into, resp.RetVal)
 }
 
 func (c *codecClient) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
@@ -65,6 +73,10 @@ func (c *codecClient) GetMaxDecodingSize(ctx context.Context, n int, itemType st
 
 var _ pb.CodecServer = (*codecServer)(nil)
 
+func NewCodecServer(impl types.Codec) pb.CodecServer {
+	return &codecServer{impl: impl}
+}
+
 type codecServer struct {
 	pb.UnimplementedCodecServer
 	impl types.Codec
@@ -76,7 +88,7 @@ func (c *codecServer) GetEncoding(ctx context.Context, req *pb.GetEncodingReques
 		return nil, err
 	}
 
-	if err = decodeVersionedBytes(encodedType, req.Params); err != nil {
+	if err = DecodeVersionedBytes(encodedType, req.Params); err != nil {
 		return nil, err
 	}
 
@@ -95,7 +107,7 @@ func (c *codecServer) GetDecoding(ctx context.Context, req *pb.GetDecodingReques
 		return nil, err
 	}
 
-	versionBytes, err := encodeVersionedBytes(encodedType, CurrentEncodingVersion)
+	versionBytes, err := EncodeVersionedBytes(encodedType, CurrentEncodingVersion)
 	return &pb.GetDecodingResponse{RetVal: versionBytes}, err
 }
 

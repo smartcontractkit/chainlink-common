@@ -1,4 +1,4 @@
-package internal
+package internal_test
 
 import (
 	"context"
@@ -9,43 +9,44 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestCodecClient(t *testing.T) {
-	RunCodecInterfaceTests(t, &codecInterfaceTester{srv: &codecServer{impl: &fakeCodec{}}})
+	interfaceTester := test.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: &fakeCodec{}})
+	RunCodecInterfaceTests(t, interfaceTester)
 
-	es := &codecErrServer{}
-	esTester := &codecInterfaceTester{srv: es}
+	es := &errCodec{}
+	esTester := test.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: es})
 	esTester.Setup(t)
-	codec := esTester.GetCodec(t)
+	esCodec := esTester.GetCodec(t)
 
+	anyObj := &TestStruct{}
 	for _, errorType := range errorTypes {
 		es.err = errorType
 		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := codec.Encode(tests.Context(t), "any", "doesnotmatter")
+			_, err := esCodec.Encode(tests.Context(t), anyObj, "doesnotmatter")
 			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("Decode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := codec.Encode(tests.Context(t), "any", "doesnotmatter")
+			_, err := esCodec.Encode(tests.Context(t), anyObj, "doesnotmatter")
 			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := codec.GetMaxEncodingSize(tests.Context(t), 1, "anything")
+			_, err := esCodec.GetMaxEncodingSize(tests.Context(t), 1, "anything")
 			assert.True(t, errors.Is(err, errorType))
 		})
 
 		t.Run("GetMaxDecodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := codec.GetMaxDecodingSize(tests.Context(t), 1, "anything")
+			_, err := esCodec.GetMaxDecodingSize(tests.Context(t), 1, "anything")
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
@@ -53,18 +54,24 @@ func TestCodecClient(t *testing.T) {
 	// make sure that errors come from client directly
 	es.err = nil
 	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		_, err := codec.Encode(tests.Context(t), &cannotEncode{}, "doesnotmatter")
+		interfaceTester.Setup(t)
+		c := interfaceTester.GetCodec(t)
+		_, err := c.Encode(tests.Context(t), &cannotEncode{}, "doesnotmatter")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
-		err := codec.Decode(tests.Context(t), []byte("does not matter"), &cannotEncode{}, TestItemType)
+		interfaceTester.Setup(t)
+		c := interfaceTester.GetCodec(t)
+		toDecode, err := c.Encode(tests.Context(t), &TestStruct{Field: 1}, TestItemType)
+		require.NoError(t, err)
+		err = c.Decode(tests.Context(t), toDecode, &cannotEncode{}, TestItemType)
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("Nil codec returns unimplemented", func(t *testing.T) {
+	t.Run("Nil esCodec returns unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
-		nilTester := &codecInterfaceTester{srv: nil}
+		nilTester := test.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCodec := nilTester.GetCodec(t)
 
@@ -84,26 +91,15 @@ func TestCodecClient(t *testing.T) {
 	})
 }
 
-type codecInterfaceTester struct {
+type fakeCodecInterfaceTester struct {
 	interfaceTesterBase
-	srv pb.CodecServer
+	impl types.Codec
 }
 
-func (it *codecInterfaceTester) Setup(t *testing.T) {
-	it.setupHook = func(s *grpc.Server) {
-		if it.srv != nil {
-			pb.RegisterCodecServer(s, it.srv)
-		}
-	}
-	it.interfaceTesterBase.Setup(t)
-}
+func (it *fakeCodecInterfaceTester) Setup(t *testing.T) {}
 
-func (it *codecInterfaceTester) GetCodec(t *testing.T) types.Codec {
-	if it.conn == nil {
-		it.conn = connFromLis(t, it.lis)
-	}
-
-	return &codecClient{grpc: pb.NewCodecClient(it.conn)}
+func (it *fakeCodecInterfaceTester) GetCodec(t *testing.T) types.Codec {
+	return it.impl
 }
 
 type fakeCodec struct {
@@ -123,7 +119,7 @@ func (f *fakeCodec) GetMaxEncodingSize(_ context.Context, _ int, itemType string
 	return 0, types.ErrInvalidType
 }
 
-func (it *codecInterfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) []byte {
+func (it *fakeCodecInterfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) []byte {
 	if request.TestOn == TestItemType {
 		bytes, err := encoder.Marshal(request.TestStructs[0])
 		require.NoError(t, err)
@@ -135,7 +131,7 @@ func (it *codecInterfaceTester) EncodeFields(t *testing.T, request *EncodeReques
 	return bytes
 }
 
-func (it *codecInterfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
+func (it *fakeCodecInterfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
 	return false
 }
 
@@ -173,20 +169,22 @@ func (f *fakeCodec) Decode(_ context.Context, _ []byte, into any, itemType strin
 	return types.ErrInvalidType
 }
 
-type codecErrServer struct {
+type errCodec struct {
 	err error
-	pb.UnimplementedCodecServer
 }
 
-func (e *codecErrServer) GetEncoding(context.Context, *pb.GetEncodingRequest) (*pb.GetEncodingResponse, error) {
+func (e *errCodec) Encode(_ context.Context, _ any, _ string) ([]byte, error) {
 	return nil, e.err
 }
 
-func (e *codecErrServer) GetDecoding(context.Context, *pb.GetDecodingRequest) (*pb.GetDecodingResponse, error) {
-	anyResp := &pb.GetDecodingResponse{RetVal: &pb.VersionedBytes{Version: CBOREncodingVersion, Data: []byte{1, 2, 3}}}
-	return anyResp, e.err
+func (e *errCodec) GetMaxEncodingSize(_ context.Context, _ int, _ string) (int, error) {
+	return 0, e.err
 }
 
-func (e *codecErrServer) GetMaxSize(context.Context, *pb.GetMaxSizeRequest) (*pb.GetMaxSizeResponse, error) {
-	return nil, e.err
+func (e *errCodec) Decode(_ context.Context, _ []byte, _ any, _ string) error {
+	return e.err
+}
+
+func (e *errCodec) GetMaxDecodingSize(_ context.Context, _ int, _ string) (int, error) {
+	return 0, e.err
 }

@@ -1,4 +1,4 @@
-package internal
+package internal_test
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -23,27 +23,27 @@ import (
 
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
-	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
+	t.Run("internal.EncodeVersionedBytes unsupported type", func(t *testing.T) {
 		invalidData := make(chan int)
 
-		_, err := encodeVersionedBytes(invalidData, JSONEncodingVersion2)
+		_, err := internal.EncodeVersionedBytes(invalidData, internal.JSONEncodingVersion2)
 
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
+	t.Run("internal.EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
 		expected := fmt.Errorf("%w: unsupported encoding version %d for data map[key:value]", types.ErrInvalidEncoding, unsupportedVer)
 		data := map[string]interface{}{
 			"key": "value",
 		}
 
-		_, err := encodeVersionedBytes(data, unsupportedVer)
+		_, err := internal.EncodeVersionedBytes(data, unsupportedVer)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
 
-	t.Run("DecodeVersionedBytes", func(t *testing.T) {
+	t.Run("internal.DecodeVersionedBytes", func(t *testing.T) {
 		var decodedData map[string]interface{}
 		expected := fmt.Errorf("unsupported encoding version %d for versionedData [97 98 99 100 102]", unsupportedVer)
 		versionedBytes := &pb.VersionedBytes{
@@ -51,7 +51,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 			Data:    []byte("abcdf"),
 		}
 
-		err := decodeVersionedBytes(&decodedData, versionedBytes)
+		err := internal.DecodeVersionedBytes(&decodedData, versionedBytes)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
@@ -60,10 +60,10 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 func TestChainReaderClient(t *testing.T) {
 	fake := &fakeChainReader{}
-	RunChainReaderInterfaceTests(t, &chainReaderInterfaceTester{chainReader: &chainReaderServer{impl: fake}, fake: fake})
+	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
 
-	es := &chainReaderErrServer{}
-	errTester := &chainReaderInterfaceTester{chainReader: es}
+	es := &errChainReader{}
+	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
 	errTester.Setup(t)
 	chainReader := errTester.GetChainReader(t)
 
@@ -71,7 +71,7 @@ func TestChainReaderClient(t *testing.T) {
 		es.err = errorType
 		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			ctx := tests.Context(t)
-			err := chainReader.GetLatestValue(ctx, "", "method", "anything", "anything")
+			err := chainReader.GetLatestValue(ctx, "", "method", nil, "anything")
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
@@ -95,7 +95,8 @@ func TestChainReaderClient(t *testing.T) {
 
 	t.Run("nil reader should return unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
-		nilTester := &chainReaderInterfaceTester{chainReader: nil}
+
+		nilTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCr := nilTester.GetChainReader(t)
 
@@ -113,55 +114,34 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-type chainReaderInterfaceTester struct {
+type fakeChainReaderInterfaceTester struct {
 	interfaceTesterBase
-	chainReader pb.ChainReaderServer
-	fake        *fakeChainReader
+	impl types.ChainReader
 }
 
-func (it *chainReaderInterfaceTester) GetBindings(t *testing.T) []types.BoundContract {
+func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {}
+
+func (it *fakeChainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
+	return it.impl
+}
+
+func (it *fakeChainReaderInterfaceTester) GetBindings(t *testing.T) []types.BoundContract {
 	return []types.BoundContract{
 		{Name: AnyContractName, Address: AnyContractName},
 		{Name: AnySecondContractName, Address: AnySecondContractName},
 	}
 }
 
-func (it *chainReaderInterfaceTester) Setup(t *testing.T) {
-	it.setupHook = func(s *grpc.Server) {
-		if it.chainReader != nil {
-			pb.RegisterChainReaderServer(s, it.chainReader)
-		}
-	}
-
-	it.interfaceTesterBase.Setup(t)
+func (it *fakeChainReaderInterfaceTester) SetLatestValue(t *testing.T, testStruct *TestStruct) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	fake.SetLatestValue(testStruct)
 }
 
-func (it *chainReaderInterfaceTester) SetLatestValue(_ *testing.T, testStruct *TestStruct) {
-	it.fake.SetLatestValue(testStruct)
-}
-
-func (it *chainReaderInterfaceTester) GetDifferentPrimitiveContract(_ *testing.T) string {
-	return ""
-}
-
-func (it *chainReaderInterfaceTester) GetSliceContract(_ *testing.T) string {
-	return ""
-}
-
-func (it *chainReaderInterfaceTester) GetReturnSeenContract(_ *testing.T) string {
-	return ""
-}
-
-func (it *chainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
-	if it.conn == nil {
-		it.conn = connFromLis(t, it.lis)
-	}
-
-	return &chainReaderClient{grpc: pb.NewChainReaderClient(it.conn)}
-}
-
-func (it *chainReaderInterfaceTester) TriggerEvent(_ *testing.T, testStruct *TestStruct) {
-	it.fake.SetTrigger(testStruct)
+func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	fake.SetTrigger(testStruct)
 }
 
 type fakeChainReader struct {
@@ -230,15 +210,14 @@ func (f *fakeChainReader) SetTrigger(testStruct *TestStruct) {
 	f.lastTrigger = *testStruct
 }
 
-type chainReaderErrServer struct {
+type errChainReader struct {
 	err error
-	pb.UnimplementedChainReaderServer
 }
 
-func (e *chainReaderErrServer) GetLatestValue(context.Context, *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	return nil, e.err
+func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any) error {
+	return e.err
 }
 
-func (e *chainReaderErrServer) Bind(context.Context, *pb.BindRequest) (*emptypb.Empty, error) {
-	return nil, e.err
+func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
+	return e.err
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	jsonv2 "github.com/go-json-experiment/json"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/fxamacker/cbor/v2"
@@ -15,6 +16,12 @@ import (
 )
 
 var _ types.ChainReader = (*chainReaderClient)(nil)
+
+// NewChainReaderTestClient is a test client for [types.ChainReader]
+// internal users should instantiate a client directly and set all private fields
+func NewChainReaderTestClient(conn *grpc.ClientConn) types.ChainReader {
+	return &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
+}
 
 type chainReaderClient struct {
 	*brokerExt
@@ -31,7 +38,7 @@ const (
 // Version to be used for encoding (version used for decoding is determined by data received)
 const CurrentEncodingVersion = CBOREncodingVersion
 
-func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
+func EncodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	var bytes []byte
 	var err error
 
@@ -65,7 +72,7 @@ func encodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 	return &pb.VersionedBytes{Version: uint32(version), Data: bytes}, nil
 }
 
-func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
+func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	var err error
 	switch vData.Version {
 	case JSONEncodingVersion1:
@@ -73,6 +80,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	case JSONEncodingVersion2:
 		err = jsonv2.Unmarshal(vData.Data, res)
 	case CBOREncodingVersion:
+		fmt.Printf("vData.Data: %T\n", res)
 		err = cbor.Unmarshal(vData.Data, res)
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
@@ -85,7 +93,7 @@ func decodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 }
 
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
-	versionedParams, err := encodeVersionedBytes(params, CurrentEncodingVersion)
+	versionedParams, err := EncodeVersionedBytes(params, CurrentEncodingVersion)
 	if err != nil {
 		return err
 	}
@@ -95,7 +103,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 		return wrapRPCErr(err)
 	}
 
-	return decodeVersionedBytes(retVal, reply.RetVal)
+	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
 func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundContract) error {
@@ -109,6 +117,10 @@ func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundCont
 
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
 
+func NewChainReaderServer(impl types.ChainReader) pb.ChainReaderServer {
+	return &chainReaderServer{impl: impl}
+}
+
 type chainReaderServer struct {
 	pb.UnimplementedChainReaderServer
 	impl types.ChainReader
@@ -121,7 +133,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 		return nil, err
 	}
 
-	if err = decodeVersionedBytes(params, request.Params); err != nil {
+	if err = DecodeVersionedBytes(params, request.Params); err != nil {
 		return nil, err
 	}
 
@@ -134,7 +146,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 		return nil, err
 	}
 
-	encodedRetVal, err := encodeVersionedBytes(retVal, CurrentEncodingVersion)
+	encodedRetVal, err := EncodeVersionedBytes(retVal, CurrentEncodingVersion)
 	if err != nil {
 		return nil, err
 	}

@@ -80,7 +80,6 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	case JSONEncodingVersion2:
 		err = jsonv2.Unmarshal(vData.Data, res)
 	case CBOREncodingVersion:
-		fmt.Printf("vData.Data: %T\n", res)
 		err = cbor.Unmarshal(vData.Data, res)
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)

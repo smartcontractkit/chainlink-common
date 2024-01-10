@@ -2,8 +2,9 @@ package automation
 
 import (
 	"context"
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"io"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type UpkeepTypeGetter func(UpkeepIdentifier) UpkeepType

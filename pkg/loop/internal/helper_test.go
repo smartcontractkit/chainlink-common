@@ -78,9 +78,9 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 			return &TestStruct{}, nil
 		}
 		return &TestStructWithExtraField{}, nil
-	case EventName:
+	case EventName, EventWithFilterName:
 		if isEncode {
-			return &struct{}{}, nil
+			return &FilterEventParams{}, nil
 		}
 		return &TestStruct{}, nil
 	}

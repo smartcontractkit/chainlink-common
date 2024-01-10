@@ -70,6 +70,10 @@ type LatestParams struct {
 	I int
 }
 
+type FilterEventParams struct {
+	Field int32
+}
+
 func CreateTestStruct(i int, tester BasicTester) TestStruct {
 	s := fmt.Sprintf("field%v", i)
 	return TestStruct{

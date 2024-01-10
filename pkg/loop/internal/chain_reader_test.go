@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +120,13 @@ type fakeChainReaderInterfaceTester struct {
 	impl types.ChainReader
 }
 
-func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {}
+func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {
+	fake, ok := it.impl.(*fakeChainReader)
+	if ok {
+		fake.stored = []TestStruct{}
+		fake.triggers = []TestStruct{}
+	}
+}
 
 func (it *fakeChainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
 	return it.impl
@@ -144,11 +151,15 @@ func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct 
 	fake.SetTrigger(testStruct)
 }
 
+func (it *fakeChainReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
+	return time.Millisecond * 100
+}
+
 type fakeChainReader struct {
 	fakeTypeProvider
-	stored      []TestStruct
-	lock        sync.Mutex
-	lastTrigger TestStruct
+	stored   []TestStruct
+	lock     sync.Mutex
+	triggers []TestStruct
 }
 
 func (f *fakeChainReader) Bind(context.Context, []types.BoundContract) error {
@@ -186,8 +197,22 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, name, method string,
 	} else if method == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
-		*returnVal.(*TestStruct) = f.lastTrigger
+		if len(f.triggers) == 0 {
+			return types.ErrNotFound
+		}
+		*returnVal.(*TestStruct) = f.triggers[len(f.triggers)-1]
 		return nil
+	} else if method == EventWithFilterName {
+		f.lock.Lock()
+		defer f.lock.Unlock()
+		param := params.(*FilterEventParams)
+		for i := len(f.triggers) - 1; i >= 0; i-- {
+			if f.triggers[i].Field == param.Field {
+				*returnVal.(*TestStruct) = f.triggers[i]
+				return nil
+			}
+		}
+		return types.ErrNotFound
 	} else if method == DifferentMethodReturningUint64 {
 		r := returnVal.(*uint64)
 		*r = AnyDifferentValueToReadWithoutAnArgument
@@ -207,7 +232,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, name, method string,
 func (f *fakeChainReader) SetTrigger(testStruct *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.lastTrigger = *testStruct
+	f.triggers = append(f.triggers, *testStruct)
 }
 
 type errChainReader struct {

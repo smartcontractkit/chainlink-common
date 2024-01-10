@@ -50,9 +50,9 @@ func TestTimeToUnix(t *testing.T) {
 	type testInvalidStruct struct{ T string }
 
 	anyTimeEpoch := int64(631515600)
-	testTime := time.Unix(anyTimeEpoch, 0)
+	testTime := time.Unix(anyTimeEpoch, 0).UTC()
 	anyTimeEpoch2 := int64(631515601)
-	testTime2 := time.Unix(anyTimeEpoch2, 0)
+	testTime2 := time.Unix(anyTimeEpoch2, 0).UTC()
 
 	t.Run("RetypeForOffChain returns error if type is not an integer type", func(t *testing.T) {
 		converter := codec.NewEpochToTimeModifier([]string{"T"})

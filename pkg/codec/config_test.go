@@ -110,7 +110,7 @@ func TestModifiersConfig(t *testing.T) {
 			// when decoding to actualMap, the types are lost
 			// the tests for the actual modifiers verify the types are correct
 			// json is also encoded differently depending on the timezone
-			j, err := json.Marshal(time.Unix(onChain.T, 0))
+			j, err := json.Marshal(time.Unix(onChain.T, 0).UTC())
 			require.NoError(t, err)
 			expectedMap := map[string]any{
 				"Z": []any{float64(1)},

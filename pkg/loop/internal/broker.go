@@ -10,8 +10,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 )
 
 // Broker is a subset of the methods exported by *plugin.GRPCBroker.
@@ -39,7 +39,7 @@ func (a *atomicBroker) DialWithOptions(id uint32, opts ...grpc.DialOption) (conn
 	return a.load().DialWithOptions(id, opts...)
 }
 
-func (a *atomicBroker) NextId() uint32 {
+func (a *atomicBroker) NextId() uint32 { //nolint:revive
 	return a.load().NextId()
 }
 

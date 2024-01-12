@@ -6,16 +6,16 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 )
 
 func TestPluginRelayer(t *testing.T) {
 	t.Parallel()
 
 	stopCh := newStopCh(t)
-	testPlugin(t, loop.PluginRelayerName, &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{}, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, test.TestPluginRelayer)
+	test.PluginTest(t, loop.PluginRelayerName, &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{}, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, test.RunPluginRelayer)
 }
 
 func TestPluginRelayerExec(t *testing.T) {
@@ -24,13 +24,13 @@ func TestPluginRelayerExec(t *testing.T) {
 
 	pr := newPluginRelayerExec(t, stopCh)
 
-	test.TestPluginRelayer(t, pr)
+	test.RunPluginRelayer(t, pr)
 }
 
 func newPluginRelayerExec(t *testing.T, stopCh <-chan struct{}) loop.PluginRelayer {
 	relayer := loop.GRPCPluginRelayer{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := relayer.ClientConfig()
-	cc.Cmd = helperProcess(loop.PluginRelayerName)
+	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName)
 	c := plugin.NewClient(cc)
 	t.Cleanup(c.Kill)
 	client, err := c.Client()

@@ -2,16 +2,19 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-var _ types.Service = (*serviceClient)(nil)
+var ErrPluginUnavailable = errors.New("plugin unavailable")
+
+var _ services.Service = (*serviceClient)(nil)
 
 type serviceClient struct {
 	b    *brokerExt
@@ -66,7 +69,7 @@ var _ pb.ServiceServer = (*serviceServer)(nil)
 
 type serviceServer struct {
 	pb.UnimplementedServiceServer
-	srv types.Service
+	srv services.Service
 }
 
 func (s *serviceServer) Close(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {

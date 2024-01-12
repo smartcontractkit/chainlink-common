@@ -14,8 +14,7 @@ func TestPrometheusExporter(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 		log := newNullLogger()
-		metrics := new(MetricsMock)
-		metrics.Test(t)
+		metrics := NewMetricsMock(t)
 		factory := NewPrometheusExporterFactory(log, metrics)
 
 		chainConfig := generateChainConfig()
@@ -75,7 +74,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetChainID(),      // chainID
 			chainConfig.GetNetworkID(),    // networkID
 			chainConfig.GetNetworkName(),  // networkName
-			string(nodes[0].GetName()),    // oracleName
+			nodes[0].GetName(),            // oracleName
 			string(envelope1.Transmitter), // sender
 		).Once()
 		metrics.On("SetHeadTrackerCurrentHead",
@@ -222,7 +221,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetChainID(),      // chainID
 			chainConfig.GetNetworkID(),    // networkID
 			chainConfig.GetNetworkName(),  // networkName
-			string(nodes[1].GetName()),    // oracleName
+			nodes[1].GetName(),            // oracleName
 			string(envelope2.Transmitter), // sender
 		).Once()
 		metrics.On("SetHeadTrackerCurrentHead",
@@ -346,7 +345,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkName(),   // networkName
 			chainConfig.GetNetworkID(),     // networkID
 			chainConfig.GetChainID(),       // chainID
-			string(nodes[0].GetName()),     // oracleName
+			nodes[0].GetName(),             // oracleName
 			string(envelope1.Transmitter),  // sender
 			feedConfig.GetName(),           // feedName
 			feedConfig.GetPath(),           // feedPath
@@ -360,7 +359,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkName(),   // networkName
 			chainConfig.GetNetworkID(),     // networkID
 			chainConfig.GetChainID(),       // chainID
-			string(nodes[1].GetName()),     // oracleName
+			nodes[1].GetName(),             // oracleName
 			string(envelope2.Transmitter),  // sender
 			feedConfig.GetName(),           // feedName
 			feedConfig.GetPath(),           // feedPath
@@ -371,15 +370,12 @@ func TestPrometheusExporter(t *testing.T) {
 			feedConfig.GetID(),             // feedID
 		).Once()
 		exporter.Cleanup(ctx)
-
-		mock.AssertExpectationsForObjects(t, metrics)
 	})
 	t.Run("should not emit metrics for stale transmissions", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 		log := newNullLogger()
-		metrics := new(MetricsMock)
-		metrics.Test(t)
+		metrics := NewMetricsMock(t)
 		factory := NewPrometheusExporterFactory(log, metrics)
 
 		chainConfig := generateChainConfig()
@@ -439,7 +435,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetChainID(),      // chainID
 			chainConfig.GetNetworkID(),    // networkID
 			chainConfig.GetNetworkName(),  // networkName
-			string(nodes[0].GetName()),    // oracleName
+			nodes[0].GetName(),            // oracleName
 			string(envelope1.Transmitter), // sender
 		).Once()
 		metrics.On("SetHeadTrackerCurrentHead",
@@ -586,7 +582,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetChainID(),      // chainID
 			chainConfig.GetNetworkID(),    // networkID
 			chainConfig.GetNetworkName(),  // networkName
-			string(nodes[0].GetName()),    // oracleName
+			nodes[0].GetName(),            // oracleName
 			string(envelope2.Transmitter), // sender
 		).Once()
 		metrics.On("SetHeadTrackerCurrentHead",
@@ -613,7 +609,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkName(),   // networkName
 			chainConfig.GetNetworkID(),     // networkID
 			chainConfig.GetChainID(),       // chainID
-			string(nodes[0].GetName()),     // oracleName
+			nodes[0].GetName(),             // oracleName
 			string(envelope1.Transmitter),  // sender
 			feedConfig.GetName(),           // feedName
 			feedConfig.GetPath(),           // feedPath
@@ -629,14 +625,12 @@ func TestPrometheusExporter(t *testing.T) {
 		metrics.AssertNumberOfCalls(t, "SetOffchainAggregatorAnswersRaw", 1)
 		metrics.AssertNumberOfCalls(t, "IncOffchainAggregatorAnswersTotal", 1)
 		metrics.AssertNumberOfCalls(t, "SetOffchainAggregatorSubmissionReceivedValues", 1)
-		mock.AssertExpectationsForObjects(t, metrics)
 	})
 	t.Run("should emit transaction results metrics", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 		log := newNullLogger()
-		metrics := new(MetricsMock)
-		metrics.Test(t)
+		metrics := NewMetricsMock(t)
 		factory := NewPrometheusExporterFactory(log, metrics)
 
 		chainConfig := generateChainConfig()
@@ -684,7 +678,5 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkName(),   // networkName
 		).Once()
 		exporter.Export(ctx, txResults)
-
-		mock.AssertExpectationsForObjects(t, metrics)
 	})
 }

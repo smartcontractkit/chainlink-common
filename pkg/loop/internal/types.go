@@ -3,7 +3,7 @@ package internal
 import (
 	"context"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type PluginRelayer interface {
@@ -20,6 +20,10 @@ type MercuryProvider interface {
 
 type FunctionsProvider interface {
 	NewFunctionsProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.FunctionsProvider, error)
+}
+
+type AutomationProvider interface {
+	NewAutomationProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.AutomationProvider, error)
 }
 
 // Relayer extends [types.Relayer] and includes [context.Context]s.

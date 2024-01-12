@@ -2,81 +2,46 @@ package loop_test
 
 import (
 	"os/exec"
-	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
 func TestMedianService(t *testing.T) {
 	t.Parallel()
+
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return helperProcess(loop.PluginMedianName)
+		return NewHelperProcessCommand(loop.PluginMedianName)
 	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), test.StaticGasPriceDataSource(), &test.StaticErrorLog{})
-	hook := median.TestHook()
-	require.NoError(t, median.Start(utils.Context(t)))
-	t.Cleanup(func() { assert.NoError(t, median.Close()) })
+	hook := median.PluginService.XXXTestHook()
+	servicetest.Run(t, median)
 
 	t.Run("control", func(t *testing.T) {
-		test.TestReportingPluginFactory(t, median)
+		test.ReportingPluginFactory(t, median)
 	})
 
 	t.Run("Kill", func(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * loop.KeepAliveTickDuration)
+		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.TestReportingPluginFactory(t, median)
+		test.ReportingPluginFactory(t, median)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * loop.KeepAliveTickDuration)
+		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.TestReportingPluginFactory(t, median)
-	})
-}
-
-func TestMedianServiceNOOPGasPriceDataSource(t *testing.T) {
-	t.Parallel()
-	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return helperProcess(loop.PluginMedianName)
-	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), test.NOOPDataSource{}, &test.StaticErrorLog{})
-	hook := median.TestHook()
-	require.NoError(t, median.Start(utils.Context(t)))
-	t.Cleanup(func() { assert.NoError(t, median.Close()) })
-
-	t.Run("control", func(t *testing.T) {
-		test.TestReportingPluginFactory(t, median)
-	})
-
-	t.Run("Kill", func(t *testing.T) {
-		hook.Kill()
-
-		// wait for relaunch
-		time.Sleep(2 * loop.KeepAliveTickDuration)
-
-		test.TestReportingPluginFactory(t, median)
-	})
-
-	t.Run("Reset", func(t *testing.T) {
-		hook.Reset()
-
-		// wait for relaunch
-		time.Sleep(2 * loop.KeepAliveTickDuration)
-
-		test.TestReportingPluginFactory(t, median)
+		test.ReportingPluginFactory(t, median)
 	})
 }
 
@@ -84,10 +49,13 @@ func TestMedianService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return helperProcess(loop.PluginMedianName, strconv.Itoa(int(limit.Add(1))))
+		h := HelperProcessCommand{
+			Command: loop.PluginMedianName,
+			Limit:   int(limit.Add(1)),
+		}
+		return h.New()
 	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), test.StaticGasPriceDataSource(), &test.StaticErrorLog{})
-	require.NoError(t, median.Start(utils.Context(t)))
-	t.Cleanup(func() { assert.NoError(t, median.Close()) })
+	servicetest.Run(t, median)
 
-	test.TestReportingPluginFactory(t, median)
+	test.ReportingPluginFactory(t, median)
 }

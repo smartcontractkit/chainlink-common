@@ -15,11 +15,11 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-func TestPluginMedian(t *testing.T, p types.PluginMedian) {
+func PluginMedian(t *testing.T, p types.PluginMedian) {
 	PluginMedianTest{&StaticMedianProvider{}}.TestPluginMedian(t, p)
 }
 
@@ -29,30 +29,30 @@ type PluginMedianTest struct {
 
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian No-op GasPriceDataSource", func(t *testing.T) {
-		ctx := utils.Context(t)
+		ctx := tests.Context(t)
 		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &NOOPDataSource{}, &StaticErrorLog{})
 		require.NoError(t, err)
 
-		TestReportingPluginFactory(t, factory)
+		ReportingPluginFactory(t, factory)
 	})
 
-	t.Run("PluginMedian With GasPriceDataSource", func(t *testing.T) {
-		ctx := utils.Context(t)
+	t.Run("PluginMedian", func(t *testing.T) {
+		ctx := tests.Context(t)
 		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &staticDataSource{gasPrice}, &StaticErrorLog{})
 		require.NoError(t, err)
 
-		TestReportingPluginFactory(t, factory)
+		ReportingPluginFactory(t, factory)
 	})
 }
 
-func TestReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) {
+func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) {
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
 		rp, gotRPI, err := factory.NewReportingPlugin(reportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := utils.Context(t)
+			ctx := tests.Context(t)
 			gotQuery, err := rp.Query(ctx, reportContext.ReportTimestamp)
 			require.NoError(t, err)
 			assert.Equal(t, query, []byte(gotQuery))
@@ -71,12 +71,23 @@ func TestReportingPluginFactory(t *testing.T, factory types.ReportingPluginFacto
 			assert.True(t, gotShouldTransmit)
 		})
 	})
-
 }
 
 type StaticPluginMedian struct{}
 
-func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource, gasPrice median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource, gasPriceDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+	cr := provider.ChainReader()
+	var gotLatestValue map[string]int
+
+	err := cr.GetLatestValue(ctx, boundContract, medianContractGenericMethod, getLatestValueParams, &gotLatestValue)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call GetLatestValue() on median provider: %w", err)
+	}
+
+	if !assert.ObjectsAreEqual(gotLatestValue, latestValue) {
+		return nil, fmt.Errorf("GetLatestValue: expected %v but got %v", gotLatestValue, latestValue)
+	}
+
 	ocd := provider.OffchainConfigDigester()
 	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
 	if err != nil {
@@ -223,6 +234,14 @@ func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 	if !assert.ObjectsAreEqual(juelsPerFeeCoin, gotJuels) {
 		return nil, fmt.Errorf("expected JuelsPerFeeCoin %s but got %s", juelsPerFeeCoin, gotJuels)
 	}
+	gotGas, err := gasPriceDataSource.Observe(ctx, reportContext.ReportTimestamp)
+	// account for noop gas price data source
+	if err != nil && err != median.ErrNOOPDataSource {
+		return nil, fmt.Errorf("failed to observe juelsPerFeeCoin: %w", err)
+	}
+	if gotGas != nil && !assert.ObjectsAreEqual(gasPrice, gotGas) {
+		return nil, fmt.Errorf("expected JuelsPerFeeCoin %s but got %s", juelsPerFeeCoin, gotJuels)
+	}
 	if err := errorLog.SaveError(ctx, errMsg); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)
 	}
@@ -311,6 +330,10 @@ func (s StaticMedianProvider) MedianContract() median.MedianContract { return st
 
 func (s StaticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
 	return staticOnchainConfigCodec{}
+}
+
+func (s StaticMedianProvider) ChainReader() types.ChainReader {
+	return staticChainReader{}
 }
 
 type staticReportCodec struct{}

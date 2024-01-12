@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
-	"github.com/smartcontractkit/chainlink-relay/pkg/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type StaticKeystore struct{}
@@ -102,13 +102,11 @@ func (s staticRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, e
 }
 
 func (s staticRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
-
 	if limit != pageSize {
 		return nil, "", -1, fmt.Errorf("expected page_size %d but got %d", limit, pageSize)
 	}
 	if pageToken != "" {
 		return nil, "", -1, fmt.Errorf("expected empty page_token but got %q", pageToken)
-
 	}
 	return nodes, "", total, nil
 }
@@ -148,20 +146,20 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 	}
 }
 
-func TestPluginRelayer(t *testing.T, p internal.PluginRelayer) {
-	ctx := utils.Context(t)
+func RunPluginRelayer(t *testing.T, p internal.PluginRelayer) {
+	ctx := tests.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
 		relayer, err := p.NewRelayer(ctx, ConfigTOML, StaticKeystore{})
 		require.NoError(t, err)
 		require.NoError(t, relayer.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })
-		TestRelayer(t, relayer)
+		RunRelayer(t, relayer)
 	})
 }
 
-func TestRelayer(t *testing.T, relayer internal.Relayer) {
-	ctx := utils.Context(t)
+func RunRelayer(t *testing.T, relayer internal.Relayer) {
+	ctx := tests.Context(t)
 
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()

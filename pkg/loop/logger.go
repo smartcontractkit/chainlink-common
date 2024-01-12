@@ -7,8 +7,9 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/exp/slices"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // HCLogLogger returns an [hclog.Logger] backed by the given [logger.Logger].
@@ -36,9 +37,34 @@ func (h *hclSinkAdapter) named(name string) logger.Logger {
 	return v.(func() logger.Logger)()
 }
 
-func (h *hclSinkAdapter) Accept(name string, level hclog.Level, msg string, args ...interface{}) {
-	l := h.named(name)
+func removeArg(args []interface{}, key string) ([]interface{}, string) {
+	if len(args) < 2 {
+		return args, ""
+	}
+	for i := 0; i+1 < len(args); i += 2 {
+		if args[i] == key {
+			if v, ok := (args)[i+1].(string); ok {
+				return slices.Delete(args, i, i+2), v
+			}
+			break
+		}
+	}
+	return args, ""
+}
+
+func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ...interface{}) {
+	if level == hclog.Off {
+		return
+	}
+
+	l := h.l
+	var name string
+	if args, name = removeArg(args, "logger"); name != "" {
+		l = h.named(name)
+	}
 	switch level {
+	case hclog.Off:
+		return // unreachable, but satisfies linter
 	case hclog.NoLevel:
 	case hclog.Debug, hclog.Trace:
 		l.Debugw(msg, args...)

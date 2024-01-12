@@ -8,11 +8,13 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ PluginRelayer = (*PluginRelayerClient)(nil)
@@ -232,7 +234,7 @@ func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, 
 	}, nil
 }
 
-func (r *relayerClient) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, next_page_token string, total int, err error) {
+func (r *relayerClient) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
 	reply, err := r.relayer.ListNodeStatuses(ctx, &pb.ListNodeStatusesRequest{
 		PageSize:  pageSize,
 		PageToken: pageToken,
@@ -349,7 +351,7 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
 	i, ok := r.impl.(MedianProvider)
 	if !ok {
-		return 0, errors.New("median not supported")
+		return 0, status.Error(codes.Unimplemented, "median not supported")
 	}
 
 	provider, err := i.NewMedianProvider(ctx, relayArgs, pluginArgs)
@@ -370,6 +372,7 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 		pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
 		pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 		pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
+		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
 		pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
 	}, providerRes)
 	if err != nil {
@@ -417,7 +420,7 @@ func (r *relayerServer) GetChainStatus(ctx context.Context, request *pb.GetChain
 }
 
 func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNodeStatusesRequest) (*pb.ListNodeStatusesReply, error) {
-	nodeConfigs, next_page_token, total, err := r.impl.ListNodeStatuses(ctx, request.PageSize, request.PageToken)
+	nodeConfigs, nextPageToken, total, err := r.impl.ListNodeStatuses(ctx, request.PageSize, request.PageToken)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +433,7 @@ func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNo
 			State:   n.State,
 		})
 	}
-	return &pb.ListNodeStatusesReply{Nodes: nodes, NextPageToken: next_page_token, Total: int32(total)}, nil
+	return &pb.ListNodeStatusesReply{Nodes: nodes, NextPageToken: nextPageToken, Total: int32(total)}, nil
 }
 func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionRequest) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, r.impl.Transact(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
@@ -446,4 +449,16 @@ func healthReport(s map[string]string) (hr map[string]error) {
 		hr[n] = err
 	}
 	return hr
+}
+
+// RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,
+// this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed
+func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
+	pb.RegisterServiceServer(s, &serviceServer{srv: p})
+	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: p.OffchainConfigDigester()})
+	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: p.ContractConfigTracker()})
+	pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: p.ContractTransmitter()})
+	pb.RegisterReportCodecServer(s, &reportCodecServer{impl: p.ReportCodec()})
+	pb.RegisterMedianContractServer(s, &medianContractServer{impl: p.MedianContract()})
+	pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: p.OnchainConfigCodec()})
 }

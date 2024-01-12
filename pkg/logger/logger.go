@@ -62,18 +62,23 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &logger{core.Sugar(), ""}, nil
+	return &logger{core.Sugar()}, nil
 }
 
 // Test returns a new test Logger for tb.
 func Test(tb testing.TB) Logger {
-	return &logger{zaptest.NewLogger(tb).Sugar(), ""}
+	return &logger{zaptest.NewLogger(tb).Sugar()}
+}
+
+// TestSugared returns a new test SugaredLogger.
+func TestSugared(tb testing.TB) SugaredLogger {
+	return Sugared(&logger{zaptest.NewLogger(tb).Sugar()})
 }
 
 // TestObserved returns a new test Logger for tb and ObservedLogs at the given Level.
 func TestObserved(tb testing.TB, lvl zapcore.Level) (Logger, *observer.ObservedLogs) {
 	sl, logs := testObserved(tb, lvl)
-	return &logger{sl, ""}, logs
+	return &logger{sl}, logs
 }
 
 func testObserved(tb testing.TB, lvl zapcore.Level) (*zap.SugaredLogger, *observer.ObservedLogs) {
@@ -81,43 +86,34 @@ func testObserved(tb testing.TB, lvl zapcore.Level) (*zap.SugaredLogger, *observ
 	observe := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
 		return zapcore.NewTee(c, oCore)
 	})
-	return zaptest.NewLogger(tb, zaptest.WrapOptions(observe)).Sugar(), logs
+	return zaptest.NewLogger(tb, zaptest.WrapOptions(observe, zap.AddCaller())).Sugar(), logs
 }
 
 // Nop returns a no-op Logger.
 func Nop() Logger {
-	return &logger{zap.New(zapcore.NewNopCore()).Sugar(), ""}
+	return &logger{zap.New(zapcore.NewNopCore()).Sugar()}
 }
 
 type logger struct {
 	*zap.SugaredLogger
-	name string
 }
 
 func (l *logger) with(args ...interface{}) Logger {
-	return &logger{l.SugaredLogger.With(args...), ""}
-}
-
-func joinName(old, new string) string {
-	if old == "" {
-		return new
-	}
-	return old + "." + new
+	return &logger{l.SugaredLogger.With(args...)}
 }
 
 func (l *logger) named(name string) Logger {
 	newLogger := *l
-	newLogger.name = joinName(l.name, name)
 	newLogger.SugaredLogger = l.SugaredLogger.Named(name)
 	return &newLogger
 }
 
 func (l *logger) Name() string {
-	return l.name
+	return l.Desugar().Name()
 }
 
 func (l *logger) helper(skip int) Logger {
-	return &logger{l.sugaredHelper(skip), l.name}
+	return &logger{l.sugaredHelper(skip)}
 }
 
 func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
@@ -185,53 +181,26 @@ func Helper(l Logger, skip int) Logger {
 	return l
 }
 
-// Critical emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+// Deprecated: instead use [SugaredLogger.Critical]:
+//
+//	Sugared(l).Critical(args...)
 func Critical(l Logger, args ...interface{}) {
-	switch t := l.(type) {
-	case *logger:
-		t.DPanic(args...)
-		return
-	}
-	c, ok := l.(interface {
-		Critical(args ...interface{})
-	})
-	if ok {
-		c.Critical(args...)
-		return
-	}
-	l.Error(append([]any{"[crit] "}, args...)...)
+	s := &sugared{Logger: l, h: Helper(l, 2)}
+	s.Critical(args...)
 }
 
-// Criticalf emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+// Deprecated: instead use [SugaredLogger.Criticalf]:
+//
+//	Sugared(l).Criticalf(args...)
 func Criticalf(l Logger, format string, values ...interface{}) {
-	switch t := l.(type) {
-	case *logger:
-		t.DPanicf(format, values...)
-		return
-	}
-	c, ok := l.(interface {
-		Criticalf(format string, values ...interface{})
-	})
-	if ok {
-		c.Criticalf(format, values...)
-		return
-	}
-	l.Errorf("[crit] "+format, values...)
+	s := &sugared{Logger: l, h: Helper(l, 2)}
+	s.Criticalf(format, values...)
 }
 
-// Criticalw emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
+// Deprecated: instead use [SugaredLogger.Criticalw]:
+//
+//	Sugared(l).Criticalw(args...)
 func Criticalw(l Logger, msg string, keysAndValues ...interface{}) {
-	switch t := l.(type) {
-	case *logger:
-		t.DPanicw(msg, keysAndValues...)
-		return
-	}
-	c, ok := l.(interface {
-		Criticalw(msg string, keysAndValues ...interface{})
-	})
-	if ok {
-		c.Criticalw(msg, keysAndValues...)
-		return
-	}
-	l.Errorw("[crit] "+msg, keysAndValues...)
+	s := &sugared{Logger: l, h: Helper(l, 2)}
+	s.Criticalw(msg, keysAndValues...)
 }

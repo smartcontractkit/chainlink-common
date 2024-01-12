@@ -10,11 +10,16 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 const ConfigTOML = `[Foo]
 Bar = "Baz"
+`
+
+const spec = `
+answer [type=sum values=<[ $(val), 2 ]>]
+answer;
 `
 
 const (
@@ -33,6 +38,9 @@ const (
 	offset           = 11
 	round            = uint8(74)
 	to               = "0x1234"
+	network          = "solana"
+	contractID       = "contract-id"
+	telemType        = "mercury"
 )
 
 var (
@@ -59,7 +67,7 @@ var (
 	gasPrice        = big.NewInt(777)
 	onchainConfig   = median.OnchainConfig{Min: big.NewInt(-12), Max: big.NewInt(1234567890987654321)}
 	latestAnswer    = big.NewInt(-66)
-	latestTimestamp = time.Unix(1234567890, 987654321)
+	latestTimestamp = time.Unix(1234567890, 987654321).UTC()
 	medianValue     = big.NewInt(-1042)
 	nodes           = []types.NodeStatus{{
 		ChainID: "foo",
@@ -126,4 +134,27 @@ URL = 'https://test.url'
 	signed         = []byte{13: 37}
 	sigs           = []libocr.AttributedOnchainSignature{{Signature: []byte{9: 8, 7: 6}, Signer: commontypes.OracleID(54)}}
 	value          = big.NewInt(999)
+	vars           = types.Vars{
+		Vars: map[string]interface{}{"foo": "baz"},
+	}
+	options = types.Options{
+		MaxTaskDuration: 10 * time.Second,
+	}
+	taskResults = types.TaskResults([]types.TaskResult{
+		{
+			TaskValue: types.TaskValue{
+				Value: "hello",
+			},
+			Index: 0,
+		},
+	})
+	payload                     = []byte("oops")
+	medianContractGenericMethod = "LatestTransmissionDetails"
+	getLatestValueParams        = map[string]string{"param1": "value1", "param2": "value2"}
+	boundContract               = types.BoundContract{
+		Name:    "my median contract",
+		Address: "0xBbf078A8849D74653e36E6DBBdC7e1a35E657C26",
+		Pending: false,
+	}
+	latestValue = map[string]int{"ret1": 1, "ret2": 2}
 )

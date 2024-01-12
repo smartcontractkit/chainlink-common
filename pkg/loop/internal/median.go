@@ -15,9 +15,9 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-relay/pkg/logger"
-	"github.com/smartcontractkit/chainlink-relay/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-relay/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ types.PluginMedian = (*PluginMedianClient)(nil)
@@ -73,6 +73,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 				pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
 				pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 				pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+				pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
 				pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 				pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
 				pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
@@ -191,6 +192,7 @@ type medianProviderClient struct {
 	reportCodec        median.ReportCodec
 	medianContract     median.MedianContract
 	onchainConfigCodec median.OnchainConfigCodec
+	chainReader        types.ChainReader
 }
 
 func (m *medianProviderClient) ClientConn() grpc.ClientConnInterface { return m.cc }
@@ -200,6 +202,7 @@ func newMedianProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *medianP
 	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(m.cc)}
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(m.cc)}
 	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(m.cc)}
+	m.chainReader = &chainReaderClient{b, pb.NewChainReaderClient(m.cc)}
 	return m
 }
 
@@ -213,6 +216,10 @@ func (m *medianProviderClient) MedianContract() median.MedianContract {
 
 func (m *medianProviderClient) OnchainConfigCodec() median.OnchainConfigCodec {
 	return m.onchainConfigCodec
+}
+
+func (m *medianProviderClient) ChainReader() types.ChainReader {
+	return m.chainReader
 }
 
 var _ median.ReportCodec = (*reportCodecClient)(nil)
@@ -277,7 +284,6 @@ type reportCodecServer struct {
 func (r *reportCodecServer) BuildReport(ctx context.Context, request *pb.BuildReportRequest) (*pb.BuildReportReply, error) {
 	var obs []median.ParsedAttributedObservation
 	for _, o := range request.Observations {
-
 		val, jpfc := o.Value.Int(), o.JulesPerFeeCoin.Int()
 		if o.Observer > math.MaxUint8 {
 			return nil, fmt.Errorf("expected uint8 Observer (max %d) but got %d", math.MaxUint8, o.Observer)
@@ -454,4 +460,11 @@ func (o *onchainConfigCodecServer) Decode(ctx context.Context, request *pb.Decod
 		Min: pb.NewBigIntFromInt(oc.Min),
 		Max: pb.NewBigIntFromInt(oc.Max),
 	}}, nil
+}
+
+type MedianProviderServer struct{}
+
+func (m MedianProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker Broker, brokerCfg BrokerConfig) types.MedianProvider {
+	be := &brokerExt{broker: broker, BrokerConfig: brokerCfg}
+	return newMedianProviderClient(be, conn)
 }

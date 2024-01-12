@@ -53,17 +53,13 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		}
 		deps.Add(juelsPerFeeCoinDataSourceRes)
 
-		var gasPriceDataSourceID uint32
-		if gasPrice != nil {
-			var gasPriceDataSourceRes resource
-			gasPriceDataSourceID, gasPriceDataSourceRes, err = m.serveNew("GasPriceDataSource", func(s *grpc.Server) {
-				pb.RegisterDataSourceServer(s, &dataSourceServer{impl: gasPrice})
-			})
-			if err != nil {
-				return 0, nil, err
-			}
-			deps.Add(gasPriceDataSourceRes)
+		gasPriceDataSourceID, gasPriceDataSourceRes, err := m.serveNew("GasPriceDataSource", func(s *grpc.Server) {
+			pb.RegisterDataSourceServer(s, &dataSourceServer{impl: gasPrice})
+		})
+		if err != nil {
+			return 0, nil, err
 		}
+		deps.Add(gasPriceDataSourceRes)
 
 		var (
 			providerID  uint32
@@ -144,17 +140,13 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	juelsRes := resource{juelsConn, "JuelsPerFeeCoinDataSource"}
 	juelsPerFeeCoin := newDataSourceClient(juelsConn)
 
-	var gasPriceRes resource
-	var gasPrice *dataSourceClient
-	if request.GasPriceDataSourceID != 0 {
-		gasPriceConn, dialErr := m.dial(request.GasPriceDataSourceID)
-		if dialErr != nil {
-			m.closeAll(dsRes, juelsRes)
-			return nil, ErrConnDial{Name: "GasPriceDataSource", ID: request.GasPriceDataSourceID, Err: dialErr}
-		}
-		gasPriceRes = resource{gasPriceConn, "GasPriceDataSource"}
-		gasPrice = newDataSourceClient(gasPriceConn)
+	gasPriceConn, err := m.dial(request.GasPriceDataSourceID)
+	if err != nil {
+		m.closeAll(dsRes, juelsRes)
+		return nil, ErrConnDial{Name: "GasPriceDataSource", ID: request.GasPriceDataSourceID, Err: err}
 	}
+	gasPriceRes := resource{gasPriceConn, "GasPriceDataSource"}
+	gasPrice := newDataSourceClient(gasPriceConn)
 
 	providerConn, err := m.dial(request.MedianProviderID)
 	if err != nil {

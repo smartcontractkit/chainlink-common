@@ -27,3 +27,10 @@ func (s *staticDataSource) Observe(ctx context.Context, timestamp types.ReportTi
 	}
 	return s.value, nil
 }
+
+type NOOPDataSource struct {
+}
+
+func (s NOOPDataSource) Observe(ctx context.Context, _ types.ReportTimestamp) (*big.Int, error) {
+	return nil, median.ErrNOOPDataSource
+}

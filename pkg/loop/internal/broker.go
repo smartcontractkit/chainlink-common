@@ -141,10 +141,8 @@ func (b *brokerExt) serve(name string, server *grpc.Server, deps ...resource) (u
 
 func (b *brokerExt) closeAll(deps ...resource) {
 	for _, d := range deps {
-		if d.Closer != nil {
-			if err := d.Close(); err != nil {
-				b.Logger.Error(fmt.Sprintf("Error closing %s", d.name), "err", err)
-			}
+		if err := d.Close(); err != nil {
+			b.Logger.Error(fmt.Sprintf("Error closing %s", d.name), "err", err)
 		}
 	}
 }

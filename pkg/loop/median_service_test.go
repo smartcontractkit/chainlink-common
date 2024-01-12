@@ -48,11 +48,11 @@ func TestMedianService(t *testing.T) {
 	})
 }
 
-func TestMedianServiceNoGasPrice(t *testing.T) {
+func TestMedianServiceNOOPGasPriceDataSource(t *testing.T) {
 	t.Parallel()
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return helperProcess(loop.PluginMedianName)
-	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), nil, &test.StaticErrorLog{})
+	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), test.NOOPDataSource{}, &test.StaticErrorLog{})
 	hook := median.TestHook()
 	require.NoError(t, median.Start(utils.Context(t)))
 	t.Cleanup(func() { assert.NoError(t, median.Close()) })

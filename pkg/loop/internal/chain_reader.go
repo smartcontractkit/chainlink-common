@@ -102,7 +102,13 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 		return wrapRPCErr(err)
 	}
 
-	return DecodeVersionedBytes(retVal, reply.RetVal)
+	fmt.Printf("RYAN reply bytes\n%x\n", reply.RetVal)
+
+	err = DecodeVersionedBytes(retVal, reply.RetVal)
+	if err != nil {
+		fmt.Printf("RYAN client retval\n%#v\n", retVal)
+	}
+	return err
 }
 
 func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundContract) error {
@@ -144,11 +150,14 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("RYAN return from impl\n%#v\n", retVal)
 
 	encodedRetVal, err := EncodeVersionedBytes(retVal, CurrentEncodingVersion)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("RYAN encoded\n%x\n", encodedRetVal)
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 	v1 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	v2 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
@@ -18,4 +20,9 @@ type MercuryProvider interface {
 	OnchainConfigCodec() mercury.OnchainConfigCodec
 	MercuryServerFetcher() mercury.ServerFetcher
 	MercuryChainReader() mercury.ChainReader
+}
+
+type PluginMercury interface {
+	// NewMedianFactory returns a new ReportingPluginFactory. If provider implements GRPCClientConn, it can be forwarded efficiently via proxy.
+	NewMercuryV3Factory(ctx context.Context, provider MercuryProvider, dataSource v3.DataSource) (ReportingPluginFactory, error)
 }

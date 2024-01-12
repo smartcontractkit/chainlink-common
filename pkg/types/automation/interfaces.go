@@ -7,9 +7,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-type UpkeepTypeGetter func(UpkeepIdentifier) UpkeepType
-type WorkIDGenerator func(UpkeepIdentifier, Trigger) string
-
 // UpkeepStateStore is the interface for managing upkeeps final state in a local store.
 type UpkeepStateStore interface {
 	UpkeepStateUpdater
@@ -59,10 +56,6 @@ type RecoverableProvider interface {
 	GetRecoveryProposals(context.Context) ([]UpkeepPayload, error)
 }
 
-type TransmitEventProvider interface {
-	GetLatestEvents(context.Context) ([]TransmitEvent, error)
-}
-
 type ConditionalUpkeepProvider interface {
 	GetActiveUpkeeps(context.Context) ([]UpkeepPayload, error)
 }
@@ -70,11 +63,6 @@ type ConditionalUpkeepProvider interface {
 type PayloadBuilder interface {
 	// Can get payloads for a subset of proposals along with an error
 	BuildPayloads(context.Context, ...CoordinatedBlockProposal) ([]UpkeepPayload, error)
-}
-
-type Runnable interface {
-	// Can get results for a subset of payloads along with an error
-	CheckUpkeeps(context.Context, ...UpkeepPayload) ([]CheckResult, error)
 }
 
 type BlockSubscriber interface {
@@ -88,50 +76,4 @@ type BlockSubscriber interface {
 
 type UpkeepStateUpdater interface {
 	SetUpkeepState(context.Context, CheckResult, UpkeepState) error
-}
-
-type RetryQueue interface {
-	// Enqueue adds new items to the queue
-	Enqueue(items ...RetryRecord) error
-	// Dequeue returns the next n items in the queue, considering retry time schedules
-	Dequeue(n int) ([]UpkeepPayload, error)
-}
-
-type ProposalQueue interface {
-	// Enqueue adds new items to the queue
-	Enqueue(items ...CoordinatedBlockProposal) error
-	// Dequeue returns the next n items in the queue, considering retry time schedules
-	Dequeue(t UpkeepType, n int) ([]CoordinatedBlockProposal, error)
-}
-
-type ResultStore interface {
-	Add(...CheckResult)
-	Remove(...string)
-	View() ([]CheckResult, error)
-}
-
-type Coordinator interface {
-	PreProcess(_ context.Context, payloads []UpkeepPayload) ([]UpkeepPayload, error)
-
-	Accept(ReportedUpkeep) bool
-	ShouldTransmit(ReportedUpkeep) bool
-	FilterResults([]CheckResult) ([]CheckResult, error)
-	FilterProposals([]CoordinatedBlockProposal) ([]CoordinatedBlockProposal, error)
-}
-
-type MetadataStore interface {
-	SetBlockHistory(BlockHistory)
-	GetBlockHistory() BlockHistory
-
-	AddProposals(proposals ...CoordinatedBlockProposal)
-	ViewProposals(utype UpkeepType) []CoordinatedBlockProposal
-	RemoveProposals(proposals ...CoordinatedBlockProposal)
-
-	Start(context.Context) error
-	Close() error
-}
-
-type Ratio interface {
-	// OfInt should return n out of x such that n/x ~ r (ratio)
-	OfInt(int) int
 }

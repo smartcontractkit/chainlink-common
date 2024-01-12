@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"math/big"
 
 	"google.golang.org/grpc"
@@ -26,6 +27,10 @@ func (d *dataSourceClient) Observe(ctx context.Context, timestamp types.ReportTi
 	reply, err := d.grpc.Observe(ctx, &pb.ObserveRequest{
 		ReportTimestamp: pbReportTimestamp(timestamp),
 	})
+	// return nil value for NOOP (only affects gas price data source)
+	if errors.Is(err, median.ErrNOOPDataSource) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +51,12 @@ func (d *dataSourceServer) Observe(ctx context.Context, request *pb.ObserveReque
 		return nil, err
 	}
 	val, err := d.impl.Observe(ctx, timestamp)
+
+	// return nil value for NOOP (only affects gas price data source)
+	if errors.Is(err, median.ErrNOOPDataSource) {
+		return &pb.ObserveReply{Value: nil}, nil
+	}
+
 	if err != nil {
 		return nil, err
 	}

@@ -45,6 +45,38 @@ func TestMedianService(t *testing.T) {
 	})
 }
 
+func TestMedianServiceNOOPGasPriceDataSource(t *testing.T) {
+	t.Parallel()
+
+	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		return NewHelperProcessCommand(loop.PluginMedianName)
+	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), test.NOOPDataSource{}, &test.StaticErrorLog{})
+	hook := median.PluginService.XXXTestHook()
+	servicetest.Run(t, median)
+
+	t.Run("control", func(t *testing.T) {
+		test.ReportingPluginFactory(t, median)
+	})
+
+	t.Run("Kill", func(t *testing.T) {
+		hook.Kill()
+
+		// wait for relaunch
+		time.Sleep(2 * internal.KeepAliveTickDuration)
+
+		test.ReportingPluginFactory(t, median)
+	})
+
+	t.Run("Reset", func(t *testing.T) {
+		hook.Reset()
+
+		// wait for relaunch
+		time.Sleep(2 * internal.KeepAliveTickDuration)
+
+		test.ReportingPluginFactory(t, median)
+	})
+}
+
 func TestMedianService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32

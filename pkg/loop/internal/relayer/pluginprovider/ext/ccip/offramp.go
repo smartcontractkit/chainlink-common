@@ -60,9 +60,9 @@ type OffRampReaderGRPCServer struct {
 // NewOffRampReaderGRPCServer creates a new OffRampReaderGRPCServer. It is used by the relayer to serve the offramp reader service.
 // The server is created by wrapping a [cciptypes.OffRampReader] implementation. It requires a brokerExt to allocate and serve the gas estimator server.
 // *must* be the same broker used by the client. BCF-3061
-func NewOffRampReaderGRPCServer(impl cciptypes.OffRampReader, brokerExt *net.BrokerExt) (*OffRampReaderGRPCServer, error) {
+func NewOffRampReaderGRPCServer(ctx context.Context, impl cciptypes.OffRampReader, brokerExt *net.BrokerExt) (*OffRampReaderGRPCServer, error) {
 	// offramp reader server needs to serve the gas estimator server
-	estimator, err := impl.GasPriceEstimator(context.Background())
+	estimator, err := impl.GasPriceEstimator(ctx)
 	if err != nil {
 		return nil, err
 	}

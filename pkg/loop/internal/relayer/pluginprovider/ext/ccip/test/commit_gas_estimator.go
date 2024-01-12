@@ -38,7 +38,7 @@ type staticGasPriceEstimatorCommit struct {
 var _ GasPriceEstimatorCommitEvaluator = staticGasPriceEstimatorCommit{}
 
 // DenoteInUSD implements GasPriceEstimatorCommitEvaluator.
-func (s staticGasPriceEstimatorCommit) DenoteInUSD(p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
+func (s staticGasPriceEstimatorCommit) DenoteInUSD(ctx context.Context, p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
 	if s.denoteInUSDRequest.p.Cmp(p) != 0 {
 		return nil, fmt.Errorf("expected p %v, got %v", s.denoteInUSDRequest.p, p)
 	}
@@ -49,7 +49,7 @@ func (s staticGasPriceEstimatorCommit) DenoteInUSD(p *big.Int, wrappedNativePric
 }
 
 // Deviates implements GasPriceEstimatorCommitEvaluator.
-func (s staticGasPriceEstimatorCommit) Deviates(p1 *big.Int, p2 *big.Int) (bool, error) {
+func (s staticGasPriceEstimatorCommit) Deviates(ctx context.Context, p1 *big.Int, p2 *big.Int) (bool, error) {
 	if s.deviatesRequest.p1.Cmp(p1) != 0 {
 		return false, fmt.Errorf("expected p1 %v, got %v", s.deviatesRequest.p1, p1)
 	}
@@ -69,7 +69,7 @@ func (s staticGasPriceEstimatorCommit) Evaluate(ctx context.Context, other ccipt
 		return fmt.Errorf("expected other.GetGasPrice %v, got %v", s.getGasPriceResponse, gotGas)
 	}
 
-	gotMedian, err := other.Median(s.medianRequest.gasPrices)
+	gotMedian, err := other.Median(ctx, s.medianRequest.gasPrices)
 	if err != nil {
 		return fmt.Errorf("failed to other.Median: %w", err)
 	}
@@ -77,7 +77,7 @@ func (s staticGasPriceEstimatorCommit) Evaluate(ctx context.Context, other ccipt
 		return fmt.Errorf("expected other.Median %v, got %v", s.medianResponse, gotMedian)
 	}
 
-	gotDeviates, err := other.Deviates(s.deviatesRequest.p1, s.deviatesRequest.p2)
+	gotDeviates, err := other.Deviates(ctx, s.deviatesRequest.p1, s.deviatesRequest.p2)
 	if err != nil {
 		return fmt.Errorf("failed to other.Deviates: %w", err)
 	}
@@ -85,7 +85,7 @@ func (s staticGasPriceEstimatorCommit) Evaluate(ctx context.Context, other ccipt
 		return fmt.Errorf("expected other.Deviates %v, got %v", s.deviatesResponse, gotDeviates)
 	}
 
-	gotDenoteInUSD, err := other.DenoteInUSD(s.denoteInUSDRequest.p, s.denoteInUSDRequest.wrappedNativePrice)
+	gotDenoteInUSD, err := other.DenoteInUSD(ctx, s.denoteInUSDRequest.p, s.denoteInUSDRequest.wrappedNativePrice)
 	if err != nil {
 		return fmt.Errorf("failed to other.DenoteInUSD: %w", err)
 	}
@@ -102,7 +102,7 @@ func (s staticGasPriceEstimatorCommit) GetGasPrice(ctx context.Context) (*big.In
 }
 
 // Median implements GasPriceEstimatorCommitEvaluator.
-func (s staticGasPriceEstimatorCommit) Median(gasPrices []*big.Int) (*big.Int, error) {
+func (s staticGasPriceEstimatorCommit) Median(ctx context.Context, gasPrices []*big.Int) (*big.Int, error) {
 	if len(gasPrices) != len(s.medianRequest.gasPrices) {
 		return nil, fmt.Errorf("expected gas prices len %d, got %d", len(s.medianRequest.gasPrices), len(gasPrices))
 	}

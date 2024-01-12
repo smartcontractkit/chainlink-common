@@ -53,7 +53,7 @@ type staticGasPriceEstimatorExec struct {
 }
 
 // EstimateMsgCostUSD implements GasPriceEstimatorExecEvaluator.
-func (s staticGasPriceEstimatorExec) EstimateMsgCostUSD(p *big.Int, wrappedNativePrice *big.Int, msg cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta) (*big.Int, error) {
+func (s staticGasPriceEstimatorExec) EstimateMsgCostUSD(ctx context.Context, p *big.Int, wrappedNativePrice *big.Int, msg cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta) (*big.Int, error) {
 	if s.estimateMsgCostUSDRequest.p.Cmp(p) != 0 {
 		return nil, fmt.Errorf("expected p %v, got %v", s.estimateMsgCostUSDRequest.p, p)
 	}
@@ -69,7 +69,7 @@ func (s staticGasPriceEstimatorExec) EstimateMsgCostUSD(p *big.Int, wrappedNativ
 var _ GasPriceEstimatorExecEvaluator = staticGasPriceEstimatorExec{}
 
 // DenoteInUSD implements GasPriceEstimatorExecEvaluator.
-func (s staticGasPriceEstimatorExec) DenoteInUSD(p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
+func (s staticGasPriceEstimatorExec) DenoteInUSD(ctx context.Context, p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
 	if s.denoteInUSDRequest.p.Cmp(p) != 0 {
 		return nil, fmt.Errorf("expected p %v, got %v", s.denoteInUSDRequest.p, p)
 	}
@@ -91,7 +91,7 @@ func (s staticGasPriceEstimatorExec) Evaluate(ctx context.Context, other cciptyp
 	}
 
 	// Median test case
-	gotMedian, err := other.Median(s.medianRequest.gasPrices)
+	gotMedian, err := other.Median(ctx, s.medianRequest.gasPrices)
 	if err != nil {
 		return fmt.Errorf("failed to other.Median: %w", err)
 	}
@@ -100,7 +100,7 @@ func (s staticGasPriceEstimatorExec) Evaluate(ctx context.Context, other cciptyp
 	}
 
 	// EstimateMsgCostUSD test case
-	gotEstimate, err := other.EstimateMsgCostUSD(s.estimateMsgCostUSDRequest.p, s.estimateMsgCostUSDRequest.wrappedNativePrice, s.estimateMsgCostUSDRequest.msg)
+	gotEstimate, err := other.EstimateMsgCostUSD(ctx, s.estimateMsgCostUSDRequest.p, s.estimateMsgCostUSDRequest.wrappedNativePrice, s.estimateMsgCostUSDRequest.msg)
 	if err != nil {
 		return fmt.Errorf("failed to other.EstimateMsgCostUSD: %w", err)
 	}
@@ -108,7 +108,7 @@ func (s staticGasPriceEstimatorExec) Evaluate(ctx context.Context, other cciptyp
 		return fmt.Errorf("expected other.EstimateMsgCostUSD %v, got %v", s.estimateMsgCostUSDResponse, gotEstimate)
 	}
 
-	gotDenoteInUSD, err := other.DenoteInUSD(s.denoteInUSDRequest.p, s.denoteInUSDRequest.wrappedNativePrice)
+	gotDenoteInUSD, err := other.DenoteInUSD(ctx, s.denoteInUSDRequest.p, s.denoteInUSDRequest.wrappedNativePrice)
 	if err != nil {
 		return fmt.Errorf("failed to other.DenoteInUSD: %w", err)
 	}
@@ -125,7 +125,7 @@ func (s staticGasPriceEstimatorExec) GetGasPrice(ctx context.Context) (*big.Int,
 }
 
 // Median implements GasPriceEstimatorExecEvaluator.
-func (s staticGasPriceEstimatorExec) Median(gasPrices []*big.Int) (*big.Int, error) {
+func (s staticGasPriceEstimatorExec) Median(ctx context.Context, gasPrices []*big.Int) (*big.Int, error) {
 	if len(gasPrices) != len(s.medianRequest.gasPrices) {
 		return nil, fmt.Errorf("expected gas prices len %d, got %d", len(s.medianRequest.gasPrices), len(gasPrices))
 	}

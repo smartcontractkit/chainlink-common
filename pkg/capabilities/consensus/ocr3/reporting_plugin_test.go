@@ -263,7 +263,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(ocr3types.OutcomeContext{}, qb, aos)
+	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 
 	opb := &pbtypes.Outcome{}
@@ -314,7 +314,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(sqNr, pl)
+	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
@@ -371,7 +371,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(sqNr, pl)
+	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
@@ -407,6 +407,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 }
 
 func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
+	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	cap := &mockCapability{
@@ -502,13 +503,13 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 		},
 	}
 
-	outcome1, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	outcome1, err := rp.Outcome(ctx, ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
 	require.NoError(t, err)
 	opb1 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome1, opb1)
 	require.NoError(t, err)
 
-	outcome2, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: outcomePruningThreshold + 100, PreviousOutcome: outcome1}, qb, aos2)
+	outcome2, err := rp.Outcome(ctx, ocr3types.OutcomeContext{SeqNr: outcomePruningThreshold + 100, PreviousOutcome: outcome1}, qb, aos2)
 	require.NoError(t, err)
 	opb2 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome2, opb2)

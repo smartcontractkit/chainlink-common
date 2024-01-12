@@ -275,7 +275,9 @@ func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterfa
 	// for interoperability with legacy code.
 	switch providerType {
 	case string(types.Median):
-		return median.NewProviderClient(broker, cc), nil
+		pc := median.NewProviderClient(broker, cc)
+		pc.RmUnimplemented(context.Background())
+		return pc, nil
 	case string(types.GenericPlugin):
 		return ocr2.NewPluginProviderClient(broker, cc), nil
 	case string(types.OCR3Capability):

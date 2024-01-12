@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/transport"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -21,7 +21,7 @@ const ReportingPluginWithMedianProviderName = "reporting-plugin-with-median-prov
 type StaticReportingPluginWithMedianProvider struct {
 }
 
-func (s StaticReportingPluginWithMedianProvider) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
+func (s StaticReportingPluginWithMedianProvider) ConnToProvider(conn grpc.ClientConnInterface, broker transport.Broker, brokerConfig transport.BrokerConfig) types.MedianProvider {
 	return StaticMedianProvider{}
 }
 
@@ -175,7 +175,7 @@ func (s StaticReportingPluginWithMedianProvider) NewReportingPluginFactory(ctx c
 type StaticReportingPluginWithPluginProvider struct {
 }
 
-func (s StaticReportingPluginWithPluginProvider) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {
+func (s StaticReportingPluginWithPluginProvider) ConnToProvider(conn grpc.ClientConnInterface, broker transport.Broker, brokerConfig transport.BrokerConfig) types.PluginProvider {
 	return StaticPluginProvider{}
 }
 

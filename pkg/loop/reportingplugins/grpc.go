@@ -8,6 +8,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/transport"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -23,7 +25,7 @@ func ReportingPluginHandshakeConfig() plugin.HandshakeConfig {
 
 type ProviderServer[T types.PluginProvider] interface {
 	types.ReportingPluginServer[T]
-	ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig loop.BrokerConfig) T
+	ConnToProvider(conn grpc.ClientConnInterface, broker transport.Broker, brokerConfig loop.BrokerConfig) T
 }
 
 // GRPCService is the loopp interface for a plugin that can
@@ -36,7 +38,7 @@ type GRPCService[T types.PluginProvider] struct {
 
 	PluginServer ProviderServer[T]
 
-	pluginClient *internal.ReportingPluginServiceClient
+	pluginClient *common.ReportingPluginServiceClient
 }
 
 type serverAdapter func(
@@ -69,16 +71,16 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 		el types.ErrorLog,
 	) (types.ReportingPluginFactory, error) {
 		provider := g.PluginServer.ConnToProvider(conn, broker, g.BrokerConfig)
-		tc := internal.NewTelemetryClient(ts)
+		tc := common.NewTelemetryClient(ts)
 		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el)
 	}
-	return internal.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter(adapter))
+	return common.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter(adapter))
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginClient], updated with the new broker and conn.
 func (g *GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if g.pluginClient == nil {
-		g.pluginClient = internal.NewReportingPluginServiceClient(broker, g.BrokerConfig, conn)
+		g.pluginClient = common.NewReportingPluginServiceClient(broker, g.BrokerConfig, conn)
 	} else {
 		g.pluginClient.Refresh(broker, conn)
 	}
@@ -99,5 +101,5 @@ func (g *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
 // These implement `ConnToProvider` and return the conn wrapped as
 // the specified provider type. They can be embedded into the server struct
 // for ease of use.
-type PluginProviderServer = internal.PluginProviderServer
+type PluginProviderServer = common.PluginProviderServer
 type MedianProviderServer = internal.MedianProviderServer

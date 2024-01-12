@@ -1,4 +1,4 @@
-package internal
+package transport
 
 import (
 	"context"
@@ -14,32 +14,33 @@ import (
 
 var ErrPluginUnavailable = errors.New("plugin unavailable")
 
-var _ services.Service = (*serviceClient)(nil)
+var _ services.Service = (*ServiceClient)(nil)
 
-type serviceClient struct {
-	b    *brokerExt
+type ServiceClient struct {
+	LoggerStopper
+	//b    *brokerExt
 	cc   grpc.ClientConnInterface
 	grpc pb.ServiceClient
 }
 
-func newServiceClient(b *brokerExt, cc grpc.ClientConnInterface) *serviceClient {
-	return &serviceClient{b, cc, pb.NewServiceClient(cc)}
+func NewServiceClient(b LoggerStopper, cc grpc.ClientConnInterface) *ServiceClient {
+	return &ServiceClient{b, cc, pb.NewServiceClient(cc)}
 }
 
-func (s *serviceClient) Start(ctx context.Context) error {
+func (s *ServiceClient) Start(ctx context.Context) error {
 	return nil // no-op: server side starts automatically
 }
 
-func (s *serviceClient) Close() error {
-	ctx, cancel := s.b.stopCtx()
+func (s *ServiceClient) Close() error {
+	ctx, cancel := s.StopCtx()
 	defer cancel()
 
 	_, err := s.grpc.Close(ctx, &emptypb.Empty{})
 	return err
 }
 
-func (s *serviceClient) Ready() error {
-	ctx, cancel := s.b.stopCtx()
+func (s *ServiceClient) Ready() error {
+	ctx, cancel := s.StopCtx()
 	defer cancel()
 	ctx, cancel = context.WithTimeout(ctx, time.Second)
 	defer cancel()
@@ -48,20 +49,20 @@ func (s *serviceClient) Ready() error {
 	return err
 }
 
-func (s *serviceClient) Name() string { return s.b.Logger.Name() }
+func (s *ServiceClient) Name() string { return s.Logger().Name() }
 
-func (s *serviceClient) HealthReport() map[string]error {
-	ctx, cancel := s.b.stopCtx()
+func (s *ServiceClient) HealthReport() map[string]error {
+	ctx, cancel := s.StopCtx()
 	defer cancel()
 	ctx, cancel = context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
 	reply, err := s.grpc.HealthReport(ctx, &emptypb.Empty{})
 	if err != nil {
-		return map[string]error{s.b.Logger.Name(): err}
+		return map[string]error{s.Logger().Name(): err}
 	}
 	hr := healthReport(reply.HealthReport)
-	hr[s.b.Logger.Name()] = nil
+	hr[s.Logger().Name()] = nil
 	return hr
 }
 
@@ -91,4 +92,16 @@ func (s *serviceServer) HealthReport(ctx context.Context, empty *emptypb.Empty) 
 		r.HealthReport[n] = serr
 	}
 	return &r, nil
+}
+
+func healthReport(s map[string]string) (hr map[string]error) {
+	hr = make(map[string]error, len(s))
+	for n, e := range s {
+		var err error
+		if e != "" {
+			err = errors.New(e)
+		}
+		hr[n] = err
+	}
+	return hr
 }

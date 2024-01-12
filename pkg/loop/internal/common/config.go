@@ -1,4 +1,4 @@
-package internal
+package common
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/transport"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -21,9 +21,9 @@ type configProviderClient struct {
 	contractTracker  libocr.ContractConfigTracker
 }
 
-func newConfigProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *configProviderClient {
-	c := &configProviderClient{serviceClient: newServiceClient(b, cc)}
-	c.offchainDigester = &offchainConfigDigesterClient{b, pb.NewOffchainConfigDigesterClient(cc)}
+func newConfigProviderClient(l transport.LoggerStopper, cc grpc.ClientConnInterface) *configProviderClient {
+	c := &configProviderClient{serviceClient: newServiceClient(l, cc)}
+	c.offchainDigester = &offchainConfigDigesterClient{l, pb.NewOffchainConfigDigesterClient(cc)}
 	c.contractTracker = &contractConfigTrackerClient{pb.NewContractConfigTrackerClient(cc)}
 	return c
 }
@@ -39,12 +39,14 @@ func (c *configProviderClient) ContractConfigTracker() libocr.ContractConfigTrac
 var _ libocr.OffchainConfigDigester = (*offchainConfigDigesterClient)(nil)
 
 type offchainConfigDigesterClient struct {
-	*brokerExt
+	//*brokerExt // only needs the stopCtx
+	//stopFn func() (context.Context, context.CancelFunc)
+	transport.LoggerStopper
 	grpc pb.OffchainConfigDigesterClient
 }
 
 func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig) (digest libocr.ConfigDigest, err error) {
-	ctx, cancel := o.stopCtx()
+	ctx, cancel := o.StopCtx()
 	defer cancel()
 
 	var reply *pb.ConfigDigestReply
@@ -55,7 +57,7 @@ func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig
 		return
 	}
 	if l := len(reply.ConfigDigest); l != 32 {
-		err = common.ErrConfigDigestLen(l)
+		err = ErrConfigDigestLen(l)
 		return
 	}
 	copy(digest[:], reply.ConfigDigest)
@@ -63,7 +65,7 @@ func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig
 }
 
 func (o *offchainConfigDigesterClient) ConfigDigestPrefix() (libocr.ConfigDigestPrefix, error) {
-	ctx, cancel := o.stopCtx()
+	ctx, cancel := o.StopCtx()
 	defer cancel()
 
 	reply, err := o.grpc.ConfigDigestPrefix(ctx, &pb.ConfigDigestPrefixRequest{})
@@ -82,7 +84,7 @@ type offchainConfigDigesterServer struct {
 
 func (o *offchainConfigDigesterServer) ConfigDigest(ctx context.Context, request *pb.ConfigDigestRequest) (*pb.ConfigDigestReply, error) {
 	if request.ContractConfig.F > math.MaxUint8 {
-		return nil, common.ErrUint8Bounds{Name: "F", U: request.ContractConfig.F}
+		return nil, ErrUint8Bounds{Name: "F", U: request.ContractConfig.F}
 	}
 	cc := libocr.ContractConfig{
 		ConfigCount:           request.ContractConfig.ConfigCount,
@@ -129,7 +131,7 @@ func (c *contractConfigTrackerClient) LatestConfigDetails(ctx context.Context) (
 	}
 	changedInBlock = reply.ChangedInBlock
 	if l := len(reply.ConfigDigest); l != 32 {
-		err = common.ErrConfigDigestLen(l)
+		err = ErrConfigDigestLen(l)
 		return
 	}
 	copy(configDigest[:], reply.ConfigDigest)
@@ -145,7 +147,7 @@ func (c *contractConfigTrackerClient) LatestConfig(ctx context.Context, changedI
 		return
 	}
 	if l := len(reply.ContractConfig.ConfigDigest); l != 32 {
-		err = common.ErrConfigDigestLen(l)
+		err = ErrConfigDigestLen(l)
 		return
 	}
 	copy(cfg.ConfigDigest[:], reply.ContractConfig.ConfigDigest)
@@ -157,7 +159,7 @@ func (c *contractConfigTrackerClient) LatestConfig(ctx context.Context, changedI
 		cfg.Transmitters = append(cfg.Transmitters, libocr.Account(t))
 	}
 	if reply.ContractConfig.F > math.MaxUint8 {
-		err = common.ErrUint8Bounds{Name: "F", U: reply.ContractConfig.F}
+		err = ErrUint8Bounds{Name: "F", U: reply.ContractConfig.F}
 		return
 	}
 	cfg.F = uint8(reply.ContractConfig.F)

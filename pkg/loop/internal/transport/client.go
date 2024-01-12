@@ -1,4 +1,4 @@
-package internal
+package transport
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 )
 
 var _ grpc.ClientConnInterface = (*atomicClient)(nil)
@@ -35,18 +34,20 @@ func (a *atomicClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, met
 var _ grpc.ClientConnInterface = (*clientConn)(nil)
 
 // newClientFn returns a new client connection id to dial, and a set of resource dependencies to close.
-type newClientFn func(context.Context) (id uint32, deps resources, err error)
+type newClientFn func(context.Context) (id uint32, deps Resources, err error)
 
 // clientConn is a [grpc.ClientConnInterface] backed by a [*grpc.ClientConn] which can be recreated and swapped out
 // via the provided [newClientFn].
 // New instances should be created via brokerExt.newClientConn.
 type clientConn struct {
-	*brokerExt
+	//*brokerExt
+	Broker
+	BrokerConfig
 	newClient newClientFn
 	name      string
 
 	mu   sync.RWMutex
-	deps resources
+	deps Resources
 	cc   *grpc.ClientConn
 }
 
@@ -102,7 +103,7 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 		if err := c.cc.Close(); err != nil {
 			c.Logger.Errorw("Client close failed", "err", err)
 		}
-		c.closeAll(c.deps...)
+		CloseAndLog(c.Logger, c.deps...)
 	}
 
 	try := func() bool {
@@ -110,19 +111,19 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 		id, deps, err := c.newClient(ctx)
 		if err != nil {
 			c.Logger.Errorw("Client refresh attempt failed", "err", err)
-			c.closeAll(deps...)
+			CloseAndLog(c.Logger, deps...)
 			return false
 		}
 		c.deps = deps
 
 		lggr := logger.With(c.Logger, "id", id)
 		lggr.Debug("Client dial")
-		c.cc, err = c.dial(id)
+		c.cc, err = c.DialWithOptions(id, c.DialOpts...)
 		if err != nil {
 			if ctx.Err() != nil {
-				lggr.Errorw("Client dial failed", "err", common.ErrConnDial{Name: c.name, ID: id, Err: err})
+				lggr.Errorw("Client dial failed", "err", ErrConnDial{Name: c.name, ID: id, Err: err})
 			}
-			c.closeAll(c.deps...)
+			CloseAndLog(lggr, deps...)
 			return false
 		}
 		return true

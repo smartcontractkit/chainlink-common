@@ -1,10 +1,11 @@
-package internal
+package common
 
 import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/transport"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -16,9 +17,9 @@ type pluginProviderClient struct {
 
 func (p *pluginProviderClient) ClientConn() grpc.ClientConnInterface { return p.cc }
 
-func newPluginProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *pluginProviderClient {
-	p := &pluginProviderClient{configProviderClient: newConfigProviderClient(b.withName("PluginProviderClient"), cc)}
-	p.contractTransmitter = &contractTransmitterClient{b, pb.NewContractTransmitterClient(p.cc)}
+func newPluginProviderClient(l transport.LoggerStopper, cc grpc.ClientConnInterface) *pluginProviderClient {
+	p := &pluginProviderClient{configProviderClient: newConfigProviderClient(l.Named("PluginProviderClient"), cc)}
+	p.contractTransmitter = &contractTransmitterClient{l, pb.NewContractTransmitterClient(p.cc)}
 	return p
 }
 
@@ -28,9 +29,9 @@ func (p *pluginProviderClient) ContractTransmitter() libocr.ContractTransmitter 
 
 type PluginProviderServer struct{}
 
-func (p PluginProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker Broker, brokerCfg BrokerConfig) types.PluginProvider {
-	be := &brokerExt{broker: broker, BrokerConfig: brokerCfg}
-	return newPluginProviderClient(be, conn)
+func (p PluginProviderServer) ConnToProvider(conn grpc.ClientConnInterface, l transport.LoggerStopper) types.PluginProvider {
+	//be := &brokerExt{broker: broker, BrokerConfig: brokerCfg} //only needs stopCtx
+	return newPluginProviderClient(l, conn)
 }
 
 func (p *pluginProviderClient) ChainReader() types.ChainReader {

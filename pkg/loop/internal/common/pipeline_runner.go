@@ -1,4 +1,4 @@
-package internal
+package common
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 var _ types.PipelineRunnerService = (*pipelineRunnerServiceClient)(nil)
 
 type pipelineRunnerServiceClient struct {
-	*brokerExt
+	//	*brokerExt
 	grpc pb.PipelineRunnerServiceClient
 }
 
@@ -67,7 +67,7 @@ var _ pb.PipelineRunnerServiceServer = (*pipelineRunnerServiceServer)(nil)
 
 type pipelineRunnerServiceServer struct {
 	pb.UnimplementedPipelineRunnerServiceServer
-	*brokerExt
+	//	*brokerExt
 
 	impl types.PipelineRunnerService
 }

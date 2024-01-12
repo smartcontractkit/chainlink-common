@@ -1,23 +1,25 @@
-package internal
+package transport
 
 import (
 	"google.golang.org/grpc"
 )
 
-type pluginClient struct {
+type PluginClient struct {
 	atomicBroker
 	atomicClient
-	*brokerExt
+	//*brokerExt
+	BrokerConfig
 }
 
-func newPluginClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *pluginClient {
-	var pc pluginClient
-	pc.brokerExt = &brokerExt{&pc.atomicBroker, brokerCfg}
+func NewPluginClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *PluginClient {
+	var pc PluginClient
+	//pc.brokeBrokerConfig
+	pc.BrokerConfig = brokerCfg
 	pc.Refresh(broker, conn)
 	return &pc
 }
 
-func (p *pluginClient) Refresh(broker Broker, conn *grpc.ClientConn) {
+func (p *PluginClient) Refresh(broker Broker, conn *grpc.ClientConn) {
 	p.atomicBroker.store(broker)
 	p.atomicClient.store(conn)
 	p.Logger.Debugw("Refreshed pluginClient connection", "state", conn.GetState())

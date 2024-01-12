@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -438,18 +437,6 @@ func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNo
 }
 func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionRequest) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, r.impl.Transact(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
-}
-
-func healthReport(s map[string]string) (hr map[string]error) {
-	hr = make(map[string]error, len(s))
-	for n, e := range s {
-		var err error
-		if e != "" {
-			err = errors.New(e)
-		}
-		hr[n] = err
-	}
-	return hr
 }
 
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,

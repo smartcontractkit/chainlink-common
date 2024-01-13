@@ -69,7 +69,11 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 				pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
 				pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 				if provider.ChainReader() != nil {
-					pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+					lggr, err := logger.New()
+					if err != nil {
+						fmt.Printf("ERROR CREATING LOGGER %+v\n", err)
+					}
+					pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader(), lggr: lggr})
 				}
 
 				if provider.Codec() != nil {

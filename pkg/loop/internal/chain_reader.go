@@ -4,6 +4,7 @@ import (
 	"context"
 	jsonv1 "encoding/json"
 	"fmt"
+	"reflect"
 
 	jsonv2 "github.com/go-json-experiment/json"
 	"google.golang.org/grpc"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -102,11 +104,11 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 		return wrapRPCErr(err)
 	}
 
-	fmt.Printf("RYAN reply bytes\\n%x\n", reply.RetVal)
+	c.Logger.Infof("RYAN: reply bytes\\n%x\n", reply.RetVal)
 
 	err = DecodeVersionedBytes(retVal, reply.RetVal)
 
-	fmt.Printf("RYAN client retval\\n%+v\n", retVal)
+	c.Logger.Infof("RYAN: client retval\\n%+v\n", retVal)
 	return err
 }
 
@@ -128,6 +130,7 @@ func NewChainReaderServer(impl types.ChainReader) pb.ChainReaderServer {
 type chainReaderServer struct {
 	pb.UnimplementedChainReaderServer
 	impl types.ChainReader
+	lggr logger.Logger
 }
 
 func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
@@ -149,14 +152,22 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("RYAN return from impl\\n%#v\n", retVal)
+	c.lggr.Infof("RYAN: return from impl\\n%#v\n", retVal)
 
 	encodedRetVal, err := EncodeVersionedBytes(retVal, CurrentEncodingVersion)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("RYAN encoded\\n%x\n", encodedRetVal)
+	c.lggr.Infof("RYAN: encoded\\n%x\n", encodedRetVal)
+
+	tmp := reflect.New(reflect.TypeOf(retVal).Elem()).Interface()
+	err = DecodeVersionedBytes(tmp, encodedRetVal)
+	if err != nil {
+		c.lggr.Infof("RYAN: sever added ecode it won't decode\\n%x\n", encodedRetVal)
+	}
+
+	c.lggr.Infof("RYAN: server decoded\\n%v\\n%#v\n", reflect.DeepEqual(tmp, retVal), tmp)
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }

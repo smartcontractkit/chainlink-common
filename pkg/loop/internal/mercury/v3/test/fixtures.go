@@ -38,7 +38,7 @@ var Fixtures = Parameters{
 
 	// DataSource
 	ReportTimestamp: ocr2plus_types.ReportTimestamp{
-		ConfigDigest: [32]byte([]byte("mercury v3 config digest")),
+		ConfigDigest: [32]byte([]byte("mercury v3 configuration digest!")),
 		Epoch:        0,
 		Round:        1,
 	},

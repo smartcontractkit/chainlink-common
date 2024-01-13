@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: reportcodec.proto
+// source: reportcodec_v3.proto
 
 package mercury_v3_pb
 
@@ -179,5 +179,5 @@ var ReportCodec_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "reportcodec.proto",
+	Metadata: "reportcodec_v3.proto",
 }

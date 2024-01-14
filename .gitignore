@@ -16,7 +16,7 @@
 /golangci-lint/
 
 # Fuzz test artifacts
-*testdata/fuzz/*
+**/testdata/fuzz/*
 
 # Dependency directories (remove the comment below to include it)
 # vendor/

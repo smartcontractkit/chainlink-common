@@ -1,0 +1,12 @@
+go test fuzz v1
+rune('\x05')
+string("0")
+byte('\t')
+[]byte("")
+int(-20)
+int(48)
+int64(1)
+[]byte("")
+int(-81)
+string("0")
+[]byte("")

@@ -1,6 +1,7 @@
 package interfacetests
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -22,6 +23,7 @@ type ChainReaderInterfaceTester interface {
 	SetLatestValue(t *testing.T, testStruct *TestStruct)
 	TriggerEvent(t *testing.T, testStruct *TestStruct)
 	GetBindings(t *testing.T) []types.BoundContract
+	MaxWaitTimeForEvents() time.Duration
 }
 
 const (
@@ -33,6 +35,7 @@ const (
 	MethodReturningUint64Slice                  = "GetSliceValue"
 	MethodReturningSeenStruct                   = "GetSeenStruct"
 	EventName                                   = "SomeEvent"
+	EventWithFilterName                         = "SomeEventToFilter"
 	AnyContractName                             = "TestContract"
 	AnySecondContractName                       = "Not" + AnyContractName
 )
@@ -162,9 +165,40 @@ func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTeste
 				assert.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, AnyContractName, EventName, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts)
-				}, time.Second*20, time.Millisecond*10)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+		{
+			name: "Get latest value returns not found if event was never triggered",
+			test: func(t *testing.T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
-				assert.Equal(t, &ts, result)
+				result := &TestStruct{}
+				err := cr.GetLatestValue(ctx, AnyContractName, EventName, nil, &result)
+				assert.True(t, errors.Is(err, types.ErrNotFound))
+			},
+		},
+		{
+			name: "Get latest value gets latest event with filtering",
+			test: func(t *testing.T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				ts0 := CreateTestStruct(0, tester)
+				tester.TriggerEvent(t, &ts0)
+				ts1 := CreateTestStruct(1, tester)
+				tester.TriggerEvent(t, &ts1)
+
+				filterParams := &FilterEventParams{Field: ts0.Field}
+				result := &TestStruct{}
+				assert.Never(t, func() bool {
+					err := cr.GetLatestValue(ctx, AnyContractName, EventWithFilterName, filterParams, &result)
+					return err == nil && reflect.DeepEqual(result, &ts1)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+
+				assert.Equal(t, &ts0, result)
 			},
 		},
 	}

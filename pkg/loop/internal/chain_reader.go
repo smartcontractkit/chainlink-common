@@ -59,7 +59,7 @@ func EncodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 		var enc cbor.EncMode
 		enc, err = enco.EncMode()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %w", types.ErrInternal, err)
 		}
 		bytes, err = enc.Marshal(data)
 		if err != nil {
@@ -80,7 +80,13 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	case JSONEncodingVersion2:
 		err = jsonv2.Unmarshal(vData.Data, res)
 	case CBOREncodingVersion:
-		err = cbor.Unmarshal(vData.Data, res)
+		decopt := cbor.DecOptions{UTF8: cbor.UTF8DecodeInvalid}
+		var dec cbor.DecMode
+		dec, err = decopt.DecMode()
+		if err != nil {
+			return fmt.Errorf("%w: %w", types.ErrInternal, err)
+		}
+		err = dec.Unmarshal(vData.Data, res)
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
 	}

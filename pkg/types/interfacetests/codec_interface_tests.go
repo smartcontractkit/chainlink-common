@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -290,6 +291,34 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				require.NoError(t, err)
 
 				assert.Equal(t, expected, actual)
+			},
+		},
+		{
+			name: "Encode allows nil params to be encoded, either as empty encoding or with prefix",
+			test: func(t *testing.T) {
+				ctx := tests.Context(t)
+				cr := tester.GetCodec(t)
+				_, err := cr.Encode(ctx, nil, TestItemType)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "Encode allows nil field to be encoded, either as empty encoding or with prefix",
+			test: func(t *testing.T) {
+				ctx := tests.Context(t)
+				cr := tester.GetCodec(t)
+				nilArgs := &TestStruct{
+					Field:          0,
+					DifferentField: "",
+					OracleID:       0,
+					OracleIDs:      [32]commontypes.OracleID{},
+					Account:        nil,
+					Accounts:       nil,
+					BigField:       nil,
+					NestedStruct:   MidLevelTestStruct{},
+				}
+				// Assure no panic, use _,_ to tell the compiler we don't care about the error
+				_, _ = cr.Encode(ctx, nilArgs, TestItemType)
 			},
 		},
 	}

@@ -120,7 +120,7 @@ type fakeChainReaderInterfaceTester struct {
 	impl types.ChainReader
 }
 
-func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {
+func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	if ok {
 		fake.stored = []TestStruct{}
@@ -128,11 +128,11 @@ func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {
 	}
 }
 
-func (it *fakeChainReaderInterfaceTester) GetChainReader(t *testing.T) types.ChainReader {
+func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.ChainReader {
 	return it.impl
 }
 
-func (it *fakeChainReaderInterfaceTester) GetBindings(t *testing.T) []types.BoundContract {
+func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{
 		{Name: AnyContractName, Address: AnyContractName},
 		{Name: AnySecondContractName, Address: AnySecondContractName},

@@ -3,6 +3,7 @@ package internal_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -150,6 +151,9 @@ func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) ([]byte
 }
 
 func (f *fakeCodec) Decode(_ context.Context, _ []byte, into any, itemType string) error {
+	if f.lastItem == nil {
+		return fmt.Errorf("%w: no item to decode", types.ErrInvalidEncoding)
+	}
 	switch itemType {
 	case TestItemWithConfigExtra:
 		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Squash: true, Result: into})

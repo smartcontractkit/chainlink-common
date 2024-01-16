@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/mwitkow/grpc-proxy/proxy"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -26,6 +27,7 @@ func NewReportingPluginServiceClient(broker Broker, brokerCfg BrokerConfig, conn
 	return &ReportingPluginServiceClient{pluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), serviceClient: newServiceClient(pc.brokerExt, pc)}
 }
 
+// NewReportingPluginFactory TODO: save possible errors with the errorLog(?)
 func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 	ctx context.Context,
 	config types.ReportingPluginServiceConfig,
@@ -37,6 +39,9 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 	cc := m.newClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps resources, err error) {
 		providerID, providerRes, err := m.serve("PluginProvider", proxy.NewProxy(grpcProvider))
 		if err != nil {
+			if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+				return 0, nil, errors.Wrap(saveErr, err.Error())
+			}
 			return 0, nil, err
 		}
 		deps.Add(providerRes)
@@ -45,6 +50,9 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterPipelineRunnerServiceServer(s, &pipelineRunnerServiceServer{impl: pipelineRunner})
 		})
 		if err != nil {
+			if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+				return 0, nil, errors.Wrap(saveErr, err.Error())
+			}
 			return 0, nil, err
 		}
 		deps.Add(pipelineRunnerRes)
@@ -53,6 +61,9 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterTelemetryServer(s, NewTelemetryServer(telemetry))
 		})
 		if err != nil {
+			if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+				return 0, nil, errors.Wrap(saveErr, err.Error())
+			}
 			return 0, nil, err
 		}
 		deps.Add(telemetryRes)
@@ -61,6 +72,9 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterErrorLogServer(s, &errorLogServer{impl: errorLog})
 		})
 		if err != nil {
+			if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+				return 0, nil, errors.Wrap(saveErr, err.Error())
+			}
 			return 0, nil, err
 		}
 		deps.Add(errorLogRes)
@@ -79,11 +93,14 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			TelemetryID:      telemetryID,
 		})
 		if err != nil {
+			if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+				return 0, nil, errors.Wrap(saveErr, err.Error())
+			}
 			return 0, nil, err
 		}
 		return reply.ID, nil, nil
 	})
-	return newReportingPluginFactoryClient(m.pluginClient.brokerExt, cc), nil
+	return newReportingPluginFactoryClient(m.pluginClient.brokerExt, cc, errorLog), nil
 }
 
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)
@@ -115,14 +132,22 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	providerConn, err := m.dial(request.ProviderID)
 	if err != nil {
 		m.closeAll(errorLogRes)
-		return nil, ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
+		err := ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
+		if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
+		return nil, err
 	}
 	providerRes := resource{providerConn, "PluginProvider"}
 
 	pipelineRunnerConn, err := m.dial(request.PipelineRunnerID)
 	if err != nil {
 		m.closeAll(errorLogRes, providerRes)
-		return nil, ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
+		err := ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
+		if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
+		return nil, err
 	}
 	pipelineRunnerRes := resource{pipelineRunnerConn, "PipelineRunner"}
 	pipelineRunner := newPipelineRunnerClient(pipelineRunnerConn)
@@ -130,7 +155,11 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	telemetryConn, err := m.dial(request.TelemetryID)
 	if err != nil {
 		m.closeAll(errorLogRes, providerRes, pipelineRunnerRes)
-		return nil, ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
+		err := ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
+		if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
+		return nil, err
 	}
 	telemetryRes := resource{telemetryConn, "Telemetry"}
 	telemetry := NewTelemetryServiceClient(telemetryConn)
@@ -146,14 +175,20 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog)
 	if err != nil {
 		m.closeAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
+		if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 
 	id, _, err := m.serveNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.brokerExt))
+		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.brokerExt, errorLog))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
 	if err != nil {
+		if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 

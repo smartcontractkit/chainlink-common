@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/pkg/errors"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
@@ -37,7 +38,11 @@ func NewLOOPPService(
 	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
 		plug, ok := instance.(types.ReportingPluginClient)
 		if !ok {
-			return nil, fmt.Errorf("expected GenericPluginClient but got %T", instance)
+			err := fmt.Errorf("expected GenericPluginClient but got %T", instance)
+			if saveErr := errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+				return nil, errors.Wrap(saveErr, err.Error())
+			}
+			return nil, err
 		}
 		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog)
 	}

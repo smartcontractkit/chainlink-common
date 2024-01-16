@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -12,16 +13,18 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type reportingPluginFactoryClient struct {
 	*brokerExt
 	*serviceClient
-	grpc pb.ReportingPluginFactoryClient
+	errorLog types.ErrorLog
+	grpc     pb.ReportingPluginFactoryClient
 }
 
-func newReportingPluginFactoryClient(b *brokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
-	return &reportingPluginFactoryClient{b.withName("ReportingPluginProviderClient"), newServiceClient(b, cc), pb.NewReportingPluginFactoryClient(cc)}
+func newReportingPluginFactoryClient(b *brokerExt, cc grpc.ClientConnInterface, el types.ErrorLog) *reportingPluginFactoryClient {
+	return &reportingPluginFactoryClient{b.withName("ReportingPluginProviderClient"), newServiceClient(b, cc), el, pb.NewReportingPluginFactoryClient(cc)}
 }
 
 func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
@@ -43,6 +46,9 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.Reportin
 		MaxDurationShouldTransmitAcceptedReport: int64(config.MaxDurationShouldTransmitAcceptedReport),
 	}})
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, libocr.ReportingPluginInfo{}, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, libocr.ReportingPluginInfo{}, err
 	}
 	rpi := libocr.ReportingPluginInfo{
@@ -56,9 +62,12 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.Reportin
 	}
 	cc, err := r.brokerExt.dial(reply.ReportingPluginID)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, libocr.ReportingPluginInfo{}, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, libocr.ReportingPluginInfo{}, err
 	}
-	return newReportingPluginClient(r.brokerExt, cc), rpi, nil
+	return newReportingPluginClient(r.brokerExt, cc, r.errorLog), rpi, nil
 }
 
 var _ pb.ReportingPluginFactoryServer = (*reportingPluginFactoryServer)(nil)
@@ -68,11 +77,12 @@ type reportingPluginFactoryServer struct {
 
 	*brokerExt
 
-	impl libocr.ReportingPluginFactory
+	errorLog types.ErrorLog
+	impl     libocr.ReportingPluginFactory
 }
 
-func newReportingPluginFactoryServer(impl libocr.ReportingPluginFactory, b *brokerExt) *reportingPluginFactoryServer {
-	return &reportingPluginFactoryServer{impl: impl, brokerExt: b.withName("ReportingPluginFactoryServer")}
+func newReportingPluginFactoryServer(impl libocr.ReportingPluginFactory, b *brokerExt, el types.ErrorLog) *reportingPluginFactoryServer {
+	return &reportingPluginFactoryServer{impl: impl, brokerExt: b.withName("ReportingPluginFactoryServer"), errorLog: el}
 }
 
 func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, request *pb.NewReportingPluginRequest) (*pb.NewReportingPluginReply, error) {
@@ -90,20 +100,30 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 		MaxDurationShouldTransmitAcceptedReport: time.Duration(request.ReportingPluginConfig.MaxDurationShouldTransmitAcceptedReport),
 	}
 	if l := len(request.ReportingPluginConfig.ConfigDigest); l != 32 {
-		return nil, ErrConfigDigestLen(l)
+		err := ErrConfigDigestLen(l)
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
+		return nil, err
 	}
 	copy(cfg.ConfigDigest[:], request.ReportingPluginConfig.ConfigDigest)
 
 	rp, rpi, err := r.impl.NewReportingPlugin(cfg)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 
 	const name = "ReportingPlugin"
 	id, _, err := r.serveNew(name, func(s *grpc.Server) {
-		pb.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp})
+		pb.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp, errorLog: r.errorLog})
 	}, resource{rp, name})
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 
@@ -122,11 +142,12 @@ var _ libocr.ReportingPlugin = (*reportingPluginClient)(nil)
 
 type reportingPluginClient struct {
 	*brokerExt
-	grpc pb.ReportingPluginClient
+	errorLog types.ErrorLog
+	grpc     pb.ReportingPluginClient
 }
 
-func newReportingPluginClient(b *brokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
-	return &reportingPluginClient{b.withName("ReportingPluginClient"), pb.NewReportingPluginClient(cc)}
+func newReportingPluginClient(b *brokerExt, cc grpc.ClientConnInterface, el types.ErrorLog) *reportingPluginClient {
+	return &reportingPluginClient{b.withName("ReportingPluginClient"), el, pb.NewReportingPluginClient(cc)}
 }
 
 func (r *reportingPluginClient) Query(ctx context.Context, timestamp libocr.ReportTimestamp) (libocr.Query, error) {
@@ -134,6 +155,9 @@ func (r *reportingPluginClient) Query(ctx context.Context, timestamp libocr.Repo
 		ReportTimestamp: pbReportTimestamp(timestamp),
 	})
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	return reply.Query, nil
@@ -145,6 +169,9 @@ func (r *reportingPluginClient) Observation(ctx context.Context, timestamp liboc
 		Query:           query,
 	})
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	return reply.Observation, nil
@@ -157,6 +184,9 @@ func (r *reportingPluginClient) Report(ctx context.Context, timestamp libocr.Rep
 		Observations:    pbAttributedObservations(obs),
 	})
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return false, nil, errors.Wrap(saveErr, err.Error())
+		}
 		return false, nil, err
 	}
 	return reply.ShouldReport, reply.Report, nil
@@ -168,6 +198,9 @@ func (r *reportingPluginClient) ShouldAcceptFinalizedReport(ctx context.Context,
 		Report:          report,
 	})
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return false, errors.Wrap(saveErr, err.Error())
+		}
 		return false, err
 	}
 	return reply.ShouldAccept, nil
@@ -179,6 +212,9 @@ func (r *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context
 		Report:          report,
 	})
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return false, errors.Wrap(saveErr, err.Error())
+		}
 		return false, err
 	}
 	return reply.ShouldTransmit, nil
@@ -189,6 +225,9 @@ func (r *reportingPluginClient) Close() error {
 	defer cancel()
 
 	_, err := r.grpc.Close(ctx, &emptypb.Empty{})
+	if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+		return errors.Wrap(saveErr, err.Error())
+	}
 	return err
 }
 
@@ -197,16 +236,23 @@ var _ pb.ReportingPluginServer = (*reportingPluginServer)(nil)
 type reportingPluginServer struct {
 	pb.UnimplementedReportingPluginServer
 
-	impl libocr.ReportingPlugin
+	errorLog types.ErrorLog
+	impl     libocr.ReportingPlugin
 }
 
 func (r *reportingPluginServer) Query(ctx context.Context, request *pb.QueryRequest) (*pb.QueryReply, error) {
 	rts, err := reportTimestamp(request.ReportTimestamp)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	q, err := r.impl.Query(ctx, rts)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	return &pb.QueryReply{Query: q}, nil
@@ -215,10 +261,16 @@ func (r *reportingPluginServer) Query(ctx context.Context, request *pb.QueryRequ
 func (r *reportingPluginServer) Observation(ctx context.Context, request *pb.ObservationRequest) (*pb.ObservationReply, error) {
 	rts, err := reportTimestamp(request.ReportTimestamp)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	o, err := r.impl.Observation(ctx, rts, request.Query)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	return &pb.ObservationReply{Observation: o}, nil
@@ -227,14 +279,23 @@ func (r *reportingPluginServer) Observation(ctx context.Context, request *pb.Obs
 func (r *reportingPluginServer) Report(ctx context.Context, request *pb.ReportRequest) (*pb.ReportReply, error) {
 	rts, err := reportTimestamp(request.ReportTimestamp)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	obs, err := attributedObservations(request.Observations)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	should, report, err := r.impl.Report(ctx, rts, request.Query, obs)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	return &pb.ReportReply{
@@ -246,10 +307,16 @@ func (r *reportingPluginServer) Report(ctx context.Context, request *pb.ReportRe
 func (r *reportingPluginServer) ShouldAcceptFinalizedReport(ctx context.Context, request *pb.ShouldAcceptFinalizedReportRequest) (*pb.ShouldAcceptFinalizedReportReply, error) {
 	rts, err := reportTimestamp(request.ReportTimestamp)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	should, err := r.impl.ShouldAcceptFinalizedReport(ctx, rts, request.Report)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	return &pb.ShouldAcceptFinalizedReportReply{ShouldAccept: should}, nil
@@ -258,17 +325,27 @@ func (r *reportingPluginServer) ShouldAcceptFinalizedReport(ctx context.Context,
 func (r *reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context, request *pb.ShouldTransmitAcceptedReportRequest) (*pb.ShouldTransmitAcceptedReportReply, error) {
 	rts, err := reportTimestamp(request.ReportTimestamp)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	should, err := r.impl.ShouldTransmitAcceptedReport(ctx, rts, request.Report)
 	if err != nil {
+		if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+			return nil, errors.Wrap(saveErr, err.Error())
+		}
 		return nil, err
 	}
 	return &pb.ShouldTransmitAcceptedReportReply{ShouldTransmit: should}, nil
 }
 
 func (r *reportingPluginServer) Close(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, r.impl.Close()
+	err := r.impl.Close()
+	if saveErr := r.errorLog.SaveError(ctx, err.Error()); saveErr != nil {
+		return &emptypb.Empty{}, errors.Wrap(saveErr, err.Error())
+	}
+	return &emptypb.Empty{}, err
 }
 
 func pbReportTimestamp(ts libocr.ReportTimestamp) *pb.ReportTimestamp {

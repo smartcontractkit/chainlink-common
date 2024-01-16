@@ -29,6 +29,7 @@ message GetEncodingResponse {
 message GetDecodingRequest {
   bytes encoded = 1;
   string itemType = 2;
+  uint32 wireEncodingVersion = 3;
 }
 
 message GetDecodingResponse {

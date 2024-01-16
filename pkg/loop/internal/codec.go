@@ -42,8 +42,9 @@ func (c *codecClient) Encode(ctx context.Context, item any, itemType string) ([]
 
 func (c *codecClient) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
 	request := &pb.GetDecodingRequest{
-		Encoded:  raw,
-		ItemType: itemType,
+		Encoded:             raw,
+		ItemType:            itemType,
+		WireEncodingVersion: CurrentEncodingVersion,
 	}
 	resp, err := c.grpc.GetDecoding(ctx, request)
 	if err != nil {
@@ -107,7 +108,7 @@ func (c *codecServer) GetDecoding(ctx context.Context, req *pb.GetDecodingReques
 		return nil, err
 	}
 
-	versionBytes, err := EncodeVersionedBytes(encodedType, CurrentEncodingVersion)
+	versionBytes, err := EncodeVersionedBytes(encodedType, req.WireEncodingVersion)
 	return &pb.GetDecodingResponse{RetVal: versionBytes}, err
 }
 

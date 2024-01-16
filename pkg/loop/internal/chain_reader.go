@@ -38,7 +38,7 @@ const (
 // Version to be used for encoding (version used for decoding is determined by data received)
 const CurrentEncodingVersion = CBOREncodingVersion
 
-func EncodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
+func EncodeVersionedBytes(data any, version uint32) (*pb.VersionedBytes, error) {
 	var bytes []byte
 	var err error
 
@@ -69,7 +69,7 @@ func EncodeVersionedBytes(data any, version int32) (*pb.VersionedBytes, error) {
 		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
 	}
 
-	return &pb.VersionedBytes{Version: uint32(version), Data: bytes}, nil
+	return &pb.VersionedBytes{Version: version, Data: bytes}, nil
 }
 
 func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
@@ -151,7 +151,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 		return nil, err
 	}
 
-	encodedRetVal, err := EncodeVersionedBytes(retVal, CurrentEncodingVersion)
+	encodedRetVal, err := EncodeVersionedBytes(retVal, request.Params.Version)
 	if err != nil {
 		return nil, err
 	}

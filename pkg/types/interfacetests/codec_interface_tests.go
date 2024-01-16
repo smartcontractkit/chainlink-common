@@ -257,6 +257,15 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 			},
 		},
 		{
+			name: "GetMaxDecodingSize returns errors for unknown types",
+			test: func(t *testing.T) {
+				ctx := tests.Context(t)
+				cr := tester.GetCodec(t)
+				_, err := cr.GetMaxDecodingSize(ctx, 10, "not"+TestItemType)
+				assert.True(t, errors.Is(err, types.ErrInvalidType))
+			},
+		},
+		{
 			name: "Decode respects config",
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)

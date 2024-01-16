@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/pkg/errors"
+	"errors"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 

@@ -5,11 +5,14 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"testing"
 
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
+	"github.com/stretchr/testify/assert"
 )
 
 type MockConn struct {
@@ -261,4 +264,19 @@ func (s StaticReportingPluginWithPluginProvider) NewReportingPluginFactory(ctx c
 		return nil, fmt.Errorf("failed to send log: %w", err)
 	}
 	return staticPluginFactory{}, nil
+}
+
+type StaticReportingPluginWithMercuryProvider struct {
+	p StaticMercuryProvider
+	t *testing.T
+}
+
+func (s StaticReportingPluginWithMercuryProvider) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MercuryProvider {
+	return s.p
+}
+
+func (s StaticReportingPluginWithMercuryProvider) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, dataSource mercury_v3_types.DataSource, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+	assert.IsType(s.t, StaticMercuryProvider{}, provider)
+	return StaticPluginMercury{}.NewMercuryV3Factory(ctx, provider.(types.MercuryProvider), dataSource)
+
 }

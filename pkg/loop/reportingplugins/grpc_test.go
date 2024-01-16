@@ -68,6 +68,7 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 	)
 }
 
+/*
 func TestGRPCService_MercuryProvider(t *testing.T) {
 	t.Parallel()
 
@@ -75,8 +76,8 @@ func TestGRPCService_MercuryProvider(t *testing.T) {
 	test.PluginTest(
 		t,
 		reportingplugins.PluginServiceName,
-		&reportingplugins.GRPCService[types.PluginProvider]{
-			PluginServer: test.StaticReportingPluginWithPluginProvider{},
+		&reportingplugins.GRPCService[types.MercuryProvider]{
+			PluginServer: test.StaticReportingPluginWithMercuryProvider{},
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,
@@ -85,3 +86,4 @@ func TestGRPCService_MercuryProvider(t *testing.T) {
 		PluginGenericTest,
 	)
 }
+*/

@@ -19,7 +19,7 @@ type ReportCodecClient struct {
 	grpc mercury_v2_pb.ReportCodecClient
 }
 
-func newReportCodecClient(cc grpc.ClientConnInterface) *ReportCodecClient {
+func NewReportCodecClient(cc grpc.ClientConnInterface) *ReportCodecClient {
 	return &ReportCodecClient{grpc: mercury_v2_pb.NewReportCodecClient(cc)}
 }
 

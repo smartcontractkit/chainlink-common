@@ -16,7 +16,7 @@ type OnchainConfigCodecClient struct {
 	grpc mercury_pb.OnchainConfigCodecClient
 }
 
-func newOnchainConfigCodecClient(cc grpc.ClientConnInterface) *OnchainConfigCodecClient {
+func NewOnchainConfigCodecClient(cc grpc.ClientConnInterface) *OnchainConfigCodecClient {
 	return &OnchainConfigCodecClient{grpc: mercury_pb.NewOnchainConfigCodecClient(cc)}
 }
 

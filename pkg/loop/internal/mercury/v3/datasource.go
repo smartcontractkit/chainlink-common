@@ -23,7 +23,7 @@ type DataSourceClient struct {
 	grpc mercury_v3_pb.DataSourceClient
 }
 
-func newDataSourceClient(cc grpc.ClientConnInterface) *DataSourceClient {
+func NewDataSourceClient(cc grpc.ClientConnInterface) *DataSourceClient {
 	return &DataSourceClient{grpc: mercury_v3_pb.NewDataSourceClient(cc)}
 }
 

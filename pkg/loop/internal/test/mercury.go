@@ -25,7 +25,7 @@ import (
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 )
 
-func PluginMercuryFunc(t *testing.T, p types.PluginMercury) {
+func PluginMercury(t *testing.T, p types.PluginMercury) {
 	PluginMercuryTest{&StaticMercuryProvider{}}.TestPluginMercury(t, p)
 }
 

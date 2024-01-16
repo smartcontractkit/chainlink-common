@@ -116,6 +116,16 @@ func main() {
 		})
 		os.Exit(0)
 
+	case loop.PluginMercuryName:
+		plugin.Serve(&plugin.ServeConfig{
+			HandshakeConfig: loop.PluginMercuryHandshakeConfig(),
+			Plugins: map[string]plugin.Plugin{
+				loop.PluginMercuryName: &loop.GRPCPluginMercury{PluginServer: test.StaticPluginMercury{}, BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+			},
+			GRPCServer: grpcServer,
+		})
+		os.Exit(0)
+
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %q\n", cmdS)
 		os.Exit(2)

@@ -17,7 +17,7 @@ type ServerFetcherClient struct {
 	grpc mercury_pb.ServerFetcherClient
 }
 
-func newServerFetcherClient(cc grpc.ClientConnInterface) *ServerFetcherClient {
+func NewServerFetcherClient(cc grpc.ClientConnInterface) *ServerFetcherClient {
 	return &ServerFetcherClient{grpc: mercury_pb.NewServerFetcherClient(cc)}
 }
 

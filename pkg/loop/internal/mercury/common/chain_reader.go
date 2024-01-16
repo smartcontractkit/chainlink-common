@@ -14,7 +14,7 @@ type ChainReaderClient struct {
 	grpc mercury_pb.MercuryChainReaderClient
 }
 
-func newChainReaderClient(cc grpc.ClientConnInterface) *ChainReaderClient {
+func NewChainReaderClient(cc grpc.ClientConnInterface) *ChainReaderClient {
 	return &ChainReaderClient{grpc: mercury_pb.NewMercuryChainReaderClient(cc)}
 }
 

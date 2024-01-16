@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/mwitkow/grpc-proxy/proxy"
-	"github.com/pkg/errors"
+	"errors"
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"

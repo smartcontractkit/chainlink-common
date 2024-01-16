@@ -95,7 +95,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		}
 		return reply.ReportingPluginFactoryID, nil, nil
 	})
-	return newReportingPluginFactoryClient(m.pluginClient.brokerExt, cc), nil
+	return newReportingPluginFactoryClient(m.pluginClient.brokerExt, cc, errorLog), nil
 }
 
 var _ pb.PluginMedianServer = (*pluginMedianServer)(nil)
@@ -156,7 +156,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 	id, _, err := m.serveNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.brokerExt))
+		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.brokerExt, errorLog))
 	}, dsRes, juelsRes, providerRes, errorLogRes)
 	if err != nil {
 		return nil, err

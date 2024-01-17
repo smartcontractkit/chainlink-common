@@ -92,6 +92,8 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 				// Interface extensions defined in [pkg/types/MercuryProvider]
 
 				mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
+				//	mercury_pb.RegisterOnchainConfigCodecServer(s, provider.OnchainConfigCodec())
+
 				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
 				// given that this is a v3 factory, we should only need to handle v3 report codec.
 				// maybe panic if the report codec is not v3?

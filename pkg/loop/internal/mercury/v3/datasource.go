@@ -34,7 +34,8 @@ func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types
 	if err != nil {
 		return mercury_v3_types.Observation{}, err
 	}
-	panic("fetchMaxFinalizedTimestamp not implemented")
+	// TODO: implement fetchMaxFinalizedTimestamp handling. Not sure what the application logic is here
+	//panic("fetchMaxFinalizedTimestamp not implemented")
 	return observation(reply), nil
 }
 

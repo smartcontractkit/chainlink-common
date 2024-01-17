@@ -13,7 +13,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
+	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
+	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
+	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -216,6 +220,8 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 		return newMedianProviderClient(r.brokerExt, cc), nil
 	case string(types.GenericPlugin):
 		return newPluginProviderClient(r.brokerExt, cc), nil
+	case string(types.Mercury):
+		return newMercuryProviderClient(r.brokerExt, cc), nil
 	default:
 		return nil, fmt.Errorf("provider type not supported: %s", rargs.ProviderType)
 	}
@@ -343,8 +349,13 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 			return nil, err
 		}
 		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
+	case string(types.Mercury):
+		id, err := r.newMercuryProvider(ctx, relayArgs, pluginArgs)
+		if err != nil {
+			return nil, err
+		}
+		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
 	}
-
 	return nil, fmt.Errorf("provider type not supported: %s", relayArgs.ProviderType)
 }
 
@@ -399,6 +410,52 @@ func (r *relayerServer) newPluginProvider(ctx context.Context, relayArgs types.R
 		pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
 		pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 		pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+	}, providerRes)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, err
+}
+
+func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
+	i, ok := r.impl.(MercuryProvider)
+	if !ok {
+		return 0, status.Error(codes.Unimplemented, fmt.Sprintf("mercury not supported by %T", r.impl))
+	}
+
+	provider, err := i.NewMercuryProvider(ctx, relayArgs, pluginArgs)
+	if err != nil {
+		return 0, err
+	}
+	err = provider.Start(ctx)
+	if err != nil {
+		return 0, err
+	}
+	const name = "MercuryProvider"
+	providerRes := resource{name: name, Closer: provider}
+
+	id, _, err := r.serveNew(name, func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &serviceServer{srv: provider})
+		pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
+		pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
+		pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+
+		mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
+
+		reportCodecServer := mercury_v3_internal.NewReportCodecServer(provider.ReportCodecV3())
+		mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(reportCodecServer))
+
+		// note to self: this has to registered because the common server above is just a wrapper
+		// maybe that wrapper can do the registration?
+		mercury_v3_pb.RegisterReportCodecServer(s, reportCodecServer)
+
+		mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
+		mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
+		mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
+		mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
+
+		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
 	}, providerRes)
 	if err != nil {
 		return 0, err

@@ -13,5 +13,5 @@ var _ mercury_v3_types.DataSource = StaticDataSource{}
 
 func (StaticDataSource) Observe(ctx context.Context, repts ocrtypes.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (mercury_v3_types.Observation, error) {
 
-	return mercury_v3_types.Observation{}, nil
+	return Fixtures.Observation, nil
 }

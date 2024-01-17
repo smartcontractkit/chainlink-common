@@ -216,7 +216,8 @@ func (s StaticMercuryProvider) MercuryChainReader() mercury_types.ChainReader {
 }
 
 func (s StaticMercuryProvider) ChainReader() types.ChainReader {
-	panic("mercury does not use the general ChainReader interface yet")
+	//panic("mercury does not use the general ChainReader interface yet")
+	return nil
 }
 
 func (s StaticMercuryProvider) MercuryServerFetcher() mercury_types.ServerFetcher {

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -95,6 +96,17 @@ func (s staticRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs,
 		return nil, fmt.Errorf("expected plugin args %v but got %v", PluginArgs, p)
 	}
 	return StaticPluginProvider{}, nil
+}
+
+func (s staticRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
+	//ra := newRelayArgsWithProviderType(types.Mercury)
+	if !equalRelayArgs(r, mercury_common_test.RelayArgs) {
+		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercury_common_test.RelayArgs, r)
+	}
+	if !reflect.DeepEqual(mercury_common_test.PluginArgs, p) {
+		return nil, fmt.Errorf("expected plugin args %v but got %v", mercury_common_test.PluginArgs, p)
+	}
+	return StaticMercuryProvider{}, nil
 }
 
 func (s staticRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {

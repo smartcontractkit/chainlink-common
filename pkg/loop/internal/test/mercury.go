@@ -44,16 +44,13 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 }
 
-type StaticPluginMercury struct {
-	t *testing.T
-}
+type StaticPluginMercury struct{}
 
 func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.ReportingPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
-
-			panic(fmt.Sprintf("prover %v, %T: %s", provider, provider, err))
+			panic(fmt.Sprintf("provider %v, %T: %s", provider, provider, err))
 		}
 	}()
 	ocd := provider.OffchainConfigDigester()
@@ -163,7 +160,7 @@ func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("failed to observe dataSource: %w", err)
 	}
 	if !assert.ObjectsAreEqual(mercury_v3_test.Fixtures.Observation, gotVal) {
-		return nil, fmt.Errorf("expected Value %s but got %s", value, gotVal)
+		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 
 	return staticPluginFactory{}, nil

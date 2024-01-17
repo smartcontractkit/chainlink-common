@@ -3,9 +3,10 @@ package mercury_v3_test
 import (
 	"math/big"
 
+	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
-	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 type Parameters struct {

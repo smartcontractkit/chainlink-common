@@ -1,8 +1,9 @@
 package mercury_v2_test
 
 import (
-	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
+
+	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 )
 
 type StaticReportCodec struct{}
@@ -23,14 +24,12 @@ var StaticReportCodecFixtures = StaticReportCodecValues{
 
 func (s StaticReportCodec) BuildReport(fields mercury_v2_types.ReportFields) (ocrtypes.Report, error) {
 	return StaticReportCodecFixtures.Report, nil
-
 }
 
 // MaxReportLength Returns the maximum length of a report based on n, the number of oracles.
 // The output of BuildReport must respect this maximum length.
 func (s StaticReportCodec) MaxReportLength(n int) (int, error) {
 	return StaticReportCodecFixtures.MaxReportLength, nil
-
 }
 
 // CurrentBlockNumFromReport returns the median current block number from a report

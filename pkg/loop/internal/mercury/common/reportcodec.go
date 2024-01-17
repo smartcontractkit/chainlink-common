@@ -3,6 +3,8 @@ package mercury_common
 import (
 	"context"
 
+	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
 	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1"
 	mercury_v2_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v2"
 	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
@@ -11,7 +13,6 @@ import (
 	mercury_v2_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v2"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
-	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 // The point of this is to translate between the well-versioned gRPC api in [pkg/loop/internal/pb/mercury] and the

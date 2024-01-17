@@ -2,6 +2,7 @@ package mercury_common_test
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 

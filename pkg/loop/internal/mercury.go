@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/mwitkow/grpc-proxy/proxy"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
@@ -56,7 +57,6 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 	provider types.MercuryProvider, dataSource mercury_v3.DataSource,
 	//occ mercury.OnchainConfigCodec, reportCodec mercury_v3.ReportCodec
 ) (types.ReportingPluginFactory, error) {
-
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
 	// some of those services are hosted in the same process as the client itself and others may be remote.
@@ -79,7 +79,6 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 			providerID, providerRes, err = c.serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
-
 				// PluginProvider resources [pkg/types/provider/PluginProvider]
 				pb.RegisterServiceServer(s, &serviceServer{srv: provider})
 				pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})

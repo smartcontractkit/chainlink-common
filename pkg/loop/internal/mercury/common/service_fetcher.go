@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"google.golang.org/grpc"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
-	"google.golang.org/grpc"
 )
 
 var _ mercury_types.ServerFetcher = (*ServerFetcherClient)(nil)

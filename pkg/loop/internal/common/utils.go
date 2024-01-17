@@ -3,8 +3,9 @@ package common
 import (
 	"math"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
 func PbReportTimestamp(ts libocr.ReportTimestamp) *pb.ReportTimestamp {

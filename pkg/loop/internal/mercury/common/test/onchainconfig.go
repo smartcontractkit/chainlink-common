@@ -26,7 +26,6 @@ type StaticOnchainConfigCodec struct{}
 var _ mercury_types.OnchainConfigCodec = StaticOnchainConfigCodec{}
 
 func (StaticOnchainConfigCodec) Encode(c mercury_types.OnchainConfig) ([]byte, error) {
-
 	if !reflect.DeepEqual(c, StaticOnChainConfigCodecFixtures.Decoded) {
 		return nil, fmt.Errorf("expected OnchainConfig %v but got %v", StaticOnChainConfigCodecFixtures.Decoded, c)
 	}

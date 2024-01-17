@@ -1,8 +1,9 @@
 package mercury_v3_test
 
 import (
-	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 )
 
 type StaticReportCodec struct{}

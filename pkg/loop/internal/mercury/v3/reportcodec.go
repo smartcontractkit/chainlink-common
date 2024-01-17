@@ -5,12 +5,11 @@ import (
 
 	"google.golang.org/grpc"
 
-	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
-
 	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
+	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 )
 
 var _ mercury_v3_types.ReportCodec = (*ReportCodecClient)(nil)

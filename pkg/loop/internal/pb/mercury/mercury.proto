@@ -8,9 +8,9 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 // naive attempt: import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayer.proto"; and `../relayer.proto` did not work
 package loop.internal.pb.mercury; // related to above, seems to need to have loop package
 import "relayer.proto";
-import "v1/reportcodec.proto";
-import "v2/reportcodec.proto";
-import "v3/reportcodec.proto";
+import "v1/reportcodec_v1.proto";
+import "v2/reportcodec_v2.proto";
+import "v3/reportcodec_v3.proto";
 
 
 service MercuryAdapter {

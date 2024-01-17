@@ -40,3 +40,7 @@ func (c *codecReaderLoopTester) Name() string {
 func (c *codecReaderLoopTester) GetCodec(t *testing.T) types.Codec {
 	return internal.NewCodecTestClient(c.lst.GetConn(t))
 }
+
+func (c *codecReaderLoopTester) IncludeArrayEncodingSizeEnforcement() bool {
+	return false
+}

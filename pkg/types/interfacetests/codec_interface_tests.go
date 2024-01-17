@@ -34,6 +34,7 @@ const (
 	TestItemArray1Type      = "TestItemArray1Type"
 	TestItemArray2Type      = "TestItemArray2Type"
 	TestItemWithConfigExtra = "TestItemWithConfigExtra"
+	NilType                 = "NilType"
 )
 
 func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
@@ -307,7 +308,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetCodec(t)
-				_, err := cr.Encode(ctx, nil, TestItemType)
+				_, err := cr.Encode(ctx, nil, NilType)
 				require.NoError(t, err)
 			},
 		},

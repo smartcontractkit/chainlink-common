@@ -54,6 +54,8 @@ func (f fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error
 
 func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
 	switch itemType {
+	case NilType:
+		return &struct{}{}, nil
 	case TestItemType:
 		return &TestStruct{}, nil
 	case TestItemSliceType:

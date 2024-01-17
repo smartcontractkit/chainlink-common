@@ -139,6 +139,8 @@ func (it *fakeCodecInterfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
 func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) ([]byte, error) {
 	f.lastItem = item
 	switch itemType {
+	case NilType:
+		return []byte{}, nil
 	case TestItemWithConfigExtra:
 		ts := item.(*TestStruct)
 		ts.Account = anyAccountBytes

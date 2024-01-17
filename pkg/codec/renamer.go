@@ -30,7 +30,7 @@ type renamer struct {
 	modifierBase[string]
 }
 
-func (r *renamer) TransformForOffChain(onChainValue any, _ string) (any, error) {
+func (r *renamer) TransformToOffChain(onChainValue any, _ string) (any, error) {
 	rOutput, err := renameTransform(r.onToOffChainType, reflect.ValueOf(onChainValue))
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (r *renamer) TransformForOffChain(onChainValue any, _ string) (any, error) 
 	return rOutput.Interface(), nil
 }
 
-func (r *renamer) TransformForOnChain(offChainValue any, _ string) (any, error) {
+func (r *renamer) TransformToOnChain(offChainValue any, _ string) (any, error) {
 	rOutput, err := renameTransform(r.offToOnChainType, reflect.ValueOf(offChainValue))
 	if err != nil {
 		return nil, err

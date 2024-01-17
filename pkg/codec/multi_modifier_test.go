@@ -19,38 +19,38 @@ func TestMultiModifier(t *testing.T) {
 	mod2 := codec.NewRenamer(map[string]string{"B": "C"})
 	chainMod := codec.MultiModifier{mod1, mod2}
 
-	t.Run("RetypeForOffChain chains modifiers", func(t *testing.T) {
-		offChain, err := chainMod.RetypeForOffChain(testType, "")
+	t.Run("RetypeToOffChain chains modifiers", func(t *testing.T) {
+		offChain, err := chainMod.RetypeToOffChain(testType, "")
 		require.NoError(t, err)
-		m1, err := mod1.RetypeForOffChain(testType, "")
+		m1, err := mod1.RetypeToOffChain(testType, "")
 		require.NoError(t, err)
-		expected, err := mod2.RetypeForOffChain(m1, "")
+		expected, err := mod2.RetypeToOffChain(m1, "")
 		require.NoError(t, err)
 		assert.Equal(t, expected, offChain)
 	})
 
-	t.Run("TransformForOffChain chains modifiers", func(t *testing.T) {
-		_, err := chainMod.RetypeForOffChain(testType, "")
+	t.Run("TransformToOffChain chains modifiers", func(t *testing.T) {
+		_, err := chainMod.RetypeToOffChain(testType, "")
 		require.NoError(t, err)
 
 		input := testStruct{A: 100}
-		actual, err := chainMod.TransformForOffChain(input, "")
+		actual, err := chainMod.TransformToOffChain(input, "")
 		require.NoError(t, err)
 
-		m1, err := mod1.TransformForOffChain(input, "")
+		m1, err := mod1.TransformToOffChain(input, "")
 		require.NoError(t, err)
-		expected, err := mod2.TransformForOffChain(m1, "")
+		expected, err := mod2.TransformToOffChain(m1, "")
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("TransformForOnChain chains modifiers", func(t *testing.T) {
-		offChainType, err := chainMod.RetypeForOffChain(testType, "")
+	t.Run("TransformToOnChain chains modifiers", func(t *testing.T) {
+		offChainType, err := chainMod.RetypeToOffChain(testType, "")
 		require.NoError(t, err)
 
 		input := reflect.New(offChainType).Elem()
 		input.FieldByName("C").SetInt(100)
-		actual, err := chainMod.TransformForOnChain(input.Interface(), "")
+		actual, err := chainMod.TransformToOnChain(input.Interface(), "")
 		require.NoError(t, err)
 
 		expected := testStruct{A: 100}

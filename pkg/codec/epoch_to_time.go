@@ -40,12 +40,12 @@ type timeToUnixModifier struct {
 	modifierBase[bool]
 }
 
-func (t *timeToUnixModifier) TransformForOnChain(offChainValue any, itemType string) (any, error) {
+func (t *timeToUnixModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
 	// since the hook will convert time.Time to epoch, we don't need to worry about converting them in the maps
 	return transformWithMaps(offChainValue, t.offToOnChainType, t.fields, noop, epochToTimeHook, BigIntHook)
 }
 
-func (t *timeToUnixModifier) TransformForOffChain(onChainValue any, itemType string) (any, error) {
+func (t *timeToUnixModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
 	// since the hook will convert epoch to time.Time, we don't need to worry about converting them in the maps
 	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields, noop, epochToTimeHook, BigIntHook)
 }

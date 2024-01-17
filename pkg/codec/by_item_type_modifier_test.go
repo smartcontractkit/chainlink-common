@@ -18,33 +18,33 @@ func TestByTypeModifier(t *testing.T) {
 	mod, err := codec.NewByItemTypeModifier(map[string]codec.Modifier{anyitemType: modifierCodecChainMod})
 	require.NoError(t, err)
 	t.Run("Uses modifier for the type", func(t *testing.T) {
-		offChainType, err := mod.RetypeForOffChain(reflect.TypeOf(&modifierCodecChainType{}), anyitemType)
+		offChainType, err := mod.RetypeToOffChain(reflect.TypeOf(&modifierCodecChainType{}), anyitemType)
 		require.NoError(t, err)
 
-		expectedType, err := modifierCodecChainMod.RetypeForOffChain(reflect.TypeOf(&modifierCodecChainType{}), anyitemType)
+		expectedType, err := modifierCodecChainMod.RetypeToOffChain(reflect.TypeOf(&modifierCodecChainType{}), anyitemType)
 		require.NoError(t, err)
 		assert.Equal(t, expectedType, offChainType)
 
 		item := &modifierCodecChainType{A: 100}
-		offChain, err := mod.TransformForOffChain(item, anyitemType)
+		offChain, err := mod.TransformToOffChain(item, anyitemType)
 		require.NoError(t, err)
-		actualOffChain, err := modifierCodecChainMod.TransformForOffChain(item, anyitemType)
+		actualOffChain, err := modifierCodecChainMod.TransformToOffChain(item, anyitemType)
 		require.NoError(t, err)
 		assert.Equal(t, actualOffChain, offChain)
 
-		onChain, err := mod.TransformForOnChain(offChain, anyitemType)
+		onChain, err := mod.TransformToOnChain(offChain, anyitemType)
 		require.NoError(t, err)
 		assert.Equal(t, item, onChain)
 	})
 
 	t.Run("Returns error if modifier isn't found", func(t *testing.T) {
-		_, err := mod.RetypeForOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
+		_, err := mod.RetypeToOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 
-		_, err = mod.TransformForOnChain(&modifierCodecChainType{}, "different")
+		_, err = mod.TransformToOnChain(&modifierCodecChainType{}, "different")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 
-		_, err = mod.TransformForOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
+		_, err = mod.TransformToOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 }

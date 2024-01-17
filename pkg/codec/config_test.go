@@ -89,7 +89,7 @@ func TestModifiersConfig(t *testing.T) {
 			modifier, err := conf.ToModifier()
 			require.NoError(t, err)
 
-			_, err = modifier.RetypeForOffChain(reflect.TypeOf(testStruct{}), "")
+			_, err = modifier.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
 			require.NoError(t, err)
 
 			onChain := testStruct{
@@ -98,7 +98,7 @@ func TestModifiersConfig(t *testing.T) {
 				T: 631515600,
 			}
 
-			offChain, err := modifier.TransformForOffChain(onChain, "")
+			offChain, err := modifier.TransformToOffChain(onChain, "")
 			require.NoError(t, err)
 
 			b, err := json.Marshal(offChain)

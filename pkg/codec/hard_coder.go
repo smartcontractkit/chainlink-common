@@ -81,11 +81,11 @@ func verifyHardCodeKeys(values map[string]any) error {
 	return nil
 }
 
-func (o *onChainHardCoder) TransformForOnChain(offChainValue any, _ string) (any, error) {
+func (o *onChainHardCoder) TransformToOnChain(offChainValue any, _ string) (any, error) {
 	return transformWithMaps(offChainValue, o.offToOnChainType, o.onChain, hardCode, o.hooks...)
 }
 
-func (o *onChainHardCoder) TransformForOffChain(onChainValue any, _ string) (any, error) {
+func (o *onChainHardCoder) TransformToOffChain(onChainValue any, _ string) (any, error) {
 	return transformWithMaps(onChainValue, o.onToOffChainType, o.fields, hardCode, hardCodeManyHook)
 }
 

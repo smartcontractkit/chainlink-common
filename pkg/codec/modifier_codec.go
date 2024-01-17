@@ -40,7 +40,7 @@ func (m *modifierCodec) CreateType(itemType string, forEncoding bool) (any, erro
 	}
 
 	ot := reflect.TypeOf(t)
-	nt, err := m.modifier.RetypeForOffChain(ot, itemType)
+	nt, err := m.modifier.RetypeToOffChain(ot, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (m *modifierCodec) Encode(ctx context.Context, item any, itemType string) (
 		return nil, err
 	}
 
-	onChainItem, err := m.modifier.TransformForOnChain(offChainItem, itemType)
+	onChainItem, err := m.modifier.TransformToOnChain(offChainItem, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (m *modifierCodec) Decode(ctx context.Context, raw []byte, into any, itemTy
 	if err = m.codec.Decode(ctx, raw, onChain, itemType); err != nil {
 		return err
 	}
-	offChain, err := m.modifier.TransformForOffChain(onChain, itemType)
+	offChain, err := m.modifier.TransformToOffChain(onChain, itemType)
 	if err != nil {
 		return err
 	}

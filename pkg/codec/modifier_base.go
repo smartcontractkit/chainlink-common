@@ -19,7 +19,7 @@ type modifierBase[T any] struct {
 	addFieldForInput    func(pkgPath, name string, change T) reflect.StructField
 }
 
-func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
+func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
 	if m.fields == nil || len(m.fields) == 0 {
 		m.offToOnChainType[onChainType] = onChainType
 		m.onToOffChainType[onChainType] = onChainType
@@ -32,7 +32,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type, itemType s
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
-		elm, err := m.RetypeForOffChain(onChainType.Elem(), "")
+		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type, itemType s
 		m.offToOnChainType[ptr] = onChainType
 		return ptr, nil
 	case reflect.Slice:
-		elm, err := m.RetypeForOffChain(onChainType.Elem(), "")
+		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
 			return nil, err
 		}
@@ -52,7 +52,7 @@ func (m *modifierBase[T]) RetypeForOffChain(onChainType reflect.Type, itemType s
 		m.offToOnChainType[sliceType] = onChainType
 		return sliceType, nil
 	case reflect.Array:
-		elm, err := m.RetypeForOffChain(onChainType.Elem(), "")
+		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
 			return nil, err
 		}

@@ -302,7 +302,7 @@ func (t *testCodec) CreateType(itemType string, _ bool) (any, error) {
 
 type testModifier struct{}
 
-func (testModifier) RetypeForOffChain(onChainType reflect.Type, _ string) (reflect.Type, error) {
+func (testModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (reflect.Type, error) {
 	switch onChainType {
 	case reflect.TypeOf(&modifierCodecChainType{}):
 		return reflect.TypeOf(&modifierCodecOffChainType{}), nil
@@ -315,7 +315,7 @@ func (testModifier) RetypeForOffChain(onChainType reflect.Type, _ string) (refle
 	}
 }
 
-func (t testModifier) TransformForOnChain(offChainValue any, _ string) (any, error) {
+func (t testModifier) TransformToOnChain(offChainValue any, _ string) (any, error) {
 	offChain, ok := offChainValue.(*modifierCodecOffChainType)
 	if !ok {
 		slice, ok := offChainValue.(*[]modifierCodecOffChainType)
@@ -334,7 +334,7 @@ func (t testModifier) TransformForOnChain(offChainValue any, _ string) (any, err
 	return &modifierCodecChainType{A: offChain.Z}, nil
 }
 
-func (t testModifier) TransformForOffChain(onChainValue any, _ string) (any, error) {
+func (t testModifier) TransformToOffChain(onChainValue any, _ string) (any, error) {
 	onChain, ok := onChainValue.(*modifierCodecChainType)
 	if !ok {
 		slice, ok := onChainValue.(*[]modifierCodecChainType)

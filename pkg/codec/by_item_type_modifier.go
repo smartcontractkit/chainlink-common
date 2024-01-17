@@ -22,21 +22,21 @@ type byItemTypeModifier struct {
 	modByitemType map[string]Modifier
 }
 
-func (b *byItemTypeModifier) RetypeForOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
+func (b *byItemTypeModifier) RetypeToOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
 	mod, ok := b.modByitemType[itemType]
 	if !ok {
 		return nil, fmt.Errorf("%w: cannot find modifier for %s", types.ErrInvalidType, itemType)
 	}
 
-	return mod.RetypeForOffChain(onChainType, itemType)
+	return mod.RetypeToOffChain(onChainType, itemType)
 }
 
-func (b *byItemTypeModifier) TransformForOnChain(offChainValue any, itemType string) (any, error) {
-	return b.transform(offChainValue, itemType, Modifier.TransformForOnChain)
+func (b *byItemTypeModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	return b.transform(offChainValue, itemType, Modifier.TransformToOnChain)
 }
 
-func (b *byItemTypeModifier) TransformForOffChain(onChainValue any, itemType string) (any, error) {
-	return b.transform(onChainValue, itemType, Modifier.TransformForOffChain)
+func (b *byItemTypeModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	return b.transform(onChainValue, itemType, Modifier.TransformToOffChain)
 }
 
 func (b *byItemTypeModifier) transform(

@@ -55,8 +55,8 @@ func (e *ElementExtractorLocation) UnmarshalJSON(b []byte) error {
 
 // NewElementExtractor creates a modifier that extracts an element from a slice or array.
 // fields is used to determine which fields to extract elements from and which element to extract.
-// This modifier is lossy, as TransformForOffChain will always return a slice of length 1 with the single element,
-// so calling TransformForOnChain, then TransformForOffChain will not return the original value, if it has multiple elements.
+// This modifier is lossy, as TransformToOffChain will always return a slice of length 1 with the single element,
+// so calling TransformToOnChain, then TransformToOffChain will not return the original value, if it has multiple elements.
 func NewElementExtractor(fields map[string]*ElementExtractorLocation) Modifier {
 	m := &elementExtractor{
 		modifierBase: modifierBase[*ElementExtractorLocation]{
@@ -77,11 +77,11 @@ type elementExtractor struct {
 	modifierBase[*ElementExtractorLocation]
 }
 
-func (e *elementExtractor) TransformForOnChain(offChainValue any, _ string) (any, error) {
+func (e *elementExtractor) TransformToOnChain(offChainValue any, _ string) (any, error) {
 	return transformWithMaps(offChainValue, e.offToOnChainType, e.fields, extractMap)
 }
 
-func (e *elementExtractor) TransformForOffChain(onChainValue any, _ string) (any, error) {
+func (e *elementExtractor) TransformToOffChain(onChainValue any, _ string) (any, error) {
 	return transformWithMaps(onChainValue, e.onToOffChainType, e.fields, expandMap)
 }
 

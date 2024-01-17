@@ -17,7 +17,7 @@ var _ ocrtypes.ReportingPluginFactory = (*MercuryV3Service)(nil)
 
 // MercuryV3Service is a [types.Service] that maintains an internal [types.PluginMedian].
 type MercuryV3Service struct {
-	internal.PluginService[*GRPCPluginMedian, types.ReportingPluginFactory]
+	internal.PluginService[*GRPCPluginMercury, types.ReportingPluginFactory]
 }
 
 // NewMercuryV3Service returns a new [*MercuryV3Service].
@@ -26,7 +26,7 @@ func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
 		plug, ok := instance.(types.PluginMercury)
 		if !ok {
-			return nil, fmt.Errorf("expected PluginMedian but got %T", instance)
+			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
 		}
 		return plug.NewMercuryV3Factory(ctx, provider, dataSource)
 	}
@@ -34,7 +34,7 @@ func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	lggr = logger.Named(lggr, "MercuryV3")
 	var ms MercuryV3Service
 	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
-	ms.Init(PluginMedianName, &GRPCPluginMedian{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
+	ms.Init(PluginMercuryName, &GRPCPluginMercury{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &ms
 }
 

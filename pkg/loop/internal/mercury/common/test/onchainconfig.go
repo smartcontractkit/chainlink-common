@@ -3,6 +3,7 @@ package mercury_common_test
 import (
 	"fmt"
 	"math/big"
+	"reflect"
 
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )
@@ -25,9 +26,11 @@ type StaticOnchainConfigCodec struct{}
 var _ mercury_types.OnchainConfigCodec = StaticOnchainConfigCodec{}
 
 func (StaticOnchainConfigCodec) Encode(c mercury_types.OnchainConfig) ([]byte, error) {
-	if c != StaticOnChainConfigCodecFixtures.Decoded {
-		return nil, fmt.Errorf("expected onchainconfig to be %v, got %v", StaticOnChainConfigCodecFixtures.Decoded, c)
+
+	if !reflect.DeepEqual(c, StaticOnChainConfigCodecFixtures.Decoded) {
+		return nil, fmt.Errorf("expected OnchainConfig %v but got %v", StaticOnChainConfigCodecFixtures.Decoded, c)
 	}
+
 	return StaticOnChainConfigCodecFixtures.Encoded, nil
 }
 

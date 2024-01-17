@@ -18,7 +18,7 @@ func TestMercuryV3Service(t *testing.T) {
 	t.Parallel()
 
 	mercuryV3 := loop.NewMercuryV3Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return NewHelperProcessCommand(loop.PluginMedianName)
+		return NewHelperProcessCommand(loop.PluginMercuryName)
 	}, test.StaticMercuryProvider{}, mercury_v3_test.StaticDataSource{})
 	hook := mercuryV3.PluginService.XXXTestHook()
 	servicetest.Run(t, mercuryV3)

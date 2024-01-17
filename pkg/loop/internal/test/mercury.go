@@ -38,15 +38,24 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 		ctx := tests.Context(t)
 		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.StaticDataSource{})
 		require.NoError(t, err)
+		require.NotNil(t, factory)
 
 		ReportingPluginFactory(t, factory)
 	})
 }
 
-type StaticPluginMercury struct{}
+type StaticPluginMercury struct {
+	t *testing.T
+}
 
 func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.ReportingPluginFactory, error) {
+	var err error
+	defer func() {
+		if err != nil {
 
+			panic(fmt.Sprintf("prover %v, %T: %s", provider, provider, err))
+		}
+	}()
 	ocd := provider.OffchainConfigDigester()
 	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
 	if err != nil {

@@ -10,6 +10,8 @@ import (
 	mercury_v1_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1"
 	mercury_v2_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v2"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
+	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
+	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 // The point of this is to translate between the well-versioned gRPC api in [pkg/loop/internal/pb/mercury] and the
@@ -38,6 +40,30 @@ func (r *reportCodecV3Server) MaxReportLength(ctx context.Context, request *merc
 
 func (r *reportCodecV3Server) ObservationTimestampFromReport(ctx context.Context, request *mercury_v3_pb.ObservationTimestampFromReportRequest) (*mercury_v3_pb.ObservationTimestampFromReportReply, error) {
 	return r.impl.ObservationTimestampFromReport(ctx, request)
+}
+
+var _ mercury_v3_types.ReportCodec = (*reportCodecV3Client)(nil)
+
+type reportCodecV3Client struct {
+	//mercury_pb.UnimplementedReportCodecV3Client
+
+	impl *mercury_v3_internal.ReportCodecClient
+}
+
+func NewReportCodecV3Client(impl *mercury_v3_internal.ReportCodecClient) mercury_v3_types.ReportCodec {
+	return &reportCodecV3Client{impl: impl}
+}
+
+func (r *reportCodecV3Client) BuildReport(fields mercury_v3_types.ReportFields) (ocr2plus_types.Report, error) {
+	return r.impl.BuildReport(fields)
+}
+
+func (r *reportCodecV3Client) MaxReportLength(n int) (int, error) {
+	return r.impl.MaxReportLength(n)
+}
+
+func (r *reportCodecV3Client) ObservationTimestampFromReport(report ocr2plus_types.Report) (uint32, error) {
+	return r.impl.ObservationTimestampFromReport(report)
 }
 
 var _ mercury_pb.ReportCodecV2Server = (*reportCodecV2Server)(nil)

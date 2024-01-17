@@ -41,10 +41,12 @@ func TestPluginMercuryExec(t *testing.T) {
 	require.NoError(t, err)
 	defer client.Close()
 	require.NoError(t, client.Ping())
+
 	i, err := client.Dispense(loop.PluginMercuryName)
 	require.NoError(t, err)
-
+	require.NotNil(t, i)
 	test.PluginMercury(t, i.(types.PluginMercury))
+	//panic("is this working")
 
 	t.Run("proxy", func(t *testing.T) {
 		pr := newPluginRelayerExec(t, stopCh)

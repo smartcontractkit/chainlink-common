@@ -3,7 +3,6 @@ package test
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -236,12 +235,12 @@ func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 		return nil, fmt.Errorf("expected JuelsPerFeeCoin %s but got %s", juelsPerFeeCoin, gotJuels)
 	}
 	gotGas, err := gasPriceDataSource.Observe(ctx, reportContext.ReportTimestamp)
-	// account for noop gas price data source
-	if err != nil && !errors.Is(err, median.ErrNOOPDataSource) {
-		return nil, fmt.Errorf("failed to observe juelsPerFeeCoin: %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to observe GasPriceSubUnitDataSource: %w", err)
 	}
+	// value may be nil due to no-op
 	if gotGas != nil && !assert.ObjectsAreEqual(gasPrice, gotGas) {
-		return nil, fmt.Errorf("expected JuelsPerFeeCoin %s but got %s", juelsPerFeeCoin, gotJuels)
+		return nil, fmt.Errorf("expected GasPriceSubUnitDataSource %s but got %s", gasPrice, gotGas)
 	}
 	if err := errorLog.SaveError(ctx, errMsg); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)

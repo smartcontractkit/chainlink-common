@@ -49,14 +49,14 @@ func TestMercuryV3Service(t *testing.T) {
 func TestMercuryV3Service_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
-	median := loop.NewMercuryV3Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	mercury := loop.NewMercuryV3Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: loop.PluginMedianName,
+			Command: loop.PluginMercuryName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
 	}, test.StaticMercuryProvider{}, mercury_v3_test.StaticDataSource{})
-	servicetest.Run(t, median)
+	servicetest.Run(t, mercury)
 
-	test.ReportingPluginFactory(t, median)
+	test.ReportingPluginFactory(t, mercury)
 }

@@ -1,4 +1,4 @@
-package mercury_common
+package common
 
 import (
 	"context"

@@ -1,6 +1,6 @@
 syntax = "proto3";
 // this is it's own package to avoid name collision with median types like OnchainConfig and BuildReport
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3;mercury_v3_pb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3;mercuryv3pb";
 
 package loop.internal.pb.mercury.v3;
 

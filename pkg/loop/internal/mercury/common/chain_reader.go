@@ -1,11 +1,12 @@
-package mercury_common
+package common
 
 import (
 	"context"
 
+	"google.golang.org/grpc"
+
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
-	"google.golang.org/grpc"
 )
 
 var _ mercury_types.ChainReader = (*ChainReaderClient)(nil)

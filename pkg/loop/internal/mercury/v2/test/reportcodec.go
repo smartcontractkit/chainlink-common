@@ -1,4 +1,4 @@
-package mercury_v2_test
+package v2_test
 
 import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"

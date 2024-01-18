@@ -4,7 +4,7 @@
 // - protoc             v4.25.1
 // source: datasource_v1.proto
 
-package mercury_v1_pb
+package mercuryv1pb
 
 import (
 	context "context"

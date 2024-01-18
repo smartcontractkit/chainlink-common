@@ -8,7 +8,7 @@
 // TODO: is there a better, more explicit to reference relayer.proto, which is really in the parent dir?
 // naive attempt: import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayer.proto"; and `../relayer.proto` did not work
 
-package mercury_pb
+package mercurypb
 
 import (
 	context "context"

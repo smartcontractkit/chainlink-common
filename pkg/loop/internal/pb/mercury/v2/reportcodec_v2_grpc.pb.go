@@ -4,7 +4,7 @@
 // - protoc             v4.25.1
 // source: reportcodec_v2.proto
 
-package mercury_v2_pb
+package mercuryv2pb
 
 import (
 	context "context"

@@ -96,6 +96,12 @@ func TestRenamer(t *testing.T) {
 		assert.Equal(t, reflect.TypeOf(""), f3.Type)
 	})
 
+	t.Run("RetypeToOffChain returns an error if the name is already in use", func(t *testing.T) {
+		dup := codec.NewRenamer(map[string]string{"A": "B"})
+		_, err := dup.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		require.True(t, errors.Is(err, types.ErrInvalidType))
+	})
+
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {
 		offChainType, err := renamer.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)

@@ -19,7 +19,14 @@ type modifierBase[T any] struct {
 	addFieldForInput    func(pkgPath, name string, change T) reflect.StructField
 }
 
-func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
+func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType string) (tpe reflect.Type, err error) {
+	defer func() {
+		// StructOf can panic if the fields are not valid
+		if r := recover(); r != nil {
+			tpe = nil
+			err = fmt.Errorf("%w: %v", types.ErrInvalidType, r)
+		}
+	}()
 	if m.fields == nil || len(m.fields) == 0 {
 		m.offToOnChainType[onChainType] = onChainType
 		m.onToOffChainType[onChainType] = onChainType

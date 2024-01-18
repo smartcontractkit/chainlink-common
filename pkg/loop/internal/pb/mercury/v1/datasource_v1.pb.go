@@ -27,7 +27,7 @@ type ObserveRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ReportTimestamp           *pb.ReportTimestamp `protobuf:"bytes,1,opt,name=report_timestamp,json=reportTimestamp,proto3" json:"report_timestamp,omitempty"` // common code. TODO: figure out how to share with median impl -- prob need to make internal/pb/median pkg
+	ReportTimestamp           *pb.ReportTimestamp `protobuf:"bytes,1,opt,name=report_timestamp,json=reportTimestamp,proto3" json:"report_timestamp,omitempty"`
 	FetchMaxFinalizedBlockNum bool                `protobuf:"varint,2,opt,name=fetchMaxFinalizedBlockNum,proto3" json:"fetchMaxFinalizedBlockNum,omitempty"`
 }
 
@@ -147,9 +147,9 @@ type Observation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	BenchmarkPrice          *pb.BigInt `protobuf:"bytes,1,opt,name=benchmarkPrice,proto3" json:"benchmarkPrice,omitempty"` // TODO: WARNING: this is a pointer in the Observation struct
-	Bid                     *pb.BigInt `protobuf:"bytes,2,opt,name=bid,proto3" json:"bid,omitempty"`                       // TODO: WARNING: this is a pointer in the Observation struct
-	Ask                     *pb.BigInt `protobuf:"bytes,3,opt,name=ask,proto3" json:"ask,omitempty"`                       // TODO: WARNING: this is a pointer in the Observation struct
+	BenchmarkPrice          *pb.BigInt `protobuf:"bytes,1,opt,name=benchmarkPrice,proto3" json:"benchmarkPrice,omitempty"`
+	Bid                     *pb.BigInt `protobuf:"bytes,2,opt,name=bid,proto3" json:"bid,omitempty"`
+	Ask                     *pb.BigInt `protobuf:"bytes,3,opt,name=ask,proto3" json:"ask,omitempty"`
 	CurrentBlockNum         int64      `protobuf:"varint,4,opt,name=currentBlockNum,proto3" json:"currentBlockNum,omitempty"`
 	CurrentBlockHash        []byte     `protobuf:"bytes,5,opt,name=currentBlockHash,proto3" json:"currentBlockHash,omitempty"`
 	CurrentBlockTimestamp   uint64     `protobuf:"varint,6,opt,name=currentBlockTimestamp,proto3" json:"currentBlockTimestamp,omitempty"`

@@ -27,12 +27,12 @@ type ReportFields struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ValidFromTimestamp uint32     `protobuf:"varint,1,opt,name=validFromTimestamp,proto3" json:"validFromTimestamp,omitempty"` // TODO: timestamp?
-	Timestamp          uint32     `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                   // TODO: timestamp?
-	NativeFee          *pb.BigInt `protobuf:"bytes,3,opt,name=nativeFee,proto3" json:"nativeFee,omitempty"`                    // TODO: WARNING this is a pointer in ReportFields
-	LinkFee            *pb.BigInt `protobuf:"bytes,4,opt,name=linkFee,proto3" json:"linkFee,omitempty"`                        // TODO: WARNING this is a pointer in ReportFields
-	ExpiresAt          uint32     `protobuf:"varint,5,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`                   // TODO: timestamp?
-	BenchmarkPrice     *pb.BigInt `protobuf:"bytes,6,opt,name=benchmarkPrice,proto3" json:"benchmarkPrice,omitempty"`          // TODO: WARNING this is a pointer in ReportFields
+	ValidFromTimestamp uint32     `protobuf:"varint,1,opt,name=validFromTimestamp,proto3" json:"validFromTimestamp,omitempty"`
+	Timestamp          uint32     `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	NativeFee          *pb.BigInt `protobuf:"bytes,3,opt,name=nativeFee,proto3" json:"nativeFee,omitempty"`
+	LinkFee            *pb.BigInt `protobuf:"bytes,4,opt,name=linkFee,proto3" json:"linkFee,omitempty"`
+	ExpiresAt          uint32     `protobuf:"varint,5,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	BenchmarkPrice     *pb.BigInt `protobuf:"bytes,6,opt,name=benchmarkPrice,proto3" json:"benchmarkPrice,omitempty"`
 }
 
 func (x *ReportFields) Reset() {
@@ -211,7 +211,7 @@ type MaxReportLengthRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NumOracles uint64 `protobuf:"varint,1,opt,name=numOracles,proto3" json:"numOracles,omitempty"` // TODO: WARNING this is a int in ReportCodec interface
+	NumOracles uint64 `protobuf:"varint,1,opt,name=numOracles,proto3" json:"numOracles,omitempty"`
 }
 
 func (x *MaxReportLengthRequest) Reset() {
@@ -259,7 +259,7 @@ type MaxReportLengthReply struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MaxReportLength uint64 `protobuf:"varint,1,opt,name=maxReportLength,proto3" json:"maxReportLength,omitempty"` //TODO: WARNING this is a int in ReportCodec interface
+	MaxReportLength uint64 `protobuf:"varint,1,opt,name=maxReportLength,proto3" json:"maxReportLength,omitempty"`
 }
 
 func (x *MaxReportLengthReply) Reset() {
@@ -355,7 +355,7 @@ type ObservationTimestampFromReportReply struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Timestamp uint32 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // TODO: WARNING this is a uint32 in ReportCodec interface
+	Timestamp uint32 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
 func (x *ObservationTimestampFromReportReply) Reset() {

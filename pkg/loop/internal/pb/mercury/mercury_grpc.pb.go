@@ -4,9 +4,7 @@
 // - protoc             v4.25.1
 // source: mercury.proto
 
-// the generate file in this dir specifies the import path of the relative proto files
-// TODO: is there a better, more explicit to reference relayer.proto, which is really in the parent dir?
-// naive attempt: import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayer.proto"; and `../relayer.proto` did not work
+// note: the generate.go file in this dir specifies the import path of the relative proto files
 
 package mercurypb
 

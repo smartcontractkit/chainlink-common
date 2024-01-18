@@ -34,7 +34,6 @@ func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types
 		return v3.Observation{}, err
 	}
 	// TODO: implement fetchMaxFinalizedTimestamp handling. Not sure what the application logic is here
-	//panic("fetchMaxFinalizedTimestamp not implemented")
 	return observation(reply), nil
 }
 

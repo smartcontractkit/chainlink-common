@@ -63,8 +63,7 @@ func (s *ServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	// TODO: why is this a pointer?
-	// i don't think that val can be nil, but play defense for now
+	// play defense against a nil dereference below. it's a bit weird that we're returning a pointer to an int64
 	if val == nil {
 		return nil, fmt.Errorf("FetchInitialMaxFinalizedBlockNumber returned nil")
 	}

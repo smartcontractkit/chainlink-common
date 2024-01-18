@@ -5,9 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.internal.pb.mercury.v2;
 
 
-// the generate file in this dir specifies the import path of the relative proto files
-// TODO: is there a better, more explicit to reference relayer.proto, which is really in the parent dir?
-// naive attempt: import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayer.proto"; and `../relayer.proto` did not work
+// note: the generate.go file in this dir specifies the import path of the relative proto files
 import "relayer.proto";
 
 
@@ -20,12 +18,12 @@ service ReportCodec {
 
 // ReportFields is gRPC wrapper for struct [github.com/smartcontractkit/chainlink-data-streams/mercury/v2/ReportFields].
 message ReportFields {
-  uint32 validFromTimestamp =1; // TODO: timestamp?
-  uint32 timestamp =2; // TODO: timestamp?
-  BigInt nativeFee = 3; // TODO: WARNING this is a pointer in ReportFields
-  BigInt linkFee = 4; // TODO: WARNING this is a pointer in ReportFields
-  uint32 expiresAt = 5; // TODO: timestamp?
-  BigInt benchmarkPrice = 6; // TODO: WARNING this is a pointer in ReportFields
+  uint32 validFromTimestamp =1;
+  uint32 timestamp =2;
+  BigInt nativeFee = 3;
+  BigInt linkFee = 4;
+  uint32 expiresAt = 5;
+  BigInt benchmarkPrice = 6;
   }
   
   // BuildReportRequest is gRPC adapter for [github.com/smartcontractkit/chainlink-data-streams/mercury/v2/ReportCodec.BuildReport].
@@ -40,12 +38,12 @@ message BuildReportReply {
   
   // MaxReportLengthRequest is gRPC adapter for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
   message MaxReportLengthRequest {
-    uint64 numOracles = 1; // TODO: WARNING this is a int in ReportCodec interface
+    uint64 numOracles = 1;
   }
   
   // MaxReportLengthReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
   message MaxReportLengthReply {
-    uint64 maxReportLength = 1; //TODO: WARNING this is a int in ReportCodec interface
+    uint64 maxReportLength = 1;
   }
   
   // ObservationTimestampFromReportRequest has arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.ObservationTimestampFromReport].
@@ -54,5 +52,5 @@ message BuildReportReply {
   }
   //ObservationTimestampFromReportReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.ObservationTimestampFromReport].
   message ObservationTimestampFromReportReply {
-    uint32 timestamp = 1; // TODO: WARNING this is a uint32 in ReportCodec interface
+    uint32 timestamp = 1;
   }

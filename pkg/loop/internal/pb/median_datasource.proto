@@ -6,7 +6,6 @@ package loop;
 
 import "relayer.proto";
 
-// TODO: move this to it's own package ~ internal/pb/median/ and bring median.proto, too.
 service DataSource {
     rpc Observe (ObserveRequest) returns (ObserveReply) {}
   }

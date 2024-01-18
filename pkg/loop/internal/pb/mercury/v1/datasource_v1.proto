@@ -5,9 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.internal.pb.mercury.v1;
 
 
-// the generate file in this dir specifies the import path of the relative proto files
-// TODO: is there a better, more explicit to reference relayer.proto, which is really in the parent dir?
-// naive attempt: import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayer.proto"; and `../relayer.proto` did not work
+// note: the generate.go file in this dir specifies the import path of the relative proto files
 import "relayer.proto";
 
 // DataSource is a gRPC adapter for [pkg/types/mercury/v1/DataSource]
@@ -17,7 +15,7 @@ service DataSource {
 
 // ObserveRequest is the request payload for the Observe method, which is a gRPC adapter for input arguments of [pkg/types/mercury/v1/DataSource.Observe]
 message ObserveRequest {
-    ReportTimestamp report_timestamp = 1; // common code. TODO: figure out how to share with median impl -- prob need to make internal/pb/median pkg
+    ReportTimestamp report_timestamp = 1;
     bool fetchMaxFinalizedBlockNum = 2;
 }
 
@@ -30,9 +28,9 @@ message Block {
 
 // Observation is a gRPC adapter for [pkg/types/mercury/v1/Observation]
 message Observation {
-    BigInt benchmarkPrice = 1; // TODO: WARNING: this is a pointer in the Observation struct
-    BigInt bid = 2; // TODO: WARNING: this is a pointer in the Observation struct
-    BigInt ask = 3; // TODO: WARNING: this is a pointer in the Observation struct
+    BigInt benchmarkPrice = 1;
+    BigInt bid = 2;
+    BigInt ask = 3;
     int64 currentBlockNum = 4;
     bytes currentBlockHash = 5;
     uint64 currentBlockTimestamp = 6;

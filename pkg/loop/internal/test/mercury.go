@@ -34,9 +34,27 @@ type PluginMercuryTest struct {
 }
 
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
-	t.Run("PluginMercury", func(t *testing.T) {
+	t.Run("PluginMercuryV3", func(t *testing.T) {
 		ctx := tests.Context(t)
 		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.StaticDataSource{})
+		require.NoError(t, err)
+		require.NotNil(t, factory)
+
+		ReportingPluginFactory(t, factory)
+	})
+
+	t.Run("PluginMercuryV2", func(t *testing.T) {
+		ctx := tests.Context(t)
+		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.StaticDataSource{})
+		require.NoError(t, err)
+		require.NotNil(t, factory)
+
+		ReportingPluginFactory(t, factory)
+	})
+
+	t.Run("PluginMercuryV1", func(t *testing.T) {
+		ctx := tests.Context(t)
+		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.StaticDataSource{})
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 

@@ -69,14 +69,8 @@ func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
 		} else {
 			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
 				registerCommonServices(s, provider)
-				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
-				// given that this is a v1 factory, we should only need to handle v1 report codec.
-				// maybe panic if the report codec is not v1?
-				reportCodecServer := mercury_v1_internal.NewReportCodecServer(provider.ReportCodecV1())
-				// note to self: this has to registered because the common server below is just a wrapper
-				// maybe that wrapper can do the registration?
-				mercury_v1_pb.RegisterReportCodecServer(s, reportCodecServer)
-				mercury_pb.RegisterReportCodecV1Server(s, mercury_common_internal.NewReportCodecV1Server(reportCodecServer))
+
+				mercury_pb.RegisterReportCodecV1Server(s, mercury_common_internal.NewReportCodecV1Server(s, provider.ReportCodecV1()))
 				mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
 				mercury_pb.RegisterReportCodecV3Server(s, mercury_pb.UnimplementedReportCodecV3Server{})
 			})
@@ -125,14 +119,8 @@ func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 		} else {
 			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
 				registerCommonServices(s, provider)
-				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
-				// given that this is a v2 factory, we should only need to handle v2 report codec.
-				// maybe panic if the report codec is not v2?
-				reportCodecServer := mercury_v2_internal.NewReportCodecServer(provider.ReportCodecV2())
-				// note to self: this has to registered because the common server below is just a wrapper
-				// maybe that wrapper can do the registration?
-				mercury_v2_pb.RegisterReportCodecServer(s, reportCodecServer)
-				mercury_pb.RegisterReportCodecV2Server(s, mercury_common_internal.NewReportCodecV2Server(reportCodecServer))
+
+				mercury_pb.RegisterReportCodecV2Server(s, mercury_common_internal.NewReportCodecV2Server(s, provider.ReportCodecV2()))
 
 				mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
 				mercury_pb.RegisterReportCodecV3Server(s, mercury_pb.UnimplementedReportCodecV3Server{})
@@ -195,14 +183,8 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 		} else {
 			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
 				registerCommonServices(s, provider)
-				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
-				// given that this is a v3 factory, we should only need to handle v3 report codec.
-				// maybe panic if the report codec is not v3?
-				reportCodecServer := mercury_v3_internal.NewReportCodecServer(provider.ReportCodecV3())
-				// note to self: this has to registered because the common server below is just a wrapper
-				// maybe that wrapper can do the registration?
-				mercury_v3_pb.RegisterReportCodecServer(s, reportCodecServer)
-				mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(reportCodecServer))
+
+				mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(s, provider.ReportCodecV3()))
 
 				mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
 				mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})

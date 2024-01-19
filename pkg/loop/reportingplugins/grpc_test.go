@@ -67,23 +67,3 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 		PluginGenericTest,
 	)
 }
-
-/*
-func TestGRPCService_MercuryProvider(t *testing.T) {
-	t.Parallel()
-
-	stopCh := newStopCh(t)
-	test.PluginTest(
-		t,
-		reportingplugins.PluginServiceName,
-		&reportingplugins.GRPCService[types.MercuryProvider]{
-			PluginServer: test.StaticReportingPluginWithMercuryProvider{},
-			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
-				StopCh: stopCh,
-			},
-		},
-		PluginGenericTest,
-	)
-}
-*/

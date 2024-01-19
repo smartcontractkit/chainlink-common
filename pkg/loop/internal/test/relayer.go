@@ -99,7 +99,6 @@ func (s staticRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs,
 }
 
 func (s staticRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
-	//ra := newRelayArgsWithProviderType(types.Mercury)
 	if !equalRelayArgs(r, mercury_common_test.RelayArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercury_common_test.RelayArgs, r)
 	}

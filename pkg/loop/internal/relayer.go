@@ -13,14 +13,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
-	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1"
-	mercury_v2_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v2"
-	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
-	mercury_v1_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1"
-	mercury_v2_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v2"
-	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -453,19 +447,9 @@ func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.
 
 		mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
 
-		reportCodecServerV3 := mercury_v3_internal.NewReportCodecServer(provider.ReportCodecV3())
-		// note to self: this has to registered because the common server above is just a wrapper
-		// maybe that wrapper can do the registration?
-		mercury_v3_pb.RegisterReportCodecServer(s, reportCodecServerV3)
-		mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(reportCodecServerV3))
-
-		reportCodecServerV2 := mercury_v2_internal.NewReportCodecServer(provider.ReportCodecV2())
-		mercury_v2_pb.RegisterReportCodecServer(s, reportCodecServerV2)
-		mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
-
-		reportCodecServerV1 := mercury_v1_internal.NewReportCodecServer(provider.ReportCodecV1())
-		mercury_v1_pb.RegisterReportCodecServer(s, reportCodecServerV1)
-		mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
+		mercury_pb.RegisterReportCodecV1Server(s, mercury_common_internal.NewReportCodecV1Server(s, provider.ReportCodecV1()))
+		mercury_pb.RegisterReportCodecV2Server(s, mercury_common_internal.NewReportCodecV2Server(s, provider.ReportCodecV2()))
+		mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(s, provider.ReportCodecV3()))
 
 		mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
 		mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))

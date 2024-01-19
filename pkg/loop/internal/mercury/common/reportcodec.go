@@ -4,6 +4,7 @@ import (
 	"context"
 
 	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	"google.golang.org/grpc"
 
 	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1"
 	mercury_v2_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v2"
@@ -29,8 +30,11 @@ type reportCodecV3Server struct {
 
 var _ mercury_pb.ReportCodecV3Server = (*reportCodecV3Server)(nil)
 
-func NewReportCodecV3Server(impl *mercury_v3_internal.ReportCodecServer) mercury_pb.ReportCodecV3Server {
-	return &reportCodecV3Server{impl: impl}
+// NewReportCodecV3Server returns a new instance of [mercury_pb.ReportCodecV3Server] which wraps [mercury_v3_internal.ReportCodecServer]
+func NewReportCodecV3Server(s *grpc.Server, rc mercury_v3_types.ReportCodec) mercury_pb.ReportCodecV3Server {
+	internalServer := mercury_v3_internal.NewReportCodecServer(rc)
+	mercury_v3_pb.RegisterReportCodecServer(s, internalServer)
+	return &reportCodecV3Server{impl: internalServer}
 }
 
 func (r *reportCodecV3Server) BuildReport(ctx context.Context, request *mercury_v3_pb.BuildReportRequest) (*mercury_v3_pb.BuildReportReply, error) {
@@ -78,8 +82,11 @@ type reportCodecV2Server struct {
 
 var _ mercury_pb.ReportCodecV2Server = (*reportCodecV2Server)(nil)
 
-func NewReportCodecV2Server(impl *mercury_v2_internal.ReportCodecServer) mercury_pb.ReportCodecV2Server {
-	return &reportCodecV2Server{impl: impl}
+// NewReportCodecV2Server returns a new instance of [mercury_pb.ReportCodecV2Server] which wraps [mercury_v2_internal.ReportCodecServer]
+func NewReportCodecV2Server(s *grpc.Server, rc mercury_v2_types.ReportCodec) mercury_pb.ReportCodecV2Server {
+	internalServer := mercury_v2_internal.NewReportCodecServer(rc)
+	mercury_v2_pb.RegisterReportCodecServer(s, internalServer)
+	return &reportCodecV2Server{impl: internalServer}
 }
 
 func (r *reportCodecV2Server) BuildReport(ctx context.Context, request *mercury_v2_pb.BuildReportRequest) (*mercury_v2_pb.BuildReportReply, error) {
@@ -125,8 +132,11 @@ type reportCodecV1Server struct {
 
 var _ mercury_pb.ReportCodecV1Server = (*reportCodecV1Server)(nil)
 
-func NewReportCodecV1Server(impl *mercury_v1_internal.ReportCodecServer) mercury_pb.ReportCodecV1Server {
-	return &reportCodecV1Server{impl: impl}
+// NewReportCodecV1Server returns a new instance of [mercury_pb.ReportCodecV1Server] which wraps [mercury_v1_internal.ReportCodecServer]
+func NewReportCodecV1Server(s *grpc.Server, rc mercury_v1_types.ReportCodec) mercury_pb.ReportCodecV1Server {
+	internalServer := mercury_v1_internal.NewReportCodecServer(rc)
+	mercury_v1_pb.RegisterReportCodecServer(s, internalServer)
+	return &reportCodecV1Server{impl: internalServer}
 }
 
 func (r *reportCodecV1Server) BuildReport(ctx context.Context, request *mercury_v1_pb.BuildReportRequest) (*mercury_v1_pb.BuildReportReply, error) {

@@ -6,7 +6,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	//ocr_types "github.com/smartcontractkit/libocr/offchainreporting/types"
 	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"

@@ -54,7 +54,6 @@ func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 // https://github.com/smartcontractkit/chainlink-data-streams/blob/a6e3fe8ff2a12886b111f341639bae3cbf478501/mercury/v3/mercury.go#L65C92-L65C105
 func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 	provider types.MercuryProvider, dataSource mercury_v3.DataSource,
-	//occ mercury.OnchainConfigCodec, reportCodec mercury_v3.ReportCodec
 ) (types.ReportingPluginFactory, error) {
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
@@ -215,11 +214,7 @@ func (m *mercuryProviderClient) ClientConn() grpc.ClientConnInterface { return m
 func newMercuryProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *mercuryProviderClient {
 	m := &mercuryProviderClient{pluginProviderClient: newPluginProviderClient(b.withName("MercuryProviderClient"), cc)}
 	m.reportCodecV3 = mercury_common_internal.NewReportCodecV3Client(mercury_v3_internal.NewReportCodecClient(m.cc))
-	//mercury_v3_internal.NewReportCodecClient(m.cc) // &reportCodecClient {b, pb.NewReportCodecClient(m.cc)}
-	/*
-		m.reportCodecV2 = mercury_v2_internal.NewReportCodecClient(m.cc) // &reportCodecClient {b, pb.NewReportCodecClient(m.cc)}
-		m.reportCodecV1 = mercury_v1_internal.NewReportCodecClient(m.cc) // &reportCodecClient {b, pb.NewReportCodecClient(m.cc)}
-	*/
+	// TODO v1 & v2
 	m.onchainConfigCodec = mercury_common_internal.NewOnchainConfigCodecClient(m.cc)
 	m.serverFetcher = mercury_common_internal.NewServerFetcherClient(m.cc)
 	m.mercuryChainReader = mercury_common_internal.NewChainReaderClient(m.cc)

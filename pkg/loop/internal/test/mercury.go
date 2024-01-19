@@ -46,6 +46,90 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 type StaticPluginMercury struct{}
 
+var _ types.PluginMercury = StaticPluginMercury{}
+
+func (s StaticPluginMercury) commonValidation(ctx context.Context, provider types.MercuryProvider) error {
+	ocd := provider.OffchainConfigDigester()
+	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
+	if err != nil {
+		return fmt.Errorf("failed to get ConfigDigestPrefix: %w", err)
+	}
+	if gotDigestPrefix != configDigestPrefix {
+		return fmt.Errorf("expected ConfigDigestPrefix %x but got %x", configDigestPrefix, gotDigestPrefix)
+	}
+	gotDigest, err := ocd.ConfigDigest(contractConfig)
+	if err != nil {
+		return fmt.Errorf("failed to get ConfigDigest: %w", err)
+	}
+	if gotDigest != configDigest {
+		return fmt.Errorf("expected ConfigDigest %x but got %x", configDigest, gotDigest)
+	}
+	cct := provider.ContractConfigTracker()
+	gotBlockHeight, err := cct.LatestBlockHeight(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestBlockHeight: %w", err)
+	}
+	if gotBlockHeight != blockHeight {
+		return fmt.Errorf("expected LatestBlockHeight %d but got %d", blockHeight, gotBlockHeight)
+	}
+	gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestConfigDetails: %w", err)
+	}
+	if gotChangedInBlock != changedInBlock {
+		return fmt.Errorf("expected changedInBlock %d but got %d", changedInBlock, gotChangedInBlock)
+	}
+	if gotConfigDigest != configDigest {
+		return fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
+	}
+	gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestConfig: %w", err)
+	}
+	if !reflect.DeepEqual(gotContractConfig, contractConfig) {
+		return fmt.Errorf("expected ContractConfig %v but got %v", contractConfig, gotContractConfig)
+	}
+	ct := provider.ContractTransmitter()
+	gotAccount, err := ct.FromAccount()
+	if err != nil {
+		return fmt.Errorf("failed to get FromAccount: %w", err)
+	}
+	if gotAccount != account {
+		return fmt.Errorf("expectd FromAccount %s but got %s", account, gotAccount)
+	}
+	gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestConfigDigestAndEpoch: %w", err)
+	}
+	if gotConfigDigest != configDigest {
+		return fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
+	}
+	if gotEpoch != epoch {
+		return fmt.Errorf("expected Epoch %d but got %d", epoch, gotEpoch)
+	}
+	err = ct.Transmit(ctx, reportContext, report, sigs)
+	if err != nil {
+		return fmt.Errorf("failed to Transmit")
+	}
+
+	occ := provider.OnchainConfigCodec()
+	gotEncoded, err := occ.Encode(mercury_common_test.StaticOnChainConfigCodecFixtures.Decoded)
+	if err != nil {
+		return fmt.Errorf("failed to Encode: %w", err)
+	}
+	if !bytes.Equal(gotEncoded, mercury_common_test.StaticOnChainConfigCodecFixtures.Encoded) {
+		return fmt.Errorf("expected Encoded %s but got %s", encoded, gotEncoded)
+	}
+	gotDecoded, err := occ.Decode(mercury_common_test.StaticOnChainConfigCodecFixtures.Encoded)
+	if err != nil {
+		return fmt.Errorf("failed to Decode: %w", err)
+	}
+	if !reflect.DeepEqual(gotDecoded, mercury_common_test.StaticOnChainConfigCodecFixtures.Decoded) {
+		return fmt.Errorf("expected OnchainConfig %s but got %s", onchainConfig, gotDecoded)
+	}
+	return nil
+}
+
 func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.ReportingPluginFactory, error) {
 	var err error
 	defer func() {
@@ -53,69 +137,10 @@ func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider t
 			panic(fmt.Sprintf("provider %v, %T: %s", provider, provider, err))
 		}
 	}()
-	ocd := provider.OffchainConfigDigester()
-	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
+	err = s.commonValidation(ctx, provider)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ConfigDigestPrefix: %w", err)
+		return nil, fmt.Errorf("failed commonValidation: %w", err)
 	}
-	if gotDigestPrefix != configDigestPrefix {
-		return nil, fmt.Errorf("expected ConfigDigestPrefix %x but got %x", configDigestPrefix, gotDigestPrefix)
-	}
-	gotDigest, err := ocd.ConfigDigest(contractConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ConfigDigest: %w", err)
-	}
-	if gotDigest != configDigest {
-		return nil, fmt.Errorf("expected ConfigDigest %x but got %x", configDigest, gotDigest)
-	}
-	cct := provider.ContractConfigTracker()
-	gotBlockHeight, err := cct.LatestBlockHeight(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get LatestBlockHeight: %w", err)
-	}
-	if gotBlockHeight != blockHeight {
-		return nil, fmt.Errorf("expected LatestBlockHeight %d but got %d", blockHeight, gotBlockHeight)
-	}
-	gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get LatestConfigDetails: %w", err)
-	}
-	if gotChangedInBlock != changedInBlock {
-		return nil, fmt.Errorf("expected changedInBlock %d but got %d", changedInBlock, gotChangedInBlock)
-	}
-	if gotConfigDigest != configDigest {
-		return nil, fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
-	}
-	gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get LatestConfig: %w", err)
-	}
-	if !reflect.DeepEqual(gotContractConfig, contractConfig) {
-		return nil, fmt.Errorf("expected ContractConfig %v but got %v", contractConfig, gotContractConfig)
-	}
-	ct := provider.ContractTransmitter()
-	gotAccount, err := ct.FromAccount()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get FromAccount: %w", err)
-	}
-	if gotAccount != account {
-		return nil, fmt.Errorf("expectd FromAccount %s but got %s", account, gotAccount)
-	}
-	gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get LatestConfigDigestAndEpoch: %w", err)
-	}
-	if gotConfigDigest != configDigest {
-		return nil, fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
-	}
-	if gotEpoch != epoch {
-		return nil, fmt.Errorf("expected Epoch %d but got %d", epoch, gotEpoch)
-	}
-	err = ct.Transmit(ctx, reportContext, report, sigs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to Transmit")
-	}
-
 	rc := provider.ReportCodecV3()
 	gotReport, err := rc.BuildReport(mercury_v3_test.Fixtures.ReportFields)
 	if err != nil {
@@ -139,27 +164,56 @@ func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v3_test.Fixtures.ObservationTimestamp, gotObservedTimestamp)
 	}
 
-	occ := provider.OnchainConfigCodec()
-	gotEncoded, err := occ.Encode(mercury_common_test.StaticOnChainConfigCodecFixtures.Decoded)
-	if err != nil {
-		return nil, fmt.Errorf("failed to Encode: %w", err)
-	}
-	if !bytes.Equal(gotEncoded, mercury_common_test.StaticOnChainConfigCodecFixtures.Encoded) {
-		return nil, fmt.Errorf("expected Encoded %s but got %s", encoded, gotEncoded)
-	}
-	gotDecoded, err := occ.Decode(mercury_common_test.StaticOnChainConfigCodecFixtures.Encoded)
-	if err != nil {
-		return nil, fmt.Errorf("failed to Decode: %w", err)
-	}
-	if !reflect.DeepEqual(gotDecoded, mercury_common_test.StaticOnChainConfigCodecFixtures.Decoded) {
-		return nil, fmt.Errorf("expected OnchainConfig %s but got %s", onchainConfig, gotDecoded)
-	}
-
 	gotVal, err := dataSource.Observe(ctx, mercury_v3_test.Fixtures.ReportTimestamp, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to observe dataSource: %w", err)
 	}
 	if !assert.ObjectsAreEqual(mercury_v3_test.Fixtures.Observation, gotVal) {
+		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
+	}
+
+	return staticPluginFactory{}, nil
+}
+
+func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) (types.ReportingPluginFactory, error) {
+	var err error
+	defer func() {
+		if err != nil {
+			panic(fmt.Sprintf("provider %v, %T: %s", provider, provider, err))
+		}
+	}()
+	err = s.commonValidation(ctx, provider)
+	if err != nil {
+		return nil, fmt.Errorf("failed commonValidation: %w", err)
+	}
+	rc := provider.ReportCodecV1()
+	gotReport, err := rc.BuildReport(mercury_v1_test.Fixtures.ReportFields)
+	if err != nil {
+		return nil, fmt.Errorf("failed to BuildReport: %w", err)
+	}
+	if !bytes.Equal(gotReport, mercury_v1_test.Fixtures.Report) {
+		return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
+	}
+	gotMax, err := rc.MaxReportLength(n)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
+	}
+	if gotMax != mercury_v1_test.Fixtures.MaxReportLength {
+		return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
+	}
+	gotCurrentBlockNum, err := rc.CurrentBlockNumFromReport(gotReport)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ObservationTimestampFromReport: %w", err)
+	}
+	if gotCurrentBlockNum != mercury_v1_test.Fixtures.CurrentBlockNum {
+		return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v1_test.Fixtures.CurrentBlockNum, gotCurrentBlockNum)
+	}
+
+	gotVal, err := dataSource.Observe(ctx, mercury_v1_test.Fixtures.ReportTimestamp, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to observe dataSource: %w", err)
+	}
+	if !assert.ObjectsAreEqual(mercury_v1_test.Fixtures.Observation, gotVal) {
 		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 

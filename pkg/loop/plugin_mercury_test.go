@@ -47,7 +47,6 @@ func TestPluginMercuryExec(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, i)
 	test.PluginMercury(t, i.(types.PluginMercury))
-	//panic("is this working")
 
 	t.Run("proxy", func(t *testing.T) {
 		pr := newPluginRelayerExec(t, stopCh)
@@ -63,7 +62,6 @@ func newMercuryProvider(t *testing.T, pr loop.PluginRelayer) types.MercuryProvid
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 	p, err := r.NewPluginProvider(ctx, mercury_common_test.RelayArgs, mercury_common_test.PluginArgs)
-	//panic(fmt.Sprintf("pr: %T, r: %T, p: %T", pr, r, p))
 	mp, ok := p.(types.MercuryProvider)
 	require.True(t, ok)
 	require.NoError(t, err)

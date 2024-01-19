@@ -10,9 +10,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
+	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1"
 	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
+	mercury_v1_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
@@ -41,13 +43,78 @@ func NewMercuryAdapterClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.C
 }
 
 func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
-	provider types.MercuryProvider, dataSource mercury_v1.DataSource) {
-	panic("TODO")
+	provider types.MercuryProvider, dataSource mercury_v1.DataSource) (types.ReportingPluginFactory, error) {
+	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
+	// at this layer of the stack, all of those dependencies are other gRPC services.
+	// some of those services are hosted in the same process as the client itself and others may be remote.
+	newMercuryClientFn := func(ctx context.Context) (id uint32, deps resources, err error) {
+		// the local resources for mercury are the DataSource
+		dataSourceID, dsRes, err := c.serveNew("DataSource", func(s *grpc.Server) {
+			mercury_v1_pb.RegisterDataSourceServer(s, mercury_v1_internal.NewDataSourceServer(dataSource))
+		})
+		if err != nil {
+			return 0, nil, err
+		}
+		deps.Add(dsRes)
+
+		// the proxyable resources for mercury are the Provider,  which may or may not be local to the client process. (legacy vs loopp)
+		var (
+			providerID  uint32
+			providerRes resource
+		)
+		if grpcProvider, ok := provider.(GRPCClientConn); ok {
+			providerID, providerRes, err = c.serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
+		} else {
+			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
+				registerCommonServices(s, provider)
+				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
+				// given that this is a v1 factory, we should only need to handle v1 report codec.
+				// maybe panic if the report codec is not v1?
+				reportCodecServer := mercury_v1_internal.NewReportCodecServer(provider.ReportCodecV1())
+				mercury_pb.RegisterReportCodecV1Server(s, mercury_common_internal.NewReportCodecV1Server(reportCodecServer))
+
+				// note to self: this has to registered because the common server above is just a wrapper
+				// maybe that wrapper can do the registration?
+				mercury_v1_pb.RegisterReportCodecServer(s, reportCodecServer)
+
+				//				mercury_pb.RegisterReportCodecV3Server(s, mercury_pb.UnimplementedReportCodecV3Server{})
+				mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
+				mercury_pb.RegisterReportCodecV3Server(s, mercury_pb.UnimplementedReportCodecV3Server{})
+
+			})
+		}
+		if err != nil {
+			return 0, nil, err
+		}
+		deps.Add(providerRes)
+
+		reply, err := c.mercury.NewMercuryV1Factory(ctx, &mercury_pb.NewMercuryV1FactoryRequest{
+			MercuryProviderID: providerID,
+			DataSourceV1ID:    dataSourceID,
+		})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.MercuryV1FactoryID, deps, nil
+	}
+
+	cc := c.newClientConn("MercuryV3Factory", newMercuryClientFn)
+	return newReportingPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
 }
 
 func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 	provider types.MercuryProvider, dataSource mercury_v2.DataSource) {
 	panic("TODO")
+}
+
+func registerCommonServices(s *grpc.Server, provider types.MercuryProvider) {
+	pb.RegisterServiceServer(s, &serviceServer{srv: provider})
+	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
+	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
+	pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+	mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
+	mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
+	mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
 }
 
 // TODO: unlike median, the existing code to create a factory for mercury v3 does not use a provider. not sure what to do about that.
@@ -77,20 +144,7 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 			providerID, providerRes, err = c.serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = c.serveNew("MercuryProvider", func(s *grpc.Server) {
-				// PluginProvider resources [pkg/types/provider/PluginProvider]
-				pb.RegisterServiceServer(s, &serviceServer{srv: provider})
-				pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
-				pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
-				pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
-				// TODO the [pkg/types/provider/PluginProvider] defines a ChainReader() method, but the mercury
-				// doesn't have one of these... panic? return unimplemented? return nil?
-				//pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
-
-				// Interface extensions defined in [pkg/types/MercuryProvider]
-
-				mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
-				//	mercury_pb.RegisterOnchainConfigCodecServer(s, provider.OnchainConfigCodec())
-
+				registerCommonServices(s, provider)
 				// TODO: handle all the versions of report codec. The mercury provider api is very weird.
 				// given that this is a v3 factory, we should only need to handle v3 report codec.
 				// maybe panic if the report codec is not v3?
@@ -103,8 +157,6 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 
 				mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
 				mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
-				mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
-				mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
 			})
 		}
 		if err != nil {
@@ -145,7 +197,44 @@ func newMercuryAdapterServer(b *brokerExt, impl types.PluginMercury) *mercuryAda
 }
 
 func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *mercury_pb.NewMercuryV1FactoryRequest) (*mercury_pb.NewMercuryV1FactoryReply, error) {
-	panic("TODO")
+	// declared so we can clean up open resources
+	var err error
+	var deps resources
+	defer func() {
+		if err != nil {
+			ms.closeAll(deps...)
+		}
+	}()
+
+	dsConn, err := ms.dial(req.DataSourceV1ID)
+	if err != nil {
+		return nil, ErrConnDial{Name: "DataSourceV1", ID: req.DataSourceV1ID, Err: err}
+	}
+	dsRes := resource{Closer: dsConn, name: "DataSourceV1"}
+	deps.Add(dsRes)
+	ds := mercury_v1_internal.NewDataSourceClient(dsConn)
+
+	providerConn, err := ms.dial(req.MercuryProviderID)
+	if err != nil {
+		return nil, ErrConnDial{Name: "MercuryProvider", ID: req.MercuryProviderID, Err: err}
+	}
+	providerRes := resource{Closer: providerConn, name: "MercuryProvider"}
+	deps.Add(providerRes)
+	provider := newMercuryProviderClient(ms.brokerExt, providerConn)
+	factory, err := ms.impl.NewMercuryV1Factory(ctx, provider, ds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create MercuryV1Factory: %w", err)
+	}
+
+	id, _, err := ms.serveNew("MercuryV1Factory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
+		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, ms.brokerExt))
+	}, deps...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serverNew: %w", err)
+	}
+
+	return &mercury_pb.NewMercuryV1FactoryReply{MercuryV1FactoryID: id}, nil
 }
 
 func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *mercury_pb.NewMercuryV2FactoryRequest) (*mercury_pb.NewMercuryV2FactoryReply, error) {
@@ -214,7 +303,9 @@ func (m *mercuryProviderClient) ClientConn() grpc.ClientConnInterface { return m
 func newMercuryProviderClient(b *brokerExt, cc grpc.ClientConnInterface) *mercuryProviderClient {
 	m := &mercuryProviderClient{pluginProviderClient: newPluginProviderClient(b.withName("MercuryProviderClient"), cc)}
 	m.reportCodecV3 = mercury_common_internal.NewReportCodecV3Client(mercury_v3_internal.NewReportCodecClient(m.cc))
-	// TODO v1 & v2
+
+	m.reportCodecV1 = mercury_common_internal.NewReportCodecV1Client(mercury_v1_internal.NewReportCodecClient(m.cc))
+
 	m.onchainConfigCodec = mercury_common_internal.NewOnchainConfigCodecClient(m.cc)
 	m.serverFetcher = mercury_common_internal.NewServerFetcherClient(m.cc)
 	m.mercuryChainReader = mercury_common_internal.NewChainReaderClient(m.cc)
@@ -228,6 +319,7 @@ func (m *mercuryProviderClient) ReportCodecV3() mercury_v3.ReportCodec {
 }
 
 func (m *mercuryProviderClient) ReportCodecV2() mercury_v2.ReportCodec {
+	panic("unimplemented")
 	return m.reportCodecV2
 }
 

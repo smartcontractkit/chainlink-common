@@ -23,7 +23,7 @@ type MercuryProvider interface {
 }
 
 type PluginMercury interface {
-	// NewMercuryV3Factory returns a new ReportingPluginFactory. If provider implements GRPCClientConn, it can be forwarded efficiently via proxy.
-	NewMercuryV3Factory(ctx context.Context, provider MercuryProvider, dataSource v3.DataSource) (ReportingPluginFactory, error)
 	NewMercuryV1Factory(ctx context.Context, provider MercuryProvider, dataSource v1.DataSource) (ReportingPluginFactory, error)
+	NewMercuryV2Factory(ctx context.Context, provider MercuryProvider, dataSource v2.DataSource) (ReportingPluginFactory, error)
+	NewMercuryV3Factory(ctx context.Context, provider MercuryProvider, dataSource v3.DataSource) (ReportingPluginFactory, error)
 }

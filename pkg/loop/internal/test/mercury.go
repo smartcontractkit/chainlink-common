@@ -175,6 +175,51 @@ func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider t
 	return staticPluginFactory{}, nil
 }
 
+func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) (types.ReportingPluginFactory, error) {
+	var err error
+	defer func() {
+		if err != nil {
+			panic(fmt.Sprintf("provider %v, %T: %s", provider, provider, err))
+		}
+	}()
+	err = s.commonValidation(ctx, provider)
+	if err != nil {
+		return nil, fmt.Errorf("failed commonValidation: %w", err)
+	}
+	rc := provider.ReportCodecV2()
+	gotReport, err := rc.BuildReport(mercury_v2_test.Fixtures.ReportFields)
+	if err != nil {
+		return nil, fmt.Errorf("failed to BuildReport: %w", err)
+	}
+	if !bytes.Equal(gotReport, mercury_v2_test.Fixtures.Report) {
+		return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
+	}
+	gotMax, err := rc.MaxReportLength(n)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
+	}
+	if gotMax != mercury_v2_test.Fixtures.MaxReportLength {
+		return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
+	}
+	gotObservedTimestamp, err := rc.ObservationTimestampFromReport(gotReport)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ObservationTimestampFromReport: %w", err)
+	}
+	if gotObservedTimestamp != mercury_v2_test.Fixtures.ObservationTimestamp {
+		return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v2_test.Fixtures.ObservationTimestamp, gotObservedTimestamp)
+	}
+
+	gotVal, err := dataSource.Observe(ctx, mercury_v2_test.Fixtures.ReportTimestamp, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to observe dataSource: %w", err)
+	}
+	if !assert.ObjectsAreEqual(mercury_v2_test.Fixtures.Observation, gotVal) {
+		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
+	}
+
+	return staticPluginFactory{}, nil
+}
+
 func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) (types.ReportingPluginFactory, error) {
 	var err error
 	defer func() {

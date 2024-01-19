@@ -16,7 +16,6 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	median_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -121,7 +120,7 @@ func newPluginMedianServer(b *brokerExt, mp types.PluginMedian) *pluginMedianSer
 func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.NewMedianFactoryRequest) (*pb.NewMedianFactoryReply, error) {
 	dsConn, err := m.dial(request.DataSourceID)
 	if err != nil {
-		return nil, common.ErrConnDial{Name: "DataSource", ID: request.DataSourceID, Err: err}
+		return nil, ErrConnDial{Name: "DataSource", ID: request.DataSourceID, Err: err}
 	}
 	dsRes := resource{dsConn, "DataSource"}
 	dataSource := median_internal.NewDataSourceClient(dsConn)
@@ -129,7 +128,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	juelsConn, err := m.dial(request.JuelsPerFeeCoinDataSourceID)
 	if err != nil {
 		m.closeAll(dsRes)
-		return nil, common.ErrConnDial{Name: "JuelsPerFeeCoinDataSource", ID: request.JuelsPerFeeCoinDataSourceID, Err: err}
+		return nil, ErrConnDial{Name: "JuelsPerFeeCoinDataSource", ID: request.JuelsPerFeeCoinDataSourceID, Err: err}
 	}
 	juelsRes := resource{juelsConn, "JuelsPerFeeCoinDataSource"}
 	juelsPerFeeCoin := median_internal.NewDataSourceClient(juelsConn)
@@ -137,7 +136,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	providerConn, err := m.dial(request.MedianProviderID)
 	if err != nil {
 		m.closeAll(dsRes, juelsRes)
-		return nil, common.ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
+		return nil, ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
 	}
 	providerRes := resource{providerConn, "MedianProvider"}
 	provider := newMedianProviderClient(m.brokerExt, providerConn)
@@ -145,7 +144,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	errorLogConn, err := m.dial(request.ErrorLogID)
 	if err != nil {
 		m.closeAll(dsRes, juelsRes, providerRes)
-		return nil, common.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
+		return nil, ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := resource{errorLogConn, "ErrorLog"}
 	errorLog := newErrorLogClient(errorLogConn)

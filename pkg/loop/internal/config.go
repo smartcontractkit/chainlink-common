@@ -8,7 +8,6 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -55,7 +54,7 @@ func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig
 		return
 	}
 	if l := len(reply.ConfigDigest); l != 32 {
-		err = common.ErrConfigDigestLen(l)
+		err = pb.ErrConfigDigestLen(l)
 		return
 	}
 	copy(digest[:], reply.ConfigDigest)
@@ -82,7 +81,7 @@ type offchainConfigDigesterServer struct {
 
 func (o *offchainConfigDigesterServer) ConfigDigest(ctx context.Context, request *pb.ConfigDigestRequest) (*pb.ConfigDigestReply, error) {
 	if request.ContractConfig.F > math.MaxUint8 {
-		return nil, common.ErrUint8Bounds{Name: "F", U: request.ContractConfig.F}
+		return nil, pb.ErrUint8Bounds{Name: "F", U: request.ContractConfig.F}
 	}
 	cc := libocr.ContractConfig{
 		ConfigCount:           request.ContractConfig.ConfigCount,
@@ -129,7 +128,7 @@ func (c *contractConfigTrackerClient) LatestConfigDetails(ctx context.Context) (
 	}
 	changedInBlock = reply.ChangedInBlock
 	if l := len(reply.ConfigDigest); l != 32 {
-		err = common.ErrConfigDigestLen(l)
+		err = pb.ErrConfigDigestLen(l)
 		return
 	}
 	copy(configDigest[:], reply.ConfigDigest)
@@ -145,7 +144,7 @@ func (c *contractConfigTrackerClient) LatestConfig(ctx context.Context, changedI
 		return
 	}
 	if l := len(reply.ContractConfig.ConfigDigest); l != 32 {
-		err = common.ErrConfigDigestLen(l)
+		err = pb.ErrConfigDigestLen(l)
 		return
 	}
 	copy(cfg.ConfigDigest[:], reply.ContractConfig.ConfigDigest)
@@ -157,7 +156,7 @@ func (c *contractConfigTrackerClient) LatestConfig(ctx context.Context, changedI
 		cfg.Transmitters = append(cfg.Transmitters, libocr.Account(t))
 	}
 	if reply.ContractConfig.F > math.MaxUint8 {
-		err = common.ErrUint8Bounds{Name: "F", U: reply.ContractConfig.F}
+		err = pb.ErrUint8Bounds{Name: "F", U: reply.ContractConfig.F}
 		return
 	}
 	cfg.F = uint8(reply.ContractConfig.F)

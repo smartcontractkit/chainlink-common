@@ -10,14 +10,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// PluginMedianName is the name for [types.PluginMedian]/[NewGRPCPluginMedian].
+// PluginMercurynName is the name for [types.PluginMercury]/[NewGRPCPluginMercury].
 const PluginMercuryName = "mercury"
 
 func PluginMercuryHandshakeConfig() plugin.HandshakeConfig {
 	return plugin.HandshakeConfig{
-		MagicCookieKey: "CL_PLUGIN_MERCURY_MAGIC_COOKIE",
-		// TODO how to generate this?
-		MagicCookieValue: "fffa697e19748cd695dd1690c09745ee7cc03717179958e8eadd5a7ca4646000",
+		MagicCookieKey:   "CL_PLUGIN_MERCURY_MAGIC_COOKIE",
+		MagicCookieValue: "c3478720-a7a6-4d39-b506-0dd432c9be9a",
 	}
 }
 

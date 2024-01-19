@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -108,7 +107,7 @@ func newReportingPluginServiceServer(b *brokerExt, gp types.ReportingPluginClien
 func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Context, request *pb.NewReportingPluginFactoryRequest) (*pb.NewReportingPluginFactoryReply, error) {
 	errorLogConn, err := m.dial(request.ErrorLogID)
 	if err != nil {
-		return nil, common.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
+		return nil, ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := resource{errorLogConn, "ErrorLog"}
 	errorLog := newErrorLogClient(errorLogConn)
@@ -116,14 +115,14 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	providerConn, err := m.dial(request.ProviderID)
 	if err != nil {
 		m.closeAll(errorLogRes)
-		return nil, common.ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
+		return nil, ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
 	}
 	providerRes := resource{providerConn, "PluginProvider"}
 
 	pipelineRunnerConn, err := m.dial(request.PipelineRunnerID)
 	if err != nil {
 		m.closeAll(errorLogRes, providerRes)
-		return nil, common.ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
+		return nil, ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
 	}
 	pipelineRunnerRes := resource{pipelineRunnerConn, "PipelineRunner"}
 	pipelineRunner := newPipelineRunnerClient(pipelineRunnerConn)
@@ -131,7 +130,7 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	telemetryConn, err := m.dial(request.TelemetryID)
 	if err != nil {
 		m.closeAll(errorLogRes, providerRes, pipelineRunnerRes)
-		return nil, common.ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
+		return nil, ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
 	}
 	telemetryRes := resource{telemetryConn, "Telemetry"}
 	telemetry := NewTelemetryServiceClient(telemetryConn)

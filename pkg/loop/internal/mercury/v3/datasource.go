@@ -9,7 +9,6 @@ import (
 	//ocr_types "github.com/smartcontractkit/libocr/offchainreporting/types"
 	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
 	mercury_common_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
@@ -28,7 +27,7 @@ func NewDataSourceClient(cc grpc.ClientConnInterface) *DataSourceClient {
 
 func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (v3.Observation, error) {
 	reply, err := d.grpc.Observe(ctx, &mercury_v3_pb.ObserveRequest{
-		ReportTimestamp: common.PbReportTimestamp(timestamp),
+		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 	})
 	if err != nil {
 		return v3.Observation{}, err
@@ -50,7 +49,7 @@ func NewDataSourceServer(impl v3.DataSource) *DataSourceServer {
 }
 
 func (d *DataSourceServer) Observe(ctx context.Context, request *mercury_v3_pb.ObserveRequest) (*mercury_v3_pb.ObserveResponse, error) {
-	timestamp, err := common.ReportTimestamp(request.ReportTimestamp)
+	timestamp, err := pb.ReportTimestampFromPb(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}

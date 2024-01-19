@@ -11,7 +11,6 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
@@ -91,7 +90,7 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 		MaxDurationShouldTransmitAcceptedReport: time.Duration(request.ReportingPluginConfig.MaxDurationShouldTransmitAcceptedReport),
 	}
 	if l := len(request.ReportingPluginConfig.ConfigDigest); l != 32 {
-		return nil, common.ErrConfigDigestLen(l)
+		return nil, pb.ErrConfigDigestLen(l)
 	}
 	copy(cfg.ConfigDigest[:], request.ReportingPluginConfig.ConfigDigest)
 
@@ -132,7 +131,7 @@ func newReportingPluginClient(b *brokerExt, cc grpc.ClientConnInterface) *report
 
 func (r *reportingPluginClient) Query(ctx context.Context, timestamp libocr.ReportTimestamp) (libocr.Query, error) {
 	reply, err := r.grpc.Query(ctx, &pb.QueryRequest{
-		ReportTimestamp: common.PbReportTimestamp(timestamp),
+		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 	})
 	if err != nil {
 		return nil, err
@@ -142,7 +141,7 @@ func (r *reportingPluginClient) Query(ctx context.Context, timestamp libocr.Repo
 
 func (r *reportingPluginClient) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, query libocr.Query) (libocr.Observation, error) {
 	reply, err := r.grpc.Observation(ctx, &pb.ObservationRequest{
-		ReportTimestamp: common.PbReportTimestamp(timestamp),
+		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 		Query:           query,
 	})
 	if err != nil {
@@ -153,7 +152,7 @@ func (r *reportingPluginClient) Observation(ctx context.Context, timestamp liboc
 
 func (r *reportingPluginClient) Report(ctx context.Context, timestamp libocr.ReportTimestamp, query libocr.Query, obs []libocr.AttributedObservation) (bool, libocr.Report, error) {
 	reply, err := r.grpc.Report(ctx, &pb.ReportRequest{
-		ReportTimestamp: common.PbReportTimestamp(timestamp),
+		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 		Query:           query,
 		Observations:    pbAttributedObservations(obs),
 	})
@@ -165,7 +164,7 @@ func (r *reportingPluginClient) Report(ctx context.Context, timestamp libocr.Rep
 
 func (r *reportingPluginClient) ShouldAcceptFinalizedReport(ctx context.Context, timestamp libocr.ReportTimestamp, report libocr.Report) (bool, error) {
 	reply, err := r.grpc.ShouldAcceptFinalizedReport(ctx, &pb.ShouldAcceptFinalizedReportRequest{
-		ReportTimestamp: common.PbReportTimestamp(timestamp),
+		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 		Report:          report,
 	})
 	if err != nil {
@@ -176,7 +175,7 @@ func (r *reportingPluginClient) ShouldAcceptFinalizedReport(ctx context.Context,
 
 func (r *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context, timestamp libocr.ReportTimestamp, report libocr.Report) (bool, error) {
 	reply, err := r.grpc.ShouldTransmitAcceptedReport(ctx, &pb.ShouldTransmitAcceptedReportRequest{
-		ReportTimestamp: common.PbReportTimestamp(timestamp),
+		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 		Report:          report,
 	})
 	if err != nil {
@@ -202,7 +201,7 @@ type reportingPluginServer struct {
 }
 
 func (r *reportingPluginServer) Query(ctx context.Context, request *pb.QueryRequest) (*pb.QueryReply, error) {
-	rts, err := common.ReportTimestamp(request.ReportTimestamp)
+	rts, err := pb.ReportTimestampFromPb(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +213,7 @@ func (r *reportingPluginServer) Query(ctx context.Context, request *pb.QueryRequ
 }
 
 func (r *reportingPluginServer) Observation(ctx context.Context, request *pb.ObservationRequest) (*pb.ObservationReply, error) {
-	rts, err := common.ReportTimestamp(request.ReportTimestamp)
+	rts, err := pb.ReportTimestampFromPb(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +225,7 @@ func (r *reportingPluginServer) Observation(ctx context.Context, request *pb.Obs
 }
 
 func (r *reportingPluginServer) Report(ctx context.Context, request *pb.ReportRequest) (*pb.ReportReply, error) {
-	rts, err := common.ReportTimestamp(request.ReportTimestamp)
+	rts, err := pb.ReportTimestampFromPb(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +244,7 @@ func (r *reportingPluginServer) Report(ctx context.Context, request *pb.ReportRe
 }
 
 func (r *reportingPluginServer) ShouldAcceptFinalizedReport(ctx context.Context, request *pb.ShouldAcceptFinalizedReportRequest) (*pb.ShouldAcceptFinalizedReportReply, error) {
-	rts, err := common.ReportTimestamp(request.ReportTimestamp)
+	rts, err := pb.ReportTimestampFromPb(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +256,7 @@ func (r *reportingPluginServer) ShouldAcceptFinalizedReport(ctx context.Context,
 }
 
 func (r *reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context, request *pb.ShouldTransmitAcceptedReportRequest) (*pb.ShouldTransmitAcceptedReportReply, error) {
-	rts, err := common.ReportTimestamp(request.ReportTimestamp)
+	rts, err := pb.ReportTimestampFromPb(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +295,7 @@ func attributedObservations(pbos []*pb.AttributedObservation) (r []libocr.Attrib
 func attributedObservation(pbo *pb.AttributedObservation) (o libocr.AttributedObservation, err error) {
 	o.Observation = pbo.Observation
 	if pbo.Observer > math.MaxUint8 {
-		err = common.ErrUint8Bounds{Name: "Observer", U: pbo.Observer}
+		err = pb.ErrUint8Bounds{Name: "Observer", U: pbo.Observer}
 		return
 	}
 	o.Observer = commontypes.OracleID(pbo.Observer)

@@ -9,7 +9,6 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
@@ -25,7 +24,7 @@ func NewDataSourceClient(cc grpc.ClientConnInterface) *DataSourceClient {
 
 func (d *DataSourceClient) Observe(ctx context.Context, timestamp types.ReportTimestamp) (*big.Int, error) {
 	reply, err := d.grpc.Observe(ctx, &pb.ObserveRequest{
-		ReportTimestamp: common.PbReportTimestamp(timestamp),
+		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 	})
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func NewDataSourceServer(impl median.DataSource) *DataSourceServer {
 }
 
 func (d *DataSourceServer) Observe(ctx context.Context, request *pb.ObserveRequest) (*pb.ObserveReply, error) {
-	timestamp, err := common.ReportTimestamp(request.ReportTimestamp)
+	timestamp, err := pb.ReportTimestampFromPb(request.ReportTimestamp)
 	if err != nil {
 		return nil, err
 	}

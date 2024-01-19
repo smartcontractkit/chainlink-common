@@ -8,7 +8,6 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
@@ -52,7 +51,7 @@ func (c *contractTransmitterClient) LatestConfigDigestAndEpoch(ctx context.Conte
 		return
 	}
 	if l := len(reply.ConfigDigest); l != 32 {
-		err = common.ErrConfigDigestLen(l)
+		err = pb.ErrConfigDigestLen(l)
 		return
 	}
 	copy(configDigest[:], reply.ConfigDigest)
@@ -81,12 +80,12 @@ type contractTransmitterServer struct {
 func (c *contractTransmitterServer) Transmit(ctx context.Context, request *pb.TransmitRequest) (*pb.TransmitReply, error) {
 	var reportCtx libocr.ReportContext
 	if l := len(request.ReportContext.ReportTimestamp.ConfigDigest); l != 32 {
-		return nil, common.ErrConfigDigestLen(l)
+		return nil, pb.ErrConfigDigestLen(l)
 	}
 	copy(reportCtx.ConfigDigest[:], request.ReportContext.ReportTimestamp.ConfigDigest)
 	reportCtx.Epoch = request.ReportContext.ReportTimestamp.Epoch
 	if request.ReportContext.ReportTimestamp.Round > math.MaxUint8 {
-		return nil, common.ErrUint8Bounds{Name: "Round", U: request.ReportContext.ReportTimestamp.Round}
+		return nil, pb.ErrUint8Bounds{Name: "Round", U: request.ReportContext.ReportTimestamp.Round}
 	}
 	reportCtx.Round = uint8(request.ReportContext.ReportTimestamp.Round)
 	if l := len(request.ReportContext.ExtraHash); l != 32 {
@@ -96,7 +95,7 @@ func (c *contractTransmitterServer) Transmit(ctx context.Context, request *pb.Tr
 	var sigs []libocr.AttributedOnchainSignature
 	for _, s := range request.AttributedOnchainSignatures {
 		if s.Signer > math.MaxUint8 {
-			return nil, common.ErrUint8Bounds{Name: "Signer", U: s.Signer}
+			return nil, pb.ErrUint8Bounds{Name: "Signer", U: s.Signer}
 		}
 		sigs = append(sigs, libocr.AttributedOnchainSignature{
 			Signature: s.Signature,

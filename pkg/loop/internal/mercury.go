@@ -9,7 +9,6 @@ import (
 	"github.com/mwitkow/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/common"
 	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
 	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -166,7 +165,7 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 
 	dsConn, resourceErr := ms.dial(req.DataSourceV3ID)
 	if resourceErr != nil {
-		return nil, common.ErrConnDial{Name: "DataSourceV3", ID: req.DataSourceV3ID, Err: resourceErr}
+		return nil, ErrConnDial{Name: "DataSourceV3", ID: req.DataSourceV3ID, Err: resourceErr}
 	}
 	dsRes := resource{Closer: dsConn, name: "DataSourceV3"}
 	deps.Add(dsRes)
@@ -174,7 +173,7 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 
 	providerConn, resourceErr := ms.dial(req.MercuryProviderID)
 	if resourceErr != nil {
-		return nil, common.ErrConnDial{Name: "MercuryProvider", ID: req.MercuryProviderID, Err: resourceErr}
+		return nil, ErrConnDial{Name: "MercuryProvider", ID: req.MercuryProviderID, Err: resourceErr}
 	}
 	providerRes := resource{Closer: providerConn, name: "MercuryProvider"}
 	deps.Add(providerRes)

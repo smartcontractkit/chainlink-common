@@ -220,3 +220,7 @@ func (s StaticMercuryProvider) ChainReader() types.ChainReader {
 func (s StaticMercuryProvider) MercuryServerFetcher() mercury_types.ServerFetcher {
 	return mercury_common_test.StaticServerFetcher{}
 }
+
+func (s StaticMercuryProvider) Codec() types.Codec {
+	return nil
+}

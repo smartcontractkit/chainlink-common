@@ -5,17 +5,17 @@ import (
 )
 
 type String struct {
-	Value string
+	Underlying string
 }
 
 func NewString(s string) (*String, error) {
-	return &String{Value: s}, nil
+	return &String{Underlying: s}, nil
 }
 
 func (s *String) Proto() (*pb.Value, error) {
-	return pb.NewStringValue(s.Value)
+	return pb.NewStringValue(s.Underlying)
 }
 
 func (s *String) Unwrap() (any, error) {
-	return s.Value, nil
+	return s.Underlying, nil
 }

@@ -7,17 +7,17 @@ import (
 )
 
 type Decimal struct {
-	Value decimal.Decimal
+	Underlying decimal.Decimal
 }
 
 func NewDecimal(d decimal.Decimal) (*Decimal, error) {
-	return &Decimal{Value: d}, nil
+	return &Decimal{Underlying: d}, nil
 }
 
 func (d *Decimal) Proto() (*pb.Value, error) {
-	return pb.NewDecimalValue(d.Value)
+	return pb.NewDecimalValue(d.Underlying)
 }
 
 func (d *Decimal) Unwrap() (any, error) {
-	return d.Value, nil
+	return d.Underlying, nil
 }

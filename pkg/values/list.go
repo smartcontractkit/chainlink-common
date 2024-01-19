@@ -5,7 +5,7 @@ import (
 )
 
 type List struct {
-	Value []Value
+	Underlying []Value
 }
 
 func NewList(l []any) (*List, error) {
@@ -18,12 +18,12 @@ func NewList(l []any) (*List, error) {
 
 		lv = append(lv, ev)
 	}
-	return &List{Value: lv}, nil
+	return &List{Underlying: lv}, nil
 }
 
 func (l *List) Proto() (*pb.Value, error) {
 	v := []*pb.Value{}
-	for _, e := range l.Value {
+	for _, e := range l.Underlying {
 		pe, err := e.Proto()
 		if err != nil {
 			return nil, err
@@ -36,7 +36,7 @@ func (l *List) Proto() (*pb.Value, error) {
 
 func (l *List) Unwrap() (any, error) {
 	nl := []any{}
-	for _, v := range l.Value {
+	for _, v := range l.Underlying {
 		uv, err := v.Unwrap()
 		if err != nil {
 			return nil, err

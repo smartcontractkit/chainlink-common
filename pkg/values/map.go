@@ -5,7 +5,7 @@ import (
 )
 
 type Map struct {
-	Value map[string]Value
+	Underlying map[string]Value
 }
 
 func NewMap(m map[string]any) (*Map, error) {
@@ -20,13 +20,13 @@ func NewMap(m map[string]any) (*Map, error) {
 	}
 
 	return &Map{
-		Value: mv,
+		Underlying: mv,
 	}, nil
 }
 
 func (m *Map) Proto() (*pb.Value, error) {
 	pm := map[string]*pb.Value{}
-	for k, v := range m.Value {
+	for k, v := range m.Underlying {
 		pv, err := v.Proto()
 		if err != nil {
 			return nil, err
@@ -40,7 +40,7 @@ func (m *Map) Proto() (*pb.Value, error) {
 
 func (m *Map) Unwrap() (any, error) {
 	nm := map[string]any{}
-	for k, v := range m.Value {
+	for k, v := range m.Underlying {
 		uv, err := v.Unwrap()
 		if err != nil {
 			return nil, err

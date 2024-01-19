@@ -5,17 +5,17 @@ import (
 )
 
 type Bytes struct {
-	Value []byte
+	Underlying []byte
 }
 
 func NewBytes(b []byte) (*Bytes, error) {
-	return &Bytes{Value: b}, nil
+	return &Bytes{Underlying: b}, nil
 }
 
 func (b *Bytes) Proto() (*pb.Value, error) {
-	return pb.NewBytesValue(b.Value)
+	return pb.NewBytesValue(b.Underlying)
 }
 
 func (b *Bytes) Unwrap() (any, error) {
-	return b.Value, nil
+	return b.Underlying, nil
 }

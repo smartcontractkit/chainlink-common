@@ -5,17 +5,17 @@ import (
 )
 
 type Bool struct {
-	Value bool
+	Underlying bool
 }
 
 func NewBool(b bool) (*Bool, error) {
-	return &Bool{Value: b}, nil
+	return &Bool{Underlying: b}, nil
 }
 
 func (b *Bool) Proto() (*pb.Value, error) {
-	return pb.NewBoolValue(b.Value)
+	return pb.NewBoolValue(b.Underlying)
 }
 
 func (b *Bool) Unwrap() (any, error) {
-	return b.Value, nil
+	return b.Underlying, nil
 }

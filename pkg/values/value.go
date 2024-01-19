@@ -82,7 +82,7 @@ func fromMapValueProto(mv *pb.Map) (Value, error) {
 
 		nm[k] = val
 	}
-	return &Map{Value: nm}, nil
+	return &Map{Underlying: nm}, nil
 }
 
 func fromListValueProto(lv *pb.List) (Value, error) {
@@ -95,7 +95,7 @@ func fromListValueProto(lv *pb.List) (Value, error) {
 
 		nl = append(nl, elv)
 	}
-	return &List{Value: nl}, nil
+	return &List{Underlying: nl}, nil
 }
 
 func fromDecimalValueProto(decStr string) (Value, error) {

@@ -41,9 +41,9 @@ func SqlxTransaction(ctx context.Context, q Queryer, lggr logger.Logger, fc func
 		// nested transaction: just use the outer transaction
 		err = fc(db)
 	case *sqlx.DB:
-		err = sqlxTransactionQ(ctx, db, lggr, fc, txOpts...)
+		err = SqlxTransactionQ(ctx, db, lggr, fc, txOpts...)
 	case Q:
-		err = sqlxTransactionQ(ctx, db.db, lggr, fc, txOpts...)
+		err = SqlxTransactionQ(ctx, db.db, lggr, fc, txOpts...)
 	default:
 		err = errors.Errorf("invalid db type: %T", q)
 	}

@@ -145,7 +145,7 @@ func NewQ(db *sqlx.DB, lggr logger.Logger, config QConfig, qopts ...QOpt) (q Q) 
 	return
 }
 
-func (q Q) originalLogger() logger.Logger {
+func (q Q) OriginalLogger() logger.Logger {
 	return logger.Helper(q.logger, -2)
 }
 
@@ -159,7 +159,7 @@ func PrepareQueryRowx(q Queryer, sql string, dest interface{}, arg interface{}) 
 }
 
 func (q Q) WithOpts(qopts ...QOpt) Q {
-	return NewQ(q.db, q.originalLogger(), q.config, qopts...)
+	return NewQ(q.db, q.OriginalLogger(), q.config, qopts...)
 }
 
 func (q Q) Context() (context.Context, context.CancelFunc) {
@@ -169,7 +169,7 @@ func (q Q) Context() (context.Context, context.CancelFunc) {
 func (q Q) Transaction(fc func(q Queryer) error, txOpts ...TxOption) error {
 	ctx, cancel := q.Context()
 	defer cancel()
-	return SqlxTransaction(ctx, q.Queryer, q.originalLogger(), fc, txOpts...)
+	return SqlxTransaction(ctx, q.Queryer, q.OriginalLogger(), fc, txOpts...)
 }
 
 // CAUTION: A subtle problem lurks here, because the following code is buggy:

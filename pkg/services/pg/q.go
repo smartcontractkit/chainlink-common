@@ -273,8 +273,8 @@ func (q Q) GetNamed(sql string, dest interface{}, arg interface{}) error {
 	return ql.withLogError(errors.Wrap(q.GetContext(ctx, dest, query, args...), "error in get query"))
 }
 
-func (q Q) newQueryLogger(query string, args []interface{}) *queryLogger {
-	return &queryLogger{Q: q, query: query, args: args, str: sync.OnceValue(func() string {
+func (q Q) newQueryLogger(query string, args []interface{}) *QueryLogger {
+	return &QueryLogger{Q: q, query: query, args: args, str: sync.OnceValue(func() string {
 		return sprintQ(query, args)
 	})}
 }
@@ -311,8 +311,8 @@ func sprintQ(query string, args []interface{}) string {
 	return strings.ReplaceAll(strings.ReplaceAll(queryWithVals, "\n", " "), "\t", " ")
 }
 
-// queryLogger extends Q with logging helpers for a particular query w/ args.
-type queryLogger struct {
+// QueryLogger extends Q with logging helpers for a particular query w/ args.
+type QueryLogger struct {
 	Q
 
 	query string
@@ -321,17 +321,17 @@ type queryLogger struct {
 	str func() string
 }
 
-func (q *queryLogger) String() string {
+func (q *QueryLogger) String() string {
 	return q.str()
 }
 
-func (q *queryLogger) logSqlQuery() {
+func (q *QueryLogger) logSqlQuery() {
 	if q.config != nil && q.config.LogSQL() {
 		q.logger.Debugw("SQL QUERY", "sql", q)
 	}
 }
 
-func (q *queryLogger) withLogError(err error) error {
+func (q *QueryLogger) withLogError(err error) error {
 	if err != nil && !errors.Is(err, sql.ErrNoRows) && q.config != nil && q.config.LogSQL() {
 		q.logger.Errorw("SQL ERROR", "err", err, "sql", q)
 	}
@@ -340,7 +340,7 @@ func (q *queryLogger) withLogError(err error) error {
 
 // postSqlLog logs about context cancellation and timing after a query returns.
 // Queries which use their full timeout log critical level. More than 50% log error, and 10% warn.
-func (q *queryLogger) postSqlLog(ctx context.Context, begin time.Time) {
+func (q *QueryLogger) postSqlLog(ctx context.Context, begin time.Time) {
 	elapsed := time.Since(begin)
 	if ctx.Err() != nil {
 		q.logger.Debugw("SQL CONTEXT CANCELLED", "ms", elapsed.Milliseconds(), "err", ctx.Err(), "sql", q)

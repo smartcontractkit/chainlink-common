@@ -275,12 +275,12 @@ func (q Q) GetNamed(sql string, dest interface{}, arg interface{}) error {
 
 func (q Q) newQueryLogger(query string, args []interface{}) *QueryLogger {
 	return &QueryLogger{Q: q, query: query, args: args, str: sync.OnceValue(func() string {
-		return sprintQ(query, args)
+		return SprintQ(query, args)
 	})}
 }
 
-// sprintQ formats the query with the given args and returns the resulting string.
-func sprintQ(query string, args []interface{}) string {
+// SprintQ formats the query with the given args and returns the resulting string.
+func SprintQ(query string, args []interface{}) string {
 	if args == nil {
 		return query
 	}

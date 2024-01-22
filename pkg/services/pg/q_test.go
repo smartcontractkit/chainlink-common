@@ -44,7 +44,7 @@ func Test_sprintQ(t *testing.T) {
 			"SELECT foo FROM table WHERE b = ('\\x0a','\\x0b');"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			got := sprintQ(tt.query, tt.args)
+			got := SprintQ(tt.query, tt.args)
 			t.Log(tt.query, tt.args)
 			t.Log(got)
 			require.Equal(t, tt.exp, got)

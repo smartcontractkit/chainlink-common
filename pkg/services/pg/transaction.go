@@ -41,15 +41,15 @@ func SqlTransaction(ctx context.Context, rdb *sql.DB, lggr logger.Logger, fn fun
 		}
 		return fn(tx)
 	}
-	return sqlxTransactionQ(ctx, db, lggr, wrapFn, opts...)
+	return SqlxTransactionQ(ctx, db, lggr, wrapFn, opts...)
 }
 
-// txBeginner can be a db or a conn, anything that implements BeginTxx
-type txBeginner interface {
+// TxBeginner can be a db or a conn, anything that implements BeginTxx
+type TxBeginner interface {
 	BeginTxx(context.Context, *sql.TxOptions) (*sqlx.Tx, error)
 }
 
-func sqlxTransactionQ(ctx context.Context, db txBeginner, lggr logger.Logger, fn func(q Queryer) error, opts ...TxOption) (err error) {
+func SqlxTransactionQ(ctx context.Context, db TxBeginner, lggr logger.Logger, fn func(q Queryer) error, opts ...TxOption) (err error) {
 	var txOpts sql.TxOptions
 	for _, o := range opts {
 		o(&txOpts)

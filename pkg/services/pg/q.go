@@ -193,8 +193,8 @@ func (q Q) ExecQIter(query string, args ...interface{}) (sql.Result, context.Can
 	ctx, cancel := q.Context()
 
 	ql := q.newQueryLogger(query, args)
-	ql.logSqlQuery()
-	defer ql.postSqlLog(ctx, time.Now())
+	ql.logSQLQuery()
+	defer ql.postSQLLog(ctx, time.Now())
 
 	res, err := q.Queryer.ExecContext(ctx, query, args...)
 	return res, cancel, ql.withLogError(err)
@@ -204,8 +204,8 @@ func (q Q) ExecQ(query string, args ...interface{}) error {
 	defer cancel()
 
 	ql := q.newQueryLogger(query, args)
-	ql.logSqlQuery()
-	defer ql.postSqlLog(ctx, time.Now())
+	ql.logSQLQuery()
+	defer ql.postSQLLog(ctx, time.Now())
 
 	_, err := q.Queryer.ExecContext(ctx, query, args...)
 	return ql.withLogError(err)
@@ -219,8 +219,8 @@ func (q Q) ExecQNamed(query string, arg interface{}) (err error) {
 	defer cancel()
 
 	ql := q.newQueryLogger(query, args)
-	ql.logSqlQuery()
-	defer ql.postSqlLog(ctx, time.Now())
+	ql.logSQLQuery()
+	defer ql.postSQLLog(ctx, time.Now())
 
 	_, err = q.Queryer.ExecContext(ctx, query, args...)
 	return ql.withLogError(err)
@@ -233,8 +233,8 @@ func (q Q) Select(dest interface{}, query string, args ...interface{}) error {
 	defer cancel()
 
 	ql := q.newQueryLogger(query, args)
-	ql.logSqlQuery()
-	defer ql.postSqlLog(ctx, time.Now())
+	ql.logSQLQuery()
+	defer ql.postSQLLog(ctx, time.Now())
 
 	return ql.withLogError(q.Queryer.SelectContext(ctx, dest, query, args...))
 }
@@ -252,8 +252,8 @@ func (q Q) Get(dest interface{}, query string, args ...interface{}) error {
 	defer cancel()
 
 	ql := q.newQueryLogger(query, args)
-	ql.logSqlQuery()
-	defer ql.postSqlLog(ctx, time.Now())
+	ql.logSQLQuery()
+	defer ql.postSQLLog(ctx, time.Now())
 
 	return ql.withLogError(q.Queryer.GetContext(ctx, dest, query, args...))
 }
@@ -267,8 +267,8 @@ func (q Q) GetNamed(sql string, dest interface{}, arg interface{}) error {
 	defer cancel()
 
 	ql := q.newQueryLogger(query, args)
-	ql.logSqlQuery()
-	defer ql.postSqlLog(ctx, time.Now())
+	ql.logSQLQuery()
+	defer ql.postSQLLog(ctx, time.Now())
 
 	return ql.withLogError(errors.Wrap(q.GetContext(ctx, dest, query, args...), "error in get query"))
 }
@@ -325,7 +325,7 @@ func (q *QueryLogger) String() string {
 	return q.str()
 }
 
-func (q *QueryLogger) logSqlQuery() {
+func (q *QueryLogger) logSQLQuery() {
 	if q.config != nil && q.config.LogSQL() {
 		q.logger.Debugw("SQL QUERY", "sql", q)
 	}
@@ -338,9 +338,9 @@ func (q *QueryLogger) withLogError(err error) error {
 	return err
 }
 
-// postSqlLog logs about context cancellation and timing after a query returns.
+// postSQLLog logs about context cancellation and timing after a query returns.
 // Queries which use their full timeout log critical level. More than 50% log error, and 10% warn.
-func (q *QueryLogger) postSqlLog(ctx context.Context, begin time.Time) {
+func (q *QueryLogger) postSQLLog(ctx context.Context, begin time.Time) {
 	elapsed := time.Since(begin)
 	if ctx.Err() != nil {
 		q.logger.Debugw("SQL CONTEXT CANCELLED", "ms", elapsed.Milliseconds(), "err", ctx.Err(), "sql", q)

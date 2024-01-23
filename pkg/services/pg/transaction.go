@@ -15,9 +15,6 @@ import (
 )
 
 const (
-	// NOTE: This is the default level in Postgres anyway, we just make it
-	// explicit here
-	defaultIsolation = sql.LevelReadCommitted
 	// SentryFlushDeadline indicates the maximum amount of time we allow sentry to
 	// flush events on manual flush
 	SentryFlushDeadline = 5 * time.Second
@@ -32,7 +29,7 @@ func OptReadOnlyTx() TxOption {
 	}
 }
 
-func SqlTransaction(ctx context.Context, rdb *sql.DB, lggr logger.Logger, fn func(tx *sqlx.Tx) error, opts ...TxOption) (err error) {
+func SQLTransaction(ctx context.Context, rdb *sql.DB, lggr logger.Logger, fn func(tx *sqlx.Tx) error, opts ...TxOption) (err error) {
 	db := WrapDbWithSqlx(rdb)
 	wrapFn := func(q Queryer) error {
 		tx, ok := q.(*sqlx.Tx)

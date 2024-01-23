@@ -26,12 +26,12 @@ func NewDataSourceClient(cc grpc.ClientConnInterface) *DataSourceClient {
 
 func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (v3.Observation, error) {
 	reply, err := d.grpc.Observe(ctx, &mercury_v3_pb.ObserveRequest{
-		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
+		ReportTimestamp:           pb.ReportTimestampToPb(timestamp),
+		FetchMaxFinalizedBlockNum: fetchMaxFinalizedTimestamp,
 	})
 	if err != nil {
 		return v3.Observation{}, err
 	}
-	// TODO: implement fetchMaxFinalizedTimestamp handling. Not sure what the application logic is here
 	return observation(reply), nil
 }
 
@@ -60,8 +60,6 @@ func (d *DataSourceServer) Observe(ctx context.Context, request *mercury_v3_pb.O
 }
 
 func observation(resp *mercury_v3_pb.ObserveResponse) v3.Observation {
-	// TODO: figure out what to do with the Err field. should it be the resp error? that seems wrong b/c
-	// the Err field is one all the Observation fields.
 	return v3.Observation{
 		BenchmarkPrice:        mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.BenchmarkPrice.Int()},
 		Bid:                   mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.Bid.Int()},

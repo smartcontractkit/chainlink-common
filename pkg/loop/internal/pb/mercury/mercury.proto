@@ -17,9 +17,6 @@ service MercuryAdapter {
   rpc NewMercuryV3Factory (NewMercuryV3FactoryRequest) returns (NewMercuryV3FactoryReply) {}
 }
 
-// TODO the versioning is confusing. There is a distinct Factory for each verion, but the 
-// MercuryProvider [pkg/types/provider_mercury.go] has a all of the versions of the codec defined on it
-
 
 // NewMercuryV3FactoryRequest is a grpc wrapper for the input to  [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/NewFactory].
 message NewMercuryV3FactoryRequest {

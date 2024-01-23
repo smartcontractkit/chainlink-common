@@ -60,8 +60,6 @@ func (d *DataSourceServer) Observe(ctx context.Context, request *mercury_v1_pb.O
 }
 
 func observation(resp *mercury_v1_pb.ObserveResponse) v1.Observation {
-	// TODO: figure out what to do with the Err field. should it be the resp error? that seems wrong b/c
-	// the Err field is one all the Observation fields.
 	return v1.Observation{
 		BenchmarkPrice:          mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.BenchmarkPrice.Int()},
 		Bid:                     mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.Bid.Int()},

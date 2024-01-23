@@ -23,7 +23,6 @@ func NewReportCodecClient(cc grpc.ClientConnInterface) *ReportCodecClient {
 	return &ReportCodecClient{grpc: mercury_v1_pb.NewReportCodecClient(cc)}
 }
 
-// TODO: why doesn't the interface have a context?!
 func (r *ReportCodecClient) BuildReport(fields mercury_v1_types.ReportFields) (ocr2plus_types.Report, error) {
 	reply, err := r.grpc.BuildReport(context.TODO(), &mercury_v1_pb.BuildReportRequest{
 		ReportFields: pbReportFields(fields),

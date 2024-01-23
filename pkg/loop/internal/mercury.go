@@ -35,8 +35,6 @@ type MercuryAdapterClient struct {
 func NewMercuryAdapterClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *MercuryAdapterClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "MercuryAdapterClient")
 	pc := newPluginClient(broker, brokerCfg, conn)
-	// TODO: this is difficult to parse. the plugin client seems to be used to mean different things,
-	// or at least is more 'primary' than the service client and the mercury client. i don't understand the asymmetry.
 	return &MercuryAdapterClient{
 		pluginClient:  pc,
 		serviceClient: newServiceClient(pc.brokerExt, pc),
@@ -155,8 +153,6 @@ func registerCommonServices(s *grpc.Server, provider types.MercuryProvider) {
 	mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
 }
 
-// TODO: unlike median, the existing code to create a factory for mercury v3 does not use a provider. not sure what to do about that.
-// https://github.com/smartcontractkit/chainlink-data-streams/blob/a6e3fe8ff2a12886b111f341639bae3cbf478501/mercury/v3/mercury.go#L65C92-L65C105
 func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 	provider types.MercuryProvider, dataSource mercury_v3.DataSource,
 ) (types.ReportingPluginFactory, error) {

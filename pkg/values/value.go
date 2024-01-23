@@ -3,6 +3,7 @@ package values
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/shopspring/decimal"
@@ -38,6 +39,8 @@ func Wrap(v any) (Value, error) {
 		return NewInt64(tv)
 	case int:
 		return NewInt64(int64(tv))
+	case error:
+		return NewError(tv)
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
@@ -59,6 +62,8 @@ func FromProto(val *pb.Value) (Value, error) {
 		return fromListValueProto(val.GetListValue())
 	case *pb.Value_MapValue:
 		return fromMapValueProto(val.GetMapValue())
+	case *pb.Value_ErrorValue:
+		return NewError(errors.New(val.GetErrorValue()))
 	}
 
 	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)

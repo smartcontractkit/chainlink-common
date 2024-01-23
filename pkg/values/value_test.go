@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/shopspring/decimal"
@@ -14,6 +15,14 @@ func Test_Value(t *testing.T) {
 		newValue func() (any, Value, error)
 		equal    func(t *testing.T, expected any, unwrapped any)
 	}{
+		{
+			name: "error",
+			newValue: func() (any, Value, error) {
+				origErr := errors.New("oops, I broke something")
+				mv, err := NewError(origErr)
+				return origErr, mv, err
+			},
+		},
 		{
 			name: "map",
 			newValue: func() (any, Value, error) {

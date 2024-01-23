@@ -72,3 +72,11 @@ func NewInt64Value(i int64) (*Value, error) {
 		},
 	}, nil
 }
+
+func NewErrorValue(e error) (*Value, error) {
+	return &Value{
+		Value: &Value_ErrorValue{
+			ErrorValue: e.Error(),
+		},
+	}, nil
+}

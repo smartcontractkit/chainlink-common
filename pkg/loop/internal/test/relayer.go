@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -362,4 +363,97 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		err := relayer.Transact(ctx, from, to, amount, balanceCheck)
 		require.NoError(t, err)
 	})
+}
+
+func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.PluginRelayer) {
+	f.Add("ABC\xa8\x8c\xb3G\xfc", "", true, []byte{}, true, true, "")
+
+	f.Fuzz(func(
+		t *testing.T, fConfig string, fAccts string, fAcctErr bool,
+		fSigned []byte, fSignErr bool, fValsWErr bool, fErr string,
+	) {
+		keystore := fuzzerKeystore{
+			accounts:      []string{fAccts}, // fuzzer does not support []string type
+			acctErr:       fAcctErr,
+			signed:        fSigned,
+			signErr:       fSignErr,
+			valuesWithErr: fValsWErr,
+			errStr:        fErr,
+		}
+
+		ctx := context.Background()
+		_, _ = relayerFunc(t).NewRelayer(ctx, fConfig, keystore)
+	})
+}
+
+func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer) {
+	f.Add([]byte{}, int32(-1), "ABC\xa8\x8c\xb3G\xfc", false, []byte{}, "", "", []byte{})
+
+	f.Fuzz(func(
+		t *testing.T, fExtJobID []byte, fJobID int32, fContractID string, fNew bool,
+		fConfig []byte, fType string, fTransmID string, fPlugConf []byte,
+	) {
+		var rawBytes [16]byte
+
+		copy(rawBytes[:], fExtJobID)
+
+		relayer := relayerFunc(t)
+		ctx := context.Background()
+		fRelayArgs := types.RelayArgs{
+			ExternalJobID: uuid.UUID(rawBytes),
+			JobID:         fJobID,
+			ContractID:    fContractID,
+			New:           fNew,
+			RelayConfig:   fConfig,
+			ProviderType:  fType,
+		}
+
+		_, _ = relayer.NewConfigProvider(ctx, fRelayArgs)
+
+		pArgs := types.PluginArgs{
+			TransmitterID: fTransmID,
+			PluginConfig:  fPlugConf,
+		}
+
+		_, _ = relayer.NewPluginProvider(ctx, fRelayArgs, pArgs)
+	})
+}
+
+type fuzzerKeystore struct {
+	accounts      []string
+	acctErr       bool
+	signed        []byte
+	signErr       bool
+	valuesWithErr bool
+	errStr        string
+}
+
+func (k fuzzerKeystore) Accounts(ctx context.Context) ([]string, error) {
+	if k.acctErr {
+		err := fmt.Errorf(k.errStr)
+
+		if k.valuesWithErr {
+			return k.accounts, err
+		}
+
+		return nil, err
+	}
+
+	return k.accounts, nil
+}
+
+// Sign returns data signed by account.
+// nil data can be used as a no-op to check for account existence.
+func (k fuzzerKeystore) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
+	if k.signErr {
+		err := fmt.Errorf(k.errStr)
+
+		if k.valuesWithErr {
+			return k.signed, err
+		}
+
+		return nil, err
+	}
+
+	return k.signed, nil
 }

@@ -1,4 +1,4 @@
-name: 'nightly fuzz'
+name: 'nightly/tag fuzz'
 on:
   schedule:
     # Note: The schedule event can be delayed during periods of high
@@ -6,6 +6,9 @@ on:
     # the start of every hour. To decrease the chance of delay,
     # schedule your workflow to run at a different time of the hour.
     - cron: "25 0 * * *" # at 25 past midnight every day
+  push:
+    tags:
+      - '*'
   workflow_dispatch: null
 jobs:
   fuzzrun:

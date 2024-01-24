@@ -33,8 +33,8 @@ def main():
         print(f"{fuzzfn} in {path}", file=sys.stderr)
 
     if args.ci:
-        # only run each fuzzer once for 2 seconds in CI
-        durations_seconds = [2]
+        # only run each fuzzer once for 60 seconds in CI
+        durations_seconds = [60]
     else:
         # run forever or until --seconds, with increasingly longer durations per fuzz run
         durations_seconds = itertools.chain([5, 10, 30, 90, 270], itertools.repeat(600))

@@ -33,9 +33,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MercuryAdapterClient interface {
-	NewMercuryV1Factory(ctx context.Context, in *NewMercuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV1FactoryReply, error)
-	NewMercuryV2Factory(ctx context.Context, in *NewMercuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV2FactoryReply, error)
-	NewMercuryV3Factory(ctx context.Context, in *NewMercuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV3FactoryReply, error)
+	NewMercuryV1Factory(ctx context.Context, in *NewMercuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV1FactoryResponse, error)
+	NewMercuryV2Factory(ctx context.Context, in *NewMercuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV2FactoryResponse, error)
+	NewMercuryV3Factory(ctx context.Context, in *NewMercuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV3FactoryResponse, error)
 }
 
 type mercuryAdapterClient struct {
@@ -46,8 +46,8 @@ func NewMercuryAdapterClient(cc grpc.ClientConnInterface) MercuryAdapterClient {
 	return &mercuryAdapterClient{cc}
 }
 
-func (c *mercuryAdapterClient) NewMercuryV1Factory(ctx context.Context, in *NewMercuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV1FactoryReply, error) {
-	out := new(NewMercuryV1FactoryReply)
+func (c *mercuryAdapterClient) NewMercuryV1Factory(ctx context.Context, in *NewMercuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV1FactoryResponse, error) {
+	out := new(NewMercuryV1FactoryResponse)
 	err := c.cc.Invoke(ctx, MercuryAdapter_NewMercuryV1Factory_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -55,8 +55,8 @@ func (c *mercuryAdapterClient) NewMercuryV1Factory(ctx context.Context, in *NewM
 	return out, nil
 }
 
-func (c *mercuryAdapterClient) NewMercuryV2Factory(ctx context.Context, in *NewMercuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV2FactoryReply, error) {
-	out := new(NewMercuryV2FactoryReply)
+func (c *mercuryAdapterClient) NewMercuryV2Factory(ctx context.Context, in *NewMercuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV2FactoryResponse, error) {
+	out := new(NewMercuryV2FactoryResponse)
 	err := c.cc.Invoke(ctx, MercuryAdapter_NewMercuryV2Factory_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (c *mercuryAdapterClient) NewMercuryV2Factory(ctx context.Context, in *NewM
 	return out, nil
 }
 
-func (c *mercuryAdapterClient) NewMercuryV3Factory(ctx context.Context, in *NewMercuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV3FactoryReply, error) {
-	out := new(NewMercuryV3FactoryReply)
+func (c *mercuryAdapterClient) NewMercuryV3Factory(ctx context.Context, in *NewMercuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV3FactoryResponse, error) {
+	out := new(NewMercuryV3FactoryResponse)
 	err := c.cc.Invoke(ctx, MercuryAdapter_NewMercuryV3Factory_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -77,9 +77,9 @@ func (c *mercuryAdapterClient) NewMercuryV3Factory(ctx context.Context, in *NewM
 // All implementations must embed UnimplementedMercuryAdapterServer
 // for forward compatibility
 type MercuryAdapterServer interface {
-	NewMercuryV1Factory(context.Context, *NewMercuryV1FactoryRequest) (*NewMercuryV1FactoryReply, error)
-	NewMercuryV2Factory(context.Context, *NewMercuryV2FactoryRequest) (*NewMercuryV2FactoryReply, error)
-	NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryReply, error)
+	NewMercuryV1Factory(context.Context, *NewMercuryV1FactoryRequest) (*NewMercuryV1FactoryResponse, error)
+	NewMercuryV2Factory(context.Context, *NewMercuryV2FactoryRequest) (*NewMercuryV2FactoryResponse, error)
+	NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryResponse, error)
 	mustEmbedUnimplementedMercuryAdapterServer()
 }
 
@@ -87,13 +87,13 @@ type MercuryAdapterServer interface {
 type UnimplementedMercuryAdapterServer struct {
 }
 
-func (UnimplementedMercuryAdapterServer) NewMercuryV1Factory(context.Context, *NewMercuryV1FactoryRequest) (*NewMercuryV1FactoryReply, error) {
+func (UnimplementedMercuryAdapterServer) NewMercuryV1Factory(context.Context, *NewMercuryV1FactoryRequest) (*NewMercuryV1FactoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV1Factory not implemented")
 }
-func (UnimplementedMercuryAdapterServer) NewMercuryV2Factory(context.Context, *NewMercuryV2FactoryRequest) (*NewMercuryV2FactoryReply, error) {
+func (UnimplementedMercuryAdapterServer) NewMercuryV2Factory(context.Context, *NewMercuryV2FactoryRequest) (*NewMercuryV2FactoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV2Factory not implemented")
 }
-func (UnimplementedMercuryAdapterServer) NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryReply, error) {
+func (UnimplementedMercuryAdapterServer) NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV3Factory not implemented")
 }
 func (UnimplementedMercuryAdapterServer) mustEmbedUnimplementedMercuryAdapterServer() {}
@@ -196,8 +196,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OnchainConfigCodecClient interface {
-	Encode(ctx context.Context, in *EncodeOnchainConfigRequest, opts ...grpc.CallOption) (*EncodeOnchainConfigReply, error)
-	Decode(ctx context.Context, in *DecodeOnchainConfigRequest, opts ...grpc.CallOption) (*DecodeOnchainConfigReply, error)
+	Encode(ctx context.Context, in *EncodeOnchainConfigRequest, opts ...grpc.CallOption) (*EncodeOnchainConfigResponse, error)
+	Decode(ctx context.Context, in *DecodeOnchainConfigRequest, opts ...grpc.CallOption) (*DecodeOnchainConfigResponse, error)
 }
 
 type onchainConfigCodecClient struct {
@@ -208,8 +208,8 @@ func NewOnchainConfigCodecClient(cc grpc.ClientConnInterface) OnchainConfigCodec
 	return &onchainConfigCodecClient{cc}
 }
 
-func (c *onchainConfigCodecClient) Encode(ctx context.Context, in *EncodeOnchainConfigRequest, opts ...grpc.CallOption) (*EncodeOnchainConfigReply, error) {
-	out := new(EncodeOnchainConfigReply)
+func (c *onchainConfigCodecClient) Encode(ctx context.Context, in *EncodeOnchainConfigRequest, opts ...grpc.CallOption) (*EncodeOnchainConfigResponse, error) {
+	out := new(EncodeOnchainConfigResponse)
 	err := c.cc.Invoke(ctx, OnchainConfigCodec_Encode_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -217,8 +217,8 @@ func (c *onchainConfigCodecClient) Encode(ctx context.Context, in *EncodeOnchain
 	return out, nil
 }
 
-func (c *onchainConfigCodecClient) Decode(ctx context.Context, in *DecodeOnchainConfigRequest, opts ...grpc.CallOption) (*DecodeOnchainConfigReply, error) {
-	out := new(DecodeOnchainConfigReply)
+func (c *onchainConfigCodecClient) Decode(ctx context.Context, in *DecodeOnchainConfigRequest, opts ...grpc.CallOption) (*DecodeOnchainConfigResponse, error) {
+	out := new(DecodeOnchainConfigResponse)
 	err := c.cc.Invoke(ctx, OnchainConfigCodec_Decode_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -230,8 +230,8 @@ func (c *onchainConfigCodecClient) Decode(ctx context.Context, in *DecodeOnchain
 // All implementations must embed UnimplementedOnchainConfigCodecServer
 // for forward compatibility
 type OnchainConfigCodecServer interface {
-	Encode(context.Context, *EncodeOnchainConfigRequest) (*EncodeOnchainConfigReply, error)
-	Decode(context.Context, *DecodeOnchainConfigRequest) (*DecodeOnchainConfigReply, error)
+	Encode(context.Context, *EncodeOnchainConfigRequest) (*EncodeOnchainConfigResponse, error)
+	Decode(context.Context, *DecodeOnchainConfigRequest) (*DecodeOnchainConfigResponse, error)
 	mustEmbedUnimplementedOnchainConfigCodecServer()
 }
 
@@ -239,10 +239,10 @@ type OnchainConfigCodecServer interface {
 type UnimplementedOnchainConfigCodecServer struct {
 }
 
-func (UnimplementedOnchainConfigCodecServer) Encode(context.Context, *EncodeOnchainConfigRequest) (*EncodeOnchainConfigReply, error) {
+func (UnimplementedOnchainConfigCodecServer) Encode(context.Context, *EncodeOnchainConfigRequest) (*EncodeOnchainConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Encode not implemented")
 }
-func (UnimplementedOnchainConfigCodecServer) Decode(context.Context, *DecodeOnchainConfigRequest) (*DecodeOnchainConfigReply, error) {
+func (UnimplementedOnchainConfigCodecServer) Decode(context.Context, *DecodeOnchainConfigRequest) (*DecodeOnchainConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Decode not implemented")
 }
 func (UnimplementedOnchainConfigCodecServer) mustEmbedUnimplementedOnchainConfigCodecServer() {}
@@ -324,9 +324,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReportCodecV3Client interface {
-	BuildReport(ctx context.Context, in *v3.BuildReportRequest, opts ...grpc.CallOption) (*v3.BuildReportReply, error)
-	MaxReportLength(ctx context.Context, in *v3.MaxReportLengthRequest, opts ...grpc.CallOption) (*v3.MaxReportLengthReply, error)
-	ObservationTimestampFromReport(ctx context.Context, in *v3.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v3.ObservationTimestampFromReportReply, error)
+	BuildReport(ctx context.Context, in *v3.BuildReportRequest, opts ...grpc.CallOption) (*v3.BuildReportResponse, error)
+	MaxReportLength(ctx context.Context, in *v3.MaxReportLengthRequest, opts ...grpc.CallOption) (*v3.MaxReportLengthResponse, error)
+	ObservationTimestampFromReport(ctx context.Context, in *v3.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v3.ObservationTimestampFromReportResponse, error)
 }
 
 type reportCodecV3Client struct {
@@ -337,8 +337,8 @@ func NewReportCodecV3Client(cc grpc.ClientConnInterface) ReportCodecV3Client {
 	return &reportCodecV3Client{cc}
 }
 
-func (c *reportCodecV3Client) BuildReport(ctx context.Context, in *v3.BuildReportRequest, opts ...grpc.CallOption) (*v3.BuildReportReply, error) {
-	out := new(v3.BuildReportReply)
+func (c *reportCodecV3Client) BuildReport(ctx context.Context, in *v3.BuildReportRequest, opts ...grpc.CallOption) (*v3.BuildReportResponse, error) {
+	out := new(v3.BuildReportResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV3_BuildReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -346,8 +346,8 @@ func (c *reportCodecV3Client) BuildReport(ctx context.Context, in *v3.BuildRepor
 	return out, nil
 }
 
-func (c *reportCodecV3Client) MaxReportLength(ctx context.Context, in *v3.MaxReportLengthRequest, opts ...grpc.CallOption) (*v3.MaxReportLengthReply, error) {
-	out := new(v3.MaxReportLengthReply)
+func (c *reportCodecV3Client) MaxReportLength(ctx context.Context, in *v3.MaxReportLengthRequest, opts ...grpc.CallOption) (*v3.MaxReportLengthResponse, error) {
+	out := new(v3.MaxReportLengthResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV3_MaxReportLength_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -355,8 +355,8 @@ func (c *reportCodecV3Client) MaxReportLength(ctx context.Context, in *v3.MaxRep
 	return out, nil
 }
 
-func (c *reportCodecV3Client) ObservationTimestampFromReport(ctx context.Context, in *v3.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v3.ObservationTimestampFromReportReply, error) {
-	out := new(v3.ObservationTimestampFromReportReply)
+func (c *reportCodecV3Client) ObservationTimestampFromReport(ctx context.Context, in *v3.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v3.ObservationTimestampFromReportResponse, error) {
+	out := new(v3.ObservationTimestampFromReportResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV3_ObservationTimestampFromReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -368,9 +368,9 @@ func (c *reportCodecV3Client) ObservationTimestampFromReport(ctx context.Context
 // All implementations must embed UnimplementedReportCodecV3Server
 // for forward compatibility
 type ReportCodecV3Server interface {
-	BuildReport(context.Context, *v3.BuildReportRequest) (*v3.BuildReportReply, error)
-	MaxReportLength(context.Context, *v3.MaxReportLengthRequest) (*v3.MaxReportLengthReply, error)
-	ObservationTimestampFromReport(context.Context, *v3.ObservationTimestampFromReportRequest) (*v3.ObservationTimestampFromReportReply, error)
+	BuildReport(context.Context, *v3.BuildReportRequest) (*v3.BuildReportResponse, error)
+	MaxReportLength(context.Context, *v3.MaxReportLengthRequest) (*v3.MaxReportLengthResponse, error)
+	ObservationTimestampFromReport(context.Context, *v3.ObservationTimestampFromReportRequest) (*v3.ObservationTimestampFromReportResponse, error)
 	mustEmbedUnimplementedReportCodecV3Server()
 }
 
@@ -378,13 +378,13 @@ type ReportCodecV3Server interface {
 type UnimplementedReportCodecV3Server struct {
 }
 
-func (UnimplementedReportCodecV3Server) BuildReport(context.Context, *v3.BuildReportRequest) (*v3.BuildReportReply, error) {
+func (UnimplementedReportCodecV3Server) BuildReport(context.Context, *v3.BuildReportRequest) (*v3.BuildReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
 }
-func (UnimplementedReportCodecV3Server) MaxReportLength(context.Context, *v3.MaxReportLengthRequest) (*v3.MaxReportLengthReply, error) {
+func (UnimplementedReportCodecV3Server) MaxReportLength(context.Context, *v3.MaxReportLengthRequest) (*v3.MaxReportLengthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
 }
-func (UnimplementedReportCodecV3Server) ObservationTimestampFromReport(context.Context, *v3.ObservationTimestampFromReportRequest) (*v3.ObservationTimestampFromReportReply, error) {
+func (UnimplementedReportCodecV3Server) ObservationTimestampFromReport(context.Context, *v3.ObservationTimestampFromReportRequest) (*v3.ObservationTimestampFromReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObservationTimestampFromReport not implemented")
 }
 func (UnimplementedReportCodecV3Server) mustEmbedUnimplementedReportCodecV3Server() {}
@@ -488,8 +488,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReportCodecV1Client interface {
-	BuildReport(ctx context.Context, in *v1.BuildReportRequest, opts ...grpc.CallOption) (*v1.BuildReportReply, error)
-	MaxReportLength(ctx context.Context, in *v1.MaxReportLengthRequest, opts ...grpc.CallOption) (*v1.MaxReportLengthReply, error)
+	BuildReport(ctx context.Context, in *v1.BuildReportRequest, opts ...grpc.CallOption) (*v1.BuildReportResponse, error)
+	MaxReportLength(ctx context.Context, in *v1.MaxReportLengthRequest, opts ...grpc.CallOption) (*v1.MaxReportLengthResponse, error)
 	CurrentBlockNumFromReport(ctx context.Context, in *v1.CurrentBlockNumFromReportRequest, opts ...grpc.CallOption) (*v1.CurrentBlockNumFromReportResponse, error)
 }
 
@@ -501,8 +501,8 @@ func NewReportCodecV1Client(cc grpc.ClientConnInterface) ReportCodecV1Client {
 	return &reportCodecV1Client{cc}
 }
 
-func (c *reportCodecV1Client) BuildReport(ctx context.Context, in *v1.BuildReportRequest, opts ...grpc.CallOption) (*v1.BuildReportReply, error) {
-	out := new(v1.BuildReportReply)
+func (c *reportCodecV1Client) BuildReport(ctx context.Context, in *v1.BuildReportRequest, opts ...grpc.CallOption) (*v1.BuildReportResponse, error) {
+	out := new(v1.BuildReportResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV1_BuildReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -510,8 +510,8 @@ func (c *reportCodecV1Client) BuildReport(ctx context.Context, in *v1.BuildRepor
 	return out, nil
 }
 
-func (c *reportCodecV1Client) MaxReportLength(ctx context.Context, in *v1.MaxReportLengthRequest, opts ...grpc.CallOption) (*v1.MaxReportLengthReply, error) {
-	out := new(v1.MaxReportLengthReply)
+func (c *reportCodecV1Client) MaxReportLength(ctx context.Context, in *v1.MaxReportLengthRequest, opts ...grpc.CallOption) (*v1.MaxReportLengthResponse, error) {
+	out := new(v1.MaxReportLengthResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV1_MaxReportLength_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -532,8 +532,8 @@ func (c *reportCodecV1Client) CurrentBlockNumFromReport(ctx context.Context, in 
 // All implementations must embed UnimplementedReportCodecV1Server
 // for forward compatibility
 type ReportCodecV1Server interface {
-	BuildReport(context.Context, *v1.BuildReportRequest) (*v1.BuildReportReply, error)
-	MaxReportLength(context.Context, *v1.MaxReportLengthRequest) (*v1.MaxReportLengthReply, error)
+	BuildReport(context.Context, *v1.BuildReportRequest) (*v1.BuildReportResponse, error)
+	MaxReportLength(context.Context, *v1.MaxReportLengthRequest) (*v1.MaxReportLengthResponse, error)
 	CurrentBlockNumFromReport(context.Context, *v1.CurrentBlockNumFromReportRequest) (*v1.CurrentBlockNumFromReportResponse, error)
 	mustEmbedUnimplementedReportCodecV1Server()
 }
@@ -542,10 +542,10 @@ type ReportCodecV1Server interface {
 type UnimplementedReportCodecV1Server struct {
 }
 
-func (UnimplementedReportCodecV1Server) BuildReport(context.Context, *v1.BuildReportRequest) (*v1.BuildReportReply, error) {
+func (UnimplementedReportCodecV1Server) BuildReport(context.Context, *v1.BuildReportRequest) (*v1.BuildReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
 }
-func (UnimplementedReportCodecV1Server) MaxReportLength(context.Context, *v1.MaxReportLengthRequest) (*v1.MaxReportLengthReply, error) {
+func (UnimplementedReportCodecV1Server) MaxReportLength(context.Context, *v1.MaxReportLengthRequest) (*v1.MaxReportLengthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
 }
 func (UnimplementedReportCodecV1Server) CurrentBlockNumFromReport(context.Context, *v1.CurrentBlockNumFromReportRequest) (*v1.CurrentBlockNumFromReportResponse, error) {
@@ -652,9 +652,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReportCodecV2Client interface {
-	BuildReport(ctx context.Context, in *v2.BuildReportRequest, opts ...grpc.CallOption) (*v2.BuildReportReply, error)
-	MaxReportLength(ctx context.Context, in *v2.MaxReportLengthRequest, opts ...grpc.CallOption) (*v2.MaxReportLengthReply, error)
-	ObservationTimestampFromReport(ctx context.Context, in *v2.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v2.ObservationTimestampFromReportReply, error)
+	BuildReport(ctx context.Context, in *v2.BuildReportRequest, opts ...grpc.CallOption) (*v2.BuildReportResponse, error)
+	MaxReportLength(ctx context.Context, in *v2.MaxReportLengthRequest, opts ...grpc.CallOption) (*v2.MaxReportLengthResponse, error)
+	ObservationTimestampFromReport(ctx context.Context, in *v2.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v2.ObservationTimestampFromReportResponse, error)
 }
 
 type reportCodecV2Client struct {
@@ -665,8 +665,8 @@ func NewReportCodecV2Client(cc grpc.ClientConnInterface) ReportCodecV2Client {
 	return &reportCodecV2Client{cc}
 }
 
-func (c *reportCodecV2Client) BuildReport(ctx context.Context, in *v2.BuildReportRequest, opts ...grpc.CallOption) (*v2.BuildReportReply, error) {
-	out := new(v2.BuildReportReply)
+func (c *reportCodecV2Client) BuildReport(ctx context.Context, in *v2.BuildReportRequest, opts ...grpc.CallOption) (*v2.BuildReportResponse, error) {
+	out := new(v2.BuildReportResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV2_BuildReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -674,8 +674,8 @@ func (c *reportCodecV2Client) BuildReport(ctx context.Context, in *v2.BuildRepor
 	return out, nil
 }
 
-func (c *reportCodecV2Client) MaxReportLength(ctx context.Context, in *v2.MaxReportLengthRequest, opts ...grpc.CallOption) (*v2.MaxReportLengthReply, error) {
-	out := new(v2.MaxReportLengthReply)
+func (c *reportCodecV2Client) MaxReportLength(ctx context.Context, in *v2.MaxReportLengthRequest, opts ...grpc.CallOption) (*v2.MaxReportLengthResponse, error) {
+	out := new(v2.MaxReportLengthResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV2_MaxReportLength_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -683,8 +683,8 @@ func (c *reportCodecV2Client) MaxReportLength(ctx context.Context, in *v2.MaxRep
 	return out, nil
 }
 
-func (c *reportCodecV2Client) ObservationTimestampFromReport(ctx context.Context, in *v2.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v2.ObservationTimestampFromReportReply, error) {
-	out := new(v2.ObservationTimestampFromReportReply)
+func (c *reportCodecV2Client) ObservationTimestampFromReport(ctx context.Context, in *v2.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v2.ObservationTimestampFromReportResponse, error) {
+	out := new(v2.ObservationTimestampFromReportResponse)
 	err := c.cc.Invoke(ctx, ReportCodecV2_ObservationTimestampFromReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -696,9 +696,9 @@ func (c *reportCodecV2Client) ObservationTimestampFromReport(ctx context.Context
 // All implementations must embed UnimplementedReportCodecV2Server
 // for forward compatibility
 type ReportCodecV2Server interface {
-	BuildReport(context.Context, *v2.BuildReportRequest) (*v2.BuildReportReply, error)
-	MaxReportLength(context.Context, *v2.MaxReportLengthRequest) (*v2.MaxReportLengthReply, error)
-	ObservationTimestampFromReport(context.Context, *v2.ObservationTimestampFromReportRequest) (*v2.ObservationTimestampFromReportReply, error)
+	BuildReport(context.Context, *v2.BuildReportRequest) (*v2.BuildReportResponse, error)
+	MaxReportLength(context.Context, *v2.MaxReportLengthRequest) (*v2.MaxReportLengthResponse, error)
+	ObservationTimestampFromReport(context.Context, *v2.ObservationTimestampFromReportRequest) (*v2.ObservationTimestampFromReportResponse, error)
 	mustEmbedUnimplementedReportCodecV2Server()
 }
 
@@ -706,13 +706,13 @@ type ReportCodecV2Server interface {
 type UnimplementedReportCodecV2Server struct {
 }
 
-func (UnimplementedReportCodecV2Server) BuildReport(context.Context, *v2.BuildReportRequest) (*v2.BuildReportReply, error) {
+func (UnimplementedReportCodecV2Server) BuildReport(context.Context, *v2.BuildReportRequest) (*v2.BuildReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
 }
-func (UnimplementedReportCodecV2Server) MaxReportLength(context.Context, *v2.MaxReportLengthRequest) (*v2.MaxReportLengthReply, error) {
+func (UnimplementedReportCodecV2Server) MaxReportLength(context.Context, *v2.MaxReportLengthRequest) (*v2.MaxReportLengthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
 }
-func (UnimplementedReportCodecV2Server) ObservationTimestampFromReport(context.Context, *v2.ObservationTimestampFromReportRequest) (*v2.ObservationTimestampFromReportReply, error) {
+func (UnimplementedReportCodecV2Server) ObservationTimestampFromReport(context.Context, *v2.ObservationTimestampFromReportRequest) (*v2.ObservationTimestampFromReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObservationTimestampFromReport not implemented")
 }
 func (UnimplementedReportCodecV2Server) mustEmbedUnimplementedReportCodecV2Server() {}
@@ -816,9 +816,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServerFetcherClient interface {
-	FetchInitialMaxFinalizedBlockNumber(ctx context.Context, in *FetchInitialMaxFinalizedBlockNumberRequest, opts ...grpc.CallOption) (*FetchInitialMaxFinalizedBlockNumberReply, error)
-	LatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceReply, error)
-	LatestTimestamp(ctx context.Context, in *LatestTimestampRequest, opts ...grpc.CallOption) (*LatestTimestampReply, error)
+	FetchInitialMaxFinalizedBlockNumber(ctx context.Context, in *FetchInitialMaxFinalizedBlockNumberRequest, opts ...grpc.CallOption) (*FetchInitialMaxFinalizedBlockNumberResponse, error)
+	LatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceResponse, error)
+	LatestTimestamp(ctx context.Context, in *LatestTimestampRequest, opts ...grpc.CallOption) (*LatestTimestampResponse, error)
 }
 
 type serverFetcherClient struct {
@@ -829,8 +829,8 @@ func NewServerFetcherClient(cc grpc.ClientConnInterface) ServerFetcherClient {
 	return &serverFetcherClient{cc}
 }
 
-func (c *serverFetcherClient) FetchInitialMaxFinalizedBlockNumber(ctx context.Context, in *FetchInitialMaxFinalizedBlockNumberRequest, opts ...grpc.CallOption) (*FetchInitialMaxFinalizedBlockNumberReply, error) {
-	out := new(FetchInitialMaxFinalizedBlockNumberReply)
+func (c *serverFetcherClient) FetchInitialMaxFinalizedBlockNumber(ctx context.Context, in *FetchInitialMaxFinalizedBlockNumberRequest, opts ...grpc.CallOption) (*FetchInitialMaxFinalizedBlockNumberResponse, error) {
+	out := new(FetchInitialMaxFinalizedBlockNumberResponse)
 	err := c.cc.Invoke(ctx, ServerFetcher_FetchInitialMaxFinalizedBlockNumber_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -838,8 +838,8 @@ func (c *serverFetcherClient) FetchInitialMaxFinalizedBlockNumber(ctx context.Co
 	return out, nil
 }
 
-func (c *serverFetcherClient) LatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceReply, error) {
-	out := new(LatestPriceReply)
+func (c *serverFetcherClient) LatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceResponse, error) {
+	out := new(LatestPriceResponse)
 	err := c.cc.Invoke(ctx, ServerFetcher_LatestPrice_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -847,8 +847,8 @@ func (c *serverFetcherClient) LatestPrice(ctx context.Context, in *LatestPriceRe
 	return out, nil
 }
 
-func (c *serverFetcherClient) LatestTimestamp(ctx context.Context, in *LatestTimestampRequest, opts ...grpc.CallOption) (*LatestTimestampReply, error) {
-	out := new(LatestTimestampReply)
+func (c *serverFetcherClient) LatestTimestamp(ctx context.Context, in *LatestTimestampRequest, opts ...grpc.CallOption) (*LatestTimestampResponse, error) {
+	out := new(LatestTimestampResponse)
 	err := c.cc.Invoke(ctx, ServerFetcher_LatestTimestamp_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -860,9 +860,9 @@ func (c *serverFetcherClient) LatestTimestamp(ctx context.Context, in *LatestTim
 // All implementations must embed UnimplementedServerFetcherServer
 // for forward compatibility
 type ServerFetcherServer interface {
-	FetchInitialMaxFinalizedBlockNumber(context.Context, *FetchInitialMaxFinalizedBlockNumberRequest) (*FetchInitialMaxFinalizedBlockNumberReply, error)
-	LatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceReply, error)
-	LatestTimestamp(context.Context, *LatestTimestampRequest) (*LatestTimestampReply, error)
+	FetchInitialMaxFinalizedBlockNumber(context.Context, *FetchInitialMaxFinalizedBlockNumberRequest) (*FetchInitialMaxFinalizedBlockNumberResponse, error)
+	LatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceResponse, error)
+	LatestTimestamp(context.Context, *LatestTimestampRequest) (*LatestTimestampResponse, error)
 	mustEmbedUnimplementedServerFetcherServer()
 }
 
@@ -870,13 +870,13 @@ type ServerFetcherServer interface {
 type UnimplementedServerFetcherServer struct {
 }
 
-func (UnimplementedServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(context.Context, *FetchInitialMaxFinalizedBlockNumberRequest) (*FetchInitialMaxFinalizedBlockNumberReply, error) {
+func (UnimplementedServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(context.Context, *FetchInitialMaxFinalizedBlockNumberRequest) (*FetchInitialMaxFinalizedBlockNumberResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchInitialMaxFinalizedBlockNumber not implemented")
 }
-func (UnimplementedServerFetcherServer) LatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceReply, error) {
+func (UnimplementedServerFetcherServer) LatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestPrice not implemented")
 }
-func (UnimplementedServerFetcherServer) LatestTimestamp(context.Context, *LatestTimestampRequest) (*LatestTimestampReply, error) {
+func (UnimplementedServerFetcherServer) LatestTimestamp(context.Context, *LatestTimestampRequest) (*LatestTimestampResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestTimestamp not implemented")
 }
 func (UnimplementedServerFetcherServer) mustEmbedUnimplementedServerFetcherServer() {}
@@ -978,7 +978,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MercuryChainReaderClient interface {
-	LatestHeads(ctx context.Context, in *LatestHeadsRequest, opts ...grpc.CallOption) (*LatestHeadsReply, error)
+	LatestHeads(ctx context.Context, in *LatestHeadsRequest, opts ...grpc.CallOption) (*LatestHeadsResponse, error)
 }
 
 type mercuryChainReaderClient struct {
@@ -989,8 +989,8 @@ func NewMercuryChainReaderClient(cc grpc.ClientConnInterface) MercuryChainReader
 	return &mercuryChainReaderClient{cc}
 }
 
-func (c *mercuryChainReaderClient) LatestHeads(ctx context.Context, in *LatestHeadsRequest, opts ...grpc.CallOption) (*LatestHeadsReply, error) {
-	out := new(LatestHeadsReply)
+func (c *mercuryChainReaderClient) LatestHeads(ctx context.Context, in *LatestHeadsRequest, opts ...grpc.CallOption) (*LatestHeadsResponse, error) {
+	out := new(LatestHeadsResponse)
 	err := c.cc.Invoke(ctx, MercuryChainReader_LatestHeads_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1002,7 +1002,7 @@ func (c *mercuryChainReaderClient) LatestHeads(ctx context.Context, in *LatestHe
 // All implementations must embed UnimplementedMercuryChainReaderServer
 // for forward compatibility
 type MercuryChainReaderServer interface {
-	LatestHeads(context.Context, *LatestHeadsRequest) (*LatestHeadsReply, error)
+	LatestHeads(context.Context, *LatestHeadsRequest) (*LatestHeadsResponse, error)
 	mustEmbedUnimplementedMercuryChainReaderServer()
 }
 
@@ -1010,7 +1010,7 @@ type MercuryChainReaderServer interface {
 type UnimplementedMercuryChainReaderServer struct {
 }
 
-func (UnimplementedMercuryChainReaderServer) LatestHeads(context.Context, *LatestHeadsRequest) (*LatestHeadsReply, error) {
+func (UnimplementedMercuryChainReaderServer) LatestHeads(context.Context, *LatestHeadsRequest) (*LatestHeadsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestHeads not implemented")
 }
 func (UnimplementedMercuryChainReaderServer) mustEmbedUnimplementedMercuryChainReaderServer() {}

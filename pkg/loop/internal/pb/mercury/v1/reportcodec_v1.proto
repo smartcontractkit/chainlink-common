@@ -11,8 +11,8 @@ import "relayer.proto";
 
 // ReportCodec is a gRPC adapter for the ReportCodec interface [pkg/types/mercury/v1/ReportCodec].
 service ReportCodec {
-    rpc BuildReport (BuildReportRequest) returns (BuildReportReply) {}
-    rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthReply) {}
+    rpc BuildReport (BuildReportRequest) returns (BuildReportResponse) {}
+    rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthResponse) {}
     rpc CurrentBlockNumFromReport (CurrentBlockNumFromReportRequest) returns (CurrentBlockNumFromReportResponse) {}
   }
 
@@ -33,8 +33,8 @@ message ReportFields {
     ReportFields reportFields = 1;
   }
   
-  // BuildReportReply is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.BuildReport].
-message BuildReportReply {
+  // BuildReportResponse is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v1/ReportCodec.BuildReport].
+message BuildReportResponse {
     bytes report = 1;
   }
   
@@ -43,8 +43,8 @@ message BuildReportReply {
     uint64 numOracles = 1;
   }
   
-  // MaxReportLengthReply has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
-  message MaxReportLengthReply {
+  // MaxReportLengthResponse has return arguments for [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
+  message MaxReportLengthResponse {
     uint64 maxReportLength = 1;
   }
   

@@ -26,13 +26,13 @@ var _ ocr3types.MercuryPluginFactory = (*MercuryV3Service)(nil)
 
 // NewMercuryV3Service returns a new [*MercuryV3Service].
 // cmd must return a new exec.Cmd each time it is called.
-func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) *MercuryV3Service {
+func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource, errorLog types.ErrorLog) *MercuryV3Service {
 	newService := func(ctx context.Context, instance any) (types.MercuryPluginFactory, error) {
 		plug, ok := instance.(types.PluginMercury)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
 		}
-		return plug.NewMercuryV3Factory(ctx, provider, dataSource)
+		return plug.NewMercuryV3Factory(ctx, provider, dataSource, errorLog)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "MercuryV3")
@@ -58,13 +58,13 @@ var _ ocr3types.MercuryPluginFactory = (*MercuryV1Service)(nil)
 
 // NewMercuryV1Service returns a new [*MercuryV1Service].
 // cmd must return a new exec.Cmd each time it is called.
-func NewMercuryV1Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) *MercuryV1Service {
+func NewMercuryV1Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource, errorLog types.ErrorLog) *MercuryV1Service {
 	newService := func(ctx context.Context, instance any) (types.MercuryPluginFactory, error) {
 		plug, ok := instance.(types.PluginMercury)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
 		}
-		return plug.NewMercuryV1Factory(ctx, provider, dataSource)
+		return plug.NewMercuryV1Factory(ctx, provider, dataSource, errorLog)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "MercuryV1")
@@ -92,13 +92,13 @@ var _ ocr3types.MercuryPluginFactory = (*MercuryV2Service)(nil)
 
 // NewMercuryV2Service returns a new [*MercuryV2Service].
 // cmd must return a new exec.Cmd each time it is called.
-func NewMercuryV2Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) *MercuryV2Service {
+func NewMercuryV2Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource, errorLog types.ErrorLog) *MercuryV2Service {
 	newService := func(ctx context.Context, instance any) (types.MercuryPluginFactory, error) {
 		plug, ok := instance.(types.PluginMercury)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
 		}
-		return plug.NewMercuryV2Factory(ctx, provider, dataSource)
+		return plug.NewMercuryV2Factory(ctx, provider, dataSource, errorLog)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "MercuryV2")

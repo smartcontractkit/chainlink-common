@@ -25,14 +25,14 @@ func NewDataSourceClient(cc grpc.ClientConnInterface) *DataSourceClient {
 }
 
 func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types.ReportTimestamp, fetchMaxFinalizedTimestamp bool) (v3.Observation, error) {
-	reply, err := d.grpc.Observe(ctx, &mercury_v3_pb.ObserveRequest{
+	Response, err := d.grpc.Observe(ctx, &mercury_v3_pb.ObserveRequest{
 		ReportTimestamp:           pb.ReportTimestampToPb(timestamp),
 		FetchMaxFinalizedBlockNum: fetchMaxFinalizedTimestamp,
 	})
 	if err != nil {
 		return v3.Observation{}, err
 	}
-	return observation(reply), nil
+	return observation(Response), nil
 }
 
 var _ mercury_v3_pb.DataSourceServer = (*DataSourceServer)(nil)

@@ -37,15 +37,15 @@ func NewReportCodecV3Server(s *grpc.Server, rc mercury_v3_types.ReportCodec) mer
 	return &reportCodecV3Server{impl: internalServer}
 }
 
-func (r *reportCodecV3Server) BuildReport(ctx context.Context, request *mercury_v3_pb.BuildReportRequest) (*mercury_v3_pb.BuildReportReply, error) {
+func (r *reportCodecV3Server) BuildReport(ctx context.Context, request *mercury_v3_pb.BuildReportRequest) (*mercury_v3_pb.BuildReportResponse, error) {
 	return r.impl.BuildReport(ctx, request)
 }
 
-func (r *reportCodecV3Server) MaxReportLength(ctx context.Context, request *mercury_v3_pb.MaxReportLengthRequest) (*mercury_v3_pb.MaxReportLengthReply, error) {
+func (r *reportCodecV3Server) MaxReportLength(ctx context.Context, request *mercury_v3_pb.MaxReportLengthRequest) (*mercury_v3_pb.MaxReportLengthResponse, error) {
 	return r.impl.MaxReportLength(ctx, request)
 }
 
-func (r *reportCodecV3Server) ObservationTimestampFromReport(ctx context.Context, request *mercury_v3_pb.ObservationTimestampFromReportRequest) (*mercury_v3_pb.ObservationTimestampFromReportReply, error) {
+func (r *reportCodecV3Server) ObservationTimestampFromReport(ctx context.Context, request *mercury_v3_pb.ObservationTimestampFromReportRequest) (*mercury_v3_pb.ObservationTimestampFromReportResponse, error) {
 	return r.impl.ObservationTimestampFromReport(ctx, request)
 }
 
@@ -89,15 +89,15 @@ func NewReportCodecV2Server(s *grpc.Server, rc mercury_v2_types.ReportCodec) mer
 	return &reportCodecV2Server{impl: internalServer}
 }
 
-func (r *reportCodecV2Server) BuildReport(ctx context.Context, request *mercury_v2_pb.BuildReportRequest) (*mercury_v2_pb.BuildReportReply, error) {
+func (r *reportCodecV2Server) BuildReport(ctx context.Context, request *mercury_v2_pb.BuildReportRequest) (*mercury_v2_pb.BuildReportResponse, error) {
 	return r.impl.BuildReport(ctx, request)
 }
 
-func (r *reportCodecV2Server) MaxReportLength(ctx context.Context, request *mercury_v2_pb.MaxReportLengthRequest) (*mercury_v2_pb.MaxReportLengthReply, error) {
+func (r *reportCodecV2Server) MaxReportLength(ctx context.Context, request *mercury_v2_pb.MaxReportLengthRequest) (*mercury_v2_pb.MaxReportLengthResponse, error) {
 	return r.impl.MaxReportLength(ctx, request)
 }
 
-func (r *reportCodecV2Server) ObservationTimestampFromReport(ctx context.Context, request *mercury_v2_pb.ObservationTimestampFromReportRequest) (*mercury_v2_pb.ObservationTimestampFromReportReply, error) {
+func (r *reportCodecV2Server) ObservationTimestampFromReport(ctx context.Context, request *mercury_v2_pb.ObservationTimestampFromReportRequest) (*mercury_v2_pb.ObservationTimestampFromReportResponse, error) {
 	return r.impl.ObservationTimestampFromReport(ctx, request)
 }
 
@@ -139,11 +139,11 @@ func NewReportCodecV1Server(s *grpc.Server, rc mercury_v1_types.ReportCodec) mer
 	return &reportCodecV1Server{impl: internalServer}
 }
 
-func (r *reportCodecV1Server) BuildReport(ctx context.Context, request *mercury_v1_pb.BuildReportRequest) (*mercury_v1_pb.BuildReportReply, error) {
+func (r *reportCodecV1Server) BuildReport(ctx context.Context, request *mercury_v1_pb.BuildReportRequest) (*mercury_v1_pb.BuildReportResponse, error) {
 	return r.impl.BuildReport(ctx, request)
 }
 
-func (r *reportCodecV1Server) MaxReportLength(ctx context.Context, request *mercury_v1_pb.MaxReportLengthRequest) (*mercury_v1_pb.MaxReportLengthReply, error) {
+func (r *reportCodecV1Server) MaxReportLength(ctx context.Context, request *mercury_v1_pb.MaxReportLengthRequest) (*mercury_v1_pb.MaxReportLengthResponse, error) {
 	return r.impl.MaxReportLength(ctx, request)
 }
 

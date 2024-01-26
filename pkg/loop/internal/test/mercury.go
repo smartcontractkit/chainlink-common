@@ -39,7 +39,7 @@ type PluginMercuryTest struct {
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
 	t.Run("PluginMercuryV3", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.StaticDataSource{})
+		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.StaticDataSource{}, &StaticErrorLog{})
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -48,7 +48,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV2", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.StaticDataSource{})
+		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.StaticDataSource{}, &StaticErrorLog{})
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -57,7 +57,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV1", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.StaticDataSource{})
+		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.StaticDataSource{}, &StaticErrorLog{})
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -151,7 +151,7 @@ func (s StaticPluginMercury) commonValidation(ctx context.Context, provider type
 	return nil
 }
 
-func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.MercuryPluginFactory, error) {
+func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource, errorLog types.ErrorLog) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -193,10 +193,13 @@ func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 
+	if err := errorLog.SaveError(ctx, errMsg); err != nil {
+		return nil, fmt.Errorf("failed to save error: %w", err)
+	}
 	return staticMercuryPluginFactory{}, nil
 }
 
-func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) (types.MercuryPluginFactory, error) {
+func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource, errorLog types.ErrorLog) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -238,10 +241,13 @@ func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 
+	if err := errorLog.SaveError(ctx, errMsg); err != nil {
+		return nil, fmt.Errorf("failed to save error: %w", err)
+	}
 	return staticMercuryPluginFactory{}, nil
 }
 
-func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) (types.MercuryPluginFactory, error) {
+func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource, errorLog types.ErrorLog) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -283,6 +289,9 @@ func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 
+	if err := errorLog.SaveError(ctx, errMsg); err != nil {
+		return nil, fmt.Errorf("failed to save error: %w", err)
+	}
 	return staticMercuryPluginFactory{}, nil
 }
 

@@ -24,31 +24,31 @@ func NewReportCodecClient(cc grpc.ClientConnInterface) *ReportCodecClient {
 
 // TODO: why doesn't the interface have a context?!
 func (r *ReportCodecClient) BuildReport(fields mercury_v3_types.ReportFields) (ocr2plus_types.Report, error) {
-	reply, err := r.grpc.BuildReport(context.TODO(), &mercury_v3_pb.BuildReportRequest{
+	Response, err := r.grpc.BuildReport(context.TODO(), &mercury_v3_pb.BuildReportRequest{
 		ReportFields: pbReportFields(fields),
 	})
 	if err != nil {
 		return ocr2plus_types.Report{}, err
 	}
-	return reply.Report, nil
+	return Response.Report, nil
 }
 
 func (r *ReportCodecClient) MaxReportLength(n int) (int, error) {
-	reply, err := r.grpc.MaxReportLength(context.TODO(), &mercury_v3_pb.MaxReportLengthRequest{})
+	Response, err := r.grpc.MaxReportLength(context.TODO(), &mercury_v3_pb.MaxReportLengthRequest{})
 	if err != nil {
 		return 0, err
 	}
-	return int(reply.MaxReportLength), nil
+	return int(Response.MaxReportLength), nil
 }
 
 func (r *ReportCodecClient) ObservationTimestampFromReport(report ocr2plus_types.Report) (uint32, error) {
-	reply, err := r.grpc.ObservationTimestampFromReport(context.TODO(), &mercury_v3_pb.ObservationTimestampFromReportRequest{
+	Response, err := r.grpc.ObservationTimestampFromReport(context.TODO(), &mercury_v3_pb.ObservationTimestampFromReportRequest{
 		Report: report,
 	})
 	if err != nil {
 		return 0, err
 	}
-	return reply.Timestamp, nil
+	return Response.Timestamp, nil
 }
 
 func pbReportFields(fields mercury_v3_types.ReportFields) *mercury_v3_pb.ReportFields {
@@ -74,28 +74,28 @@ func NewReportCodecServer(impl mercury_v3_types.ReportCodec) *ReportCodecServer 
 	return &ReportCodecServer{impl: impl}
 }
 
-func (r *ReportCodecServer) BuildReport(ctx context.Context, request *mercury_v3_pb.BuildReportRequest) (*mercury_v3_pb.BuildReportReply, error) {
+func (r *ReportCodecServer) BuildReport(ctx context.Context, request *mercury_v3_pb.BuildReportRequest) (*mercury_v3_pb.BuildReportResponse, error) {
 	report, err := r.impl.BuildReport(reportFields(request.ReportFields))
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_v3_pb.BuildReportReply{Report: report}, nil
+	return &mercury_v3_pb.BuildReportResponse{Report: report}, nil
 }
 
-func (r *ReportCodecServer) MaxReportLength(ctx context.Context, request *mercury_v3_pb.MaxReportLengthRequest) (*mercury_v3_pb.MaxReportLengthReply, error) {
+func (r *ReportCodecServer) MaxReportLength(ctx context.Context, request *mercury_v3_pb.MaxReportLengthRequest) (*mercury_v3_pb.MaxReportLengthResponse, error) {
 	n, err := r.impl.MaxReportLength(int(request.NumOracles))
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_v3_pb.MaxReportLengthReply{MaxReportLength: uint64(n)}, nil
+	return &mercury_v3_pb.MaxReportLengthResponse{MaxReportLength: uint64(n)}, nil
 }
 
-func (r *ReportCodecServer) ObservationTimestampFromReport(ctx context.Context, request *mercury_v3_pb.ObservationTimestampFromReportRequest) (*mercury_v3_pb.ObservationTimestampFromReportReply, error) {
+func (r *ReportCodecServer) ObservationTimestampFromReport(ctx context.Context, request *mercury_v3_pb.ObservationTimestampFromReportRequest) (*mercury_v3_pb.ObservationTimestampFromReportResponse, error) {
 	timestamp, err := r.impl.ObservationTimestampFromReport(request.Report)
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_v3_pb.ObservationTimestampFromReportReply{Timestamp: timestamp}, nil
+	return &mercury_v3_pb.ObservationTimestampFromReportResponse{Timestamp: timestamp}, nil
 }
 
 func reportFields(fields *mercury_v3_pb.ReportFields) mercury_v3_types.ReportFields {

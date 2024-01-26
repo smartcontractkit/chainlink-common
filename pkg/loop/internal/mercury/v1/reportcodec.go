@@ -24,31 +24,31 @@ func NewReportCodecClient(cc grpc.ClientConnInterface) *ReportCodecClient {
 }
 
 func (r *ReportCodecClient) BuildReport(fields mercury_v1_types.ReportFields) (ocr2plus_types.Report, error) {
-	reply, err := r.grpc.BuildReport(context.TODO(), &mercury_v1_pb.BuildReportRequest{
+	Response, err := r.grpc.BuildReport(context.TODO(), &mercury_v1_pb.BuildReportRequest{
 		ReportFields: pbReportFields(fields),
 	})
 	if err != nil {
 		return ocr2plus_types.Report{}, err
 	}
-	return reply.Report, nil
+	return Response.Report, nil
 }
 
 func (r *ReportCodecClient) MaxReportLength(n int) (int, error) {
-	reply, err := r.grpc.MaxReportLength(context.TODO(), &mercury_v1_pb.MaxReportLengthRequest{})
+	Response, err := r.grpc.MaxReportLength(context.TODO(), &mercury_v1_pb.MaxReportLengthRequest{})
 	if err != nil {
 		return 0, err
 	}
-	return int(reply.MaxReportLength), nil
+	return int(Response.MaxReportLength), nil
 }
 
 func (r *ReportCodecClient) CurrentBlockNumFromReport(report ocr2plus_types.Report) (int64, error) {
-	reply, err := r.grpc.CurrentBlockNumFromReport(context.TODO(), &mercury_v1_pb.CurrentBlockNumFromReportRequest{
+	Response, err := r.grpc.CurrentBlockNumFromReport(context.TODO(), &mercury_v1_pb.CurrentBlockNumFromReportRequest{
 		Report: report,
 	})
 	if err != nil {
 		return 0, err
 	}
-	return reply.CurrentBlockNum, nil
+	return Response.CurrentBlockNum, nil
 }
 
 func pbReportFields(fields mercury_v1_types.ReportFields) *mercury_v1_pb.ReportFields {
@@ -75,20 +75,20 @@ func NewReportCodecServer(impl mercury_v1_types.ReportCodec) *ReportCodecServer 
 	return &ReportCodecServer{impl: impl}
 }
 
-func (r *ReportCodecServer) BuildReport(ctx context.Context, request *mercury_v1_pb.BuildReportRequest) (*mercury_v1_pb.BuildReportReply, error) {
+func (r *ReportCodecServer) BuildReport(ctx context.Context, request *mercury_v1_pb.BuildReportRequest) (*mercury_v1_pb.BuildReportResponse, error) {
 	report, err := r.impl.BuildReport(reportFields(request.ReportFields))
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_v1_pb.BuildReportReply{Report: report}, nil
+	return &mercury_v1_pb.BuildReportResponse{Report: report}, nil
 }
 
-func (r *ReportCodecServer) MaxReportLength(ctx context.Context, request *mercury_v1_pb.MaxReportLengthRequest) (*mercury_v1_pb.MaxReportLengthReply, error) {
+func (r *ReportCodecServer) MaxReportLength(ctx context.Context, request *mercury_v1_pb.MaxReportLengthRequest) (*mercury_v1_pb.MaxReportLengthResponse, error) {
 	n, err := r.impl.MaxReportLength(int(request.NumOracles))
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_v1_pb.MaxReportLengthReply{MaxReportLength: uint64(n)}, nil
+	return &mercury_v1_pb.MaxReportLengthResponse{MaxReportLength: uint64(n)}, nil
 }
 
 func (r *ReportCodecServer) CurrentBlockNumFromReport(ctx context.Context, request *mercury_v1_pb.CurrentBlockNumFromReportRequest) (*mercury_v1_pb.CurrentBlockNumFromReportResponse, error) {

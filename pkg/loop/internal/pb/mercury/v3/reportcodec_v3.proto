@@ -12,9 +12,9 @@ import "relayer.proto";
 // NOTE: MaxReport and ObservationTimestampFromReport are common amongst all mercury versions, but BuildReport is not.
 // in principle they could be refactor to be shared, but it's not clear if that's worth the effort.
 service ReportCodec {
-    rpc BuildReport (BuildReportRequest) returns (BuildReportReply) {}
-    rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthReply) {}
-    rpc ObservationTimestampFromReport (ObservationTimestampFromReportRequest) returns (ObservationTimestampFromReportReply) {}
+    rpc BuildReport (BuildReportRequest) returns (BuildReportResponse) {}
+    rpc MaxReportLength (MaxReportLengthRequest) returns (MaxReportLengthResponse) {}
+    rpc ObservationTimestampFromReport (ObservationTimestampFromReportRequest) returns (ObservationTimestampFromReportResponse) {}
   }
   
   // ReportFields is a gRPC adapter for the ReportFields struct [pkg/types/mercury/v3/ReportFields].
@@ -34,8 +34,8 @@ service ReportCodec {
     ReportFields reportFields = 1;
   } 
   
-  // BuildReportReply is gRPC adapter for the return values of [pkg/types/mercury/v3/ReportCodec.BuildReport].
-  message BuildReportReply {
+  // BuildReportResponse is gRPC adapter for the return values of [pkg/types/mercury/v3/ReportCodec.BuildReport].
+  message BuildReportResponse {
     bytes report = 1;
   }
   
@@ -44,8 +44,8 @@ service ReportCodec {
     uint64 numOracles = 1;
   }
   
-  // MaxReportLengthReply is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
-  message MaxReportLengthReply {
+  // MaxReportLengthResponse is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
+  message MaxReportLengthResponse {
     uint64 maxReportLength = 1;
   }
   
@@ -53,8 +53,8 @@ service ReportCodec {
   message ObservationTimestampFromReportRequest {
     bytes report = 1;
   }
-  //ObservationTimestampFromReportReply is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.ObservationTimestampFromReport].
-  message ObservationTimestampFromReportReply {
+  //ObservationTimestampFromReportResponse is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.ObservationTimestampFromReport].
+  message ObservationTimestampFromReportResponse {
     uint32 timestamp = 1;
   }
   

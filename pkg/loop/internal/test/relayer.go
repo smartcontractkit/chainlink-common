@@ -13,6 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -381,8 +383,10 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Pl
 			errStr:        fErr,
 		}
 
-		ctx := context.Background()
-		_, _ = relayerFunc(t).NewRelayer(ctx, fConfig, keystore)
+		ctx := tests.Context(t)
+		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore)
+
+		grpcUnavailableErr(t, err)
 	})
 }
 
@@ -398,7 +402,7 @@ func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer)
 		copy(rawBytes[:], fExtJobID)
 
 		relayer := relayerFunc(t)
-		ctx := context.Background()
+		ctx := tests.Context(t)
 		fRelayArgs := types.RelayArgs{
 			ExternalJobID: uuid.UUID(rawBytes),
 			JobID:         fJobID,
@@ -408,15 +412,62 @@ func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer)
 			ProviderType:  fType,
 		}
 
-		_, _ = relayer.NewConfigProvider(ctx, fRelayArgs)
+		_, err := relayer.NewConfigProvider(ctx, fRelayArgs)
+
+		grpcUnavailableErr(t, err)
 
 		pArgs := types.PluginArgs{
 			TransmitterID: fTransmID,
 			PluginConfig:  fPlugConf,
 		}
 
-		_, _ = relayer.NewPluginProvider(ctx, fRelayArgs, pArgs)
+		_, err = relayer.NewPluginProvider(ctx, fRelayArgs, pArgs)
+
+		grpcUnavailableErr(t, err)
 	})
+}
+
+type FuzzableProvider[K any] func(context.Context, types.RelayArgs, types.PluginArgs) (K, error)
+
+func RunFuzzProvider[K any](f *testing.F, providerFunc func(*testing.T) FuzzableProvider[K]) {
+	f.Add([]byte{}, int32(-1), "ABC\xa8\x8c\xb3G\xfc", false, []byte{}, "", "", []byte{})
+
+	f.Fuzz(func(
+		t *testing.T, fExtJobID []byte, fJobID int32, fContractID string, fNew bool,
+		fConfig []byte, fType string, fTransmID string, fPlugConf []byte,
+	) {
+		var rawBytes [16]byte
+
+		copy(rawBytes[:], fExtJobID)
+
+		provider := providerFunc(t)
+		ctx := tests.Context(t)
+		fRelayArgs := types.RelayArgs{
+			ExternalJobID: uuid.UUID(rawBytes),
+			JobID:         fJobID,
+			ContractID:    fContractID,
+			New:           fNew,
+			RelayConfig:   fConfig,
+			ProviderType:  fType,
+		}
+
+		pArgs := types.PluginArgs{
+			TransmitterID: fTransmID,
+			PluginConfig:  fPlugConf,
+		}
+
+		_, err := provider(ctx, fRelayArgs, pArgs)
+
+		grpcUnavailableErr(t, err)
+	})
+}
+
+func grpcUnavailableErr(t *testing.T, err error) {
+	t.Helper()
+
+	if code := status.Code(err); code == codes.Unavailable {
+		t.FailNow()
+	}
 }
 
 type fuzzerKeystore struct {

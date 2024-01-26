@@ -29,17 +29,7 @@ func TestPluginRelayerExec(t *testing.T) {
 }
 
 func FuzzPluginRelayer(f *testing.F) {
-	test.RunFuzzPluginRelayer(f, fuzzTestWrapPluginRelayConstructor(f))
-}
-
-func FuzzRelayer(f *testing.F) {
-	test.RunFuzzRelayer(f, fuzzTestWrapRelayConstructor(f))
-}
-
-func fuzzTestWrapPluginRelayConstructor(f *testing.F) func(*testing.T) loop.PluginRelayer {
-	f.Helper()
-
-	return func(t *testing.T) loop.PluginRelayer {
+	testFunc := func(t *testing.T) loop.PluginRelayer {
 		t.Helper()
 
 		stopCh := newStopCh(t)
@@ -47,12 +37,12 @@ func fuzzTestWrapPluginRelayConstructor(f *testing.F) func(*testing.T) loop.Plug
 
 		return relayer
 	}
+
+	test.RunFuzzPluginRelayer(f, testFunc)
 }
 
-func fuzzTestWrapRelayConstructor(f *testing.F) func(*testing.T) loop.Relayer {
-	f.Helper()
-
-	return func(t *testing.T) loop.Relayer {
+func FuzzRelayer(f *testing.F) {
+	testFunc := func(t *testing.T) loop.Relayer {
 		t.Helper()
 
 		stopCh := newStopCh(t)
@@ -64,6 +54,8 @@ func fuzzTestWrapRelayConstructor(f *testing.F) func(*testing.T) loop.Relayer {
 
 		return relayer
 	}
+
+	test.RunFuzzRelayer(f, testFunc)
 }
 
 func newPluginRelayerExec(t *testing.T, stopCh <-chan struct{}) loop.PluginRelayer {

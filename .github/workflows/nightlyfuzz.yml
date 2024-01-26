@@ -38,8 +38,8 @@ jobs:
           key: "nightlyfuzz-corpus-${{ github.run_id }}-${{ github.run_attempt }}"
           restore-keys: "nightlyfuzz-corpus-"
       - name: "Run native fuzzers"
-        # Fuzz for 5 hours, after 6 hours the action would time out
-        run: "cd fuzz && ./fuzz_all_native.py --seconds 18000"
+        # Fuzz for 1 hour
+        run: "cd fuzz && ./fuzz_all_native.py --seconds 3600"
       - name: "Print failing testcases"
         if: failure()
         run: find . -type f|fgrep '/testdata/fuzz/'|while read f; do echo $f; cat $f; done

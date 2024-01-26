@@ -27,6 +27,7 @@ func newServiceClient(b *brokerExt, cc grpc.ClientConnInterface) *serviceClient 
 }
 
 func (s *serviceClient) Start(ctx context.Context) error {
+	//TODO reconsider?
 	return nil // no-op: server side starts automatically
 }
 
@@ -56,11 +57,12 @@ func (s *serviceClient) HealthReport() map[string]error {
 	ctx, cancel = context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
+	name := s.Name()
 	reply, err := s.grpc.HealthReport(ctx, &emptypb.Empty{})
 	if err != nil {
-		return map[string]error{s.b.Logger.Name(): err}
+		return map[string]error{name: err}
 	}
-	hr := healthReport(reply.HealthReport)
+	hr := healthReport(name, reply.HealthReport)
 	hr[s.b.Logger.Name()] = nil
 	return hr
 }

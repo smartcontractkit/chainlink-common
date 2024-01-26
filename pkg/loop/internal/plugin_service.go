@@ -43,20 +43,30 @@ type PluginService[P grpcPlugin, S services.Service] struct {
 	client         *plugin.Client
 	clientProtocol plugin.ClientProtocol
 
-	newService func(context.Context, any) (S, error)
+	newService func(context.Context, any) (S, services.HealthReporter, error)
 
 	serviceCh chan struct{} // closed when service is available
 	Service   S
+	Health    services.HealthReporter //TODO may or may not be the same as Service?
 
 	testInterrupt chan func(*PluginService[P, S]) // tests only (via TestHook) to enable access to internals without racing
 }
 
-func (s *PluginService[P, S]) Init(pluginName string, p P, newService func(context.Context, any) (S, error), lggr logger.Logger, cmd func() *exec.Cmd, stopCh chan struct{}) {
+type NewService[S any] func(context.Context, any) (S, services.HealthReporter, error)
+
+func (s *PluginService[P, S]) Init(
+	pluginName string,
+	grpcPlug P,
+	newService NewService[S],
+	lggr logger.Logger,
+	cmd func() *exec.Cmd,
+	stopCh chan struct{},
+) {
 	s.pluginName = pluginName
 	s.lggr = lggr
 	s.cmd = cmd
 	s.stopCh = stopCh
-	s.grpcPlug = p
+	s.grpcPlug = grpcPlug
 	s.newService = newService
 	s.serviceCh = make(chan struct{})
 }
@@ -140,7 +150,7 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	case <-s.serviceCh:
 		// s.service already set
 	default:
-		s.Service, err = s.newService(ctx, i)
+		s.Service, s.Health, err = s.newService(ctx, i)
 		if err != nil {
 			abort()
 			return nil, nil, fmt.Errorf("failed to create service: %w", err)
@@ -173,7 +183,7 @@ func (s *PluginService[P, S]) HealthReport() map[string]error {
 	select {
 	case <-s.serviceCh:
 		hr := map[string]error{s.Name(): s.Healthy()}
-		services.CopyHealth(hr, s.Service.HealthReport())
+		services.CopyHealth(hr, s.Health.HealthReport())
 		return hr
 	default:
 		return map[string]error{s.Name(): ErrPluginUnavailable}
@@ -187,7 +197,7 @@ func (s *PluginService[P, S]) Close() error {
 
 		select {
 		case <-s.serviceCh:
-			if cerr := s.Service.Close(); !errors.Is(cerr, context.Canceled) && status.Code(cerr) != codes.Canceled {
+			if cerr := s.Service.Close(); !isCanceled(cerr) {
 				err = errors.Join(err, cerr)
 			}
 		default:
@@ -199,7 +209,7 @@ func (s *PluginService[P, S]) Close() error {
 
 func (s *PluginService[P, S]) closeClient() (err error) {
 	if s.clientProtocol != nil {
-		if cerr := s.clientProtocol.Close(); !errors.Is(cerr, context.Canceled) {
+		if cerr := s.clientProtocol.Close(); !isCanceled(cerr) {
 			err = cerr
 		}
 	}
@@ -255,4 +265,8 @@ func (ch TestPluginService[P, S]) Reset() {
 		r.clientProtocol = nil
 	}
 	<-done
+}
+
+func isCanceled(err error) bool {
+	return errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled
 }

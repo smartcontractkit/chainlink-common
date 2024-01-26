@@ -3,10 +3,12 @@ package internal
 import (
 	"context"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type PluginRelayer interface {
+	services.Service
 	NewRelayer(ctx context.Context, config string, keystore types.Keystore) (Relayer, error)
 }
 

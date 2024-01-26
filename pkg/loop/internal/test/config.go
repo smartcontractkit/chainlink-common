@@ -10,21 +10,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-type staticConfigProvider struct{}
+type staticConfigProvider struct {
+	staticService
+}
 
-// TODO validate start/Close calls?
-func (s staticConfigProvider) Start(ctx context.Context) error { return nil }
-
-func (s staticConfigProvider) Close() error { return nil }
-
-func (s staticConfigProvider) Ready() error { panic("unimplemented") }
-
-func (s staticConfigProvider) Name() string { panic("unimplemented") }
-
-func (s staticConfigProvider) HealthReport() map[string]error { panic("unimplemented") }
+func newStaticConfigProvider(lggr logger.Logger) staticConfigProvider {
+	return staticConfigProvider{staticService{lggr: logger.Named(lggr, "staticConfigProvider")}}
+}
 
 func (s staticConfigProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return staticOffchainConfigDigester{}

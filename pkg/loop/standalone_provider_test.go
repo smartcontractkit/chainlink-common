@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 )
@@ -13,7 +14,7 @@ import (
 func TestRegisterStandAloneProvider(t *testing.T) {
 	s := grpc.NewServer()
 
-	p := test.StaticPluginProvider{}
+	p := test.NewStaticPluginProvider(logger.Test(t))
 	err := loop.RegisterStandAloneProvider(s, p, "some-type-we-do-not-support")
 	require.ErrorContains(t, err, "stand alone provider only supports median")
 

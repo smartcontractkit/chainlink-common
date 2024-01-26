@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -39,16 +40,22 @@ type GRPCService[T types.PluginProvider] struct {
 	pluginClient *internal.ReportingPluginServiceClient
 }
 
-type serverAdapter func(
-	context.Context,
-	types.ReportingPluginServiceConfig,
-	grpc.ClientConnInterface,
-	types.PipelineRunnerService,
-	types.TelemetryService,
-	types.ErrorLog,
-) (types.ReportingPluginFactory, error)
+type serverAdapter[T types.PluginProvider] struct {
+	services.StateMachine
+	BrokerConfig   loop.BrokerConfig
+	ProviderServer ProviderServer[T]
+	GRPCBroker     *plugin.GRPCBroker
+}
 
-func (s serverAdapter) NewReportingPluginFactory(
+func (s *serverAdapter[T]) Start(ctx context.Context) error { return s.ProviderServer.Start(ctx) }
+
+func (s *serverAdapter[T]) Close() error { return s.ProviderServer.Close() }
+
+func (s *serverAdapter[T]) HealthReport() map[string]error { return s.ProviderServer.HealthReport() }
+
+func (s *serverAdapter[T]) Name() string { return s.ProviderServer.Name() }
+
+func (s *serverAdapter[T]) NewReportingPluginFactory(
 	ctx context.Context,
 	config types.ReportingPluginServiceConfig,
 	conn grpc.ClientConnInterface,
@@ -56,23 +63,15 @@ func (s serverAdapter) NewReportingPluginFactory(
 	ts types.TelemetryService,
 	errorLog types.ErrorLog,
 ) (types.ReportingPluginFactory, error) {
-	return s(ctx, config, conn, pr, ts, errorLog)
+	provider := s.ProviderServer.ConnToProvider(conn, s.GRPCBroker, s.BrokerConfig)
+	tc := internal.NewTelemetryClient(ts)
+	return s.ProviderServer.NewReportingPluginFactory(ctx, config, provider, pr, tc, errorLog)
 }
 
 func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
-	adapter := func(
-		ctx context.Context,
-		cfg types.ReportingPluginServiceConfig,
-		conn grpc.ClientConnInterface,
-		pr types.PipelineRunnerService,
-		ts types.TelemetryService,
-		el types.ErrorLog,
-	) (types.ReportingPluginFactory, error) {
-		provider := g.PluginServer.ConnToProvider(conn, broker, g.BrokerConfig)
-		tc := internal.NewTelemetryClient(ts)
-		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el)
-	}
-	return internal.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter(adapter))
+	impl := &serverAdapter[T]{BrokerConfig: g.BrokerConfig, ProviderServer: g.PluginServer, GRPCBroker: broker}
+	//TODO when to start
+	return internal.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, impl)
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginClient], updated with the new broker and conn.

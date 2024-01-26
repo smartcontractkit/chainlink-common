@@ -12,7 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -33,9 +36,21 @@ func (s StaticKeystore) Sign(ctx context.Context, id string, data []byte) ([]byt
 	return signed, nil
 }
 
-type StaticPluginRelayer struct{}
+type staticPluginRelayer struct {
+	staticService
+}
 
-func (s StaticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (internal.Relayer, error) {
+func NewStaticPluginRelayer(lggr logger.Logger) staticPluginRelayer {
+	return staticPluginRelayer{staticService{lggr: logger.Named(lggr, "staticPluginRelayer")}}
+}
+
+func (s staticPluginRelayer) HealthReport() map[string]error {
+	hp := s.staticService.HealthReport()
+	services.CopyHealth(hp, newStaticRelayer(s.lggr).HealthReport())
+	return hp
+}
+
+func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (internal.Relayer, error) {
 	if config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
@@ -53,26 +68,30 @@ func (s StaticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 	if !bytes.Equal(signed, gotSigned) {
 		return nil, fmt.Errorf("expected signed bytes %x but got %x", signed, gotSigned)
 	}
-	return staticRelayer{}, nil
+	return newStaticRelayer(s.lggr), nil
 }
 
-type staticRelayer struct{}
+type staticRelayer struct {
+	staticService
+}
 
-func (s staticRelayer) Start(ctx context.Context) error { return nil }
+func newStaticRelayer(lggr logger.Logger) staticRelayer {
+	return staticRelayer{staticService{lggr: logger.Named(lggr, "staticRelayer")}}
+}
 
-func (s staticRelayer) Close() error { return nil }
-
-func (s staticRelayer) Ready() error { panic("unimplemented") }
-
-func (s staticRelayer) Name() string { panic("unimplemented") }
-
-func (s staticRelayer) HealthReport() map[string]error { panic("unimplemented") }
+func (s staticRelayer) HealthReport() map[string]error {
+	hp := s.staticService.HealthReport()
+	services.CopyHealth(hp, newStaticConfigProvider(s.lggr).HealthReport())
+	services.CopyHealth(hp, NewStaticMedianProvider(s.lggr).HealthReport())
+	services.CopyHealth(hp, NewStaticPluginProvider(s.lggr).HealthReport())
+	return hp
+}
 
 func (s staticRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
 	if !equalRelayArgs(r, RelayArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", RelayArgs, r)
 	}
-	return staticConfigProvider{}, nil
+	return newStaticConfigProvider(s.lggr), nil
 }
 
 func (s staticRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
@@ -83,7 +102,7 @@ func (s staticRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs,
 	if !reflect.DeepEqual(PluginArgs, p) {
 		return nil, fmt.Errorf("expected plugin args %v but got %v", PluginArgs, p)
 	}
-	return StaticMedianProvider{}, nil
+	return NewStaticMedianProvider(s.lggr), nil
 }
 
 func (s staticRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
@@ -94,7 +113,7 @@ func (s staticRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs,
 	if !reflect.DeepEqual(PluginArgs, p) {
 		return nil, fmt.Errorf("expected plugin args %v but got %v", PluginArgs, p)
 	}
-	return StaticPluginProvider{}, nil
+	return NewStaticPluginProvider(s.lggr), nil
 }
 
 func (s staticRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
@@ -148,25 +167,34 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 
 func RunPluginRelayer(t *testing.T, p internal.PluginRelayer) {
 	ctx := tests.Context(t)
+	servicetest.Run(t, p)
 
 	t.Run("Relayer", func(t *testing.T) {
 		relayer, err := p.NewRelayer(ctx, ConfigTOML, StaticKeystore{})
 		require.NoError(t, err)
-		require.NoError(t, relayer.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })
+		servicetest.Run(t, relayer)
 		RunRelayer(t, relayer)
+		servicetest.AssertHealthReportNames(t, relayer.HealthReport(),
+			"PluginRelayerClient", //TODO missing
+			"PluginRelayerClient.RelayerClient",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer", //TODO missing
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticMedianProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticPluginProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticConfigProvider",
+		)
 	})
 }
 
 func RunRelayer(t *testing.T, relayer internal.Relayer) {
 	ctx := tests.Context(t)
 
+	configProvider, err0 := relayer.NewConfigProvider(ctx, RelayArgs)
+	require.NoError(t, err0)
+	servicetest.Run(t, configProvider)
+
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
-		configProvider, err := relayer.NewConfigProvider(ctx, RelayArgs)
-		require.NoError(t, err)
-		require.NoError(t, configProvider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, configProvider.Close()) })
 
 		t.Run("OffchainConfigDigester", func(t *testing.T) {
 			t.Parallel()
@@ -194,145 +222,135 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		})
 	})
 
+	pp, err0 := relayer.NewPluginProvider(ctx, newRelayArgsWithProviderType(types.Median), PluginArgs)
+	require.NoError(t, err0)
+	provider := pp.(types.MedianProvider)
+	servicetest.Run(t, provider)
+
 	t.Run("MedianProvider", func(t *testing.T) {
 		t.Parallel()
-		ra := newRelayArgsWithProviderType(types.Median)
-		p, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
-		provider := p.(types.MedianProvider)
-		require.NoError(t, err)
-		require.NoError(t, provider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
 
-		t.Run("ReportingPluginProvider", func(t *testing.T) {
+		t.Run("OffchainConfigDigester", func(t *testing.T) {
 			t.Parallel()
-
-			t.Run("OffchainConfigDigester", func(t *testing.T) {
-				t.Parallel()
-				ocd := provider.OffchainConfigDigester()
-				gotConfigDigestPrefix, err := ocd.ConfigDigestPrefix()
-				require.NoError(t, err)
-				assert.Equal(t, configDigestPrefix, gotConfigDigestPrefix)
-				gotConfigDigest, err := ocd.ConfigDigest(contractConfig)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-			})
-			t.Run("ContractConfigTracker", func(t *testing.T) {
-				t.Parallel()
-				cct := provider.ContractConfigTracker()
-				gotBlockHeight, err := cct.LatestBlockHeight(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, blockHeight, gotBlockHeight)
-				gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, changedInBlock, gotChangedInBlock)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
-				require.NoError(t, err)
-				assert.Equal(t, contractConfig, gotContractConfig)
-			})
-			t.Run("ContractTransmitter", func(t *testing.T) {
-				t.Parallel()
-				ct := provider.ContractTransmitter()
-				gotAccount, err := ct.FromAccount()
-				require.NoError(t, err)
-				assert.Equal(t, account, gotAccount)
-				gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				err = ct.Transmit(ctx, reportContext, report, sigs)
-				require.NoError(t, err)
-			})
-			t.Run("ReportCodec", func(t *testing.T) {
-				t.Parallel()
-				rc := provider.ReportCodec()
-				gotReport, err := rc.BuildReport(pobs)
-				require.NoError(t, err)
-				assert.Equal(t, report, gotReport)
-				gotMedianValue, err := rc.MedianFromReport(report)
-				require.NoError(t, err)
-				assert.Equal(t, medianValue, gotMedianValue)
-				gotMax, err := rc.MaxReportLength(n)
-				require.NoError(t, err)
-				assert.Equal(t, max, gotMax)
-			})
-			t.Run("MedianContract", func(t *testing.T) {
-				t.Parallel()
-				mc := provider.MedianContract()
-				gotConfigDigest, gotEpoch, gotRound, err := mc.LatestRoundRequested(ctx, lookbackDuration)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				assert.Equal(t, round, gotRound)
-				gotConfigDigest, gotEpoch, gotRound, gotLatestAnswer, gotLatestTimestamp, err := mc.LatestTransmissionDetails(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				assert.Equal(t, round, gotRound)
-				assert.Equal(t, latestAnswer, gotLatestAnswer)
-				assert.WithinDuration(t, latestTimestamp, gotLatestTimestamp, time.Second)
-			})
-			t.Run("OnchainConfigCodec", func(t *testing.T) {
-				t.Parallel()
-				occ := provider.OnchainConfigCodec()
-				gotEncoded, err := occ.Encode(onchainConfig)
-				require.NoError(t, err)
-				assert.Equal(t, encoded, gotEncoded)
-				gotDecoded, err := occ.Decode(encoded)
-				require.NoError(t, err)
-				assert.Equal(t, onchainConfig, gotDecoded)
-			})
+			ocd := provider.OffchainConfigDigester()
+			gotConfigDigestPrefix, err := ocd.ConfigDigestPrefix()
+			require.NoError(t, err)
+			assert.Equal(t, configDigestPrefix, gotConfigDigestPrefix)
+			gotConfigDigest, err := ocd.ConfigDigest(contractConfig)
+			require.NoError(t, err)
+			assert.Equal(t, configDigest, gotConfigDigest)
+		})
+		t.Run("ContractConfigTracker", func(t *testing.T) {
+			t.Parallel()
+			cct := provider.ContractConfigTracker()
+			gotBlockHeight, err := cct.LatestBlockHeight(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, blockHeight, gotBlockHeight)
+			gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, changedInBlock, gotChangedInBlock)
+			assert.Equal(t, configDigest, gotConfigDigest)
+			gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
+			require.NoError(t, err)
+			assert.Equal(t, contractConfig, gotContractConfig)
+		})
+		t.Run("ContractTransmitter", func(t *testing.T) {
+			t.Parallel()
+			ct := provider.ContractTransmitter()
+			gotAccount, err := ct.FromAccount()
+			require.NoError(t, err)
+			assert.Equal(t, account, gotAccount)
+			gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, configDigest, gotConfigDigest)
+			assert.Equal(t, epoch, gotEpoch)
+			err = ct.Transmit(ctx, reportContext, report, sigs)
+			require.NoError(t, err)
+		})
+		t.Run("ReportCodec", func(t *testing.T) {
+			t.Parallel()
+			rc := provider.ReportCodec()
+			gotReport, err := rc.BuildReport(pobs)
+			require.NoError(t, err)
+			assert.Equal(t, report, gotReport)
+			gotMedianValue, err := rc.MedianFromReport(report)
+			require.NoError(t, err)
+			assert.Equal(t, medianValue, gotMedianValue)
+			gotMax, err := rc.MaxReportLength(n)
+			require.NoError(t, err)
+			assert.Equal(t, max, gotMax)
+		})
+		t.Run("MedianContract", func(t *testing.T) {
+			t.Parallel()
+			mc := provider.MedianContract()
+			gotConfigDigest, gotEpoch, gotRound, err := mc.LatestRoundRequested(ctx, lookbackDuration)
+			require.NoError(t, err)
+			assert.Equal(t, configDigest, gotConfigDigest)
+			assert.Equal(t, epoch, gotEpoch)
+			assert.Equal(t, round, gotRound)
+			gotConfigDigest, gotEpoch, gotRound, gotLatestAnswer, gotLatestTimestamp, err := mc.LatestTransmissionDetails(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, configDigest, gotConfigDigest)
+			assert.Equal(t, epoch, gotEpoch)
+			assert.Equal(t, round, gotRound)
+			assert.Equal(t, latestAnswer, gotLatestAnswer)
+			assert.WithinDuration(t, latestTimestamp, gotLatestTimestamp, time.Second)
+		})
+		t.Run("OnchainConfigCodec", func(t *testing.T) {
+			t.Parallel()
+			occ := provider.OnchainConfigCodec()
+			gotEncoded, err := occ.Encode(onchainConfig)
+			require.NoError(t, err)
+			assert.Equal(t, encoded, gotEncoded)
+			gotDecoded, err := occ.Decode(encoded)
+			require.NoError(t, err)
+			assert.Equal(t, onchainConfig, gotDecoded)
 		})
 	})
 
+	pp, err0 = relayer.NewPluginProvider(ctx, newRelayArgsWithProviderType(types.GenericPlugin), PluginArgs)
+	require.NoError(t, err0)
+	servicetest.Run(t, pp)
+
 	t.Run("PluginProvider", func(t *testing.T) {
 		t.Parallel()
-		ra := newRelayArgsWithProviderType(types.GenericPlugin)
-		provider, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
-		require.NoError(t, err)
-		require.NoError(t, provider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
 
-		t.Run("ReportingPluginProvider", func(t *testing.T) {
+		t.Run("OffchainConfigDigester", func(t *testing.T) {
 			t.Parallel()
-
-			t.Run("OffchainConfigDigester", func(t *testing.T) {
-				t.Parallel()
-				ocd := provider.OffchainConfigDigester()
-				gotConfigDigestPrefix, err := ocd.ConfigDigestPrefix()
-				require.NoError(t, err)
-				assert.Equal(t, configDigestPrefix, gotConfigDigestPrefix)
-				gotConfigDigest, err := ocd.ConfigDigest(contractConfig)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-			})
-			t.Run("ContractConfigTracker", func(t *testing.T) {
-				t.Parallel()
-				cct := provider.ContractConfigTracker()
-				gotBlockHeight, err := cct.LatestBlockHeight(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, blockHeight, gotBlockHeight)
-				gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, changedInBlock, gotChangedInBlock)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
-				require.NoError(t, err)
-				assert.Equal(t, contractConfig, gotContractConfig)
-			})
-			t.Run("ContractTransmitter", func(t *testing.T) {
-				t.Parallel()
-				ct := provider.ContractTransmitter()
-				gotAccount, err := ct.FromAccount()
-				require.NoError(t, err)
-				assert.Equal(t, account, gotAccount)
-				gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				err = ct.Transmit(ctx, reportContext, report, sigs)
-				require.NoError(t, err)
-			})
+			ocd := pp.OffchainConfigDigester()
+			gotConfigDigestPrefix, err := ocd.ConfigDigestPrefix()
+			require.NoError(t, err)
+			assert.Equal(t, configDigestPrefix, gotConfigDigestPrefix)
+			gotConfigDigest, err := ocd.ConfigDigest(contractConfig)
+			require.NoError(t, err)
+			assert.Equal(t, configDigest, gotConfigDigest)
+		})
+		t.Run("ContractConfigTracker", func(t *testing.T) {
+			t.Parallel()
+			cct := pp.ContractConfigTracker()
+			gotBlockHeight, err := cct.LatestBlockHeight(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, blockHeight, gotBlockHeight)
+			gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, changedInBlock, gotChangedInBlock)
+			assert.Equal(t, configDigest, gotConfigDigest)
+			gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
+			require.NoError(t, err)
+			assert.Equal(t, contractConfig, gotContractConfig)
+		})
+		t.Run("ContractTransmitter", func(t *testing.T) {
+			t.Parallel()
+			ct := pp.ContractTransmitter()
+			gotAccount, err := ct.FromAccount()
+			require.NoError(t, err)
+			assert.Equal(t, account, gotAccount)
+			gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, configDigest, gotConfigDigest)
+			assert.Equal(t, epoch, gotEpoch)
+			err = ct.Transmit(ctx, reportContext, report, sigs)
+			require.NoError(t, err)
 		})
 	})
 

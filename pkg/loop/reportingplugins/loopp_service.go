@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -34,12 +35,17 @@ func NewLOOPPService(
 	telemetryService types.TelemetryService,
 	errorLog types.ErrorLog,
 ) *LOOPPService {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, services.HealthReporter, error) {
 		plug, ok := instance.(types.ReportingPluginClient)
 		if !ok {
-			return nil, fmt.Errorf("expected GenericPluginClient but got %T", instance)
+			return nil, nil, fmt.Errorf("expected GenericPluginClient but got %T", instance)
 		}
-		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog)
+		//TODO plug.Start(ctx)? (how to close?)
+		factory, err := plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog)
+		if err != nil {
+			return nil, nil, err
+		}
+		return factory, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "GenericService")

@@ -142,6 +142,13 @@ func With(l Logger, keyvals ...interface{}) Logger {
 
 // Named returns a logger with name 'n', if 'l' has a method `Named(string) L`, where L implements Logger, otherwise it returns l.
 func Named(l Logger, n string) Logger {
+	l = named(l, n)
+	if testing.Testing() {
+		l.Debugf("New logger: %s", n)
+	}
+	return l
+}
+func named(l Logger, n string) Logger {
 	switch t := l.(type) {
 	case *logger:
 		return t.named(n)

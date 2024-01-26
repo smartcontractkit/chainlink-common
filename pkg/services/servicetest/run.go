@@ -27,8 +27,8 @@ type TestingT interface {
 // Run fails tb if the service fails to start or close.
 func Run[R Runnable](tb TestingT, r R) R {
 	tb.Helper()
-	require.NoError(tb, r.Start(tests.Context(tb)), "service failed to start")
-	tb.Cleanup(func() { assert.NoError(tb, r.Close(), "error closing service") })
+	require.NoError(tb, r.Start(tests.Context(tb)), "service failed to start: %T", r)
+	tb.Cleanup(func() { assert.NoError(tb, r.Close(), "error closing service: %T", r) })
 	return r
 }
 

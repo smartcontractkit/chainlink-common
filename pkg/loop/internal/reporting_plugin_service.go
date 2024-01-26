@@ -96,6 +96,7 @@ type reportingPluginServiceServer struct {
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl types.ReportingPluginClient) error {
+	pb.RegisterServiceServer(server, &serviceServer{srv: impl})
 	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&brokerExt{broker, brokerCfg}, impl))
 	return nil
 }
@@ -145,6 +146,10 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 
 	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog)
 	if err != nil {
+		m.closeAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
+		return nil, err
+	}
+	if err = factory.Start(ctx); err != nil {
 		m.closeAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
 		return nil, err
 	}

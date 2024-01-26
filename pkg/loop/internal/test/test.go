@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"math/big"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -153,3 +155,29 @@ URL = 'https://test.url'
 	contractName                = "my median contract"
 	latestValue                 = map[string]int{"ret1": 1, "ret2": 2}
 )
+
+type staticService struct {
+	lggr logger.Logger
+}
+
+func (s staticService) Name() string { return s.lggr.Name() }
+
+func (s staticService) Start(ctx context.Context) error {
+	s.lggr.Info("Started")
+	return nil
+}
+
+func (s staticService) Close() error {
+	s.lggr.Info("Closed")
+	return nil
+}
+
+func (s staticService) Ready() error {
+	s.lggr.Info("Ready")
+	return nil
+}
+
+// HealthReport reports only for this single service. Override to include sub-services.
+func (s staticService) HealthReport() map[string]error {
+	return map[string]error{s.Name(): s.Ready()}
+}

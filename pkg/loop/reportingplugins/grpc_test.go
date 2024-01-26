@@ -40,7 +40,7 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 		t,
 		test.ReportingPluginWithMedianProviderName,
 		&reportingplugins.GRPCService[types.MedianProvider]{
-			PluginServer: test.StaticReportingPluginWithMedianProvider{},
+			PluginServer: test.NewStaticReportingPluginWithMedianProvider(logger.Test(t)),
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,
@@ -58,7 +58,7 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 		t,
 		reportingplugins.PluginServiceName,
 		&reportingplugins.GRPCService[types.PluginProvider]{
-			PluginServer: test.StaticReportingPluginWithPluginProvider{},
+			PluginServer: test.NewStaticReportingPluginWithPluginProvider(logger.Test(t)),
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,

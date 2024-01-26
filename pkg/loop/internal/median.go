@@ -117,6 +117,7 @@ type pluginMedianServer struct {
 }
 
 func RegisterPluginMedianServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl types.PluginMedian) error {
+	pb.RegisterServiceServer(server, &serviceServer{srv: impl})
 	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&brokerExt{broker, brokerCfg}, impl))
 	return nil
 }
@@ -159,6 +160,10 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
 	if err != nil {
+		m.closeAll(dsRes, juelsRes, providerRes, errorLogRes)
+		return nil, err
+	}
+	if err = factory.Start(ctx); err != nil {
 		m.closeAll(dsRes, juelsRes, providerRes, errorLogRes)
 		return nil, err
 	}

@@ -8,7 +8,9 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -18,14 +20,27 @@ type MockConn struct {
 
 const ReportingPluginWithMedianProviderName = "reporting-plugin-with-median-provider"
 
-type StaticReportingPluginWithMedianProvider struct {
+type staticReportingPluginWithMedianProvider struct {
+	staticService
 }
 
-func (s StaticReportingPluginWithMedianProvider) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
-	return StaticMedianProvider{}
+func NewStaticReportingPluginWithMedianProvider(lggr logger.Logger) staticReportingPluginWithMedianProvider {
+	return staticReportingPluginWithMedianProvider{staticService{lggr: logger.Named(lggr, "staticReportingPluginWithMedianProvider")}}
 }
 
-func (s StaticReportingPluginWithMedianProvider) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.MedianProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticReportingPluginWithMedianProvider) HealthReport() map[string]error {
+	hp := s.staticService.HealthReport()
+	services.CopyHealth(hp, NewStaticMedianProvider(s.lggr).HealthReport())
+	services.CopyHealth(hp, newStaticPluginFactory(s.lggr).HealthReport())
+	return hp
+}
+
+func (s staticReportingPluginWithMedianProvider) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
+	return NewStaticMedianProvider(s.lggr)
+}
+
+func (s staticReportingPluginWithMedianProvider) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.MedianProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+	//TODO validate config
 	ocd := provider.OffchainConfigDigester()
 	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
 	if err != nil {
@@ -158,6 +173,7 @@ func (s StaticReportingPluginWithMedianProvider) NewReportingPluginFactory(ctx c
 	if !reflect.DeepEqual(gotDecoded, onchainConfig) {
 		return nil, fmt.Errorf("expected OnchainConfig %s but got %s", onchainConfig, gotDecoded)
 	}
+	//TODO validate pipelineRunner
 	if err2 := errorLog.SaveError(ctx, errMsg); err2 != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err2)
 	}
@@ -169,17 +185,29 @@ func (s StaticReportingPluginWithMedianProvider) NewReportingPluginFactory(ctx c
 	if err != nil {
 		return nil, fmt.Errorf("failed to send log: %w", err)
 	}
-	return staticPluginFactory{}, nil
+	return newStaticPluginFactory(s.lggr), nil
 }
 
-type StaticReportingPluginWithPluginProvider struct {
+type staticReportingPluginWithPluginProvider struct {
+	staticService
 }
 
-func (s StaticReportingPluginWithPluginProvider) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {
-	return StaticPluginProvider{}
+func NewStaticReportingPluginWithPluginProvider(lggr logger.Logger) staticReportingPluginWithPluginProvider {
+	return staticReportingPluginWithPluginProvider{staticService{lggr: logger.Named(lggr, "staticReportingPluginWithPluginProvider")}}
 }
 
-func (s StaticReportingPluginWithPluginProvider) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticReportingPluginWithPluginProvider) HealthReport() map[string]error {
+	hp := s.staticService.HealthReport()
+	services.CopyHealth(hp, NewStaticPluginProvider(s.lggr).HealthReport())
+	services.CopyHealth(hp, newStaticPluginFactory(s.lggr).HealthReport())
+	return hp
+}
+
+func (s staticReportingPluginWithPluginProvider) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {
+	return NewStaticPluginProvider(s.lggr)
+}
+
+func (s staticReportingPluginWithPluginProvider) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	ocd := provider.OffchainConfigDigester()
 	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
 	if err != nil {
@@ -260,5 +288,5 @@ func (s StaticReportingPluginWithPluginProvider) NewReportingPluginFactory(ctx c
 	if err != nil {
 		return nil, fmt.Errorf("failed to send log: %w", err)
 	}
-	return staticPluginFactory{}, nil
+	return newStaticPluginFactory(s.lggr), nil
 }

@@ -21,14 +21,15 @@ var _ PluginRelayer = (*PluginRelayerClient)(nil)
 
 type PluginRelayerClient struct {
 	*pluginClient
+	*serviceClient
 
-	grpc pb.PluginRelayerClient
+	pluginRelayer pb.PluginRelayerClient
 }
 
 func NewPluginRelayerClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *PluginRelayerClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginRelayerClient")
 	pc := newPluginClient(broker, brokerCfg, conn)
-	return &PluginRelayerClient{pluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
+	return &PluginRelayerClient{pluginClient: pc, pluginRelayer: pb.NewPluginRelayerClient(pc), serviceClient: newServiceClient(pc.brokerExt, pc)}
 }
 
 func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (Relayer, error) {
@@ -42,7 +43,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		}
 		deps.Add(ksRes)
 
-		reply, err := p.grpc.NewRelayer(ctx, &pb.NewRelayerRequest{
+		reply, err := p.pluginRelayer.NewRelayer(ctx, &pb.NewRelayerRequest{
 			Config:     config,
 			KeystoreID: id,
 		})
@@ -63,6 +64,7 @@ type pluginRelayerServer struct {
 }
 
 func RegisterPluginRelayerServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl PluginRelayer) error {
+	pb.RegisterServiceServer(server, &serviceServer{srv: impl})
 	pb.RegisterPluginRelayerServer(server, newPluginRelayerServer(broker, brokerCfg, impl))
 	return nil
 }
@@ -163,7 +165,7 @@ type relayerClient struct {
 }
 
 func newRelayerClient(b *brokerExt, conn grpc.ClientConnInterface) *relayerClient {
-	b = b.withName("ChainRelayerClient")
+	b = b.withName("RelayerClient")
 	return &relayerClient{b, newServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
@@ -446,14 +448,14 @@ func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionReq
 	return &emptypb.Empty{}, r.impl.Transact(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
 }
 
-func healthReport(s map[string]string) (hr map[string]error) {
+func healthReport(prefix string, s map[string]string) (hr map[string]error) {
 	hr = make(map[string]error, len(s))
 	for n, e := range s {
 		var err error
 		if e != "" {
 			err = errors.New(e)
 		}
-		hr[n] = err
+		hr[prefix+"."+n] = err
 	}
 	return hr
 }

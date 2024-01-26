@@ -15,12 +15,15 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func PluginMedian(t *testing.T, p types.PluginMedian) {
-	PluginMedianTest{&StaticMedianProvider{}}.TestPluginMedian(t, p)
+	PluginMedianTest{&staticMedianProvider{}}.TestPluginMedian(t, p)
 }
 
 type PluginMedianTest struct {
@@ -34,6 +37,11 @@ func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
+		servicetest.AssertHealthReportNames(t, p.HealthReport(),
+			"PluginMedianClient",
+			"PluginMedianClient.staticPluginMedian",
+			"PluginMedianClient.staticPluginMedian.staticPluginFactory",
+		)
 	})
 }
 
@@ -65,9 +73,21 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 	})
 }
 
-type StaticPluginMedian struct{}
+type staticPluginMedian struct {
+	staticService
+}
 
-func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func NewStaticPluginMedian(lggr logger.Logger) staticPluginMedian {
+	return staticPluginMedian{staticService{lggr: logger.Named(lggr, "staticPluginMedian")}}
+}
+
+func (s staticPluginMedian) HealthReport() map[string]error {
+	hp := s.staticService.HealthReport()
+	services.CopyHealth(hp, newStaticPluginFactory(s.lggr).HealthReport())
+	return hp
+}
+
+func (s staticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	cr := provider.ChainReader()
 	var gotLatestValue map[string]int
 
@@ -229,20 +249,16 @@ func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 	if err := errorLog.SaveError(ctx, errMsg); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)
 	}
-	return staticPluginFactory{}, nil
+	return newStaticPluginFactory(s.lggr), nil
 }
 
-type staticPluginFactory struct{}
+type staticPluginFactory struct {
+	staticService
+}
 
-func (s staticPluginFactory) Name() string { panic("implement me") }
-
-func (s staticPluginFactory) Start(ctx context.Context) error { return nil }
-
-func (s staticPluginFactory) Close() error { return nil }
-
-func (s staticPluginFactory) Ready() error { panic("implement me") }
-
-func (s staticPluginFactory) HealthReport() map[string]error { panic("implement me") }
+func newStaticPluginFactory(lggr logger.Logger) staticPluginFactory {
+	return staticPluginFactory{staticService{lggr: logger.Named(lggr, "staticPluginFactory")}}
+}
 
 func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
 	if config.ConfigDigest != reportingPluginConfig.ConfigDigest {
@@ -284,39 +300,35 @@ func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginCon
 	return staticReportingPlugin{}, rpi, nil
 }
 
-type StaticMedianProvider struct{}
+type staticMedianProvider struct {
+	staticService
+}
 
-func (s StaticMedianProvider) Start(ctx context.Context) error { return nil }
+func NewStaticMedianProvider(lggr logger.Logger) staticMedianProvider {
+	return staticMedianProvider{staticService{lggr: logger.Named(lggr, "staticMedianProvider")}}
+}
 
-func (s StaticMedianProvider) Close() error { return nil }
-
-func (s StaticMedianProvider) Ready() error { panic("unimplemented") }
-
-func (s StaticMedianProvider) Name() string { panic("unimplemented") }
-
-func (s StaticMedianProvider) HealthReport() map[string]error { panic("unimplemented") }
-
-func (s StaticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
+func (s staticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return staticOffchainConfigDigester{}
 }
 
-func (s StaticMedianProvider) ContractConfigTracker() libocr.ContractConfigTracker {
+func (s staticMedianProvider) ContractConfigTracker() libocr.ContractConfigTracker {
 	return staticContractConfigTracker{}
 }
 
-func (s StaticMedianProvider) ContractTransmitter() libocr.ContractTransmitter {
+func (s staticMedianProvider) ContractTransmitter() libocr.ContractTransmitter {
 	return staticContractTransmitter{}
 }
 
-func (s StaticMedianProvider) ReportCodec() median.ReportCodec { return staticReportCodec{} }
+func (s staticMedianProvider) ReportCodec() median.ReportCodec { return staticReportCodec{} }
 
-func (s StaticMedianProvider) MedianContract() median.MedianContract { return staticMedianContract{} }
+func (s staticMedianProvider) MedianContract() median.MedianContract { return staticMedianContract{} }
 
-func (s StaticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
+func (s staticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
 	return staticOnchainConfigCodec{}
 }
 
-func (s StaticMedianProvider) ChainReader() types.ChainReader {
+func (s staticMedianProvider) ChainReader() types.ChainReader {
 	return staticChainReader{}
 }
 

@@ -7,7 +7,6 @@ package loop;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "relayer.proto";
-import "error_log.proto";
 
 service PluginMedian {
   rpc NewMedianFactory (NewMedianFactoryRequest) returns (NewMedianFactoryReply) {}
@@ -24,6 +23,15 @@ message NewMedianFactoryRequest {
 // NewMedianFactoryRequest has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewMedianFactory].
 message NewMedianFactoryReply {
   uint32 reportingPluginFactoryID = 1;
+}
+
+service ErrorLog {
+  rpc SaveError(SaveErrorRequest) returns (google.protobuf.Empty) {}
+}
+
+// SaveErrorRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.ErrorLog.SaveErrorRequest].
+message SaveErrorRequest {
+  string message = 1;
 }
 
 // ReportCodec is gRPC adapter of [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec].

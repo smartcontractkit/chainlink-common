@@ -20,13 +20,13 @@ func NewChainReaderClient(cc grpc.ClientConnInterface) *ChainReaderClient {
 }
 
 func (c *ChainReaderClient) LatestHeads(ctx context.Context, n int) ([]mercury_types.Head, error) {
-	Response, err := c.grpc.LatestHeads(ctx, &mercury_pb.LatestHeadsRequest{
+	reply, err := c.grpc.LatestHeads(ctx, &mercury_pb.LatestHeadsRequest{
 		NumHeads: int64(n),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return heads(Response.Heads), nil
+	return heads(reply.Heads), nil
 }
 
 func heads(heads []*mercury_pb.Head) []mercury_types.Head {
@@ -56,12 +56,12 @@ func NewChainReaderServer(impl mercury_types.ChainReader) *ChainReaderServer {
 	return &ChainReaderServer{impl: impl}
 }
 
-func (c *ChainReaderServer) LatestHeads(ctx context.Context, request *mercury_pb.LatestHeadsRequest) (*mercury_pb.LatestHeadsResponse, error) {
+func (c *ChainReaderServer) LatestHeads(ctx context.Context, request *mercury_pb.LatestHeadsRequest) (*mercury_pb.LatestHeadsReply, error) {
 	heads, err := c.impl.LatestHeads(ctx, int(request.NumHeads))
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_pb.LatestHeadsResponse{
+	return &mercury_pb.LatestHeadsReply{
 		Heads: pbHeads(heads),
 	}, nil
 }

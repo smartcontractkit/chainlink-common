@@ -24,9 +24,9 @@ type MercuryProvider interface {
 }
 
 type PluginMercury interface {
-	NewMercuryV1Factory(ctx context.Context, provider MercuryProvider, dataSource v1.DataSource, errorLog ErrorLog) (MercuryPluginFactory, error)
-	NewMercuryV2Factory(ctx context.Context, provider MercuryProvider, dataSource v2.DataSource, errorLog ErrorLog) (MercuryPluginFactory, error)
-	NewMercuryV3Factory(ctx context.Context, provider MercuryProvider, dataSource v3.DataSource, errorLog ErrorLog) (MercuryPluginFactory, error)
+	NewMercuryV1Factory(ctx context.Context, provider MercuryProvider, dataSource v1.DataSource) (MercuryPluginFactory, error)
+	NewMercuryV2Factory(ctx context.Context, provider MercuryProvider, dataSource v2.DataSource) (MercuryPluginFactory, error)
+	NewMercuryV3Factory(ctx context.Context, provider MercuryProvider, dataSource v3.DataSource) (MercuryPluginFactory, error)
 }
 
 type MercuryPluginFactory interface {

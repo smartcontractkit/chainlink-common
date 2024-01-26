@@ -43,7 +43,7 @@ func NewMercuryAdapterClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.C
 }
 
 func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
-	provider types.MercuryProvider, dataSource mercury_v1.DataSource, errorLog types.ErrorLog) (types.MercuryPluginFactory, error) {
+	provider types.MercuryProvider, dataSource mercury_v1.DataSource) (types.MercuryPluginFactory, error) {
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
 	// some of those services are hosted in the same process as the client itself and others may be remote.
@@ -78,23 +78,14 @@ func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
 		}
 		deps.Add(providerRes)
 
-		errorLogID, errorLogRes, err := c.serveNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &errorLogServer{impl: errorLog})
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		deps.Add(errorLogRes)
-
-		response, err := c.mercury.NewMercuryV1Factory(ctx, &mercury_pb.NewMercuryV1FactoryRequest{
+		reply, err := c.mercury.NewMercuryV1Factory(ctx, &mercury_pb.NewMercuryV1FactoryRequest{
 			MercuryProviderID: providerID,
 			DataSourceV1ID:    dataSourceID,
-			ErrorLogID:        errorLogID,
 		})
 		if err != nil {
 			return 0, nil, err
 		}
-		return response.MercuryV1FactoryID, deps, nil
+		return reply.MercuryV1FactoryID, deps, nil
 	}
 
 	cc := c.newClientConn("MercuryV3Factory", newMercuryClientFn)
@@ -102,7 +93,7 @@ func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
 }
 
 func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
-	provider types.MercuryProvider, dataSource mercury_v2.DataSource, errorLog types.ErrorLog) (types.MercuryPluginFactory, error) {
+	provider types.MercuryProvider, dataSource mercury_v2.DataSource) (types.MercuryPluginFactory, error) {
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
 	// some of those services are hosted in the same process as the client itself and others may be remote.
@@ -138,23 +129,14 @@ func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 		}
 		deps.Add(providerRes)
 
-		errorLogID, errorLogRes, err := c.serveNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &errorLogServer{impl: errorLog})
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		deps.Add(errorLogRes)
-
-		response, err := c.mercury.NewMercuryV2Factory(ctx, &mercury_pb.NewMercuryV2FactoryRequest{
+		reply, err := c.mercury.NewMercuryV2Factory(ctx, &mercury_pb.NewMercuryV2FactoryRequest{
 			MercuryProviderID: providerID,
 			DataSourceV2ID:    dataSourceID,
-			ErrorLogID:        errorLogID,
 		})
 		if err != nil {
 			return 0, nil, err
 		}
-		return response.MercuryV2FactoryID, deps, nil
+		return reply.MercuryV2FactoryID, deps, nil
 	}
 
 	cc := c.newClientConn("MercuryV2Factory", newMercuryClientFn)
@@ -172,7 +154,8 @@ func registerCommonServices(s *grpc.Server, provider types.MercuryProvider) {
 }
 
 func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
-	provider types.MercuryProvider, dataSource mercury_v3.DataSource, errorLog types.ErrorLog) (types.MercuryPluginFactory, error) {
+	provider types.MercuryProvider, dataSource mercury_v3.DataSource,
+) (types.MercuryPluginFactory, error) {
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
 	// some of those services are hosted in the same process as the client itself and others may be remote.
@@ -208,23 +191,14 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 		}
 		deps.Add(providerRes)
 
-		errorLogID, errorLogRes, err := c.serveNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &errorLogServer{impl: errorLog})
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		deps.Add(errorLogRes)
-
-		response, err := c.mercury.NewMercuryV3Factory(ctx, &mercury_pb.NewMercuryV3FactoryRequest{
+		reply, err := c.mercury.NewMercuryV3Factory(ctx, &mercury_pb.NewMercuryV3FactoryRequest{
 			MercuryProviderID: providerID,
 			DataSourceV3ID:    dataSourceID,
-			ErrorLogID:        errorLogID,
 		})
 		if err != nil {
 			return 0, nil, err
 		}
-		return response.MercuryV3FactoryID, deps, nil
+		return reply.MercuryV3FactoryID, deps, nil
 	}
 
 	cc := c.newClientConn("MercuryV3Factory", newMercuryClientFn)
@@ -249,7 +223,7 @@ func newMercuryAdapterServer(b *brokerExt, impl types.PluginMercury) *mercuryAda
 	return &mercuryAdapterServer{brokerExt: b.withName("MercuryAdapter"), impl: impl}
 }
 
-func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *mercury_pb.NewMercuryV1FactoryRequest) (*mercury_pb.NewMercuryV1FactoryResponse, error) {
+func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *mercury_pb.NewMercuryV1FactoryRequest) (*mercury_pb.NewMercuryV1FactoryReply, error) {
 	// declared so we can clean up open resources
 	var err error
 	var deps resources
@@ -274,16 +248,7 @@ func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *me
 	providerRes := resource{Closer: providerConn, name: "MercuryProvider"}
 	deps.Add(providerRes)
 	provider := newMercuryProviderClient(ms.brokerExt, providerConn)
-
-	errorLogConn, err := ms.dial(req.ErrorLogID)
-	if err != nil {
-		return nil, ErrConnDial{Name: "ErrorLog", ID: req.ErrorLogID, Err: err}
-	}
-	errorLogRes := resource{errorLogConn, "ErrorLog"}
-	deps.Add(errorLogRes)
-	errorLog := newErrorLogClient(errorLogConn)
-
-	factory, err := ms.impl.NewMercuryV1Factory(ctx, provider, ds, errorLog)
+	factory, err := ms.impl.NewMercuryV1Factory(ctx, provider, ds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MercuryV1Factory: %w", err)
 	}
@@ -296,10 +261,10 @@ func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *me
 		return nil, fmt.Errorf("failed to serverNew: %w", err)
 	}
 
-	return &mercury_pb.NewMercuryV1FactoryResponse{MercuryV1FactoryID: id}, nil
+	return &mercury_pb.NewMercuryV1FactoryReply{MercuryV1FactoryID: id}, nil
 }
 
-func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *mercury_pb.NewMercuryV2FactoryRequest) (*mercury_pb.NewMercuryV2FactoryResponse, error) {
+func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *mercury_pb.NewMercuryV2FactoryRequest) (*mercury_pb.NewMercuryV2FactoryReply, error) {
 	// declared so we can clean up open resources
 	var err error
 	var deps resources
@@ -324,16 +289,7 @@ func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *me
 	providerRes := resource{Closer: providerConn, name: "MercuryProvider"}
 	deps.Add(providerRes)
 	provider := newMercuryProviderClient(ms.brokerExt, providerConn)
-
-	errorLogConn, err := ms.dial(req.ErrorLogID)
-	if err != nil {
-		return nil, ErrConnDial{Name: "ErrorLog", ID: req.ErrorLogID, Err: err}
-	}
-	errorLogRes := resource{errorLogConn, "ErrorLog"}
-	deps.Add(errorLogRes)
-	errorLog := newErrorLogClient(errorLogConn)
-
-	factory, err := ms.impl.NewMercuryV2Factory(ctx, provider, ds, errorLog)
+	factory, err := ms.impl.NewMercuryV2Factory(ctx, provider, ds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MercuryV2Factory: %w", err)
 	}
@@ -346,10 +302,10 @@ func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *me
 		return nil, fmt.Errorf("failed to serverNew: %w", err)
 	}
 
-	return &mercury_pb.NewMercuryV2FactoryResponse{MercuryV2FactoryID: id}, nil
+	return &mercury_pb.NewMercuryV2FactoryReply{MercuryV2FactoryID: id}, nil
 }
 
-func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *mercury_pb.NewMercuryV3FactoryRequest) (*mercury_pb.NewMercuryV3FactoryResponse, error) {
+func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *mercury_pb.NewMercuryV3FactoryRequest) (*mercury_pb.NewMercuryV3FactoryReply, error) {
 	// declared so we can clean up open resources
 	var err error
 	var deps resources
@@ -374,16 +330,7 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 	providerRes := resource{Closer: providerConn, name: "MercuryProvider"}
 	deps.Add(providerRes)
 	provider := newMercuryProviderClient(ms.brokerExt, providerConn)
-
-	errorLogConn, err := ms.dial(req.ErrorLogID)
-	if err != nil {
-		return nil, ErrConnDial{Name: "ErrorLog", ID: req.ErrorLogID, Err: err}
-	}
-	errorLogRes := resource{errorLogConn, "ErrorLog"}
-	deps.Add(errorLogRes)
-	errorLog := newErrorLogClient(errorLogConn)
-
-	factory, err := ms.impl.NewMercuryV3Factory(ctx, provider, ds, errorLog)
+	factory, err := ms.impl.NewMercuryV3Factory(ctx, provider, ds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MercuryV3Factory: %w", err)
 	}
@@ -396,7 +343,7 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 		return nil, fmt.Errorf("failed to serverNew: %w", err)
 	}
 
-	return &mercury_pb.NewMercuryV3FactoryResponse{MercuryV3FactoryID: id}, nil
+	return &mercury_pb.NewMercuryV3FactoryReply{MercuryV3FactoryID: id}, nil
 }
 
 var (

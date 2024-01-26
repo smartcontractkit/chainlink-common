@@ -28,9 +28,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReportCodecClient interface {
-	BuildReport(ctx context.Context, in *BuildReportRequest, opts ...grpc.CallOption) (*BuildReportResponse, error)
-	MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthResponse, error)
-	ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportResponse, error)
+	BuildReport(ctx context.Context, in *BuildReportRequest, opts ...grpc.CallOption) (*BuildReportReply, error)
+	MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error)
+	ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportReply, error)
 }
 
 type reportCodecClient struct {
@@ -41,8 +41,8 @@ func NewReportCodecClient(cc grpc.ClientConnInterface) ReportCodecClient {
 	return &reportCodecClient{cc}
 }
 
-func (c *reportCodecClient) BuildReport(ctx context.Context, in *BuildReportRequest, opts ...grpc.CallOption) (*BuildReportResponse, error) {
-	out := new(BuildReportResponse)
+func (c *reportCodecClient) BuildReport(ctx context.Context, in *BuildReportRequest, opts ...grpc.CallOption) (*BuildReportReply, error) {
+	out := new(BuildReportReply)
 	err := c.cc.Invoke(ctx, ReportCodec_BuildReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -50,8 +50,8 @@ func (c *reportCodecClient) BuildReport(ctx context.Context, in *BuildReportRequ
 	return out, nil
 }
 
-func (c *reportCodecClient) MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthResponse, error) {
-	out := new(MaxReportLengthResponse)
+func (c *reportCodecClient) MaxReportLength(ctx context.Context, in *MaxReportLengthRequest, opts ...grpc.CallOption) (*MaxReportLengthReply, error) {
+	out := new(MaxReportLengthReply)
 	err := c.cc.Invoke(ctx, ReportCodec_MaxReportLength_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -59,8 +59,8 @@ func (c *reportCodecClient) MaxReportLength(ctx context.Context, in *MaxReportLe
 	return out, nil
 }
 
-func (c *reportCodecClient) ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportResponse, error) {
-	out := new(ObservationTimestampFromReportResponse)
+func (c *reportCodecClient) ObservationTimestampFromReport(ctx context.Context, in *ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*ObservationTimestampFromReportReply, error) {
+	out := new(ObservationTimestampFromReportReply)
 	err := c.cc.Invoke(ctx, ReportCodec_ObservationTimestampFromReport_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -72,9 +72,9 @@ func (c *reportCodecClient) ObservationTimestampFromReport(ctx context.Context, 
 // All implementations must embed UnimplementedReportCodecServer
 // for forward compatibility
 type ReportCodecServer interface {
-	BuildReport(context.Context, *BuildReportRequest) (*BuildReportResponse, error)
-	MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthResponse, error)
-	ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportResponse, error)
+	BuildReport(context.Context, *BuildReportRequest) (*BuildReportReply, error)
+	MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error)
+	ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportReply, error)
 	mustEmbedUnimplementedReportCodecServer()
 }
 
@@ -82,13 +82,13 @@ type ReportCodecServer interface {
 type UnimplementedReportCodecServer struct {
 }
 
-func (UnimplementedReportCodecServer) BuildReport(context.Context, *BuildReportRequest) (*BuildReportResponse, error) {
+func (UnimplementedReportCodecServer) BuildReport(context.Context, *BuildReportRequest) (*BuildReportReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
 }
-func (UnimplementedReportCodecServer) MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthResponse, error) {
+func (UnimplementedReportCodecServer) MaxReportLength(context.Context, *MaxReportLengthRequest) (*MaxReportLengthReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
 }
-func (UnimplementedReportCodecServer) ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportResponse, error) {
+func (UnimplementedReportCodecServer) ObservationTimestampFromReport(context.Context, *ObservationTimestampFromReportRequest) (*ObservationTimestampFromReportReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObservationTimestampFromReport not implemented")
 }
 func (UnimplementedReportCodecServer) mustEmbedUnimplementedReportCodecServer() {}

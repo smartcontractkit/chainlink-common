@@ -22,23 +22,23 @@ func NewOnchainConfigCodecClient(cc grpc.ClientConnInterface) *OnchainConfigCode
 
 // TODO: why doesn't the interface have a context?!
 func (o *OnchainConfigCodecClient) Encode(config mercury_types.OnchainConfig) ([]byte, error) {
-	Response, err := o.grpc.Encode(context.TODO(), &mercury_pb.EncodeOnchainConfigRequest{
+	reply, err := o.grpc.Encode(context.TODO(), &mercury_pb.EncodeOnchainConfigRequest{
 		OnchainConfig: pbOnchainConfig(config),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return Response.OnchainConfig, nil
+	return reply.OnchainConfig, nil
 }
 
 func (o *OnchainConfigCodecClient) Decode(data []byte) (mercury_types.OnchainConfig, error) {
-	Response, err := o.grpc.Decode(context.TODO(), &mercury_pb.DecodeOnchainConfigRequest{
+	reply, err := o.grpc.Decode(context.TODO(), &mercury_pb.DecodeOnchainConfigRequest{
 		OnchainConfig: data,
 	})
 	if err != nil {
 		return mercury_types.OnchainConfig{}, err
 	}
-	return onchainConfig(Response.OnchainConfig), nil
+	return onchainConfig(reply.OnchainConfig), nil
 }
 
 func pbOnchainConfig(config mercury_types.OnchainConfig) *mercury_pb.OnchainConfig {
@@ -67,18 +67,18 @@ func NewOnchainConfigCodecServer(impl mercury_types.OnchainConfigCodec) *Onchain
 	return &OnchainConfigCodecServer{impl: impl}
 }
 
-func (o *OnchainConfigCodecServer) Encode(ctx context.Context, request *mercury_pb.EncodeOnchainConfigRequest) (*mercury_pb.EncodeOnchainConfigResponse, error) {
+func (o *OnchainConfigCodecServer) Encode(ctx context.Context, request *mercury_pb.EncodeOnchainConfigRequest) (*mercury_pb.EncodeOnchainConfigReply, error) {
 	val, err := o.impl.Encode(onchainConfig(request.OnchainConfig))
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_pb.EncodeOnchainConfigResponse{OnchainConfig: val}, nil
+	return &mercury_pb.EncodeOnchainConfigReply{OnchainConfig: val}, nil
 }
 
-func (o *OnchainConfigCodecServer) Decode(ctx context.Context, request *mercury_pb.DecodeOnchainConfigRequest) (*mercury_pb.DecodeOnchainConfigResponse, error) {
+func (o *OnchainConfigCodecServer) Decode(ctx context.Context, request *mercury_pb.DecodeOnchainConfigRequest) (*mercury_pb.DecodeOnchainConfigReply, error) {
 	val, err := o.impl.Decode(request.OnchainConfig)
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_pb.DecodeOnchainConfigResponse{OnchainConfig: pbOnchainConfig(val)}, nil
+	return &mercury_pb.DecodeOnchainConfigReply{OnchainConfig: pbOnchainConfig(val)}, nil
 }

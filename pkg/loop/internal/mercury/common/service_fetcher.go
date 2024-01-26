@@ -23,27 +23,27 @@ func NewServerFetcherClient(cc grpc.ClientConnInterface) *ServerFetcherClient {
 }
 
 func (s *ServerFetcherClient) FetchInitialMaxFinalizedBlockNumber(ctx context.Context) (*int64, error) {
-	Response, err := s.grpc.FetchInitialMaxFinalizedBlockNumber(ctx, &mercury_pb.FetchInitialMaxFinalizedBlockNumberRequest{})
+	reply, err := s.grpc.FetchInitialMaxFinalizedBlockNumber(ctx, &mercury_pb.FetchInitialMaxFinalizedBlockNumberRequest{})
 	if err != nil {
 		return nil, err
 	}
-	return &Response.InitialMaxFinalizedBlockNumber, nil
+	return &reply.InitialMaxFinalizedBlockNumber, nil
 }
 
 func (s *ServerFetcherClient) LatestPrice(ctx context.Context, feedID [32]byte) (*big.Int, error) {
-	Response, err := s.grpc.LatestPrice(ctx, &mercury_pb.LatestPriceRequest{})
+	reply, err := s.grpc.LatestPrice(ctx, &mercury_pb.LatestPriceRequest{})
 	if err != nil {
 		return nil, err
 	}
-	return Response.LatestPrice.Int(), nil
+	return reply.LatestPrice.Int(), nil
 }
 
 func (s *ServerFetcherClient) LatestTimestamp(ctx context.Context) (int64, error) {
-	Response, err := s.grpc.LatestTimestamp(ctx, &mercury_pb.LatestTimestampRequest{})
+	reply, err := s.grpc.LatestTimestamp(ctx, &mercury_pb.LatestTimestampRequest{})
 	if err != nil {
 		return 0, err
 	}
-	return Response.LatestTimestamp, nil
+	return reply.LatestTimestamp, nil
 }
 
 var _ mercury_pb.ServerFetcherServer = (*ServerFetcherServer)(nil)
@@ -58,7 +58,7 @@ func NewServerFetcherServer(impl mercury_types.ServerFetcher) *ServerFetcherServ
 	return &ServerFetcherServer{impl: impl}
 }
 
-func (s *ServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(ctx context.Context, request *mercury_pb.FetchInitialMaxFinalizedBlockNumberRequest) (*mercury_pb.FetchInitialMaxFinalizedBlockNumberResponse, error) {
+func (s *ServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(ctx context.Context, request *mercury_pb.FetchInitialMaxFinalizedBlockNumberRequest) (*mercury_pb.FetchInitialMaxFinalizedBlockNumberReply, error) {
 	val, err := s.impl.FetchInitialMaxFinalizedBlockNumber(ctx)
 	if err != nil {
 		return nil, err
@@ -67,10 +67,10 @@ func (s *ServerFetcherServer) FetchInitialMaxFinalizedBlockNumber(ctx context.Co
 	if val == nil {
 		return nil, fmt.Errorf("FetchInitialMaxFinalizedBlockNumber returned nil")
 	}
-	return &mercury_pb.FetchInitialMaxFinalizedBlockNumberResponse{InitialMaxFinalizedBlockNumber: *val}, nil
+	return &mercury_pb.FetchInitialMaxFinalizedBlockNumberReply{InitialMaxFinalizedBlockNumber: *val}, nil
 }
 
-func (s *ServerFetcherServer) LatestPrice(ctx context.Context, request *mercury_pb.LatestPriceRequest) (*mercury_pb.LatestPriceResponse, error) {
+func (s *ServerFetcherServer) LatestPrice(ctx context.Context, request *mercury_pb.LatestPriceRequest) (*mercury_pb.LatestPriceReply, error) {
 	if len(request.FeedID) != 32 {
 		return nil, fmt.Errorf("expected feed ID to be 32 bytes, got %d", len(request.FeedID))
 	}
@@ -78,13 +78,13 @@ func (s *ServerFetcherServer) LatestPrice(ctx context.Context, request *mercury_
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_pb.LatestPriceResponse{LatestPrice: pb.NewBigIntFromInt(val)}, nil
+	return &mercury_pb.LatestPriceReply{LatestPrice: pb.NewBigIntFromInt(val)}, nil
 }
 
-func (s *ServerFetcherServer) LatestTimestamp(ctx context.Context, request *mercury_pb.LatestTimestampRequest) (*mercury_pb.LatestTimestampResponse, error) {
+func (s *ServerFetcherServer) LatestTimestamp(ctx context.Context, request *mercury_pb.LatestTimestampRequest) (*mercury_pb.LatestTimestampReply, error) {
 	val, err := s.impl.LatestTimestamp(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &mercury_pb.LatestTimestampResponse{LatestTimestamp: val}, nil
+	return &mercury_pb.LatestTimestampReply{LatestTimestamp: val}, nil
 }

@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
@@ -40,7 +43,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
-		ReportingPluginFactory(t, factory)
+		MercuryPluginFactory(t, factory)
 	})
 
 	t.Run("PluginMercuryV2", func(t *testing.T) {
@@ -49,7 +52,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
-		ReportingPluginFactory(t, factory)
+		MercuryPluginFactory(t, factory)
 	})
 
 	t.Run("PluginMercuryV1", func(t *testing.T) {
@@ -58,7 +61,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
-		ReportingPluginFactory(t, factory)
+		MercuryPluginFactory(t, factory)
 	})
 }
 
@@ -148,7 +151,7 @@ func (s StaticPluginMercury) commonValidation(ctx context.Context, provider type
 	return nil
 }
 
-func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.ReportingPluginFactory, error) {
+func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -190,10 +193,10 @@ func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 
-	return staticPluginFactory{}, nil
+	return staticMercuryPluginFactory{}, nil
 }
 
-func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) (types.ReportingPluginFactory, error) {
+func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -235,10 +238,10 @@ func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 
-	return staticPluginFactory{}, nil
+	return staticMercuryPluginFactory{}, nil
 }
 
-func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) (types.ReportingPluginFactory, error) {
+func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -280,7 +283,7 @@ func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
 	}
 
-	return staticPluginFactory{}, nil
+	return staticMercuryPluginFactory{}, nil
 }
 
 type StaticMercuryProvider struct{}
@@ -341,3 +344,113 @@ func (s StaticMercuryProvider) MercuryServerFetcher() mercury_types.ServerFetche
 func (s StaticMercuryProvider) Codec() types.Codec {
 	return nil
 }
+
+type staticMercuryPluginFactory struct{}
+
+func (s staticMercuryPluginFactory) Name() string { panic("implement me") }
+
+func (s staticMercuryPluginFactory) Start(ctx context.Context) error { return nil }
+
+func (s staticMercuryPluginFactory) Close() error { return nil }
+
+func (s staticMercuryPluginFactory) Ready() error { panic("implement me") }
+
+func (s staticMercuryPluginFactory) HealthReport() map[string]error { panic("implement me") }
+
+func (s staticMercuryPluginFactory) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+	if config.ConfigDigest != mercuryPluginConfig.ConfigDigest {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected ConfigDigest %x but got %x", mercuryPluginConfig.ConfigDigest, config.ConfigDigest)
+	}
+	if config.OracleID != mercuryPluginConfig.OracleID {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected OracleID %d but got %d", mercuryPluginConfig.OracleID, config.OracleID)
+	}
+	if config.F != mercuryPluginConfig.F {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected F %d but got %d", mercuryPluginConfig.F, config.F)
+	}
+	if config.N != mercuryPluginConfig.N {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected N %d but got %d", mercuryPluginConfig.N, config.N)
+	}
+	if !bytes.Equal(config.OnchainConfig, mercuryPluginConfig.OnchainConfig) {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected OnchainConfig %x but got %x", mercuryPluginConfig.OnchainConfig, config.OnchainConfig)
+	}
+	if !bytes.Equal(config.OffchainConfig, mercuryPluginConfig.OffchainConfig) {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected OffchainConfig %x but got %x", mercuryPluginConfig.OffchainConfig, config.OffchainConfig)
+	}
+	if config.EstimatedRoundInterval != mercuryPluginConfig.EstimatedRoundInterval {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected EstimatedRoundInterval %d but got %d", mercuryPluginConfig.EstimatedRoundInterval, config.EstimatedRoundInterval)
+	}
+
+	if config.MaxDurationObservation != mercuryPluginConfig.MaxDurationObservation {
+		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected MaxDurationObservation %d but got %d", mercuryPluginConfig.MaxDurationObservation, config.MaxDurationObservation)
+	}
+
+	return staticMercuryPlugin{}, mercuryPluginInfo, nil
+}
+
+func MercuryPluginFactory(t *testing.T, factory types.MercuryPluginFactory) {
+	t.Run("ReportingPluginFactory", func(t *testing.T) {
+		rp, gotRPI, err := factory.NewMercuryPlugin(mercuryPluginConfig)
+		require.NoError(t, err)
+		assert.Equal(t, mercuryPluginInfo, gotRPI)
+		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
+		t.Run("ReportingPlugin", func(t *testing.T) {
+			ctx := tests.Context(t)
+			gotObs, err := rp.Observation(ctx, reportContext.ReportTimestamp, query)
+			require.NoError(t, err)
+			assert.Equal(t, observation, gotObs)
+			gotOk, gotReport, err := rp.Report(reportContext.ReportTimestamp, query, obs)
+			require.NoError(t, err)
+			assert.True(t, gotOk)
+			assert.Equal(t, report, gotReport)
+		})
+	})
+}
+
+type staticMercuryPlugin struct{}
+
+var _ ocr3types.MercuryPlugin = staticMercuryPlugin{}
+
+func (s staticMercuryPlugin) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, previousReport libocr.Report) (libocr.Observation, error) {
+	if timestamp != reportContext.ReportTimestamp {
+		return nil, fmt.Errorf("expected report timestamp %v but got %v", reportContext.ReportTimestamp, timestamp)
+	}
+	if !bytes.Equal(previousReport, query) {
+		return nil, fmt.Errorf("expected previous report %x but got %x", query, previousReport)
+	}
+	return observation, nil
+}
+
+func (s staticMercuryPlugin) Report(timestamp libocr.ReportTimestamp, previousReport libocr.Report, observations []libocr.AttributedObservation) (bool, libocr.Report, error) {
+	if timestamp != reportContext.ReportTimestamp {
+		return false, nil, fmt.Errorf("expected report timestamp %v but got %v", reportContext.ReportTimestamp, timestamp)
+	}
+	if !bytes.Equal(query, previousReport) {
+		return false, nil, fmt.Errorf("expected previous report %x but got %x", query, previousReport)
+	}
+	if !assert.ObjectsAreEqual(obs, observations) {
+		return false, nil, fmt.Errorf("expected %v but got %v", obs, observations)
+	}
+	return shouldReport, report, nil
+}
+
+func (s staticMercuryPlugin) Close() error { return nil }
+
+var (
+	mercuryPluginConfig = ocr3types.MercuryPluginConfig{
+		ConfigDigest:           configDigest,
+		OracleID:               commontypes.OracleID(11),
+		N:                      12,
+		F:                      42,
+		OnchainConfig:          []byte{17: 11},
+		OffchainConfig:         []byte{32: 64},
+		EstimatedRoundInterval: time.Second,
+		MaxDurationObservation: time.Millisecond,
+	}
+	mercuryPluginInfo = ocr3types.MercuryPluginInfo{
+		Name: "test",
+		Limits: ocr3types.MercuryPluginLimits{
+			MaxObservationLength: 13,
+			MaxReportLength:      17,
+		},
+	}
+)

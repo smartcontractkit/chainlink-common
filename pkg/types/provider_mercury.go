@@ -7,6 +7,7 @@ import (
 	v1 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	v2 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	v3 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 // MercuryProvider provides components needed for a mercury OCR2 plugin.
@@ -23,7 +24,12 @@ type MercuryProvider interface {
 }
 
 type PluginMercury interface {
-	NewMercuryV1Factory(ctx context.Context, provider MercuryProvider, dataSource v1.DataSource) (ReportingPluginFactory, error)
-	NewMercuryV2Factory(ctx context.Context, provider MercuryProvider, dataSource v2.DataSource) (ReportingPluginFactory, error)
-	NewMercuryV3Factory(ctx context.Context, provider MercuryProvider, dataSource v3.DataSource) (ReportingPluginFactory, error)
+	NewMercuryV1Factory(ctx context.Context, provider MercuryProvider, dataSource v1.DataSource) (MercuryPluginFactory, error)
+	NewMercuryV2Factory(ctx context.Context, provider MercuryProvider, dataSource v2.DataSource) (MercuryPluginFactory, error)
+	NewMercuryV3Factory(ctx context.Context, provider MercuryProvider, dataSource v3.DataSource) (MercuryPluginFactory, error)
+}
+
+type MercuryPluginFactory interface {
+	Service
+	ocr3types.MercuryPluginFactory
 }

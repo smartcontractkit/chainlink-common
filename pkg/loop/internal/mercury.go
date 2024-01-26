@@ -43,7 +43,7 @@ func NewMercuryAdapterClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.C
 }
 
 func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
-	provider types.MercuryProvider, dataSource mercury_v1.DataSource) (types.ReportingPluginFactory, error) {
+	provider types.MercuryProvider, dataSource mercury_v1.DataSource) (types.MercuryPluginFactory, error) {
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
 	// some of those services are hosted in the same process as the client itself and others may be remote.
@@ -89,11 +89,11 @@ func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
 	}
 
 	cc := c.newClientConn("MercuryV3Factory", newMercuryClientFn)
-	return newReportingPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
+	return newMercuryPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
 }
 
 func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
-	provider types.MercuryProvider, dataSource mercury_v2.DataSource) (types.ReportingPluginFactory, error) {
+	provider types.MercuryProvider, dataSource mercury_v2.DataSource) (types.MercuryPluginFactory, error) {
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
 	// some of those services are hosted in the same process as the client itself and others may be remote.
@@ -140,7 +140,7 @@ func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 	}
 
 	cc := c.newClientConn("MercuryV2Factory", newMercuryClientFn)
-	return newReportingPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
+	return newMercuryPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
 }
 
 func registerCommonServices(s *grpc.Server, provider types.MercuryProvider) {
@@ -155,7 +155,7 @@ func registerCommonServices(s *grpc.Server, provider types.MercuryProvider) {
 
 func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 	provider types.MercuryProvider, dataSource mercury_v3.DataSource,
-) (types.ReportingPluginFactory, error) {
+) (types.MercuryPluginFactory, error) {
 	// every time a new client is created, we have to ensure that all the external dependencies are satisfied.
 	// at this layer of the stack, all of those dependencies are other gRPC services.
 	// some of those services are hosted in the same process as the client itself and others may be remote.
@@ -202,7 +202,7 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 	}
 
 	cc := c.newClientConn("MercuryV3Factory", newMercuryClientFn)
-	return newReportingPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
+	return newMercuryPluginFactoryClient(c.pluginClient.brokerExt, cc), nil
 }
 
 var _ mercury_pb.MercuryAdapterServer = (*mercuryAdapterServer)(nil)
@@ -255,7 +255,7 @@ func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *me
 
 	id, _, err := ms.serveNew("MercuryV1Factory", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, ms.brokerExt))
+		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.brokerExt))
 	}, deps...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serverNew: %w", err)
@@ -296,7 +296,7 @@ func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *me
 
 	id, _, err := ms.serveNew("MercuryV2Factory", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, ms.brokerExt))
+		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.brokerExt))
 	}, deps...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serverNew: %w", err)
@@ -337,7 +337,7 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 
 	id, _, err := ms.serveNew("MercuryV3Factory", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, ms.brokerExt))
+		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.brokerExt))
 	}, deps...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serverNew: %w", err)

@@ -26,7 +26,7 @@ func TestMercuryV3Service(t *testing.T) {
 	servicetest.Run(t, mercuryV3)
 
 	t.Run("control", func(t *testing.T) {
-		test.ReportingPluginFactory(t, mercuryV3)
+		test.MercuryPluginFactory(t, mercuryV3)
 	})
 
 	t.Run("Kill", func(t *testing.T) {
@@ -35,7 +35,7 @@ func TestMercuryV3Service(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.ReportingPluginFactory(t, mercuryV3)
+		test.MercuryPluginFactory(t, mercuryV3)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -44,7 +44,7 @@ func TestMercuryV3Service(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.ReportingPluginFactory(t, mercuryV3)
+		test.MercuryPluginFactory(t, mercuryV3)
 	})
 }
 
@@ -60,7 +60,7 @@ func TestMercuryV3Service_recovery(t *testing.T) {
 	}, test.StaticMercuryProvider{}, mercury_v3_test.StaticDataSource{})
 	servicetest.Run(t, mercury)
 
-	test.ReportingPluginFactory(t, mercury)
+	test.MercuryPluginFactory(t, mercury)
 }
 
 func TestMercuryV1Service(t *testing.T) {
@@ -73,7 +73,7 @@ func TestMercuryV1Service(t *testing.T) {
 	servicetest.Run(t, mercuryV1)
 
 	t.Run("control", func(t *testing.T) {
-		test.ReportingPluginFactory(t, mercuryV1)
+		test.MercuryPluginFactory(t, mercuryV1)
 	})
 
 	t.Run("Kill", func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestMercuryV1Service(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.ReportingPluginFactory(t, mercuryV1)
+		test.MercuryPluginFactory(t, mercuryV1)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestMercuryV1Service(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.ReportingPluginFactory(t, mercuryV1)
+		test.MercuryPluginFactory(t, mercuryV1)
 	})
 }
 
@@ -107,7 +107,7 @@ func TestMercuryV1Service_recovery(t *testing.T) {
 	}, test.StaticMercuryProvider{}, mercury_v1_test.StaticDataSource{})
 	servicetest.Run(t, mercury)
 
-	test.ReportingPluginFactory(t, mercury)
+	test.MercuryPluginFactory(t, mercury)
 }
 
 func TestMercuryV2Service(t *testing.T) {
@@ -120,7 +120,7 @@ func TestMercuryV2Service(t *testing.T) {
 	servicetest.Run(t, mercuryV2)
 
 	t.Run("control", func(t *testing.T) {
-		test.ReportingPluginFactory(t, mercuryV2)
+		test.MercuryPluginFactory(t, mercuryV2)
 	})
 
 	t.Run("Kill", func(t *testing.T) {
@@ -129,7 +129,7 @@ func TestMercuryV2Service(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.ReportingPluginFactory(t, mercuryV2)
+		test.MercuryPluginFactory(t, mercuryV2)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -138,7 +138,7 @@ func TestMercuryV2Service(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.ReportingPluginFactory(t, mercuryV2)
+		test.MercuryPluginFactory(t, mercuryV2)
 	})
 }
 
@@ -154,5 +154,5 @@ func TestMercuryV2Service_recovery(t *testing.T) {
 	}, test.StaticMercuryProvider{}, mercury_v2_test.StaticDataSource{})
 	servicetest.Run(t, mercury)
 
-	test.ReportingPluginFactory(t, mercury)
+	test.MercuryPluginFactory(t, mercury)
 }

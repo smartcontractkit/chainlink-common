@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
@@ -15,19 +15,19 @@ import (
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 )
 
-var _ ocrtypes.ReportingPluginFactory = (*MercuryV3Service)(nil)
+var _ ocr3types.MercuryPluginFactory = (*MercuryV3Service)(nil)
 
 // MercuryV3Service is a [types.Service] that maintains an internal [types.PluginMedian].
 type MercuryV3Service struct {
-	internal.PluginService[*GRPCPluginMercury, types.ReportingPluginFactory]
+	internal.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
 }
 
-var _ ocrtypes.ReportingPluginFactory = (*MercuryV3Service)(nil)
+var _ ocr3types.MercuryPluginFactory = (*MercuryV3Service)(nil)
 
 // NewMercuryV3Service returns a new [*MercuryV3Service].
 // cmd must return a new exec.Cmd each time it is called.
 func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) *MercuryV3Service {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.MercuryPluginFactory, error) {
 		plug, ok := instance.(types.PluginMercury)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
@@ -42,24 +42,24 @@ func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &ms
 }
 
-func (m *MercuryV3Service) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+func (m *MercuryV3Service) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
 	if err := m.Wait(); err != nil {
-		return nil, ocrtypes.ReportingPluginInfo{}, err
+		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(config)
+	return m.Service.NewMercuryPlugin(config)
 }
 
 // MercuryV1Service is a [types.Service] that maintains an internal [types.PluginMedian].
 type MercuryV1Service struct {
-	internal.PluginService[*GRPCPluginMercury, types.ReportingPluginFactory]
+	internal.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
 }
 
-var _ ocrtypes.ReportingPluginFactory = (*MercuryV1Service)(nil)
+var _ ocr3types.MercuryPluginFactory = (*MercuryV1Service)(nil)
 
 // NewMercuryV1Service returns a new [*MercuryV1Service].
 // cmd must return a new exec.Cmd each time it is called.
 func NewMercuryV1Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) *MercuryV1Service {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.MercuryPluginFactory, error) {
 		plug, ok := instance.(types.PluginMercury)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
@@ -74,26 +74,26 @@ func NewMercuryV1Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &ms
 }
 
-func (m *MercuryV1Service) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+func (m *MercuryV1Service) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
 	if err := m.Wait(); err != nil {
-		return nil, ocrtypes.ReportingPluginInfo{}, err
+		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(config)
+	return m.Service.NewMercuryPlugin(config)
 }
 
-var _ ocrtypes.ReportingPluginFactory = (*MercuryV1Service)(nil)
+var _ ocr3types.MercuryPluginFactory = (*MercuryV1Service)(nil)
 
 // MercuryV2Service is a [types.Service] that maintains an internal [types.PluginMedian].
 type MercuryV2Service struct {
-	internal.PluginService[*GRPCPluginMercury, types.ReportingPluginFactory]
+	internal.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
 }
 
-var _ ocrtypes.ReportingPluginFactory = (*MercuryV2Service)(nil)
+var _ ocr3types.MercuryPluginFactory = (*MercuryV2Service)(nil)
 
 // NewMercuryV2Service returns a new [*MercuryV2Service].
 // cmd must return a new exec.Cmd each time it is called.
 func NewMercuryV2Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) *MercuryV2Service {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.MercuryPluginFactory, error) {
 		plug, ok := instance.(types.PluginMercury)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
@@ -108,11 +108,11 @@ func NewMercuryV2Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &ms
 }
 
-func (m *MercuryV2Service) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+func (m *MercuryV2Service) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
 	if err := m.Wait(); err != nil {
-		return nil, ocrtypes.ReportingPluginInfo{}, err
+		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(config)
+	return m.Service.NewMercuryPlugin(config)
 }
 
-var _ ocrtypes.ReportingPluginFactory = (*MercuryV2Service)(nil)
+var _ ocr3types.MercuryPluginFactory = (*MercuryV2Service)(nil)

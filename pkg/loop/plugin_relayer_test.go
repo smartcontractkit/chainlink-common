@@ -23,7 +23,7 @@ func TestPluginRelayerExec(t *testing.T) {
 	t.Parallel()
 	stopCh := newStopCh(t)
 
-	pr := newPluginRelayerExec(t, stopCh)
+	pr := newPluginRelayerExec(t, true, stopCh)
 
 	test.RunPluginRelayer(t, pr)
 }
@@ -33,7 +33,7 @@ func FuzzPluginRelayer(f *testing.F) {
 		t.Helper()
 
 		stopCh := newStopCh(t)
-		relayer := newPluginRelayerExec(t, stopCh)
+		relayer := newPluginRelayerExec(t, true, stopCh)
 
 		return relayer
 	}
@@ -46,7 +46,7 @@ func FuzzRelayer(f *testing.F) {
 		t.Helper()
 
 		stopCh := newStopCh(t)
-		p := newPluginRelayerExec(t, stopCh)
+		p := newPluginRelayerExec(t, false, stopCh)
 		ctx := tests.Context(t)
 		relayer, err := p.NewRelayer(ctx, test.ConfigTOML, test.StaticKeystore{})
 
@@ -58,10 +58,10 @@ func FuzzRelayer(f *testing.F) {
 	test.RunFuzzRelayer(f, testFunc)
 }
 
-func newPluginRelayerExec(t *testing.T, stopCh <-chan struct{}) loop.PluginRelayer {
+func newPluginRelayerExec(t *testing.T, staticChecks bool, stopCh <-chan struct{}) loop.PluginRelayer {
 	relayer := loop.GRPCPluginRelayer{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := relayer.ClientConfig()
-	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName)
+	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName, staticChecks)
 	c := plugin.NewClient(cc)
 	t.Cleanup(c.Kill)
 	client, err := c.Client()

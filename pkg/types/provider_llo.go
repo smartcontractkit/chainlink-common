@@ -12,7 +12,6 @@ import (
 // - If randomly chosen, low chance of off-by-one ids being valid
 // - Is not specific to any chain, e.g. [32]byte is not fully supported on starknet etc
 // - Avoids any possible encoding/copypasta issues e.g. UUIDs which can convert to [32]byte in multiple different ways
-
 type StreamID = uint32
 
 type LLOLifeCycleStage string

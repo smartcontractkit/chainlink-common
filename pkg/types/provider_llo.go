@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 

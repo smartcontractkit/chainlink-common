@@ -59,31 +59,27 @@ func (s StaticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 	if s.StaticChecks && !bytes.Equal(signed, gotSigned) {
 		return nil, fmt.Errorf("expected signed bytes %x but got %x", signed, gotSigned)
 	}
-	return staticRelayer{StaticChecks: s.StaticChecks}, nil
+	return s, nil
 }
 
-type staticRelayer struct {
-	StaticChecks bool
-}
+func (s StaticPluginRelayer) Start(ctx context.Context) error { return nil }
 
-func (s staticRelayer) Start(ctx context.Context) error { return nil }
+func (s StaticPluginRelayer) Close() error { return nil }
 
-func (s staticRelayer) Close() error { return nil }
+func (s StaticPluginRelayer) Ready() error { panic("unimplemented") }
 
-func (s staticRelayer) Ready() error { panic("unimplemented") }
+func (s StaticPluginRelayer) Name() string { panic("unimplemented") }
 
-func (s staticRelayer) Name() string { panic("unimplemented") }
+func (s StaticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
 
-func (s staticRelayer) HealthReport() map[string]error { panic("unimplemented") }
-
-func (s staticRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
+func (s StaticPluginRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
 	if s.StaticChecks && !equalRelayArgs(r, RelayArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", RelayArgs, r)
 	}
 	return staticConfigProvider{}, nil
 }
 
-func (s staticRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
+func (s StaticPluginRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
@@ -97,7 +93,7 @@ func (s staticRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs,
 	return StaticMedianProvider{}, nil
 }
 
-func (s staticRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
+func (s StaticPluginRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
@@ -111,15 +107,15 @@ func (s staticRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs,
 	return StaticPluginProvider{}, nil
 }
 
-func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
+func (s StaticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s staticRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
+func (s StaticPluginRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	return chain, nil
 }
 
-func (s staticRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
+func (s StaticPluginRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
 	if s.StaticChecks && limit != pageSize {
 		return nil, "", -1, fmt.Errorf("expected page_size %d but got %d", limit, pageSize)
 	}
@@ -129,7 +125,7 @@ func (s staticRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pag
 	return nodes, "", total, nil
 }
 
-func (s staticRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b bool) error {
+func (s StaticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b bool) error {
 	if s.StaticChecks {
 		if f != from {
 			return fmt.Errorf("expected from %s but got %s", from, f)

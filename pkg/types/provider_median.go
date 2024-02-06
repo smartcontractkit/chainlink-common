@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
@@ -23,4 +24,9 @@ type PluginMedian interface {
 type ReportingPluginFactory interface {
 	Service
 	libocr.ReportingPluginFactory
+}
+
+type OCR3ReportingPluginFactory interface {
+	Service
+	ocr3types.ReportingPluginFactory[any]
 }

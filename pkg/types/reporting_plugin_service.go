@@ -27,3 +27,7 @@ type ReportingPluginClient interface {
 type ReportingPluginServer[T PluginProvider] interface {
 	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, provider T, pipelineRunner PipelineRunnerService, telemetry TelemetryClient, errorLog ErrorLog) (ReportingPluginFactory, error)
 }
+
+type OCR3ReportingPluginClient interface {
+	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, grpcProvider grpc.ClientConnInterface, pipelineRunner PipelineRunnerService, telemetry TelemetryService, errorLog ErrorLog) (OCR3ReportingPluginFactory, error)
+}

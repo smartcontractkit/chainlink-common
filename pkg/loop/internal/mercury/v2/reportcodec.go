@@ -54,11 +54,12 @@ func (r *ReportCodecClient) ObservationTimestampFromReport(report ocr2plus_types
 
 func pbReportFields(fields mercury_v2_types.ReportFields) *mercury_v2_pb.ReportFields {
 	return &mercury_v2_pb.ReportFields{
-		Timestamp:      fields.Timestamp,
-		NativeFee:      pb.NewBigIntFromInt(fields.NativeFee),
-		LinkFee:        pb.NewBigIntFromInt(fields.LinkFee),
-		ExpiresAt:      fields.ExpiresAt,
-		BenchmarkPrice: pb.NewBigIntFromInt(fields.BenchmarkPrice),
+		ValidFromTimestamp: fields.ValidFromTimestamp,
+		Timestamp:          fields.Timestamp,
+		NativeFee:          pb.NewBigIntFromInt(fields.NativeFee),
+		LinkFee:            pb.NewBigIntFromInt(fields.LinkFee),
+		ExpiresAt:          fields.ExpiresAt,
+		BenchmarkPrice:     pb.NewBigIntFromInt(fields.BenchmarkPrice),
 	}
 }
 
@@ -99,10 +100,11 @@ func (r *ReportCodecServer) ObservationTimestampFromReport(ctx context.Context, 
 
 func reportFields(fields *mercury_v2_pb.ReportFields) mercury_v2_types.ReportFields {
 	return mercury_v2_types.ReportFields{
-		Timestamp:      fields.Timestamp,
-		NativeFee:      fields.NativeFee.Int(),
-		LinkFee:        fields.LinkFee.Int(),
-		ExpiresAt:      fields.ExpiresAt,
-		BenchmarkPrice: fields.BenchmarkPrice.Int(),
+		ValidFromTimestamp: fields.ValidFromTimestamp,
+		Timestamp:          fields.Timestamp,
+		NativeFee:          fields.NativeFee.Int(),
+		LinkFee:            fields.LinkFee.Int(),
+		ExpiresAt:          fields.ExpiresAt,
+		BenchmarkPrice:     fields.BenchmarkPrice.Int(),
 	}
 }

@@ -22,7 +22,7 @@ message ObserveRequest {
 // Block is a gRPC adapter for [pkg/types/mercury/v2/Block]
 message Block {
     int64 number = 1;
-    string hash = 2;
+    bytes hash = 2;
     uint64 timestamp = 3;
 }
 

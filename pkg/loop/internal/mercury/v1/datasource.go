@@ -83,7 +83,7 @@ func blocks(blocks []*mercury_v1_pb.Block) []v1.Block {
 func block(pb *mercury_v1_pb.Block) v1.Block {
 	return v1.Block{
 		Num:  pb.Number,
-		Hash: pb.Hash,
+		Hash: string(pb.Hash),
 		Ts:   pb.Timestamp,
 	}
 }
@@ -112,7 +112,7 @@ func pbBlocks(blocks []v1.Block) []*mercury_v1_pb.Block {
 func pbBlock(b v1.Block) *mercury_v1_pb.Block {
 	return &mercury_v1_pb.Block{
 		Number:    b.Num,
-		Hash:      b.Hash,
+		Hash:      []byte(b.Hash),
 		Timestamp: b.Ts,
 	}
 }

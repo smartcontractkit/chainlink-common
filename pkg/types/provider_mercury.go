@@ -3,11 +3,12 @@ package types
 import (
 	"context"
 
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 	v1 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	v2 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	v3 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 // MercuryProvider provides components needed for a mercury OCR2 plugin.

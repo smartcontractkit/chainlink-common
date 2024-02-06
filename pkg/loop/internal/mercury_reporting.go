@@ -10,9 +10,10 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/libocr/commontypes"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercurypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
-	"github.com/smartcontractkit/libocr/commontypes"
 )
 
 type mercuryPluginFactoryClient struct {

@@ -221,6 +221,10 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 	}
 }
 
+func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.LLOProvider, error) {
+	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
+}
+
 func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	reply, err := r.relayer.GetChainStatus(ctx, &pb.GetChainStatusRequest{})
 	if err != nil {
@@ -372,7 +376,14 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 		pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
 		pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 		pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
-		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+		if provider.ChainReader() != nil {
+			pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+		}
+
+		if provider.Codec() != nil {
+			pb.RegisterCodecServer(s, &codecServer{impl: provider.Codec()})
+		}
+
 		pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
 	}, providerRes)
 	if err != nil {

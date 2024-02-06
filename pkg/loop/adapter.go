@@ -2,7 +2,6 @@ package loop
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -39,6 +38,14 @@ func (r *RelayerAdapter) NewFunctionsProvider(ctx context.Context, rargs types.R
 	return r.Relayer.NewFunctionsProvider(rargs, pargs)
 }
 
+func (r *RelayerAdapter) NewAutomationProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.AutomationProvider, error) {
+	return r.Relayer.NewAutomationProvider(rargs, pargs)
+}
+
+func (r *RelayerAdapter) NewLLOProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.LLOProvider, error) {
+	return r.Relayer.NewLLOProvider(rargs, pargs)
+}
+
 func (r *RelayerAdapter) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
 	return nil, fmt.Errorf("unexpected call to NewPluginProvider: did you forget to wrap RelayerAdapter in a relayerServerAdapter?")
 }
@@ -53,11 +60,11 @@ func (r *RelayerAdapter) Close() error {
 }
 
 func (r *RelayerAdapter) Name() string {
-	return fmt.Sprintf("%s-%s", r.Relayer.Name(), r.RelayerExt.Name())
+	return r.Relayer.Name()
 }
 
 func (r *RelayerAdapter) Ready() (err error) {
-	return errors.Join(r.Relayer.Ready(), r.RelayerExt.Ready())
+	return r.Relayer.Ready()
 }
 
 func (r *RelayerAdapter) HealthReport() map[string]error {

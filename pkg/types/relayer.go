@@ -16,12 +16,20 @@ type PluginArgs struct {
 }
 
 type RelayArgs struct {
-	ExternalJobID uuid.UUID
-	JobID         int32
-	ContractID    string
-	New           bool // Whether this is a first time job add.
-	RelayConfig   []byte
-	ProviderType  string
+	ExternalJobID      uuid.UUID
+	JobID              int32
+	ContractID         string
+	New                bool // Whether this is a first time job add.
+	RelayConfig        []byte
+	ProviderType       string
+	MercuryCredentials *MercuryCredentials
+}
+
+type MercuryCredentials struct {
+	LegacyURL string
+	URL       string
+	Username  string
+	Password  string
 }
 
 type ChainStatus struct {
@@ -53,4 +61,6 @@ type Relayer interface {
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
+	NewAutomationProvider(rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
+	NewLLOProvider(rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
 }

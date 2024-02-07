@@ -21,7 +21,7 @@ jobs:
         run: go test -race ./... -coverpkg=./... -coverprofile=pkg_coverage.out
       
       - name: Fuzz Tests
-        run: cd fuzz && ./fuzz_all_native.py --ci
+        run: cd fuzz && ./fuzz_all_native.py --ci --seconds 360
       
       - name: Upload Go test results
         if: always()

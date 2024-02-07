@@ -58,7 +58,7 @@ func (g *LOOPPService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig)
 }
 
 type OCR3LOOPPService struct {
-	internal.PluginService[*GRPCService[types.PluginProvider], types.OCR3ReportingPluginFactory]
+	internal.PluginService[*OCR3GRPCService[types.PluginProvider], types.OCR3ReportingPluginFactory]
 }
 
 func NewOCR3LOOPPService(
@@ -74,15 +74,16 @@ func NewOCR3LOOPPService(
 	newService := func(ctx context.Context, instance any) (types.OCR3ReportingPluginFactory, error) {
 		plug, ok := instance.(types.OCR3ReportingPluginClient)
 		if !ok {
-			return nil, fmt.Errorf("expected GenericPluginClient but got %T", instance)
+			return nil, fmt.Errorf("expected OCR3ReportingPluginClient but got %T", instance)
 		}
 		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog)
 	}
+
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "OCR3GenericService")
 	var ps OCR3LOOPPService
 	broker := internal.BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
-	ps.Init(PluginServiceName, &GRPCService[types.PluginProvider]{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
+	ps.Init(PluginServiceName, &OCR3GRPCService[types.PluginProvider]{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &ps
 }
 

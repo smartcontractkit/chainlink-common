@@ -71,6 +71,48 @@ func TestLOOPPService(t *testing.T) {
 	}
 }
 
+func TestOCR3LOOPPService(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		Plugin string
+	}{
+		// A generic plugin with a median provider
+		{Plugin: test.OCR3ReportingPluginWithMedianProviderName},
+		// A generic plugin with a plugin provider
+		//{Plugin: reportingplugins.PluginServiceName},
+	}
+	for _, ts := range tests {
+		looppSvc := reportingplugins.NewOCR3LOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+			return NewHelperProcessCommand(ts.Plugin)
+		}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
+		hook := looppSvc.XXXTestHook()
+		servicetest.Run(t, looppSvc)
+
+		t.Run("control", func(t *testing.T) {
+			test.OCR3ReportingPluginFactory(t, looppSvc)
+		})
+
+		t.Run("Kill", func(t *testing.T) {
+			hook.Kill()
+
+			// wait for relaunch
+			time.Sleep(2 * internal.KeepAliveTickDuration)
+
+			test.OCR3ReportingPluginFactory(t, looppSvc)
+		})
+
+		t.Run("Reset", func(t *testing.T) {
+			hook.Reset()
+
+			// wait for relaunch
+			time.Sleep(2 * internal.KeepAliveTickDuration)
+
+			test.OCR3ReportingPluginFactory(t, looppSvc)
+		})
+	}
+}
+
 func TestLOOPPService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32

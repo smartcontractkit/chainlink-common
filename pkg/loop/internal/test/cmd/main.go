@@ -115,6 +115,38 @@ func main() {
 			GRPCServer: grpcServer,
 		})
 		os.Exit(0)
+	//
+	//case reportingplugins.OCR3PluginServiceName:
+	//	plugin.Serve(&plugin.ServeConfig{
+	//		HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
+	//		Plugins: map[string]plugin.Plugin{
+	//			reportingplugins.PluginServiceName: &reportingplugins.OCR3GRPCService[types.PluginProvider]{
+	//				PluginServer: test.OCR3StaticReportingPluginWithPluginProvider{},
+	//				BrokerConfig: loop.BrokerConfig{
+	//					Logger: lggr,
+	//					StopCh: stopCh,
+	//				},
+	//			},
+	//		},
+	//		GRPCServer: grpcServer,
+	//	})
+	//	os.Exit(0)
+
+	case test.OCR3ReportingPluginWithMedianProviderName:
+		plugin.Serve(&plugin.ServeConfig{
+			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
+			Plugins: map[string]plugin.Plugin{
+				reportingplugins.PluginServiceName: &reportingplugins.OCR3GRPCService[types.MedianProvider]{
+					PluginServer: test.OCR3StaticReportingPluginWithMedianProvider{},
+					BrokerConfig: loop.BrokerConfig{
+						Logger: lggr,
+						StopCh: stopCh,
+					},
+				},
+			},
+			GRPCServer: grpcServer,
+		})
+		os.Exit(0)
 
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %q\n", cmdS)

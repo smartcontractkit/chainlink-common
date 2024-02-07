@@ -71,10 +71,10 @@ type ocr3reportingPluginFactoryServer struct {
 
 	*brokerExt
 
-	impl ocr3types.ReportingPluginFactory[RI]
+	impl ocr3types.ReportingPluginFactory[any]
 }
 
-func newOCR3ReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[RI], b *brokerExt) *ocr3reportingPluginFactoryServer {
+func newOCR3ReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[any], b *brokerExt) *ocr3reportingPluginFactoryServer {
 	return &ocr3reportingPluginFactoryServer{impl: impl, brokerExt: b.withName("OCR3ReportingPluginFactoryServer")}
 }
 
@@ -233,7 +233,7 @@ var _ pb.OCR3ReportingPluginServer = (*ocr3reportingPluginServer)(nil)
 type ocr3reportingPluginServer struct {
 	pb.UnimplementedOCR3ReportingPluginServer
 
-	impl ocr3types.ReportingPlugin[RI]
+	impl ocr3types.ReportingPlugin[any]
 }
 
 func (r *ocr3reportingPluginServer) Query(ctx context.Context, request *pb.OCR3QueryRequest) (*pb.OCR3QueryReply, error) {
@@ -259,7 +259,7 @@ func (r *ocr3reportingPluginServer) ValidateObservation(ctx context.Context, req
 		return nil, err
 	}
 	err = r.impl.ValidateObservation(outcomeContext(request.OutcomeContext), request.Query, ao)
-	return nil, err
+	return new(emptypb.Empty), err
 }
 
 func (r *ocr3reportingPluginServer) ObservationQuorum(ctx context.Context, request *pb.OCR3ObservationQuorumRequest) (*pb.OCR3ObservationQuorumReply, error) {
@@ -295,7 +295,7 @@ func (r *ocr3reportingPluginServer) Reports(ctx context.Context, request *pb.OCR
 }
 
 func (r *ocr3reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Context, request *pb.OCR3ShouldAcceptAttestedReportRequest) (*pb.OCR3ShouldAcceptAttestedReportReply, error) {
-	sa, err := r.impl.ShouldAcceptAttestedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[RI]{
+	sa, err := r.impl.ShouldAcceptAttestedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[any]{
 		Report: request.Ri.Report,
 	})
 	if err != nil {
@@ -307,7 +307,7 @@ func (r *ocr3reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Conte
 }
 
 func (r *ocr3reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context, request *pb.OCR3ShouldTransmitAcceptedReportRequest) (*pb.OCR3ShouldTransmitAcceptedReportReply, error) {
-	st, err := r.impl.ShouldTransmitAcceptedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[RI]{
+	st, err := r.impl.ShouldTransmitAcceptedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[any]{
 		Report: request.Ri.Report,
 	})
 	if err != nil {
@@ -376,7 +376,7 @@ func ocr3attributedObservations(pbo []*pb.OCR3AttributedObservation) (o []libocr
 	return
 }
 
-func pbReportsWithInfo(rwi []ocr3types.ReportWithInfo[RI]) (ri []*pb.OCR3ReportWithInfo) {
+func pbReportsWithInfo(rwi []ocr3types.ReportWithInfo[any]) (ri []*pb.OCR3ReportWithInfo) {
 	for _, r := range rwi {
 		ri = append(ri, &pb.OCR3ReportWithInfo{
 			Report: r.Report,

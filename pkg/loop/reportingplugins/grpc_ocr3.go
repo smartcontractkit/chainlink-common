@@ -11,13 +11,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func OCR3ReportingPluginHandshakeConfig() plugin.HandshakeConfig {
-	return plugin.HandshakeConfig{
-		MagicCookieKey:   "CL_OCR3_PLUGIN_GENERIC_MAGIC_COOKIE",
-		MagicCookieValue: "2ad983747cd86c2ab3e23170970020fa",
-	}
-}
-
 type OCR3ProviderServer[T types.PluginProvider] interface {
 	types.OCR3ReportingPluginServer[T]
 	ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig loop.BrokerConfig) T

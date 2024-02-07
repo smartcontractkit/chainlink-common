@@ -463,14 +463,15 @@ func (o ocr3staticPluginFactory) NewReportingPlugin(config ocr3types.ReportingPl
 	if config.MaxDurationQuery != ocr3reportingPluginConfig.MaxDurationQuery {
 		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationQuery %d but got %d", ocr3reportingPluginConfig.MaxDurationQuery, config.MaxDurationQuery)
 	}
-
 	if config.MaxDurationObservation != ocr3reportingPluginConfig.MaxDurationObservation {
 		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationObservation %d but got %d", ocr3reportingPluginConfig.MaxDurationObservation, config.MaxDurationObservation)
+	}
+	if config.MaxDurationShouldAcceptAttestedReport != ocr3reportingPluginConfig.MaxDurationShouldAcceptAttestedReport {
+		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationShouldAcceptAttestedReport %d but got %d", ocr3reportingPluginConfig.MaxDurationShouldAcceptAttestedReport, config.MaxDurationShouldAcceptAttestedReport)
 	}
 	if config.MaxDurationShouldTransmitAcceptedReport != ocr3reportingPluginConfig.MaxDurationShouldTransmitAcceptedReport {
 		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationShouldTransmitAcceptedReport %d but got %d", ocr3reportingPluginConfig.MaxDurationShouldTransmitAcceptedReport, config.MaxDurationShouldTransmitAcceptedReport)
 	}
 
-	//TODO @george-dorin: check if all config is tested
 	return ocr3staticReportingPlugin{}, ocr3rpi, nil
 }

@@ -71,6 +71,21 @@ func TestLOOPPService(t *testing.T) {
 	}
 }
 
+func TestLOOPPService_recovery(t *testing.T) {
+	t.Parallel()
+	var limit atomic.Int32
+	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		h := HelperProcessCommand{
+			Command: test.ReportingPluginWithMedianProviderName,
+			Limit:   int(limit.Add(1)),
+		}
+		return h.New()
+	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
+	servicetest.Run(t, looppSvc)
+
+	test.ReportingPluginFactory(t, looppSvc)
+}
+
 func TestOCR3LOOPPService(t *testing.T) {
 	t.Parallel()
 
@@ -80,7 +95,7 @@ func TestOCR3LOOPPService(t *testing.T) {
 		// A generic plugin with a median provider
 		{Plugin: test.OCR3ReportingPluginWithMedianProviderName},
 		// A generic plugin with a plugin provider
-		//{Plugin: reportingplugins.PluginServiceName},
+		{Plugin: reportingplugins.OCR3PluginServiceName},
 	}
 	for _, ts := range tests {
 		looppSvc := reportingplugins.NewOCR3LOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
@@ -113,17 +128,17 @@ func TestOCR3LOOPPService(t *testing.T) {
 	}
 }
 
-func TestLOOPPService_recovery(t *testing.T) {
+func TestOCR3LOOPPService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
-	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	looppSvc := reportingplugins.NewOCR3LOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: test.ReportingPluginWithMedianProviderName,
+			Command: test.OCR3ReportingPluginWithMedianProviderName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
 	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
 	servicetest.Run(t, looppSvc)
 
-	test.ReportingPluginFactory(t, looppSvc)
+	test.OCR3ReportingPluginFactory(t, looppSvc)
 }

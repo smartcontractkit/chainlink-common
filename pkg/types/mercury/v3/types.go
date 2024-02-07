@@ -55,7 +55,7 @@ type DataSource interface {
 	//
 	// Important: Observe should not perform any potentially time-consuming
 	// actions like database access, once the context passed has expired.
-
+	//
 	// TODO/WARNING: the type of repts is ocrtypes.ReportTimestamp, but the type of the
 	// argument to Observe is types.ReportTimestamp. the underlying struct is the same, but
 	// updated here to be self-consistent.

@@ -31,7 +31,6 @@ func (d *DataSourceClient) Observe(ctx context.Context, timestamp ocr2plus_types
 	if err != nil {
 		return v1.Observation{}, err
 	}
-	// TODO: implement fetchMaxFinalizedTimestamp handling. Not sure what the application logic is here
 	return observation(reply), nil
 }
 

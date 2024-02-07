@@ -131,7 +131,7 @@ func (r *mercuryPluginClient) Observation(ctx context.Context, timestamp libocr.
 	return response.Observation, nil
 }
 
-// TODO context in libocr3
+// TODO: BCF-2887 plumb context through
 func (r *mercuryPluginClient) Report(timestamp libocr.ReportTimestamp, previousReport libocr.Report, obs []libocr.AttributedObservation) (bool, libocr.Report, error) {
 	response, err := r.grpc.Report(context.TODO(), &mercurypb.ReportRequest{
 		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
@@ -181,7 +181,7 @@ func (r *mercuryPluginServer) Report(ctx context.Context, request *mercurypb.Rep
 	if err != nil {
 		return nil, err
 	}
-	// TODO context in libocr3
+	// TODO: BCF-2887 plumb context through
 	should, report, err := r.impl.Report(rts, request.PreviousReport, obs)
 	if err != nil {
 		return nil, err

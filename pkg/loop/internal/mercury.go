@@ -258,7 +258,7 @@ func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *me
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.brokerExt))
 	}, deps...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serverNew: %w", err)
+		return nil, fmt.Errorf("failed to create new v1 factory server: %w", err)
 	}
 
 	return &mercury_pb.NewMercuryV1FactoryReply{MercuryV1FactoryID: id}, nil
@@ -299,7 +299,7 @@ func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *me
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.brokerExt))
 	}, deps...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serverNew: %w", err)
+		return nil, fmt.Errorf("failed to create new v2 factory server: %w", err)
 	}
 
 	return &mercury_pb.NewMercuryV2FactoryReply{MercuryV2FactoryID: id}, nil
@@ -340,7 +340,7 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.brokerExt))
 	}, deps...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serverNew: %w", err)
+		return nil, fmt.Errorf("failed to create new v3 factory server: %w", err)
 	}
 
 	return &mercury_pb.NewMercuryV3FactoryReply{MercuryV3FactoryID: id}, nil

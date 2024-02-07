@@ -35,7 +35,7 @@ func TestPluginMercuryExec(t *testing.T) {
 	stopCh := newStopCh(t)
 	mercury := loop.GRPCPluginMercury{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := mercury.ClientConfig()
-	cc.Cmd = NewHelperProcessCommand(loop.PluginMercuryName)
+	cc.Cmd = NewHelperProcessCommand(loop.PluginMercuryName, true)
 	c := plugin.NewClient(cc)
 	t.Cleanup(c.Kill)
 	client, err := c.Client()
@@ -49,7 +49,7 @@ func TestPluginMercuryExec(t *testing.T) {
 	test.PluginMercury(t, i.(types.PluginMercury))
 
 	t.Run("proxy", func(t *testing.T) {
-		pr := newPluginRelayerExec(t, stopCh)
+		pr := newPluginRelayerExec(t, true, stopCh)
 		p := newMercuryProvider(t, pr)
 		pm := test.PluginMercuryTest{MercuryProvider: p}
 		pm.TestPluginMercury(t, i.(types.PluginMercury))

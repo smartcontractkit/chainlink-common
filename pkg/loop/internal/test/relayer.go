@@ -108,18 +108,17 @@ func (s StaticPluginRelayer) NewPluginProvider(ctx context.Context, r types.Rela
 	return StaticPluginProvider{}, nil
 }
 
-func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
-  if s.StaticChecks {
-	  if !equalRelayArgs(r, mercury_common_test.RelayArgs) {
-		  return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercury_common_test.RelayArgs, r)
-	  }
-	  if !reflect.DeepEqual(mercury_common_test.PluginArgs, p) {
-		  return nil, fmt.Errorf("expected plugin args %v but got %v", mercury_common_test.PluginArgs, p)
-	  }
-  }
+func (s StaticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
+	if s.StaticChecks {
+		if !equalRelayArgs(r, mercury_common_test.RelayArgs) {
+			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercury_common_test.RelayArgs, r)
+		}
+		if !reflect.DeepEqual(mercury_common_test.PluginArgs, p) {
+			return nil, fmt.Errorf("expected plugin args %v but got %v", mercury_common_test.PluginArgs, p)
+		}
+	}
 	return StaticMercuryProvider{}, nil
 }
-
 
 func (s StaticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
 	return nil, errors.New("not implemented")

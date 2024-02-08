@@ -154,8 +154,7 @@ func (r *registryPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBrok
 }
 
 func (r *registryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
-	RegisterCapabilitiesRegistryServer(server, broker, r.brokerCfg, r.reg)
-	return nil
+	return RegisterCapabilitiesRegistryServer(server, broker, r.brokerCfg, r.reg)
 }
 
 func newRegistryPlugin(t *testing.T, reg *registry) (*CapabilitiesRegistryClient, error) {
@@ -210,7 +209,7 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 		require.NoError(t, err)
 
 		ch := make(chan capabilities.CapabilityResponse)
-		err = tr.(capabilities.TriggerCapability).RegisterTrigger(
+		err = tr.RegisterTrigger(
 			ctx,
 			ch,
 			capabilities.CapabilityRequest{})
@@ -256,7 +255,7 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, mtr.callback)
 
-		err = tr.(capabilities.TriggerCapability).UnregisterTrigger(
+		err = tr.UnregisterTrigger(
 			ctx,
 			capabilities.CapabilityRequest{})
 		require.NoError(t, err)
@@ -295,7 +294,7 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 		expectedUnrRequest := capabilities.UnregisterFromWorkflowRequest{
 			Config: vmap,
 		}
-		err = tr.(capabilities.ActionCapability).UnregisterFromWorkflow(
+		err = tr.UnregisterFromWorkflow(
 			ctx,
 			expectedUnrRequest)
 		require.NoError(t, err)

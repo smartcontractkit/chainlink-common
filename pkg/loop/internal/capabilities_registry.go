@@ -129,7 +129,7 @@ func (c *CapabilitiesRegistryClient) Add(ctx context.Context, cap capabilities.B
 	var (
 		capabilityID   uint32
 		executeAPIType pb.ExecuteAPIType
-		resource       resource
+		openedResource resource
 	)
 	switch tc := cap.(type) {
 	case capabilities.TriggerExecutable:
@@ -143,7 +143,7 @@ func (c *CapabilitiesRegistryClient) Add(ctx context.Context, cap capabilities.B
 
 		capabilityID = cid
 		executeAPIType = pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER
-		resource = res
+		openedResource = res
 	case capabilities.CallbackExecutable:
 		cid, res, err := c.serveNew("CallbackCapability", func(s *grpc.Server) {
 			pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(cap))
@@ -155,14 +155,14 @@ func (c *CapabilitiesRegistryClient) Add(ctx context.Context, cap capabilities.B
 
 		capabilityID = cid
 		executeAPIType = pb.ExecuteAPIType_EXECUTE_API_TYPE_CALLBACK
-		resource = res
+		openedResource = res
 	default:
 		return fmt.Errorf("could not add capability: unknown capability type: %T", cap)
 	}
 
 	_, err := c.client.Add(ctx, &pb.AddRequest{CapabilityID: capabilityID, Type: executeAPIType})
 	if err != nil {
-		c.closeAll(resource)
+		c.closeAll(openedResource)
 	}
 	return err
 }

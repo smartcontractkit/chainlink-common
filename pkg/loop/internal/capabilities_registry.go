@@ -328,6 +328,25 @@ func (c *CapabilitiesRegistryServer) GetTarget(ctx context.Context, request *pb.
 	return &pb.GetTargetReply{CapabilityID: cid}, nil
 }
 
+func (c *CapabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddRequest) (*emptypb.Empty, error) {
+	conn, err := c.dial(request.CapabilityID)
+	if err != nil {
+		return nil, err
+	}
+
+	var bc capabilities.BaseCapability
+	switch request.Type {
+	case pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER:
+		bc = newTriggerCapabilityClient(c.brokerExt, conn)
+	case pb.ExecuteAPIType_EXECUTE_API_TYPE_CALLBACK:
+		bc = newCallbackCapabilityClient(c.brokerExt, conn)
+	case pb.ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN:
+		return nil, fmt.Errorf("unknown capability type %s", request.Type)
+	}
+
+	return &emptypb.Empty{}, c.impl.Add(ctx, bc)
+}
+
 type baseCapabilityServer struct {
 	pb.UnimplementedBaseCapabilityServer
 

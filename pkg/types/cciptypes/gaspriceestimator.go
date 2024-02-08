@@ -45,5 +45,5 @@ type EVM2EVMOnRampCCIPSendRequestedWithMeta struct {
 	Executed       bool
 	Finalized      bool
 	LogIndex       uint
-	TxHash         Hash
+	TxHash         string
 }

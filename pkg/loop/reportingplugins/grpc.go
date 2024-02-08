@@ -13,7 +13,6 @@ import (
 
 // PluginServiceName is the name for [types.PluginClient]/[NewGRPCService].
 const PluginServiceName = "plugin-service"
-const OCR3PluginServiceName = "ocr3-plugin-service"
 
 func ReportingPluginHandshakeConfig() plugin.HandshakeConfig {
 	return plugin.HandshakeConfig{

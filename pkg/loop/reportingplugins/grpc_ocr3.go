@@ -11,6 +11,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+const OCR3PluginServiceName = "ocr3-plugin-service"
+
 type OCR3ProviderServer[T types.PluginProvider] interface {
 	types.OCR3ReportingPluginServer[T]
 	ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig loop.BrokerConfig) T
@@ -62,7 +64,6 @@ func (g *OCR3GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	return internal.RegisterOCR3ReportingPluginServiceServer(server, broker, g.BrokerConfig, ocr3serverAdapter(adapter))
 }
 
-// GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginClient], updated with the new broker and conn.
 func (g *OCR3GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if g.pluginClient == nil {
 		g.pluginClient = internal.NewOCR3ReportingPluginServiceClient(broker, g.BrokerConfig, conn)

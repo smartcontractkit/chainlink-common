@@ -428,15 +428,15 @@ type ocr3staticPluginFactory struct{}
 
 var _ types.OCR3ReportingPluginFactory = (*ocr3staticPluginFactory)(nil)
 
-func (s ocr3staticPluginFactory) Name() string { panic("implement me") }
+func (o ocr3staticPluginFactory) Name() string { panic("implement me") }
 
-func (s ocr3staticPluginFactory) Start(ctx context.Context) error { return nil }
+func (o ocr3staticPluginFactory) Start(ctx context.Context) error { return nil }
 
-func (s ocr3staticPluginFactory) Close() error { return nil }
+func (o ocr3staticPluginFactory) Close() error { return nil }
 
-func (s ocr3staticPluginFactory) Ready() error { panic("implement me") }
+func (o ocr3staticPluginFactory) Ready() error { panic("implement me") }
 
-func (s ocr3staticPluginFactory) HealthReport() map[string]error { panic("implement me") }
+func (o ocr3staticPluginFactory) HealthReport() map[string]error { panic("implement me") }
 
 func (o ocr3staticPluginFactory) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[any], ocr3types.ReportingPluginInfo, error) {
 	if config.ConfigDigest != ocr3reportingPluginConfig.ConfigDigest {

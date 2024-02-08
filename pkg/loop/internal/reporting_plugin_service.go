@@ -33,7 +33,7 @@ func NewOCR3ReportingPluginServiceClient(broker Broker, brokerCfg BrokerConfig, 
 	return &OCR3ReportingPluginServiceClient{pluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), serviceClient: newServiceClient(pc.brokerExt, pc)}
 }
 
-func (m *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
+func (o *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
 	ctx context.Context,
 	config types.ReportingPluginServiceConfig,
 	grpcProvider grpc.ClientConnInterface,
@@ -41,14 +41,14 @@ func (m *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
 	telemetry types.TelemetryService,
 	errorLog types.ErrorLog,
 ) (types.OCR3ReportingPluginFactory, error) {
-	cc := m.newClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps resources, err error) {
-		providerID, providerRes, err := m.serve("PluginProvider", proxy.NewProxy(grpcProvider))
+	cc := o.newClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps resources, err error) {
+		providerID, providerRes, err := o.serve("PluginProvider", proxy.NewProxy(grpcProvider))
 		if err != nil {
 			return 0, nil, err
 		}
 		deps.Add(providerRes)
 
-		pipelineRunnerID, pipelineRunnerRes, err := m.serveNew("PipelineRunner", func(s *grpc.Server) {
+		pipelineRunnerID, pipelineRunnerRes, err := o.serveNew("PipelineRunner", func(s *grpc.Server) {
 			pb.RegisterPipelineRunnerServiceServer(s, &pipelineRunnerServiceServer{impl: pipelineRunner})
 		})
 		if err != nil {
@@ -56,7 +56,7 @@ func (m *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		deps.Add(pipelineRunnerRes)
 
-		telemetryID, telemetryRes, err := m.serveNew("Telemetry", func(s *grpc.Server) {
+		telemetryID, telemetryRes, err := o.serveNew("Telemetry", func(s *grpc.Server) {
 			pb.RegisterTelemetryServer(s, NewTelemetryServer(telemetry))
 		})
 		if err != nil {
@@ -64,7 +64,7 @@ func (m *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		deps.Add(telemetryRes)
 
-		errorLogID, errorLogRes, err := m.serveNew("ErrorLog", func(s *grpc.Server) {
+		errorLogID, errorLogRes, err := o.serveNew("ErrorLog", func(s *grpc.Server) {
 			pb.RegisterErrorLogServer(s, &errorLogServer{impl: errorLog})
 		})
 		if err != nil {
@@ -72,7 +72,7 @@ func (m *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		deps.Add(errorLogRes)
 
-		reply, err := m.reportingPluginService.NewReportingPluginFactory(ctx, &pb.NewReportingPluginFactoryRequest{
+		reply, err := o.reportingPluginService.NewReportingPluginFactory(ctx, &pb.NewReportingPluginFactoryRequest{
 			ReportingPluginServiceConfig: &pb.ReportingPluginServiceConfig{
 				ProviderType:  config.ProviderType,
 				Command:       config.Command,
@@ -90,7 +90,7 @@ func (m *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		return reply.ID, nil, nil
 	})
-	return newOCR3ReportingPluginFactoryClient(m.pluginClient.brokerExt, cc), nil
+	return newOCR3ReportingPluginFactoryClient(o.pluginClient.brokerExt, cc), nil
 }
 
 func NewReportingPluginServiceClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *ReportingPluginServiceClient {

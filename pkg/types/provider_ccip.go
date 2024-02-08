@@ -24,6 +24,6 @@ type CCIPExecProvider interface {
 	NewOffRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OffRampReader, error)
 	NewCommitStoreReader(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreReader, error)
 	NewPriceRegistryReader(ctx context.Context, addr cciptypes.Address) (cciptypes.PriceRegistryReader, error)
-	NewUSDCReader(ctx context.Context) (cciptypes.USDCReader, error)
+	NewTokenDataReader(ctx context.Context, tokenAddress cciptypes.Address) (cciptypes.TokenDataReader, error)
 	SourceNativeToken(ctx context.Context) (cciptypes.Address, error)
 }

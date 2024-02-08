@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
 
@@ -91,6 +93,13 @@ type ExecOnchainConfig struct {
 	PermissionLessExecutionThresholdSeconds time.Duration
 }
 
+func (c ExecOnchainConfig) Validate() error {
+	if c.PermissionLessExecutionThresholdSeconds == 0 {
+		return errors.New("must set PermissionLessExecutionThresholdSeconds")
+	}
+	return nil
+}
+
 type OffRampStaticConfig struct {
 	CommitStore         Address
 	ChainSelector       uint64
@@ -105,3 +114,13 @@ type OffRampTokens struct {
 	SourceTokens      []Address
 	DestinationPool   map[Address]Address
 }
+
+// MessageExecutionState defines the execution states of CCIP messages.
+type MessageExecutionState uint8
+
+const (
+	ExecutionStateUntouched MessageExecutionState = iota
+	ExecutionStateInProgress
+	ExecutionStateSuccess
+	ExecutionStateFailure
+)

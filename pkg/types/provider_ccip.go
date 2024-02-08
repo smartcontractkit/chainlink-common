@@ -2,6 +2,8 @@ package types
 
 import (
 	"context"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/types/cciptypes"
 )
 
 type CCIPCommitProvider interface {

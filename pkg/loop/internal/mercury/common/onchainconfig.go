@@ -20,7 +20,7 @@ func NewOnchainConfigCodecClient(cc grpc.ClientConnInterface) *OnchainConfigCode
 	return &OnchainConfigCodecClient{grpc: mercury_pb.NewOnchainConfigCodecClient(cc)}
 }
 
-// TODO: why doesn't the interface have a context?!
+// TODO: BCF-2887 plumb context through
 func (o *OnchainConfigCodecClient) Encode(config mercury_types.OnchainConfig) ([]byte, error) {
 	reply, err := o.grpc.Encode(context.TODO(), &mercury_pb.EncodeOnchainConfigRequest{
 		OnchainConfig: pbOnchainConfig(config),

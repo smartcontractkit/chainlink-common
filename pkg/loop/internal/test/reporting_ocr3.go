@@ -119,6 +119,7 @@ func checkOutCtx(outctx ocr3types.OutcomeContext) error {
 	if outctx.Epoch != outcomeContext.Epoch {
 		return fmt.Errorf("expected %v but got %v", outcomeContext.Epoch, outctx.Epoch)
 	}
+	//nolint:all
 	if outctx.Round != outcomeContext.Round {
 		return fmt.Errorf("expected %v but got %v", outcomeContext.Round, outctx.Round)
 	}

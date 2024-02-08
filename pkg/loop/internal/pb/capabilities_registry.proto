@@ -9,6 +9,11 @@ import "google/protobuf/empty.proto";
 
 service CapabilitiesRegistry {
   rpc Get (GetRequest) returns (GetReply) {}
+  rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
+  rpc GetAction (GetActionRequest) returns (GetActionReply) {}
+  rpc GetConsensus (GetConsensusRequest) returns (GetConsensusReply) {}
+  rpc GetTarget (GetTargetRequest) returns (GetTargetReply) {}
+  rpc Add (AddRequest) returns (google.protobuf.Empty) {}
 }
 
 enum ExecuteAPIType {
@@ -23,6 +28,48 @@ message GetRequest {
 }
 
 message GetReply {
+  uint32 capabilityID = 1;
+  ExecuteAPIType type = 2;
+}
+
+// GetTrigger has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger].
+message GetTriggerRequest {
+  string id = 1;
+}
+
+message GetTriggerReply {
+  uint32 capabilityID = 1;
+}
+
+// GetAction has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetAction].
+message GetActionRequest {
+  string id = 1;
+}
+
+message GetActionReply {
+  uint32 capabilityID = 1;
+}
+
+// GetConsensus has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetConsensus].
+message GetConsensusRequest {
+  string id = 1;
+}
+
+message GetConsensusReply {
+  uint32 capabilityID = 1;
+}
+
+// GetTarget has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTarget].
+message GetTargetRequest {
+  string id = 1;
+}
+
+message GetTargetReply {
+  uint32 capabilityID = 1;
+}
+
+// Add has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Add].
+message AddRequest {
   uint32 capabilityID = 1;
   ExecuteAPIType type = 2;
 }

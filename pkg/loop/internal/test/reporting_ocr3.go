@@ -115,6 +115,7 @@ func (s ocr3staticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Cont
 func (s ocr3staticReportingPlugin) Close() error { return nil }
 
 func checkOutCtx(outctx ocr3types.OutcomeContext) error {
+	//nolint:all
 	if outctx.Epoch != outcomeContext.Epoch {
 		return fmt.Errorf("expected %v but got %v", outcomeContext.Epoch, outctx.Epoch)
 	}

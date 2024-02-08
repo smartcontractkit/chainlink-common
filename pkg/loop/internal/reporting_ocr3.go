@@ -88,7 +88,7 @@ func (r *ocr3reportingPluginFactoryServer) NewReportingPlugin(ctx context.Contex
 		MaxDurationQuery:                        time.Duration(request.ReportingPluginConfig.MaxDurationQuery),
 		MaxDurationObservation:                  time.Duration(request.ReportingPluginConfig.MaxDurationObservation),
 		MaxDurationShouldTransmitAcceptedReport: time.Duration(request.ReportingPluginConfig.MaxDurationShouldTransmitAcceptedReport),
-		MaxDurationShouldAcceptAttestedReport:   time.Duration(request.ReportingPluginConfig.MaxDurationShouldTransmitAcceptedReport),
+		MaxDurationShouldAcceptAttestedReport:   time.Duration(request.ReportingPluginConfig.MaxDurationShouldAcceptAttestedReport),
 	}
 	if l := len(request.ReportingPluginConfig.ConfigDigest); l != 32 {
 		return nil, ErrConfigDigestLen(l)
@@ -324,8 +324,8 @@ func pbOutcomeContext(oc ocr3types.OutcomeContext) *pb.OCR3OutcomeContext {
 	return &pb.OCR3OutcomeContext{
 		SeqNr:           oc.SeqNr,
 		PreviousOutcome: oc.PreviousOutcome,
-		Epoch:           oc.Epoch,
-		Round:           oc.Round,
+		Epoch:           oc.Epoch, //nolint:all
+		Round:           oc.Round, //nolint:all
 	}
 }
 
@@ -357,8 +357,8 @@ func outcomeContext(oc *pb.OCR3OutcomeContext) ocr3types.OutcomeContext {
 	return ocr3types.OutcomeContext{
 		SeqNr:           oc.SeqNr,
 		PreviousOutcome: oc.PreviousOutcome,
-		Epoch:           oc.Epoch, //nolint:staticcheck
-		Round:           oc.Round, //nolint:staticcheck
+		Epoch:           oc.Epoch, //nolint:all
+		Round:           oc.Round, //nolint:all
 	}
 }
 

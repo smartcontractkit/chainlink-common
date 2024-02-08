@@ -65,6 +65,108 @@ func (c *CapabilitiesRegistryClient) Get(ctx context.Context, id string) (capabi
 	return nil, fmt.Errorf("unknown api type %s", resp.Type)
 }
 
+func (c *CapabilitiesRegistryClient) GetTrigger(ctx context.Context, id string) (capabilities.TriggerCapability, error) {
+	resp, err := c.client.GetTrigger(ctx, &pb.GetTriggerRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := c.dial(resp.CapabilityID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newTriggerCapabilityClient(c.brokerExt, conn), nil
+}
+
+func (c *CapabilitiesRegistryClient) GetAction(ctx context.Context, id string) (capabilities.ActionCapability, error) {
+	resp, err := c.client.GetAction(ctx, &pb.GetActionRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := c.dial(resp.CapabilityID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCallbackCapabilityClient(c.brokerExt, conn), nil
+}
+
+func (c *CapabilitiesRegistryClient) GetConsensus(ctx context.Context, id string) (capabilities.ConsensusCapability, error) {
+	resp, err := c.client.GetConsensus(ctx, &pb.GetConsensusRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := c.dial(resp.CapabilityID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCallbackCapabilityClient(c.brokerExt, conn), nil
+}
+
+func (c *CapabilitiesRegistryClient) GetTarget(ctx context.Context, id string) (capabilities.TargetCapability, error) {
+	resp, err := c.client.GetTarget(ctx, &pb.GetTargetRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := c.dial(resp.CapabilityID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCallbackCapabilityClient(c.brokerExt, conn), nil
+}
+
+func (c *CapabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
+	return nil, nil
+}
+
+func (c *CapabilitiesRegistryClient) Add(ctx context.Context, cap capabilities.BaseCapability) error {
+	var (
+		capabilityID   uint32
+		executeAPIType pb.ExecuteAPIType
+		resource       resource
+	)
+	switch tc := cap.(type) {
+	case capabilities.TriggerExecutable:
+		cid, res, err := c.serveNew("TriggerCapability", func(s *grpc.Server) {
+			pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(cap))
+			pb.RegisterTriggerCapabilityServer(s, newTriggerCapabilityServer(c.brokerExt, tc))
+		})
+		if err != nil {
+			return err
+		}
+
+		capabilityID = cid
+		executeAPIType = pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER
+		resource = res
+	case capabilities.CallbackExecutable:
+		cid, res, err := c.serveNew("CallbackCapability", func(s *grpc.Server) {
+			pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(cap))
+			pb.RegisterCallbackExecutableServer(s, newCallbackExecutableServer(c.brokerExt, tc))
+		})
+		if err != nil {
+			return err
+		}
+
+		capabilityID = cid
+		executeAPIType = pb.ExecuteAPIType_EXECUTE_API_TYPE_CALLBACK
+		resource = res
+	default:
+		return fmt.Errorf("could not add capability: unknown capability type: %T", cap)
+	}
+
+	_, err := c.client.Add(ctx, &pb.AddRequest{CapabilityID: capabilityID, Type: executeAPIType})
+	if err != nil {
+		c.closeAll(resource)
+	}
+	return err
+}
+
 type TriggerCapabilityClient struct {
 	*triggerExecutableClient
 	*baseCapabilityClient
@@ -152,6 +254,78 @@ func (c *CapabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 		CapabilityID: capabilityID,
 		Type:         executeAPIType,
 	}, nil
+}
+
+func (c *CapabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb.GetTriggerRequest) (*pb.GetTriggerReply, error) {
+	id := request.Id
+	cp, err := c.impl.GetTrigger(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	cid, _, err := c.serveNew("TriggerCapability", func(s *grpc.Server) {
+		pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(cp))
+		pb.RegisterTriggerCapabilityServer(s, newTriggerCapabilityServer(c.brokerExt, cp))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetTriggerReply{CapabilityID: cid}, nil
+}
+
+func (c *CapabilitiesRegistryServer) GetAction(ctx context.Context, request *pb.GetActionRequest) (*pb.GetActionReply, error) {
+	id := request.Id
+	cp, err := c.impl.GetAction(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	cid, _, err := c.serveNew("ActionCapability", func(s *grpc.Server) {
+		pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(cp))
+		pb.RegisterCallbackExecutableServer(s, newCallbackExecutableServer(c.brokerExt, cp))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetActionReply{CapabilityID: cid}, nil
+}
+
+func (c *CapabilitiesRegistryServer) GetConsensus(ctx context.Context, request *pb.GetConsensusRequest) (*pb.GetConsensusReply, error) {
+	id := request.Id
+	cp, err := c.impl.GetConsensus(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	cid, _, err := c.serveNew("ConsensusCapability", func(s *grpc.Server) {
+		pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(cp))
+		pb.RegisterCallbackExecutableServer(s, newCallbackExecutableServer(c.brokerExt, cp))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetConsensusReply{CapabilityID: cid}, nil
+}
+
+func (c *CapabilitiesRegistryServer) GetTarget(ctx context.Context, request *pb.GetTargetRequest) (*pb.GetTargetReply, error) {
+	id := request.Id
+	cp, err := c.impl.GetTarget(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	cid, _, err := c.serveNew("TargetCapability", func(s *grpc.Server) {
+		pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(cp))
+		pb.RegisterCallbackExecutableServer(s, newCallbackExecutableServer(c.brokerExt, cp))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetTargetReply{CapabilityID: cid}, nil
 }
 
 type baseCapabilityServer struct {
@@ -337,7 +511,7 @@ type triggerExecutableClient struct {
 var _ capabilities.TriggerExecutable = (*triggerExecutableClient)(nil)
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
-	cid, _, err := t.serveNew("Callback", func(s *grpc.Server) {
+	cid, res, err := t.serveNew("Callback", func(s *grpc.Server) {
 		pb.RegisterCallbackServer(s, newCallbackServer(callback))
 	})
 	if err != nil {
@@ -346,6 +520,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback 
 
 	reqPb, err := toProto(req)
 	if err != nil {
+		t.closeAll(res)
 		return err
 	}
 
@@ -355,6 +530,9 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback 
 	}
 
 	_, err = t.grpc.RegisterTrigger(ctx, r)
+	if err != nil {
+		t.closeAll(res)
+	}
 	return err
 }
 
@@ -516,7 +694,7 @@ func toProto(req capabilities.CapabilityRequest) (*pb.CapabilityRequest, error) 
 }
 
 func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
-	cid, _, err := c.serveNew("Callback", func(s *grpc.Server) {
+	cid, res, err := c.serveNew("Callback", func(s *grpc.Server) {
 		pb.RegisterCallbackServer(s, newCallbackServer(callback))
 	})
 	if err != nil {
@@ -525,6 +703,7 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- 
 
 	reqPb, err := toProto(req)
 	if err != nil {
+		c.closeAll(res)
 		return nil
 	}
 
@@ -534,6 +713,9 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- 
 	}
 
 	_, err = c.grpc.Execute(ctx, r)
+	if err != nil {
+		c.closeAll(res)
+	}
 	return err
 }
 

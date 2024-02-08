@@ -28,6 +28,66 @@ func (r *registry) Get(ctx context.Context, id string) (capabilities.BaseCapabil
 	return c, nil
 }
 
+func (r *registry) GetAction(ctx context.Context, id string) (capabilities.ActionCapability, error) {
+	c, ok := r.caps[id]
+	if !ok {
+		return nil, errors.New("capability not found")
+	}
+	ac, ok := c.(capabilities.ActionCapability)
+	if !ok {
+		return nil, errors.New("not an action capability")
+	}
+
+	return ac, nil
+}
+
+func (r *registry) GetTrigger(ctx context.Context, id string) (capabilities.TriggerCapability, error) {
+	c, ok := r.caps[id]
+	if !ok {
+		return nil, errors.New("capability not found")
+	}
+	tc, ok := c.(capabilities.TriggerCapability)
+	if !ok {
+		return nil, errors.New("not an action capability")
+	}
+
+	return tc, nil
+}
+
+func (r *registry) GetConsensus(ctx context.Context, id string) (capabilities.ConsensusCapability, error) {
+	c, ok := r.caps[id]
+	if !ok {
+		return nil, errors.New("capability not found")
+	}
+	tc, ok := c.(capabilities.ConsensusCapability)
+	if !ok {
+		return nil, errors.New("not an action capability")
+	}
+
+	return tc, nil
+}
+
+func (r *registry) GetTarget(ctx context.Context, id string) (capabilities.TargetCapability, error) {
+	c, ok := r.caps[id]
+	if !ok {
+		return nil, errors.New("capability not found")
+	}
+	tc, ok := c.(capabilities.TargetCapability)
+	if !ok {
+		return nil, errors.New("not an action capability")
+	}
+
+	return tc, nil
+}
+
+func (r *registry) Add(ctx context.Context, bc capabilities.BaseCapability) error {
+	return nil
+}
+
+func (r *registry) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
+	return nil, nil
+}
+
 type mockTrigger struct {
 	capabilities.BaseCapability
 	callback chan<- capabilities.CapabilityResponse
@@ -284,5 +344,10 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 		close(mcb.callback)
 		_, isOpen := <-ch
 		assert.False(t, isOpen)
+	})
+
+	t.Run("getting a trigger capability via GetTrigger", func(t *testing.T) {
+		_, err := rc.GetTrigger(ctx, "trigger")
+		require.NoError(t, err)
 	})
 }

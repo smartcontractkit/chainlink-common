@@ -27,6 +27,7 @@ message GetRequest {
   string id = 1;
 }
 
+// GetReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin) and type indicating client wrapper that we need to use on the client side.
 message GetReply {
   uint32 capabilityID = 1;
   ExecuteAPIType type = 2;
@@ -37,6 +38,7 @@ message GetTriggerRequest {
   string id = 1;
 }
 
+// GetTriggerReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
 message GetTriggerReply {
   uint32 capabilityID = 1;
 }
@@ -46,6 +48,7 @@ message GetActionRequest {
   string id = 1;
 }
 
+// GetActionReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
 message GetActionReply {
   uint32 capabilityID = 1;
 }
@@ -55,6 +58,7 @@ message GetConsensusRequest {
   string id = 1;
 }
 
+// GetConsensusReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
 message GetConsensusReply {
   uint32 capabilityID = 1;
 }
@@ -64,6 +68,7 @@ message GetTargetRequest {
   string id = 1;
 }
 
+// GetTargetReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
 message GetTargetReply {
   uint32 capabilityID = 1;
 }
@@ -89,19 +94,19 @@ enum CapabilityType {
 message CapabilityInfoReply {
   string id = 1; 
   CapabilityType capability_type = 2;
-  string Description = 3;
-  string Version = 4;
+  string description = 3;
+  string version = 4;
 }
 
 message RequestMetadata {
-  string WorkflowID = 1;
-  string WorkflowExecutionID = 2;
+  string workflowID = 1;
+  string workflowExecutionID = 2;
 }
 
 message CapabilityRequest {
-  RequestMetadata Metadata = 1;
-  values.Value Config = 2;
-  values.Value Inputs = 3;
+  RequestMetadata metadata = 1;
+  values.Value config = 2;
+  values.Value inputs = 3;
 }
 
 message RegisterTriggerRequest {
@@ -119,8 +124,8 @@ service TriggerCapability {
 }
 
 message CapabilityResponse {
-  values.Value Value = 1;
-  string Error = 2;
+  values.Value value = 1;
+  string error = 2;
 }
 
 service Callback {
@@ -129,17 +134,17 @@ service Callback {
 }
 
 message RegistrationMetadata {
-  string WorkflowID = 1;
+  string workflowID = 1;
 }
 
 message RegisterToWorkflowRequest {
-  RegistrationMetadata Metadata = 1;
-  values.Value Config = 2;
+  RegistrationMetadata metadata = 1;
+  values.Value config = 2;
 }
 
 message UnregisterFromWorkflowRequest {
-  RegistrationMetadata Metadata = 1;
-  values.Value Config = 2;
+  RegistrationMetadata metadata = 1;
+  values.Value config = 2;
 }
 
 message ExecuteRequest {

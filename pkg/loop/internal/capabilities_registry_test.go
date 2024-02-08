@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/hashicorp/go-plugin"
@@ -81,6 +82,12 @@ func (r *registry) GetTarget(ctx context.Context, id string) (capabilities.Targe
 }
 
 func (r *registry) Add(ctx context.Context, bc capabilities.BaseCapability) error {
+	info, err := bc.Info(ctx)
+	if err != nil {
+		return err
+	}
+
+	r.caps[info.ID] = bc
 	return nil
 }
 
@@ -130,9 +137,9 @@ func (m *mockCallback) Execute(ctx context.Context, callback chan<- capabilities
 	return nil
 }
 
-func mustMockCallback(t *testing.T) *mockCallback {
+func mustMockCallback(t *testing.T, _type capabilities.CapabilityType) *mockCallback {
 	return &mockCallback{
-		BaseCapability: capabilities.MustNewCapabilityInfo("callback", capabilities.CapabilityTypeAction, "a mock action", "v0.0.1"),
+		BaseCapability: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback %s", _type), _type, fmt.Sprintf("a mock %s", _type), "v0.0.1"),
 	}
 }
 
@@ -177,11 +184,15 @@ func newRegistryPlugin(t *testing.T, reg *registry) (*CapabilitiesRegistryClient
 
 func Test_CapabilitiesRegistry(t *testing.T) {
 	mtr := mustMockTrigger(t)
-	mcb := mustMockCallback(t)
+	ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+	mcon := mustMockCallback(t, capabilities.CapabilityTypeConsensus)
+	mt := mustMockCallback(t, capabilities.CapabilityTypeTarget)
 	reg := &registry{
 		caps: map[string]capabilities.BaseCapability{
-			"trigger": mtr,
-			"action":  mcb,
+			"trigger":   mtr,
+			"action":    ma,
+			"consensus": mcon,
+			"target":    mt,
 		},
 	}
 	ctx := tests.Context(t)
@@ -195,7 +206,7 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability, and executing it", func(t *testing.T) {
-		tr, err := rc.Get(ctx, "trigger")
+		tr, err := rc.GetTrigger(ctx, "trigger")
 		require.NoError(t, err)
 
 		ch := make(chan capabilities.CapabilityResponse)
@@ -215,11 +226,11 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability, and closing the channel", func(t *testing.T) {
-		tr, err := rc.Get(ctx, "trigger")
+		tr, err := rc.GetTrigger(ctx, "trigger")
 		require.NoError(t, err)
 
 		ch := make(chan capabilities.CapabilityResponse)
-		err = tr.(capabilities.TriggerCapability).RegisterTrigger(
+		err = tr.RegisterTrigger(
 			ctx,
 			ch,
 			capabilities.CapabilityRequest{})
@@ -234,11 +245,11 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability, and unregistering", func(t *testing.T) {
-		tr, err := rc.Get(ctx, "trigger")
+		tr, err := rc.GetTrigger(ctx, "trigger")
 		require.NoError(t, err)
 
 		ch := make(chan capabilities.CapabilityResponse)
-		err = tr.(capabilities.TriggerCapability).RegisterTrigger(
+		err = tr.RegisterTrigger(
 			ctx,
 			ch,
 			capabilities.CapabilityRequest{})
@@ -266,7 +277,7 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 	})
 
 	t.Run("fetching an action capability, and (un)registering it", func(t *testing.T) {
-		tr, err := rc.Get(ctx, "action")
+		tr, err := rc.GetAction(ctx, "action")
 		require.NoError(t, err)
 
 		vmap, err := values.NewMap(map[string]any{"foo": "bar"})
@@ -274,12 +285,12 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 		expectedRequest := capabilities.RegisterToWorkflowRequest{
 			Config: vmap,
 		}
-		err = tr.(capabilities.ActionCapability).RegisterToWorkflow(
+		err = tr.RegisterToWorkflow(
 			ctx,
 			expectedRequest)
 		require.NoError(t, err)
 
-		assert.Equal(t, expectedRequest, mcb.regRequest)
+		assert.Equal(t, expectedRequest, ma.regRequest)
 
 		expectedUnrRequest := capabilities.UnregisterFromWorkflowRequest{
 			Config: vmap,
@@ -289,7 +300,7 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 			expectedUnrRequest)
 		require.NoError(t, err)
 
-		assert.Equal(t, expectedUnrRequest, mcb.unregRequest)
+		assert.Equal(t, expectedUnrRequest, ma.unregRequest)
 	})
 
 	t.Run("fetching an action capability, and executing it", func(t *testing.T) {
@@ -317,12 +328,12 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 			Err: expectedErr,
 		}
 
-		mcb.callback <- expectedResp
+		ma.callback <- expectedResp
 		assert.Equal(t, expectedResp, <-ch)
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {
-		tr, err := rc.Get(ctx, "action")
+		tr, err := rc.GetAction(ctx, "action")
 		require.NoError(t, err)
 
 		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
@@ -335,19 +346,64 @@ func Test_CapabilitiesRegistry(t *testing.T) {
 			Inputs: imap,
 		}
 		ch := make(chan capabilities.CapabilityResponse)
-		err = tr.(capabilities.ActionCapability).Execute(
+		err = tr.Execute(
 			ctx,
 			ch,
 			expectedRequest)
 		require.NoError(t, err)
 
-		close(mcb.callback)
+		close(ma.callback)
 		_, isOpen := <-ch
 		assert.False(t, isOpen)
 	})
 
-	t.Run("getting a trigger capability via GetTrigger", func(t *testing.T) {
-		_, err := rc.GetTrigger(ctx, "trigger")
+	t.Run("getting an capability via Get", func(t *testing.T) {
+		ac, err := rc.Get(ctx, "action")
 		require.NoError(t, err)
+		_, ok := ac.(capabilities.ActionCapability)
+		assert.True(t, ok)
+
+		tc, err := rc.Get(ctx, "trigger")
+		require.NoError(t, err)
+		_, ok = tc.(capabilities.TriggerCapability)
+		assert.True(t, ok)
+
+		cc, err := rc.Get(ctx, "consensus")
+		require.NoError(t, err)
+		_, ok = cc.(capabilities.ConsensusCapability)
+		assert.True(t, ok)
+	})
+
+	t.Run("adding a capability via Add", func(t *testing.T) {
+		id := "capToAdd"
+		capToAdd := &mockCallback{
+			BaseCapability: capabilities.MustNewCapabilityInfo(id, capabilities.CapabilityTypeAction, "capability to add description", "v0.0.1"),
+		}
+
+		err := rc.Add(ctx, capToAdd)
+		require.NoError(t, err)
+
+		aclient, err := rc.GetAction(ctx, id)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+		ch := make(chan capabilities.CapabilityResponse)
+		err = aclient.Execute(
+			ctx,
+			ch,
+			expectedRequest)
+		require.NoError(t, err)
+
+		close(capToAdd.callback)
+		_, isOpen := <-ch
+		assert.False(t, isOpen)
 	})
 }

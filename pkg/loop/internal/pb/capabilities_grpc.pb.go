@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: loop/internal/pb/capabilities_registry.proto
+// source: loop/internal/pb/capabilities.proto
 
 package pb
 
@@ -18,281 +18,6 @@ import (
 // is compatible with the grpc package it is being compiled against.
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
-
-const (
-	CapabilitiesRegistry_Get_FullMethodName          = "/loop.CapabilitiesRegistry/Get"
-	CapabilitiesRegistry_GetTrigger_FullMethodName   = "/loop.CapabilitiesRegistry/GetTrigger"
-	CapabilitiesRegistry_GetAction_FullMethodName    = "/loop.CapabilitiesRegistry/GetAction"
-	CapabilitiesRegistry_GetConsensus_FullMethodName = "/loop.CapabilitiesRegistry/GetConsensus"
-	CapabilitiesRegistry_GetTarget_FullMethodName    = "/loop.CapabilitiesRegistry/GetTarget"
-	CapabilitiesRegistry_Add_FullMethodName          = "/loop.CapabilitiesRegistry/Add"
-)
-
-// CapabilitiesRegistryClient is the client API for CapabilitiesRegistry service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type CapabilitiesRegistryClient interface {
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetReply, error)
-	GetTrigger(ctx context.Context, in *GetTriggerRequest, opts ...grpc.CallOption) (*GetTriggerReply, error)
-	GetAction(ctx context.Context, in *GetActionRequest, opts ...grpc.CallOption) (*GetActionReply, error)
-	GetConsensus(ctx context.Context, in *GetConsensusRequest, opts ...grpc.CallOption) (*GetConsensusReply, error)
-	GetTarget(ctx context.Context, in *GetTargetRequest, opts ...grpc.CallOption) (*GetTargetReply, error)
-	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-}
-
-type capabilitiesRegistryClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface) CapabilitiesRegistryClient {
-	return &capabilitiesRegistryClient{cc}
-}
-
-func (c *capabilitiesRegistryClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetReply, error) {
-	out := new(GetReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_Get_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *capabilitiesRegistryClient) GetTrigger(ctx context.Context, in *GetTriggerRequest, opts ...grpc.CallOption) (*GetTriggerReply, error) {
-	out := new(GetTriggerReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetTrigger_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *capabilitiesRegistryClient) GetAction(ctx context.Context, in *GetActionRequest, opts ...grpc.CallOption) (*GetActionReply, error) {
-	out := new(GetActionReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetAction_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *capabilitiesRegistryClient) GetConsensus(ctx context.Context, in *GetConsensusRequest, opts ...grpc.CallOption) (*GetConsensusReply, error) {
-	out := new(GetConsensusReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetConsensus_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *capabilitiesRegistryClient) GetTarget(ctx context.Context, in *GetTargetRequest, opts ...grpc.CallOption) (*GetTargetReply, error) {
-	out := new(GetTargetReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetTarget_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *capabilitiesRegistryClient) Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_Add_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// CapabilitiesRegistryServer is the server API for CapabilitiesRegistry service.
-// All implementations must embed UnimplementedCapabilitiesRegistryServer
-// for forward compatibility
-type CapabilitiesRegistryServer interface {
-	Get(context.Context, *GetRequest) (*GetReply, error)
-	GetTrigger(context.Context, *GetTriggerRequest) (*GetTriggerReply, error)
-	GetAction(context.Context, *GetActionRequest) (*GetActionReply, error)
-	GetConsensus(context.Context, *GetConsensusRequest) (*GetConsensusReply, error)
-	GetTarget(context.Context, *GetTargetRequest) (*GetTargetReply, error)
-	Add(context.Context, *AddRequest) (*emptypb.Empty, error)
-	mustEmbedUnimplementedCapabilitiesRegistryServer()
-}
-
-// UnimplementedCapabilitiesRegistryServer must be embedded to have forward compatible implementations.
-type UnimplementedCapabilitiesRegistryServer struct {
-}
-
-func (UnimplementedCapabilitiesRegistryServer) Get(context.Context, *GetRequest) (*GetReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) GetTrigger(context.Context, *GetTriggerRequest) (*GetTriggerReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTrigger not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) GetAction(context.Context, *GetActionRequest) (*GetActionReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAction not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) GetConsensus(context.Context, *GetConsensusRequest) (*GetConsensusReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetConsensus not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) GetTarget(context.Context, *GetTargetRequest) (*GetTargetReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTarget not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) Add(context.Context, *AddRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) mustEmbedUnimplementedCapabilitiesRegistryServer() {}
-
-// UnsafeCapabilitiesRegistryServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CapabilitiesRegistryServer will
-// result in compilation errors.
-type UnsafeCapabilitiesRegistryServer interface {
-	mustEmbedUnimplementedCapabilitiesRegistryServer()
-}
-
-func RegisterCapabilitiesRegistryServer(s grpc.ServiceRegistrar, srv CapabilitiesRegistryServer) {
-	s.RegisterService(&CapabilitiesRegistry_ServiceDesc, srv)
-}
-
-func _CapabilitiesRegistry_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).Get(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_Get_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).Get(ctx, req.(*GetRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CapabilitiesRegistry_GetTrigger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTriggerRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).GetTrigger(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_GetTrigger_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).GetTrigger(ctx, req.(*GetTriggerRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CapabilitiesRegistry_GetAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetActionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).GetAction(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_GetAction_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).GetAction(ctx, req.(*GetActionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CapabilitiesRegistry_GetConsensus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetConsensusRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).GetConsensus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_GetConsensus_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).GetConsensus(ctx, req.(*GetConsensusRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CapabilitiesRegistry_GetTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTargetRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).GetTarget(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_GetTarget_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).GetTarget(ctx, req.(*GetTargetRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CapabilitiesRegistry_Add_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).Add(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_Add_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).Add(ctx, req.(*AddRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// CapabilitiesRegistry_ServiceDesc is the grpc.ServiceDesc for CapabilitiesRegistry service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.CapabilitiesRegistry",
-	HandlerType: (*CapabilitiesRegistryServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Get",
-			Handler:    _CapabilitiesRegistry_Get_Handler,
-		},
-		{
-			MethodName: "GetTrigger",
-			Handler:    _CapabilitiesRegistry_GetTrigger_Handler,
-		},
-		{
-			MethodName: "GetAction",
-			Handler:    _CapabilitiesRegistry_GetAction_Handler,
-		},
-		{
-			MethodName: "GetConsensus",
-			Handler:    _CapabilitiesRegistry_GetConsensus_Handler,
-		},
-		{
-			MethodName: "GetTarget",
-			Handler:    _CapabilitiesRegistry_GetTarget_Handler,
-		},
-		{
-			MethodName: "Add",
-			Handler:    _CapabilitiesRegistry_Add_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/capabilities_registry.proto",
-}
 
 const (
 	BaseCapability_Info_FullMethodName = "/loop.BaseCapability/Info"
@@ -381,134 +106,134 @@ var BaseCapability_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/capabilities_registry.proto",
+	Metadata: "loop/internal/pb/capabilities.proto",
 }
 
 const (
-	TriggerCapability_RegisterTrigger_FullMethodName   = "/loop.TriggerCapability/RegisterTrigger"
-	TriggerCapability_UnregisterTrigger_FullMethodName = "/loop.TriggerCapability/UnregisterTrigger"
+	TriggerExecutable_RegisterTrigger_FullMethodName   = "/loop.TriggerExecutable/RegisterTrigger"
+	TriggerExecutable_UnregisterTrigger_FullMethodName = "/loop.TriggerExecutable/UnregisterTrigger"
 )
 
-// TriggerCapabilityClient is the client API for TriggerCapability service.
+// TriggerExecutableClient is the client API for TriggerExecutable service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type TriggerCapabilityClient interface {
+type TriggerExecutableClient interface {
 	RegisterTrigger(ctx context.Context, in *RegisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterTrigger(ctx context.Context, in *UnregisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type triggerCapabilityClient struct {
+type triggerExecutableClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTriggerCapabilityClient(cc grpc.ClientConnInterface) TriggerCapabilityClient {
-	return &triggerCapabilityClient{cc}
+func NewTriggerExecutableClient(cc grpc.ClientConnInterface) TriggerExecutableClient {
+	return &triggerExecutableClient{cc}
 }
 
-func (c *triggerCapabilityClient) RegisterTrigger(ctx context.Context, in *RegisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *triggerExecutableClient) RegisterTrigger(ctx context.Context, in *RegisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, TriggerCapability_RegisterTrigger_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, TriggerExecutable_RegisterTrigger_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *triggerCapabilityClient) UnregisterTrigger(ctx context.Context, in *UnregisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *triggerExecutableClient) UnregisterTrigger(ctx context.Context, in *UnregisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, TriggerCapability_UnregisterTrigger_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, TriggerExecutable_UnregisterTrigger_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TriggerCapabilityServer is the server API for TriggerCapability service.
-// All implementations must embed UnimplementedTriggerCapabilityServer
+// TriggerExecutableServer is the server API for TriggerExecutable service.
+// All implementations must embed UnimplementedTriggerExecutableServer
 // for forward compatibility
-type TriggerCapabilityServer interface {
+type TriggerExecutableServer interface {
 	RegisterTrigger(context.Context, *RegisterTriggerRequest) (*emptypb.Empty, error)
 	UnregisterTrigger(context.Context, *UnregisterTriggerRequest) (*emptypb.Empty, error)
-	mustEmbedUnimplementedTriggerCapabilityServer()
+	mustEmbedUnimplementedTriggerExecutableServer()
 }
 
-// UnimplementedTriggerCapabilityServer must be embedded to have forward compatible implementations.
-type UnimplementedTriggerCapabilityServer struct {
+// UnimplementedTriggerExecutableServer must be embedded to have forward compatible implementations.
+type UnimplementedTriggerExecutableServer struct {
 }
 
-func (UnimplementedTriggerCapabilityServer) RegisterTrigger(context.Context, *RegisterTriggerRequest) (*emptypb.Empty, error) {
+func (UnimplementedTriggerExecutableServer) RegisterTrigger(context.Context, *RegisterTriggerRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterTrigger not implemented")
 }
-func (UnimplementedTriggerCapabilityServer) UnregisterTrigger(context.Context, *UnregisterTriggerRequest) (*emptypb.Empty, error) {
+func (UnimplementedTriggerExecutableServer) UnregisterTrigger(context.Context, *UnregisterTriggerRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterTrigger not implemented")
 }
-func (UnimplementedTriggerCapabilityServer) mustEmbedUnimplementedTriggerCapabilityServer() {}
+func (UnimplementedTriggerExecutableServer) mustEmbedUnimplementedTriggerExecutableServer() {}
 
-// UnsafeTriggerCapabilityServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to TriggerCapabilityServer will
+// UnsafeTriggerExecutableServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TriggerExecutableServer will
 // result in compilation errors.
-type UnsafeTriggerCapabilityServer interface {
-	mustEmbedUnimplementedTriggerCapabilityServer()
+type UnsafeTriggerExecutableServer interface {
+	mustEmbedUnimplementedTriggerExecutableServer()
 }
 
-func RegisterTriggerCapabilityServer(s grpc.ServiceRegistrar, srv TriggerCapabilityServer) {
-	s.RegisterService(&TriggerCapability_ServiceDesc, srv)
+func RegisterTriggerExecutableServer(s grpc.ServiceRegistrar, srv TriggerExecutableServer) {
+	s.RegisterService(&TriggerExecutable_ServiceDesc, srv)
 }
 
-func _TriggerCapability_RegisterTrigger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TriggerExecutable_RegisterTrigger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterTriggerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TriggerCapabilityServer).RegisterTrigger(ctx, in)
+		return srv.(TriggerExecutableServer).RegisterTrigger(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TriggerCapability_RegisterTrigger_FullMethodName,
+		FullMethod: TriggerExecutable_RegisterTrigger_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TriggerCapabilityServer).RegisterTrigger(ctx, req.(*RegisterTriggerRequest))
+		return srv.(TriggerExecutableServer).RegisterTrigger(ctx, req.(*RegisterTriggerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TriggerCapability_UnregisterTrigger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TriggerExecutable_UnregisterTrigger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UnregisterTriggerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TriggerCapabilityServer).UnregisterTrigger(ctx, in)
+		return srv.(TriggerExecutableServer).UnregisterTrigger(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TriggerCapability_UnregisterTrigger_FullMethodName,
+		FullMethod: TriggerExecutable_UnregisterTrigger_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TriggerCapabilityServer).UnregisterTrigger(ctx, req.(*UnregisterTriggerRequest))
+		return srv.(TriggerExecutableServer).UnregisterTrigger(ctx, req.(*UnregisterTriggerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// TriggerCapability_ServiceDesc is the grpc.ServiceDesc for TriggerCapability service.
+// TriggerExecutable_ServiceDesc is the grpc.ServiceDesc for TriggerExecutable service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var TriggerCapability_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.TriggerCapability",
-	HandlerType: (*TriggerCapabilityServer)(nil),
+var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.TriggerExecutable",
+	HandlerType: (*TriggerExecutableServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "RegisterTrigger",
-			Handler:    _TriggerCapability_RegisterTrigger_Handler,
+			Handler:    _TriggerExecutable_RegisterTrigger_Handler,
 		},
 		{
 			MethodName: "UnregisterTrigger",
-			Handler:    _TriggerCapability_UnregisterTrigger_Handler,
+			Handler:    _TriggerExecutable_UnregisterTrigger_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/capabilities_registry.proto",
+	Metadata: "loop/internal/pb/capabilities.proto",
 }
 
 const (
@@ -635,7 +360,7 @@ var Callback_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/capabilities_registry.proto",
+	Metadata: "loop/internal/pb/capabilities.proto",
 }
 
 const (
@@ -799,5 +524,5 @@ var CallbackExecutable_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/capabilities_registry.proto",
+	Metadata: "loop/internal/pb/capabilities.proto",
 }

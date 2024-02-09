@@ -22,7 +22,7 @@ type TriggerCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func newTriggerCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
+func NewTriggerCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
 	return &TriggerCapabilityClient{
 		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -34,16 +34,36 @@ type CallbackCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-type callbackCapability interface {
+type CallbackCapability interface {
 	capabilities.CallbackExecutable
 	capabilities.BaseCapability
 }
 
-func newCallbackCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) callbackCapability {
+func NewCallbackCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) CallbackCapability {
 	return &CallbackCapabilityClient{
 		callbackExecutableClient: newCallbackExecutableClient(brokerExt, conn),
 		baseCapabilityClient:     newBaseCapabilityClient(brokerExt, conn),
 	}
+}
+
+func RegisterCallbackCapabilityServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl CallbackCapability) error {
+	bext := &brokerExt{
+		BrokerConfig: brokerCfg,
+		broker:       broker,
+	}
+	pb.RegisterCallbackExecutableServer(server, newCallbackExecutableServer(bext, impl))
+	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
+	return nil
+}
+
+func RegisterTriggerCapabilityServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl capabilities.TriggerCapability) error {
+	bext := &brokerExt{
+		BrokerConfig: brokerCfg,
+		broker:       broker,
+	}
+	pb.RegisterTriggerExecutableServer(server, newTriggerExecutableServer(bext, impl))
+	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
+	return nil
 }
 
 type baseCapabilityServer struct {
@@ -123,8 +143,8 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 	}, nil
 }
 
-type triggerCapabilityServer struct {
-	pb.UnimplementedTriggerCapabilityServer
+type triggerExecutableServer struct {
+	pb.UnimplementedTriggerExecutableServer
 	*brokerExt
 
 	impl capabilities.TriggerExecutable
@@ -132,20 +152,20 @@ type triggerCapabilityServer struct {
 	cancelFuncs map[string]func()
 }
 
-func newTriggerCapabilityServer(brokerExt *brokerExt, impl capabilities.TriggerExecutable) *triggerCapabilityServer {
-	return &triggerCapabilityServer{
+func newTriggerExecutableServer(brokerExt *brokerExt, impl capabilities.TriggerExecutable) *triggerExecutableServer {
+	return &triggerExecutableServer{
 		impl:        impl,
 		brokerExt:   brokerExt,
 		cancelFuncs: map[string]func(){},
 	}
 }
 
-var _ pb.TriggerCapabilityServer = (*triggerCapabilityServer)(nil)
+var _ pb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
-func (t *triggerCapabilityServer) RegisterTrigger(ctx context.Context, request *pb.RegisterTriggerRequest) (*emptypb.Empty, error) {
+func (t *triggerExecutableServer) RegisterTrigger(ctx context.Context, request *pb.RegisterTriggerRequest) (*emptypb.Empty, error) {
 	ch := make(chan capabilities.CapabilityResponse)
 
-	conn, err := t.dial(request.CallbackID)
+	conn, err := t.dial(request.CallbackId)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +190,8 @@ func (t *triggerCapabilityServer) RegisterTrigger(ctx context.Context, request *
 
 	req := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
-			WorkflowID:          md.WorkflowID,
-			WorkflowExecutionID: md.WorkflowExecutionID,
+			WorkflowID:          md.WorkflowId,
+			WorkflowExecutionID: md.WorkflowExecutionId,
 		},
 		Config: config.(*values.Map),
 		Inputs: inputs.(*values.Map),
@@ -183,11 +203,11 @@ func (t *triggerCapabilityServer) RegisterTrigger(ctx context.Context, request *
 		return nil, err
 	}
 
-	t.cancelFuncs[md.WorkflowID] = connCancel
+	t.cancelFuncs[md.WorkflowId] = connCancel
 	return &emptypb.Empty{}, nil
 }
 
-func (t *triggerCapabilityServer) UnregisterTrigger(ctx context.Context, request *pb.UnregisterTriggerRequest) (*emptypb.Empty, error) {
+func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *pb.UnregisterTriggerRequest) (*emptypb.Empty, error) {
 	req := request.CapabilityRequest
 	md := req.Metadata
 
@@ -203,8 +223,8 @@ func (t *triggerCapabilityServer) UnregisterTrigger(ctx context.Context, request
 
 	err = t.impl.UnregisterTrigger(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
-			WorkflowID:          md.WorkflowID,
-			WorkflowExecutionID: md.WorkflowExecutionID,
+			WorkflowID:          md.WorkflowId,
+			WorkflowExecutionID: md.WorkflowExecutionId,
 		},
 		Inputs: inputs.(*values.Map),
 		Config: config.(*values.Map),
@@ -213,7 +233,7 @@ func (t *triggerCapabilityServer) UnregisterTrigger(ctx context.Context, request
 		return nil, err
 	}
 
-	cancelFunc := t.cancelFuncs[md.WorkflowID]
+	cancelFunc := t.cancelFuncs[md.WorkflowId]
 	if cancelFunc != nil {
 		cancelFunc()
 	}
@@ -222,7 +242,7 @@ func (t *triggerCapabilityServer) UnregisterTrigger(ctx context.Context, request
 }
 
 type triggerExecutableClient struct {
-	grpc pb.TriggerCapabilityClient
+	grpc pb.TriggerExecutableClient
 	*brokerExt
 }
 
@@ -243,7 +263,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback 
 	}
 
 	r := &pb.RegisterTriggerRequest{
-		CallbackID:        cid,
+		CallbackId:        cid,
 		CapabilityRequest: reqPb,
 	}
 
@@ -269,7 +289,7 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 }
 
 func newTriggerExecutableClient(brokerExt *brokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
-	return &triggerExecutableClient{grpc: pb.NewTriggerCapabilityClient(conn), brokerExt: brokerExt}
+	return &triggerExecutableClient{grpc: pb.NewTriggerExecutableClient(conn), brokerExt: brokerExt}
 }
 
 type callbackExecutableServer struct {
@@ -299,7 +319,7 @@ func (c *callbackExecutableServer) RegisterToWorkflow(ctx context.Context, req *
 
 	err = c.impl.RegisterToWorkflow(ctx, capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowID,
+			WorkflowID: req.Metadata.WorkflowId,
 		},
 		Config: config.(*values.Map),
 	})
@@ -314,7 +334,7 @@ func (c *callbackExecutableServer) UnregisterFromWorkflow(ctx context.Context, r
 
 	err = c.impl.UnregisterFromWorkflow(ctx, capabilities.UnregisterFromWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowID,
+			WorkflowID: req.Metadata.WorkflowId,
 		},
 		Config: config.(*values.Map),
 	})
@@ -324,7 +344,7 @@ func (c *callbackExecutableServer) UnregisterFromWorkflow(ctx context.Context, r
 func (c *callbackExecutableServer) Execute(ctx context.Context, req *pb.ExecuteRequest) (*emptypb.Empty, error) {
 	ch := make(chan capabilities.CapabilityResponse)
 
-	conn, err := c.dial(req.CallbackID)
+	conn, err := c.dial(req.CallbackId)
 	if err != nil {
 		return nil, err
 	}
@@ -349,8 +369,8 @@ func (c *callbackExecutableServer) Execute(ctx context.Context, req *pb.ExecuteR
 
 	r := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
-			WorkflowID:          md.WorkflowID,
-			WorkflowExecutionID: md.WorkflowExecutionID,
+			WorkflowID:          md.WorkflowId,
+			WorkflowExecutionID: md.WorkflowExecutionId,
 		},
 		Config: config.(*values.Map),
 		Inputs: inputs.(*values.Map),
@@ -362,7 +382,7 @@ func (c *callbackExecutableServer) Execute(ctx context.Context, req *pb.ExecuteR
 		return nil, err
 	}
 
-	c.cancelFuncs[md.WorkflowID] = connCancel
+	c.cancelFuncs[md.WorkflowId] = connCancel
 	return &emptypb.Empty{}, nil
 }
 
@@ -403,8 +423,8 @@ func toProto(req capabilities.CapabilityRequest) (*pb.CapabilityRequest, error) 
 
 	return &pb.CapabilityRequest{
 		Metadata: &pb.RequestMetadata{
-			WorkflowID:          req.Metadata.WorkflowID,
-			WorkflowExecutionID: req.Metadata.WorkflowExecutionID,
+			WorkflowId:          req.Metadata.WorkflowID,
+			WorkflowExecutionId: req.Metadata.WorkflowExecutionID,
 		},
 		Inputs: inputsPb,
 		Config: configPb,
@@ -426,7 +446,7 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- 
 	}
 
 	r := &pb.ExecuteRequest{
-		CallbackID:        cid,
+		CallbackId:        cid,
 		CapabilityRequest: reqPb,
 	}
 
@@ -451,7 +471,7 @@ func (c *callbackExecutableClient) UnregisterFromWorkflow(ctx context.Context, r
 	r := &pb.UnregisterFromWorkflowRequest{
 		Config: configPb,
 		Metadata: &pb.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowID,
+			WorkflowId: req.Metadata.WorkflowID,
 		},
 	}
 
@@ -473,7 +493,7 @@ func (c *callbackExecutableClient) RegisterToWorkflow(ctx context.Context, req c
 	r := &pb.RegisterToWorkflowRequest{
 		Config: configPb,
 		Metadata: &pb.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowID,
+			WorkflowId: req.Metadata.WorkflowID,
 		},
 	}
 

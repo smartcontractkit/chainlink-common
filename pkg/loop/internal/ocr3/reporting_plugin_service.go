@@ -100,7 +100,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 	if err != nil {
 		return nil, internal.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
-	errorLogRes := internal.Resource{errorLogConn, "ErrorLog"}
+	errorLogRes := internal.Resource{Closer: errorLogConn, Name: "ErrorLog"}
 	errorLog := internal.NewErrorLogClient(errorLogConn)
 
 	providerConn, err := m.Dial(request.ProviderID)
@@ -108,14 +108,14 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		m.CloseAll(errorLogRes)
 		return nil, internal.ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
 	}
-	providerRes := internal.Resource{providerConn, "PluginProvider"}
+	providerRes := internal.Resource{Closer: providerConn, Name: "PluginProvider"}
 
 	pipelineRunnerConn, err := m.Dial(request.PipelineRunnerID)
 	if err != nil {
 		m.CloseAll(errorLogRes, providerRes)
 		return nil, internal.ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
 	}
-	pipelineRunnerRes := internal.Resource{pipelineRunnerConn, "PipelineRunner"}
+	pipelineRunnerRes := internal.Resource{Closer: pipelineRunnerConn, Name: "PipelineRunner"}
 	pipelineRunner := internal.NewPipelineRunnerClient(pipelineRunnerConn)
 
 	telemetryConn, err := m.Dial(request.TelemetryID)
@@ -123,7 +123,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		m.CloseAll(errorLogRes, providerRes, pipelineRunnerRes)
 		return nil, internal.ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
 	}
-	telemetryRes := internal.Resource{telemetryConn, "Telemetry"}
+	telemetryRes := internal.Resource{Closer: telemetryConn, Name: "Telemetry"}
 	telemetry := internal.NewTelemetryServiceClient(telemetryConn)
 
 	config := types.ReportingPluginServiceConfig{
@@ -152,7 +152,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker internal.Broker, brokerCfg internal.BrokerConfig, impl types.OCR3ReportingPluginClient) error {
-	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&internal.BrokerExt{broker, brokerCfg}, impl))
+	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&internal.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
 

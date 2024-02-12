@@ -104,7 +104,7 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 	const name = "OCR3ReportingPlugin"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr3.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp})
-	}, internal.Resource{rp, name})
+	}, internal.Resource{Closer: rp, Name: name})
 	if err != nil {
 		return nil, err
 	}

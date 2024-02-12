@@ -129,7 +129,6 @@ func main() {
 			GRPCServer: grpcServer,
 		})
 		lggr.Debugf("Done serving %s", loop.PluginMercuryName)
-
 		os.Exit(0)
 
 	case reportingplugins.OCR3PluginServiceName:

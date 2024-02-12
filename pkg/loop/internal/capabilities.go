@@ -22,7 +22,7 @@ type TriggerCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewTriggerCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
+func NewTriggerCapabilityClient(brokerExt *BrokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
 	return &TriggerCapabilityClient{
 		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -39,7 +39,7 @@ type CallbackCapability interface {
 	capabilities.BaseCapability
 }
 
-func NewCallbackCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) CallbackCapability {
+func NewCallbackCapabilityClient(brokerExt *BrokerExt, conn *grpc.ClientConn) CallbackCapability {
 	return &CallbackCapabilityClient{
 		callbackExecutableClient: newCallbackExecutableClient(brokerExt, conn),
 		baseCapabilityClient:     newBaseCapabilityClient(brokerExt, conn),
@@ -47,9 +47,9 @@ func NewCallbackCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) Ca
 }
 
 func RegisterCallbackCapabilityServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl CallbackCapability) error {
-	bext := &brokerExt{
+	bext := &BrokerExt{
 		BrokerConfig: brokerCfg,
-		broker:       broker,
+		Broker:       broker,
 	}
 	pb.RegisterCallbackExecutableServer(server, newCallbackExecutableServer(bext, impl))
 	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
@@ -57,9 +57,9 @@ func RegisterCallbackCapabilityServer(server *grpc.Server, broker Broker, broker
 }
 
 func RegisterTriggerCapabilityServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl capabilities.TriggerCapability) error {
-	bext := &brokerExt{
+	bext := &BrokerExt{
 		BrokerConfig: brokerCfg,
-		broker:       broker,
+		Broker:       broker,
 	}
 	pb.RegisterTriggerExecutableServer(server, newTriggerExecutableServer(bext, impl))
 	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
@@ -106,13 +106,13 @@ func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty)
 
 type baseCapabilityClient struct {
 	grpc pb.BaseCapabilityClient
-	*brokerExt
+	*BrokerExt
 }
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
-func newBaseCapabilityClient(brokerExt *brokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
-	return &baseCapabilityClient{grpc: pb.NewBaseCapabilityClient(conn), brokerExt: brokerExt}
+func newBaseCapabilityClient(brokerExt *BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
+	return &baseCapabilityClient{grpc: pb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
 }
 
 func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -123,15 +123,15 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 
 	var ct capabilities.CapabilityType
 	switch resp.CapabilityType {
-	case pb.CapabilityType_CAPABILITY_TYPE_TRIGGER:
+	case pb.CapabilityTypeTrigger:
 		ct = capabilities.CapabilityTypeTrigger
-	case pb.CapabilityType_CAPABILITY_TYPE_ACTION:
+	case pb.CapabilityTypeAction:
 		ct = capabilities.CapabilityTypeAction
-	case pb.CapabilityType_CAPABILITY_TYPE_CONSENSUS:
+	case pb.CapabilityTypeConsensus:
 		ct = capabilities.CapabilityTypeConsensus
-	case pb.CapabilityType_CAPABILITY_TYPE_TARGET:
+	case pb.CapabilityTypeTarget:
 		ct = capabilities.CapabilityTypeTarget
-	case pb.CapabilityType_CAPABILITY_TYPE_UNKNOWN:
+	case pb.CapabilityTypeUnknown:
 		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
 	}
 
@@ -145,17 +145,17 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 
 type triggerExecutableServer struct {
 	pb.UnimplementedTriggerExecutableServer
-	*brokerExt
+	*BrokerExt
 
 	impl capabilities.TriggerExecutable
 
 	cancelFuncs map[string]func()
 }
 
-func newTriggerExecutableServer(brokerExt *brokerExt, impl capabilities.TriggerExecutable) *triggerExecutableServer {
+func newTriggerExecutableServer(brokerExt *BrokerExt, impl capabilities.TriggerExecutable) *triggerExecutableServer {
 	return &triggerExecutableServer{
 		impl:        impl,
-		brokerExt:   brokerExt,
+		BrokerExt:   brokerExt,
 		cancelFuncs: map[string]func(){},
 	}
 }
@@ -165,7 +165,7 @@ var _ pb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 func (t *triggerExecutableServer) RegisterTrigger(ctx context.Context, request *pb.RegisterTriggerRequest) (*emptypb.Empty, error) {
 	ch := make(chan capabilities.CapabilityResponse)
 
-	conn, err := t.dial(request.CallbackId)
+	conn, err := t.Dial(request.CallbackId)
 	if err != nil {
 		return nil, err
 	}
@@ -243,13 +243,13 @@ func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 
 type triggerExecutableClient struct {
 	grpc pb.TriggerExecutableClient
-	*brokerExt
+	*BrokerExt
 }
 
 var _ capabilities.TriggerExecutable = (*triggerExecutableClient)(nil)
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
-	cid, res, err := t.serveNew("Callback", func(s *grpc.Server) {
+	cid, res, err := t.ServeNew("Callback", func(s *grpc.Server) {
 		pb.RegisterCallbackServer(s, newCallbackServer(callback))
 	})
 	if err != nil {
@@ -258,7 +258,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback 
 
 	reqPb, err := toProto(req)
 	if err != nil {
-		t.closeAll(res)
+		t.CloseAll(res)
 		return err
 	}
 
@@ -269,7 +269,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback 
 
 	_, err = t.grpc.RegisterTrigger(ctx, r)
 	if err != nil {
-		t.closeAll(res)
+		t.CloseAll(res)
 	}
 	return err
 }
@@ -288,23 +288,23 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 	return err
 }
 
-func newTriggerExecutableClient(brokerExt *brokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
-	return &triggerExecutableClient{grpc: pb.NewTriggerExecutableClient(conn), brokerExt: brokerExt}
+func newTriggerExecutableClient(brokerExt *BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
+	return &triggerExecutableClient{grpc: pb.NewTriggerExecutableClient(conn), BrokerExt: brokerExt}
 }
 
 type callbackExecutableServer struct {
 	pb.UnimplementedCallbackExecutableServer
-	*brokerExt
+	*BrokerExt
 
 	impl capabilities.CallbackExecutable
 
 	cancelFuncs map[string]func()
 }
 
-func newCallbackExecutableServer(brokerExt *brokerExt, impl capabilities.CallbackExecutable) *callbackExecutableServer {
+func newCallbackExecutableServer(brokerExt *BrokerExt, impl capabilities.CallbackExecutable) *callbackExecutableServer {
 	return &callbackExecutableServer{
 		impl:        impl,
-		brokerExt:   brokerExt,
+		BrokerExt:   brokerExt,
 		cancelFuncs: map[string]func(){},
 	}
 }
@@ -344,7 +344,7 @@ func (c *callbackExecutableServer) UnregisterFromWorkflow(ctx context.Context, r
 func (c *callbackExecutableServer) Execute(ctx context.Context, req *pb.ExecuteRequest) (*emptypb.Empty, error) {
 	ch := make(chan capabilities.CapabilityResponse)
 
-	conn, err := c.dial(req.CallbackId)
+	conn, err := c.Dial(req.CallbackId)
 	if err != nil {
 		return nil, err
 	}
@@ -388,13 +388,13 @@ func (c *callbackExecutableServer) Execute(ctx context.Context, req *pb.ExecuteR
 
 type callbackExecutableClient struct {
 	grpc pb.CallbackExecutableClient
-	*brokerExt
+	*BrokerExt
 }
 
-func newCallbackExecutableClient(brokerExt *brokerExt, conn *grpc.ClientConn) *callbackExecutableClient {
+func newCallbackExecutableClient(brokerExt *BrokerExt, conn *grpc.ClientConn) *callbackExecutableClient {
 	return &callbackExecutableClient{
 		grpc:      pb.NewCallbackExecutableClient(conn),
-		brokerExt: brokerExt,
+		BrokerExt: brokerExt,
 	}
 }
 
@@ -432,7 +432,7 @@ func toProto(req capabilities.CapabilityRequest) (*pb.CapabilityRequest, error) 
 }
 
 func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
-	cid, res, err := c.serveNew("Callback", func(s *grpc.Server) {
+	cid, res, err := c.ServeNew("Callback", func(s *grpc.Server) {
 		pb.RegisterCallbackServer(s, newCallbackServer(callback))
 	})
 	if err != nil {
@@ -441,7 +441,7 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- 
 
 	reqPb, err := toProto(req)
 	if err != nil {
-		c.closeAll(res)
+		c.CloseAll(res)
 		return nil
 	}
 
@@ -452,7 +452,7 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- 
 
 	_, err = c.grpc.Execute(ctx, r)
 	if err != nil {
-		c.closeAll(res)
+		c.CloseAll(res)
 	}
 	return err
 }

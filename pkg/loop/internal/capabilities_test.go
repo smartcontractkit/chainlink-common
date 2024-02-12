@@ -72,9 +72,9 @@ type capabilityPlugin struct {
 }
 
 func (c *capabilityPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
-	bext := &brokerExt{
+	bext := &BrokerExt{
 		BrokerConfig: c.brokerCfg,
-		broker:       broker,
+		Broker:       broker,
 	}
 	switch c.capability.(type) {
 	case capabilities.TriggerExecutable:

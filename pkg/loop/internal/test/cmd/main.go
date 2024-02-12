@@ -119,6 +119,19 @@ func main() {
 		})
 		os.Exit(0)
 
+	case loop.PluginMercuryName:
+		lggr.Debugf("Starting %s", loop.PluginMercuryName)
+		plugin.Serve(&plugin.ServeConfig{
+			HandshakeConfig: loop.PluginMercuryHandshakeConfig(),
+			Plugins: map[string]plugin.Plugin{
+				loop.PluginMercuryName: &loop.GRPCPluginMercury{PluginServer: test.StaticPluginMercury{}, BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+			},
+			GRPCServer: grpcServer,
+		})
+		lggr.Debugf("Done serving %s", loop.PluginMercuryName)
+
+		os.Exit(0)
+
 	case reportingplugins.OCR3PluginServiceName:
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),

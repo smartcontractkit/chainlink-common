@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -223,7 +224,7 @@ func (m ocr3reportingPluginServiceServer) NewReportingPluginFactory(ctx context.
 
 	id, _, err := m.serveNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		pb.RegisterOCR3ReportingPluginFactoryServer(s, newOCR3ReportingPluginFactoryServer(factory, m.brokerExt))
+		ocr3pb.RegisterReportingPluginFactoryServer(s, newOCR3ReportingPluginFactoryServer(factory, m.brokerExt))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
 	if err != nil {
 		return nil, err

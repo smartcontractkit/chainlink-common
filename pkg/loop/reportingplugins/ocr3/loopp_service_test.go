@@ -1,4 +1,4 @@
-package reportingplugins_test
+package ocr3
 
 import (
 	"os/exec"
@@ -10,7 +10,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -18,7 +17,7 @@ import (
 type HelperProcessCommand test.HelperProcessCommand
 
 func (h *HelperProcessCommand) New() *exec.Cmd {
-	h.CommandLocation = "../internal/test/cmd/main.go"
+	h.CommandLocation = "../../internal/test/cmd/main.go"
 	return (test.HelperProcessCommand)(*h).New()
 }
 
@@ -36,19 +35,19 @@ func TestLOOPPService(t *testing.T) {
 		Plugin string
 	}{
 		// A generic plugin with a median provider
-		{Plugin: test.ReportingPluginWithMedianProviderName},
+		{Plugin: test.OCR3ReportingPluginWithMedianProviderName},
 		// A generic plugin with a plugin provider
-		{Plugin: reportingplugins.PluginServiceName},
+		{Plugin: PluginServiceName},
 	}
 	for _, ts := range tests {
-		looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		looppSvc := NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 			return NewHelperProcessCommand(ts.Plugin)
 		}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
 		hook := looppSvc.XXXTestHook()
 		servicetest.Run(t, looppSvc)
 
 		t.Run("control", func(t *testing.T) {
-			test.ReportingPluginFactory(t, looppSvc)
+			test.OCR3ReportingPluginFactory(t, looppSvc)
 		})
 
 		t.Run("Kill", func(t *testing.T) {
@@ -57,7 +56,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * internal.KeepAliveTickDuration)
 
-			test.ReportingPluginFactory(t, looppSvc)
+			test.OCR3ReportingPluginFactory(t, looppSvc)
 		})
 
 		t.Run("Reset", func(t *testing.T) {
@@ -66,7 +65,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * internal.KeepAliveTickDuration)
 
-			test.ReportingPluginFactory(t, looppSvc)
+			test.OCR3ReportingPluginFactory(t, looppSvc)
 		})
 	}
 }
@@ -74,14 +73,14 @@ func TestLOOPPService(t *testing.T) {
 func TestLOOPPService_recovery(t *testing.T) {
 	t.Parallel()
 	var limit atomic.Int32
-	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	looppSvc := NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: test.ReportingPluginWithMedianProviderName,
+			Command: test.OCR3ReportingPluginWithMedianProviderName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
 	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
 	servicetest.Run(t, looppSvc)
 
-	test.ReportingPluginFactory(t, looppSvc)
+	test.OCR3ReportingPluginFactory(t, looppSvc)
 }

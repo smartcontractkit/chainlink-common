@@ -1,4 +1,4 @@
-package reportingplugins
+package ocr3
 
 import (
 	"context"
@@ -8,27 +8,29 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr3"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-const OCR3PluginServiceName = "ocr3-plugin-service"
+const PluginServiceName = "ocr3-plugin-service"
 
-type OCR3ProviderServer[T types.PluginProvider] interface {
+type ProviderServer[T types.PluginProvider] interface {
 	types.OCR3ReportingPluginServer[T]
 	ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig loop.BrokerConfig) T
 }
 
-type OCR3GRPCService[T types.PluginProvider] struct {
+type GRPCService[T types.PluginProvider] struct {
 	plugin.NetRPCUnsupportedPlugin
 
 	loop.BrokerConfig
 
-	PluginServer OCR3ProviderServer[T]
+	PluginServer ProviderServer[T]
 
-	pluginClient *internal.OCR3ReportingPluginServiceClient
+	pluginClient *ocr3.ReportingPluginServiceClient
 }
 
-type ocr3serverAdapter func(
+type serverAdapter func(
 	context.Context,
 	types.ReportingPluginServiceConfig,
 	grpc.ClientConnInterface,
@@ -37,7 +39,7 @@ type ocr3serverAdapter func(
 	types.ErrorLog,
 ) (types.OCR3ReportingPluginFactory, error)
 
-func (s ocr3serverAdapter) NewReportingPluginFactory(
+func (s serverAdapter) NewReportingPluginFactory(
 	ctx context.Context,
 	config types.ReportingPluginServiceConfig,
 	conn grpc.ClientConnInterface,
@@ -48,7 +50,7 @@ func (s ocr3serverAdapter) NewReportingPluginFactory(
 	return s(ctx, config, conn, pr, ts, errorLog)
 }
 
-func (g *OCR3GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
+func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
 	adapter := func(
 		ctx context.Context,
 		cfg types.ReportingPluginServiceConfig,
@@ -61,12 +63,12 @@ func (g *OCR3GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 		tc := internal.NewTelemetryClient(ts)
 		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el)
 	}
-	return internal.RegisterOCR3ReportingPluginServiceServer(server, broker, g.BrokerConfig, ocr3serverAdapter(adapter))
+	return ocr3.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter(adapter))
 }
 
-func (g *OCR3GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (g *GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if g.pluginClient == nil {
-		g.pluginClient = internal.NewOCR3ReportingPluginServiceClient(broker, g.BrokerConfig, conn)
+		g.pluginClient = ocr3.NewReportingPluginServiceClient(broker, g.BrokerConfig, conn)
 	} else {
 		g.pluginClient.Refresh(broker, conn)
 	}
@@ -74,10 +76,10 @@ func (g *OCR3GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBr
 	return types.OCR3ReportingPluginClient(g.pluginClient), nil
 }
 
-func (g *OCR3GRPCService[T]) ClientConfig() *plugin.ClientConfig {
+func (g *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
 	return &plugin.ClientConfig{
-		HandshakeConfig:  ReportingPluginHandshakeConfig(),
-		Plugins:          map[string]plugin.Plugin{PluginServiceName: g},
+		HandshakeConfig:  reportingplugins.ReportingPluginHandshakeConfig(),
+		Plugins:          map[string]plugin.Plugin{reportingplugins.PluginServiceName: g},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		GRPCDialOptions:  g.BrokerConfig.DialOpts,
 		Logger:           loop.HCLogLogger(g.BrokerConfig.Logger),

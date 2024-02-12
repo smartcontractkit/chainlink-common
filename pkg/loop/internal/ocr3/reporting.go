@@ -1,33 +1,33 @@
-package internal
+package ocr3
 
 import (
 	"context"
 	"math"
 	"time"
 
+	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/libocr/commontypes"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
 )
 
-type ocr3reportingPluginFactoryClient struct {
-	*brokerExt
-	*serviceClient
+type reportingPluginFactoryClient struct {
+	*internal.BrokerExt
+	*internal.ServiceClient
 	grpc ocr3.ReportingPluginFactoryClient
 }
 
-func newOCR3ReportingPluginFactoryClient(b *brokerExt, cc grpc.ClientConnInterface) *ocr3reportingPluginFactoryClient {
-	return &ocr3reportingPluginFactoryClient{b.withName("OCR3ReportingPluginProviderClient"), newServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
+func newReportingPluginFactoryClient(b *internal.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
+	return &reportingPluginFactoryClient{b.WithName("OCR3ReportingPluginProviderClient"), internal.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
 }
 
-func (r *ocr3reportingPluginFactoryClient) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[any], ocr3types.ReportingPluginInfo, error) {
-	ctx, cancel := r.stopCtx()
+func (r *reportingPluginFactoryClient) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[any], ocr3types.ReportingPluginInfo, error) {
+	ctx, cancel := r.StopCtx()
 	defer cancel()
 
 	reply, err := r.grpc.NewReportingPlugin(ctx, &ocr3.NewReportingPluginRequest{ReportingPluginConfig: &ocr3.ReportingPluginConfig{
@@ -56,28 +56,28 @@ func (r *ocr3reportingPluginFactoryClient) NewReportingPlugin(config ocr3types.R
 			MaxReportCount:       int(reply.ReportingPluginInfo.ReportingPluginLimits.MaxReportCount),
 		},
 	}
-	cc, err := r.brokerExt.dial(reply.ReportingPluginID)
+	cc, err := r.BrokerExt.Dial(reply.ReportingPluginID)
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
-	return newOCR3ReportingPluginClient(r.brokerExt, cc), rpi, nil
+	return newReportingPluginClient(r.BrokerExt, cc), rpi, nil
 }
 
-var _ ocr3.ReportingPluginFactoryServer = (*ocr3reportingPluginFactoryServer)(nil)
+var _ ocr3.ReportingPluginFactoryServer = (*reportingPluginFactoryServer)(nil)
 
-type ocr3reportingPluginFactoryServer struct {
+type reportingPluginFactoryServer struct {
 	ocr3.UnimplementedReportingPluginFactoryServer
 
-	*brokerExt
+	*internal.BrokerExt
 
 	impl ocr3types.ReportingPluginFactory[any]
 }
 
-func newOCR3ReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[any], b *brokerExt) *ocr3reportingPluginFactoryServer {
-	return &ocr3reportingPluginFactoryServer{impl: impl, brokerExt: b.withName("OCR3ReportingPluginFactoryServer")}
+func newReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[any], b *internal.BrokerExt) *reportingPluginFactoryServer {
+	return &reportingPluginFactoryServer{impl: impl, BrokerExt: b.WithName("OCR3ReportingPluginFactoryServer")}
 }
 
-func (r *ocr3reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, request *ocr3.NewReportingPluginRequest) (*ocr3.NewReportingPluginReply, error) {
+func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, request *ocr3.NewReportingPluginRequest) (*ocr3.NewReportingPluginReply, error) {
 	cfg := ocr3types.ReportingPluginConfig{
 		ConfigDigest:                            libocr.ConfigDigest{},
 		OracleID:                                commontypes.OracleID(request.ReportingPluginConfig.OracleID),
@@ -102,9 +102,9 @@ func (r *ocr3reportingPluginFactoryServer) NewReportingPlugin(ctx context.Contex
 	}
 
 	const name = "OCR3ReportingPlugin"
-	id, _, err := r.serveNew(name, func(s *grpc.Server) {
-		ocr3.RegisterReportingPluginServer(s, &ocr3reportingPluginServer{impl: rp})
-	}, resource{rp, name})
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		ocr3.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp})
+	}, internal.Resource{rp, name})
 	if err != nil {
 		return nil, err
 	}
@@ -122,14 +122,14 @@ func (r *ocr3reportingPluginFactoryServer) NewReportingPlugin(ctx context.Contex
 	}, nil
 }
 
-var _ ocr3types.ReportingPlugin[any] = (*ocr3reportingPluginClient)(nil)
+var _ ocr3types.ReportingPlugin[any] = (*reportingPluginClient)(nil)
 
-type ocr3reportingPluginClient struct {
-	*brokerExt
+type reportingPluginClient struct {
+	*internal.BrokerExt
 	grpc ocr3.ReportingPluginClient
 }
 
-func (o *ocr3reportingPluginClient) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (libocr.Query, error) {
+func (o *reportingPluginClient) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (libocr.Query, error) {
 	reply, err := o.grpc.Query(ctx, &ocr3.QueryRequest{
 		OutcomeContext: pbOutcomeContext(outctx),
 	})
@@ -139,7 +139,7 @@ func (o *ocr3reportingPluginClient) Query(ctx context.Context, outctx ocr3types.
 	return reply.Query, nil
 }
 
-func (o *ocr3reportingPluginClient) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query libocr.Query) (libocr.Observation, error) {
+func (o *reportingPluginClient) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query libocr.Query) (libocr.Observation, error) {
 	reply, err := o.grpc.Observation(ctx, &ocr3.ObservationRequest{
 		OutcomeContext: pbOutcomeContext(outctx),
 		Query:          query,
@@ -150,7 +150,7 @@ func (o *ocr3reportingPluginClient) Observation(ctx context.Context, outctx ocr3
 	return reply.Observation, nil
 }
 
-func (o *ocr3reportingPluginClient) ValidateObservation(outctx ocr3types.OutcomeContext, query libocr.Query, ao libocr.AttributedObservation) error {
+func (o *reportingPluginClient) ValidateObservation(outctx ocr3types.OutcomeContext, query libocr.Query, ao libocr.AttributedObservation) error {
 	_, err := o.grpc.ValidateObservation(context.Background(), &ocr3.ValidateObservationRequest{
 		OutcomeContext: pbOutcomeContext(outctx),
 		Query:          query,
@@ -159,7 +159,7 @@ func (o *ocr3reportingPluginClient) ValidateObservation(outctx ocr3types.Outcome
 	return err
 }
 
-func (o *ocr3reportingPluginClient) ObservationQuorum(outctx ocr3types.OutcomeContext, query libocr.Query) (ocr3types.Quorum, error) {
+func (o *reportingPluginClient) ObservationQuorum(outctx ocr3types.OutcomeContext, query libocr.Query) (ocr3types.Quorum, error) {
 	reply, err := o.grpc.ObservationQuorum(context.Background(), &ocr3.ObservationQuorumRequest{
 		OutcomeContext: pbOutcomeContext(outctx),
 		Query:          query,
@@ -170,11 +170,11 @@ func (o *ocr3reportingPluginClient) ObservationQuorum(outctx ocr3types.OutcomeCo
 	return ocr3types.Quorum(reply.Quorum), nil
 }
 
-func (o *ocr3reportingPluginClient) Outcome(outctx ocr3types.OutcomeContext, query libocr.Query, aos []libocr.AttributedObservation) (ocr3types.Outcome, error) {
+func (o *reportingPluginClient) Outcome(outctx ocr3types.OutcomeContext, query libocr.Query, aos []libocr.AttributedObservation) (ocr3types.Outcome, error) {
 	reply, err := o.grpc.Outcome(context.Background(), &ocr3.OutcomeRequest{
 		OutcomeContext: pbOutcomeContext(outctx),
 		Query:          query,
-		Ao:             pbOcr3AttributedObservations(aos),
+		Ao:             pbAttributedObservations(aos),
 	})
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (o *ocr3reportingPluginClient) Outcome(outctx ocr3types.OutcomeContext, que
 	return reply.Outcome, nil
 }
 
-func (o *ocr3reportingPluginClient) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[any], error) {
+func (o *reportingPluginClient) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[any], error) {
 	reply, err := o.grpc.Reports(context.Background(), &ocr3.ReportsRequest{
 		SeqNr:   seqNr,
 		Outcome: outcome,
@@ -193,7 +193,7 @@ func (o *ocr3reportingPluginClient) Reports(seqNr uint64, outcome ocr3types.Outc
 	return reportsWithInfo(reply.ReportWithInfo), nil
 }
 
-func (o *ocr3reportingPluginClient) ShouldAcceptAttestedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[any]) (bool, error) {
+func (o *reportingPluginClient) ShouldAcceptAttestedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[any]) (bool, error) {
 	reply, err := o.grpc.ShouldAcceptAttestedReport(ctx, &ocr3.ShouldAcceptAttestedReportRequest{
 		SegNr: u,
 		Ri:    &ocr3.ReportWithInfo{Report: ri.Report},
@@ -204,7 +204,7 @@ func (o *ocr3reportingPluginClient) ShouldAcceptAttestedReport(ctx context.Conte
 	return reply.ShouldAccept, nil
 }
 
-func (o *ocr3reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[any]) (bool, error) {
+func (o *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[any]) (bool, error) {
 	reply, err := o.grpc.ShouldTransmitAcceptedReport(ctx, &ocr3.ShouldTransmitAcceptedReportRequest{
 		SegNr: u,
 		Ri:    &ocr3.ReportWithInfo{Report: ri.Report},
@@ -215,27 +215,27 @@ func (o *ocr3reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Con
 	return reply.ShouldTransmit, nil
 }
 
-func (o *ocr3reportingPluginClient) Close() error {
-	ctx, cancel := o.stopCtx()
+func (o *reportingPluginClient) Close() error {
+	ctx, cancel := o.StopCtx()
 	defer cancel()
 
 	_, err := o.grpc.Close(ctx, &emptypb.Empty{})
 	return err
 }
 
-func newOCR3ReportingPluginClient(b *brokerExt, cc grpc.ClientConnInterface) *ocr3reportingPluginClient {
-	return &ocr3reportingPluginClient{b.withName("OCR3ReportingPluginClient"), ocr3.NewReportingPluginClient(cc)}
+func newReportingPluginClient(b *internal.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
+	return &reportingPluginClient{b.WithName("OCR3ReportingPluginClient"), ocr3.NewReportingPluginClient(cc)}
 }
 
-var _ ocr3.ReportingPluginServer = (*ocr3reportingPluginServer)(nil)
+var _ ocr3.ReportingPluginServer = (*reportingPluginServer)(nil)
 
-type ocr3reportingPluginServer struct {
+type reportingPluginServer struct {
 	ocr3.UnimplementedReportingPluginServer
 
 	impl ocr3types.ReportingPlugin[any]
 }
 
-func (o *ocr3reportingPluginServer) Query(ctx context.Context, request *ocr3.QueryRequest) (*ocr3.QueryReply, error) {
+func (o *reportingPluginServer) Query(ctx context.Context, request *ocr3.QueryRequest) (*ocr3.QueryReply, error) {
 	oc := outcomeContext(request.OutcomeContext)
 	q, err := o.impl.Query(ctx, oc)
 	if err != nil {
@@ -244,7 +244,7 @@ func (o *ocr3reportingPluginServer) Query(ctx context.Context, request *ocr3.Que
 	return &ocr3.QueryReply{Query: q}, nil
 }
 
-func (o *ocr3reportingPluginServer) Observation(ctx context.Context, request *ocr3.ObservationRequest) (*ocr3.ObservationReply, error) {
+func (o *reportingPluginServer) Observation(ctx context.Context, request *ocr3.ObservationRequest) (*ocr3.ObservationReply, error) {
 	obs, err := o.impl.Observation(ctx, outcomeContext(request.OutcomeContext), request.Query)
 	if err != nil {
 		return nil, err
@@ -252,8 +252,8 @@ func (o *ocr3reportingPluginServer) Observation(ctx context.Context, request *oc
 	return &ocr3.ObservationReply{Observation: obs}, nil
 }
 
-func (o *ocr3reportingPluginServer) ValidateObservation(ctx context.Context, request *ocr3.ValidateObservationRequest) (*emptypb.Empty, error) {
-	ao, err := ocr3AttributedObservation(request.Ao)
+func (o *reportingPluginServer) ValidateObservation(ctx context.Context, request *ocr3.ValidateObservationRequest) (*emptypb.Empty, error) {
+	ao, err := attributedObservation(request.Ao)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func (o *ocr3reportingPluginServer) ValidateObservation(ctx context.Context, req
 	return new(emptypb.Empty), err
 }
 
-func (o *ocr3reportingPluginServer) ObservationQuorum(ctx context.Context, request *ocr3.ObservationQuorumRequest) (*ocr3.ObservationQuorumReply, error) {
+func (o *reportingPluginServer) ObservationQuorum(ctx context.Context, request *ocr3.ObservationQuorumRequest) (*ocr3.ObservationQuorumReply, error) {
 	oq, err := o.impl.ObservationQuorum(outcomeContext(request.OutcomeContext), request.Query)
 	if err != nil {
 		return nil, err
@@ -269,8 +269,8 @@ func (o *ocr3reportingPluginServer) ObservationQuorum(ctx context.Context, reque
 	return &ocr3.ObservationQuorumReply{Quorum: int32(oq)}, nil
 }
 
-func (o *ocr3reportingPluginServer) Outcome(ctx context.Context, request *ocr3.OutcomeRequest) (*ocr3.OutcomeReply, error) {
-	aos, err := ocr3AttributedObservations(request.Ao)
+func (o *reportingPluginServer) Outcome(ctx context.Context, request *ocr3.OutcomeRequest) (*ocr3.OutcomeReply, error) {
+	aos, err := attributedObservations(request.Ao)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func (o *ocr3reportingPluginServer) Outcome(ctx context.Context, request *ocr3.O
 	}, nil
 }
 
-func (o *ocr3reportingPluginServer) Reports(ctx context.Context, request *ocr3.ReportsRequest) (*ocr3.ReportsReply, error) {
+func (o *reportingPluginServer) Reports(ctx context.Context, request *ocr3.ReportsRequest) (*ocr3.ReportsReply, error) {
 	ri, err := o.impl.Reports(request.SeqNr, request.Outcome)
 	if err != nil {
 		return nil, err
@@ -293,7 +293,7 @@ func (o *ocr3reportingPluginServer) Reports(ctx context.Context, request *ocr3.R
 	}, nil
 }
 
-func (o *ocr3reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Context, request *ocr3.ShouldAcceptAttestedReportRequest) (*ocr3.ShouldAcceptAttestedReportReply, error) {
+func (o *reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Context, request *ocr3.ShouldAcceptAttestedReportRequest) (*ocr3.ShouldAcceptAttestedReportReply, error) {
 	sa, err := o.impl.ShouldAcceptAttestedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[any]{
 		Report: request.Ri.Report,
 	})
@@ -305,7 +305,7 @@ func (o *ocr3reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Conte
 	}, nil
 }
 
-func (o *ocr3reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context, request *ocr3.ShouldTransmitAcceptedReportRequest) (*ocr3.ShouldTransmitAcceptedReportReply, error) {
+func (o *reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context, request *ocr3.ShouldTransmitAcceptedReportRequest) (*ocr3.ShouldTransmitAcceptedReportReply, error) {
 	st, err := o.impl.ShouldTransmitAcceptedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[any]{
 		Report: request.Ri.Report,
 	})
@@ -317,7 +317,7 @@ func (o *ocr3reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Con
 	}, nil
 }
 
-func (o *ocr3reportingPluginServer) Close(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
+func (o *reportingPluginServer) Close(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, o.impl.Close()
 }
 
@@ -346,7 +346,7 @@ func pbReportsWithInfo(rwi []ocr3types.ReportWithInfo[any]) (ri []*ocr3.ReportWi
 	return
 }
 
-func pbOcr3AttributedObservations(aos []libocr.AttributedObservation) (pbaos []*ocr3.AttributedObservation) {
+func pbAttributedObservations(aos []libocr.AttributedObservation) (pbaos []*ocr3.AttributedObservation) {
 	for _, ao := range aos {
 		pbaos = append(pbaos, pbAttributedObservation(ao))
 	}
@@ -363,7 +363,7 @@ func outcomeContext(oc *ocr3.OutcomeContext) ocr3types.OutcomeContext {
 	}
 }
 
-func ocr3AttributedObservation(pbo *ocr3.AttributedObservation) (o libocr.AttributedObservation, err error) {
+func attributedObservation(pbo *ocr3.AttributedObservation) (o libocr.AttributedObservation, err error) {
 	o.Observation = pbo.Observation
 	if pbo.Observer > math.MaxUint8 {
 		err = pb.ErrUint8Bounds{Name: "Observer", U: pbo.Observer}
@@ -373,9 +373,9 @@ func ocr3AttributedObservation(pbo *ocr3.AttributedObservation) (o libocr.Attrib
 	return
 }
 
-func ocr3AttributedObservations(pbo []*ocr3.AttributedObservation) (o []libocr.AttributedObservation, err error) {
+func attributedObservations(pbo []*ocr3.AttributedObservation) (o []libocr.AttributedObservation, err error) {
 	for _, ao := range pbo {
-		a, err := ocr3AttributedObservation(ao)
+		a, err := attributedObservation(ao)
 		if err != nil {
 			return nil, err
 		}

@@ -8,96 +8,22 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	ocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ types.ReportingPluginClient = (*ReportingPluginServiceClient)(nil)
 
 type ReportingPluginServiceClient struct {
-	*pluginClient
-	*serviceClient
+	*PluginClient
+	*ServiceClient
 
 	reportingPluginService pb.ReportingPluginServiceClient
-}
-
-type OCR3ReportingPluginServiceClient struct {
-	*pluginClient
-	*serviceClient
-
-	reportingPluginService pb.ReportingPluginServiceClient
-}
-
-func NewOCR3ReportingPluginServiceClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *OCR3ReportingPluginServiceClient {
-	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ReportingPluginServiceClient")
-	pc := newPluginClient(broker, brokerCfg, conn)
-	return &OCR3ReportingPluginServiceClient{pluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), serviceClient: newServiceClient(pc.brokerExt, pc)}
-}
-
-func (o *OCR3ReportingPluginServiceClient) NewReportingPluginFactory(
-	ctx context.Context,
-	config types.ReportingPluginServiceConfig,
-	grpcProvider grpc.ClientConnInterface,
-	pipelineRunner types.PipelineRunnerService,
-	telemetry types.TelemetryService,
-	errorLog types.ErrorLog,
-) (types.OCR3ReportingPluginFactory, error) {
-	cc := o.newClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps resources, err error) {
-		providerID, providerRes, err := o.serve("PluginProvider", proxy.NewProxy(grpcProvider))
-		if err != nil {
-			return 0, nil, err
-		}
-		deps.Add(providerRes)
-
-		pipelineRunnerID, pipelineRunnerRes, err := o.serveNew("PipelineRunner", func(s *grpc.Server) {
-			pb.RegisterPipelineRunnerServiceServer(s, &pipelineRunnerServiceServer{impl: pipelineRunner})
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		deps.Add(pipelineRunnerRes)
-
-		telemetryID, telemetryRes, err := o.serveNew("Telemetry", func(s *grpc.Server) {
-			pb.RegisterTelemetryServer(s, NewTelemetryServer(telemetry))
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		deps.Add(telemetryRes)
-
-		errorLogID, errorLogRes, err := o.serveNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &errorLogServer{impl: errorLog})
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		deps.Add(errorLogRes)
-
-		reply, err := o.reportingPluginService.NewReportingPluginFactory(ctx, &pb.NewReportingPluginFactoryRequest{
-			ReportingPluginServiceConfig: &pb.ReportingPluginServiceConfig{
-				ProviderType:  config.ProviderType,
-				Command:       config.Command,
-				PluginName:    config.PluginName,
-				TelemetryType: config.TelemetryType,
-				PluginConfig:  config.PluginConfig,
-			},
-			ProviderID:       providerID,
-			ErrorLogID:       errorLogID,
-			PipelineRunnerID: pipelineRunnerID,
-			TelemetryID:      telemetryID,
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		return reply.ID, nil, nil
-	})
-	return newOCR3ReportingPluginFactoryClient(o.pluginClient.brokerExt, cc), nil
 }
 
 func NewReportingPluginServiceClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *ReportingPluginServiceClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ReportingPluginServiceClient")
-	pc := newPluginClient(broker, brokerCfg, conn)
-	return &ReportingPluginServiceClient{pluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), serviceClient: newServiceClient(pc.brokerExt, pc)}
+	pc := NewPluginClient(broker, brokerCfg, conn)
+	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
@@ -108,22 +34,22 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 	telemetry types.TelemetryService,
 	errorLog types.ErrorLog,
 ) (types.ReportingPluginFactory, error) {
-	cc := m.newClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps resources, err error) {
-		providerID, providerRes, err := m.serve("PluginProvider", proxy.NewProxy(grpcProvider))
+	cc := m.NewClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps Resources, err error) {
+		providerID, providerRes, err := m.Serve("PluginProvider", proxy.NewProxy(grpcProvider))
 		if err != nil {
 			return 0, nil, err
 		}
 		deps.Add(providerRes)
 
-		pipelineRunnerID, pipelineRunnerRes, err := m.serveNew("PipelineRunner", func(s *grpc.Server) {
-			pb.RegisterPipelineRunnerServiceServer(s, &pipelineRunnerServiceServer{impl: pipelineRunner})
+		pipelineRunnerID, pipelineRunnerRes, err := m.ServeNew("PipelineRunner", func(s *grpc.Server) {
+			pb.RegisterPipelineRunnerServiceServer(s, &PipelineRunnerServiceServer{Impl: pipelineRunner})
 		})
 		if err != nil {
 			return 0, nil, err
 		}
 		deps.Add(pipelineRunnerRes)
 
-		telemetryID, telemetryRes, err := m.serveNew("Telemetry", func(s *grpc.Server) {
+		telemetryID, telemetryRes, err := m.ServeNew("Telemetry", func(s *grpc.Server) {
 			pb.RegisterTelemetryServer(s, NewTelemetryServer(telemetry))
 		})
 		if err != nil {
@@ -131,8 +57,8 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		deps.Add(telemetryRes)
 
-		errorLogID, errorLogRes, err := m.serveNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &errorLogServer{impl: errorLog})
+		errorLogID, errorLogRes, err := m.ServeNew("ErrorLog", func(s *grpc.Server) {
+			pb.RegisterErrorLogServer(s, &ErrorLogServer{Impl: errorLog})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -157,129 +83,56 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		return reply.ID, nil, nil
 	})
-	return newReportingPluginFactoryClient(m.pluginClient.brokerExt, cc), nil
+	return newReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
 }
 
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)
-var _ pb.ReportingPluginServiceServer = (*ocr3reportingPluginServiceServer)(nil)
 
 type reportingPluginServiceServer struct {
 	pb.UnimplementedReportingPluginServiceServer
 
-	*brokerExt
+	*BrokerExt
 	impl types.ReportingPluginClient
 }
 
-type ocr3reportingPluginServiceServer struct {
-	pb.UnimplementedReportingPluginServiceServer
-
-	*brokerExt
-	impl types.OCR3ReportingPluginClient
-}
-
-func (m ocr3reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Context, request *pb.NewReportingPluginFactoryRequest) (*pb.NewReportingPluginFactoryReply, error) {
-	errorLogConn, err := m.dial(request.ErrorLogID)
-	if err != nil {
-		return nil, ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
-	}
-	errorLogRes := resource{errorLogConn, "ErrorLog"}
-	errorLog := newErrorLogClient(errorLogConn)
-
-	providerConn, err := m.dial(request.ProviderID)
-	if err != nil {
-		m.closeAll(errorLogRes)
-		return nil, ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
-	}
-	providerRes := resource{providerConn, "PluginProvider"}
-
-	pipelineRunnerConn, err := m.dial(request.PipelineRunnerID)
-	if err != nil {
-		m.closeAll(errorLogRes, providerRes)
-		return nil, ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
-	}
-	pipelineRunnerRes := resource{pipelineRunnerConn, "PipelineRunner"}
-	pipelineRunner := newPipelineRunnerClient(pipelineRunnerConn)
-
-	telemetryConn, err := m.dial(request.TelemetryID)
-	if err != nil {
-		m.closeAll(errorLogRes, providerRes, pipelineRunnerRes)
-		return nil, ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
-	}
-	telemetryRes := resource{telemetryConn, "Telemetry"}
-	telemetry := NewTelemetryServiceClient(telemetryConn)
-
-	config := types.ReportingPluginServiceConfig{
-		ProviderType:  request.ReportingPluginServiceConfig.ProviderType,
-		PluginConfig:  request.ReportingPluginServiceConfig.PluginConfig,
-		PluginName:    request.ReportingPluginServiceConfig.PluginName,
-		Command:       request.ReportingPluginServiceConfig.Command,
-		TelemetryType: request.ReportingPluginServiceConfig.TelemetryType,
-	}
-
-	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog)
-	if err != nil {
-		m.closeAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
-		return nil, err
-	}
-
-	id, _, err := m.serveNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		ocr3pb.RegisterReportingPluginFactoryServer(s, newOCR3ReportingPluginFactoryServer(factory, m.brokerExt))
-	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.NewReportingPluginFactoryReply{ID: id}, nil
-}
-
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl types.ReportingPluginClient) error {
-	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&brokerExt{broker, brokerCfg}, impl))
+	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&BrokerExt{broker, brokerCfg}, impl))
 	return nil
 }
 
-func RegisterOCR3ReportingPluginServiceServer(server *grpc.Server, broker Broker, brokerCfg BrokerConfig, impl types.OCR3ReportingPluginClient) error {
-	pb.RegisterReportingPluginServiceServer(server, newOCR3ReportingPluginServiceServer(&brokerExt{broker, brokerCfg}, impl))
-	return nil
-}
-
-func newReportingPluginServiceServer(b *brokerExt, gp types.ReportingPluginClient) *reportingPluginServiceServer {
-	return &reportingPluginServiceServer{brokerExt: b.withName("ReportingPluginService"), impl: gp}
-}
-
-func newOCR3ReportingPluginServiceServer(b *brokerExt, gp types.OCR3ReportingPluginClient) *ocr3reportingPluginServiceServer {
-	return &ocr3reportingPluginServiceServer{brokerExt: b.withName("OCR3ReportingPluginService"), impl: gp}
+func newReportingPluginServiceServer(b *BrokerExt, gp types.ReportingPluginClient) *reportingPluginServiceServer {
+	return &reportingPluginServiceServer{BrokerExt: b.WithName("ReportingPluginService"), impl: gp}
 }
 
 func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Context, request *pb.NewReportingPluginFactoryRequest) (*pb.NewReportingPluginFactoryReply, error) {
-	errorLogConn, err := m.dial(request.ErrorLogID)
+	errorLogConn, err := m.Dial(request.ErrorLogID)
 	if err != nil {
 		return nil, ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
-	errorLogRes := resource{errorLogConn, "ErrorLog"}
-	errorLog := newErrorLogClient(errorLogConn)
+	errorLogRes := Resource{errorLogConn, "ErrorLog"}
+	errorLog := NewErrorLogClient(errorLogConn)
 
-	providerConn, err := m.dial(request.ProviderID)
+	providerConn, err := m.Dial(request.ProviderID)
 	if err != nil {
-		m.closeAll(errorLogRes)
+		m.CloseAll(errorLogRes)
 		return nil, ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
 	}
-	providerRes := resource{providerConn, "PluginProvider"}
+	providerRes := Resource{providerConn, "PluginProvider"}
 
-	pipelineRunnerConn, err := m.dial(request.PipelineRunnerID)
+	pipelineRunnerConn, err := m.Dial(request.PipelineRunnerID)
 	if err != nil {
-		m.closeAll(errorLogRes, providerRes)
+		m.CloseAll(errorLogRes, providerRes)
 		return nil, ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
 	}
-	pipelineRunnerRes := resource{pipelineRunnerConn, "PipelineRunner"}
-	pipelineRunner := newPipelineRunnerClient(pipelineRunnerConn)
+	pipelineRunnerRes := Resource{pipelineRunnerConn, "PipelineRunner"}
+	pipelineRunner := NewPipelineRunnerClient(pipelineRunnerConn)
 
-	telemetryConn, err := m.dial(request.TelemetryID)
+	telemetryConn, err := m.Dial(request.TelemetryID)
 	if err != nil {
-		m.closeAll(errorLogRes, providerRes, pipelineRunnerRes)
+		m.CloseAll(errorLogRes, providerRes, pipelineRunnerRes)
 		return nil, ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
 	}
-	telemetryRes := resource{telemetryConn, "Telemetry"}
+	telemetryRes := Resource{telemetryConn, "Telemetry"}
 	telemetry := NewTelemetryServiceClient(telemetryConn)
 
 	config := types.ReportingPluginServiceConfig{
@@ -292,13 +145,13 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 
 	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog)
 	if err != nil {
-		m.closeAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
+		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
 		return nil, err
 	}
 
-	id, _, err := m.serveNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &serviceServer{srv: factory})
-		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.brokerExt))
+	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &ServiceServer{Srv: factory})
+		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
 	if err != nil {
 		return nil, err

@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "google/protobuf/empty.proto";
+import "relayer.proto";
+import "models.proto";
+
+service OffRampReader {
+    rpc EncodeExecutionReport(EncodeExecutionReportRequest) returns (EncodeExecutionReportResponse) {}
+    rpc DecodeExecutionReport(DecodeExecutionReportRequest) returns (DecodeExecutionReportResponse) {}
+    rpc GetExecutionStateChanges(GetExecutionStateChangesRequest) returns (GetExecutionStateChangesResponse) {}
+    rpc GetTookenPoolRateLimits(GetTokenPoolRateLimitsRequest) returns (GetTokenPoolRateLimitsResponse) {}
+    rpc Address(google.protobuf.Empty) returns (OffRampAddressResponse) {}
+    rpc ChangeConfig(ChangeConfigRequest) returns (ChangeConfigResponse) {}
+    rpc OffchainConfig(google.protobuf.Empty) returns (OffchainConfigResponse) {}
+    rpc OnchainConfig(google.protobuf.Empty) returns (OnchainConfigResponse) {}
+    rpc GasPriceEstimator(google.protobuf.Empty) returns (GasPriceEstimatorResponse) {}
+    rpc GetSenderNonce(GetSenderNonceRequest) returns (GetSenderNonceResponse) {}
+    rpc CurrentRateLimiterState(google.protobuf.Empty) returns (CurrentRateLimiterStateResponse) {}
+    rpc GetExecutionState(GetExecutionStateRequest) returns (GetExecutionStateResponse) {}
+    rpc GetStaticConfig(google.protobuf.Empty) returns (GetStaticConfigResponse) {}
+    rpc GetSourceToDestTokenMapping(google.protobuf.Empty) returns (GetSourceToDestTokenMappingResponse) {}
+    rpc GetTokens(google.protobuf.Empty) returns (GetTokensResponse) {}
+}
+
+message EncodeExecutionReportRequest {
+    ExecutionReport execution_report = 1;
+}
+
+message EncodeExecutionReportResponse {
+    bytes encoded_execution_report = 1;
+}
+
+
+message DecodeExecutionReportRequest {
+    bytes encoded_execution_report = 1;
+}
+
+message DecodeExecutionReportResponse {
+    ExecutionReport execution_report = 1;
+}
+
+message GetExecutionStateChangesRequest {
+    uint64 min_seq_num = 1;
+    uint64 max_seq_num = 2;
+    uint64 confirmations = 3;
+}
+
+message GetExecutionStateChangesResponse {
+    repeated ExecutionStateChangeWithBlockMeta execution_state_changes = 1;
+}
+
+message ExecutionStateChangeWithBlockMeta {
+    ExecutionStateChange execution_state_change = 1;
+    BlockMeta block_meta = 2;
+}
+
+message ExecutionStateChange {
+    uint64 seq_num = 1;
+    bool finalized = 2;
+}
+
+message GetTokenPoolRateLimitsRequest {
+    repeated string token_pool_address = 1; // []Address
+}
+
+message GetTokenPoolRateLimitsResponse {
+    repeated TokenPoolRateLimit token_pool_rate_limits = 1;
+}
+
+message TokenPoolRateLimit {
+    BigInt tokens = 1;
+    uint32 last_updated = 2;
+    bool is_enabled = 3;
+    BigInt Capacity = 4;
+    BigInt rate = 5;
+}
+
+message OffRampAddressResponse {
+    string address = 1;
+}
+
+message ChangeConfigRequest {
+    bytes onchain_config = 1;
+    bytes offchain_config = 2;
+}
+
+message ChangeConfigResponse {
+    string onchain_config_address = 1; // Address
+    string offchain_config_address = 2; // Address
+}
+
+message OffchainConfigResponse {
+    ExecOffchainConfig offchain_config = 1;
+}
+
+message ExecOffchainConfig {
+    uint32 dest_optimistic_confirmations = 1;
+    uint32 batch_gas_limit = 2;
+    float relative_boost_per_wait_hour = 3;
+    uint64 inflight_cache_expiry_seconds = 4; // config.Duration
+    uint64 root_snooze_time_seconds = 5; // config.Duration
+}
+
+message OnchainConfigResponse {
+    ExecOnchainConfig onchain_config = 1;
+}
+
+message ExecOnchainConfig {
+    uint64 permissionless_exec_threshold_seconds = 1; // time.Duration
+}
+
+message GasPriceEstimatorResponse {
+   int32 estimator_service_id=1; // the ccip interface defines this as an interface. how to handle it? thinking it need to be a reference to a service that proxies connections
+}
+
+message GetSenderNonceRequest {
+    string sender_address = 1;
+}
+
+message GetSenderNonceResponse {
+    uint64 nonce = 1;
+}
+
+message CurrentRateLimiterStateResponse {
+    TokenPoolRateLimit rate_limiter = 1;
+}
+
+message GetExecutionStateRequest {
+    uint64 seq_num = 1;
+}
+
+message GetExecutionStateResponse {
+   uint32 execution_state = 1;
+}
+
+message GetStaticConfigResponse {
+    OffRampStaticConfig static_config = 1;
+}
+
+message OffRampStaticConfig {
+    string commit_string = 1; // Address
+    uint64 chain_selector = 2;
+    uint64 source_chain_selector = 3;
+    string on_ramp = 4; // Address
+    string prev_on_ramp =5; // Address
+    string arm_proxy = 6; // Address
+}
+
+message GetSourceToDestTokenMappingResponse {
+    map<string,string> token_mappings = 1; // map[Address]Address
+}
+
+message GetTokensResponse {
+    OffRampTokens tokens = 1; // []Address
+}
+
+message OffRampTokens {
+    repeated string destination_tokens = 1; // []Address
+    repeated string source_tokens = 2; // []Address
+    map<string,string> destination_pool = 3; // map[Address]Address
+}
+
+

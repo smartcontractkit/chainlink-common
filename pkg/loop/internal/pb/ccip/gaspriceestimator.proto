@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "relayer.proto";
+import "models.proto";
+
+
+service GasPriceEstimatorExec {
+  rpc GetGasPrice(google.protobuf.Empty) returns (GetGasPriceResponse);
+  rpc DenoteInUSD(DenoteInUSDRequest) returns (DenoteInUSDResponse);
+  rpc Median(MedianRequest) returns (MedianResponse);
+  rpc EstimateMsgCostUSD(EstimateMsgCostUSDRequest) returns (EstimateMsgCostUSDResponse);
+}
+
+service GasPriceEstimatorCommit {
+    rpc GetGasPrice(google.protobuf.Empty) returns (GetGasPriceResponse);
+    rpc DenoteInUSD(DenoteInUSDRequest) returns (DenoteInUSDResponse);
+    rpc Median(MedianRequest) returns (MedianResponse);
+    rpc Deviates(DeviatesRequest) returns (DeviatesResponse);
+}
+  
+message GetGasPriceResponse {
+BigInt gas_price = 1;
+}
+
+message DenoteInUSDRequest {
+    BigInt p = 1;
+    BigInt wrapped_native_price = 2;
+}
+
+message DenoteInUSDResponse {
+    BigInt usd_price = 1;
+}
+
+message MedianRequest {
+    repeated BigInt prices = 1;
+}
+
+message MedianResponse {
+    BigInt median = 1;
+}
+
+message DeviatesRequest {
+    BigInt p1 = 1;
+    BigInt p2 = 2;
+}
+
+message DeviatesResponse {
+    bool deviates = 1;
+}
+
+message EstimateMsgCostUSDRequest {
+    BigInt p = 1;
+    BigInt wrapped_native_price = 2;
+    EVM2EVMOnRampCCIPSendRequestedWithMeta msg = 3;
+}
+
+message EstimateMsgCostUSDResponse {
+    BigInt usd_cost = 1;
+}
+
+message EVM2EVMOnRampCCIPSendRequestedWithMeta {
+    EVM2EVMMessage evm_to_evm_msg = 1;
+    google.protobuf.Timestamp block_timestamp = 2;
+    bool executed = 3;
+    bool finalized = 4;
+    uint64 log_index = 5;
+    string tx_hash = 6;
+}
+

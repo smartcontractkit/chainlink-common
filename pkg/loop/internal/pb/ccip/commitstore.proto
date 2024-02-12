@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "relayer.proto";
+import "models.proto";
+
+
+service CommitStoreReader {
+    rpc GetExpectedNextSequenceNumber(google.protobuf.Empty) returns (GetExpectedNextSequenceNumberResponse);
+    rpc GetLatestPriceEpochAndRound(google.protobuf.Empty) returns (GetLatestPriceEpochAndRoundResponse);
+    rpc GeteCommitReportMatchingSequenceNumber(GetCommitReportMatchingSequenceNumberRequest) returns (GetCommitReportMatchingSequenceNumberResponse);
+    rpc GetAcceptedCommitReportsGetTimestamp(GetAcceptedCommitReportsGetTimestampRequest) returns (GetAcceptedCommitReportsGetTimestampResponse);
+    rpc IsDown(google.protobuf.Empty) returns (IsDownResponse);
+    rpc IsBlessed(IsBlessedRequest) returns (IsBlessedResponse);
+    rpc ChangeConfig(CommitStoreChangeConfigRequest) returns (CommitStoreChangeConfigResponse);
+    rpc GetOffchainConfig(google.protobuf.Empty) returns (GetOffchainConfigResponse);
+    rpc GetCommitGasPriceEstimator(google.protobuf.Empty) returns (GetCommitGasPriceEstimatorResponse);
+    rpc EncodeCommitReport(EncodeCommitReportRequest) returns (EncodeCommitReportResponse);
+    rpc DecodeCommitReport(DecodeCommitReportRequest) returns (DecodeCommitReportResponse);
+    rpc VerifyExecutionReport(VerifyExecutionReportRequest) returns (VerifyExecutionReportResponse);
+    rpc GetCommitStoreStaticConfig(google.protobuf.Empty) returns (GetCommitStoreStaticConfigResponse);
+}
+
+message GetExpectedNextSequenceNumberResponse {
+    uint64 sequence_number = 1;
+}
+
+message GetLatestPriceEpochAndRoundResponse {
+    uint64 epoch_and_round = 1;
+}
+
+message GetCommitReportMatchingSequenceNumberRequest {
+    uint64 sequence_number = 1;
+    uint64 confirmations = 2;
+}
+
+message GetCommitReportMatchingSequenceNumberResponse {
+    repeated CommitStoreReportWithBlockMeta reports = 1;
+}
+
+message GetAcceptedCommitReportsGetTimestampRequest {
+    google.protobuf.Timestamp  timestamp = 1;
+    uint64 confirmations = 2;
+}
+
+message GetAcceptedCommitReportsGetTimestampResponse {
+    repeated CommitStoreReportWithBlockMeta reports = 1;
+}
+
+message IsDownResponse {
+    bool is_down = 1;
+}
+
+message IsBlessedRequest {
+    bytes root = 1; // [32]byte
+}
+
+message IsBlessedResponse {
+    bool is_blessed = 1;
+}
+
+message CommitStoreChangeConfigRequest {
+    bytes onchain_config = 1;
+    bytes offchain_config = 2;
+}
+
+message CommitStoreChangeConfigResponse {
+    string address = 1; // Address
+}
+
+message GetOffchainConfigResponse {
+   CommitOffchainConfig offchain_config = 1;
+}
+
+message GetCommitGasPriceEstimatorResponse {
+    uint32 gas_price_estimator_id = 1; // connection id for proxying
+}
+
+message EncodeCommitReportRequest {
+    CommitStoreReport report = 1;
+}
+
+message EncodeCommitReportResponse {
+    bytes encoded_report = 1;
+}
+
+message DecodeCommitReportRequest {
+    bytes encoded_report = 1;
+}
+
+
+message DecodeCommitReportResponse {
+    CommitStoreReport report = 1;
+}
+
+message VerifyExecutionReportRequest {
+    ExecutionReport report = 1;
+    bytes encoded_report = 2;
+}
+
+message VerifyExecutionReportResponse {
+    bool is_valid = 1;
+}
+
+message GetCommitStoreStaticConfigResponse {
+    CommitStoreStaticConfig static_config = 1;
+}
+
+message CommitOffchainConfig {
+    uint32 gas_price_deviation_ppb = 1;
+    google.protobuf.Duration gas_price_hearbeat = 2;
+    uint32 token_price_deviation_ppb = 3;
+    google.protobuf.Duration token_price_hearbeat = 4;
+    google.protobuf.Duration inflight_cache_expiry = 5;
+}
+
+message CommitStoreReportWithBlockMeta {
+    CommitStoreReport report = 1;
+    BlockMeta block_meta = 2;
+}
+
+message CommitStoreReport {
+    repeated TokenPrice token_prices = 1;
+    repeated GasPrice gas_prices = 2;
+    CommitStoreInterval interval = 3;
+    bytes merkle_root = 4;
+}
+
+message TokenPrice {
+    string token = 1; // Address
+    BigInt value = 2;
+}
+
+message GasPrice {
+    uint64 dest_chain_selector = 1;
+    BigInt value = 2;
+}
+
+message CommitStoreInterval {
+    uint64 min = 1;
+    uint64 max = 2;
+}
+
+message CommitStoreStaticConfig {
+    uint64 chain_selector = 1;
+    uint64 source_chain_selector = 2;
+    string on_ramp = 3; // Address
+    string arm_proxy = 4; // Address
+}

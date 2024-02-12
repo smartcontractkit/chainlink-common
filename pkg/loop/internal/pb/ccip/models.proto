@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "relayer.proto";
+
+message BlockMeta {
+    uint64 block_timestamp = 1;
+    uint64 block_height = 2;
+    string tx_hash = 3;
+    uint64 log_index = 4;
+}
+
+message EVM2EVMMessage {
+    uint64 sequence_number = 1;
+    BigInt gas_limit = 2;
+    uint64 gas_price = 3;
+    bytes message_id = 4; // Hash [32]byte
+    uint64 source_chain_selector = 5;
+    string sender = 6; // Address
+    string receiver = 7; // Address
+    bool strict = 8;
+    string fee_token = 9; // Address
+    BigInt fee_token_amount = 10;
+    bytes data = 11;
+    repeated TokenAmount token_amounts = 12;
+    repeated bytes source_token_data = 13;
+    bytes hash = 14; // Hash [32]byte, computed from the message
+}
+
+message TokenAmount {
+    string token = 1; // Address
+    BigInt amount = 2;
+}
+
+message ExecutionReport {
+    repeated EVM2EVMMessage evm_to_evm_messages = 1;
+    repeated TokenData offchain_token_data = 2; // [][][]byte todo: what is the meaning of the triple nesting? ie, what is better naming?
+    repeated bytes proofs = 3; // [][32]byte
+    BigInt proof_flag_bits = 4;
+}
+
+message TokenData {
+    repeated bytes data= 1;
+}

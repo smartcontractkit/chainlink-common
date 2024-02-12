@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "google/protobuf/empty.proto";
+import "models.proto";
+
+
+service OnRampReader {
+    rpc GetSendRequestBetweenSeqNums(GetSendRequestBetweenSeqNumsRequest) returns (GetSendRequestBetweenSeqNumsResponse) {}
+    rpc RouterAddress(google.protobuf.Empty) returns (RouterAddressResponse) {}
+    rpc Address(google.protobuf.Empty) returns (AddressResponse) {}
+    rpc GetDynamicConfig(google.protobuf.Empty) returns (GetDynamicConfigResponse) {}
+}
+
+message GetSendRequestBetweenSeqNumsRequest {
+    uint64 seq_num_min = 1;
+    uint64 seq_num_max = 2;
+    bool finalized = 3;
+}
+
+message GetSendRequestBetweenSeqNumsResponse {
+    repeated SendRequest send_requests = 1;
+}
+
+message SendRequest {
+    oneof request {
+        EVM2EVMMessageWithBlockMeta evm2_evm_message_with_block_meta = 1;    
+}
+}
+
+message RouterAddressResponse {
+    string router_address = 1;
+}
+
+message AddressResponse {
+    string address = 1;
+}
+
+message GetDynamicConfigResponse {
+    OnRampDynamicConfig dynamic_config = 1;
+}
+
+message OnRampDynamicConfig {
+    string router = 1; // Address
+    uint32 max_number_of_token_per_msg = 2;
+    uint32 dest_gas_overhead = 3;
+    uint32 dest_gas_per_byte = 4;
+    uint32 dest_data_availability_overhead_gas = 5;
+    uint32 dest_data_availability_gas_per_byte = 6;
+    uint32 dest_data_availability_multiplier_bps = 7;
+    string price_registry = 8; // Address
+    uint32 max_data_bytes = 9;
+    uint32 max_per_msg_gas_limite = 10;
+}
+
+
+
+message EVM2EVMMessageWithBlockMeta {
+    EVM2EVMMessage message = 1;
+    BlockMeta block_meta = 2;
+}

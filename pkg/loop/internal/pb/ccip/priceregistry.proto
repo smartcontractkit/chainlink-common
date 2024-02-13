@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "relayer.proto";
+import "models.proto";
+
+service PriceRegistryReader {
+    rpc GetTokenPriceUpdatesCreatedAfter(GetTokenPriceUpdatesCreatedAfterRequest) returns (GetTokenPriceUpdatesCreatedAfterResponse) {}
+    rpc GetGasPriceUpdatesCreatedAfter(GetGasPriceUpdatesCreatedAfterRequest) returns (GetGasPriceUpdatesCreatedAfterResponse) {}
+    rpc GetAddress (google.protobuf.Empty) returns (GetPriceRegistryAddressResponse) {}
+    rpc GetFeeTokens (google.protobuf.Empty) returns (GetFeeTokensResponse) {}
+    rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse) {}
+    rpc GetTokensDecimals(GetTokensDecimalsRequest) returns (GetTokensDecimalsResponse) {}
+    rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+message GetTokenPriceUpdatesCreatedAfterRequest {
+    google.protobuf.Timestamp created_after = 1;
+    uint64 confirmations = 2;
+}
+
+message GetTokenPriceUpdatesCreatedAfterResponse {
+    repeated TokenPriceUpdateWithBlockMeta token_price_updates = 1;
+}
+
+message GetGasPriceUpdatesCreatedAfterRequest {
+    uint64 chain_selector = 1;
+    google.protobuf.Timestamp created_after = 2;
+    uint64 confirmations = 3;
+}
+
+message GetGasPriceUpdatesCreatedAfterResponse {
+    repeated GasPriceUpdateWithBlockMeta gas_price_updates = 1;
+}
+
+message GetPriceRegistryAddressResponse {
+    string address = 1;
+}
+
+message GetFeeTokensResponse {
+    repeated string fee_token_addresses = 1; //[]Address
+}
+
+message GetTokenPricesRequest {
+    repeated string token_addresses = 1; //[]Address
+}
+
+message GetTokenPricesResponse {
+    repeated TokenPriceUpdate token_prices = 1;
+}
+
+message GetTokensDecimalsRequest {
+    repeated string token_addresses = 1; //[]Address
+}
+
+message GetTokensDecimalsResponse {
+    repeated uint32 decimals = 1; //uint8
+}
+
+
+
+message GasPriceUpdateWithBlockMeta {
+    GasPriceUpdate gas_price_update = 1;
+    BlockMeta block_meta = 2;
+}
+
+message GasPriceUpdate {
+    GasPrice price = 1;
+    BigInt unix_timestamp = 2;
+}
+
+message TokenPriceUpdateWithBlockMeta {
+    TokenPriceUpdate token_price_update = 1;
+    BlockMeta block_meta = 2;
+}
+
+message TokenPriceUpdate {
+    TokenPrice price = 1;
+    BigInt unix_timestamp = 2;
+}

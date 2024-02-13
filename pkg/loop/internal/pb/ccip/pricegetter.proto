@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "relayer.proto";
+
+
+
+service PriceGetter {
+    rpc TokenPricesUSD(TokenPricesRequest) returns (TokenPricesResponse) {}
+}
+
+message TokenPricesRequest {
+    repeated string tokens = 1; // []Address
+}
+
+message TokenPricesResponse {
+    map<string, BigInt> prices = 1; // map[Address]price
+}

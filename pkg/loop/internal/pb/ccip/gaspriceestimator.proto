@@ -6,7 +6,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 // note: the generate.go file in this dir specifies the import path of the relative proto files
 package loop.internal.pb.ccip; // related to above, seems to need to have loop package
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 import "relayer.proto";
 import "models.proto";
 
@@ -65,12 +64,4 @@ message EstimateMsgCostUSDResponse {
     BigInt usd_cost = 1;
 }
 
-message EVM2EVMOnRampCCIPSendRequestedWithMeta {
-    EVM2EVMMessage evm_to_evm_msg = 1;
-    google.protobuf.Timestamp block_timestamp = 2;
-    bool executed = 3;
-    bool finalized = 4;
-    uint64 log_index = 5;
-    string tx_hash = 6;
-}
 

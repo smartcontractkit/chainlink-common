@@ -8,7 +8,6 @@ package loop.internal.pb.ccip; // related to above, seems to need to have loop p
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "relayer.proto";
 import "models.proto";
 
 
@@ -133,15 +132,6 @@ message CommitStoreReport {
     bytes merkle_root = 4;
 }
 
-message TokenPrice {
-    string token = 1; // Address
-    BigInt value = 2;
-}
-
-message GasPrice {
-    uint64 dest_chain_selector = 1;
-    BigInt value = 2;
-}
 
 message CommitStoreInterval {
     uint64 min = 1;

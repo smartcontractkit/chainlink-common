@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+import "models.proto";
+
+
+service TokenDataReader {
+    rpc ReadTokenData(TokenDataRequest) returns (TokenDataResponse) {}
+}
+
+message TokenDataRequest {
+    EVM2EVMOnRampCCIPSendRequestedWithMeta  msg = 1;
+    uint64 token_index = 2;
+}
+
+message TokenDataResponse {
+    bytes token_data = 1;
+}

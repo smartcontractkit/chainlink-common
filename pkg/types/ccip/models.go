@@ -1,4 +1,4 @@
-package cciptypes
+package ccip
 
 import (
 	"encoding/hex"

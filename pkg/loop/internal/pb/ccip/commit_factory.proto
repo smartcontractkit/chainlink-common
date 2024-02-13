@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
+
+
+// note: the generate.go file in this dir specifies the import path of the relative proto files
+package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+
+// CommitFactoryGenerator is a gRPC service that generates a commit factory
+// It is a gRPC service adapter for the https://github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipcommit/NewCommitReportingPluginFactory
+service CommitFactoryGenerator {
+    rpc NewCommitFactory(NewCommitFactoryRequest) returns (NewCommitFactoryResponse);
+}
+
+// NewCommitFactoryRequest is a gRPC adapter to the factory configuration [https://github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipcommit/CommitPluginStaticConfig]
+message NewCommitFactoryRequest {
+    // Source
+    int32 onramp_reader_service_id = 1;
+    uint64 source_chain_selector = 2;
+    string source_native = 3; // Address
+    // Dest
+    int32 offramp_reader_service_id = 4;
+    int32 commit_store_service_id = 5;
+    uint64 dest_chain_selector = 6;
+    int32 price_registiry_service_id = 7;
+    // Offchain
+    int32 price_getter_service_id = 8;
+    // TODO: there is a metrics collector defined in the corresponding config. what to do with it?
+}
+
+// NewCommitFactoryResponse is a contains the id of the created commit factory
+message NewCommitFactoryResponse {
+    int32 commit_factory_service_id = 1;
+}

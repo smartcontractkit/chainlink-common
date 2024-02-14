@@ -59,6 +59,7 @@ func (o *factoryService) NewReportingPlugin(ocr3types.ReportingPluginConfig) (oc
 }
 
 func (o *factoryService) Start(ctx context.Context) error {
+<<<<<<< HEAD
 	return o.StartOnce("plugin factory service", func() error {
 		return o.capability.Start(ctx)
 	})
@@ -68,6 +69,13 @@ func (o *factoryService) Close() error {
 	return o.StopOnce("plugin factory service", func() error {
 		return o.capability.Close()
 	})
+=======
+	return o.StartOnce("plugin factory service", func() error { return nil })
+}
+
+func (o *factoryService) Close() error {
+	return o.StopOnce("plugin factory service", func() error { return nil })
+>>>>>>> f782660 (Implement mocked OCR3 consensus capability)
 }
 
 func (o *factoryService) Name() string { return "ocr3PluginFactoryService" }

@@ -15,5 +15,24 @@ message AggregationOutcome {
 
 message Query {
   // the requests to get consensus on.
-  repeated string requestIds = 1;
+  repeated Id ids = 1;
+}
+
+message Id {
+  string workflowExecutionId = 1;
+  string workflowId = 2;
+}
+
+message Observation {
+  Id id = 1;
+  values.Value observation = 3;
+}
+
+message Observations {
+  repeated Observation observations = 1;
+}
+
+message Outcome {
+  map<string, AggregationOutcome> outcomes = 1;
+  repeated Id reports_to_generate = 2;
 }

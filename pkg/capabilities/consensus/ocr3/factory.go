@@ -7,12 +7,14 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type config struct {
 	RequestTimeout *time.Duration
 	BatchSize      int
+	Logger         logger.Logger
 
 	clock clockwork.Clock
 }
@@ -21,6 +23,7 @@ type factoryService struct {
 	store *store
 	*capability
 	batchSize int
+	lggr      logger.Logger
 
 	services.StateMachine
 }
@@ -45,21 +48,22 @@ func newFactoryService(config *config) (*factoryService, error) {
 	}
 
 	s := newStore(*config.RequestTimeout, config.clock)
-	cp := newCapability(s, config.clock)
+	cp := newCapability(s, config.clock, config.Logger)
 	return &factoryService{
 		capability: cp,
 		store:      s,
 		batchSize:  config.BatchSize,
+		lggr:       config.Logger,
 	}, nil
 }
 
-func (o *factoryService) NewReportingPlugin(ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
-	//return newReportingPlugin(o.store, o.capability, o.batchSize), ocr3types.ReportingPluginInfo{Name: "OCR3 Capability Plugin"}, nil
-	return nil, ocr3types.ReportingPluginInfo{}, nil
+func (o *factoryService) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+	rp, err := newReportingPlugin(o.store, o.capability, o.batchSize, config, o.lggr)
+	info := ocr3types.ReportingPluginInfo{Name: "OCR3 Capability Plugin"}
+	return rp, info, err
 }
 
 func (o *factoryService) Start(ctx context.Context) error {
-<<<<<<< HEAD
 	return o.StartOnce("plugin factory service", func() error {
 		return o.capability.Start(ctx)
 	})
@@ -69,13 +73,6 @@ func (o *factoryService) Close() error {
 	return o.StopOnce("plugin factory service", func() error {
 		return o.capability.Close()
 	})
-=======
-	return o.StartOnce("plugin factory service", func() error { return nil })
-}
-
-func (o *factoryService) Close() error {
-	return o.StopOnce("plugin factory service", func() error { return nil })
->>>>>>> f782660 (Implement mocked OCR3 consensus capability)
 }
 
 func (o *factoryService) Name() string { return "ocr3PluginFactoryService" }

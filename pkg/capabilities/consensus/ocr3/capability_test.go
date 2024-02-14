@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -21,24 +22,15 @@ const workflowExecutionTestID = "consensus-workflow-execution-test-id-1"
 func TestOCR3Capability(t *testing.T) {
 	n := time.Now()
 	fc := clockwork.NewFakeClockAt(n)
+	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
 	s := newStore(1*time.Second, fc)
-	cp := newCapability(s, fc)
+	cp := newCapability(s, fc, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	callback := make(chan capabilities.CapabilityResponse, 10)
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
-	require.NoError(t, err)
-
-	registerReq := capabilities.RegisterToWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID: workflowTestID,
-		},
-		Config: config,
-	}
-
-	err = cp.RegisterToWorkflow(ctx, registerReq)
 	require.NoError(t, err)
 
 	ethUsdValue, err := decimal.NewFromString("1.123456")
@@ -64,9 +56,9 @@ func TestOCR3Capability(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response
-	err = cp.response(ctx, response{
-		Value:     obsv,
-		RequestID: workflowExecutionTestID,
+	err = cp.transmitResponse(ctx, response{
+		Value:               obsv,
+		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
 
@@ -80,11 +72,12 @@ func TestOCR3Capability(t *testing.T) {
 func TestOCR3Capability_Eviction(t *testing.T) {
 	n := time.Now()
 	fc := clockwork.NewFakeClockAt(n)
+	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
 	rea := time.Second
 	s := newStore(rea, fc)
-	cp := newCapability(s, fc)
+	cp := newCapability(s, fc, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
@@ -114,4 +107,44 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 
 	_, err = s.get(ctx, rid)
 	assert.ErrorContains(t, err, "not found")
+}
+
+func TestOCR3Capability_Registration(t *testing.T) {
+	n := time.Now()
+	fc := clockwork.NewFakeClockAt(n)
+	lggr := logger.Test(t)
+
+	ctx := tests.Context(t)
+	s := newStore(1*time.Second, fc)
+	cp := newCapability(s, fc, lggr)
+	require.NoError(t, cp.Start(ctx))
+
+	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
+	require.NoError(t, err)
+
+	registerReq := capabilities.RegisterToWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID: workflowTestID,
+		},
+		Config: config,
+	}
+
+	err = cp.RegisterToWorkflow(ctx, registerReq)
+	require.NoError(t, err)
+
+	agg, err := cp.getAggregator(workflowTestID)
+	require.NoError(t, err)
+	assert.NotNil(t, agg)
+
+	unregisterReq := capabilities.UnregisterFromWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID: workflowTestID,
+		},
+	}
+
+	err = cp.UnregisterFromWorkflow(ctx, unregisterReq)
+	require.NoError(t, err)
+
+	_, err = cp.getAggregator(workflowTestID)
+	assert.ErrorContains(t, err, "no aggregator found for")
 }

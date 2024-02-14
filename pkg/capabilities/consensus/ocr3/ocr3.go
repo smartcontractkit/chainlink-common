@@ -17,6 +17,7 @@ func NewOCR3(lggr logger.Logger) *OCR3Capability {
 
 func (o *OCR3Capability) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.OCR3ReportingPluginFactory, error) {
 	factory, err := newFactoryService(nil)
+	conf := &config{Logger: o.lggr}
 	// TODO capabilityRegistry.Add(factory.capability)
 	return factory, err
 }

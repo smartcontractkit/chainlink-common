@@ -9,7 +9,7 @@ type Address string
 type Hash [32]byte
 
 func (h Hash) String() string {
-	return hex.EncodeToString(h[:])
+	return "0x" + hex.EncodeToString(h[:])
 }
 
 type TxMeta struct {

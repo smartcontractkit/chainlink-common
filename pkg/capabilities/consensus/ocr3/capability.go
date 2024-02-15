@@ -3,6 +3,7 @@ package consensus
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/jonboulle/clockwork"
 	"github.com/mitchellh/mapstructure"
@@ -22,7 +23,8 @@ type capability struct {
 	services.StateMachine
 	capabilities.CapabilityInfo
 	store  *store
-	cancel func()
+	stopCh services.StopChan
+	wg     sync.WaitGroup
 
 	clock clockwork.Clock
 
@@ -35,22 +37,23 @@ func newCapability(s *store, clock clockwork.Clock) *capability {
 		store:             s,
 		newExpiryWorkerCh: make(chan *request),
 		clock:             clock,
+		stopCh:            make(chan struct{}),
 	}
 	return o
 }
 
 func (o *capability) Start(ctx context.Context) error {
 	return o.StartOnce("OCR3Capability", func() error {
-		innerCtx, c := context.WithCancel(ctx)
-		o.cancel = c
-		go o.loop(innerCtx)
+		o.wg.Add(1)
+		go o.loop()
 		return nil
 	})
 }
 
-func (o *capability) Stop(ctx context.Context) error {
+func (o *capability) Close() error {
 	return o.StopOnce("OCR3Capability", func() error {
-		o.cancel()
+		close(o.stopCh)
+		o.wg.Wait()
 		return nil
 	})
 }
@@ -81,18 +84,25 @@ func (o *capability) Execute(ctx context.Context, callback chan<- capabilities.C
 	return nil
 }
 
-func (o *capability) loop(ctx context.Context) {
+func (o *capability) loop() {
+	ctx, cancel := o.stopCh.NewCtx()
+	defer cancel()
+	defer o.wg.Done()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case r := <-o.newExpiryWorkerCh:
+			o.wg.Add(1)
 			go o.expiryWorker(ctx, r)
 		}
 	}
 }
 
 func (o *capability) expiryWorker(ctx context.Context, r *request) {
+	defer o.wg.Done()
+
 	d := r.ExpiresAt.Sub(o.clock.Now())
 	tr := o.clock.NewTimer(d)
 	defer tr.Stop()

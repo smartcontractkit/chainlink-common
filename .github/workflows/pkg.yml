@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: failing-fuzz-inputs
-          pattern: "**/testdata/fuzz/**"
+          path: '**/testdata/fuzz/**'
       
       - name: Upload Go test results
         if: always()

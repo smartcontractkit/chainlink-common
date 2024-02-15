@@ -70,7 +70,6 @@ func (cr *capabilitiesRegistryClient) GetAction(ctx context.Context, ID string) 
 	}
 	client := NewActionCapabilityClient(cr.BrokerExt, conn)
 	return client, nil
-
 }
 
 func (cr *capabilitiesRegistryClient) GetConsensus(ctx context.Context, ID string) (capabilities.ConsensusCapability, error) {
@@ -251,7 +250,6 @@ func (c *capabilitiesRegistryServer) GetAction(ctx context.Context, request *pb.
 	return &pb.GetActionReply{
 		CapabilityID: id,
 	}, nil
-
 }
 
 func (c *capabilitiesRegistryServer) GetConsensus(ctx context.Context, request *pb.GetConsensusRequest) (*pb.GetConsensusReply, error) {
@@ -397,43 +395,35 @@ func validateCapability(impl capabilities.BaseCapability, t capabilities.Capabil
 	return nil
 }
 
-func pbRegisterCapability(s *grpc.Server, b *BrokerExt, impl capabilities.BaseCapability, t capabilities.CapabilityType) error {
+// pbRegisterCapability registers the server with the correct capability based on capability type, this method assumes
+// that the capability has already been validated with validateCapability
+func pbRegisterCapability(s *grpc.Server, b *BrokerExt, impl capabilities.BaseCapability, t capabilities.CapabilityType) {
 	switch t {
 	case capabilities.CapabilityTypeTrigger:
-		i, ok := impl.(capabilities.TriggerCapability)
-		if !ok {
-			return fmt.Errorf("expected TriggerCapability but got %T", impl)
-		}
+		i, _ := impl.(capabilities.TriggerCapability)
 		pb.RegisterTriggerExecutableServer(s, &triggerExecutableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},
 		})
 	case capabilities.CapabilityTypeAction:
-		i, ok := impl.(capabilities.ActionCapability)
-		if !ok {
-			return fmt.Errorf("expected ActionCapability but got %T", impl)
-		}
+		i, _ := impl.(capabilities.ActionCapability)
+
 		pb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},
 		})
 	case capabilities.CapabilityTypeConsensus:
-		i, ok := impl.(capabilities.ConsensusCapability)
-		if !ok {
-			return fmt.Errorf("expected ConsensusCapability but got %T", impl)
-		}
+		i, _ := impl.(capabilities.ConsensusCapability)
+
 		pb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},
 		})
 	case capabilities.CapabilityTypeTarget:
-		i, ok := impl.(capabilities.TargetCapability)
-		if !ok {
-			return fmt.Errorf("expected TargetCapability but got %T", impl)
-		}
+		i, _ := impl.(capabilities.TargetCapability)
 		pb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
 			BrokerExt:   b,
 			impl:        i,
@@ -441,7 +431,6 @@ func pbRegisterCapability(s *grpc.Server, b *BrokerExt, impl capabilities.BaseCa
 		})
 	}
 	pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(impl))
-	return nil
 }
 
 func getExecuteAPIType(c capabilities.CapabilityType) int32 {

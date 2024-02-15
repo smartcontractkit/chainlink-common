@@ -67,7 +67,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(errorLogRes)
 
 		capRegistryID, capRegistryRes, err := o.ServeNew("CapRegistry", func(s *grpc.Server) {
-			pb.RegisterCapabilitiesRegistryServer(s, internal.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry)) // TODO: figure out broker
+			pb.RegisterCapabilitiesRegistryServer(s, internal.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry))
 		})
 		if err != nil {
 			return 0, nil, err
@@ -136,7 +136,6 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 	telemetryRes := internal.Resource{Closer: telemetryConn, Name: "Telemetry"}
 	telemetry := internal.NewTelemetryServiceClient(telemetryConn)
 
-	////
 	capRegistryConn, err := m.Dial(request.CapRegistryID)
 	if err != nil {
 		m.CloseAll(errorLogRes, providerRes, pipelineRunnerRes, telemetryRes)
@@ -144,7 +143,6 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 	}
 	capRegistryRes := internal.Resource{Closer: capRegistryConn, Name: "CapabilitiesRegistry"}
 	capRegistry := internal.NewCapabilitiesRegistryClient(capRegistryConn, m.BrokerExt)
-	///
 
 	config := types.ReportingPluginServiceConfig{
 		ProviderType:  request.ReportingPluginServiceConfig.ProviderType,

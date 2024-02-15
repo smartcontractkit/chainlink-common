@@ -16,11 +16,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-type fakeRegistry struct {
+type mockRegistry struct {
 	caps map[string]map[string]capabilities.BaseCapability
 }
 
-func (r *fakeRegistry) GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error) {
+func (r *mockRegistry) GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error) {
 	c, ok := r.caps["trigger"][ID]
 	if ok {
 		return c.(capabilities.TriggerCapability), nil
@@ -29,7 +29,7 @@ func (r *fakeRegistry) GetTrigger(ctx context.Context, ID string) (capabilities.
 	return nil, errors.New("capability not found")
 }
 
-func (r *fakeRegistry) GetAction(ctx context.Context, ID string) (capabilities.ActionCapability, error) {
+func (r *mockRegistry) GetAction(ctx context.Context, ID string) (capabilities.ActionCapability, error) {
 	c, ok := r.caps["action"][ID]
 	if ok {
 		return c.(capabilities.ActionCapability), nil
@@ -38,7 +38,7 @@ func (r *fakeRegistry) GetAction(ctx context.Context, ID string) (capabilities.A
 	return nil, errors.New("capability not found")
 }
 
-func (r *fakeRegistry) GetConsensus(ctx context.Context, ID string) (capabilities.ConsensusCapability, error) {
+func (r *mockRegistry) GetConsensus(ctx context.Context, ID string) (capabilities.ConsensusCapability, error) {
 	c, ok := r.caps["consensus"][ID]
 	if ok {
 		return c.(capabilities.ConsensusCapability), nil
@@ -47,7 +47,7 @@ func (r *fakeRegistry) GetConsensus(ctx context.Context, ID string) (capabilitie
 	return nil, errors.New("capability not found")
 }
 
-func (r *fakeRegistry) GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error) {
+func (r *mockRegistry) GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error) {
 	c, ok := r.caps["target"][ID]
 	if ok {
 		return c.(capabilities.TargetCapability), nil
@@ -56,7 +56,7 @@ func (r *fakeRegistry) GetTarget(ctx context.Context, ID string) (capabilities.T
 	return nil, errors.New("capability not found")
 }
 
-func (r *fakeRegistry) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
+func (r *mockRegistry) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
 	var caps []capabilities.BaseCapability
 
 	for _, capType := range r.caps {
@@ -68,7 +68,7 @@ func (r *fakeRegistry) List(ctx context.Context) ([]capabilities.BaseCapability,
 	return caps, nil
 }
 
-func (r *fakeRegistry) Add(ctx context.Context, c capabilities.BaseCapability) error {
+func (r *mockRegistry) Add(ctx context.Context, c capabilities.BaseCapability) error {
 	info, err := c.Info(ctx)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (r *fakeRegistry) Add(ctx context.Context, c capabilities.BaseCapability) e
 	return nil
 }
 
-func (r *fakeRegistry) Get(ctx context.Context, id string) (capabilities.BaseCapability, error) {
+func (r *mockRegistry) Get(ctx context.Context, id string) (capabilities.BaseCapability, error) {
 	for _, caps := range r.caps {
 		c, ok := caps[id]
 		if ok {
@@ -96,53 +96,53 @@ func (r *fakeRegistry) Get(ctx context.Context, id string) (capabilities.BaseCap
 	return nil, errors.New("capability not found")
 }
 
-var _ capabilities.BaseCapability = (*fakeBaseCapability)(nil)
+var _ capabilities.BaseCapability = (*mockBaseCapability)(nil)
 
-type fakeBaseCapability struct {
+type mockBaseCapability struct {
 	info capabilities.CapabilityInfo
 }
 
-func (f *fakeBaseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+func (f *mockBaseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	return f.info, nil
 }
 
-var _ capabilities.TriggerExecutable = (*fakeTriggerExecutable)(nil)
+var _ capabilities.TriggerExecutable = (*mockTriggerExecutable)(nil)
 
-type fakeTriggerExecutable struct {
+type mockTriggerExecutable struct {
 	callback chan<- capabilities.CapabilityResponse
 }
 
-func (f *fakeTriggerExecutable) XXXTestingPushToCallbackChan(cr capabilities.CapabilityResponse) {
+func (f *mockTriggerExecutable) XXXTestingPushToCallbackChan(cr capabilities.CapabilityResponse) {
 	f.callback <- cr
 }
 
-func (f *fakeTriggerExecutable) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, request capabilities.CapabilityRequest) error {
+func (f *mockTriggerExecutable) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, request capabilities.CapabilityRequest) error {
 	f.callback = callback
 	return nil
 }
 
-func (f *fakeTriggerExecutable) UnregisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) error {
+func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) error {
 	f.callback = nil
 	return nil
 }
 
-var _ capabilities.CallbackExecutable = (*fakeCallbackExecutable)(nil)
+var _ capabilities.CallbackExecutable = (*mockCallbackExecutable)(nil)
 
-type fakeCallbackExecutable struct {
+type mockCallbackExecutable struct {
 	registeredWorkflowRequest *capabilities.RegisterToWorkflowRequest
 }
 
-func (f *fakeCallbackExecutable) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (f *mockCallbackExecutable) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	f.registeredWorkflowRequest = &request
 	return nil
 }
 
-func (f *fakeCallbackExecutable) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (f *mockCallbackExecutable) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	f.registeredWorkflowRequest = nil
 	return nil
 }
 
-func (f *fakeCallbackExecutable) Execute(ctx context.Context, callback chan<- capabilities.CapabilityResponse, request capabilities.CapabilityRequest) error {
+func (f *mockCallbackExecutable) Execute(ctx context.Context, callback chan<- capabilities.CapabilityResponse, request capabilities.CapabilityRequest) error {
 	callback <- capabilities.CapabilityResponse{
 		Value: nil,
 		Err:   errors.New("some-error"),
@@ -150,43 +150,41 @@ func (f *fakeCallbackExecutable) Execute(ctx context.Context, callback chan<- ca
 	return nil
 }
 
-var _ capabilities.TriggerCapability = (*fakeTriggerCapability)(nil)
+var _ capabilities.TriggerCapability = (*mockTriggerCapability)(nil)
 
-type fakeTriggerCapability struct {
-	*fakeBaseCapability
-	*fakeTriggerExecutable
+type mockTriggerCapability struct {
+	*mockBaseCapability
+	*mockTriggerExecutable
 }
 
-var _ capabilities.ActionCapability = (*fakeActionCapability)(nil)
-
-type fakeActionCapability struct {
-	*fakeBaseCapability
-	*fakeCallbackExecutable
+type mockActionCapability struct {
+	*mockBaseCapability
+	*mockCallbackExecutable
 }
 
-type fakeConsensusCapability struct {
-	*fakeBaseCapability
-	*fakeCallbackExecutable
+type mockConsensusCapability struct {
+	*mockBaseCapability
+	*mockCallbackExecutable
 }
 
-type fakeTargetCapability struct {
-	*fakeBaseCapability
-	*fakeCallbackExecutable
+type mockTargetCapability struct {
+	*mockBaseCapability
+	*mockCallbackExecutable
 }
 
-type registryPlugin struct {
+type testRegistryPlugin struct {
 	plugin.NetRPCUnsupportedPlugin
 	brokerExt *BrokerExt
-	impl      *fakeRegistry
+	impl      *mockRegistry
 }
 
-func (r *registryPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
-	r.brokerExt.Broker = broker //TODO: fix this mess
+func (r *testRegistryPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
+	r.brokerExt.Broker = broker
 	return NewCapabilitiesRegistryClient(client, r.brokerExt), nil
 }
 
-func (r *registryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
-	r.brokerExt.Broker = broker //TODO: fix this mess
+func (r *testRegistryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
+	r.brokerExt.Broker = broker
 	pb.RegisterCapabilitiesRegistryServer(server, NewCapabilitiesRegistryServer(r.brokerExt, r.impl))
 	return nil
 }
@@ -194,7 +192,7 @@ func (r *registryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 func Test(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
-	reg := &fakeRegistry{
+	reg := &mockRegistry{
 		caps: map[string]map[string]capabilities.BaseCapability{
 			"trigger":   make(map[string]capabilities.BaseCapability),
 			"action":    make(map[string]capabilities.BaseCapability),
@@ -213,7 +211,7 @@ func Test(t *testing.T) {
 	client, server := plugin.TestPluginGRPCConn(
 		t,
 		map[string]plugin.Plugin{
-			pluginName: &registryPlugin{
+			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &BrokerExt{
 					BrokerConfig: BrokerConfig{
@@ -256,11 +254,11 @@ func Test(t *testing.T) {
 		Description:    "trigger-1-description",
 		Version:        "trigger-1-version",
 	}
-	fakeTrigger := fakeTriggerCapability{
-		fakeBaseCapability:    &fakeBaseCapability{info: triggerInfo},
-		fakeTriggerExecutable: &fakeTriggerExecutable{},
+	testTrigger := mockTriggerCapability{
+		mockBaseCapability:    &mockBaseCapability{info: triggerInfo},
+		mockTriggerExecutable: &mockTriggerExecutable{},
 	}
-	err = rc.Add(tests.Context(t), fakeTrigger)
+	err = rc.Add(tests.Context(t), testTrigger)
 	require.NoError(t, err)
 	triggerCap, err := rc.GetTrigger(tests.Context(t), "trigger-1")
 	require.NoError(t, err)
@@ -275,7 +273,7 @@ func Test(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fakeTrigger.XXXTestingPushToCallbackChan(capabilityResponse)
+	testTrigger.XXXTestingPushToCallbackChan(capabilityResponse)
 	require.Equal(t, capabilityResponse, <-callbackChan)
 
 	err = triggerCap.UnregisterTrigger(tests.Context(t), capabilities.CapabilityRequest{
@@ -283,7 +281,7 @@ func Test(t *testing.T) {
 		Config: &values.Map{},
 	})
 	require.NoError(t, err)
-	require.Nil(t, fakeTrigger.callback)
+	require.Nil(t, testTrigger.callback)
 
 	//Add capability Trigger
 	actionInfo := capabilities.CapabilityInfo{
@@ -292,11 +290,11 @@ func Test(t *testing.T) {
 		Description:    "action-1-description",
 		Version:        "action-1-version",
 	}
-	fakeAction := fakeActionCapability{
-		fakeBaseCapability:     &fakeBaseCapability{info: actionInfo},
-		fakeCallbackExecutable: &fakeCallbackExecutable{},
+	testAction := mockActionCapability{
+		mockBaseCapability:     &mockBaseCapability{info: actionInfo},
+		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	err = rc.Add(tests.Context(t), fakeAction)
+	err = rc.Add(tests.Context(t), testAction)
 	require.NoError(t, err)
 	actionCap, err := rc.GetAction(tests.Context(t), "action-1")
 	require.NoError(t, err)
@@ -311,12 +309,13 @@ func Test(t *testing.T) {
 	}
 	err = actionCap.RegisterToWorkflow(tests.Context(t), workflowRequest)
 	require.NoError(t, err)
-	require.Equal(t, workflowRequest.Metadata.WorkflowID, fakeAction.registeredWorkflowRequest.Metadata.WorkflowID)
-	actionCap.Execute(tests.Context(t), callbackChan, capabilities.CapabilityRequest{})
+	require.Equal(t, workflowRequest.Metadata.WorkflowID, testAction.registeredWorkflowRequest.Metadata.WorkflowID)
+	err = actionCap.Execute(tests.Context(t), callbackChan, capabilities.CapabilityRequest{})
+	require.NoError(t, err)
 	require.Equal(t, capabilityResponse, <-callbackChan)
 	err = actionCap.UnregisterFromWorkflow(tests.Context(t), capabilities.UnregisterFromWorkflowRequest{})
 	require.NoError(t, err)
-	require.Nil(t, fakeAction.registeredWorkflowRequest)
+	require.Nil(t, testAction.registeredWorkflowRequest)
 
 	//Add capability Consensus
 	consensusInfo := capabilities.CapabilityInfo{
@@ -325,11 +324,11 @@ func Test(t *testing.T) {
 		Description:    "consensus-1-description",
 		Version:        "consensus-1-version",
 	}
-	fakeConsensus := fakeConsensusCapability{
-		fakeBaseCapability:     &fakeBaseCapability{info: consensusInfo},
-		fakeCallbackExecutable: &fakeCallbackExecutable{},
+	testConsensus := mockConsensusCapability{
+		mockBaseCapability:     &mockBaseCapability{info: consensusInfo},
+		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	err = rc.Add(tests.Context(t), fakeConsensus)
+	err = rc.Add(tests.Context(t), testConsensus)
 	require.NoError(t, err)
 	consensusCap, err := rc.GetConsensus(tests.Context(t), "consensus-1")
 	require.NoError(t, err)
@@ -343,11 +342,11 @@ func Test(t *testing.T) {
 		Description:    "target-1-description",
 		Version:        "target-1-version",
 	}
-	fakeTarget := fakeTargetCapability{
-		fakeBaseCapability:     &fakeBaseCapability{info: targetInfo},
-		fakeCallbackExecutable: &fakeCallbackExecutable{},
+	testTarget := mockTargetCapability{
+		mockBaseCapability:     &mockBaseCapability{info: targetInfo},
+		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	err = rc.Add(tests.Context(t), fakeTarget)
+	err = rc.Add(tests.Context(t), testTarget)
 	require.NoError(t, err)
 	targetCap, err := rc.GetTarget(tests.Context(t), "target-1")
 	require.NoError(t, err)
@@ -357,7 +356,6 @@ func Test(t *testing.T) {
 	list, err = rc.List(tests.Context(t))
 	require.NoError(t, err)
 	require.Len(t, list, 4)
-
 }
 
 func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, cap capabilities.BaseCapability) {

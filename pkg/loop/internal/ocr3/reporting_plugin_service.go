@@ -143,7 +143,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, internal.ErrConnDial{Name: "CapabilitiesRegistry", ID: request.CapRegistryID, Err: err}
 	}
 	capRegistryRes := internal.Resource{Closer: capRegistryConn, Name: "CapabilitiesRegistry"}
-	capRegistry := internal.NewCapabilitiesRegistryClient(capRegistryConn)
+	capRegistry := internal.NewCapabilitiesRegistryClient(capRegistryConn, m.BrokerExt)
 	///
 
 	config := types.ReportingPluginServiceConfig{

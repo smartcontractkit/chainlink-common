@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -103,8 +104,8 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 			return err
 		}
 
-		// TODO: mercury codec
-		agg, err := datafeeds.NewDataFeedsAggregator(*cm, nil, o.lggr)
+		mc := mercury.NewCodec()
+		agg, err := datafeeds.NewDataFeedsAggregator(*cm, mc, o.lggr)
 		if err != nil {
 			return err
 		}

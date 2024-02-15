@@ -183,7 +183,11 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		}
 
 		if outcome.ShouldReport {
-			o.ReportsToGenerate = append(o.ReportsToGenerate, weid)
+			report := &pbtypes.Report{
+				Outcome: outcome,
+				Id:      weid,
+			}
+			o.ReportsToGenerate = append(o.ReportsToGenerate, report)
 		}
 
 		o.Outcomes[weid.WorkflowId] = outcome
@@ -202,14 +206,9 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 	reports := []ocr3types.ReportWithInfo[any]{}
 
 	// This doesn't handle a query which contains the same workflowId multiple times.
-	for _, id := range o.ReportsToGenerate {
-		o, ok := o.Outcomes[id.WorkflowId]
-		if !ok {
-			r.lggr.Error("could not retrieve outcome for workflow", id.WorkflowId)
-			continue
-		}
-
-		mv, err := values.FromMapValueProto(o.EncodableOutcome)
+	for _, report := range o.ReportsToGenerate {
+		outcome, id := report.Outcome, report.Id
+		mv, err := values.FromMapValueProto(outcome.EncodableOutcome)
 		if err != nil {
 			r.lggr.Error("could not convert outcome to value", id.WorkflowId)
 			continue

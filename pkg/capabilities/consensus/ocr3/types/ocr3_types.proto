@@ -32,7 +32,12 @@ message Observations {
   repeated Observation observations = 1;
 }
 
+message Report {
+  Id id = 1;
+  AggregationOutcome outcome = 2;
+}
+
 message Outcome {
   map<string, AggregationOutcome> outcomes = 1;
-  repeated Id reports_to_generate = 2;
+  repeated Report reports_to_generate = 2;
 }

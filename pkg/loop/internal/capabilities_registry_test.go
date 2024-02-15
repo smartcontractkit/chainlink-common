@@ -210,6 +210,7 @@ func Test(t *testing.T) {
 	pluginName := "registry-test"
 	client, server := plugin.TestPluginGRPCConn(
 		t,
+		true,
 		map[string]plugin.Plugin{
 			pluginName: &testRegistryPlugin{
 				impl: reg,

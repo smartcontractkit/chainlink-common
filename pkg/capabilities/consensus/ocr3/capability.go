@@ -36,12 +36,14 @@ type capability struct {
 	newExpiryWorkerCh chan *request
 
 	aggregators map[string]types.Aggregator
-	encoders    map[string]types.Encoder
+
+	encoderFactory EncoderFactory
+	encoders       map[string]types.Encoder
 }
 
 var _ capabilityIface = (*capability)(nil)
 
-func newCapability(s *store, clock clockwork.Clock, lggr logger.Logger) *capability {
+func newCapability(s *store, clock clockwork.Clock, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
 		store:             s,
@@ -49,6 +51,7 @@ func newCapability(s *store, clock clockwork.Clock, lggr logger.Logger) *capabil
 		clock:             clock,
 		stopCh:            make(chan struct{}),
 		lggr:              lggr,
+		encoderFactory:    encoderFactory,
 		aggregators:       map[string]types.Aggregator{},
 		encoders:          map[string]types.Encoder{},
 	}
@@ -108,8 +111,15 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 
 		o.aggregators[request.Metadata.WorkflowID] = agg
 
-		// TODO: instantiate encoder
-		var encoder types.Encoder
+		em, err := values.NewMap(c.EncoderConfig)
+		if err != nil {
+			return err
+		}
+
+		encoder, err := o.encoderFactory(em)
+		if err != nil {
+			return err
+		}
 		o.encoders[request.Metadata.WorkflowID] = encoder
 	default:
 		return fmt.Errorf("aggregator %s not supported", c.AggregationMethod)

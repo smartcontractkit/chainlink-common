@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
+var _ ocr3types.ReportingPlugin[any] = (*reportingPlugin)(nil)
 
 type capabilityIface interface {
 	transmitResponse(ctx context.Context, resp response) error
@@ -192,14 +192,14 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	return proto.Marshal(o)
 }
 
-func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[[]byte], error) {
+func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[any], error) {
 	o := &pbtypes.Outcome{}
 	err := proto.Unmarshal(outcome, o)
 	if err != nil {
 		return nil, err
 	}
 
-	reports := []ocr3types.ReportWithInfo[[]byte]{}
+	reports := []ocr3types.ReportWithInfo[any]{}
 
 	// This doesn't handle a query which contains the same workflowId multiple times.
 	for _, id := range o.ReportsToGenerate {
@@ -209,7 +209,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			continue
 		}
 
-		mv, err := values.FromMapValueProto(o.EncodableOutcome.GetMapValue())
+		mv, err := values.FromMapValueProto(o.EncodableOutcome)
 		if err != nil {
 			r.lggr.Error("could not convert outcome to value", id.WorkflowId)
 			continue
@@ -233,7 +233,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			continue
 		}
 
-		reports = append(reports, ocr3types.ReportWithInfo[[]byte]{
+		reports = append(reports, ocr3types.ReportWithInfo[any]{
 			Report: report,
 			Info:   p,
 		})
@@ -242,7 +242,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 	return reports, nil
 }
 
-func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[any]) (bool, error) {
 	b, err := values.NewBytes(rwi.Report)
 	if err != nil {
 		r.lggr.Error("could not convert report bytes into value", err)
@@ -250,7 +250,7 @@ func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr 
 	}
 
 	id := &pbtypes.Id{}
-	err = proto.Unmarshal(rwi.Info, id)
+	err = proto.Unmarshal(rwi.Info.([]byte), id)
 	if err != nil {
 		r.lggr.Error("could not unmarshal id")
 		return false, err
@@ -268,7 +268,7 @@ func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr 
 	return false, nil
 }
 
-func (r *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+func (r *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[any]) (bool, error) {
 	return false, nil
 }
 

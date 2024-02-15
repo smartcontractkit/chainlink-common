@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -19,6 +20,14 @@ import (
 const workflowTestID = "consensus-workflow-test-id-1"
 const workflowExecutionTestID = "consensus-workflow-execution-test-id-1"
 
+type encoder struct {
+	types.Encoder
+}
+
+func mockEncoderFactory(_ *values.Map) (types.Encoder, error) {
+	return &encoder{}, nil
+}
+
 func TestOCR3Capability(t *testing.T) {
 	n := time.Now()
 	fc := clockwork.NewFakeClockAt(n)
@@ -26,7 +35,7 @@ func TestOCR3Capability(t *testing.T) {
 
 	ctx := tests.Context(t)
 	s := newStore(1*time.Second, fc)
-	cp := newCapability(s, fc, lggr)
+	cp := newCapability(s, fc, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	callback := make(chan capabilities.CapabilityResponse, 10)
@@ -77,7 +86,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	ctx := tests.Context(t)
 	rea := time.Second
 	s := newStore(rea, fc)
-	cp := newCapability(s, fc, lggr)
+	cp := newCapability(s, fc, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
@@ -116,7 +125,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 
 	ctx := tests.Context(t)
 	s := newStore(1*time.Second, fc)
-	cp := newCapability(s, fc, lggr)
+	cp := newCapability(s, fc, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})

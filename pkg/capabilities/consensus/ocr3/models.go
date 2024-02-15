@@ -9,10 +9,8 @@ import (
 )
 
 type request struct {
-	Observations      values.Value `mapstructure:"-"`
-	AggregationMethod string
-	Encoder           string
-	ExpiresAt         time.Time
+	Observations values.Value `mapstructure:"-"`
+	ExpiresAt    time.Time
 
 	CallbackCh chan<- capabilities.CapabilityResponse
 	RequestCtx context.Context

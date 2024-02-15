@@ -59,11 +59,17 @@ func (o *factoryService) NewReportingPlugin(ocr3types.ReportingPluginConfig) (oc
 }
 
 func (o *factoryService) Start(ctx context.Context) error {
-	return o.StartOnce("plugin factory service", func() error { return nil })
+	return o.StartOnce("plugin factory service", func() error {
+		o.capability.Start(ctx)
+		return nil
+	})
 }
 
 func (o *factoryService) Close() error {
-	return o.StopOnce("plugin factory service", func() error { return nil })
+	return o.StopOnce("plugin factory service", func() error {
+		o.capability.Stop(context.Background())
+		return nil
+	})
 }
 
 func (o *factoryService) Name() string { return "ocr3PluginFactoryService" }

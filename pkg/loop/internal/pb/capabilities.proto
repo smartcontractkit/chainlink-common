@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "values/pb/values.proto";
+import "pkg/values/pb/values.proto";
 import "google/protobuf/empty.proto";
 
 service BaseCapability {

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: ocr3_reporting.proto
+// source: pkg/loop/internal/pb/ocr3/ocr3_reporting.proto
 
 package ocr3pb
 
@@ -107,7 +107,7 @@ var ReportingPluginFactory_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "ocr3_reporting.proto",
+	Metadata: "pkg/loop/internal/pb/ocr3/ocr3_reporting.proto",
 }
 
 const (
@@ -493,5 +493,5 @@ var ReportingPlugin_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "ocr3_reporting.proto",
+	Metadata: "pkg/loop/internal/pb/ocr3/ocr3_reporting.proto",
 }

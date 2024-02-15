@@ -4,8 +4,8 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "codec.proto";
 import "google/protobuf/empty.proto";
+import "pkg/loop/internal/pb/codec.proto";
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}

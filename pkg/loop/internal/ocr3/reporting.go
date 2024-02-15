@@ -8,6 +8,7 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	"go.starlark.net/lib/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -26,7 +27,7 @@ func newReportingPluginFactoryClient(b *internal.BrokerExt, cc grpc.ClientConnIn
 	return &reportingPluginFactoryClient{b.WithName("OCR3ReportingPluginProviderClient"), internal.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
 }
 
-func (r *reportingPluginFactoryClient) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[any], ocr3types.ReportingPluginInfo, error) {
+func (r *reportingPluginFactoryClient) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[proto.Message], ocr3types.ReportingPluginInfo, error) {
 	ctx, cancel := r.StopCtx()
 	defer cancel()
 
@@ -70,10 +71,10 @@ type reportingPluginFactoryServer struct {
 
 	*internal.BrokerExt
 
-	impl ocr3types.ReportingPluginFactory[any]
+	impl ocr3types.ReportingPluginFactory[proto.Message]
 }
 
-func newReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[any], b *internal.BrokerExt) *reportingPluginFactoryServer {
+func newReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[proto.Message], b *internal.BrokerExt) *reportingPluginFactoryServer {
 	return &reportingPluginFactoryServer{impl: impl, BrokerExt: b.WithName("OCR3ReportingPluginFactoryServer")}
 }
 
@@ -122,7 +123,7 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 	}, nil
 }
 
-var _ ocr3types.ReportingPlugin[any] = (*reportingPluginClient)(nil)
+var _ ocr3types.ReportingPlugin[proto.Message] = (*reportingPluginClient)(nil)
 
 type reportingPluginClient struct {
 	*internal.BrokerExt
@@ -182,7 +183,7 @@ func (o *reportingPluginClient) Outcome(outctx ocr3types.OutcomeContext, query l
 	return reply.Outcome, nil
 }
 
-func (o *reportingPluginClient) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[any], error) {
+func (o *reportingPluginClient) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[proto.Message], error) {
 	reply, err := o.grpc.Reports(context.Background(), &ocr3.ReportsRequest{
 		SeqNr:   seqNr,
 		Outcome: outcome,
@@ -193,7 +194,7 @@ func (o *reportingPluginClient) Reports(seqNr uint64, outcome ocr3types.Outcome)
 	return reportsWithInfo(reply.ReportWithInfo), nil
 }
 
-func (o *reportingPluginClient) ShouldAcceptAttestedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[any]) (bool, error) {
+func (o *reportingPluginClient) ShouldAcceptAttestedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[proto.Message]) (bool, error) {
 	reply, err := o.grpc.ShouldAcceptAttestedReport(ctx, &ocr3.ShouldAcceptAttestedReportRequest{
 		SegNr: u,
 		Ri:    &ocr3.ReportWithInfo{Report: ri.Report},
@@ -204,7 +205,7 @@ func (o *reportingPluginClient) ShouldAcceptAttestedReport(ctx context.Context, 
 	return reply.ShouldAccept, nil
 }
 
-func (o *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[any]) (bool, error) {
+func (o *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context, u uint64, ri ocr3types.ReportWithInfo[proto.Message]) (bool, error) {
 	reply, err := o.grpc.ShouldTransmitAcceptedReport(ctx, &ocr3.ShouldTransmitAcceptedReportRequest{
 		SegNr: u,
 		Ri:    &ocr3.ReportWithInfo{Report: ri.Report},
@@ -232,7 +233,7 @@ var _ ocr3.ReportingPluginServer = (*reportingPluginServer)(nil)
 type reportingPluginServer struct {
 	ocr3.UnimplementedReportingPluginServer
 
-	impl ocr3types.ReportingPlugin[any]
+	impl ocr3types.ReportingPlugin[proto.Message]
 }
 
 func (o *reportingPluginServer) Query(ctx context.Context, request *ocr3.QueryRequest) (*ocr3.QueryReply, error) {
@@ -294,7 +295,7 @@ func (o *reportingPluginServer) Reports(ctx context.Context, request *ocr3.Repor
 }
 
 func (o *reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Context, request *ocr3.ShouldAcceptAttestedReportRequest) (*ocr3.ShouldAcceptAttestedReportReply, error) {
-	sa, err := o.impl.ShouldAcceptAttestedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[any]{
+	sa, err := o.impl.ShouldAcceptAttestedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[proto.Message]{
 		Report: request.Ri.Report,
 	})
 	if err != nil {
@@ -306,7 +307,7 @@ func (o *reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Context, 
 }
 
 func (o *reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context, request *ocr3.ShouldTransmitAcceptedReportRequest) (*ocr3.ShouldTransmitAcceptedReportReply, error) {
-	st, err := o.impl.ShouldTransmitAcceptedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[any]{
+	st, err := o.impl.ShouldTransmitAcceptedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[proto.Message]{
 		Report: request.Ri.Report,
 	})
 	if err != nil {

@@ -6,7 +6,7 @@ package loop.internal.pb.mercury.v2;
 
 
 // not: the generate.go file in this dir specifies the import path of the relative proto files
-import "relayer.proto";
+import "pkg/loop/internal/pb/relayer.proto";
 
 // DataSource is a gRPC adapter for [pkg/types/mercury/v2/DataSource]
 service DataSource {
@@ -28,10 +28,10 @@ message Block {
 
 // Observation is a gRPC adapter for [pkg/types/mercury/v2/Observation]
 message Observation {
-    BigInt benchmarkPrice = 1;
+    loop.BigInt benchmarkPrice = 1;
     int64 maxFinalizedTimestamp = 2;
-    BigInt linkPrice =3;
-    BigInt nativePrice = 4;
+    loop.BigInt linkPrice =3;
+    loop.BigInt nativePrice = 4;
 }
 // ObserveResponse is the response payload for the Observe method, which is a gRPC adapter for output arguments of [pkg/types/mercury/v2/DataSource.Observe]
 message ObserveResponse {

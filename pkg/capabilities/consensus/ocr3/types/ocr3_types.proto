@@ -4,7 +4,7 @@ option go_package = "capabilities/consensus/ocr3/types";
 
 package ocr3_types;
 
-import "values/pb/values.proto";
+import "pkg/values/pb/values.proto";
 
 // per-workflow aggregation outcome
 message AggregationOutcome {

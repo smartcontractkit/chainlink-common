@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: codec.proto
+// source: pkg/loop/internal/pb/codec.proto
 
 package pb
 
@@ -179,5 +179,5 @@ var Codec_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "codec.proto",
+	Metadata: "pkg/loop/internal/pb/codec.proto",
 }

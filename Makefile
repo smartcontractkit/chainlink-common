@@ -18,10 +18,14 @@ mockery: $(mockery) ## Install mockery.
 	go install github.com/vektra/mockery/v2@v2.38.0
 
 .PHONY: generate
-generate: mockery install-protoc
+generate: mockery install-protoc proto
 # add our installed protoc to the head of the PATH
 # maybe there is a cleaner way to do this
 	 PATH=$$HOME/.local/bin:$$PATH go generate -x ./...
+
+proto:
+	PATH=$$HOME/.local/bin:$$PATH protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative --proto_path=. $$(find . -type f -name "*.proto")
+
 
 .PHONY: golangci-lint
 golangci-lint: ## Run golangci-lint for all issues.

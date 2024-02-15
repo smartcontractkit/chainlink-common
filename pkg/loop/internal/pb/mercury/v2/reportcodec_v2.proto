@@ -6,7 +6,7 @@ package loop.internal.pb.mercury.v2;
 
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
-import "relayer.proto";
+import "pkg/loop/internal/pb/relayer.proto";
 
 
 // ReportCodec is a gRPC adapter for the ReportCodec interface [pkg/types/mercury/v2/ReportCodec].
@@ -20,10 +20,10 @@ service ReportCodec {
 message ReportFields {
   uint32 validFromTimestamp =1;
   uint32 timestamp =2;
-  BigInt nativeFee = 3;
-  BigInt linkFee = 4;
+  loop.BigInt nativeFee = 3;
+  loop.BigInt linkFee = 4;
   uint32 expiresAt = 5;
-  BigInt benchmarkPrice = 6;
+  loop.BigInt benchmarkPrice = 6;
 }
   
 // BuildReportRequest is gRPC adapter for [github.com/smartcontractkit/chainlink-data-streams/mercury/v2/ReportCodec.BuildReport].

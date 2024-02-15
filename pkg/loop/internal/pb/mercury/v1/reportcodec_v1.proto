@@ -6,7 +6,7 @@ package loop.internal.pb.mercury.v1;
 
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
-import "relayer.proto";
+import "pkg/loop/internal/pb/relayer.proto";
 
 
 // ReportCodec is a gRPC adapter for the ReportCodec interface [pkg/types/mercury/v1/ReportCodec].

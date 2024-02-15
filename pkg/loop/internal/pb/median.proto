@@ -6,7 +6,7 @@ package loop;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
-import "relayer.proto";
+import "pkg/loop/internal/pb/relayer.proto";
 
 service PluginMedian {
   rpc NewMedianFactory (NewMedianFactoryRequest) returns (NewMedianFactoryReply) {}
@@ -44,8 +44,8 @@ service ReportCodec {
 // ParsedAttributedObservation represents [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ParsedAttributedObservation].
 message ParsedAttributedObservation {
   uint32 timestamp = 1;
-  BigInt value = 2;
-  BigInt julesPerFeeCoin = 3;
+  loop.BigInt value = 2;
+  loop.BigInt julesPerFeeCoin = 3;
   uint32  observer = 4; // uint8
 }
 
@@ -66,7 +66,7 @@ message MedianFromReportRequest {
 
 // MedianFromReportReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec.MedianFromReport].
 message MedianFromReportReply {
-  BigInt median = 1;
+  loop.BigInt median = 1;
 }
 
 // MaxReportLengthRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec.MaxReportLength].

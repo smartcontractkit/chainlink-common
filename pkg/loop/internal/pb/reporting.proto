@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "google/protobuf/empty.proto";
-import "relayer.proto";
+import "pkg/loop/internal/pb/relayer.proto";
 
 service ReportingPluginFactory {
   rpc NewReportingPlugin (NewReportingPluginRequest) returns (NewReportingPluginReply) {}
@@ -61,7 +61,7 @@ service ReportingPlugin {
 
 // QueryRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ReportingPlugin.Query].
 message QueryRequest {
-  ReportTimestamp reportTimestamp = 1;
+  loop.ReportTimestamp reportTimestamp = 1;
 }
 
 // QueryReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ReportingPlugin.Query].
@@ -71,7 +71,7 @@ message QueryReply {
 
 // ObservationRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ReportingPlugin.Observation].
 message ObservationRequest {
-  ReportTimestamp reportTimestamp = 1;
+  loop.ReportTimestamp reportTimestamp = 1;
   bytes query = 2;
 }
 
@@ -88,7 +88,7 @@ message AttributedObservation {
 
 // ReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ReportingPlugin.Report].
 message ReportRequest {
-  ReportTimestamp reportTimestamp = 1;
+  loop.ReportTimestamp reportTimestamp = 1;
   bytes query = 2;
   repeated AttributedObservation observations = 3;
 }
@@ -101,7 +101,7 @@ message ReportReply {
 
 // ShouldAcceptFinalizedReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ReportingPlugin.ShouldAcceptFinalizedReport].
 message ShouldAcceptFinalizedReportRequest {
-  ReportTimestamp reportTimestamp = 1;
+  loop.ReportTimestamp reportTimestamp = 1;
   bytes report = 2;
 }
 
@@ -112,7 +112,7 @@ message ShouldAcceptFinalizedReportReply {
 
 // ShouldTransmitAcceptedReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ReportingPlugin.ShouldTransmitAcceptedReport].
 message ShouldTransmitAcceptedReportRequest {
-  ReportTimestamp reportTimestamp = 1;
+  loop.ReportTimestamp reportTimestamp = 1;
   bytes report = 2;
 }
 

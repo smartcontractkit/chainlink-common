@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: median.proto
+// source: pkg/loop/internal/pb/median.proto
 
 package pb
 
@@ -106,7 +106,7 @@ var PluginMedian_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "median.proto",
+	Metadata: "pkg/loop/internal/pb/median.proto",
 }
 
 const (
@@ -196,7 +196,7 @@ var ErrorLog_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "median.proto",
+	Metadata: "pkg/loop/internal/pb/median.proto",
 }
 
 const (
@@ -360,7 +360,7 @@ var ReportCodec_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "median.proto",
+	Metadata: "pkg/loop/internal/pb/median.proto",
 }
 
 const (
@@ -487,7 +487,7 @@ var MedianContract_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "median.proto",
+	Metadata: "pkg/loop/internal/pb/median.proto",
 }
 
 const (
@@ -614,5 +614,5 @@ var OnchainConfigCodec_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "median.proto",
+	Metadata: "pkg/loop/internal/pb/median.proto",
 }

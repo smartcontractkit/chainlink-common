@@ -5,10 +5,10 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
 package loop.internal.pb.mercury; // related to above, seems to need to have loop package
-import "relayer.proto";
-import "v1/reportcodec_v1.proto";
-import "v2/reportcodec_v2.proto";
-import "v3/reportcodec_v3.proto";
+import "pkg/loop/internal/pb/relayer.proto";
+import "pkg/loop/internal/pb/mercury/v1/reportcodec_v1.proto";
+import "pkg/loop/internal/pb/mercury/v2/reportcodec_v2.proto";
+import "pkg/loop/internal/pb/mercury/v3/reportcodec_v3.proto";
 
 
 service MercuryAdapter {

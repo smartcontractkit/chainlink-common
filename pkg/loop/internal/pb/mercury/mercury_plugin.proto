@@ -6,7 +6,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 // note: the generate.go file in this dir specifies the import path of the relative proto files
 package loop.internal.pb.mercury; // related to above, seems to need to have loop package
 import "google/protobuf/empty.proto";
-import "relayer.proto";
+import "pkg/loop/internal/pb/relayer.proto";
 
 
 service MercuryPluginFactory {

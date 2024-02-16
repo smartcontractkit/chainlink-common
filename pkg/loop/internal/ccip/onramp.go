@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var _ cciptypes.OnRampReader = (*OnRampReaderClient)(nil)
@@ -59,14 +60,14 @@ func onRampDynamicConfig(config *ccippb.OnRampDynamicConfig) cciptypes.OnRampDyn
 	return cciptypes.OnRampDynamicConfig{
 		Router:                            cciptypes.Address(config.Router),
 		MaxNumberOfTokensPerMsg:           uint16(config.MaxNumberOfTokensPerMsg),
-		DestGasOverhead:                   uint32(config.DestGasOverhead),
+		DestGasOverhead:                   config.DestGasOverhead,
 		DestGasPerPayloadByte:             uint16(config.DestGasPerByte),
-		DestDataAvailabilityOverheadGas:   uint32(config.DestDataAvailabilityOverheadGas),
+		DestDataAvailabilityOverheadGas:   config.DestDataAvailabilityOverheadGas,
 		DestGasPerDataAvailabilityByte:    uint16(config.DestGasPerDataAvailabilityByte),
 		DestDataAvailabilityMultiplierBps: uint16(config.DestDataAvailabilityMultiplierBps),
 		PriceRegistry:                     cciptypes.Address(config.PriceRegistry),
-		MaxDataBytes:                      uint32(config.MaxDataBytes),
-		MaxPerMsgGasLimit:                 uint32(config.MaxPerMsgGasLimit),
+		MaxDataBytes:                      config.MaxDataBytes,
+		MaxPerMsgGasLimit:                 config.MaxPerMsgGasLimit,
 	}
 }
 
@@ -86,7 +87,7 @@ func evm2EVMMessageWithTxMetaSlice(messages []*ccippb.EVM2EVMMessageWithTxMeta) 
 }
 
 func evm2EVMMessage(message *ccippb.EVM2EVMMessage) (cciptypes.EVM2EVMMessage, error) {
-	msgId, err := hash(message.MessageId)
+	msgID, err := hash(message.MessageId)
 	if err != nil {
 		return cciptypes.EVM2EVMMessage{}, fmt.Errorf("failed to convert message id (%v): %w", message.MessageId, err)
 	}
@@ -95,7 +96,7 @@ func evm2EVMMessage(message *ccippb.EVM2EVMMessage) (cciptypes.EVM2EVMMessage, e
 		SequenceNumber:      message.SequenceNumber,
 		GasLimit:            message.GasLimit.Int(),
 		Nonce:               message.Nonce,
-		MessageID:           msgId,
+		MessageID:           msgID,
 		SourceChainSelector: message.SourceChainSelector,
 		Sender:              cciptypes.Address(message.Sender),
 		Receiver:            cciptypes.Address(message.Receiver),

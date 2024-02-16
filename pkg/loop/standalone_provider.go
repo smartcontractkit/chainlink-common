@@ -20,6 +20,9 @@ func RegisterStandAloneProvider(s *grpc.Server, p types.PluginProvider, pType ty
 		}
 		internal.RegisterStandAloneMedianProvider(s, mp)
 		return nil
+	case types.GenericPlugin:
+		internal.RegisterStandAlonePluginProvider(s, p)
+		return nil
 	default:
 		return fmt.Errorf("stand alone provider only supports median, got %q", pType)
 	}

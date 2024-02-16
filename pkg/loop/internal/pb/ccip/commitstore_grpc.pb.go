@@ -4,8 +4,6 @@
 // - protoc             v4.25.1
 // source: commitstore.proto
 
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-
 package ccippb
 
 import (
@@ -25,7 +23,7 @@ const (
 	CommitStoreReader_GetExpectedNextSequenceNumber_FullMethodName          = "/loop.internal.pb.ccip.CommitStoreReader/GetExpectedNextSequenceNumber"
 	CommitStoreReader_GetLatestPriceEpochAndRound_FullMethodName            = "/loop.internal.pb.ccip.CommitStoreReader/GetLatestPriceEpochAndRound"
 	CommitStoreReader_GeteCommitReportMatchingSequenceNumber_FullMethodName = "/loop.internal.pb.ccip.CommitStoreReader/GeteCommitReportMatchingSequenceNumber"
-	CommitStoreReader_GetAcceptedCommitReportsGetTimestamp_FullMethodName   = "/loop.internal.pb.ccip.CommitStoreReader/GetAcceptedCommitReportsGetTimestamp"
+	CommitStoreReader_GetAcceptedCommitReportsGteTimestamp_FullMethodName   = "/loop.internal.pb.ccip.CommitStoreReader/GetAcceptedCommitReportsGteTimestamp"
 	CommitStoreReader_IsDown_FullMethodName                                 = "/loop.internal.pb.ccip.CommitStoreReader/IsDown"
 	CommitStoreReader_IsBlessed_FullMethodName                              = "/loop.internal.pb.ccip.CommitStoreReader/IsBlessed"
 	CommitStoreReader_ChangeConfig_FullMethodName                           = "/loop.internal.pb.ccip.CommitStoreReader/ChangeConfig"
@@ -44,7 +42,7 @@ type CommitStoreReaderClient interface {
 	GetExpectedNextSequenceNumber(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExpectedNextSequenceNumberResponse, error)
 	GetLatestPriceEpochAndRound(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestPriceEpochAndRoundResponse, error)
 	GeteCommitReportMatchingSequenceNumber(ctx context.Context, in *GetCommitReportMatchingSequenceNumberRequest, opts ...grpc.CallOption) (*GetCommitReportMatchingSequenceNumberResponse, error)
-	GetAcceptedCommitReportsGetTimestamp(ctx context.Context, in *GetAcceptedCommitReportsGetTimestampRequest, opts ...grpc.CallOption) (*GetAcceptedCommitReportsGetTimestampResponse, error)
+	GetAcceptedCommitReportsGteTimestamp(ctx context.Context, in *GetAcceptedCommitReportsGteTimestampRequest, opts ...grpc.CallOption) (*GetAcceptedCommitReportsGteTimestampResponse, error)
 	IsDown(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsDownResponse, error)
 	IsBlessed(ctx context.Context, in *IsBlessedRequest, opts ...grpc.CallOption) (*IsBlessedResponse, error)
 	ChangeConfig(ctx context.Context, in *CommitStoreChangeConfigRequest, opts ...grpc.CallOption) (*CommitStoreChangeConfigResponse, error)
@@ -91,9 +89,9 @@ func (c *commitStoreReaderClient) GeteCommitReportMatchingSequenceNumber(ctx con
 	return out, nil
 }
 
-func (c *commitStoreReaderClient) GetAcceptedCommitReportsGetTimestamp(ctx context.Context, in *GetAcceptedCommitReportsGetTimestampRequest, opts ...grpc.CallOption) (*GetAcceptedCommitReportsGetTimestampResponse, error) {
-	out := new(GetAcceptedCommitReportsGetTimestampResponse)
-	err := c.cc.Invoke(ctx, CommitStoreReader_GetAcceptedCommitReportsGetTimestamp_FullMethodName, in, out, opts...)
+func (c *commitStoreReaderClient) GetAcceptedCommitReportsGteTimestamp(ctx context.Context, in *GetAcceptedCommitReportsGteTimestampRequest, opts ...grpc.CallOption) (*GetAcceptedCommitReportsGteTimestampResponse, error) {
+	out := new(GetAcceptedCommitReportsGteTimestampResponse)
+	err := c.cc.Invoke(ctx, CommitStoreReader_GetAcceptedCommitReportsGteTimestamp_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +186,7 @@ type CommitStoreReaderServer interface {
 	GetExpectedNextSequenceNumber(context.Context, *emptypb.Empty) (*GetExpectedNextSequenceNumberResponse, error)
 	GetLatestPriceEpochAndRound(context.Context, *emptypb.Empty) (*GetLatestPriceEpochAndRoundResponse, error)
 	GeteCommitReportMatchingSequenceNumber(context.Context, *GetCommitReportMatchingSequenceNumberRequest) (*GetCommitReportMatchingSequenceNumberResponse, error)
-	GetAcceptedCommitReportsGetTimestamp(context.Context, *GetAcceptedCommitReportsGetTimestampRequest) (*GetAcceptedCommitReportsGetTimestampResponse, error)
+	GetAcceptedCommitReportsGteTimestamp(context.Context, *GetAcceptedCommitReportsGteTimestampRequest) (*GetAcceptedCommitReportsGteTimestampResponse, error)
 	IsDown(context.Context, *emptypb.Empty) (*IsDownResponse, error)
 	IsBlessed(context.Context, *IsBlessedRequest) (*IsBlessedResponse, error)
 	ChangeConfig(context.Context, *CommitStoreChangeConfigRequest) (*CommitStoreChangeConfigResponse, error)
@@ -214,8 +212,8 @@ func (UnimplementedCommitStoreReaderServer) GetLatestPriceEpochAndRound(context.
 func (UnimplementedCommitStoreReaderServer) GeteCommitReportMatchingSequenceNumber(context.Context, *GetCommitReportMatchingSequenceNumberRequest) (*GetCommitReportMatchingSequenceNumberResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GeteCommitReportMatchingSequenceNumber not implemented")
 }
-func (UnimplementedCommitStoreReaderServer) GetAcceptedCommitReportsGetTimestamp(context.Context, *GetAcceptedCommitReportsGetTimestampRequest) (*GetAcceptedCommitReportsGetTimestampResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAcceptedCommitReportsGetTimestamp not implemented")
+func (UnimplementedCommitStoreReaderServer) GetAcceptedCommitReportsGteTimestamp(context.Context, *GetAcceptedCommitReportsGteTimestampRequest) (*GetAcceptedCommitReportsGteTimestampResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAcceptedCommitReportsGteTimestamp not implemented")
 }
 func (UnimplementedCommitStoreReaderServer) IsDown(context.Context, *emptypb.Empty) (*IsDownResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsDown not implemented")
@@ -311,20 +309,20 @@ func _CommitStoreReader_GeteCommitReportMatchingSequenceNumber_Handler(srv inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CommitStoreReader_GetAcceptedCommitReportsGetTimestamp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAcceptedCommitReportsGetTimestampRequest)
+func _CommitStoreReader_GetAcceptedCommitReportsGteTimestamp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAcceptedCommitReportsGteTimestampRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CommitStoreReaderServer).GetAcceptedCommitReportsGetTimestamp(ctx, in)
+		return srv.(CommitStoreReaderServer).GetAcceptedCommitReportsGteTimestamp(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CommitStoreReader_GetAcceptedCommitReportsGetTimestamp_FullMethodName,
+		FullMethod: CommitStoreReader_GetAcceptedCommitReportsGteTimestamp_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommitStoreReaderServer).GetAcceptedCommitReportsGetTimestamp(ctx, req.(*GetAcceptedCommitReportsGetTimestampRequest))
+		return srv.(CommitStoreReaderServer).GetAcceptedCommitReportsGteTimestamp(ctx, req.(*GetAcceptedCommitReportsGteTimestampRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -511,8 +509,8 @@ var CommitStoreReader_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CommitStoreReader_GeteCommitReportMatchingSequenceNumber_Handler,
 		},
 		{
-			MethodName: "GetAcceptedCommitReportsGetTimestamp",
-			Handler:    _CommitStoreReader_GetAcceptedCommitReportsGetTimestamp_Handler,
+			MethodName: "GetAcceptedCommitReportsGteTimestamp",
+			Handler:    _CommitStoreReader_GetAcceptedCommitReportsGteTimestamp_Handler,
 		},
 		{
 			MethodName: "IsDown",

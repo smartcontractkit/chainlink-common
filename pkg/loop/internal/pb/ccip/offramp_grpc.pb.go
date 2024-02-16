@@ -4,8 +4,6 @@
 // - protoc             v4.25.1
 // source: offramp.proto
 
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-
 package ccippb
 
 import (

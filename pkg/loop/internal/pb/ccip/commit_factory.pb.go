@@ -4,8 +4,6 @@
 // 	protoc        v4.25.1
 // source: commit_factory.proto
 
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-
 package ccippb
 
 import (
@@ -22,7 +20,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// NewCommitFactoryRequest is a gRPC adapter to the factory configuration [https://github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipcommit/CommitPluginStaticConfig]
+// NewCommitFactoryRequest is a gRPC adapter to the factory configuration
+// [github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipcommit.CommitPluginStaticConfig]
 type NewCommitFactoryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -38,7 +37,7 @@ type NewCommitFactoryRequest struct {
 	DestChainSelector       uint64 `protobuf:"varint,6,opt,name=dest_chain_selector,json=destChainSelector,proto3" json:"dest_chain_selector,omitempty"`
 	PriceRegistiryServiceId int32  `protobuf:"varint,7,opt,name=price_registiry_service_id,json=priceRegistiryServiceId,proto3" json:"price_registiry_service_id,omitempty"`
 	// Offchain
-	PriceGetterServiceId int32 `protobuf:"varint,8,opt,name=price_getter_service_id,json=priceGetterServiceId,proto3" json:"price_getter_service_id,omitempty"` // TODO: there is a metrics collector defined in the corresponding config. what to do with it?
+	PriceGetterServiceId int32 `protobuf:"varint,8,opt,name=price_getter_service_id,json=priceGetterServiceId,proto3" json:"price_getter_service_id,omitempty"` // TODO BCF-2981: there is a metrics collector defined in the corresponding config. what to do with it?
 }
 
 func (x *NewCommitFactoryRequest) Reset() {
@@ -129,7 +128,9 @@ func (x *NewCommitFactoryRequest) GetPriceGetterServiceId() int32 {
 	return 0
 }
 
-// NewCommitFactoryResponse is a contains the id of the created commit factory
+// NewCommitFactoryResponse is a reference to the factory generator service. It is a gRPC proxy mechanism
+// for the return value of [github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipcommit.NewCommitReportingPluginFactory]
+// because the underlying return value is an interface, which is modeled as a service in gRPC
 type NewCommitFactoryResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

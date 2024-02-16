@@ -2,9 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
 
-
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-package loop.internal.pb.ccip; // related to above, seems to need to have loop package
+package loop.internal.pb.ccip;
 
 // ExecutionFactoryGenerator is a gRPC service that generates a execution factory
 // It is a gRPC service adapter for the https://github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipexec/NewExecutionReportingPluginFactory
@@ -19,11 +17,11 @@ message NewExecutionFactoryRequest {
     int32 commit_store_service_id = 3;
     int32 source_price_registiry_service_id = 4;
     string source_wrapped_native_token = 5; // Address
-    // TODO: what is this? there is no type in the common repo for it
+    // TODO BCF-2979: what is this? there is no type in the common repo for it. seems like it can be 
+    // moved to an implementation detail of the ccipexec plugin
     int32 token_data_worker_service_id = 6;
     uint64 dest_chain_selector = 7;
     int32 price_registry_service_id = 8;
-    //TODO: what is this? there is no type in the common repo for it
     int32 token_pool_batch_reader_service_id = 9;
     // TODO: there is a metrics collector defined in the corresponding config. what to do with it?
 }

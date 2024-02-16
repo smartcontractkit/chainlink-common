@@ -4,8 +4,6 @@
 // 	protoc        v4.25.1
 // source: tokendata.proto
 
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-
 package ccippb
 
 import (
@@ -22,6 +20,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// TokenDataRequest is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/TokenDataReader.ReadTokenData]
 type TokenDataRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -77,6 +77,8 @@ func (x *TokenDataRequest) GetTokenIndex() uint64 {
 	return 0
 }
 
+// TokenDataResponse is a gRPC adapter for the return value of
+// [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/TokenDataReader.ReadTokenData]
 type TokenDataResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

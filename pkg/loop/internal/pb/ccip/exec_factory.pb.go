@@ -4,8 +4,6 @@
 // 	protoc        v4.25.1
 // source: exec_factory.proto
 
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-
 package ccippb
 
 import (
@@ -33,12 +31,12 @@ type NewExecutionFactoryRequest struct {
 	CommitStoreServiceId          int32  `protobuf:"varint,3,opt,name=commit_store_service_id,json=commitStoreServiceId,proto3" json:"commit_store_service_id,omitempty"`
 	SourcePriceRegistiryServiceId int32  `protobuf:"varint,4,opt,name=source_price_registiry_service_id,json=sourcePriceRegistiryServiceId,proto3" json:"source_price_registiry_service_id,omitempty"`
 	SourceWrappedNativeToken      string `protobuf:"bytes,5,opt,name=source_wrapped_native_token,json=sourceWrappedNativeToken,proto3" json:"source_wrapped_native_token,omitempty"` // Address
-	// TODO: what is this? there is no type in the common repo for it
-	TokenDataWorkerServiceId int32  `protobuf:"varint,6,opt,name=token_data_worker_service_id,json=tokenDataWorkerServiceId,proto3" json:"token_data_worker_service_id,omitempty"`
-	DestChainSelector        uint64 `protobuf:"varint,7,opt,name=dest_chain_selector,json=destChainSelector,proto3" json:"dest_chain_selector,omitempty"`
-	PriceRegistryServiceId   int32  `protobuf:"varint,8,opt,name=price_registry_service_id,json=priceRegistryServiceId,proto3" json:"price_registry_service_id,omitempty"`
-	// TODO: what is this? there is no type in the common repo for it
-	TokenPoolBatchReaderServiceId int32 `protobuf:"varint,9,opt,name=token_pool_batch_reader_service_id,json=tokenPoolBatchReaderServiceId,proto3" json:"token_pool_batch_reader_service_id,omitempty"` // TODO: there is a metrics collector defined in the corresponding config. what to do with it?
+	// TODO BCF-2979: what is this? there is no type in the common repo for it. seems like it can be
+	// moved to an implementation detail of the ccipexec plugin
+	TokenDataWorkerServiceId      int32  `protobuf:"varint,6,opt,name=token_data_worker_service_id,json=tokenDataWorkerServiceId,proto3" json:"token_data_worker_service_id,omitempty"`
+	DestChainSelector             uint64 `protobuf:"varint,7,opt,name=dest_chain_selector,json=destChainSelector,proto3" json:"dest_chain_selector,omitempty"`
+	PriceRegistryServiceId        int32  `protobuf:"varint,8,opt,name=price_registry_service_id,json=priceRegistryServiceId,proto3" json:"price_registry_service_id,omitempty"`
+	TokenPoolBatchReaderServiceId int32  `protobuf:"varint,9,opt,name=token_pool_batch_reader_service_id,json=tokenPoolBatchReaderServiceId,proto3" json:"token_pool_batch_reader_service_id,omitempty"` // TODO: there is a metrics collector defined in the corresponding config. what to do with it?
 }
 
 func (x *NewExecutionFactoryRequest) Reset() {

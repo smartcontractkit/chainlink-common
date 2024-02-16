@@ -4,8 +4,6 @@
 // 	protoc        v4.25.1
 // source: pricegetter.proto
 
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-
 package ccippb
 
 import (
@@ -23,6 +21,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// TokenPricesRequest is a request for the price of a token in USD. It is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/PriceGetter.TokenPricesUSD]]
 type TokenPricesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -70,6 +70,8 @@ func (x *TokenPricesRequest) GetTokens() []string {
 	return nil
 }
 
+// TokenPricesResponse is a response for the price of a token in USD. It is a gRPC adapter for the return values of
+// [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/CommitStoreReader]
 type TokenPricesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

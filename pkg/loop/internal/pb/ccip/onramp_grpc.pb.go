@@ -4,8 +4,6 @@
 // - protoc             v4.25.1
 // source: onramp.proto
 
-// note: the generate.go file in this dir specifies the import path of the relative proto files
-
 package ccippb
 
 import (
@@ -34,7 +32,7 @@ const (
 type OnRampReaderClient interface {
 	GetSendRequestBetweenSeqNums(ctx context.Context, in *GetSendRequestBetweenSeqNumsRequest, opts ...grpc.CallOption) (*GetSendRequestBetweenSeqNumsResponse, error)
 	RouterAddress(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RouterAddressResponse, error)
-	Address(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AddressResponse, error)
+	Address(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OnrampAddressResponse, error)
 	GetDynamicConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetDynamicConfigResponse, error)
 }
 
@@ -64,8 +62,8 @@ func (c *onRampReaderClient) RouterAddress(ctx context.Context, in *emptypb.Empt
 	return out, nil
 }
 
-func (c *onRampReaderClient) Address(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AddressResponse, error) {
-	out := new(AddressResponse)
+func (c *onRampReaderClient) Address(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OnrampAddressResponse, error) {
+	out := new(OnrampAddressResponse)
 	err := c.cc.Invoke(ctx, OnRampReader_Address_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -88,7 +86,7 @@ func (c *onRampReaderClient) GetDynamicConfig(ctx context.Context, in *emptypb.E
 type OnRampReaderServer interface {
 	GetSendRequestBetweenSeqNums(context.Context, *GetSendRequestBetweenSeqNumsRequest) (*GetSendRequestBetweenSeqNumsResponse, error)
 	RouterAddress(context.Context, *emptypb.Empty) (*RouterAddressResponse, error)
-	Address(context.Context, *emptypb.Empty) (*AddressResponse, error)
+	Address(context.Context, *emptypb.Empty) (*OnrampAddressResponse, error)
 	GetDynamicConfig(context.Context, *emptypb.Empty) (*GetDynamicConfigResponse, error)
 	mustEmbedUnimplementedOnRampReaderServer()
 }
@@ -103,7 +101,7 @@ func (UnimplementedOnRampReaderServer) GetSendRequestBetweenSeqNums(context.Cont
 func (UnimplementedOnRampReaderServer) RouterAddress(context.Context, *emptypb.Empty) (*RouterAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RouterAddress not implemented")
 }
-func (UnimplementedOnRampReaderServer) Address(context.Context, *emptypb.Empty) (*AddressResponse, error) {
+func (UnimplementedOnRampReaderServer) Address(context.Context, *emptypb.Empty) (*OnrampAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Address not implemented")
 }
 func (UnimplementedOnRampReaderServer) GetDynamicConfig(context.Context, *emptypb.Empty) (*GetDynamicConfigResponse, error) {

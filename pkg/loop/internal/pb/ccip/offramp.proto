@@ -30,25 +30,25 @@ service OffRampReader {
 // EncodeExecutionReportRequest is a gRPC adapter for the input arguments of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.EncodeExecutionReport]
 message EncodeExecutionReportRequest {
-    ExecutionReport execution_report = 1;
+    ExecutionReport report = 1;
 }
 
 // EncodeExecutionReportResponse returns the encoded report. It is a gRPC adapter for the return values of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.EncodeExecutionReport]
 message EncodeExecutionReportResponse {
-    bytes encoded_execution_report = 1;
+    bytes report = 1;
 }
 
 // DecodeExecutionReportRequest is a gRPC adapter for the input arguments of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.DecodeExecutionReport]
 message DecodeExecutionReportRequest {
-    bytes encoded_execution_report = 1;
+    bytes report = 1;
 }
 
 // DecodeExecutionReportResponse returns the decoded report. It is a gRPC adapter for the return values of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.DecodeExecutionReport]
 message DecodeExecutionReportResponse {
-    ExecutionReport execution_report = 1;
+    ExecutionReport report = 1;
 }
 
 // GetExecutionStateChangesRequest is a gRPC adapter for the input arguments of
@@ -100,13 +100,13 @@ message ChangeConfigResponse {
 // OffchainConfigResponse returns the offchain config. It is a gRPC adapter for the return values of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.OffchainConfig]
 message OffchainConfigResponse {
-    ExecOffchainConfig offchain_config = 1;
+    ExecOffchainConfig config = 1;
 }
 
 // OnchainConfigResponse returns the onchain config. It is a gRPC adapter for the return values of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.OnchainConfig]
 message OnchainConfigResponse {
-    ExecOnchainConfig onchain_config = 1;
+    ExecOnchainConfig config = 1;
 }
 
 // GasPriceEstimatorResponse returns a reference to the gas price estimator service. It is a gRPC proxying mechanism for the return values of
@@ -149,7 +149,7 @@ message GetExecutionStateResponse {
 // GetStaticConfigResponse returns the static config. It is a gRPC adapter for the return values of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.GetStaticConfig]
 message GetStaticConfigResponse {
-    OffRampStaticConfig static_config = 1;
+    OffRampStaticConfig config = 1;
 }
 
 // GetSourceToDestTokenMappingResponse returns the source to destination token mapping. It is a gRPC adapter for the return values of

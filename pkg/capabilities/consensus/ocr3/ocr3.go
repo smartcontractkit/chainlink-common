@@ -11,7 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-type OCR3Capability struct {
+type Capability struct {
 	lggr logger.Logger
 	loop.Plugin
 	factory EncoderFactory
@@ -20,8 +20,8 @@ type OCR3Capability struct {
 
 type EncoderFactory func(config *values.Map) (types.Encoder, error)
 
-func NewOCR3(lggr logger.Logger, factory EncoderFactory) *OCR3Capability {
-	return &OCR3Capability{
+func NewOCR3(lggr logger.Logger, factory EncoderFactory) *Capability {
+	return &Capability{
 		lggr:                 lggr,
 		Plugin:               loop.Plugin{Logger: lggr},
 		factory:              factory,
@@ -29,7 +29,7 @@ func NewOCR3(lggr logger.Logger, factory EncoderFactory) *OCR3Capability {
 	}
 }
 
-func (o *OCR3Capability) NewReportingPluginFactory(ctx context.Context, cfg commontypes.ReportingPluginServiceConfig, provider commontypes.PluginProvider, pipelineRunner commontypes.PipelineRunnerService, telemetry commontypes.TelemetryClient, errorLog commontypes.ErrorLog, capabilityRegistry commontypes.CapabilitiesRegistry) (commontypes.OCR3ReportingPluginFactory, error) {
+func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg commontypes.ReportingPluginServiceConfig, provider commontypes.PluginProvider, pipelineRunner commontypes.PipelineRunnerService, telemetry commontypes.TelemetryClient, errorLog commontypes.ErrorLog, capabilityRegistry commontypes.CapabilitiesRegistry) (commontypes.OCR3ReportingPluginFactory, error) {
 	conf := &config{Logger: o.lggr, EncoderFactory: o.factory}
 	factory, err := newFactoryService(conf)
 	if err != nil {

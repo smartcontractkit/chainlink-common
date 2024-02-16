@@ -51,10 +51,10 @@ type ReportInfo struct {
 }
 
 // TODO implement an actual codec
-type MercuryCodec struct {
+type Codec struct {
 }
 
-func (m MercuryCodec) Unwrap(raw values.Value) (ReportSet, error) {
+func (m Codec) Unwrap(raw values.Value) (ReportSet, error) {
 	return ReportSet{
 		Reports: map[FeedID]Report{
 			FeedID("012345678901234567890123456789012345678901234567890123456789000000"): {
@@ -67,7 +67,7 @@ func (m MercuryCodec) Unwrap(raw values.Value) (ReportSet, error) {
 	}, nil
 }
 
-func (m MercuryCodec) Wrap(reportSet ReportSet) (values.Value, error) {
+func (m Codec) Wrap(reportSet ReportSet) (values.Value, error) {
 	return values.NewMap(
 		map[string]any{
 			"0123456789": map[string]any{
@@ -78,6 +78,6 @@ func (m MercuryCodec) Wrap(reportSet ReportSet) (values.Value, error) {
 	)
 }
 
-func NewCodec() MercuryCodec {
-	return MercuryCodec{}
+func NewCodec() Codec {
+	return Codec{}
 }

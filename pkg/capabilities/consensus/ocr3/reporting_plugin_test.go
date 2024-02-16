@@ -16,9 +16,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-type mockCapability struct {
-}
-
 func TestReportingPlugin_Query_QueueEmpty(t *testing.T) {
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
@@ -43,10 +40,11 @@ func TestReportingPlugin_Query(t *testing.T) {
 	require.NoError(t, err)
 
 	eid := uuid.New().String()
-	s.add(ctx, &request{
+	err = s.add(ctx, &request{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
 	})
+	require.NoError(t, err)
 	outcomeCtx := ocr3types.OutcomeContext{
 		PreviousOutcome: []byte(""),
 	}
@@ -75,11 +73,12 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	require.NoError(t, err)
 
 	eid := uuid.New().String()
-	s.add(ctx, &request{
+	err = s.add(ctx, &request{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
 		Observations:        o,
 	})
+	require.NoError(t, err)
 	outcomeCtx := ocr3types.OutcomeContext{
 		PreviousOutcome: []byte(""),
 	}

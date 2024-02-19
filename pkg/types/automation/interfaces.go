@@ -48,6 +48,7 @@ type Encoder interface {
 
 type LogEventProvider interface {
 	GetLatestPayloads(context.Context) ([]UpkeepPayload, error)
+	SetConfig(context.Context, uint32, uint32) error
 	Start(context.Context) error
 	Close() error
 }

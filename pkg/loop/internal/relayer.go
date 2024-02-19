@@ -512,7 +512,7 @@ func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
 	pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: p.OnchainConfigCodec()})
 }
 
-// RegisterStandAlonePluginProvider register the servers needed for a median plugin provider,
+// RegisterStandAlonePluginProvider register the servers needed for a generic plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed
 func RegisterStandAlonePluginProvider(s *grpc.Server, p types.PluginProvider) {
 	pb.RegisterServiceServer(s, &ServiceServer{Srv: p})

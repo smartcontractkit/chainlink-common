@@ -25,13 +25,13 @@ type LifeCycleStage string
 type ReportFormat uint32
 
 const (
-	_ ReportFormat = iota // reserved
+	_ ReportFormat = 0 // reserved
 
-	ReportFormatEVM
-	ReportFormatJSON
-	ReportFormatSolana
-	ReportFormatCosmos
-	ReportFormatStarknet
+	ReportFormatEVM      = 1
+	ReportFormatJSON     = 2
+	ReportFormatSolana   = 3
+	ReportFormatCosmos   = 4
+	ReportFormatStarknet = 5
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )

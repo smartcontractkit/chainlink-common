@@ -77,7 +77,6 @@ func (o *OffRampReaderClient) EncodeExecutionReport(ctx context.Context, report 
 		return nil, err
 	}
 	return resp.Report, nil
-
 }
 
 // GasPriceEstimator i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
@@ -153,7 +152,6 @@ func (o *OffRampReaderClient) GetTokens(ctx context.Context) (cciptypes.OffRampT
 		return cciptypes.OffRampTokens{}, err
 	}
 	return offRampTokens(resp.Tokens), nil
-
 }
 
 // OffchainConfig i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
@@ -197,7 +195,6 @@ func (o *OffRampReaderServer) Address(ctx context.Context, req *emptypb.Empty) (
 		return nil, err
 	}
 	return &ccippb.OffRampAddressResponse{Address: string(addr)}, nil
-
 }
 
 // ChangeConfig implements ccippb.OffRampReaderServer.
@@ -565,7 +562,7 @@ func offChainConfig(in *ccippb.ExecOffchainConfig) (cciptypes.ExecOffchainConfig
 	return cciptypes.ExecOffchainConfig{
 		DestOptimisticConfirmations: in.DestOptimisticConfirmations,
 		BatchGasLimit:               in.BatchGasLimit,
-		RelativeBoostPerWaitHour:    float64(in.RelativeBoostPerWaitHour),
+		RelativeBoostPerWaitHour:    in.RelativeBoostPerWaitHour,
 		InflightCacheExpiry:         cachedExpiry,
 		RootSnoozeTime:              rootSnoozeTime,
 	}, nil

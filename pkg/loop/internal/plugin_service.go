@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/runner"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 )
@@ -117,7 +118,8 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	s.lggr.Debug("Launching")
 
 	cc := s.grpcPlug.ClientConfig()
-	cc.Cmd = s.cmd()
+	cmd := s.cmd()
+	cc.RunnerFunc = runner.NewRunnerFunc(cmd.Path, cmd.Args, cmd.Env)
 	client := plugin.NewClient(cc)
 	cp, err := client.Client()
 	if err != nil {

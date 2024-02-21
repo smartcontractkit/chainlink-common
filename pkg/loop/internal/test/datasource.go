@@ -31,6 +31,6 @@ func (s *staticDataSource) Observe(ctx context.Context, timestamp types.ReportTi
 type NOOPDataSource struct {
 }
 
-func (s NOOPDataSource) Observe(ctx context.Context, _ types.ReportTimestamp) (*big.Int, error) {
-	return big.NewInt(0), nil
+func (s *NOOPDataSource) Observe(ctx context.Context, _ types.ReportTimestamp) (*big.Int, error) {
+	return big.NewInt(1), nil
 }

@@ -81,7 +81,7 @@ func TestChainReaderClient(t *testing.T) {
 		es.err = errorType
 		t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			ctx := tests.Context(t)
-			err := chainReader.Bind(ctx, []types.BoundContract{{Name: "name", Address: "address"}})
+			err := chainReader.Bind(ctx, []types.BoundContract{{Name: "Name", Address: "address"}})
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
@@ -207,7 +207,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, name, method string,
 		defer f.lock.Unlock()
 		param := params.(*FilterEventParams)
 		for i := len(f.triggers) - 1; i >= 0; i-- {
-			if f.triggers[i].Field == param.Field {
+			if *f.triggers[i].Field == param.Field {
 				*returnVal.(*TestStruct) = f.triggers[i]
 				return nil
 			}

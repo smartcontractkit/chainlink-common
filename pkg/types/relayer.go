@@ -62,4 +62,6 @@ type Relayer interface {
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
 	NewAutomationProvider(rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
+	NewLLOProvider(rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
+	NewPluginProvider(rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 }

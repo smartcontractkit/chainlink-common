@@ -1,15 +1,17 @@
 package test
 
 import (
+	"context"
 	"math/big"
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -153,4 +155,75 @@ URL = 'https://test.url'
 	getLatestValueParams        = map[string]string{"param1": "value1", "param2": "value2"}
 	contractName                = "my median contract"
 	latestValue                 = map[string]int{"ret1": 1, "ret2": 2}
+
+	//OCR3
+	ocr3reportingPluginConfig = ocr3types.ReportingPluginConfig{
+		ConfigDigest:                            configDigest,
+		OracleID:                                commontypes.OracleID(10),
+		N:                                       12,
+		F:                                       42,
+		OnchainConfig:                           []byte{17: 11},
+		OffchainConfig:                          []byte{32: 64},
+		EstimatedRoundInterval:                  time.Second,
+		MaxDurationQuery:                        time.Hour,
+		MaxDurationObservation:                  time.Millisecond,
+		MaxDurationShouldAcceptAttestedReport:   10 * time.Second,
+		MaxDurationShouldTransmitAcceptedReport: time.Minute,
+	}
+
+	ocr3rpi = ocr3types.ReportingPluginInfo{
+		Name: "test",
+		Limits: ocr3types.ReportingPluginLimits{
+			MaxQueryLength:       42,
+			MaxObservationLength: 13,
+			MaxOutcomeLength:     33,
+			MaxReportLength:      17,
+			MaxReportCount:       41,
+		},
+	}
+
+	outcomeContext = ocr3types.OutcomeContext{
+		SeqNr:           1,
+		PreviousOutcome: []byte("previous-outcome"),
+		Epoch:           2,
+		Round:           3,
+	}
+
+	ao      = libocr.AttributedObservation{Observation: []byte{21: 19}, Observer: commontypes.OracleID(99)}
+	quorum  = ocr3types.Quorum(7)
+	outcome = ocr3types.Outcome("outcome")
+	seqNr   = uint64(43)
+	RI      = ocr3types.ReportWithInfo[[]byte]{
+		Report: []byte("report"),
+		Info:   []byte("info"),
+	}
+	RIs = []ocr3types.ReportWithInfo[[]byte]{{
+		Report: []byte("report1"),
+		Info:   []byte("info1"),
+	}, {
+		Report: []byte("report2"),
+		Info:   []byte("info2"),
+	}}
+
+	//CapabilitiesRegistry
+	GetID          = "get-id"
+	GetTriggerID   = "get-trigger-id"
+	GetActionID    = "get-action-id"
+	GetConsensusID = "get-consensus-id"
+	GetTargetID    = "get-target-id"
+	CapabilityInfo = capabilities.CapabilityInfo{
+		ID:             "capability-info-id",
+		CapabilityType: 2,
+		Description:    "capability-info-description",
+		Version:        "capability-info-version",
+	}
 )
+
+var _ capabilities.BaseCapability = (*baseCapability)(nil)
+
+type baseCapability struct {
+}
+
+func (e baseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	return CapabilityInfo, nil
+}

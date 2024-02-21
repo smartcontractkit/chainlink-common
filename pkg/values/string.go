@@ -12,6 +12,11 @@ func NewString(s string) (*String, error) {
 	return &String{Underlying: s}, nil
 }
 
+func MustNewString(s string) *String {
+	value, _ := NewString(s)
+	return value
+}
+
 func (s *String) Proto() (*pb.Value, error) {
 	return pb.NewStringValue(s.Underlying)
 }

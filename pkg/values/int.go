@@ -12,6 +12,11 @@ func NewInt64(i int64) (*Int64, error) {
 	return &Int64{Underlying: i}, nil
 }
 
+func MustNewInt64(i int64) *Int64 {
+	value, _ := NewInt64(i)
+	return value
+}
+
 func (i *Int64) Proto() (*pb.Value, error) {
 	return pb.NewInt64Value(i.Underlying)
 }

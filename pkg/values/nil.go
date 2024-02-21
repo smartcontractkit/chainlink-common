@@ -11,6 +11,10 @@ func NewNil() (*Nil, error) {
 	return &Nil{}, nil
 }
 
+func MustNewNil() *Nil {
+	return nil
+}
+
 func (n *Nil) Proto() (*pb.Value, error) {
 	return pb.NewNilValue()
 }

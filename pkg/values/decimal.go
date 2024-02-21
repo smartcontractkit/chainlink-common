@@ -14,6 +14,11 @@ func NewDecimal(d decimal.Decimal) (*Decimal, error) {
 	return &Decimal{Underlying: d}, nil
 }
 
+func MustNewDecimal(d decimal.Decimal) *Decimal {
+	value, _ := NewDecimal(d)
+	return value
+}
+
 func (d *Decimal) Proto() (*pb.Value, error) {
 	return pb.NewDecimalValue(d.Underlying)
 }

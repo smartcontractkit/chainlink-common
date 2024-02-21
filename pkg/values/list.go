@@ -21,6 +21,14 @@ func NewList(l []any) (*List, error) {
 	return &List{Underlying: lv}, nil
 }
 
+func MustNewList(l []any) *List {
+	value, err := NewList(l)
+	if err != nil {
+		panic(err)
+	}
+	return value
+}
+
 func (l *List) Proto() (*pb.Value, error) {
 	v := []*pb.Value{}
 	for _, e := range l.Underlying {

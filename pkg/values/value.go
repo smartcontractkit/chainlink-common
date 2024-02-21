@@ -45,6 +45,32 @@ func Wrap(v any) (Value, error) {
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
 }
 
+func MustWrap(v any) Value {
+	switch tv := v.(type) {
+	case map[string]any:
+		return MustNewMap(tv)
+	case string:
+		return MustNewString(tv)
+	case bool:
+		return MustNewBool(tv)
+	case []byte:
+		return MustNewBytes(tv)
+	case []any:
+		return MustNewList(tv)
+	case decimal.Decimal:
+		return MustNewDecimal(tv)
+	case int64:
+		return MustNewInt64(tv)
+	case int:
+		return MustNewInt64(int64(tv))
+	case nil:
+		return MustNewNil()
+	}
+
+	errorString := fmt.Sprintf("could not wrap into value: %+v", v)
+	panic(errorString)
+}
+
 func FromProto(val *pb.Value) (Value, error) {
 	if val == nil {
 		return nil, nil

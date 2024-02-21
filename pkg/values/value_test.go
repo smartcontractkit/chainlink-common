@@ -10,9 +10,10 @@ import (
 
 func Test_Value(t *testing.T) {
 	testCases := []struct {
-		name     string
-		newValue func() (any, Value, error)
-		equal    func(t *testing.T, expected any, unwrapped any)
+		name         string
+		newValue     func() (any, Value, error)
+		mustNewValue func() (any, Value)
+		equal        func(t *testing.T, expected any, unwrapped any)
 	}{
 		{
 			name: "map",
@@ -22,6 +23,13 @@ func Test_Value(t *testing.T) {
 				}
 				mv, err := NewMap(m)
 				return m, mv, err
+			},
+			mustNewValue: func() (any, Value) {
+				m := map[string]any{
+					"hello": "world",
+				}
+				mv := MustNewMap(m)
+				return m, mv
 			},
 		},
 		{
@@ -34,6 +42,15 @@ func Test_Value(t *testing.T) {
 				}
 				lv, err := NewList(l)
 				return l, lv, err
+			},
+			mustNewValue: func() (any, Value) {
+				l := []any{
+					1,
+					"2",
+					decimal.NewFromFloat(1.0),
+				}
+				lv := MustNewList(l)
+				return l, lv
 			},
 			equal: func(t *testing.T, expected any, unwrapped any) {
 				e, u := expected.([]any), unwrapped.([]any)
@@ -52,6 +69,11 @@ func Test_Value(t *testing.T) {
 				decv, err := NewDecimal(dec)
 				return dec, decv, err
 			},
+			mustNewValue: func() (any, Value) {
+				dec := decimal.NewFromFloat(1.03)
+				decv := MustNewDecimal(dec)
+				return dec, decv
+			},
 		},
 		{
 			name: "string",
@@ -59,6 +81,11 @@ func Test_Value(t *testing.T) {
 				s := "hello"
 				sv, err := NewString(s)
 				return s, sv, err
+			},
+			mustNewValue: func() (any, Value) {
+				s := "hello"
+				sv := MustNewString(s)
+				return s, sv
 			},
 		},
 		{
@@ -68,6 +95,11 @@ func Test_Value(t *testing.T) {
 				bv, err := NewBytes(b)
 				return b, bv, err
 			},
+			mustNewValue: func() (any, Value) {
+				b := []byte("hello")
+				bv := MustNewBytes(b)
+				return b, bv
+			},
 		},
 		{
 			name: "bool",
@@ -75,6 +107,11 @@ func Test_Value(t *testing.T) {
 				b := true
 				bv, err := NewBool(b)
 				return b, bv, err
+			},
+			mustNewValue: func() (any, Value) {
+				b := true
+				bv := MustNewBool(b)
+				return b, bv
 			},
 		},
 		{
@@ -91,6 +128,18 @@ func Test_Value(t *testing.T) {
 				mv, err := NewMap(m)
 				return m, mv, err
 			},
+			mustNewValue: func() (any, Value) {
+				m := map[string]any{
+					"hello": map[string]any{
+						"world": "foo",
+					},
+					"baz": []any{
+						int64(1), int64(2), int64(3),
+					},
+				}
+				mv := MustNewMap(m)
+				return m, mv
+			},
 		},
 	}
 
@@ -98,6 +147,10 @@ func Test_Value(t *testing.T) {
 		t.Run(tc.name, func(st *testing.T) {
 			originalValue, wrapped, err := tc.newValue()
 			require.NoError(t, err)
+
+			assert.NotPanics(t, func() {
+				tc.mustNewValue()
+			})
 
 			pb, err := wrapped.Proto()
 			require.NoError(t, err)

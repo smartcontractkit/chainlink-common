@@ -26,6 +26,14 @@ func NewMap(m map[string]any) (*Map, error) {
 	}, nil
 }
 
+func MustNewMap(m map[string]any) *Map {
+	value, err := NewMap(m)
+	if err != nil {
+		panic(err)
+	}
+	return value
+}
+
 func (m *Map) Proto() (*pb.Value, error) {
 	pm := map[string]*pb.Value{}
 	for k, v := range m.Underlying {

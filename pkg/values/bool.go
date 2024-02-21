@@ -12,6 +12,11 @@ func NewBool(b bool) (*Bool, error) {
 	return &Bool{Underlying: b}, nil
 }
 
+func MustNewBool(b bool) *Bool {
+	value, _ := NewBool(b)
+	return value
+}
+
 func (b *Bool) Proto() (*pb.Value, error) {
 	return pb.NewBoolValue(b.Underlying)
 }

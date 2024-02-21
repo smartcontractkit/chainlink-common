@@ -12,6 +12,11 @@ func NewBytes(b []byte) (*Bytes, error) {
 	return &Bytes{Underlying: b}, nil
 }
 
+func MustNewBytes(b []byte) *Bytes {
+	value, _ := NewBytes(b)
+	return value
+}
+
 func (b *Bytes) Proto() (*pb.Value, error) {
 	return pb.NewBytesValue(b.Underlying)
 }

@@ -238,8 +238,7 @@ func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 	if err != nil {
 		return nil, fmt.Errorf("failed to observe GasPriceSubUnitDataSource: %w", err)
 	}
-	// value may be nil due to no-op
-	if gotGas != nil && !assert.ObjectsAreEqual(gasPrice, gotGas) {
+	if !assert.ObjectsAreEqual(gasPrice, gotGas) {
 		return nil, fmt.Errorf("expected GasPriceSubUnitDataSource %s but got %s", gasPrice, gotGas)
 	}
 	if err := errorLog.SaveError(ctx, errMsg); err != nil {

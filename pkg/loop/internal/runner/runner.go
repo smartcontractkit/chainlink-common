@@ -76,7 +76,7 @@ func (i *stderrWrapper) Read(p []byte) (n int, err error) {
 }
 
 func (i *stderrWrapper) Close() error {
-	i.Close()
+	i.r.Close()
 	return nil
 }
 

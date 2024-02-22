@@ -32,5 +32,5 @@ type NOOPDataSource struct {
 }
 
 func (s *NOOPDataSource) Observe(ctx context.Context, _ types.ReportTimestamp) (*big.Int, error) {
-	return big.NewInt(1), nil
+	return big.NewInt(0), nil
 }

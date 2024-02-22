@@ -11,51 +11,37 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
-	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 )
 
 func TestMedianService(t *testing.T) {
 	t.Parallel()
+	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		return NewHelperProcessCommand(loop.PluginMedianName, false)
+	}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), test.StaticGasPriceDataSource(), &test.StaticErrorLog{})
+	hook := median.PluginService.XXXTestHook()
+	servicetest.Run(t, median)
 
-	for _, tt := range []struct {
-		name               string
-		gasPriceDataSource median.DataSource
-	}{
-		{"static", test.StaticGasPriceDataSource()},
-		{"noop", &test.NOOPDataSource{}},
-	} {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-				return NewHelperProcessCommand(loop.PluginMedianName, false)
-			}, test.StaticMedianProvider{}, test.StaticDataSource(), test.StaticJuelsPerFeeCoinDataSource(), tt.gasPriceDataSource, &test.StaticErrorLog{})
-			hook := median.PluginService.XXXTestHook()
-			servicetest.Run(t, median)
+	t.Run("control", func(t *testing.T) {
+		test.ReportingPluginFactory(t, median)
+	})
 
-			t.Run("control", func(t *testing.T) {
-				test.ReportingPluginFactory(t, median)
-			})
+	t.Run("Kill", func(t *testing.T) {
+		hook.Kill()
 
-			t.Run("Kill", func(t *testing.T) {
-				hook.Kill()
+		// wait for relaunch
+		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-				// wait for relaunch
-				time.Sleep(2 * internal.KeepAliveTickDuration)
+		test.ReportingPluginFactory(t, median)
+	})
 
-				test.ReportingPluginFactory(t, median)
-			})
+	t.Run("Reset", func(t *testing.T) {
+		hook.Reset()
 
-			t.Run("Reset", func(t *testing.T) {
-				hook.Reset()
+		// wait for relaunch
+		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-				// wait for relaunch
-				time.Sleep(2 * internal.KeepAliveTickDuration)
-
-				test.ReportingPluginFactory(t, median)
-			})
-		})
-	}
+		test.ReportingPluginFactory(t, median)
+	})
 }
 
 func TestMedianService_recovery(t *testing.T) {

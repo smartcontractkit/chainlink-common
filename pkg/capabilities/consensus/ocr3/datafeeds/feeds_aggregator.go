@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 const OutputFieldName = "mercury_reports"
@@ -109,7 +110,7 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 		return nil, err
 	}
 
-	wrappedReportsNeedingUpdates, err := values.NewMap(map[string]any{OutputFieldName: reportsNeedingUpdate})
+	wrappedReportsNeedingUpdates, err := pb.NewMapValue(map[string]any{OutputFieldName: reportsNeedingUpdate})
 	if err != nil {
 		return nil, err
 	}

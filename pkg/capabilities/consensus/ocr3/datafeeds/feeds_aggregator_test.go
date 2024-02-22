@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var (
@@ -110,7 +111,7 @@ func getConfig(t *testing.T, feedID string, deviation decimal.Decimal, heartbeat
 			"Heartbeat": heartbeat,
 		},
 	}
-	config, err := values.NewMap(unwrappedConfig)
+	config, err := pb.NewMapValue(unwrappedConfig)
 	require.NoError(t, err)
 	return config
 }

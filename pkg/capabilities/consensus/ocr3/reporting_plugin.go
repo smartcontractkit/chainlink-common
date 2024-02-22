@@ -11,6 +11,7 @@ import (
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
@@ -254,7 +255,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 }
 
 func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
-	b, err := values.NewBytes(rwi.Report)
+	b, err := pb.NewBytesValue(rwi.Report)
 	if err != nil {
 		r.lggr.Errorw("could not convert report bytes into value", "error", err)
 		return false, err
@@ -267,7 +268,7 @@ func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr 
 		return false, err
 	}
 
-	r.lggr.Debugw("ShouldAcceptAttestedReport transmitting", "len", len(b.Underlying))
+	r.lggr.Debugw("ShouldAcceptAttestedReport transmitting", "len", len(rwi.Report))
 	err = r.r.transmitResponse(ctx, response{
 		Value:               b,
 		WorkflowExecutionID: id.WorkflowExecutionId,

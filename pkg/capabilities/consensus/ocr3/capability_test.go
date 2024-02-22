@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 const workflowTestID = "consensus-workflow-test-id-1"
@@ -39,7 +40,7 @@ func TestOCR3Capability(t *testing.T) {
 	require.NoError(t, cp.Start(ctx))
 
 	callback := make(chan capabilities.CapabilityResponse, 10)
-	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
+	config, err := pb.NewMapValue(map[string]any{"aggregation_method": "data_feeds_2_0"})
 	require.NoError(t, err)
 
 	ethUsdValue, err := decimal.NewFromString("1.123456")
@@ -47,7 +48,7 @@ func TestOCR3Capability(t *testing.T) {
 	require.NoError(t, err)
 
 	obs := map[string]any{"ETH_USD": ethUsdValue}
-	inputs, err := values.NewMap(map[string]any{"observations": obs})
+	inputs, err := pb.NewMapValue(map[string]any{"observations": obs})
 	require.NoError(t, err)
 
 	executeReq := capabilities.CapabilityRequest{
@@ -61,7 +62,7 @@ func TestOCR3Capability(t *testing.T) {
 	err = cp.Execute(ctx, callback, executeReq)
 	require.NoError(t, err)
 
-	obsv, err := values.NewMap(obs)
+	obsv, err := pb.NewMapValue(obs)
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response
@@ -89,12 +90,12 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	cp := newCapability(s, fc, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
-	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
+	config, err := pb.NewMapValue(map[string]any{"aggregation_method": "data_feeds_2_0"})
 	require.NoError(t, err)
 
 	ethUsdValue, err := decimal.NewFromString("1.123456")
 	require.NoError(t, err)
-	inputs, err := values.NewMap(map[string]any{"observations": map[string]any{"ETH_USD": ethUsdValue}})
+	inputs, err := pb.NewMapValue(map[string]any{"observations": map[string]any{"ETH_USD": ethUsdValue}})
 	require.NoError(t, err)
 
 	rid := uuid.New().String()
@@ -128,7 +129,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	cp := newCapability(s, fc, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
-	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
+	config, err := pb.NewMapValue(map[string]any{"aggregation_method": "data_feeds_2_0"})
 	require.NoError(t, err)
 
 	registerReq := capabilities.RegisterToWorkflowRequest{

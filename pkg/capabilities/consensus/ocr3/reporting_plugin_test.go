@@ -13,7 +13,6 @@ import (
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
@@ -70,7 +69,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	rp, err := newReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
 	require.NoError(t, err)
 
-	o, err := values.NewString("hello")
+	o, err := pb.NewString("hello")
 	require.NoError(t, err)
 
 	eid := uuid.New().String()

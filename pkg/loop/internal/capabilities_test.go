@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type mockTrigger struct {
@@ -140,7 +140,7 @@ func Test_Capabilities(t *testing.T) {
 			capabilities.CapabilityRequest{})
 		require.NoError(t, err)
 
-		vs, err := values.NewString("hello")
+		vs, err := pb.NewString("hello")
 		require.NoError(t, err)
 		cr := capabilities.CapabilityResponse{
 			Value: vs,
@@ -210,7 +210,7 @@ func Test_Capabilities(t *testing.T) {
 
 		act := c.(capabilities.ActionCapability)
 
-		vmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		vmap, err := pb.NewMapValue(map[string]any{"foo": "bar"})
 		require.NoError(t, err)
 		expectedRequest := capabilities.RegisterToWorkflowRequest{
 			Config: vmap,
@@ -237,10 +237,10 @@ func Test_Capabilities(t *testing.T) {
 		c, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
-		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		cmap, err := pb.NewMapValue(map[string]any{"foo": "bar"})
 		require.NoError(t, err)
 
-		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		imap, err := pb.NewMapValue(map[string]any{"bar": "baz"})
 		require.NoError(t, err)
 		expectedRequest := capabilities.CapabilityRequest{
 			Config: cmap,
@@ -266,10 +266,10 @@ func Test_Capabilities(t *testing.T) {
 		c, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
-		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		cmap, err := pb.NewMapValue(map[string]any{"foo": "bar"})
 		require.NoError(t, err)
 
-		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		imap, err := pb.NewMapValue(map[string]any{"bar": "baz"})
 		require.NoError(t, err)
 		expectedRequest := capabilities.CapabilityRequest{
 			Config: cmap,

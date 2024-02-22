@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var info = capabilities.MustNewCapabilityInfo(
@@ -108,7 +108,7 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 
 	switch c.AggregationMethod {
 	case "data_feeds_2_0":
-		cm, err := values.NewMap(c.AggregationConfig)
+		cm, err := pb.NewMapValue(c.AggregationConfig)
 		if err != nil {
 			return err
 		}
@@ -121,7 +121,7 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 
 		o.aggregators[request.Metadata.WorkflowID] = agg
 
-		em, err := values.NewMap(c.EncoderConfig)
+		em, err := pb.NewMapValue(c.EncoderConfig)
 		if err != nil {
 			return err
 		}

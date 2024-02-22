@@ -10,6 +10,7 @@ import (
 	"golang.org/x/mod/semver"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 // CapabilityType is an enum for the type of capability.
@@ -55,7 +56,7 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value values.Value
+	Value pb.Value
 	Err   error
 }
 
@@ -71,18 +72,18 @@ type RegistrationMetadata struct {
 // CapabilityRequest is a struct for the Execute request of a capability.
 type CapabilityRequest struct {
 	Metadata RequestMetadata
-	Config   *values.Map
-	Inputs   *values.Map
+	Config   *pb.Map
+	Inputs   *pb.Map
 }
 
 type RegisterToWorkflowRequest struct {
 	Metadata RegistrationMetadata
-	Config   *values.Map
+	Config   *pb.Map
 }
 
 type UnregisterFromWorkflowRequest struct {
 	Metadata RegistrationMetadata
-	Config   *values.Map
+	Config   *pb.Map
 }
 
 // CallbackExecutable is an interface for executing a capability.

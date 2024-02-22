@@ -10,7 +10,7 @@ import (
 func Wrap(v any) (*Value, error) {
 	switch tv := v.(type) {
 	case map[string]any:
-		return NewMap(tv)
+		return NewMapValue(tv)
 	case string:
 		return NewStringValue(tv)
 	case bool:
@@ -18,7 +18,7 @@ func Wrap(v any) (*Value, error) {
 	case []byte:
 		return NewBytesValue(tv)
 	case []any:
-		return NewList(tv)
+		return NewListValue(tv)
 	case decimal.Decimal:
 		return NewDecimalValue(tv)
 	case int64:
@@ -107,7 +107,7 @@ func NewInt64Value(i int64) (*Value, error) {
 	}, nil
 }
 
-func NewMap(m map[string]any) (*Value, error) {
+func NewMapValue(m map[string]any) (*Value, error) {
 	var fields = make(map[string]*Value)
 
 	for k, v := range m {
@@ -128,7 +128,7 @@ func NewMap(m map[string]any) (*Value, error) {
 	}, nil
 }
 
-func NewList(m []any) (*Value, error) {
+func NewListValue(m []any) (*Value, error) {
 	var vals []*Value
 
 	for _, v := range m {

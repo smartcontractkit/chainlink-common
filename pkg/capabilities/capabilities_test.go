@@ -11,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 func Test_CapabilityInfo(t *testing.T) {
@@ -74,8 +75,8 @@ func (m *mockCapabilityWithExecute) Execute(ctx context.Context, callback chan<-
 func Test_ExecuteSyncReturnSingleValue(t *testing.T) {
 	mcwe := &mockCapabilityWithExecute{
 		ExecuteFn: func(ctx context.Context, callback chan<- CapabilityResponse, req CapabilityRequest) error {
-			val, _ := values.NewString("hello")
-			callback <- CapabilityResponse{val, nil}
+			val, _ := pb.NewStringValue("hello")
+			callback <- CapabilityResponse{*val, nil}
 
 			close(callback)
 
@@ -90,13 +91,14 @@ func Test_ExecuteSyncReturnSingleValue(t *testing.T) {
 }
 
 func Test_ExecuteSyncReturnMultipleValues(t *testing.T) {
-	es, _ := values.NewString("hello")
-	expectedList := []values.Value{es, es, es}
+	es, _ := pb.NewStringValue("hello")
+	expectedList, err := pb.Wrap([]any{es, es, es})
+	require.NoError(t, err)
 	mcwe := &mockCapabilityWithExecute{
 		ExecuteFn: func(ctx context.Context, callback chan<- CapabilityResponse, req CapabilityRequest) error {
-			callback <- CapabilityResponse{es, nil}
-			callback <- CapabilityResponse{es, nil}
-			callback <- CapabilityResponse{es, nil}
+			callback <- CapabilityResponse{*es, nil}
+			callback <- CapabilityResponse{*es, nil}
+			callback <- CapabilityResponse{*es, nil}
 
 			close(callback)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 // hex-encoded 32-byte value, prefixed with "0x", all lowercase
@@ -82,7 +83,7 @@ func (m Codec) Unwrap(raw values.Value) (ReportSet, error) {
 }
 
 func (m Codec) Wrap(reportSet ReportSet) (values.Value, error) {
-	return values.NewMap(
+	return pb.NewMapValue(
 		map[string]any{
 			"0x1111111111111111111100000000000000000000000000000000000000000000": map[string]any{
 				"timestamp": 42,

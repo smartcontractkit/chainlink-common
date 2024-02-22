@@ -20,11 +20,6 @@ jobs:
       - name: Unit Tests
         run: go test -race ./... -coverpkg=./... -coverprofile=pkg_coverage.out
 
-      - name: Ensure "make generate" has been run
-        run: |
-          make generate
-          git diff --exit-code || (echo 'ERROR: "make generate" was not run.' && exit 1)
-
       - name: Fuzz Tests
         # the amount of --seconds here is subject to change based on how long the CI job takes in the future
         # as we add more fuzz tests, we should take into consideration increasing this timelapse, so we can have enough coverage.
@@ -51,3 +46,15 @@ jobs:
         with:
           name: go-test-results
           path: ./pkg_coverage.out
+
+  check-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure "make generate" has been run
+        run: |
+          make generate
+          git diff --exit-code || (echo 'ERROR: "make generate" was not run.' && exit 1)
+      - name: Ensure "make gomodtidy" has been run
+        run: |
+          make gomodtidy
+          git diff --exit-code || (echo 'ERROR: "make gomodtidy" was not run.' && exit 1)

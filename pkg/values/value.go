@@ -1,8 +1,6 @@
 package values
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	"github.com/shopspring/decimal"
@@ -72,12 +70,8 @@ func FromProto(val *pb.Value) (Value, error) {
 	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)
 }
 
-func FromBytesValueProto(bv string) (*Bytes, error) {
-	p, err := base64.StdEncoding.DecodeString(bv)
-	if err != nil {
-		return nil, err
-	}
-	return NewBytes(p)
+func FromBytesValueProto(bv []byte) (*Bytes, error) {
+	return NewBytes(bv)
 }
 
 func FromMapValueProto(mv *pb.Map) (*Map, error) {
@@ -106,11 +100,6 @@ func FromListValueProto(lv *pb.List) (*List, error) {
 	return &List{Underlying: nl}, nil
 }
 
-func FromDecimalValueProto(decStr string) (*Decimal, error) {
-	dec := decimal.Decimal{}
-	err := json.Unmarshal([]byte(decStr), &dec)
-	if err != nil {
-		return nil, err
-	}
-	return NewDecimal(dec)
+func FromDecimalValueProto(val *pb.DecimalValue) (*Decimal, error) {
+	return NewDecimal(decimal.NewFromInt(val.Integral).Shift(val.Scale))
 }

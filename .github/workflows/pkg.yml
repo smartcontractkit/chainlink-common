@@ -56,11 +56,11 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
-      - name: Ensure "make generate" has been run
-        run: |
-          make generate
-          git diff --exit-code || (echo 'ERROR: "make generate" was not run.' && exit 1)
       - name: Ensure "make gomodtidy" has been run
         run: |
           make gomodtidy
-          git diff --exit-code || (echo 'ERROR: "make gomodtidy" was not run.' && exit 1)
+          git diff --exit-code
+      - name: Ensure "make generate" has been run
+        run: |
+          make generate
+          git diff --exit-code

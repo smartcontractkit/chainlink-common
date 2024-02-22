@@ -23,7 +23,7 @@ jobs:
       - name: Ensure "make generate" has been run
         run: |
           make generate
-          git diff --exit-code || (echo 'ERROR: Git differences detected.' && exit 1)
+          git diff --exit-code || (echo 'ERROR: "make generate" was not run.' && exit 1)
 
       - name: Fuzz Tests
         # the amount of --seconds here is subject to change based on how long the CI job takes in the future

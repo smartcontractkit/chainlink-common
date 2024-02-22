@@ -128,16 +128,6 @@ func NewMap(m map[string]any) (*Value, error) {
 	}, nil
 }
 
-func NewMapValue(m map[string]*Value) (*Value, error) {
-	return &Value{
-		Value: &Value_MapValue{
-			MapValue: &Map{
-				Fields: m,
-			},
-		},
-	}, nil
-}
-
 func NewList(m []any) (*Value, error) {
 	var vals []*Value
 
@@ -154,16 +144,6 @@ func NewList(m []any) (*Value, error) {
 		Value: &Value_ListValue{
 			ListValue: &List{
 				Fields: vals,
-			},
-		},
-	}, nil
-}
-
-func NewListValue(m []*Value) (*Value, error) {
-	return &Value{
-		Value: &Value_ListValue{
-			ListValue: &List{
-				Fields: m,
 			},
 		},
 	}, nil

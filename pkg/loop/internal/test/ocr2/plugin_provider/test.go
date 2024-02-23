@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
+	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 16: 3})
 	configDigestPrefix = libocr.ConfigDigestPrefix(99)
 
 	contractConfig = libocr.ContractConfig{
@@ -37,6 +37,7 @@ var (
 		Epoch:        epoch,
 		Round:        round,
 	}
+
 	DefaultContractTransmitterTestConfig = ContractTransmitterTestConfig{
 		ConfigDigest:  configDigest,
 		Account:       libocr.Account(keystore_test.DefaultKeystoreTestConfig.Account),
@@ -46,25 +47,37 @@ var (
 		Sigs:          sigs,
 	}
 
-	DefaultContractTransmtter = StaticContractTransmitter{
+	TestContractTransmitter = StaticContractTransmitter{
 		ContractTransmitterTestConfig: DefaultContractTransmitterTestConfig,
 	}
 
-	DefaultConfigProviderTestConfig = ConfigProviderTestConfig{
-		OffchainConfigDigesterTestConfig: OffchainConfigDigesterTestConfig{
-			ContractConfig:     contractConfig,
-			ConfigDigest:       configDigest,
-			ConfigDigestPrefix: configDigestPrefix,
-		},
-		ContractConfigTrackerTestConfig: ContractConfigTrackerTestConfig{
-			ContractConfig: contractConfig,
-			ConfigDigest:   configDigest,
-			ChangedInBlock: changedInBlock,
-			BlockHeight:    blockHeight,
-		},
+	offchainConfigDigesterTestConfig = OffchainConfigDigesterTestConfig{
+		ContractConfig:     contractConfig,
+		ConfigDigest:       configDigest,
+		ConfigDigestPrefix: configDigestPrefix,
 	}
 
-	DefaultStaticConfigProvider = StaticConfigProvider{
-		ConfigProviderTestConfig: DefaultConfigProviderTestConfig,
+	TestOffchainConfigDigester = StaticOffchainConfigDigester{
+		OffchainConfigDigesterTestConfig: offchainConfigDigesterTestConfig,
+	}
+
+	contractConfigTrackerTestConfig = ContractConfigTrackerTestConfig{
+		ContractConfig: contractConfig,
+		ConfigDigest:   configDigest,
+		ChangedInBlock: changedInBlock,
+		BlockHeight:    blockHeight,
+	}
+
+	TestContractConfigTracker = StaticContractConfigTracker{
+		ContractConfigTrackerTestConfig: contractConfigTrackerTestConfig,
+	}
+
+	configProviderTestConfig = ConfigProviderTestConfig{
+		OffchainConfigDigesterTestConfig: offchainConfigDigesterTestConfig,
+		ContractConfigTrackerTestConfig:  contractConfigTrackerTestConfig,
+	}
+
+	TestStaticConfigProvider = StaticConfigProvider{
+		ConfigProviderTestConfig: configProviderTestConfig,
 	}
 )

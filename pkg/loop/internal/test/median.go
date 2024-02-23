@@ -30,13 +30,11 @@ type PluginMedianTest struct {
 
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
-		assert.IsType(t, StaticPluginMedian{}, p)
 		ctx := tests.Context(t)
 		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &StaticErrorLog{})
 		require.NoError(t, err)
 
-		assert.IsType(t, staticPluginFactory{}, factory)
-		//ReportingPluginFactory(t, factory)
+		ReportingPluginFactory(t, factory)
 	})
 }
 

@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
@@ -78,6 +80,25 @@ func (s StaticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context,
 }
 
 func (s StaticReportingPlugin) Close() error { return nil }
+
+func (s StaticReportingPlugin) Evaluate(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin) {
+	gotQuery, err := rp.Query(ctx, reportContext.ReportTimestamp)
+	require.NoError(t, err)
+	assert.Equal(t, query, []byte(gotQuery))
+	gotObs, err := rp.Observation(ctx, reportContext.ReportTimestamp, query)
+	require.NoError(t, err)
+	assert.Equal(t, observation, gotObs)
+	gotOk, gotReport, err := rp.Report(ctx, reportContext.ReportTimestamp, query, obs)
+	require.NoError(t, err)
+	assert.True(t, gotOk)
+	assert.Equal(t, report, gotReport)
+	gotShouldAccept, err := rp.ShouldAcceptFinalizedReport(ctx, reportContext.ReportTimestamp, report)
+	require.NoError(t, err)
+	assert.True(t, gotShouldAccept)
+	gotShouldTransmit, err := rp.ShouldTransmitAcceptedReport(ctx, reportContext.ReportTimestamp, report)
+	require.NoError(t, err)
+	assert.True(t, gotShouldTransmit)
+}
 
 func errExpected(expected, got any) error {
 	return fmt.Errorf("expected %v but got %v", expected, got)

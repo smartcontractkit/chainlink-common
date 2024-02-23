@@ -56,6 +56,7 @@ type LogEventProvider interface {
 type LogEventProviderConfig struct {
 	NumLogUpkeeps    uint32
 	FastExecLogsHigh uint32
+	FastExecLogsLow  uint32
 }
 
 type RecoverableProvider interface {

@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-// TODO: Register the capiability in the NewDelegateFunction in chalink/core/services/workflows.delegate.go
+// TODO: Register the capability in the NewDelegateFunction in chainlink/core/services/workflows.delegate.go
 
 var mercuryInfo = capabilities.MustNewCapabilityInfo(
 	"mercury-trigger",
@@ -25,10 +25,11 @@ var mercuryInfo = capabilities.MustNewCapabilityInfo(
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
-	chans               map[workflowID]chan<- capabilities.CapabilityResponse
-	feedIdsForTriggerId map[string][]uint64
-	mu                  sync.Mutex
-	feedIdToWorkflowId  map[uint64]string
+	chans                 map[workflowID]chan<- capabilities.CapabilityResponse
+	feedIdsForTriggerId   map[string][]uint64
+	mu                    sync.Mutex
+	feedIdToWorkflowId    map[uint64]string
+	triggerIdToWorkflowId map[string]string
 }
 
 type MercuryReport struct {
@@ -42,55 +43,81 @@ type MercuryTriggerEvent struct {
 	triggerType string // "mercury"
 	id          string // "sha256 of payload.feedId + payload.timestamp"
 	timestamp   string // "current time"
-	payload     MercuryReport
+	payload     []MercuryReport
 }
 
 var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 
 func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
-		CapabilityInfo:      mercuryInfo,
-		chans:               map[workflowID]chan<- capabilities.CapabilityResponse{},
-		feedIdsForTriggerId: make(map[string][]uint64),
-		feedIdToWorkflowId:  make(map[uint64]string),
+		CapabilityInfo:        mercuryInfo,
+		chans:                 map[workflowID]chan<- capabilities.CapabilityResponse{},
+		feedIdsForTriggerId:   make(map[string][]uint64),
+		triggerIdToWorkflowId: make(map[string]string),
 	}
 }
 
 // maybe use mercury-pipline reports.go report struct instead of MercuryReport struct, and then we can use the pipeline report generators
-func (o *MercuryTriggerService) ProcessReport(report MercuryReport) error {
+func (o *MercuryTriggerService) ProcessReport(reports []MercuryReport) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
 	currentTime := time.Now()
 	unixTimestampMillis := currentTime.UnixNano() / int64(time.Millisecond)
-	feedId := report.feedId
+	triggerIdsForReports := make(map[string][]int)
+	reportIndex := 0
 
-	// Create a new CapabilityResponse with the MercuryTriggerEvent
-	triggerEvent := MercuryTriggerEvent{
-		triggerType: "mercury",
-		id:          sha256Hash(strconv.FormatUint(feedId, 10) + strconv.FormatUint(uint64(report.observationTimestamp), 10)),
-		timestamp:   strconv.FormatInt(unixTimestampMillis, 10),
-		payload:     report,
+	for _, report := range reports {
+		// for each feed id, we need to find the triggerId associated with it.
+		reportFeedId := report.feedId
+		for triggerId, feedIds := range o.feedIdsForTriggerId {
+			for _, feedId := range feedIds {
+				if reportFeedId == feedId {
+					// if its not initalized, initialize it
+					if _, ok := triggerIdsForReports[triggerId]; !ok {
+						triggerIdsForReports[triggerId] = make([]int, 0)
+					}
+					triggerIdsForReports[triggerId] = append(triggerIdsForReports[triggerId], reportIndex)
+				}
+			}
+		}
+		reportIndex += 1
 	}
 
-	val, err := values.Wrap(triggerEvent)
-	if err != nil {
-		return err
-	}
+	// Then for each trigger id, find which reports correspond to that trigger and create an event bundling the reports
+	// and send it to the channel associated with the trigger id.
+	for triggerId, reportIds := range triggerIdsForReports {
+		reportPayload := make([]MercuryReport, 0)
+		for _, reportId := range reportIds {
+			reportPayload = append(reportPayload, reports[reportId])
+		}
 
-	// Create a new CapabilityResponse with the MercuryTriggerEvent
-	event := capabilities.CapabilityResponse{
-		Value: val,
-	}
+		triggerEvent := MercuryTriggerEvent{
+			triggerType: "mercury",
+			id:          generateTriggerEventId(reportPayload),
+			timestamp:   strconv.FormatInt(unixTimestampMillis, 10),
+			payload:     reportPayload,
+		}
 
-	// If the FeedId is in the feedIdsForTriggerId map, then send the event to the channel.
-	if _, ok := o.feedIdToWorkflowId[feedId]; ok {
-		wfID := o.feedIdToWorkflowId[feedId]
+		// TODO: Modify values.Wrap to handle MercuryTriggerEvent and MercuryReport structs
+		val, err := values.Wrap(triggerEvent)
+		if err != nil {
+			return err
+		}
+
+		// Create a new CapabilityResponse with the MercuryTriggerEvent
+		capabilityResponse := capabilities.CapabilityResponse{
+			Value: val,
+		}
+
+		// If the FeedId is in the feedIdsForTriggerId map, then send the event to the channel.
+
+		wfID := o.triggerIdToWorkflowId[triggerId]
 		ch, ok := o.chans[workflowID(wfID)]
 		if ok {
-			ch <- event
+			ch <- capabilityResponse
 		} else {
-			return fmt.Errorf("no registration for %s", feedId)
+			return fmt.Errorf("no registration for %s", triggerId)
 		}
 	}
 	return nil
@@ -107,10 +134,8 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 	triggerId := o.GetTriggerId(req) // TODO: This is manadatory, so throw an error if its not present or already exists
 	feedIds := o.GetFeedIds(req)     // TODO: what if feedIds is empty? should we throw an error or allow it?
 	o.feedIdsForTriggerId[triggerId] = feedIds
-	// set feedIdToWorkflowId for each feedId
-	for _, feedId := range feedIds {
-		o.feedIdToWorkflowId[feedId] = wid // TODO: should this be an array?
-	}
+
+	o.triggerIdToWorkflowId[triggerId] = wid
 	return nil
 }
 
@@ -126,14 +151,10 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 	}
 
 	triggerId := o.GetTriggerId(req)
-	// delete feedIdToWorkflowId for each feedId
-	feedIds := o.feedIdsForTriggerId[triggerId]
-	for _, feedId := range feedIds {
-		delete(o.feedIdToWorkflowId, feedId)
-	}
 
 	delete(o.chans, workflowID(wid))
 	delete(o.feedIdsForTriggerId, triggerId)
+	delete(o.triggerIdToWorkflowId, triggerId)
 
 	return nil
 }
@@ -167,6 +188,12 @@ func sha256Hash(s string) string {
 	hash := sha256.New()
 	hash.Write([]byte(s))
 	return hex.EncodeToString(hash.Sum(nil))
+}
+
+// TODO: The generated id should probably be the sha256 of all the report feed ids and timestamps associated with this trigger event
+func generateTriggerEventId(reports []MercuryReport) string {
+	report := reports[0]
+	return sha256Hash(strconv.FormatUint(report.feedId, 10) + strconv.FormatUint(uint64(report.observationTimestamp), 10))
 }
 
 // TODO: Capability Validation API stub out here

@@ -52,8 +52,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          path: chainlink-common
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
@@ -63,6 +61,7 @@ jobs:
           make gomodtidy
           git diff --exit-code
       - name: Ensure "make generate" has been run
+        working-directory: ./chainlink-common
         run: |
           make generate
           git diff --exit-code

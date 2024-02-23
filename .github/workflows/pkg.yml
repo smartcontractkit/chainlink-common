@@ -61,7 +61,7 @@ jobs:
           make gomodtidy
           git diff --exit-code
       - name: Ensure "make generate" has been run
-        working-directory: ./chainlink-common
+        working-directory: chainlink-common
         run: |
           make generate
           git diff --exit-code

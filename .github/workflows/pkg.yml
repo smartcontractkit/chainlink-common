@@ -65,4 +65,3 @@ jobs:
           pwd
           make generate
           git diff --exit-code
-        working-directory: ./chainlink-common

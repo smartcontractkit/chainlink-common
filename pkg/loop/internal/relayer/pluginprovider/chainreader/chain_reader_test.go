@@ -18,7 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
+	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint common practice to import test mods with .
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -61,10 +61,10 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 func TestChainReaderClient(t *testing.T) {
 	fake := &fakeChainReader{}
-	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop[*testing.T](&fakeChainReaderInterfaceTester{impl: fake}))
 
 	es := &errChainReader{}
-	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	errTester := test.WrapChainReaderTesterForLoop[*testing.T](&fakeChainReaderInterfaceTester{impl: es})
 	errTester.Setup(t)
 	chainReader := errTester.GetChainReader(t)
 
@@ -97,7 +97,7 @@ func TestChainReaderClient(t *testing.T) {
 	t.Run("nil reader should return unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
 
-		nilTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+		nilTester := test.WrapChainReaderTesterForLoop[*testing.T](&fakeChainReaderInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCr := nilTester.GetChainReader(t)
 

@@ -10,7 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester) {
+func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester[*testing.T]) {
 	// A flattening of the TestStruct, replacing the Account/Accounts with just an int that can be used to make an account
 	// And an extra []byte to test decoding on its own.
 	f.Add(int32(0), "foo", uint8(0), []byte{} /*[]int8 is not supported, byte is the same size*/, 0, 1, int64(1), []byte{} /*fixed size isn't allowed*/, 1, "foo", []byte{})

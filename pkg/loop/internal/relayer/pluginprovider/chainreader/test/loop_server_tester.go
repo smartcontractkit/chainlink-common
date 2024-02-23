@@ -3,22 +3,23 @@ package test
 import (
 	"context"
 	"net"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 
-type loopServerTester struct {
+type loopServerTester[T interfacetests.TestingT[T]] struct {
 	lis          *bufconn.Listener
 	server       *grpc.Server
 	conn         *grpc.ClientConn
 	registerHook func(server *grpc.Server)
 }
 
-func (lst *loopServerTester) Setup(t *testing.T) {
+func (lst *loopServerTester[T]) Setup(t T) {
 	lis := bufconn.Listen(1024 * 1024)
 	lst.lis = lis
 	s := grpc.NewServer()
@@ -44,7 +45,7 @@ func (lst *loopServerTester) Setup(t *testing.T) {
 	})
 }
 
-func (lst *loopServerTester) GetConn(t *testing.T) *grpc.ClientConn {
+func (lst *loopServerTester[T]) GetConn(t T) *grpc.ClientConn {
 	if lst.conn != nil {
 		return lst.conn
 	}

@@ -28,6 +28,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 	biit := &bigEndianInterfaceTester{}
 	lbiit := &bigEndianInterfaceTester{lenient: true}
 	RunCodecWithStrictArgsInterfaceTest(t, biit)
+<<<<<<< HEAD
 	RunCodecWithStrictArgsInterfaceTest(t, testutils.WrapCodecTesterForLoop(biit))
 	RunCodecInterfaceTests(t, lbiit)
 
@@ -42,6 +43,9 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 		assert.Equal(t, ts, *actual)
 	})
 
+=======
+	RunCodecWithStrictArgsInterfaceTest(t, testutils.WrapCodecTesterForLoop[*testing.T](biit))
+>>>>>>> e29b55b (Use an interface instaed of testing.T in contract tests so that they can run in SDK)
 	t.Run("GetMaxEncodingSize delegates to Size", func(t *testing.T) {
 		testCodec := &encodingtestutils.TestTypeCodec{
 			Value: []int{55, 11},
@@ -248,7 +252,7 @@ func (b *bigEndianInterfaceTester) GetCodec(t *testing.T) types.Codec {
 	arr2, err := encodings.NewArray(2, testStruct)
 	require.NoError(t, err)
 
-	ts := CreateTestStruct(0, b)
+	ts := CreateTestStruct[*testing.T](0, b)
 
 	tc := &encodings.CodecFromTypeCodec{
 		TestItemType:            testStruct,

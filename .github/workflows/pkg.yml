@@ -63,5 +63,6 @@ jobs:
       - name: Ensure "make generate" has been run
         run: |
           pwd
+          cd ./chainlink-common
           make generate
           git diff --exit-code

@@ -8,6 +8,6 @@ import (
 )
 
 func FuzzCodec(f *testing.F) {
-	interfaceTester := test.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: &fakeCodec{}})
+	interfaceTester := test.WrapCodecTesterForLoop[*testing.T](&fakeCodecInterfaceTester{impl: &fakeCodec{}})
 	interfacetests.RunCodecInterfaceFuzzTests(f, interfaceTester)
 }

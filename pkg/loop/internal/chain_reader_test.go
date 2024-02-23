@@ -61,10 +61,10 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 func TestChainReaderClient(t *testing.T) {
 	fake := &fakeChainReader{}
-	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop[*testing.T](&fakeChainReaderInterfaceTester{impl: fake}))
 
 	es := &errChainReader{}
-	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	errTester := test.WrapChainReaderTesterForLoop[*testing.T](&fakeChainReaderInterfaceTester{impl: es})
 	errTester.Setup(t)
 	chainReader := errTester.GetChainReader(t)
 
@@ -97,7 +97,7 @@ func TestChainReaderClient(t *testing.T) {
 	t.Run("nil reader should return unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
 
-		nilTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+		nilTester := test.WrapChainReaderTesterForLoop[*testing.T](&fakeChainReaderInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCr := nilTester.GetChainReader(t)
 

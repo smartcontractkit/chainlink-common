@@ -8,35 +8,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type ChainReaderTester interface {
+type ChainReaderEvaluator interface {
 	types.ChainReader
 	// Evaluate runs all the methods of the other chain reader and checks if they return
 	// the values of the embedded chain reader.
 	Evaluate(ctx context.Context, other types.ChainReader) error
 }
 
-var _ ChainReaderTester = staticChainReader{}
-
 var (
 	contractName         = "anyContract"
 	contractMethod       = "anyMethod"
 	getLatestValueParams = map[string]string{"param1": "value1", "param2": "value2"}
 	latestValue          = map[string]any{"ret1": "latestValue1", "ret2": "latestValue2"}
+
+	// TestChainReader is a static implementation of ChainReaderEvaluator for testing
+	TestChainReader = staticChainReader{
+		contractName:   contractName,
+		contractMethod: contractMethod,
+		latestValue:    latestValue,
+		params:         getLatestValueParams,
+	}
 )
 
-var TestChainReader = staticChainReader{
-	contractName:   contractName,
-	contractMethod: contractMethod,
-	latestValue:    latestValue,
-	params:         getLatestValueParams,
-}
-
+// staticChainReader is a static implementation of ChainReaderEvaluator
 type staticChainReader struct {
 	contractName   string
 	contractMethod string
 	latestValue    map[string]any
 	params         map[string]string
 }
+
+var _ ChainReaderEvaluator = staticChainReader{}
 
 func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
 	// lazy initialization

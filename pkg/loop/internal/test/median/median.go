@@ -45,7 +45,7 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		// we expect the static implementation to be used under the covers
 		// we can't compare the types directly because the returned reporting plugin may be a grpc client
 		// that wraps the static implementation
-		var expectedReportingPluginImpl = reportingplugin_test.TestStaticReportingPlugin
+		var expectedReportingPluginImpl = reportingplugin_test.StaticImpl
 
 		rp, gotRPI, err := factory.NewReportingPlugin(reportingPluginConfig)
 		require.NoError(t, err)
@@ -197,16 +197,16 @@ func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginCon
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationShouldTransmitAcceptedReport %d but got %d", s.MaxDurationShouldTransmitAcceptedReport, config.MaxDurationShouldTransmitAcceptedReport)
 	}
 
-	return reportingplugin_test.TestStaticReportingPlugin, rpi, nil
+	return reportingplugin_test.StaticImpl, rpi, nil
 }
 
 type StaticMedianProviderConfig struct {
 	// we use the static implementation type not the interface type
 	// because we always expect the static implementation to be used
 	// and it facilitates testing.
-	OffchainDigester    pluginprovider_test.StaticOffchainConfigDigester
-	ContractTracker     pluginprovider_test.StaticContractConfigTracker
-	ContractTransmitter pluginprovider_test.StaticContractTransmitter
+	OffchainDigester    pluginprovider_test.OffchainConfigDigesterEvaluator
+	ContractTracker     pluginprovider_test.ContractConfigTrackerEvaluator
+	ContractTransmitter pluginprovider_test.ContractTransmitterEvaluator //pluginprovider_test.StaticContractTransmitter
 }
 
 type StaticMedianProvider struct {
@@ -214,8 +214,8 @@ type StaticMedianProvider struct {
 	rc  staticReportCodec
 	mc  staticMedianContract
 	ooc staticOnchainConfigCodec
-	ocd pluginprovider_test.StaticOffchainConfigDigester
-	cr  pluginprovider_test.ChainReaderTester //pluginprovider_test.StaticChainReader
+	ocd pluginprovider_test.OffchainConfigDigesterEvaluator
+	cr  pluginprovider_test.ChainReaderEvaluator //pluginprovider_test.StaticChainReader
 }
 
 func (s StaticMedianProvider) Start(ctx context.Context) error {
@@ -272,40 +272,35 @@ func (s StaticMedianProvider) Codec() types.Codec {
 	return codec_test.StaticCodec{}
 }
 
-func (s StaticMedianProvider) AssertEqualOffchainConfigDigester(t *testing.T, ocd libocr.OffchainConfigDigester) {
-	t.Helper()
-	assert.NoError(t, s.ocd.Equal(ocd))
-}
-
-func (s StaticMedianProvider) AssertEqual(t *testing.T, provider types.MedianProvider) {
+func (s StaticMedianProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.ocd.Equal(provider.OffchainConfigDigester()))
+		assert.NoError(t, s.ocd.Evaluate(ctx, provider.OffchainConfigDigester()))
 	})
 
 	t.Run("ContractConfigTracker", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.StaticMedianProviderConfig.ContractTracker.Equal(context.Background(), provider.ContractConfigTracker()))
+		assert.NoError(t, s.StaticMedianProviderConfig.ContractTracker.Evaluate(ctx, provider.ContractConfigTracker()))
 	})
 
 	t.Run("ContractTransmitter", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.StaticMedianProviderConfig.ContractTransmitter.Equal(context.Background(), provider.ContractTransmitter()))
+		assert.NoError(t, s.StaticMedianProviderConfig.ContractTransmitter.Evaluate(ctx, provider.ContractTransmitter()))
 	})
 
 	t.Run("ReportCodec", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.rc.Evaluate(context.Background(), provider.ReportCodec()))
+		assert.NoError(t, s.rc.Evaluate(ctx, provider.ReportCodec()))
 	})
 
 	t.Run("MedianContract", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.mc.Evaluate(context.Background(), provider.MedianContract()))
+		assert.NoError(t, s.mc.Evaluate(ctx, provider.MedianContract()))
 	})
 
 	t.Run("OnchainConfigCodec", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.ooc.Evaluate(context.Background(), provider.OnchainConfigCodec()))
+		assert.NoError(t, s.ooc.Evaluate(ctx, provider.OnchainConfigCodec()))
 	})
 
 }
@@ -319,19 +314,19 @@ func (s StaticMedianProvider) Equal(ctx context.Context, provider types.MedianPr
 	}
 
 	ocd := provider.OffchainConfigDigester()
-	err = s.OffchainDigester.Equal(ocd)
+	err = s.OffchainDigester.Evaluate(ctx, ocd)
 	if err != nil {
 		return fmt.Errorf("providers offchain digester does not equal static offchain digester: %w", err)
 	}
 
 	cct := provider.ContractConfigTracker()
-	err = s.ContractTracker.Equal(ctx, cct)
+	err = s.ContractTracker.Evaluate(ctx, cct)
 	if err != nil {
 		return fmt.Errorf("providers contract config tracker does not equal static contract config tracker: %w", err)
 	}
 
 	ct := provider.ContractTransmitter()
-	err = s.StaticMedianProviderConfig.ContractTransmitter.Equal(ctx, ct)
+	err = s.StaticMedianProviderConfig.ContractTransmitter.Evaluate(ctx, ct)
 	if err != nil {
 		return fmt.Errorf("providers contract transmitter does not equal static contract transmitter: %w", err)
 	}

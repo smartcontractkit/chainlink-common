@@ -124,27 +124,29 @@ func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 }
 
 func (s staticPluginRelayer) Start(ctx context.Context) error {
-	// lazy initialization
-	s.StaticPluginRelayerConfig.RelayArgs = relayArgs
-	s.StaticPluginRelayerConfig.PluginArgs = pluginArgs
-	s.nodeRequest = nodeRequest{
-		pageSize:  137,
-		pageToken: "",
-	}
-	s.nodeResponse = nodeResponse{
-		nodes:    nodes,
-		nextPage: "",
-		total:    len(nodes),
-	}
 
-	//s.nodeStatus = nodes
-	//s.limit = 137
-	s.transactionRequest = transactionRequest{
-		from:         "me",
-		to:           "you",
-		amount:       big.NewInt(97),
-		balanceCheck: true,
-	}
+	/*	// lazy initialization
+		s.StaticPluginRelayerConfig.RelayArgs = relayArgs
+		s.StaticPluginRelayerConfig.PluginArgs = pluginArgs
+		s.nodeRequest = nodeRequest{
+			pageSize:  137,
+			pageToken: "",
+		}
+		s.nodeResponse = nodeResponse{
+			nodes:    nodes,
+			nextPage: "",
+			total:    len(nodes),
+		}
+
+		//s.nodeStatus = nodes
+		//s.limit = 137
+		s.transactionRequest = transactionRequest{
+			from:         "me",
+			to:           "you",
+			amount:       big.NewInt(97),
+			balanceCheck: true,
+		}
+	*/
 	return nil
 }
 
@@ -189,7 +191,7 @@ func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.Rela
 		}
 	}
 
-	return pluginprovider_test.StaticPluginProvider{}, nil
+	return pluginprovider_test.TestPluginProvider, nil
 }
 
 func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
@@ -290,7 +292,7 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		require.NoError(t, configProvider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, configProvider.Close()) })
 
-		expectedConfigProvider.AssertEqual(t, configProvider)
+		expectedConfigProvider.AssertEqual(t, ctx, configProvider)
 	})
 
 	t.Run("MedianProvider", func(t *testing.T) {
@@ -305,7 +307,7 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
 
-			expectedMedianProvider.AssertEqual(t, provider)
+			expectedMedianProvider.AssertEqual(t, ctx, provider)
 		})
 	})
 
@@ -320,7 +322,7 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
 
-			expectedAgnosticProvider.AssertEqual(t, provider)
+			expectedAgnosticProvider.AssertEqual(t, ctx, provider)
 		})
 	})
 

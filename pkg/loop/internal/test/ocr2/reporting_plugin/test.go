@@ -18,11 +18,26 @@ const (
 )
 
 var (
-	ConfigDigest       = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
+	// StaticImpl is a static implementation of the ReportingPluginTester interface for testing
+	StaticImpl = staticReportingPlugin{
+		staticReportingPluginConfig: staticReportingPluginConfig{
+			ReportContext:          reportContext,
+			Query:                  query,
+			Observation:            observation,
+			AttributedObservations: obs,
+			Report:                 report,
+			//	Sigs:           sigs,
+			ShouldAccept:   shouldAccept,
+			ShouldReport:   shouldReport,
+			ShouldTransmit: shouldTransmit,
+		},
+	}
+
+	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
 	configDigestPrefix = libocr.ConfigDigestPrefix(99)
 
 	contractConfig = libocr.ContractConfig{
-		ConfigDigest:          ConfigDigest,
+		ConfigDigest:          configDigest,
 		ConfigCount:           42,
 		Signers:               []libocr.OnchainPublicKey{[]byte{15: 1}},
 		Transmitters:          []libocr.Account{"foo", "bar"},
@@ -40,7 +55,7 @@ var (
 	report        = libocr.Report{42: 101}
 	reportContext = libocr.ReportContext{
 		ReportTimestamp: libocr.ReportTimestamp{
-			ConfigDigest: ConfigDigest,
+			ConfigDigest: configDigest,
 			Epoch:        epoch,
 			Round:        round,
 		},
@@ -70,21 +85,5 @@ var (
 			MaxObservationLength: 13,
 			MaxReportLength:      17,
 		},
-	}
-
-	DefaultReportingPluginTestConfig = ReportingPluginTestConfig{
-		ReportContext:          reportContext,
-		Query:                  query,
-		Observation:            observation,
-		AttributedObservations: obs,
-		Report:                 report,
-		//	Sigs:           sigs,
-		ShouldAccept:   shouldAccept,
-		ShouldReport:   shouldReport,
-		ShouldTransmit: shouldTransmit,
-	}
-
-	TestStaticReportingPlugin = StaticReportingPlugin{
-		DefaultReportingPluginTestConfig,
 	}
 )

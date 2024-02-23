@@ -21,7 +21,7 @@ jobs:
         run: go test -race ./... -coverpkg=./... -coverprofile=pkg_coverage.out
       
       - name: Fuzz Tests
-        uses: jidicula/go-fuzz-action@56d77b1f65ed7791cd17d5ee899379da97625851 # v1.2.0
+        uses: jidicula/go-fuzz-action@ad4614f5e1a4d3cc7a8522e6db5e5a2358eb0de5 # v1.2.0
         with:
           packages: './pkg/...'
           # the amount of seconds here is subject to change based on how long the CI job takes in the future

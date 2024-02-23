@@ -61,6 +61,7 @@ func newCapability(s *store, clock clockwork.Clock, encoderFactory EncoderFactor
 
 func (o *capability) Start(ctx context.Context) error {
 	return o.StartOnce("OCR3Capability", func() error {
+		o.lggr.Debug("OCR3Capability started")
 		o.wg.Add(1)
 		go o.loop()
 		return nil
@@ -69,6 +70,7 @@ func (o *capability) Start(ctx context.Context) error {
 
 func (o *capability) Close() error {
 	return o.StopOnce("OCR3Capability", func() error {
+		o.lggr.Debug("OCR3Capability closed")
 		close(o.stopCh)
 		o.wg.Wait()
 		return nil
@@ -176,7 +178,7 @@ func (o *capability) Execute(ctx context.Context, callback chan<- capabilities.C
 		return err
 	}
 
-	o.newExpiryWorkerCh <- r
+	//o.newExpiryWorkerCh <- r
 	return nil
 }
 
@@ -239,8 +241,8 @@ func (o *capability) transmitResponse(ctx context.Context, resp response) error 
 	}
 
 	select {
-	case <-req.RequestCtx.Done():
-		return fmt.Errorf("request canceled: not propagating response %+v to caller", resp)
+	//case <-req.RequestCtx.Done():
+	//	return fmt.Errorf("request canceled: not propagating response %+v to caller", resp)
 	case req.CallbackCh <- r:
 		close(req.CallbackCh)
 		o.store.evict(ctx, resp.WorkflowExecutionID)

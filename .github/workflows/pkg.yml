@@ -62,6 +62,7 @@ jobs:
           git diff --exit-code
       - name: Ensure "make generate" has been run
         run: |
+          pwd
           make generate
           git diff --exit-code
-        working-directory: ../chainlink-common
+        working-directory: ./chainlink-common

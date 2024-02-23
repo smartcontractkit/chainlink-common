@@ -21,10 +21,8 @@ jobs:
         run: go test -race ./... -coverpkg=./... -coverprofile=pkg_coverage.out
       
       - name: Fuzz Tests
-        uses: jidicula/go-fuzz-action@v1.1.0
+        uses: jidicula/go-fuzz-action@4f24eed45b25214f31a9fe035ca68ea2c88c6a13 # v1.2.0
         with:
-          # how can we pass the go version here from the Setup Go action?
-          go-version: 1.21
           packages: './pkg/...'
           # the amount of seconds here is subject to change based on how long the CI job takes in the future
           # as we add more fuzz tests, we should take into consideration increasing this timelapse, so we can have enough coverage.

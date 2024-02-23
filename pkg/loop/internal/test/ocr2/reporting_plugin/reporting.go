@@ -12,7 +12,13 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-type ReportingPluginTestConfig struct {
+type ReportingPluginTester interface {
+	libocr.ReportingPlugin
+	// AssertEqual checks that the sub-components of the other ReportingPlugin are equal to this one
+	AssertEqual(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin)
+}
+
+type staticReportingPluginConfig struct {
 	ReportContext          libocr.ReportContext
 	Query                  libocr.Query
 	Observation            libocr.Observation
@@ -23,65 +29,65 @@ type ReportingPluginTestConfig struct {
 	ShouldTransmit         bool
 }
 
-var _ libocr.ReportingPlugin = StaticReportingPlugin{}
+var _ libocr.ReportingPlugin = staticReportingPlugin{}
 
-type StaticReportingPlugin struct {
-	ReportingPluginTestConfig
+type staticReportingPlugin struct {
+	staticReportingPluginConfig
 }
 
-func (s StaticReportingPlugin) Query(ctx context.Context, timestamp libocr.ReportTimestamp) (libocr.Query, error) {
-	if timestamp != s.ReportingPluginTestConfig.ReportContext.ReportTimestamp {
-		return nil, errExpected(s.ReportingPluginTestConfig.ReportContext.ReportTimestamp, timestamp)
+func (s staticReportingPlugin) Query(ctx context.Context, timestamp libocr.ReportTimestamp) (libocr.Query, error) {
+	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
+		return nil, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
 	}
-	return s.ReportingPluginTestConfig.Query, nil
+	return s.staticReportingPluginConfig.Query, nil
 }
 
-func (s StaticReportingPlugin) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, q libocr.Query) (libocr.Observation, error) {
-	if timestamp != s.ReportingPluginTestConfig.ReportContext.ReportTimestamp {
-		return nil, errExpected(s.ReportingPluginTestConfig.ReportContext.ReportTimestamp, timestamp)
+func (s staticReportingPlugin) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, q libocr.Query) (libocr.Observation, error) {
+	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
+		return nil, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
 	}
-	if !bytes.Equal(q, s.ReportingPluginTestConfig.Query) {
-		return nil, errExpected(s.ReportingPluginTestConfig.Query, q)
+	if !bytes.Equal(q, s.staticReportingPluginConfig.Query) {
+		return nil, errExpected(s.staticReportingPluginConfig.Query, q)
 	}
-	return s.ReportingPluginTestConfig.Observation, nil
+	return s.staticReportingPluginConfig.Observation, nil
 }
 
-func (s StaticReportingPlugin) Report(ctx context.Context, timestamp libocr.ReportTimestamp, q libocr.Query, observations []libocr.AttributedObservation) (bool, libocr.Report, error) {
-	if timestamp != s.ReportingPluginTestConfig.ReportContext.ReportTimestamp {
-		return false, nil, errExpected(s.ReportingPluginTestConfig.ReportContext.ReportTimestamp, timestamp)
+func (s staticReportingPlugin) Report(ctx context.Context, timestamp libocr.ReportTimestamp, q libocr.Query, observations []libocr.AttributedObservation) (bool, libocr.Report, error) {
+	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
+		return false, nil, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
 	}
-	if !bytes.Equal(q, s.ReportingPluginTestConfig.Query) {
-		return false, nil, errExpected(s.ReportingPluginTestConfig.Query, q)
+	if !bytes.Equal(q, s.staticReportingPluginConfig.Query) {
+		return false, nil, errExpected(s.staticReportingPluginConfig.Query, q)
 	}
-	if !assert.ObjectsAreEqual(s.ReportingPluginTestConfig.AttributedObservations, observations) {
-		return false, nil, errExpected(s.ReportingPluginTestConfig.AttributedObservations, observations)
+	if !assert.ObjectsAreEqual(s.staticReportingPluginConfig.AttributedObservations, observations) {
+		return false, nil, errExpected(s.staticReportingPluginConfig.AttributedObservations, observations)
 	}
-	return s.ReportingPluginTestConfig.ShouldReport, s.ReportingPluginTestConfig.Report, nil
+	return s.staticReportingPluginConfig.ShouldReport, s.staticReportingPluginConfig.Report, nil
 }
 
-func (s StaticReportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, timestamp libocr.ReportTimestamp, r libocr.Report) (bool, error) {
-	if timestamp != s.ReportingPluginTestConfig.ReportContext.ReportTimestamp {
-		return false, errExpected(s.ReportingPluginTestConfig.ReportContext.ReportTimestamp, timestamp)
+func (s staticReportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, timestamp libocr.ReportTimestamp, r libocr.Report) (bool, error) {
+	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
+		return false, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
 	}
-	if !bytes.Equal(r, s.ReportingPluginTestConfig.Report) {
-		return false, errExpected(s.ReportingPluginTestConfig.Report, r)
+	if !bytes.Equal(r, s.staticReportingPluginConfig.Report) {
+		return false, errExpected(s.staticReportingPluginConfig.Report, r)
 	}
 	return shouldAccept, nil
 }
 
-func (s StaticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, timestamp libocr.ReportTimestamp, r libocr.Report) (bool, error) {
-	if timestamp != s.ReportingPluginTestConfig.ReportContext.ReportTimestamp {
-		return false, errExpected(s.ReportingPluginTestConfig.ReportContext.ReportTimestamp, timestamp)
+func (s staticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, timestamp libocr.ReportTimestamp, r libocr.Report) (bool, error) {
+	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
+		return false, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
 	}
-	if !bytes.Equal(r, s.ReportingPluginTestConfig.Report) {
-		return false, errExpected(s.ReportingPluginTestConfig.Report, r)
+	if !bytes.Equal(r, s.staticReportingPluginConfig.Report) {
+		return false, errExpected(s.staticReportingPluginConfig.Report, r)
 	}
 	return shouldTransmit, nil
 }
 
-func (s StaticReportingPlugin) Close() error { return nil }
+func (s staticReportingPlugin) Close() error { return nil }
 
-func (s StaticReportingPlugin) AssertEqual(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin) {
+func (s staticReportingPlugin) AssertEqual(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin) {
 	gotQuery, err := rp.Query(ctx, reportContext.ReportTimestamp)
 	require.NoError(t, err)
 	assert.Equal(t, query, []byte(gotQuery))

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type ContractTransmitterTestConfig struct {
+type contractTransmitterTestConfig struct {
 	ReportContext libocr.ReportContext
 	Report        libocr.Report
 	Sigs          []libocr.AttributedOnchainSignature
@@ -19,13 +19,21 @@ type ContractTransmitterTestConfig struct {
 	Epoch        uint32
 }
 
-var _ libocr.ContractTransmitter = StaticContractTransmitter{}
-
-type StaticContractTransmitter struct {
-	ContractTransmitterTestConfig
+// ContractTransmitterEvaluator is a helper interface for testing ContractTransmitters
+type ContractTransmitterEvaluator interface {
+	libocr.ContractTransmitter
+	// Evaluate runs all the method of the other ContractTransmitter and
+	// checks for equality with the embedded ContractTransmitter
+	Evaluate(ctx context.Context, other libocr.ContractTransmitter) error
 }
 
-func (s StaticContractTransmitter) Transmit(ctx context.Context, rc libocr.ReportContext, r libocr.Report, ss []libocr.AttributedOnchainSignature) error {
+var _ ContractTransmitterEvaluator = staticContractTransmitter{}
+
+type staticContractTransmitter struct {
+	contractTransmitterTestConfig
+}
+
+func (s staticContractTransmitter) Transmit(ctx context.Context, rc libocr.ReportContext, r libocr.Report, ss []libocr.AttributedOnchainSignature) error {
 	if !assert.ObjectsAreEqual(s.ReportContext, rc) {
 		return fmt.Errorf("expected report context %v but got %v", s.ReportContext, rc)
 	}
@@ -38,15 +46,15 @@ func (s StaticContractTransmitter) Transmit(ctx context.Context, rc libocr.Repor
 	return nil
 }
 
-func (s StaticContractTransmitter) LatestConfigDigestAndEpoch(ctx context.Context) (libocr.ConfigDigest, uint32, error) {
+func (s staticContractTransmitter) LatestConfigDigestAndEpoch(ctx context.Context) (libocr.ConfigDigest, uint32, error) {
 	return s.ConfigDigest, s.Epoch, nil
 }
 
-func (s StaticContractTransmitter) FromAccount() (libocr.Account, error) {
+func (s staticContractTransmitter) FromAccount() (libocr.Account, error) {
 	return s.Account, nil
 }
 
-func (s StaticContractTransmitter) Equal(ctx context.Context, ct libocr.ContractTransmitter) error {
+func (s staticContractTransmitter) Evaluate(ctx context.Context, ct libocr.ContractTransmitter) error {
 	gotAccount, err := ct.FromAccount()
 	if err != nil {
 		return fmt.Errorf("failed to get FromAccount: %w", err)

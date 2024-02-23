@@ -20,24 +20,24 @@ var TestPluginProvider = StaticPluginProvider{
 	codec:                  staticCodec{},
 }
 
-type StaticPluginProvider struct {
-	offchainConfigDigester StaticOffchainConfigDigester //libocr.OffchainConfigDigester
-	contractConfigTracker  StaticContractConfigTracker  //libocr.ContractConfigTracker
-	contractTransmitter    StaticContractTransmitter    //libocr.ContractTransmitter
-	chainReader            ChainReaderTester            //StaticChainReader            //types.ChainReader
-	codec                  staticCodec                  //types.Codec
+type PluginProviderTester interface {
+	types.PluginProvider
+	// AssertEqual checks that the sub-components of the other PluginProvider are equal to this one
+	AssertEqual(t *testing.T, ctx context.Context, other types.PluginProvider)
 }
 
-func (s StaticPluginProvider) Start(ctx context.Context) error {
-	// todo lazy initialization?
-	/*
-		s.offchainConfigDigester = TestOffchainConfigDigester
-		s.contractConfigTracker = TestContractConfigTracker
-		s.contractTransmitter = TestContractTransmitter
-		s.chainReader = TestChainReader
-	*/
-	return nil
+// StaticPluginProvider is a static implementation of PluginProviderTester
+type StaticPluginProvider struct {
+	offchainConfigDigester staticOffchainConfigDigester
+	contractConfigTracker  staticContractConfigTracker
+	contractTransmitter    ContractTransmitterEvaluator
+	chainReader            ChainReaderEvaluator
+	codec                  staticCodec
 }
+
+var _ PluginProviderTester = StaticPluginProvider{}
+
+func (s StaticPluginProvider) Start(ctx context.Context) error { return nil }
 
 func (s StaticPluginProvider) Close() error { return nil }
 
@@ -67,31 +67,31 @@ func (s StaticPluginProvider) Codec() types.Codec {
 	return staticCodec{}
 }
 
-func (s StaticPluginProvider) AssertEqual(t *testing.T, provider types.PluginProvider) {
+func (s StaticPluginProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.PluginProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.offchainConfigDigester.Equal(provider.OffchainConfigDigester()))
+		assert.NoError(t, s.offchainConfigDigester.Evaluate(ctx, provider.OffchainConfigDigester()))
 	})
 
 	t.Run("ContractConfigTracker", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.contractConfigTracker.Equal(context.Background(), provider.ContractConfigTracker()))
+		assert.NoError(t, s.contractConfigTracker.Evaluate(ctx, provider.ContractConfigTracker()))
 	})
 
 	t.Run("ContractTransmitter", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.contractTransmitter.Equal(context.Background(), provider.ContractTransmitter()))
+		assert.NoError(t, s.contractTransmitter.Evaluate(ctx, provider.ContractTransmitter()))
 	})
 
 	t.Run("ChainReader", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.chainReader.Evaluate(context.Background(), provider.ChainReader()))
+		assert.NoError(t, s.chainReader.Evaluate(ctx, provider.ChainReader()))
 	})
 
 	/*
 		t.Run("Codec", func(t *testing.T) {
 			t.Parallel()
-			assert.NoError(t, s.codec.Evaluate(context.Background(), provider.OnchainConfigCodec()))
+			assert.NoError(t, s.codec.Evaluate(ctx, provider.OnchainConfigCodec()))
 		})
 	*/
 }

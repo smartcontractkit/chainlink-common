@@ -1,7 +1,6 @@
 package pluginprovider_test
 
 import (
-	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	keystore_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/keystore"
 	"github.com/smartcontractkit/libocr/commontypes"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
@@ -16,7 +15,7 @@ const (
 )
 
 var (
-	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 16: 3})
+	configDigest       = libocr.ConfigDigest([32]byte{1: 7, 13: 11, 31: 23})
 	configDigestPrefix = libocr.ConfigDigestPrefix(99)
 
 	contractConfig = libocr.ContractConfig{
@@ -32,53 +31,45 @@ var (
 
 	sigs = []libocr.AttributedOnchainSignature{{Signature: []byte{9: 8, 7: 6}, Signer: commontypes.OracleID(54)}}
 
-	ReportTimestamp = libocr.ReportTimestamp{
+	reportTimestamp = libocr.ReportTimestamp{
 		ConfigDigest: configDigest,
 		Epoch:        epoch,
 		Round:        round,
 	}
 
-	DefaultContractTransmitterTestConfig = ContractTransmitterTestConfig{
-		ConfigDigest:  configDigest,
-		Account:       libocr.Account(keystore_test.DefaultKeystoreTestConfig.Account),
-		Epoch:         epoch,
-		ReportContext: reportingplugin_test.DefaultReportingPluginTestConfig.ReportContext,
-		Report:        reportingplugin_test.DefaultReportingPluginTestConfig.Report,
-		Sigs:          sigs,
+	TestContractTransmitter = staticContractTransmitter{
+		contractTransmitterTestConfig: contractTransmitterTestConfig{
+			ConfigDigest:  configDigest,
+			Account:       libocr.Account(keystore_test.DefaultKeystoreTestConfig.Account),
+			Epoch:         epoch,
+			ReportContext: libocr.ReportContext{ReportTimestamp: reportTimestamp, ExtraHash: [32]byte{1: 3, 3: 5, 7: 11}},
+			Report:        libocr.Report{41: 131},
+			Sigs:          sigs,
+		},
 	}
 
-	TestContractTransmitter = StaticContractTransmitter{
-		ContractTransmitterTestConfig: DefaultContractTransmitterTestConfig,
+	TestOffchainConfigDigester = staticOffchainConfigDigester{
+		staticOffchainConfigDigesterConfig: staticOffchainConfigDigesterConfig{
+			contractConfig:     contractConfig,
+			configDigest:       configDigest,
+			configDigestPrefix: configDigestPrefix,
+		},
 	}
 
-	offchainConfigDigesterTestConfig = OffchainConfigDigesterTestConfig{
-		ContractConfig:     contractConfig,
-		ConfigDigest:       configDigest,
-		ConfigDigestPrefix: configDigestPrefix,
+	TestContractConfigTracker = staticContractConfigTracker{
+		staticConfigTrackerConfig: staticConfigTrackerConfig{
+			contractConfig: contractConfig,
+			configDigest:   configDigest,
+			changedInBlock: changedInBlock,
+			blockHeight:    blockHeight,
+		},
 	}
 
-	TestOffchainConfigDigester = StaticOffchainConfigDigester{
-		OffchainConfigDigesterTestConfig: offchainConfigDigesterTestConfig,
-	}
-
-	contractConfigTrackerTestConfig = ContractConfigTrackerTestConfig{
-		ContractConfig: contractConfig,
-		ConfigDigest:   configDigest,
-		ChangedInBlock: changedInBlock,
-		BlockHeight:    blockHeight,
-	}
-
-	TestContractConfigTracker = StaticContractConfigTracker{
-		ContractConfigTrackerTestConfig: contractConfigTrackerTestConfig,
-	}
-
-	configProviderTestConfig = ConfigProviderTestConfig{
-		OffchainConfigDigesterTestConfig: offchainConfigDigesterTestConfig,
-		ContractConfigTrackerTestConfig:  contractConfigTrackerTestConfig,
-	}
-
-	TestStaticConfigProvider = StaticConfigProvider{
-		ConfigProviderTestConfig: configProviderTestConfig,
+	TestStaticConfigProvider = staticConfigProvider{
+		staticConfigProviderConfig: staticConfigProviderConfig{
+			offchainDigester:      TestOffchainConfigDigester,
+			contractConfigTracker: TestContractConfigTracker,
+		},
 	}
 
 	//TODO initialization?

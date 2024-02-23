@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
@@ -31,11 +32,11 @@ func (s StaticConfigProvider) Name() string { panic("unimplemented") }
 func (s StaticConfigProvider) HealthReport() map[string]error { panic("unimplemented") }
 
 func (s StaticConfigProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
-	return staticOffchainConfigDigester{s.OffchainConfigDigesterTestConfig}
+	return StaticOffchainConfigDigester{s.OffchainConfigDigesterTestConfig}
 }
 
 func (s StaticConfigProvider) ContractConfigTracker() libocr.ContractConfigTracker {
-	return staticContractConfigTracker{s.ContractConfigTrackerTestConfig}
+	return StaticContractConfigTracker{s.ContractConfigTrackerTestConfig}
 }
 
 type OffchainConfigDigesterTestConfig struct {
@@ -44,19 +45,39 @@ type OffchainConfigDigesterTestConfig struct {
 	ConfigDigestPrefix libocr.ConfigDigestPrefix
 }
 
-type staticOffchainConfigDigester struct {
+type StaticOffchainConfigDigester struct {
 	OffchainConfigDigesterTestConfig
 }
 
-func (s staticOffchainConfigDigester) ConfigDigest(config libocr.ContractConfig) (libocr.ConfigDigest, error) {
+var _ libocr.OffchainConfigDigester = StaticOffchainConfigDigester{}
+
+func (s StaticOffchainConfigDigester) ConfigDigest(config libocr.ContractConfig) (libocr.ConfigDigest, error) {
 	if !assert.ObjectsAreEqual(s.ContractConfig, config) {
 		return libocr.ConfigDigest{}, fmt.Errorf("expected contract config %v but got %v", s.ConfigDigest, config)
 	}
 	return s.OffchainConfigDigesterTestConfig.ConfigDigest, nil
 }
 
-func (s staticOffchainConfigDigester) ConfigDigestPrefix() (libocr.ConfigDigestPrefix, error) {
+func (s StaticOffchainConfigDigester) ConfigDigestPrefix() (libocr.ConfigDigestPrefix, error) {
 	return s.OffchainConfigDigesterTestConfig.ConfigDigestPrefix, nil
+}
+
+func (s StaticOffchainConfigDigester) Equal(ocd libocr.OffchainConfigDigester) error {
+	gotDigestPrefix, err := ocd.ConfigDigestPrefix()
+	if err != nil {
+		return fmt.Errorf("failed to get ConfigDigestPrefix: %w", err)
+	}
+	if gotDigestPrefix != s.OffchainConfigDigesterTestConfig.ConfigDigestPrefix {
+		return fmt.Errorf("expected ConfigDigestPrefix %x but got %x", s.OffchainConfigDigesterTestConfig.ConfigDigestPrefix, gotDigestPrefix)
+	}
+	gotDigest, err := ocd.ConfigDigest(contractConfig)
+	if err != nil {
+		return fmt.Errorf("failed to get ConfigDigest: %w", err)
+	}
+	if gotDigest != s.OffchainConfigDigesterTestConfig.ConfigDigest {
+		return fmt.Errorf("expected ConfigDigest %x but got %x", s.OffchainConfigDigesterTestConfig.ConfigDigest, gotDigest)
+	}
+	return nil
 }
 
 type ContractConfigTrackerTestConfig struct {
@@ -66,25 +87,53 @@ type ContractConfigTrackerTestConfig struct {
 	BlockHeight    uint64
 }
 
-type staticContractConfigTracker struct {
+type StaticContractConfigTracker struct {
 	ContractConfigTrackerTestConfig
 }
 
-func (s staticContractConfigTracker) Notify() <-chan struct{} { return nil }
+func (s StaticContractConfigTracker) Notify() <-chan struct{} { return nil }
 
-func (s staticContractConfigTracker) LatestConfigDetails(ctx context.Context) (uint64, libocr.ConfigDigest, error) {
+func (s StaticContractConfigTracker) LatestConfigDetails(ctx context.Context) (uint64, libocr.ConfigDigest, error) {
 	return s.ChangedInBlock, s.ConfigDigest, nil
 }
 
-func (s staticContractConfigTracker) LatestConfig(ctx context.Context, cib uint64) (libocr.ContractConfig, error) {
+func (s StaticContractConfigTracker) LatestConfig(ctx context.Context, cib uint64) (libocr.ContractConfig, error) {
 	if s.ChangedInBlock != cib {
 		return libocr.ContractConfig{}, fmt.Errorf("expected changed in block %d but got %d", s.ChangedInBlock, cib)
 	}
 	return s.ContractConfig, nil
 }
 
-func (s staticContractConfigTracker) LatestBlockHeight(ctx context.Context) (uint64, error) {
+func (s StaticContractConfigTracker) LatestBlockHeight(ctx context.Context) (uint64, error) {
 	return s.BlockHeight, nil
+}
+
+func (s StaticContractConfigTracker) Equal(ctx context.Context, cct libocr.ContractConfigTracker) error {
+	gotCIB, gotDigest, err := cct.LatestConfigDetails(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestConfigDetails: %w", err)
+	}
+	if gotCIB != s.ChangedInBlock {
+		return fmt.Errorf("expected changed in block %d but got %d", s.ChangedInBlock, gotCIB)
+	}
+	if gotDigest != s.ConfigDigest {
+		return fmt.Errorf("expected config digest %x but got %x", s.ConfigDigest, gotDigest)
+	}
+	gotBlockHeight, err := cct.LatestBlockHeight(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestBlockHeight: %w", err)
+	}
+	if gotBlockHeight != s.BlockHeight {
+		return fmt.Errorf("expected block height %d but got %d", s.BlockHeight, gotBlockHeight)
+	}
+	gotConfig, err := cct.LatestConfig(ctx, gotCIB)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestConfig: %w", err)
+	}
+	if !reflect.DeepEqual(gotConfig, s.ContractConfig) {
+		return fmt.Errorf("expected ContractConfig %v but got %v", s.ContractConfig, gotConfig)
+	}
+	return nil
 }
 
 type staticCodec struct{}

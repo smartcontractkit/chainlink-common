@@ -84,7 +84,7 @@ var (
 		ShouldTransmit: shouldTransmit,
 	}
 
-	DefaultStaticReportingPlugin = StaticReportingPlugin{
+	TestStaticReportingPlugin = StaticReportingPlugin{
 		DefaultReportingPluginTestConfig,
 	}
 )

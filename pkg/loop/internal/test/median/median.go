@@ -23,7 +23,7 @@ import (
 )
 
 func PluginMedian(t *testing.T, p types.PluginMedian) {
-	PluginMedianTest{&StaticMedianProvider{}}.TestPluginMedian(t, p)
+	PluginMedianTest{&TestStaticMedianProvider}.TestPluginMedian(t, p)
 }
 
 type PluginMedianTest struct {
@@ -48,22 +48,8 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
 			ctx := tests.Context(t)
-			gotQuery, err := rp.Query(ctx, reportContext.ReportTimestamp)
-			require.NoError(t, err)
-			assert.Equal(t, query, []byte(gotQuery))
-			gotObs, err := rp.Observation(ctx, reportContext.ReportTimestamp, query)
-			require.NoError(t, err)
-			assert.Equal(t, observation, gotObs)
-			gotOk, gotReport, err := rp.Report(ctx, reportContext.ReportTimestamp, query, obs)
-			require.NoError(t, err)
-			assert.True(t, gotOk)
-			assert.Equal(t, report, gotReport)
-			gotShouldAccept, err := rp.ShouldAcceptFinalizedReport(ctx, reportContext.ReportTimestamp, report)
-			require.NoError(t, err)
-			assert.True(t, gotShouldAccept)
-			gotShouldTransmit, err := rp.ShouldTransmitAcceptedReport(ctx, reportContext.ReportTimestamp, report)
-			require.NoError(t, err)
-			assert.True(t, gotShouldTransmit)
+
+			reportingplugin_test.TestStaticReportingPlugin.Evaluate(t, ctx, rp)
 		})
 	})
 }
@@ -124,181 +110,28 @@ type StaticPluginMedian struct {
 }
 
 func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
-	if !reflect.DeepEqual(s.Provider, provider) {
-		return nil, fmt.Errorf("expected Provider %v but got %v", s.Provider, provider)
-	}
-	if !reflect.DeepEqual(s.DataSource, dataSource) {
-		return nil, fmt.Errorf("expected DataSource %v but got %v", s.DataSource, dataSource)
-	}
-	if !reflect.DeepEqual(s.JuelsPerFeeCoinDataSource, juelsPerFeeCoinDataSource) {
-		return nil, fmt.Errorf("expected JuelsPerFeeCoinDataSource %v but got %v", s.JuelsPerFeeCoinDataSource, juelsPerFeeCoinDataSource)
-	}
-	if !reflect.DeepEqual(s.ErrorLog, errorLog) {
-		return nil, fmt.Errorf("expected ErrorLog %v but got %v", s.ErrorLog, errorLog)
-	}
-	/*
-		cr := provider.ChainReader()
-		var gotLatestValue map[string]int
+	// the provider may be a grpc client, so we can't compare it directly
+	// but in all of these static tests, the implementation of the provider is expected
+	// to be the same static implementation, so we can compare the expected values
 
-		err := cr.GetLatestValue(ctx, contractName, medianContractGenericMethod, getLatestValueParams, &gotLatestValue)
-		if err != nil {
-			return nil, fmt.Errorf("failed to call GetLatestValue() on median provider: %w", err)
-		}
+	err := TestStaticMedianProvider.Equal(ctx, provider)
+	if err != nil {
+		return nil, fmt.Errorf("NewMedianFactory: provider does not equal a static median provider implementation: %w", err)
+	}
 
-		if !assert.ObjectsAreEqual(gotLatestValue, latestValue) {
-			return nil, fmt.Errorf("GetLatestValue: expected %v but got %v", gotLatestValue, latestValue)
-		}
+	err = DefaultTestDataSource().Evaluate(ctx, dataSource)
+	if err != nil {
+		return nil, fmt.Errorf("NewMedianFactory: dataSource does not equal a static test data source implementation: %w", err)
+	}
 
-		ocd := provider.OffchainConfigDigester()
-		gotDigestPrefix, err := ocd.ConfigDigestPrefix()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get ConfigDigestPrefix: %w", err)
-		}
-		if gotDigestPrefix != configDigestPrefix {
-			return nil, fmt.Errorf("expected ConfigDigestPrefix %x but got %x", configDigestPrefix, gotDigestPrefix)
-		}
-		gotDigest, err := ocd.ConfigDigest(contractConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get ConfigDigest: %w", err)
-		}
-		if gotDigest != configDigest {
-			return nil, fmt.Errorf("expected ConfigDigest %x but got %x", configDigest, gotDigest)
-		}
-		cct := provider.ContractConfigTracker()
-		gotBlockHeight, err := cct.LatestBlockHeight(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get LatestBlockHeight: %w", err)
-		}
-		if gotBlockHeight != blockHeight {
-			return nil, fmt.Errorf("expected LatestBlockHeight %d but got %d", blockHeight, gotBlockHeight)
-		}
-		gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get LatestConfigDetails: %w", err)
-		}
-		if gotChangedInBlock != changedInBlock {
-			return nil, fmt.Errorf("expected changedInBlock %d but got %d", changedInBlock, gotChangedInBlock)
-		}
-		if gotConfigDigest != configDigest {
-			return nil, fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
-		}
-		gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get LatestConfig: %w", err)
-		}
-		if !reflect.DeepEqual(gotContractConfig, contractConfig) {
-			return nil, fmt.Errorf("expected ContractConfig %v but got %v", contractConfig, gotContractConfig)
-		}
-		ct := provider.ContractTransmitter()
-		gotAccount, err := ct.FromAccount()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get FromAccount: %w", err)
-		}
-		if gotAccount != account {
-			return nil, fmt.Errorf("expectd FromAccount %s but got %s", account, gotAccount)
-		}
-		gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get LatestConfigDigestAndEpoch: %w", err)
-		}
-		if gotConfigDigest != configDigest {
-			return nil, fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
-		}
-		if gotEpoch != epoch {
-			return nil, fmt.Errorf("expected Epoch %d but got %d", epoch, gotEpoch)
-		}
-		err = ct.Transmit(ctx, reportContext, report, sigs)
-		if err != nil {
-			return nil, fmt.Errorf("failed to Transmit")
-		}
-		rc := provider.ReportCodec()
-		gotReport, err := rc.BuildReport(pobs)
-		if err != nil {
-			return nil, fmt.Errorf("failed to BuildReport: %w", err)
-		}
-		if !bytes.Equal(gotReport, report) {
-			return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
-		}
-		gotMedianValue, err := rc.MedianFromReport(report)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get MedianFromReport: %w", err)
-		}
-		if medianValue.Cmp(gotMedianValue) != 0 {
-			return nil, fmt.Errorf("expected MedianValue %s but got %s", medianValue, gotMedianValue)
-		}
-		gotMax, err := rc.MaxReportLength(n)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
-		}
-		if gotMax != max {
-			return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
-		}
-		mc := provider.MedianContract()
-		gotConfigDigest, gotEpoch, gotRound, err := mc.LatestRoundRequested(ctx, lookbackDuration)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get LatestRoundRequested: %w", err)
-		}
-		if gotConfigDigest != configDigest {
-			return nil, fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
-		}
-		if gotEpoch != epoch {
-			return nil, fmt.Errorf("expected Epoch %d but got %d", epoch, gotEpoch)
-		}
-		if gotRound != round {
-			return nil, fmt.Errorf("expected Round %d but got %d", round, gotRound)
-		}
-		gotConfigDigest, gotEpoch, gotRound, gotLatestAnswer, gotLatestTimestamp, err := mc.LatestTransmissionDetails(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get LatestTransmissionDetails: %w", err)
-		}
-		if gotConfigDigest != configDigest {
-			return nil, fmt.Errorf("expected ConfigDigest %s but got %s", configDigest, gotConfigDigest)
-		}
-		if gotEpoch != epoch {
-			return nil, fmt.Errorf("expected Epoch %d but got %d", epoch, gotEpoch)
-		}
-		if gotRound != round {
-			return nil, fmt.Errorf("expected Round %d but got %d", round, gotRound)
-		}
-		if latestAnswer.Cmp(gotLatestAnswer) != 0 {
-			return nil, fmt.Errorf("expected LatestAnswer %s but got %s", latestAnswer, gotLatestAnswer)
-		}
-		if !gotLatestTimestamp.Equal(latestTimestamp) {
-			return nil, fmt.Errorf("expected LatestTimestamp %s but got %s", latestTimestamp, gotLatestTimestamp)
-		}
-		occ := provider.OnchainConfigCodec()
-		gotEncoded, err := occ.Encode(onchainConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to Encode: %w", err)
-		}
-		if !bytes.Equal(gotEncoded, encoded) {
-			return nil, fmt.Errorf("expected Encoded %s but got %s", encoded, gotEncoded)
-		}
-		gotDecoded, err := occ.Decode(encoded)
-		if err != nil {
-			return nil, fmt.Errorf("failed to Decode: %w", err)
-		}
-		if !reflect.DeepEqual(gotDecoded, onchainConfig) {
-			return nil, fmt.Errorf("expected OnchainConfig %s but got %s", onchainConfig, gotDecoded)
-		}
-		gotVal, err := dataSource.Observe(ctx, reportContext.ReportTimestamp)
-		if err != nil {
-			return nil, fmt.Errorf("failed to observe dataSource: %w", err)
-		}
-		if !assert.ObjectsAreEqual(value, gotVal) {
-			return nil, fmt.Errorf("expected Value %s but got %s", value, gotVal)
-		}
-		gotJuels, err := juelsPerFeeCoinDataSource.Observe(ctx, reportContext.ReportTimestamp)
-		if err != nil {
-			return nil, fmt.Errorf("failed to observe juelsPerFeeCoin: %w", err)
-		}
-		if !assert.ObjectsAreEqual(juelsPerFeeCoin, gotJuels) {
-			return nil, fmt.Errorf("expected JuelsPerFeeCoin %s but got %s", juelsPerFeeCoin, gotJuels)
-		}
-		if err := errorLog.SaveError(ctx, errMsg); err != nil {
-			return nil, fmt.Errorf("failed to save error: %w", err)
-		}
-	*/
+	err = DefaultTestJuelsPerFeeCoinDataSource().Evaluate(ctx, juelsPerFeeCoinDataSource)
+	if err != nil {
+		return nil, fmt.Errorf("NewMedianFactory: juelsPerFeeCoinDataSource does not equal a static test juels per fee coin data source implementation: %w", err)
+	}
+
+	if err := errorLog.SaveError(ctx, errMsg); err != nil {
+		return nil, fmt.Errorf("failed to save error: %w", err)
+	}
 	return staticPluginFactory{}, nil
 }
 
@@ -308,7 +141,9 @@ type staticPluginFactory struct {
 
 func (s staticPluginFactory) Name() string { panic("implement me") }
 
-func (s staticPluginFactory) Start(ctx context.Context) error { return nil }
+func (s staticPluginFactory) Start(ctx context.Context) error {
+	return nil
+}
 
 func (s staticPluginFactory) Close() error { return nil }
 
@@ -317,6 +152,8 @@ func (s staticPluginFactory) Ready() error { panic("implement me") }
 func (s staticPluginFactory) HealthReport() map[string]error { panic("implement me") }
 
 func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
+	// lazy initialization
+	s.ReportingPluginConfig = reportingPluginConfig
 
 	if config.ConfigDigest != s.ConfigDigest {
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected ConfigDigest %x but got %x", s.ConfigDigest, config.ConfigDigest)
@@ -355,12 +192,35 @@ func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginCon
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationShouldTransmitAcceptedReport %d but got %d", s.MaxDurationShouldTransmitAcceptedReport, config.MaxDurationShouldTransmitAcceptedReport)
 	}
 
-	return reportingplugin_test.DefaultStaticReportingPlugin, rpi, nil
+	return reportingplugin_test.TestStaticReportingPlugin, rpi, nil
 }
 
-type StaticMedianProvider struct{}
+type StaticMedianProviderConfig struct {
+	// we use the static implementation type not the interface type
+	// because we always expect the static implementation to be used
+	// and it facilitates testing.
+	OffchainDigester    pluginprovider_test.StaticOffchainConfigDigester
+	ContractTracker     pluginprovider_test.StaticContractConfigTracker
+	ContractTransmitter pluginprovider_test.StaticContractTransmitter
+}
 
-func (s StaticMedianProvider) Start(ctx context.Context) error { return nil }
+type StaticMedianProvider struct {
+	StaticMedianProviderConfig
+	rc  staticReportCodec
+	mc  staticMedianContract
+	ooc staticOnchainConfigCodec
+}
+
+func (s StaticMedianProvider) Start(ctx context.Context) error {
+	// lazy initialization
+	s.StaticMedianProviderConfig.OffchainDigester = pluginprovider_test.TestOffchainConfigDigester
+	s.StaticMedianProviderConfig.ContractTracker = pluginprovider_test.TestContractConfigTracker
+	s.StaticMedianProviderConfig.ContractTransmitter = pluginprovider_test.TestContractTransmitter
+	s.rc = staticReportCodec{}
+	s.mc = staticMedianContract{}
+	s.ooc = staticOnchainConfigCodec{}
+	return nil
+}
 
 func (s StaticMedianProvider) Close() error { return nil }
 
@@ -372,36 +232,27 @@ func (s StaticMedianProvider) HealthReport() map[string]error { panic("unimpleme
 
 func (s StaticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	//return staticOffchainConfigDigester{}
-	return pluginprovider_test.DefaultStaticConfigProvider.OffchainConfigDigester()
+	return s.StaticMedianProviderConfig.OffchainDigester
 }
 
 func (s StaticMedianProvider) ContractConfigTracker() libocr.ContractConfigTracker {
 	//return staticContractConfigTracker{}
-	return pluginprovider_test.DefaultStaticConfigProvider.ContractConfigTracker()
+	return s.StaticMedianProviderConfig.ContractTracker
 }
 
 func (s StaticMedianProvider) ContractTransmitter() libocr.ContractTransmitter {
 	//return staticContractTransmitter{}
-	return pluginprovider_test.DefaultContractTransmtter
+	return s.StaticMedianProviderConfig.ContractTransmitter
 }
 
-func (s StaticMedianProvider) ReportCodec() median.ReportCodec { return staticReportCodec{} }
+func (s StaticMedianProvider) ReportCodec() median.ReportCodec { return s.rc }
 
 func (s StaticMedianProvider) MedianContract() median.MedianContract {
-	return staticMedianContract{
-		staticMedianContractConfig{
-			configDigest: pluginprovider_test.DefaultContractTransmitterTestConfig.ConfigDigest,
-			epoch:        pluginprovider_test.DefaultContractTransmitterTestConfig.Epoch,
-			//round:        pluginprovider_test.DefaultContractTransmitterTestConfig.Round,
-			latestAnswer:     latestAnswer,
-			latestTimestamp:  latestTimestamp,
-			lookbackDuration: lookbackDuration,
-		},
-	}
+	return s.mc
 }
 
 func (s StaticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
-	return staticOnchainConfigCodec{}
+	return s.ooc
 }
 
 func (s StaticMedianProvider) ChainReader() types.ChainReader {
@@ -412,8 +263,63 @@ func (s StaticMedianProvider) Codec() types.Codec {
 	return codec_test.StaticCodec{}
 }
 
+func (s StaticMedianProvider) Equal(ctx context.Context, provider types.MedianProvider) error {
+
+	cr := provider.ChainReader()
+	var gotLatestValue map[string]int
+
+	err := cr.GetLatestValue(ctx, contractName, medianContractGenericMethod, getLatestValueParams, &gotLatestValue)
+	if err != nil {
+		fmt.Errorf("failed to call GetLatestValue() on median provider: %w", err)
+	}
+
+	if !assert.ObjectsAreEqual(gotLatestValue, latestValue) {
+		fmt.Errorf("GetLatestValue: expected %v but got %v", gotLatestValue, latestValue)
+	}
+
+	ocd := provider.OffchainConfigDigester()
+	err = s.OffchainDigester.Equal(ocd)
+	if err != nil {
+		return fmt.Errorf("providers offchain digester does not equal static offchain digester: %w", err)
+	}
+
+	cct := provider.ContractConfigTracker()
+	err = s.ContractTracker.Equal(ctx, cct)
+	if err != nil {
+		return fmt.Errorf("providers contract config tracker does not equal static contract config tracker: %w", err)
+	}
+
+	ct := provider.ContractTransmitter()
+	err = s.StaticMedianProviderConfig.ContractTransmitter.Equal(ctx, ct)
+	if err != nil {
+		return fmt.Errorf("providers contract transmitter does not equal static contract transmitter: %w", err)
+	}
+
+	rc := provider.ReportCodec()
+	err = s.rc.Evaluate(ctx, rc)
+	if err != nil {
+		return fmt.Errorf("failed to evaluate report codec: %w", err)
+	}
+
+	mc := provider.MedianContract()
+	err = s.mc.Evaluate(ctx, mc)
+	if err != nil {
+		return fmt.Errorf("failed to evaluate median contract: %w", err)
+	}
+
+	occ := provider.OnchainConfigCodec()
+	err = s.ooc.Evaluate(ctx, occ)
+	if err != nil {
+		return fmt.Errorf("failed to evaluate onchain config codec: %w", err)
+	}
+
+	return nil
+
+}
+
 type staticReportCodec struct{}
 
+// TODO remove hard coded values
 func (s staticReportCodec) BuildReport(os []median.ParsedAttributedObservation) (libocr.Report, error) {
 	if !assert.ObjectsAreEqual(pobs, os) {
 		return nil, fmt.Errorf("expected observations %v but got %v", pobs, os)
@@ -433,6 +339,31 @@ func (s staticReportCodec) MaxReportLength(n2 int) (int, error) {
 		return -1, fmt.Errorf("expected n %d but got %d", n, n2)
 	}
 	return max, nil
+}
+
+func (s staticReportCodec) Evaluate(ctx context.Context, rc median.ReportCodec) error {
+	gotReport, err := rc.BuildReport(pobs)
+	if err != nil {
+		return fmt.Errorf("failed to BuildReport: %w", err)
+	}
+	if !bytes.Equal(gotReport, report) {
+		return fmt.Errorf("expected Report %x but got %x", report, gotReport)
+	}
+	gotMedianValue, err := rc.MedianFromReport(report)
+	if err != nil {
+		return fmt.Errorf("failed to get MedianFromReport: %w", err)
+	}
+	if medianValue.Cmp(gotMedianValue) != 0 {
+		return fmt.Errorf("expected MedianValue %s but got %s", medianValue, gotMedianValue)
+	}
+	gotMax, err := rc.MaxReportLength(n)
+	if err != nil {
+		return fmt.Errorf("failed to get MaxReportLength: %w", err)
+	}
+	if gotMax != max {
+		return fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
+	}
+	return nil
 }
 
 type staticMedianContractConfig struct {
@@ -459,6 +390,43 @@ func (s staticMedianContract) LatestRoundRequested(ctx context.Context, lookback
 	return s.configDigest, s.epoch, s.round, nil
 }
 
+func (s staticMedianContract) Evaluate(ctx context.Context, mc median.MedianContract) error {
+	gotConfigDigest, gotEpoch, gotRound, err := mc.LatestRoundRequested(ctx, s.lookbackDuration)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestRoundRequested: %w", err)
+	}
+	if gotConfigDigest != s.configDigest {
+		return fmt.Errorf("expected ConfigDigest %s but got %s", s.configDigest, gotConfigDigest)
+	}
+	if gotEpoch != s.epoch {
+		return fmt.Errorf("expected Epoch %d but got %d", s.epoch, gotEpoch)
+	}
+	if gotRound != s.round {
+		return fmt.Errorf("expected Round %d but got %d", s.round, gotRound)
+	}
+	gotConfigDigest, gotEpoch, gotRound, gotLatestAnswer, gotLatestTimestamp, err := mc.LatestTransmissionDetails(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestTransmissionDetails: %w", err)
+	}
+	if gotConfigDigest != s.configDigest {
+		return fmt.Errorf("expected ConfigDigest %s but got %s", s.configDigest, gotConfigDigest)
+	}
+	if gotEpoch != s.epoch {
+		return fmt.Errorf("expected Epoch %d but got %d", s.epoch, gotEpoch)
+	}
+	if gotRound != s.round {
+		return fmt.Errorf("expected Round %d but got %d", s.round, gotRound)
+	}
+	if s.latestAnswer.Cmp(gotLatestAnswer) != 0 {
+		return fmt.Errorf("expected LatestAnswer %s but got %s", s.latestAnswer, gotLatestAnswer)
+	}
+	if !gotLatestTimestamp.Equal(s.latestTimestamp) {
+		return fmt.Errorf("expected LatestTimestamp %s but got %s", s.latestTimestamp, gotLatestTimestamp)
+	}
+	return nil
+}
+
+// TODO remove hard coded values
 type staticOnchainConfigCodec struct{}
 
 func (s staticOnchainConfigCodec) Encode(c median.OnchainConfig) ([]byte, error) {
@@ -476,6 +444,24 @@ func (s staticOnchainConfigCodec) Decode(b []byte) (median.OnchainConfig, error)
 		return median.OnchainConfig{}, fmt.Errorf("expected encoded %x but got %x", encodedOnchainConfig, b)
 	}
 	return onchainConfig, nil
+}
+
+func (s staticOnchainConfigCodec) Evaluate(ctx context.Context, occ median.OnchainConfigCodec) error {
+	gotEncoded, err := occ.Encode(onchainConfig)
+	if err != nil {
+		return fmt.Errorf("failed to Encode: %w", err)
+	}
+	if !bytes.Equal(gotEncoded, encodedOnchainConfig) {
+		return fmt.Errorf("expected Encoded %s but got %s", encodedOnchainConfig, gotEncoded)
+	}
+	gotDecoded, err := occ.Decode(encodedOnchainConfig)
+	if err != nil {
+		return fmt.Errorf("failed to Decode: %w", err)
+	}
+	if !reflect.DeepEqual(gotDecoded, onchainConfig) {
+		return fmt.Errorf("expected OnchainConfig %s but got %s", onchainConfig, gotDecoded)
+	}
+	return nil
 }
 
 /*

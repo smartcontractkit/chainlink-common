@@ -100,8 +100,12 @@ URL = 'https://test.url'
 
 	report        = libocr.Report{42: 101}
 	reportContext = libocr.ReportContext{
-		ReportTimestamp: pluginprovider_test.ReportTimestamp,
-		ExtraHash:       [32]byte{1: 2, 3: 4, 5: 6},
+		ReportTimestamp: libocr.ReportTimestamp{
+			ConfigDigest: libocr.ConfigDigest([32]byte{1: 7, 31: 3}),
+			Epoch:        79,
+			Round:        17,
+		},
+		ExtraHash: [32]byte{1: 2, 3: 4, 5: 6},
 	}
 
 	reportingPluginConfig = libocr.ReportingPluginConfig{
@@ -230,3 +234,32 @@ func (e baseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, 
 	return CapabilityInfo, nil
 }
 */
+
+var DefaultPluginMedian = StaticPluginMedian{
+	StaticPluginMedianConfig: StaticPluginMedianConfig{
+		Provider:                  TestStaticMedianProvider,
+		DataSource:                DefaultTestDataSource(),
+		JuelsPerFeeCoinDataSource: DefaultTestJuelsPerFeeCoinDataSource(),
+		ErrorLog:                  &StaticErrorLog{},
+	},
+}
+
+var TestStaticMedianProvider = StaticMedianProvider{
+	StaticMedianProviderConfig: StaticMedianProviderConfig{
+		OffchainDigester:    pluginprovider_test.TestOffchainConfigDigester,
+		ContractTracker:     pluginprovider_test.TestContractConfigTracker,
+		ContractTransmitter: pluginprovider_test.TestContractTransmitter,
+	},
+	rc: staticReportCodec{},
+	mc: staticMedianContract{
+		staticMedianContractConfig: staticMedianContractConfig{
+			configDigest:     libocr.ConfigDigest([32]byte{1: 1, 11: 8}),
+			epoch:            7,
+			round:            11,
+			latestAnswer:     big.NewInt(123),
+			latestTimestamp:  time.Unix(1234567890, 987654321).UTC(),
+			lookbackDuration: lookbackDuration,
+		},
+	},
+	ooc: staticOnchainConfigCodec{},
+}

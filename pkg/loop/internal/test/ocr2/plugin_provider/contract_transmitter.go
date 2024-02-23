@@ -19,6 +19,8 @@ type ContractTransmitterTestConfig struct {
 	Epoch        uint32
 }
 
+var _ libocr.ContractTransmitter = StaticContractTransmitter{}
+
 type StaticContractTransmitter struct {
 	ContractTransmitterTestConfig
 }
@@ -42,4 +44,29 @@ func (s StaticContractTransmitter) LatestConfigDigestAndEpoch(ctx context.Contex
 
 func (s StaticContractTransmitter) FromAccount() (libocr.Account, error) {
 	return s.Account, nil
+}
+
+func (s StaticContractTransmitter) Equal(ctx context.Context, ct libocr.ContractTransmitter) error {
+	gotAccount, err := ct.FromAccount()
+	if err != nil {
+		return fmt.Errorf("failed to get FromAccount: %w", err)
+	}
+	if gotAccount != s.Account {
+		return fmt.Errorf("expectd FromAccount %s but got %s", s.Account, gotAccount)
+	}
+	gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get LatestConfigDigestAndEpoch: %w", err)
+	}
+	if gotConfigDigest != s.ConfigDigest {
+		return fmt.Errorf("expected ConfigDigest %s but got %s", s.ConfigDigest, gotConfigDigest)
+	}
+	if gotEpoch != epoch {
+		return fmt.Errorf("expected Epoch %d but got %d", epoch, gotEpoch)
+	}
+	err = ct.Transmit(ctx, s.ReportContext, s.Report, sigs)
+	if err != nil {
+		return fmt.Errorf("failed to Transmit")
+	}
+	return nil
 }

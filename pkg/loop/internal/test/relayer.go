@@ -18,7 +18,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
-	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -92,7 +91,7 @@ func (s StaticPluginRelayer) NewMedianProvider(ctx context.Context, r types.Rela
 		}
 	}
 
-	return median_test.TestStaticMedianProvider, nil
+	return StaticMedianProvider{}, nil
 }
 
 func (s StaticPluginRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {

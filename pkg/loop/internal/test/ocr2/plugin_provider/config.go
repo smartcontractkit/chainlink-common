@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"testing"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/stretchr/testify/assert"
@@ -18,10 +20,19 @@ type ConfigProviderTestConfig struct {
 
 type StaticConfigProvider struct {
 	ConfigProviderTestConfig
+	offchainDigester      StaticOffchainConfigDigester
+	contractConfigTracker StaticContractConfigTracker
 }
 
+var _ types.ConfigProvider = StaticConfigProvider{}
+
 // TODO validate start/Close calls?
-func (s StaticConfigProvider) Start(ctx context.Context) error { return nil }
+func (s StaticConfigProvider) Start(ctx context.Context) error {
+	// TODO lazy intialization
+	s.offchainDigester = TestOffchainConfigDigester
+	s.contractConfigTracker = TestContractConfigTracker
+	return nil
+}
 
 func (s StaticConfigProvider) Close() error { return nil }
 
@@ -39,6 +50,37 @@ func (s StaticConfigProvider) ContractConfigTracker() libocr.ContractConfigTrack
 	return StaticContractConfigTracker{s.ContractConfigTrackerTestConfig}
 }
 
+func (s StaticConfigProvider) AssertEqual(t *testing.T, cp types.ConfigProvider) {
+	t.Run("OffchainConfigDigester", func(t *testing.T) {
+		t.Parallel()
+		assert.NoError(t, s.offchainDigester.Equal(cp.OffchainConfigDigester()))
+	})
+	t.Run("ContractConfigTracker", func(t *testing.T) {
+		t.Parallel()
+		assert.NoError(t, s.contractConfigTracker.Equal(context.Background(), cp.ContractConfigTracker()))
+	})
+}
+
+/*
+func (s StaticConfigProvider) Evaluate(cp types.ConfigProvider) error {
+	if err :=  .Equal(cp.OffchainConfigDigester()); err != nil {
+		return fmt.Errorf("OffchainConfigDigester: %w", err)
+	}
+	if err := s.ContractConfigTracker().Equal(context.Background(), cp.ContractConfigTracker()); err != nil {
+		return fmt.Errorf("ContractConfigTracker: %w", err)
+	}
+	return nil
+
+}
+
+*/
+
+type OffchainConfigDigesterTester interface {
+	libocr.OffchainConfigDigester
+	// Evaluate runs all the methods of the other OffchainConfigDigester and
+	// checks for equality to this one
+	Evaluate(ctx context.Context, other libocr.OffchainConfigDigester) error
+}
 type OffchainConfigDigesterTestConfig struct {
 	ContractConfig     libocr.ContractConfig
 	ConfigDigest       libocr.ConfigDigest

@@ -81,7 +81,7 @@ func (s StaticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context,
 
 func (s StaticReportingPlugin) Close() error { return nil }
 
-func (s StaticReportingPlugin) Evaluate(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin) {
+func (s StaticReportingPlugin) AssertEqual(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin) {
 	gotQuery, err := rp.Query(ctx, reportContext.ReportTimestamp)
 	require.NoError(t, err)
 	assert.Equal(t, query, []byte(gotQuery))

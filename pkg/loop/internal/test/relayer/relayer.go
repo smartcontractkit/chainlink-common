@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -16,23 +15,89 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
-	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/plugin_provider"
+	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
+	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	keystore_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
+var chainStatus = types.ChainStatus{
+	ID:      "some_chain",
+	Enabled: true,
+}
+
+type transactionRequest struct {
+	from         string
+	to           string
+	amount       *big.Int
+	balanceCheck bool
+}
+
+type nodeRequest struct {
+	pageSize  int32
+	pageToken string
+}
+
+type nodeResponse struct {
+	nodes    []types.NodeStatus
+	nextPage string
+	total    int
+}
 type StaticPluginRelayerConfig struct {
 	StaticChecks bool
 	RelayArgs    types.RelayArgs
+	PluginArgs   types.PluginArgs
+	nodeRequest
+	nodeResponse
+	transactionRequest
+	chainStatus types.ChainStatus
 }
 
-type StaticPluginRelayer struct {
+type RelayerTester interface {
+	loop.PluginRelayer
+	loop.Relayer
+	mustEmbed()
+}
+
+func NewRelayerTester(staticChecks bool) RelayerTester {
+	return staticPluginRelayer{
+		StaticPluginRelayerConfig: StaticPluginRelayerConfig{
+			StaticChecks: staticChecks,
+			RelayArgs:    relayArgs,
+			PluginArgs:   pluginArgs,
+			nodeRequest: nodeRequest{
+				pageSize:  137,
+				pageToken: "",
+			},
+			nodeResponse: nodeResponse{
+				nodes:    nodes,
+				nextPage: "",
+				total:    len(nodes),
+			},
+			transactionRequest: transactionRequest{
+				from:         "me",
+				to:           "you",
+				amount:       big.NewInt(97),
+				balanceCheck: true,
+			},
+			chainStatus: chainStatus,
+		},
+	}
+}
+
+var _ RelayerTester = staticPluginRelayer{}
+
+type staticPluginRelayer struct {
 	StaticPluginRelayerConfig
 }
 
-func (s StaticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (internal.Relayer, error) {
+func (s staticPluginRelayer) mustEmbed() {}
+
+func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (internal.Relayer, error) {
 	if s.StaticChecks && config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
@@ -58,52 +123,76 @@ func (s StaticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 	return s, nil
 }
 
-func (s StaticPluginRelayer) Start(ctx context.Context) error { return nil }
+func (s staticPluginRelayer) Start(ctx context.Context) error {
+	// lazy initialization
+	s.StaticPluginRelayerConfig.RelayArgs = relayArgs
+	s.StaticPluginRelayerConfig.PluginArgs = pluginArgs
+	s.nodeRequest = nodeRequest{
+		pageSize:  137,
+		pageToken: "",
+	}
+	s.nodeResponse = nodeResponse{
+		nodes:    nodes,
+		nextPage: "",
+		total:    len(nodes),
+	}
 
-func (s StaticPluginRelayer) Close() error { return nil }
+	//s.nodeStatus = nodes
+	//s.limit = 137
+	s.transactionRequest = transactionRequest{
+		from:         "me",
+		to:           "you",
+		amount:       big.NewInt(97),
+		balanceCheck: true,
+	}
+	return nil
+}
 
-func (s StaticPluginRelayer) Ready() error { panic("unimplemented") }
+func (s staticPluginRelayer) Close() error { return nil }
 
-func (s StaticPluginRelayer) Name() string { panic("unimplemented") }
+func (s staticPluginRelayer) Ready() error { panic("unimplemented") }
 
-func (s StaticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
+func (s staticPluginRelayer) Name() string { panic("unimplemented") }
 
-func (s StaticPluginRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
+func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
+
+func (s staticPluginRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
 	if s.StaticChecks && !equalRelayArgs(r, s.RelayArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.RelayArgs, r)
 	}
-	return pluginprovider_test.DefaultStaticConfigProvider, nil
+	return pluginprovider_test.TestStaticConfigProvider, nil
 }
 
-func (s StaticPluginRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
+func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
+
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
-			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", RelayArgs, r)
+			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", relayArgs, r)
 		}
-		if !reflect.DeepEqual(PluginArgs, p) {
-			return nil, fmt.Errorf("expected plugin args %v but got %v", PluginArgs, p)
+		if !reflect.DeepEqual(pluginArgs, p) {
+			return nil, fmt.Errorf("expected plugin args %v but got %v", pluginArgs, p)
 		}
 	}
 
-	return StaticMedianProvider{}, nil
+	return median_test.TestStaticMedianProvider, nil
 }
 
-func (s StaticPluginRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
+func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
-			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", RelayArgs, r)
+			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", relayArgs, r)
 		}
-		if !reflect.DeepEqual(PluginArgs, p) {
-			return nil, fmt.Errorf("expected plugin args %v but got %v", PluginArgs, p)
+		if !reflect.DeepEqual(pluginArgs, p) {
+			return nil, fmt.Errorf("expected plugin args %v but got %v", pluginArgs, p)
 		}
 	}
 
-	return StaticPluginProvider{}, nil
+	return pluginprovider_test.StaticPluginProvider{}, nil
 }
 
-func (s StaticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
+func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
 	if s.StaticChecks {
 		if !equalRelayArgs(r, mercury_common_test.RelayArgs) {
 			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercury_common_test.RelayArgs, r)
@@ -112,40 +201,41 @@ func (s StaticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.Rel
 			return nil, fmt.Errorf("expected plugin args %v but got %v", mercury_common_test.PluginArgs, p)
 		}
 	}
-	return StaticMercuryProvider{}, nil
+	return nil, nil
+	//return StaticMercuryProvider{}, nil
 }
 
-func (s StaticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
+func (s staticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s StaticPluginRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
-	return chain, nil
+func (s staticPluginRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
+	return s.chainStatus, nil
 }
 
-func (s StaticPluginRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
-	if s.StaticChecks && limit != pageSize {
-		return nil, "", -1, fmt.Errorf("expected page_size %d but got %d", limit, pageSize)
+func (s staticPluginRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
+	if s.StaticChecks && s.nodeRequest.pageSize != pageSize {
+		return nil, "", -1, fmt.Errorf("expected page_size %d but got %d", s.nodeRequest.pageSize, pageSize)
 	}
 	if pageToken != "" {
 		return nil, "", -1, fmt.Errorf("expected empty page_token but got %q", pageToken)
 	}
-	return nodes, "", total, nil
+	return s.nodeResponse.nodes, s.nodeResponse.nextPage, s.nodeResponse.total, nil
 }
 
-func (s StaticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b bool) error {
+func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b bool) error {
 	if s.StaticChecks {
-		if f != from {
-			return fmt.Errorf("expected from %s but got %s", from, f)
+		if f != s.transactionRequest.from {
+			return fmt.Errorf("expected from %s but got %s", s.transactionRequest.from, f)
 		}
-		if t != to {
-			return fmt.Errorf("expected to %s but got %s", to, t)
+		if t != s.transactionRequest.to {
+			return fmt.Errorf("expected to %s but got %s", s.transactionRequest.to, t)
 		}
-		if amount.Cmp(a) != 0 {
-			return fmt.Errorf("expected amount %s but got %s", amount, a)
+		if s.transactionRequest.amount.Cmp(a) != 0 {
+			return fmt.Errorf("expected amount %s but got %s", s.transactionRequest.amount, a)
 		}
-		if b != balanceCheck { //nolint:gosimple
-			return fmt.Errorf("expected balance check %t but got %t", balanceCheck, b)
+		if b != s.transactionRequest.balanceCheck { //nolint:gosimple
+			return fmt.Errorf("expected balance check %t but got %t", s.transactionRequest.balanceCheck, b)
 		}
 	}
 
@@ -162,11 +252,11 @@ func equalRelayArgs(a, b types.RelayArgs) bool {
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 	return types.RelayArgs{
-		ExternalJobID: RelayArgs.ExternalJobID,
-		JobID:         RelayArgs.JobID,
-		ContractID:    RelayArgs.ContractID,
-		New:           RelayArgs.New,
-		RelayConfig:   RelayArgs.RelayConfig,
+		ExternalJobID: relayArgs.ExternalJobID,
+		JobID:         relayArgs.JobID,
+		ContractID:    relayArgs.ContractID,
+		New:           relayArgs.New,
+		RelayConfig:   relayArgs.RelayConfig,
 		ProviderType:  string(_type),
 	}
 }
@@ -175,7 +265,7 @@ func RunPluginRelayer(t *testing.T, p internal.PluginRelayer) {
 	ctx := tests.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
-		relayer, err := p.NewRelayer(ctx, ConfigTOML, StaticKeystore{})
+		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystore_test.StaticKeystore{})
 		require.NoError(t, err)
 		require.NoError(t, relayer.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })
@@ -185,44 +275,28 @@ func RunPluginRelayer(t *testing.T, p internal.PluginRelayer) {
 
 func RunRelayer(t *testing.T, relayer internal.Relayer) {
 	ctx := tests.Context(t)
-
+	var (
+		expectedConfigProvider   = pluginprovider_test.TestStaticConfigProvider
+		expectedMedianProvider   = median_test.TestStaticMedianProvider
+		expectedAgnosticProvider = pluginprovider_test.TestStaticConfigProvider
+		expectedRelayer          = staticPluginRelayer{}
+	)
+	// TODO: fix lazy init?
+	assert.NoError(t, expectedRelayer.Start(ctx))
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
-		configProvider, err := relayer.NewConfigProvider(ctx, RelayArgs)
+		configProvider, err := relayer.NewConfigProvider(ctx, relayArgs)
 		require.NoError(t, err)
 		require.NoError(t, configProvider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, configProvider.Close()) })
 
-		t.Run("OffchainConfigDigester", func(t *testing.T) {
-			t.Parallel()
-			ocd := configProvider.OffchainConfigDigester()
-			gotConfigDigestPrefix, err := ocd.ConfigDigestPrefix()
-			require.NoError(t, err)
-			assert.Equal(t, configDigestPrefix, gotConfigDigestPrefix)
-			gotConfigDigest, err := ocd.ConfigDigest(contractConfig)
-			require.NoError(t, err)
-			assert.Equal(t, configDigest, gotConfigDigest)
-		})
-		t.Run("ContractConfigTracker", func(t *testing.T) {
-			t.Parallel()
-			cct := configProvider.ContractConfigTracker()
-			gotBlockHeight, err := cct.LatestBlockHeight(ctx)
-			require.NoError(t, err)
-			assert.Equal(t, blockHeight, gotBlockHeight)
-			gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
-			require.NoError(t, err)
-			assert.Equal(t, changedInBlock, gotChangedInBlock)
-			assert.Equal(t, configDigest, gotConfigDigest)
-			gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
-			require.NoError(t, err)
-			assert.Equal(t, contractConfig, gotContractConfig)
-		})
+		expectedConfigProvider.AssertEqual(t, configProvider)
 	})
 
 	t.Run("MedianProvider", func(t *testing.T) {
 		t.Parallel()
 		ra := newRelayArgsWithProviderType(types.Median)
-		p, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
+		p, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
 		provider := p.(types.MedianProvider)
 		require.NoError(t, err)
 		require.NoError(t, provider.Start(ctx))
@@ -231,89 +305,14 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
 
-			t.Run("OffchainConfigDigester", func(t *testing.T) {
-				t.Parallel()
-				ocd := provider.OffchainConfigDigester()
-				gotConfigDigestPrefix, err := ocd.ConfigDigestPrefix()
-				require.NoError(t, err)
-				assert.Equal(t, configDigestPrefix, gotConfigDigestPrefix)
-				gotConfigDigest, err := ocd.ConfigDigest(contractConfig)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-			})
-			t.Run("ContractConfigTracker", func(t *testing.T) {
-				t.Parallel()
-				cct := provider.ContractConfigTracker()
-				gotBlockHeight, err := cct.LatestBlockHeight(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, blockHeight, gotBlockHeight)
-				gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, changedInBlock, gotChangedInBlock)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
-				require.NoError(t, err)
-				assert.Equal(t, contractConfig, gotContractConfig)
-			})
-			t.Run("ContractTransmitter", func(t *testing.T) {
-				t.Parallel()
-				ct := provider.ContractTransmitter()
-				gotAccount, err := ct.FromAccount()
-				require.NoError(t, err)
-				assert.Equal(t, account, gotAccount)
-				gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				err = ct.Transmit(ctx, reportContext, report, sigs)
-				require.NoError(t, err)
-			})
-			t.Run("ReportCodec", func(t *testing.T) {
-				t.Parallel()
-				rc := provider.ReportCodec()
-				gotReport, err := rc.BuildReport(pobs)
-				require.NoError(t, err)
-				assert.Equal(t, report, gotReport)
-				gotMedianValue, err := rc.MedianFromReport(report)
-				require.NoError(t, err)
-				assert.Equal(t, medianValue, gotMedianValue)
-				gotMax, err := rc.MaxReportLength(n)
-				require.NoError(t, err)
-				assert.Equal(t, max, gotMax)
-			})
-			t.Run("MedianContract", func(t *testing.T) {
-				t.Parallel()
-				mc := provider.MedianContract()
-				gotConfigDigest, gotEpoch, gotRound, err := mc.LatestRoundRequested(ctx, lookbackDuration)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				assert.Equal(t, round, gotRound)
-				gotConfigDigest, gotEpoch, gotRound, gotLatestAnswer, gotLatestTimestamp, err := mc.LatestTransmissionDetails(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				assert.Equal(t, round, gotRound)
-				assert.Equal(t, latestAnswer, gotLatestAnswer)
-				assert.WithinDuration(t, latestTimestamp, gotLatestTimestamp, time.Second)
-			})
-			t.Run("OnchainConfigCodec", func(t *testing.T) {
-				t.Parallel()
-				occ := provider.OnchainConfigCodec()
-				gotEncoded, err := occ.Encode(onchainConfig)
-				require.NoError(t, err)
-				assert.Equal(t, encoded, gotEncoded)
-				gotDecoded, err := occ.Decode(encoded)
-				require.NoError(t, err)
-				assert.Equal(t, onchainConfig, gotDecoded)
-			})
+			expectedMedianProvider.AssertEqual(t, provider)
 		})
 	})
 
 	t.Run("PluginProvider", func(t *testing.T) {
 		t.Parallel()
 		ra := newRelayArgsWithProviderType(types.GenericPlugin)
-		provider, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
+		provider, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
 		require.NoError(t, err)
 		require.NoError(t, provider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
@@ -321,70 +320,43 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
 
-			t.Run("OffchainConfigDigester", func(t *testing.T) {
-				t.Parallel()
-				ocd := provider.OffchainConfigDigester()
-				gotConfigDigestPrefix, err := ocd.ConfigDigestPrefix()
-				require.NoError(t, err)
-				assert.Equal(t, configDigestPrefix, gotConfigDigestPrefix)
-				gotConfigDigest, err := ocd.ConfigDigest(contractConfig)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-			})
-			t.Run("ContractConfigTracker", func(t *testing.T) {
-				t.Parallel()
-				cct := provider.ContractConfigTracker()
-				gotBlockHeight, err := cct.LatestBlockHeight(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, blockHeight, gotBlockHeight)
-				gotChangedInBlock, gotConfigDigest, err := cct.LatestConfigDetails(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, changedInBlock, gotChangedInBlock)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				gotContractConfig, err := cct.LatestConfig(ctx, changedInBlock)
-				require.NoError(t, err)
-				assert.Equal(t, contractConfig, gotContractConfig)
-			})
-			t.Run("ContractTransmitter", func(t *testing.T) {
-				t.Parallel()
-				ct := provider.ContractTransmitter()
-				gotAccount, err := ct.FromAccount()
-				require.NoError(t, err)
-				assert.Equal(t, account, gotAccount)
-				gotConfigDigest, gotEpoch, err := ct.LatestConfigDigestAndEpoch(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, configDigest, gotConfigDigest)
-				assert.Equal(t, epoch, gotEpoch)
-				err = ct.Transmit(ctx, reportContext, report, sigs)
-				require.NoError(t, err)
-			})
+			expectedAgnosticProvider.AssertEqual(t, provider)
 		})
 	})
 
-	t.Run("GetChainStatus", func(t *testing.T) {
-		t.Parallel()
-		gotChain, err := relayer.GetChainStatus(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, chain, gotChain)
-	})
+	// TODO add this back
 
-	t.Run("ListNodeStatuses", func(t *testing.T) {
-		t.Parallel()
-		gotNodes, gotNextToken, gotCount, err := relayer.ListNodeStatuses(ctx, limit, "")
-		require.NoError(t, err)
-		assert.Equal(t, nodes, gotNodes)
-		assert.Equal(t, total, gotCount)
-		assert.Empty(t, gotNextToken)
-	})
+	t.Fatalf("don't forget to add this back")
+	/*
+		t.Run("GetChainStatus", func(t *testing.T) {
+			t.Parallel()
+			gotChain, err := relayer.GetChainStatus(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, chain, gotChain)
+		})
 
-	t.Run("Transact", func(t *testing.T) {
-		t.Parallel()
-		err := relayer.Transact(ctx, from, to, amount, balanceCheck)
-		require.NoError(t, err)
-	})
+		t.Run("ListNodeStatuses", func(t *testing.T) {
+			t.Parallel()
+			gotNodes, gotNextToken, gotCount, err := relayer.ListNodeStatuses(ctx, limit, "")
+			require.NoError(t, err)
+			assert.Equal(t, nodes, gotNodes)
+			assert.Equal(t, total, gotCount)
+			assert.Empty(t, gotNextToken)
+		})
+
+		t.Run("Transact", func(t *testing.T) {
+			t.Parallel()
+			err := relayer.Transact(ctx, from, to, amount, balanceCheck)
+			require.NoError(t, err)
+		})
+	*/
 }
 
 func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.PluginRelayer) {
+	var (
+		account = "testaccount"
+		signed  = []byte{5: 11}
+	)
 	f.Add("ABC\xa8\x8c\xb3G\xfc", "", true, []byte{}, true, true, "")
 	f.Add(ConfigTOML, string(account), false, signed, false, false, "")
 
@@ -409,7 +381,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Pl
 }
 
 func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer) {
-	validRaw := [16]byte(RelayArgs.ExternalJobID)
+	validRaw := [16]byte(relayArgs.ExternalJobID)
 	validRawBytes := make([]byte, 16)
 
 	copy(validRawBytes, validRaw[:])
@@ -463,7 +435,7 @@ func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer)
 type FuzzableProvider[K any] func(context.Context, types.RelayArgs, types.PluginArgs) (K, error)
 
 func RunFuzzProvider[K any](f *testing.F, providerFunc func(*testing.T) FuzzableProvider[K]) {
-	validRaw := [16]byte(RelayArgs.ExternalJobID)
+	validRaw := [16]byte(relayArgs.ExternalJobID)
 	validRawBytes := make([]byte, 16)
 
 	copy(validRawBytes, validRaw[:])

@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
+	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -23,7 +24,7 @@ func TestPluginMedian(t *testing.T) {
 	test.PluginTest(t, loop.PluginMedianName, &loop.GRPCPluginMedian{PluginServer: median_test.DefaultPluginMedian, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, median_test.PluginMedian)
 
 	t.Run("proxy", func(t *testing.T) {
-		test.PluginTest(t, loop.PluginRelayerName, &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{}, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, func(t *testing.T, pr loop.PluginRelayer) {
+		test.PluginTest(t, loop.PluginRelayerName, &loop.GRPCPluginRelayer{PluginServer: relayer_test.NewRelayerTester(false), BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, func(t *testing.T, pr loop.PluginRelayer) {
 			p := newMedianProvider(t, pr)
 			pm := median_test.PluginMedianTest{MedianProvider: p}
 			test.PluginTest(t, loop.PluginMedianName, &loop.GRPCPluginMedian{PluginServer: median_test.DefaultPluginMedian, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, pm.TestPluginMedian)

@@ -80,4 +80,7 @@ var (
 	TestStaticConfigProvider = StaticConfigProvider{
 		ConfigProviderTestConfig: configProviderTestConfig,
 	}
+
+	//TODO initialization?
+	TestStaticAgnosticPluginProvider = StaticPluginProvider{}
 )

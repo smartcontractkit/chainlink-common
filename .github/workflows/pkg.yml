@@ -52,6 +52,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          path: chainlink-common
       - name: Set up Go
         uses: actions/setup-go@v3
         with:

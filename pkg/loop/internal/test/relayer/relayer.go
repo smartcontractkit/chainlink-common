@@ -162,7 +162,7 @@ func (s staticPluginRelayer) NewConfigProvider(ctx context.Context, r types.Rela
 	if s.StaticChecks && !equalRelayArgs(r, s.RelayArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.RelayArgs, r)
 	}
-	return pluginprovider_test.TestStaticConfigProvider, nil
+	return pluginprovider_test.ConfigProviderImpl, nil
 }
 
 func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
@@ -177,7 +177,7 @@ func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.Rela
 		}
 	}
 
-	return median_test.TestStaticMedianProvider, nil
+	return median_test.MedianProviderImpl, nil
 }
 
 func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
@@ -278,9 +278,9 @@ func RunPluginRelayer(t *testing.T, p internal.PluginRelayer) {
 func RunRelayer(t *testing.T, relayer internal.Relayer) {
 	ctx := tests.Context(t)
 	var (
-		expectedConfigProvider   = pluginprovider_test.TestStaticConfigProvider
-		expectedMedianProvider   = median_test.TestStaticMedianProvider
-		expectedAgnosticProvider = pluginprovider_test.TestStaticConfigProvider
+		expectedConfigProvider   = pluginprovider_test.ConfigProviderImpl
+		expectedMedianProvider   = median_test.MedianProviderImpl
+		expectedAgnosticProvider = pluginprovider_test.ConfigProviderImpl
 		expectedRelayer          = staticPluginRelayer{}
 	)
 	// TODO: fix lazy init?

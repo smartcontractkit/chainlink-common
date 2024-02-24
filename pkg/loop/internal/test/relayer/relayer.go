@@ -47,7 +47,7 @@ type nodeResponse struct {
 	nextPage string
 	total    int
 }
-type StaticPluginRelayerConfig struct {
+type staticPluginRelayerConfig struct {
 	StaticChecks bool
 	RelayArgs    types.RelayArgs
 	PluginArgs   types.PluginArgs
@@ -65,7 +65,7 @@ type RelayerTester interface {
 
 func NewRelayerTester(staticChecks bool) RelayerTester {
 	return staticPluginRelayer{
-		StaticPluginRelayerConfig: StaticPluginRelayerConfig{
+		staticPluginRelayerConfig: staticPluginRelayerConfig{
 			StaticChecks: staticChecks,
 			RelayArgs:    relayArgs,
 			PluginArgs:   pluginArgs,
@@ -92,7 +92,7 @@ func NewRelayerTester(staticChecks bool) RelayerTester {
 var _ RelayerTester = staticPluginRelayer{}
 
 type staticPluginRelayer struct {
-	StaticPluginRelayerConfig
+	staticPluginRelayerConfig
 }
 
 func (s staticPluginRelayer) mustEmbed() {}
@@ -123,32 +123,7 @@ func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 	return s, nil
 }
 
-func (s staticPluginRelayer) Start(ctx context.Context) error {
-
-	/*	// lazy initialization
-		s.StaticPluginRelayerConfig.RelayArgs = relayArgs
-		s.StaticPluginRelayerConfig.PluginArgs = pluginArgs
-		s.nodeRequest = nodeRequest{
-			pageSize:  137,
-			pageToken: "",
-		}
-		s.nodeResponse = nodeResponse{
-			nodes:    nodes,
-			nextPage: "",
-			total:    len(nodes),
-		}
-
-		//s.nodeStatus = nodes
-		//s.limit = 137
-		s.transactionRequest = transactionRequest{
-			from:         "me",
-			to:           "you",
-			amount:       big.NewInt(97),
-			balanceCheck: true,
-		}
-	*/
-	return nil
-}
+func (s staticPluginRelayer) Start(ctx context.Context) error { return nil }
 
 func (s staticPluginRelayer) Close() error { return nil }
 
@@ -263,7 +238,7 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 	}
 }
 
-func RunPluginRelayer(t *testing.T, p internal.PluginRelayer) {
+func RunPlugin(t *testing.T, p internal.PluginRelayer) {
 	ctx := tests.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
@@ -271,17 +246,18 @@ func RunPluginRelayer(t *testing.T, p internal.PluginRelayer) {
 		require.NoError(t, err)
 		require.NoError(t, relayer.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })
-		RunRelayer(t, relayer)
+		Run(t, relayer)
 	})
 }
 
-func RunRelayer(t *testing.T, relayer internal.Relayer) {
+func Run(t *testing.T, relayer internal.Relayer) {
 	ctx := tests.Context(t)
 	var (
 		expectedConfigProvider   = pluginprovider_test.ConfigProviderImpl
 		expectedMedianProvider   = median_test.MedianProviderImpl
 		expectedAgnosticProvider = pluginprovider_test.ConfigProviderImpl
-		expectedRelayer          = staticPluginRelayer{}
+		// TODO: pass static check bool
+		expectedRelayer = NewRelayerTester(false)
 	)
 	// TODO: fix lazy init?
 	assert.NoError(t, expectedRelayer.Start(ctx))
@@ -299,8 +275,9 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 		t.Parallel()
 		ra := newRelayArgsWithProviderType(types.Median)
 		p, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
-		provider := p.(types.MedianProvider)
 		require.NoError(t, err)
+		require.NotNil(t, p)
+		provider := p.(types.MedianProvider)
 		require.NoError(t, provider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
 
@@ -328,7 +305,8 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 
 	// TODO add this back
 
-	t.Fatalf("don't forget to add this back")
+	panic("don't forget to add this back")
+
 	/*
 		t.Run("GetChainStatus", func(t *testing.T) {
 			t.Parallel()

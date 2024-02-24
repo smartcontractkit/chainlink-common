@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -62,7 +63,12 @@ func main() {
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: loop.PluginRelayerHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
-				loop.PluginRelayerName: &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{StaticChecks: staticChecks}, BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+				// loop.PluginRelayerName: &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{StaticChecks: staticChecks}, BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+				loop.PluginRelayerName: &loop.GRPCPluginRelayer{
+					//PluginServer: test.StaticPluginRelayer{StaticChecks: staticChecks},
+					PluginServer: relayer_test.NewRelayerTester(staticChecks),
+					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh},
+				},
 			},
 			GRPCServer: grpcServer,
 		})

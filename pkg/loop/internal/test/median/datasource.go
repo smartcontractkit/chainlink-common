@@ -9,43 +9,41 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-var _ median.DataSource = (*StaticTestDataSource)(nil)
+var _ median.DataSource = (*staticDataSource)(nil)
 
-type DataSourceTestConfig struct {
+type staticDataSourceConfig struct {
 	ReportContext types.ReportContext
 	Value         *big.Int
 }
 
-type StaticTestDataSource struct {
-	DataSourceTestConfig
+type staticDataSource struct {
+	staticDataSourceConfig
 }
 
-func DefaultTestDataSource() StaticTestDataSource {
-	return StaticTestDataSource{
-		DataSourceTestConfig{
+var (
+	DataSourceImpl = staticDataSource{
+		staticDataSourceConfig{
 			ReportContext: reportContext,
 			Value:         value,
 		},
 	}
-}
 
-func DefaultTestJuelsPerFeeCoinDataSource() StaticTestDataSource {
-	return StaticTestDataSource{
-		DataSourceTestConfig{
+	JuelsPerFeeCoinDataSourceImpl = staticDataSource{
+		staticDataSourceConfig{
 			ReportContext: reportContext,
 			Value:         juelsPerFeeCoin,
 		},
 	}
-}
+)
 
-func (s StaticTestDataSource) Observe(ctx context.Context, timestamp types.ReportTimestamp) (*big.Int, error) {
+func (s staticDataSource) Observe(ctx context.Context, timestamp types.ReportTimestamp) (*big.Int, error) {
 	if timestamp != s.ReportContext.ReportTimestamp {
 		return nil, fmt.Errorf("expected %v but got %v", s.ReportContext.ReportTimestamp, timestamp)
 	}
 	return s.Value, nil
 }
 
-func (s StaticTestDataSource) Evaluate(ctx context.Context, ds median.DataSource) error {
+func (s staticDataSource) Evaluate(ctx context.Context, ds median.DataSource) error {
 	gotVal, err := ds.Observe(ctx, s.ReportContext.ReportTimestamp)
 	if err != nil {
 		return fmt.Errorf("failed to observe dataSource: %w", err)

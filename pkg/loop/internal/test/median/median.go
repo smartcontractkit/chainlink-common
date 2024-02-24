@@ -23,7 +23,7 @@ import (
 )
 
 func PluginMedian(t *testing.T, p types.PluginMedian) {
-	PluginMedianTest{&TestStaticMedianProvider}.TestPluginMedian(t, p)
+	PluginMedianTest{&MedianProviderImpl}.TestPluginMedian(t, p)
 }
 
 type PluginMedianTest struct {
@@ -33,7 +33,7 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DefaultTestDataSource(), DefaultTestJuelsPerFeeCoinDataSource(), &StaticErrorLog{})
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSourceImpl, JuelsPerFeeCoinDataSourceImpl, &StaticErrorLog{})
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -103,33 +103,33 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		})
 	}
 */
-type StaticPluginMedianConfig struct {
-	Provider                  StaticMedianProvider //types.MedianProvider
-	DataSource                StaticTestDataSource //median.DataSource
-	JuelsPerFeeCoinDataSource StaticTestDataSource // median.DataSource
-	ErrorLog                  StaticErrorLog       //types.ErrorLog
+type staticPluginMedianConfig struct {
+	provider                  staticMedianProvider //types.MedianProvider
+	dataSource                staticDataSource     //median.DataSource
+	juelsPerFeeCoinDataSource staticDataSource     // median.DataSource
+	errorLog                  StaticErrorLog       //types.ErrorLog
 }
 
-type StaticPluginMedian struct {
-	StaticPluginMedianConfig
+type staticPluginMedian struct {
+	staticPluginMedianConfig
 }
 
-func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	// the provider may be a grpc client, so we can't compare it directly
 	// but in all of these static tests, the implementation of the provider is expected
 	// to be the same static implementation, so we can compare the expected values
 
-	err := TestStaticMedianProvider.Equal(ctx, provider)
+	err := s.provider.Evaluate(ctx, provider)
 	if err != nil {
 		return nil, fmt.Errorf("NewMedianFactory: provider does not equal a static median provider implementation: %w", err)
 	}
 
-	err = DefaultTestDataSource().Evaluate(ctx, dataSource)
+	err = s.dataSource.Evaluate(ctx, dataSource)
 	if err != nil {
 		return nil, fmt.Errorf("NewMedianFactory: dataSource does not equal a static test data source implementation: %w", err)
 	}
 
-	err = DefaultTestJuelsPerFeeCoinDataSource().Evaluate(ctx, juelsPerFeeCoinDataSource)
+	err = s.juelsPerFeeCoinDataSource.Evaluate(ctx, juelsPerFeeCoinDataSource)
 	if err != nil {
 		return nil, fmt.Errorf("NewMedianFactory: juelsPerFeeCoinDataSource does not equal a static test juels per fee coin data source implementation: %w", err)
 	}
@@ -137,7 +137,7 @@ func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 	if err := errorLog.SaveError(ctx, errMsg); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)
 	}
-	return staticPluginFactory{}, nil
+	return staticPluginFactory{ReportingPluginConfig: reportingPluginConfig}, nil
 }
 
 type staticPluginFactory struct {
@@ -157,9 +157,6 @@ func (s staticPluginFactory) Ready() error { panic("implement me") }
 func (s staticPluginFactory) HealthReport() map[string]error { panic("implement me") }
 
 func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
-	// lazy initialization
-	s.ReportingPluginConfig = reportingPluginConfig
-
 	if config.ConfigDigest != s.ConfigDigest {
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected ConfigDigest %x but got %x", s.ConfigDigest, config.ConfigDigest)
 	}
@@ -200,151 +197,141 @@ func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginCon
 	return reportingplugin_test.StaticImpl, rpi, nil
 }
 
-type StaticMedianProviderConfig struct {
+type staticMedianProviderConfig struct {
 	// we use the static implementation type not the interface type
 	// because we always expect the static implementation to be used
 	// and it facilitates testing.
-	OffchainDigester    pluginprovider_test.OffchainConfigDigesterEvaluator
-	ContractTracker     pluginprovider_test.ContractConfigTrackerEvaluator
-	ContractTransmitter pluginprovider_test.ContractTransmitterEvaluator //pluginprovider_test.StaticContractTransmitter
+	offchainDigester       pluginprovider_test.OffchainConfigDigesterEvaluator
+	contractTracker        pluginprovider_test.ContractConfigTrackerEvaluator
+	contractTransmitter    pluginprovider_test.ContractTransmitterEvaluator
+	reportCodec            staticReportCodec
+	medianContract         staticMedianContract
+	onchainConfigCodec     staticOnchainConfigCodec
+	offchainConfigDigester pluginprovider_test.OffchainConfigDigesterEvaluator
+	chainReader            pluginprovider_test.ChainReaderEvaluator //pluginprovider_test.StaticChainReader
+
 }
 
-type StaticMedianProvider struct {
-	StaticMedianProviderConfig
-	rc  staticReportCodec
-	mc  staticMedianContract
-	ooc staticOnchainConfigCodec
-	ocd pluginprovider_test.OffchainConfigDigesterEvaluator
-	cr  pluginprovider_test.ChainReaderEvaluator //pluginprovider_test.StaticChainReader
+type staticMedianProvider struct {
+	staticMedianProviderConfig
 }
 
-func (s StaticMedianProvider) Start(ctx context.Context) error {
-	// lazy initialization
-	s.StaticMedianProviderConfig.OffchainDigester = pluginprovider_test.TestOffchainConfigDigester
-	s.StaticMedianProviderConfig.ContractTracker = pluginprovider_test.TestContractConfigTracker
-	s.StaticMedianProviderConfig.ContractTransmitter = pluginprovider_test.TestContractTransmitter
-	s.rc = staticReportCodec{}
-	s.mc = staticMedianContract{}
-	s.ooc = staticOnchainConfigCodec{}
-	s.ocd = pluginprovider_test.TestOffchainConfigDigester
-	s.cr = pluginprovider_test.TestChainReader
-	return nil
-}
+func (s staticMedianProvider) Start(ctx context.Context) error { return nil }
 
-func (s StaticMedianProvider) Close() error { return nil }
+func (s staticMedianProvider) Close() error { return nil }
 
-func (s StaticMedianProvider) Ready() error { panic("unimplemented") }
+func (s staticMedianProvider) Ready() error { panic("unimplemented") }
 
-func (s StaticMedianProvider) Name() string { panic("unimplemented") }
+func (s staticMedianProvider) Name() string { panic("unimplemented") }
 
-func (s StaticMedianProvider) HealthReport() map[string]error { panic("unimplemented") }
+func (s staticMedianProvider) HealthReport() map[string]error { panic("unimplemented") }
 
-func (s StaticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
+func (s staticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	//return staticOffchainConfigDigester{}
-	return s.StaticMedianProviderConfig.OffchainDigester
+	return s.staticMedianProviderConfig.offchainDigester
 }
 
-func (s StaticMedianProvider) ContractConfigTracker() libocr.ContractConfigTracker {
+func (s staticMedianProvider) ContractConfigTracker() libocr.ContractConfigTracker {
 	//return staticContractConfigTracker{}
-	return s.StaticMedianProviderConfig.ContractTracker
+	return s.staticMedianProviderConfig.contractTracker
 }
 
-func (s StaticMedianProvider) ContractTransmitter() libocr.ContractTransmitter {
+func (s staticMedianProvider) ContractTransmitter() libocr.ContractTransmitter {
 	//return staticContractTransmitter{}
-	return s.StaticMedianProviderConfig.ContractTransmitter
+	return s.staticMedianProviderConfig.contractTransmitter
 }
 
-func (s StaticMedianProvider) ReportCodec() median.ReportCodec { return s.rc }
+func (s staticMedianProvider) ReportCodec() median.ReportCodec { return s.reportCodec }
 
-func (s StaticMedianProvider) MedianContract() median.MedianContract {
-	return s.mc
+func (s staticMedianProvider) MedianContract() median.MedianContract {
+	return s.medianContract
 }
 
-func (s StaticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
-	return s.ooc
+func (s staticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
+	return s.onchainConfigCodec
 }
 
-func (s StaticMedianProvider) ChainReader() types.ChainReader {
-	return s.cr //StaticChainReader{}
+func (s staticMedianProvider) ChainReader() types.ChainReader {
+	return s.chainReader //StaticChainReader{}
 }
 
-func (s StaticMedianProvider) Codec() types.Codec {
+func (s staticMedianProvider) Codec() types.Codec {
 	return codec_test.StaticCodec{}
 }
 
-func (s StaticMedianProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider) {
+func (s staticMedianProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.ocd.Evaluate(ctx, provider.OffchainConfigDigester()))
+		assert.NoError(t, s.offchainConfigDigester.Evaluate(ctx, provider.OffchainConfigDigester()))
 	})
 
 	t.Run("ContractConfigTracker", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.StaticMedianProviderConfig.ContractTracker.Evaluate(ctx, provider.ContractConfigTracker()))
+		assert.NoError(t, s.staticMedianProviderConfig.contractTracker.Evaluate(ctx, provider.ContractConfigTracker()))
 	})
 
 	t.Run("ContractTransmitter", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.StaticMedianProviderConfig.ContractTransmitter.Evaluate(ctx, provider.ContractTransmitter()))
+		assert.NoError(t, s.staticMedianProviderConfig.contractTransmitter.Evaluate(ctx, provider.ContractTransmitter()))
 	})
 
 	t.Run("ReportCodec", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.rc.Evaluate(ctx, provider.ReportCodec()))
+		assert.NoError(t, s.reportCodec.Evaluate(ctx, provider.ReportCodec()))
 	})
 
 	t.Run("MedianContract", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.mc.Evaluate(ctx, provider.MedianContract()))
+		assert.NoError(t, s.medianContract.Evaluate(ctx, provider.MedianContract()))
 	})
 
 	t.Run("OnchainConfigCodec", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.ooc.Evaluate(ctx, provider.OnchainConfigCodec()))
+		assert.NoError(t, s.onchainConfigCodec.Evaluate(ctx, provider.OnchainConfigCodec()))
 	})
 
 }
 
-func (s StaticMedianProvider) Equal(ctx context.Context, provider types.MedianProvider) error {
+func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.MedianProvider) error {
 
 	cr := provider.ChainReader()
-	err := s.cr.Evaluate(ctx, cr)
+	err := s.chainReader.Evaluate(ctx, cr)
 	if err != nil {
 		return fmt.Errorf("providers chain reader does not equal static chain reader: %w", err)
 	}
 
 	ocd := provider.OffchainConfigDigester()
-	err = s.OffchainDigester.Evaluate(ctx, ocd)
+	err = s.offchainDigester.Evaluate(ctx, ocd)
 	if err != nil {
 		return fmt.Errorf("providers offchain digester does not equal static offchain digester: %w", err)
 	}
 
 	cct := provider.ContractConfigTracker()
-	err = s.ContractTracker.Evaluate(ctx, cct)
+	err = s.contractTracker.Evaluate(ctx, cct)
 	if err != nil {
 		return fmt.Errorf("providers contract config tracker does not equal static contract config tracker: %w", err)
 	}
 
 	ct := provider.ContractTransmitter()
-	err = s.StaticMedianProviderConfig.ContractTransmitter.Evaluate(ctx, ct)
+	err = s.staticMedianProviderConfig.contractTransmitter.Evaluate(ctx, ct)
 	if err != nil {
 		return fmt.Errorf("providers contract transmitter does not equal static contract transmitter: %w", err)
 	}
 
 	rc := provider.ReportCodec()
-	err = s.rc.Evaluate(ctx, rc)
+	err = s.reportCodec.Evaluate(ctx, rc)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate report codec: %w", err)
 	}
 
 	mc := provider.MedianContract()
-	err = s.mc.Evaluate(ctx, mc)
+	err = s.medianContract.Evaluate(ctx, mc)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate median contract: %w", err)
 	}
 
 	occ := provider.OnchainConfigCodec()
-	err = s.ooc.Evaluate(ctx, occ)
+	err = s.onchainConfigCodec.Evaluate(ctx, occ)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate onchain config codec: %w", err)
 	}
@@ -462,7 +449,6 @@ func (s staticMedianContract) Evaluate(ctx context.Context, mc median.MedianCont
 	return nil
 }
 
-// TODO remove hard coded values
 type staticOnchainConfigCodec struct{}
 
 func (s staticOnchainConfigCodec) Encode(c median.OnchainConfig) ([]byte, error) {

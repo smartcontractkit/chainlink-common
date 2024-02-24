@@ -10,13 +10,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var _ types.PluginProvider = StaticPluginProvider{}
+var _ types.PluginProvider = staticPluginProvider{}
 
-var TestPluginProvider = StaticPluginProvider{
-	offchainConfigDigester: TestOffchainConfigDigester,
-	contractConfigTracker:  TestContractConfigTracker,
-	contractTransmitter:    TestContractTransmitter,
-	chainReader:            TestChainReader,
+var TestPluginProvider = staticPluginProvider{
+	offchainConfigDigester: OffchainConfigDigesterImpl,
+	contractConfigTracker:  ContractConfigTrackerImpl,
+	contractTransmitter:    ContractTransmitterImpl,
+	chainReader:            ChainReaderImpl,
 	codec:                  staticCodec{},
 }
 
@@ -26,8 +26,8 @@ type PluginProviderTester interface {
 	AssertEqual(t *testing.T, ctx context.Context, other types.PluginProvider)
 }
 
-// StaticPluginProvider is a static implementation of PluginProviderTester
-type StaticPluginProvider struct {
+// staticPluginProvider is a static implementation of PluginProviderTester
+type staticPluginProvider struct {
 	offchainConfigDigester staticOffchainConfigDigester
 	contractConfigTracker  staticContractConfigTracker
 	contractTransmitter    ContractTransmitterEvaluator
@@ -35,39 +35,39 @@ type StaticPluginProvider struct {
 	codec                  staticCodec
 }
 
-var _ PluginProviderTester = StaticPluginProvider{}
+var _ PluginProviderTester = staticPluginProvider{}
 
-func (s StaticPluginProvider) Start(ctx context.Context) error { return nil }
+func (s staticPluginProvider) Start(ctx context.Context) error { return nil }
 
-func (s StaticPluginProvider) Close() error { return nil }
+func (s staticPluginProvider) Close() error { return nil }
 
-func (s StaticPluginProvider) Ready() error { panic("unimplemented") }
+func (s staticPluginProvider) Ready() error { panic("unimplemented") }
 
-func (s StaticPluginProvider) Name() string { panic("unimplemented") }
+func (s staticPluginProvider) Name() string { panic("unimplemented") }
 
-func (s StaticPluginProvider) HealthReport() map[string]error { panic("unimplemented") }
+func (s staticPluginProvider) HealthReport() map[string]error { panic("unimplemented") }
 
-func (s StaticPluginProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
+func (s staticPluginProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return s.offchainConfigDigester
 }
 
-func (s StaticPluginProvider) ContractConfigTracker() libocr.ContractConfigTracker {
+func (s staticPluginProvider) ContractConfigTracker() libocr.ContractConfigTracker {
 	return s.contractConfigTracker
 }
 
-func (s StaticPluginProvider) ContractTransmitter() libocr.ContractTransmitter {
+func (s staticPluginProvider) ContractTransmitter() libocr.ContractTransmitter {
 	return s.contractTransmitter
 }
 
-func (s StaticPluginProvider) ChainReader() types.ChainReader {
+func (s staticPluginProvider) ChainReader() types.ChainReader {
 	return s.chainReader
 }
 
-func (s StaticPluginProvider) Codec() types.Codec {
+func (s staticPluginProvider) Codec() types.Codec {
 	return staticCodec{}
 }
 
-func (s StaticPluginProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.PluginProvider) {
+func (s staticPluginProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.PluginProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
 		assert.NoError(t, s.offchainConfigDigester.Evaluate(ctx, provider.OffchainConfigDigester()))

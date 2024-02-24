@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	//	account        = libocr.Account("testaccount")
 	blockHeight    = uint64(1337)
 	changedInBlock = uint64(14)
 	epoch          = uint32(88)
@@ -15,6 +14,48 @@ const (
 )
 
 var (
+	// ContractTransmitterImpl is a static implementation of the ContractTransmitterTester interface for testing
+	ContractTransmitterImpl = staticContractTransmitter{
+		contractTransmitterTestConfig: contractTransmitterTestConfig{
+			ConfigDigest:  configDigest,
+			Account:       libocr.Account(keystore_test.DefaultKeystoreTestConfig.Account),
+			Epoch:         epoch,
+			ReportContext: libocr.ReportContext{ReportTimestamp: reportTimestamp, ExtraHash: [32]byte{1: 3, 3: 5, 7: 11}},
+			Report:        libocr.Report{41: 131},
+			Sigs:          sigs,
+		},
+	}
+
+	// OffchainConfigDigesterImpl is a static implementation of the OffchainConfigDigesterTester interface for testing
+	OffchainConfigDigesterImpl = staticOffchainConfigDigester{
+		staticOffchainConfigDigesterConfig: staticOffchainConfigDigesterConfig{
+			contractConfig:     contractConfig,
+			configDigest:       configDigest,
+			configDigestPrefix: configDigestPrefix,
+		},
+	}
+
+	// ContractConfigTrackerImpl is a static implementation of the ContractConfigTrackerTester interface for testing
+	ContractConfigTrackerImpl = staticContractConfigTracker{
+		staticConfigTrackerConfig: staticConfigTrackerConfig{
+			contractConfig: contractConfig,
+			configDigest:   configDigest,
+			changedInBlock: changedInBlock,
+			blockHeight:    blockHeight,
+		},
+	}
+
+	// ChainReaderImpl is a static implementation of the ChainReaderTester interface for testing
+	ConfigProviderImpl = staticConfigProvider{
+		staticConfigProviderConfig: staticConfigProviderConfig{
+			offchainDigester:      OffchainConfigDigesterImpl,
+			contractConfigTracker: ContractConfigTrackerImpl,
+		},
+	}
+
+	// AgnosticPluginProviderImpl is a static implementation of the PluginProviderTester interface for testing
+	AgnosticPluginProviderImpl = staticPluginProvider{}
+
 	configDigest       = libocr.ConfigDigest([32]byte{1: 7, 13: 11, 31: 23})
 	configDigestPrefix = libocr.ConfigDigestPrefix(99)
 
@@ -36,42 +77,4 @@ var (
 		Epoch:        epoch,
 		Round:        round,
 	}
-
-	TestContractTransmitter = staticContractTransmitter{
-		contractTransmitterTestConfig: contractTransmitterTestConfig{
-			ConfigDigest:  configDigest,
-			Account:       libocr.Account(keystore_test.DefaultKeystoreTestConfig.Account),
-			Epoch:         epoch,
-			ReportContext: libocr.ReportContext{ReportTimestamp: reportTimestamp, ExtraHash: [32]byte{1: 3, 3: 5, 7: 11}},
-			Report:        libocr.Report{41: 131},
-			Sigs:          sigs,
-		},
-	}
-
-	TestOffchainConfigDigester = staticOffchainConfigDigester{
-		staticOffchainConfigDigesterConfig: staticOffchainConfigDigesterConfig{
-			contractConfig:     contractConfig,
-			configDigest:       configDigest,
-			configDigestPrefix: configDigestPrefix,
-		},
-	}
-
-	TestContractConfigTracker = staticContractConfigTracker{
-		staticConfigTrackerConfig: staticConfigTrackerConfig{
-			contractConfig: contractConfig,
-			configDigest:   configDigest,
-			changedInBlock: changedInBlock,
-			blockHeight:    blockHeight,
-		},
-	}
-
-	TestStaticConfigProvider = staticConfigProvider{
-		staticConfigProviderConfig: staticConfigProviderConfig{
-			offchainDigester:      TestOffchainConfigDigester,
-			contractConfigTracker: TestContractConfigTracker,
-		},
-	}
-
-	//TODO initialization?
-	TestStaticAgnosticPluginProvider = StaticPluginProvider{}
 )

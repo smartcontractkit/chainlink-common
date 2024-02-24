@@ -16,17 +16,12 @@ type ChainReaderEvaluator interface {
 }
 
 var (
-	contractName         = "anyContract"
-	contractMethod       = "anyMethod"
-	getLatestValueParams = map[string]string{"param1": "value1", "param2": "value2"}
-	latestValue          = map[string]any{"ret1": "latestValue1", "ret2": "latestValue2"}
-
-	// TestChainReader is a static implementation of ChainReaderEvaluator for testing
-	TestChainReader = staticChainReader{
-		contractName:   contractName,
-		contractMethod: contractMethod,
-		latestValue:    latestValue,
-		params:         getLatestValueParams,
+	// ChainReaderImpl is a static implementation of ChainReaderEvaluator for testing
+	ChainReaderImpl = staticChainReader{
+		contractName:   "anyContract",
+		contractMethod: "anyMethod",
+		latestValue:    map[string]any{"ret1": "latestValue1", "ret2": "latestValue2"},
+		params:         map[string]string{"param1": "value1", "param2": "value2"},
 	}
 )
 
@@ -41,11 +36,6 @@ type staticChainReader struct {
 var _ ChainReaderEvaluator = staticChainReader{}
 
 func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
-	// lazy initialization
-	c.contractName = contractName
-	c.contractMethod = contractMethod
-	c.latestValue = latestValue
-	c.params = getLatestValueParams
 	return nil
 }
 
@@ -58,15 +48,15 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string
 	}
 	gotParams, ok := params.(*map[string]any)
 	if !ok {
-		return fmt.Errorf("%w: Invalid parameter type received in GetLatestValue. Expected %T but received %T", types.ErrInvalidEncoding, gotParams, params)
+		return fmt.Errorf("%w: Invalid parameter type received in GetLatestValue. Expected %T but received %T", types.ErrInvalidEncoding, c.params, params)
 	}
 	if (*gotParams)["param1"] != c.params["param1"] || (*gotParams)["param2"] != c.params["param2"] {
-		return fmt.Errorf("%w: Wrong params value received in GetLatestValue. Expected %v but received %v", types.ErrInvalidEncoding, getLatestValueParams, *gotParams)
+		return fmt.Errorf("%w: Wrong params value received in GetLatestValue. Expected %v but received %v", types.ErrInvalidEncoding, c.params, *gotParams)
 	}
 
 	ret, ok := returnVal.(*map[string]any)
 	if !ok {
-		return fmt.Errorf("%w: Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", types.ErrInvalidType, ret, returnVal)
+		return fmt.Errorf("%w: Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", types.ErrInvalidType, c.latestValue, returnVal)
 	}
 
 	(*ret)["ret1"] = c.latestValue["ret1"]

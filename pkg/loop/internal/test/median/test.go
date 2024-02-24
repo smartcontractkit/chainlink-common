@@ -23,6 +23,38 @@ const (
 )
 
 var (
+	PluginMedianImpl = staticPluginMedian{
+		staticPluginMedianConfig: staticPluginMedianConfig{
+			provider:                  MedianProviderImpl,
+			dataSource:                DataSourceImpl,
+			juelsPerFeeCoinDataSource: JuelsPerFeeCoinDataSourceImpl,
+			errorLog:                  StaticErrorLog{},
+		},
+	}
+
+	MedianProviderImpl = staticMedianProvider{
+		staticMedianProviderConfig: staticMedianProviderConfig{
+			offchainDigester:    pluginprovider_test.OffchainConfigDigesterImpl,
+			contractTracker:     pluginprovider_test.ContractConfigTrackerImpl,
+			contractTransmitter: pluginprovider_test.ContractTransmitterImpl,
+			reportCodec:         staticReportCodec{},
+			medianContract: staticMedianContract{
+				staticMedianContractConfig: staticMedianContractConfig{
+					configDigest:     libocr.ConfigDigest([32]byte{1: 1, 11: 8}),
+					epoch:            7,
+					round:            11,
+					latestAnswer:     big.NewInt(123),
+					latestTimestamp:  time.Unix(1234567890, 987654321).UTC(),
+					lookbackDuration: lookbackDuration,
+				},
+			},
+			onchainConfigCodec: staticOnchainConfigCodec{},
+			chainReader:        pluginprovider_test.ChainReaderImpl,
+		},
+	}
+)
+
+var (
 	encodedOnchainConfig = []byte{5: 11}
 	juelsPerFeeCoin      = big.NewInt(1234)
 	onchainConfig        = median.OnchainConfig{Min: big.NewInt(-12), Max: big.NewInt(1234567890987654321)}
@@ -150,33 +182,3 @@ func (e baseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, 
 	return CapabilityInfo, nil
 }
 */
-
-var DefaultPluginMedian = StaticPluginMedian{
-	StaticPluginMedianConfig: StaticPluginMedianConfig{
-		Provider:                  TestStaticMedianProvider,
-		DataSource:                DefaultTestDataSource(),
-		JuelsPerFeeCoinDataSource: DefaultTestJuelsPerFeeCoinDataSource(),
-		ErrorLog:                  StaticErrorLog{},
-	},
-}
-
-var TestStaticMedianProvider = StaticMedianProvider{
-	StaticMedianProviderConfig: StaticMedianProviderConfig{
-		OffchainDigester:    pluginprovider_test.TestOffchainConfigDigester,
-		ContractTracker:     pluginprovider_test.TestContractConfigTracker,
-		ContractTransmitter: pluginprovider_test.TestContractTransmitter,
-	},
-	rc: staticReportCodec{},
-	mc: staticMedianContract{
-		staticMedianContractConfig: staticMedianContractConfig{
-			configDigest:     libocr.ConfigDigest([32]byte{1: 1, 11: 8}),
-			epoch:            7,
-			round:            11,
-			latestAnswer:     big.NewInt(123),
-			latestTimestamp:  time.Unix(1234567890, 987654321).UTC(),
-			lookbackDuration: lookbackDuration,
-		},
-	},
-	ooc: staticOnchainConfigCodec{},
-	cr:  pluginprovider_test.TestChainReader,
-}

@@ -12,7 +12,7 @@ import (
 
 var _ types.PluginProvider = staticPluginProvider{}
 
-var TestPluginProvider = staticPluginProvider{
+var AgnosticProviderImpl = staticPluginProvider{
 	offchainConfigDigester: OffchainConfigDigesterImpl,
 	contractConfigTracker:  ContractConfigTrackerImpl,
 	contractTransmitter:    ContractTransmitterImpl,

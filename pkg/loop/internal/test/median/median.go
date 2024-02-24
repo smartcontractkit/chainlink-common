@@ -137,26 +137,26 @@ func (s staticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 	if err := errorLog.SaveError(ctx, errMsg); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)
 	}
-	return staticPluginFactory{ReportingPluginConfig: reportingPluginConfig}, nil
+	return staticReportingPluginFactory{ReportingPluginConfig: reportingPluginConfig}, nil
 }
 
-type staticPluginFactory struct {
+type staticReportingPluginFactory struct {
 	libocr.ReportingPluginConfig
 }
 
-func (s staticPluginFactory) Name() string { panic("implement me") }
+func (s staticReportingPluginFactory) Name() string { panic("implement me") }
 
-func (s staticPluginFactory) Start(ctx context.Context) error {
+func (s staticReportingPluginFactory) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s staticPluginFactory) Close() error { return nil }
+func (s staticReportingPluginFactory) Close() error { return nil }
 
-func (s staticPluginFactory) Ready() error { panic("implement me") }
+func (s staticReportingPluginFactory) Ready() error { panic("implement me") }
 
-func (s staticPluginFactory) HealthReport() map[string]error { panic("implement me") }
+func (s staticReportingPluginFactory) HealthReport() map[string]error { panic("implement me") }
 
-func (s staticPluginFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
+func (s staticReportingPluginFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
 	if config.ConfigDigest != s.ConfigDigest {
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected ConfigDigest %x but got %x", s.ConfigDigest, config.ConfigDigest)
 	}
@@ -211,9 +211,18 @@ type staticMedianProviderConfig struct {
 
 }
 
+type MedianProviderTester interface {
+	types.MedianProvider
+	// AssertEqual runs all the methods of the other MedianProvider and
+	// checks for equality with the embedded MedianProvider
+	AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider)
+}
+
 type staticMedianProvider struct {
 	staticMedianProviderConfig
 }
+
+var _ MedianProviderTester = staticMedianProvider{}
 
 func (s staticMedianProvider) Start(ctx context.Context) error { return nil }
 

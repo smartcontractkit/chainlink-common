@@ -48,27 +48,35 @@ type nodeResponse struct {
 	total    int
 }
 type staticPluginRelayerConfig struct {
-	StaticChecks bool
-	RelayArgs    types.RelayArgs
-	PluginArgs   types.PluginArgs
-	nodeRequest
-	nodeResponse
-	transactionRequest
-	chainStatus types.ChainStatus
+	StaticChecks     bool
+	relayArgs        types.RelayArgs
+	pluginArgs       types.PluginArgs
+	medianProvider   median_test.MedianProviderTester
+	agnosticProvider pluginprovider_test.PluginProviderTester
+	configProvider   pluginprovider_test.ConfigProviderTester
+	// TODO: add other Provider testers
+	nodeRequest        nodeRequest
+	nodeResponse       nodeResponse
+	transactionRequest transactionRequest
+	chainStatus        types.ChainStatus
 }
 
 type RelayerTester interface {
 	loop.PluginRelayer
 	loop.Relayer
+	AssertEqual(t *testing.T, ctx context.Context, relayer loop.Relayer)
 	mustEmbed()
 }
 
 func NewRelayerTester(staticChecks bool) RelayerTester {
 	return staticPluginRelayer{
 		staticPluginRelayerConfig: staticPluginRelayerConfig{
-			StaticChecks: staticChecks,
-			RelayArgs:    relayArgs,
-			PluginArgs:   pluginArgs,
+			StaticChecks:     staticChecks,
+			relayArgs:        relayArgs,
+			pluginArgs:       pluginArgs,
+			medianProvider:   median_test.MedianProviderImpl,
+			agnosticProvider: pluginprovider_test.AgnosticProviderImpl,
+			configProvider:   pluginprovider_test.ConfigProviderImpl,
 			nodeRequest: nodeRequest{
 				pageSize:  137,
 				pageToken: "",
@@ -134,10 +142,10 @@ func (s staticPluginRelayer) Name() string { panic("unimplemented") }
 func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
 
 func (s staticPluginRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
-	if s.StaticChecks && !equalRelayArgs(r, s.RelayArgs) {
-		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.RelayArgs, r)
+	if s.StaticChecks && !equalRelayArgs(r, s.relayArgs) {
+		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
 	}
-	return pluginprovider_test.ConfigProviderImpl, nil
+	return s.configProvider, nil
 }
 
 func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
@@ -152,7 +160,7 @@ func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.Rela
 		}
 	}
 
-	return median_test.MedianProviderImpl, nil
+	return s.medianProvider, nil
 }
 
 func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
@@ -165,8 +173,11 @@ func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.Rela
 			return nil, fmt.Errorf("expected plugin args %v but got %v", pluginArgs, p)
 		}
 	}
-
-	return pluginprovider_test.TestPluginProvider, nil
+	//panic(fmt.Sprintf("NewPluginProvider called with args: %v, %v, returning %T", r, p, s.agnosticProvider))
+	if s.agnosticProvider.ChainReader() == nil {
+		panic("ChainReader not implemented in agnosticProvider")
+	}
+	return s.agnosticProvider, nil
 }
 
 func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
@@ -219,6 +230,71 @@ func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.I
 	return nil
 }
 
+func (s staticPluginRelayer) AssertEqual(t *testing.T, ctx context.Context, relayer loop.Relayer) {
+	t.Run("ConfigProvider", func(t *testing.T) {
+		t.Parallel()
+		configProvider, err := relayer.NewConfigProvider(ctx, relayArgs)
+		require.NoError(t, err)
+		require.NoError(t, configProvider.Start(ctx))
+		t.Cleanup(func() { assert.NoError(t, configProvider.Close()) })
+
+		s.configProvider.AssertEqual(t, ctx, configProvider)
+	})
+
+	t.Run("MedianProvider", func(t *testing.T) {
+		t.Parallel()
+		ra := newRelayArgsWithProviderType(types.Median)
+		p, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
+		require.NoError(t, err)
+		require.NotNil(t, p)
+		provider := p.(types.MedianProvider)
+		require.NoError(t, provider.Start(ctx))
+		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
+
+		t.Run("ReportingPluginProvider", func(t *testing.T) {
+			t.Parallel()
+			s.medianProvider.AssertEqual(t, ctx, provider)
+		})
+	})
+
+	t.Run("PluginProvider", func(t *testing.T) {
+		t.Parallel()
+		ra := newRelayArgsWithProviderType(types.GenericPlugin)
+		provider, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
+		require.NoError(t, err)
+		require.NoError(t, provider.Start(ctx))
+		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
+
+		t.Run("ReportingPluginProvider", func(t *testing.T) {
+			t.Parallel()
+			s.agnosticProvider.AssertEqual(t, ctx, provider)
+		})
+	})
+
+	t.Run("GetChainStatus", func(t *testing.T) {
+		t.Parallel()
+		gotChain, err := relayer.GetChainStatus(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, s.chainStatus, gotChain)
+	})
+
+	t.Run("ListNodeStatuses", func(t *testing.T) {
+		t.Parallel()
+		gotNodes, gotNextToken, gotCount, err := relayer.ListNodeStatuses(ctx, s.nodeRequest.pageSize, s.nodeRequest.pageToken)
+		require.NoError(t, err)
+		assert.Equal(t, s.nodeResponse.nodes, gotNodes)
+		assert.Equal(t, s.nodeResponse.total, gotCount)
+		assert.Empty(t, s.nodeResponse.nextPage, gotNextToken)
+	})
+
+	t.Run("Transact", func(t *testing.T) {
+		t.Parallel()
+		err := relayer.Transact(ctx, s.transactionRequest.from, s.transactionRequest.to, s.transactionRequest.amount, s.transactionRequest.balanceCheck)
+		require.NoError(t, err)
+	})
+
+}
+
 func equalRelayArgs(a, b types.RelayArgs) bool {
 	return a.ExternalJobID == b.ExternalJobID &&
 		a.JobID == b.JobID &&
@@ -252,84 +328,9 @@ func RunPlugin(t *testing.T, p internal.PluginRelayer) {
 
 func Run(t *testing.T, relayer internal.Relayer) {
 	ctx := tests.Context(t)
-	var (
-		expectedConfigProvider   = pluginprovider_test.ConfigProviderImpl
-		expectedMedianProvider   = median_test.MedianProviderImpl
-		expectedAgnosticProvider = pluginprovider_test.ConfigProviderImpl
-		// TODO: pass static check bool
-		expectedRelayer = NewRelayerTester(false)
-	)
-	// TODO: fix lazy init?
-	assert.NoError(t, expectedRelayer.Start(ctx))
-	t.Run("ConfigProvider", func(t *testing.T) {
-		t.Parallel()
-		configProvider, err := relayer.NewConfigProvider(ctx, relayArgs)
-		require.NoError(t, err)
-		require.NoError(t, configProvider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, configProvider.Close()) })
+	expectedRelayer := NewRelayerTester(false)
+	expectedRelayer.AssertEqual(t, ctx, relayer)
 
-		expectedConfigProvider.AssertEqual(t, ctx, configProvider)
-	})
-
-	t.Run("MedianProvider", func(t *testing.T) {
-		t.Parallel()
-		ra := newRelayArgsWithProviderType(types.Median)
-		p, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
-		require.NoError(t, err)
-		require.NotNil(t, p)
-		provider := p.(types.MedianProvider)
-		require.NoError(t, provider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
-
-		t.Run("ReportingPluginProvider", func(t *testing.T) {
-			t.Parallel()
-
-			expectedMedianProvider.AssertEqual(t, ctx, provider)
-		})
-	})
-
-	t.Run("PluginProvider", func(t *testing.T) {
-		t.Parallel()
-		ra := newRelayArgsWithProviderType(types.GenericPlugin)
-		provider, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
-		require.NoError(t, err)
-		require.NoError(t, provider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
-
-		t.Run("ReportingPluginProvider", func(t *testing.T) {
-			t.Parallel()
-
-			expectedAgnosticProvider.AssertEqual(t, ctx, provider)
-		})
-	})
-
-	// TODO add this back
-
-	panic("don't forget to add this back")
-
-	/*
-		t.Run("GetChainStatus", func(t *testing.T) {
-			t.Parallel()
-			gotChain, err := relayer.GetChainStatus(ctx)
-			require.NoError(t, err)
-			assert.Equal(t, chain, gotChain)
-		})
-
-		t.Run("ListNodeStatuses", func(t *testing.T) {
-			t.Parallel()
-			gotNodes, gotNextToken, gotCount, err := relayer.ListNodeStatuses(ctx, limit, "")
-			require.NoError(t, err)
-			assert.Equal(t, nodes, gotNodes)
-			assert.Equal(t, total, gotCount)
-			assert.Empty(t, gotNextToken)
-		})
-
-		t.Run("Transact", func(t *testing.T) {
-			t.Parallel()
-			err := relayer.Transact(ctx, from, to, amount, balanceCheck)
-			require.NoError(t, err)
-		})
-	*/
 }
 
 func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.PluginRelayer) {

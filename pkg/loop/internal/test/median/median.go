@@ -201,14 +201,13 @@ type staticMedianProviderConfig struct {
 	// we use the static implementation type not the interface type
 	// because we always expect the static implementation to be used
 	// and it facilitates testing.
-	offchainDigester       pluginprovider_test.OffchainConfigDigesterEvaluator
-	contractTracker        pluginprovider_test.ContractConfigTrackerEvaluator
-	contractTransmitter    pluginprovider_test.ContractTransmitterEvaluator
-	reportCodec            staticReportCodec
-	medianContract         staticMedianContract
-	onchainConfigCodec     staticOnchainConfigCodec
-	offchainConfigDigester pluginprovider_test.OffchainConfigDigesterEvaluator
-	chainReader            pluginprovider_test.ChainReaderEvaluator //pluginprovider_test.StaticChainReader
+	offchainDigester    pluginprovider_test.OffchainConfigDigesterEvaluator
+	contractTracker     pluginprovider_test.ContractConfigTrackerEvaluator
+	contractTransmitter pluginprovider_test.ContractTransmitterEvaluator
+	reportCodec         staticReportCodec
+	medianContract      staticMedianContract
+	onchainConfigCodec  staticOnchainConfigCodec
+	chainReader         pluginprovider_test.ChainReaderEvaluator //pluginprovider_test.StaticChainReader
 
 }
 
@@ -227,18 +226,15 @@ func (s staticMedianProvider) Name() string { panic("unimplemented") }
 func (s staticMedianProvider) HealthReport() map[string]error { panic("unimplemented") }
 
 func (s staticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
-	//return staticOffchainConfigDigester{}
-	return s.staticMedianProviderConfig.offchainDigester
+	return s.offchainDigester
 }
 
 func (s staticMedianProvider) ContractConfigTracker() libocr.ContractConfigTracker {
-	//return staticContractConfigTracker{}
-	return s.staticMedianProviderConfig.contractTracker
+	return s.contractTracker
 }
 
 func (s staticMedianProvider) ContractTransmitter() libocr.ContractTransmitter {
-	//return staticContractTransmitter{}
-	return s.staticMedianProviderConfig.contractTransmitter
+	return s.contractTransmitter
 }
 
 func (s staticMedianProvider) ReportCodec() median.ReportCodec { return s.reportCodec }
@@ -252,7 +248,7 @@ func (s staticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
 }
 
 func (s staticMedianProvider) ChainReader() types.ChainReader {
-	return s.chainReader //StaticChainReader{}
+	return s.chainReader
 }
 
 func (s staticMedianProvider) Codec() types.Codec {
@@ -262,7 +258,7 @@ func (s staticMedianProvider) Codec() types.Codec {
 func (s staticMedianProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.offchainConfigDigester.Evaluate(ctx, provider.OffchainConfigDigester()))
+		assert.NoError(t, s.offchainDigester.Evaluate(ctx, provider.OffchainConfigDigester()))
 	})
 
 	t.Run("ContractConfigTracker", func(t *testing.T) {

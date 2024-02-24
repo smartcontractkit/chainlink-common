@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
@@ -22,7 +23,8 @@ func TestRelayerService(t *testing.T) {
 	servicetest.Run(t, relayer)
 
 	t.Run("control", func(t *testing.T) {
-		test.RunRelayer(t, relayer)
+		//test.RunRelayer(t, relayer)
+		relayer_test.Run(t, relayer)
 	})
 
 	t.Run("Kill", func(t *testing.T) {
@@ -31,7 +33,7 @@ func TestRelayerService(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.RunRelayer(t, relayer)
+		relayer_test.Run(t, relayer)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -40,8 +42,9 @@ func TestRelayerService(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		test.RunRelayer(t, relayer)
+		relayer_test.Run(t, relayer)
 	})
+
 }
 
 func TestRelayerService_recovery(t *testing.T) {

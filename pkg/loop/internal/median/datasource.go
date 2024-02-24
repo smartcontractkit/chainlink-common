@@ -26,9 +26,11 @@ func (d *DataSourceClient) Observe(ctx context.Context, timestamp types.ReportTi
 	reply, err := d.grpc.Observe(ctx, &pb.ObserveRequest{
 		ReportTimestamp: pb.ReportTimestampToPb(timestamp),
 	})
+
 	if err != nil {
 		return nil, err
 	}
+
 	return reply.Value.Int(), nil
 }
 
@@ -50,6 +52,7 @@ func (d *DataSourceServer) Observe(ctx context.Context, request *pb.ObserveReque
 		return nil, err
 	}
 	val, err := d.impl.Observe(ctx, timestamp)
+
 	if err != nil {
 		return nil, err
 	}

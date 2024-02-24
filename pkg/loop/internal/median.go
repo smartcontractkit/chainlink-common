@@ -38,7 +38,7 @@ func NewPluginMedianClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.Cli
 	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: NewServiceClient(pc.BrokerExt, pc)}
 }
 
-func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin, gasPrice median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	cc := m.NewClientConn("MedianPluginFactory", func(ctx context.Context) (id uint32, deps Resources, err error) {
 		dataSourceID, dsRes, err := m.ServeNew("DataSource", func(s *grpc.Server) {
 			pb.RegisterDataSourceServer(s, median_internal.NewDataSourceServer(dataSource))
@@ -55,6 +55,14 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			return 0, nil, err
 		}
 		deps.Add(juelsPerFeeCoinDataSourceRes)
+
+		gasPriceDataSourceID, gasPriceDataSourceRes, err := m.ServeNew("GasPriceDataSource", func(s *grpc.Server) {
+			pb.RegisterDataSourceServer(s, median_internal.NewDataSourceServer(gasPrice))
+		})
+		if err != nil {
+			return 0, nil, err
+		}
+		deps.Add(gasPriceDataSourceRes)
 
 		var (
 			providerID  uint32
@@ -98,6 +106,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			MedianProviderID:            providerID,
 			DataSourceID:                dataSourceID,
 			JuelsPerFeeCoinDataSourceID: juelsPerFeeCoinDataSourceID,
+			GasPriceDataSourceID:        gasPriceDataSourceID,
 			ErrorLogID:                  errorLogID,
 		})
 		if err != nil {
@@ -142,9 +151,17 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	juelsRes := Resource{juelsConn, "JuelsPerFeeCoinDataSource"}
 	juelsPerFeeCoin := median_internal.NewDataSourceClient(juelsConn)
 
-	providerConn, err := m.Dial(request.MedianProviderID)
+	gasPriceConn, err := m.Dial(request.GasPriceDataSourceID)
 	if err != nil {
 		m.CloseAll(dsRes, juelsRes)
+		return nil, ErrConnDial{Name: "GasPriceDataSource", ID: request.GasPriceDataSourceID, Err: err}
+	}
+	gasPriceRes := Resource{gasPriceConn, "GasPriceDataSource"}
+	gasPrice := median_internal.NewDataSourceClient(gasPriceConn)
+
+	providerConn, err := m.Dial(request.MedianProviderID)
+	if err != nil {
+		m.CloseAll(dsRes, juelsRes, gasPriceRes)
 		return nil, ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
 	}
 	providerRes := Resource{providerConn, "MedianProvider"}
@@ -152,15 +169,15 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 	errorLogConn, err := m.Dial(request.ErrorLogID)
 	if err != nil {
-		m.CloseAll(dsRes, juelsRes, providerRes)
+		m.CloseAll(dsRes, juelsRes, gasPriceRes, providerRes)
 		return nil, ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := Resource{errorLogConn, "ErrorLog"}
 	errorLog := NewErrorLogClient(errorLogConn)
 
-	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
+	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, gasPrice, errorLog)
 	if err != nil {
-		m.CloseAll(dsRes, juelsRes, providerRes, errorLogRes)
+		m.CloseAll(dsRes, juelsRes, gasPriceRes, providerRes, errorLogRes)
 		return nil, err
 	}
 
@@ -251,6 +268,7 @@ func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedOb
 			Value:           pb.NewBigIntFromInt(o.Value),
 			JulesPerFeeCoin: pb.NewBigIntFromInt(o.JuelsPerFeeCoin),
 			Observer:        uint32(o.Observer),
+			GasPrice:        pb.NewBigIntFromInt(o.GasPrice),
 		})
 	}
 	var reply *pb.BuildReportReply

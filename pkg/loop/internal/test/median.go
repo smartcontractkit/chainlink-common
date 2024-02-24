@@ -29,9 +29,17 @@ type PluginMedianTest struct {
 }
 
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
+	t.Run("PluginMedian No-op GasPriceDataSource", func(t *testing.T) {
+		ctx := tests.Context(t)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &NOOPDataSource{}, &StaticErrorLog{})
+		require.NoError(t, err)
+
+		ReportingPluginFactory(t, factory)
+	})
+
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &StaticErrorLog{})
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, &staticDataSource{value}, &staticDataSource{juelsPerFeeCoin}, &staticDataSource{gasPrice}, &StaticErrorLog{})
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -111,7 +119,7 @@ func OCR3ReportingPluginFactory(t *testing.T, factory types.OCR3ReportingPluginF
 
 type StaticPluginMedian struct{}
 
-func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource, gasPriceDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	cr := provider.ChainReader()
 	var gotLatestValue map[string]int
 
@@ -269,6 +277,13 @@ func (s StaticPluginMedian) NewMedianFactory(ctx context.Context, provider types
 	}
 	if !assert.ObjectsAreEqual(juelsPerFeeCoin, gotJuels) {
 		return nil, fmt.Errorf("expected JuelsPerFeeCoin %s but got %s", juelsPerFeeCoin, gotJuels)
+	}
+	gotGas, err := gasPriceDataSource.Observe(ctx, reportContext.ReportTimestamp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to observe GasPriceSubUnitDataSource: %w", err)
+	}
+	if !assert.ObjectsAreEqual(gasPrice, gotGas) {
+		return nil, fmt.Errorf("expected GasPriceSubUnitDataSource %s but got %s", gasPrice, gotGas)
 	}
 	if err := errorLog.SaveError(ctx, errMsg); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)

@@ -6,6 +6,8 @@ import (
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )
 
+var ChainReaderImpl = StaticMercuryChainReader{}
+
 type StaticMercuryChainReader struct{}
 
 var _ mercury_types.ChainReader = StaticMercuryChainReader{}

@@ -29,7 +29,7 @@ import (
 )
 
 func PluginMercury(t *testing.T, p types.PluginMercury) {
-	PluginMercuryTest{&StaticMercuryProvider{}}.TestPluginMercury(t, p)
+	PluginMercuryTest{&staticMercuryProvider{}}.TestPluginMercury(t, p)
 }
 
 type PluginMercuryTest struct {
@@ -39,7 +39,7 @@ type PluginMercuryTest struct {
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
 	t.Run("PluginMercuryV3", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.StaticDataSource{})
+		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.DataSourceImpl)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -48,7 +48,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV2", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.StaticDataSource{})
+		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.DataSourceImpl)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -57,7 +57,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV1", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.StaticDataSource{})
+		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.DataSourceImpl)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -66,7 +66,10 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 }
 
 type StaticPluginMercury struct {
-	provider StaticMercuryProvider
+	provider     staticMercuryProvider
+	dataSourceV1 mercury_v1_test.DataSourceEvaluator
+	dataSourceV2 mercury_v2_test.DataSourceEvaluator
+	dataSourceV3 mercury_v3_test.DataSourceEvaluator
 }
 
 var _ types.PluginMercury = StaticPluginMercury{}
@@ -90,13 +93,12 @@ func (s StaticPluginMercury) commonValidation(ctx context.Context, provider type
 		return fmt.Errorf("failed to evaluate contractTransmitter: %w", err)
 	}
 
+	occ := provider.OnchainConfigCodec()
+	err = s.provider.onchainConfigCodec.Evaluate(ctx, occ)
+	if err != nil {
+		return fmt.Errorf("failed to evaluate onchainConfigCodec: %w", err)
+	}
 	/*
-		occ := provider.OnchainConfigCodec()
-		err = s.provider.onchainConfigCodec.Evaluate(ctx, occ)
-		if err != nil {
-			return fmt.Errorf("failed to evaluate onchainConfigCodec: %w", err)
-		}
-
 		gotDigestPrefix, err := ocd.ConfigDigestPrefix()
 		if err != nil {
 			return fmt.Errorf("failed to get ConfigDigestPrefix: %w", err)
@@ -189,37 +191,51 @@ func (s StaticPluginMercury) NewMercuryV3Factory(ctx context.Context, provider t
 	if err != nil {
 		return nil, fmt.Errorf("failed commonValidation: %w", err)
 	}
+
 	rc := provider.ReportCodecV3()
-	gotReport, err := rc.BuildReport(mercury_v3_test.Fixtures.ReportFields)
+	err = s.provider.reportCodecV3.Evaluate(ctx, rc)
 	if err != nil {
-		return nil, fmt.Errorf("failed to BuildReport: %w", err)
-	}
-	if !bytes.Equal(gotReport, mercury_v3_test.Fixtures.Report) {
-		return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
-	}
-	gotMax, err := rc.MaxReportLength(n)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
-	}
-	if gotMax != mercury_v3_test.Fixtures.MaxReportLength {
-		return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
-	}
-	gotObservedTimestamp, err := rc.ObservationTimestampFromReport(gotReport)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ObservationTimestampFromReport: %w", err)
-	}
-	if gotObservedTimestamp != mercury_v3_test.Fixtures.ObservationTimestamp {
-		return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v3_test.Fixtures.ObservationTimestamp, gotObservedTimestamp)
+		return nil, fmt.Errorf("failed to evaluate reportCodecV3: %w", err)
 	}
 
-	gotVal, err := dataSource.Observe(ctx, mercury_v3_test.Fixtures.ReportTimestamp, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to observe dataSource: %w", err)
-	}
-	if !assert.ObjectsAreEqual(mercury_v3_test.Fixtures.Observation, gotVal) {
-		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
-	}
+	/*
+		rc := provider.ReportCodecV3()
+		gotReport, err := rc.BuildReport(mercury_v3_test.Fixtures.ReportFields)
+		if err != nil {
+			return nil, fmt.Errorf("failed to BuildReport: %w", err)
+		}
 
+			if !bytes.Equal(gotReport, mercury_v3_test.Fixtures.Report) {
+				return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
+			}
+			gotMax, err := rc.MaxReportLength(n)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
+			}
+			if gotMax != mercury_v3_test.Fixtures.MaxReportLength {
+				return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
+			}
+			gotObservedTimestamp, err := rc.ObservationTimestampFromReport(gotReport)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get ObservationTimestampFromReport: %w", err)
+			}
+			if gotObservedTimestamp != mercury_v3_test.Fixtures.ObservationTimestamp {
+				return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v3_test.Fixtures.ObservationTimestamp, gotObservedTimestamp)
+			}
+	*/
+	err = s.dataSourceV3.Evaluate(ctx, dataSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
+	}
+	/*
+		gotVal, err := dataSource.Observe(ctx, mercury_v3_test.Fixtures.ReportTimestamp, false)
+		if err != nil {
+			return nil, fmt.Errorf("failed to observe dataSource: %w", err)
+		}
+		if !assert.ObjectsAreEqual(mercury_v3_test.Fixtures.Observation, gotVal) {
+			return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
+		}
+	*/
 	return staticMercuryPluginFactory{}, nil
 }
 
@@ -234,37 +250,51 @@ func (s StaticPluginMercury) NewMercuryV2Factory(ctx context.Context, provider t
 	if err != nil {
 		return nil, fmt.Errorf("failed commonValidation: %w", err)
 	}
+
 	rc := provider.ReportCodecV2()
-	gotReport, err := rc.BuildReport(mercury_v2_test.Fixtures.ReportFields)
+	err = s.provider.reportCodecV2.Evaluate(ctx, rc)
 	if err != nil {
-		return nil, fmt.Errorf("failed to BuildReport: %w", err)
-	}
-	if !bytes.Equal(gotReport, mercury_v2_test.Fixtures.Report) {
-		return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
-	}
-	gotMax, err := rc.MaxReportLength(n)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
-	}
-	if gotMax != mercury_v2_test.Fixtures.MaxReportLength {
-		return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
-	}
-	gotObservedTimestamp, err := rc.ObservationTimestampFromReport(gotReport)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ObservationTimestampFromReport: %w", err)
-	}
-	if gotObservedTimestamp != mercury_v2_test.Fixtures.ObservationTimestamp {
-		return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v2_test.Fixtures.ObservationTimestamp, gotObservedTimestamp)
+		return nil, fmt.Errorf("failed to evaluate reportCodecV2: %w", err)
 	}
 
-	gotVal, err := dataSource.Observe(ctx, mercury_v2_test.Fixtures.ReportTimestamp, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to observe dataSource: %w", err)
-	}
-	if !assert.ObjectsAreEqual(mercury_v2_test.Fixtures.Observation, gotVal) {
-		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
-	}
+	/*
+		rc := provider.ReportCodecV2()
+		gotReport, err := rc.BuildReport(mercury_v2_test.Fixtures.ReportFields)
+		if err != nil {
+			return nil, fmt.Errorf("failed to BuildReport: %w", err)
+		}
+		if !bytes.Equal(gotReport, mercury_v2_test.Fixtures.Report) {
+			return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
+		}
+		gotMax, err := rc.MaxReportLength(n)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
+		}
+		if gotMax != mercury_v2_test.Fixtures.MaxReportLength {
+			return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
+		}
+		gotObservedTimestamp, err := rc.ObservationTimestampFromReport(gotReport)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get ObservationTimestampFromReport: %w", err)
+		}
+		if gotObservedTimestamp != mercury_v2_test.Fixtures.ObservationTimestamp {
+			return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v2_test.Fixtures.ObservationTimestamp, gotObservedTimestamp)
+		}
+	*/
 
+	err = s.dataSourceV2.Evaluate(ctx, dataSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
+	}
+	/*
+		gotVal, err := dataSource.Observe(ctx, mercury_v2_test.Fixtures.ReportTimestamp, false)
+		if err != nil {
+			return nil, fmt.Errorf("failed to observe dataSource: %w", err)
+		}
+		if !assert.ObjectsAreEqual(mercury_v2_test.Fixtures.Observation, gotVal) {
+			return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
+		}
+	*/
 	return staticMercuryPluginFactory{}, nil
 }
 
@@ -279,35 +309,16 @@ func (s StaticPluginMercury) NewMercuryV1Factory(ctx context.Context, provider t
 	if err != nil {
 		return nil, fmt.Errorf("failed commonValidation: %w", err)
 	}
+
 	rc := provider.ReportCodecV1()
-	gotReport, err := rc.BuildReport(mercury_v1_test.Fixtures.ReportFields)
+	err = s.provider.reportCodecV1.Evaluate(ctx, rc)
 	if err != nil {
-		return nil, fmt.Errorf("failed to BuildReport: %w", err)
-	}
-	if !bytes.Equal(gotReport, mercury_v1_test.Fixtures.Report) {
-		return nil, fmt.Errorf("expected Report %x but got %x", report, gotReport)
-	}
-	gotMax, err := rc.MaxReportLength(n)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get MaxReportLength: %w", err)
-	}
-	if gotMax != mercury_v1_test.Fixtures.MaxReportLength {
-		return nil, fmt.Errorf("expected MaxReportLength %d but got %d", max, gotMax)
-	}
-	gotCurrentBlockNum, err := rc.CurrentBlockNumFromReport(gotReport)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ObservationTimestampFromReport: %w", err)
-	}
-	if gotCurrentBlockNum != mercury_v1_test.Fixtures.CurrentBlockNum {
-		return nil, fmt.Errorf("expected ObservationTimestampFromReport %d but got %d", mercury_v1_test.Fixtures.CurrentBlockNum, gotCurrentBlockNum)
+		return nil, fmt.Errorf("failed to evaluate reportCodecV1: %w", err)
 	}
 
-	gotVal, err := dataSource.Observe(ctx, mercury_v1_test.Fixtures.ReportTimestamp, false)
+	err = s.dataSourceV1.Evaluate(ctx, dataSource)
 	if err != nil {
-		return nil, fmt.Errorf("failed to observe dataSource: %w", err)
-	}
-	if !assert.ObjectsAreEqual(mercury_v1_test.Fixtures.Observation, gotVal) {
-		return nil, fmt.Errorf("expected Value %v but got %v", value, gotVal)
+		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
 	}
 
 	return staticMercuryPluginFactory{}, nil
@@ -320,72 +331,72 @@ type staticMercuryProviderConfig struct {
 	offchainDigester    pluginprovider_test.OffchainConfigDigesterEvaluator
 	contractTracker     pluginprovider_test.ContractConfigTrackerEvaluator
 	contractTransmitter pluginprovider_test.ContractTransmitterEvaluator
-	reportCodecV1       mercury_v1_test.StaticReportCodec
-	reportCodecV2       mercury_v2_test.StaticReportCodec
-	reportCodecV3       mercury_v3_test.StaticReportCodec
-	onchainConfigCodec  mercury_common_test.StaticOnchainConfigCodec
+	reportCodecV1       mercury_v1_test.ReportCodecEvaluator
+	reportCodecV2       mercury_v2_test.ReportCodecEvaluator
+	reportCodecV3       mercury_v3_test.ReportCodecEvaluator
+	onchainConfigCodec  mercury_common_test.OnchainConfigCodecEvaluator
 	mercuryChainReader  mercury_common_test.StaticMercuryChainReader
 	serviceFetcher      mercury_common_test.StaticServerFetcher
 }
 
-type StaticMercuryProvider struct {
+type staticMercuryProvider struct {
 	staticMercuryProviderConfig
 }
 
-var _ types.MercuryProvider = StaticMercuryProvider{}
+var _ types.MercuryProvider = staticMercuryProvider{}
 
-func (s StaticMercuryProvider) Start(ctx context.Context) error { return nil }
+func (s staticMercuryProvider) Start(ctx context.Context) error { return nil }
 
-func (s StaticMercuryProvider) Close() error { return nil }
+func (s staticMercuryProvider) Close() error { return nil }
 
-func (s StaticMercuryProvider) Ready() error { panic("unimplemented") }
+func (s staticMercuryProvider) Ready() error { panic("unimplemented") }
 
-func (s StaticMercuryProvider) Name() string { panic("unimplemented") }
+func (s staticMercuryProvider) Name() string { panic("unimplemented") }
 
-func (s StaticMercuryProvider) HealthReport() map[string]error { panic("unimplemented") }
+func (s staticMercuryProvider) HealthReport() map[string]error { panic("unimplemented") }
 
-func (s StaticMercuryProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
+func (s staticMercuryProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return s.offchainDigester
 }
 
-func (s StaticMercuryProvider) ContractConfigTracker() libocr.ContractConfigTracker {
+func (s staticMercuryProvider) ContractConfigTracker() libocr.ContractConfigTracker {
 	return s.contractTracker
 }
 
-func (s StaticMercuryProvider) ContractTransmitter() libocr.ContractTransmitter {
+func (s staticMercuryProvider) ContractTransmitter() libocr.ContractTransmitter {
 	return s.contractTransmitter
 }
 
-func (s StaticMercuryProvider) ReportCodecV1() mercury_v1_types.ReportCodec {
-	return mercury_v1_test.StaticReportCodec{}
+func (s staticMercuryProvider) ReportCodecV1() mercury_v1_types.ReportCodec {
+	return s.reportCodecV1
 }
 
-func (s StaticMercuryProvider) ReportCodecV2() mercury_v2_types.ReportCodec {
-	return mercury_v2_test.StaticReportCodec{}
+func (s staticMercuryProvider) ReportCodecV2() mercury_v2_types.ReportCodec {
+	return s.reportCodecV2
 }
 
-func (s StaticMercuryProvider) ReportCodecV3() mercury_v3_types.ReportCodec {
-	return mercury_v3_test.StaticReportCodec{}
+func (s staticMercuryProvider) ReportCodecV3() mercury_v3_types.ReportCodec {
+	return s.reportCodecV3
 }
 
-func (s StaticMercuryProvider) OnchainConfigCodec() mercury_types.OnchainConfigCodec {
-	return mercury_common_test.StaticOnchainConfigCodec{}
+func (s staticMercuryProvider) OnchainConfigCodec() mercury_types.OnchainConfigCodec {
+	return s.onchainConfigCodec
 }
 
-func (s StaticMercuryProvider) MercuryChainReader() mercury_types.ChainReader {
-	return mercury_common_test.StaticMercuryChainReader{}
+func (s staticMercuryProvider) MercuryChainReader() mercury_types.ChainReader {
+	return s.mercuryChainReader
 }
 
-func (s StaticMercuryProvider) ChainReader() types.ChainReader {
+func (s staticMercuryProvider) ChainReader() types.ChainReader {
 	//panic("mercury does not use the general ChainReader interface yet")
 	return nil
 }
 
-func (s StaticMercuryProvider) MercuryServerFetcher() mercury_types.ServerFetcher {
+func (s staticMercuryProvider) MercuryServerFetcher() mercury_types.ServerFetcher {
 	return mercury_common_test.StaticServerFetcher{}
 }
 
-func (s StaticMercuryProvider) Codec() types.Codec {
+func (s staticMercuryProvider) Codec() types.Codec {
 	return nil
 }
 
@@ -432,52 +443,105 @@ func (s staticMercuryPluginFactory) NewMercuryPlugin(config ocr3types.MercuryPlu
 }
 
 func MercuryPluginFactory(t *testing.T, factory types.MercuryPluginFactory) {
+	expectedMercuryPlugin := MercuryPluginImpl
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
 		rp, gotRPI, err := factory.NewMercuryPlugin(mercuryPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, mercuryPluginInfo, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := tests.Context(t)
-			gotObs, err := rp.Observation(ctx, reportContext.ReportTimestamp, query)
-			require.NoError(t, err)
-			assert.Equal(t, observation, gotObs)
-			gotOk, gotReport, err := rp.Report(reportContext.ReportTimestamp, query, obs)
-			require.NoError(t, err)
-			assert.True(t, gotOk)
-			assert.Equal(t, report, gotReport)
+			expectedMercuryPlugin.AssertEqual(t, context.Background(), rp)
 		})
 	})
 }
 
-type staticMercuryPlugin struct{}
+var MercuryPluginImpl = staticMercuryPlugin{
+	staticMercuryPluginConfig: staticMercuryPluginConfig{
+		observationRequest: observationRequest{
+			reportTimestamp: reportContext.ReportTimestamp,
+			previousReport:  previousReport,
+		},
+		observationResponse: observationResponse{
+			observation: libocr.Observation{1, 2, 3},
+		},
+		reportRequest: reportRequest{
+			reportTimestamp: reportContext.ReportTimestamp,
+			previousReport:  previousReport,
+			observations:    obs,
+		},
+		reportResponse: reportResponse{
+			shouldReport: true,
+			report:       report,
+		},
+	},
+}
+
+type observationRequest struct {
+	reportTimestamp libocr.ReportTimestamp
+	previousReport  libocr.Report
+}
+
+type observationResponse struct {
+	observation libocr.Observation
+}
+
+type reportRequest struct {
+	reportTimestamp libocr.ReportTimestamp
+	previousReport  libocr.Report
+	observations    []libocr.AttributedObservation
+}
+
+type reportResponse struct {
+	shouldReport bool
+	report       libocr.Report
+}
+type staticMercuryPluginConfig struct {
+	observationRequest
+	observationResponse
+	reportRequest
+	reportResponse
+}
+
+type staticMercuryPlugin struct {
+	staticMercuryPluginConfig
+}
 
 var _ ocr3types.MercuryPlugin = staticMercuryPlugin{}
 
 func (s staticMercuryPlugin) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, previousReport libocr.Report) (libocr.Observation, error) {
-	if timestamp != reportContext.ReportTimestamp {
-		return nil, fmt.Errorf("expected report timestamp %v but got %v", reportContext.ReportTimestamp, timestamp)
+	if timestamp != s.observationRequest.reportTimestamp {
+		return nil, fmt.Errorf("expected report timestamp %v but got %v", s.observationRequest.reportTimestamp, timestamp)
 	}
-	if !bytes.Equal(previousReport, query) {
-		return nil, fmt.Errorf("expected previous report %x but got %x", query, previousReport)
+	if !bytes.Equal(previousReport, s.observationRequest.previousReport) {
+		return nil, fmt.Errorf("expected previous report %x but got %x", s.observationRequest.previousReport, previousReport)
 	}
-	return observation, nil
+	return s.observationResponse.observation, nil
 }
 
 func (s staticMercuryPlugin) Report(timestamp libocr.ReportTimestamp, previousReport libocr.Report, observations []libocr.AttributedObservation) (bool, libocr.Report, error) {
-	if timestamp != reportContext.ReportTimestamp {
-		return false, nil, fmt.Errorf("expected report timestamp %v but got %v", reportContext.ReportTimestamp, timestamp)
+	if timestamp != s.reportRequest.reportTimestamp {
+		return false, nil, fmt.Errorf("expected report timestamp %v but got %v", s.reportRequest.reportTimestamp, timestamp)
 	}
-	if !bytes.Equal(query, previousReport) {
-		return false, nil, fmt.Errorf("expected previous report %x but got %x", query, previousReport)
+	if !bytes.Equal(s.reportRequest.previousReport, previousReport) {
+		return false, nil, fmt.Errorf("expected previous report %x but got %x", s.reportRequest.previousReport, previousReport)
 	}
-	if !assert.ObjectsAreEqual(obs, observations) {
-		return false, nil, fmt.Errorf("expected %v but got %v", obs, observations)
+	if !assert.ObjectsAreEqual(s.reportRequest.observations, observations) {
+		return false, nil, fmt.Errorf("expected %v but got %v", s.reportRequest.observations, observations)
 	}
-	return shouldReport, report, nil
+	return s.reportResponse.shouldReport, s.reportResponse.report, nil
 }
 
 func (s staticMercuryPlugin) Close() error { return nil }
+
+func (s staticMercuryPlugin) AssertEqual(t *testing.T, ctx context.Context, other ocr3types.MercuryPlugin) {
+	gotObs, err := other.Observation(ctx, s.observationRequest.reportTimestamp, s.observationRequest.previousReport)
+	require.NoError(t, err)
+	assert.Equal(t, s.observationResponse.observation, gotObs)
+	gotOk, gotReport, err := other.Report(s.reportRequest.reportTimestamp, s.reportRequest.previousReport, s.reportRequest.observations)
+	require.NoError(t, err)
+	assert.Equal(t, s.reportResponse.shouldReport, gotOk)
+	assert.Equal(t, s.reportResponse.report, gotReport)
+}
 
 var (
 	mercuryPluginConfig = ocr3types.MercuryPluginConfig{

@@ -39,7 +39,7 @@ type PluginMercuryTest struct {
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
 	t.Run("PluginMercuryV3", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.StaticDataSource{})
+		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.DataSourceImpl)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -48,7 +48,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV2", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.StaticDataSource{})
+		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.DataSourceImpl)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -57,7 +57,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV1", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.StaticDataSource{})
+		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.DataSourceImpl)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -313,23 +313,23 @@ func (s StaticMercuryProvider) ContractTransmitter() libocr.ContractTransmitter 
 }
 
 func (s StaticMercuryProvider) ReportCodecV1() mercury_v1_types.ReportCodec {
-	return mercury_v1_test.StaticReportCodec{}
+	return mercury_v1_test.ReportCodecImpl
 }
 
 func (s StaticMercuryProvider) ReportCodecV2() mercury_v2_types.ReportCodec {
-	return mercury_v2_test.StaticReportCodec{}
+	return mercury_v2_test.ReportCodecImpl
 }
 
 func (s StaticMercuryProvider) ReportCodecV3() mercury_v3_types.ReportCodec {
-	return mercury_v3_test.StaticReportCodec{}
+	return mercury_v3_test.ReportCodecImpl
 }
 
 func (s StaticMercuryProvider) OnchainConfigCodec() mercury_types.OnchainConfigCodec {
-	return mercury_common_test.StaticOnchainConfigCodec{}
+	return mercury_common_test.OnchainConfigCodecImpl
 }
 
 func (s StaticMercuryProvider) MercuryChainReader() mercury_types.ChainReader {
-	return mercury_common_test.StaticMercuryChainReader{}
+	return mercury_common_test.ChainReaderImpl
 }
 
 func (s StaticMercuryProvider) ChainReader() types.ChainReader {

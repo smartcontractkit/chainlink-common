@@ -344,6 +344,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Pl
 	f.Add("ABC\xa8\x8c\xb3G\xfc", "", true, []byte{}, true, true, "")
 	f.Add(ConfigTOML, string(account), false, signed, false, false, "")
 
+	// nolint: gocognit
 	f.Fuzz(func(
 		t *testing.T, fConfig string, fAccts string, fAcctErr bool,
 		fSigned []byte, fSignErr bool, fValsWErr bool, fErr string,

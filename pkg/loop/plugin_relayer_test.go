@@ -32,7 +32,7 @@ func TestPluginRelayerExec(t *testing.T) {
 
 	pr := newPluginRelayerExec(t, true, stopCh)
 
-	test.RunPluginRelayer(t, pr)
+	relayer_test.RunPlugin(t, pr)
 }
 
 func FuzzPluginRelayer(f *testing.F) {

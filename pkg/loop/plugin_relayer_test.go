@@ -9,6 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -16,7 +17,13 @@ func TestPluginRelayer(t *testing.T) {
 	t.Parallel()
 
 	stopCh := newStopCh(t)
-	test.PluginTest(t, loop.PluginRelayerName, &loop.GRPCPluginRelayer{PluginServer: test.StaticPluginRelayer{}, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, test.RunPluginRelayer)
+	test.PluginTest(t, loop.PluginRelayerName,
+		&loop.GRPCPluginRelayer{
+			PluginServer: relayer_test.NewRelayerTester(false),
+			BrokerConfig: loop.BrokerConfig{
+				Logger: logger.Test(t),
+				StopCh: stopCh}},
+		relayer_test.RunPlugin)
 }
 
 func TestPluginRelayerExec(t *testing.T) {

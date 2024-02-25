@@ -128,6 +128,9 @@ func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 			return nil, fmt.Errorf("expected signed bytes %x but got %x", signed, gotSigned)
 		}
 	*/
+	if s.agnosticProvider.ChainReader() == nil {
+		panic("ChainReader not implemented in agnosticProvider")
+	}
 	return s, nil
 }
 
@@ -264,7 +267,7 @@ func (s staticPluginRelayer) AssertEqual(t *testing.T, ctx context.Context, rela
 		require.NoError(t, err)
 		require.NoError(t, provider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
-
+		assert.NotNil(t, provider.ChainReader(), "ChainReader not implemented relayer provider %T", provider)
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
 			s.agnosticProvider.AssertEqual(t, ctx, provider)

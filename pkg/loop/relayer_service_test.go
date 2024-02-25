@@ -4,9 +4,11 @@ import (
 	"os/exec"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 
@@ -18,31 +20,31 @@ func TestRelayerService(t *testing.T) {
 	relayer := loop.NewRelayerService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginRelayerName, false)
 	}, test.ConfigTOML, test.StaticKeystore{})
-	//hook := relayer.XXXTestHook()
+	hook := relayer.XXXTestHook()
 	servicetest.Run(t, relayer)
 
 	t.Run("control", func(t *testing.T) {
 		relayer_test.Run(t, relayer)
 	})
-	/*
-		t.Run("Kill", func(t *testing.T) {
-			hook.Kill()
 
-			// wait for relaunch
-			time.Sleep(2 * internal.KeepAliveTickDuration)
+	t.Run("Kill", func(t *testing.T) {
+		hook.Kill()
 
-			relayer_test.Run(t, relayer)
-		})
+		// wait for relaunch
+		time.Sleep(2 * internal.KeepAliveTickDuration)
 
-		t.Run("Reset", func(t *testing.T) {
-			hook.Reset()
+		relayer_test.Run(t, relayer)
+	})
 
-			// wait for relaunch
-			time.Sleep(2 * internal.KeepAliveTickDuration)
+	t.Run("Reset", func(t *testing.T) {
+		hook.Reset()
 
-			relayer_test.Run(t, relayer)
-		})
-	*/
+		// wait for relaunch
+		time.Sleep(2 * internal.KeepAliveTickDuration)
+
+		relayer_test.Run(t, relayer)
+	})
+
 }
 
 func TestRelayerService_recovery(t *testing.T) {

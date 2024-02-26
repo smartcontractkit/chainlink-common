@@ -214,8 +214,12 @@ type staticMedianProviderConfig struct {
 type MedianProviderTester interface {
 	types.MedianProvider
 	// AssertEqual runs all the methods of the other MedianProvider and
-	// checks for equality with the embedded MedianProvider
+	// asserts equality with the embedded MedianProvider
 	AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider)
+
+	// Evaluate runs all the methods of the other MedianProvider and
+	// checks for equality with the embedded MedianProvider
+	Evaluate(ctx context.Context, provider types.MedianProvider) error
 }
 
 type staticMedianProvider struct {

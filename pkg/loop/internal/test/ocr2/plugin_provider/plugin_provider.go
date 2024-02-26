@@ -22,8 +22,11 @@ var AgnosticProviderImpl = staticPluginProvider{
 
 type PluginProviderTester interface {
 	types.PluginProvider
-	// AssertEqual checks that the sub-components of the other PluginProvider are equal to this one
+	// AssertEqual tests equality of sub-components of the other PluginProvider in parallel
 	AssertEqual(t *testing.T, ctx context.Context, other types.PluginProvider)
+	// Evaluate runs all the method of the other PluginProvider and checks for equality with the embedded PluginProvider
+	// it returns the first error encountered
+	Evaluate(ctx context.Context, other types.PluginProvider) error
 }
 
 // staticPluginProvider is a static implementation of PluginProviderTester
@@ -94,4 +97,34 @@ func (s staticPluginProvider) AssertEqual(t *testing.T, ctx context.Context, pro
 			assert.NoError(t, s.codec.Evaluate(ctx, provider.OnchainConfigCodec()))
 		})
 	*/
+}
+
+func (s staticPluginProvider) Evaluate(ctx context.Context, provider types.PluginProvider) error {
+	err := s.offchainConfigDigester.Evaluate(ctx, provider.OffchainConfigDigester())
+	if err != nil {
+		return err
+	}
+
+	err = s.contractConfigTracker.Evaluate(ctx, provider.ContractConfigTracker())
+	if err != nil {
+		return err
+	}
+
+	err = s.contractTransmitter.Evaluate(ctx, provider.ContractTransmitter())
+	if err != nil {
+		return err
+	}
+
+	err = s.chainReader.Evaluate(ctx, provider.ChainReader())
+	if err != nil {
+		return err
+	}
+
+	/*
+		err = s.codec.Evaluate(ctx, provider.OnchainConfigCodec())
+		if err != nil {
+			return err
+		}
+	*/
+	return nil
 }

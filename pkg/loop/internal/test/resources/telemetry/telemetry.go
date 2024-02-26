@@ -13,58 +13,90 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+var TelemetryImpl = staticTelemetry{
+	staticTelemetryConfig: staticTelemetryConfig{
+		chainID:    "some-chainID",
+		contractID: "some-contractID",
+		network:    "some-network",
+		payload:    []byte("some-data"),
+		telemType:  "some-telemetryType",
+	},
+}
+
+type TelemetryEvaluator interface {
+	types.TelemetryClient
+	// Evaluate checks that the sub-components of the other TelemetryClient are equal to this one
+	Evaluate(ctx context.Context, tc types.TelemetryClient) error
+}
+
 var _ grpc.ClientConnInterface = (*mockClientConn)(nil)
 
-type StaticTelemetryConfig struct {
-	ChainID    string
-	ContractID string
-	Network    string
-	Payload    []byte
-	TelemType  string
+type staticTelemetryConfig struct {
+	chainID    string
+	contractID string
+	network    string
+	payload    []byte
+	telemType  string
 }
 
 type staticEndpoint struct {
-	network    string
-	chainID    string
-	contractID string
-	telemType  string
-
-	StaticTelemetry
+	staticTelemetry
 }
 
 func (s staticEndpoint) SendLog(ctx context.Context, log []byte) error {
-	return s.StaticTelemetry.Send(ctx, s.network, s.chainID, s.contractID, s.telemType, log)
+	return s.staticTelemetry.Send(ctx, s.network, s.chainID, s.contractID, s.telemType, log)
 }
 
-type StaticTelemetry struct {
-	StaticTelemetryConfig
+type staticTelemetry struct {
+	staticTelemetryConfig
 }
 
-func (s StaticTelemetry) NewEndpoint(ctx context.Context, network string, chainID string, contractID string, telemType string) (types.TelemetryClientEndpoint, error) {
+func (s staticTelemetry) NewEndpoint(ctx context.Context, network string, chainID string, contractID string, telemType string) (types.TelemetryClientEndpoint, error) {
+	if network != s.network {
+		return nil, fmt.Errorf("expected network %s but got %s", s.network, network)
+	}
+	if chainID != s.chainID {
+		return nil, fmt.Errorf("expected chainID %s but got %s", s.chainID, chainID)
+	}
+	if contractID != s.contractID {
+		return nil, fmt.Errorf("expected contractID %s but got %s", s.contractID, contractID)
+	}
+	if telemType != s.telemType {
+		return nil, fmt.Errorf("expected telemType %s but got %s", s.telemType, telemType)
+	}
+
 	return staticEndpoint{
-		network:         network,
-		chainID:         chainID,
-		contractID:      contractID,
-		telemType:       telemType,
-		StaticTelemetry: s,
+		staticTelemetry: s,
 	}, nil
 }
 
-func (s StaticTelemetry) Send(ctx context.Context, n string, chid string, conid string, t string, p []byte) error {
-	if n != s.Network {
-		return fmt.Errorf("expected %s but got %s", s.Network, n)
+func (s staticTelemetry) Send(ctx context.Context, n string, chid string, conid string, t string, p []byte) error {
+	if n != s.network {
+		return fmt.Errorf("expected %s but got %s", s.network, n)
 	}
-	if chid != s.ChainID {
-		return fmt.Errorf("expected %s but got %s", s.ChainID, chid)
+	if chid != s.chainID {
+		return fmt.Errorf("expected %s but got %s", s.chainID, chid)
 	}
-	if conid != s.ContractID {
-		return fmt.Errorf("expected %s but got %s", s.ContractID, conid)
+	if conid != s.contractID {
+		return fmt.Errorf("expected %s but got %s", s.contractID, conid)
 	}
-	if t != s.TelemType {
-		return fmt.Errorf("expected %s but got %s", s.TelemType, t)
+	if t != s.telemType {
+		return fmt.Errorf("expected %s but got %s", s.telemType, t)
 	}
-	if !bytes.Equal(p, s.Payload) {
-		return fmt.Errorf("expected %s but got %s", s.Payload, p)
+	if !bytes.Equal(p, s.payload) {
+		return fmt.Errorf("expected %s but got %s", s.payload, p)
+	}
+	return nil
+}
+
+func (s staticTelemetry) Evaluate(ctx context.Context, other types.TelemetryClient) error {
+	endpoint, err := other.NewEndpoint(ctx, s.network, s.chainID, s.contractID, s.telemType)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate endpoint: %w", err)
+	}
+	err = endpoint.SendLog(ctx, s.payload)
+	if err != nil {
+		return fmt.Errorf("failed to send log: %w", err)
 	}
 	return nil
 }

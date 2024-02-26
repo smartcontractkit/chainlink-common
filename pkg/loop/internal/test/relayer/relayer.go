@@ -179,10 +179,6 @@ func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.Rela
 			return nil, fmt.Errorf("expected plugin args %v but got %v", pluginArgs, p)
 		}
 	}
-	//panic(fmt.Sprintf("NewPluginProvider called with args: %v, %v, returning %T", r, p, s.agnosticProvider))
-	if s.agnosticProvider.ChainReader() == nil {
-		panic("ChainReader not implemented in agnosticProvider")
-	}
 	return s.agnosticProvider, nil
 }
 

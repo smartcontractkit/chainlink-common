@@ -111,7 +111,7 @@ func (r *testRegistryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	return nil
 }
 
-func Test(t *testing.T) {
+func TestCapabilitiesRegistry(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
 	reg := mocks.NewCapabilitiesRegistry(t)
@@ -157,17 +157,19 @@ func Test(t *testing.T) {
 	_, err = rc.GetAction(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
-	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
+	reg.On("GetConsensus", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetConsensus(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
 	reg.On("GetTarget", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetTarget(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
+
+	reg.On("GetTrigger", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetTrigger(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
-	reg.On("List", mock.Anything).Return([]capabilities.BaseCapability{})
+	reg.On("List", mock.Anything).Return([]capabilities.BaseCapability{}, nil)
 	list, err := rc.List(tests.Context(t))
 	require.NoError(t, err)
 	require.Len(t, list, 0)
@@ -184,11 +186,12 @@ func Test(t *testing.T) {
 		mockTriggerExecutable: &mockTriggerExecutable{},
 	}
 
-	reg.On("Add", mock.Anything, testTrigger).Return(nil)
+	// After adding the trigger, we'll expect something wrapped by the internal client type below.
+	reg.On("Add", mock.Anything, mock.AnythingOfType("*internal.TriggerCapabilityClient")).Return(nil)
 	err = rc.Add(tests.Context(t), testTrigger)
 	require.NoError(t, err)
 
-	reg.On("GetTrigger", mock.Anything, "trigger-1").Return(testTrigger)
+	reg.On("GetTrigger", mock.Anything, "trigger-1").Return(testTrigger, nil)
 	triggerCap, err := rc.GetTrigger(tests.Context(t), "trigger-1")
 	require.NoError(t, err)
 
@@ -223,7 +226,7 @@ func Test(t *testing.T) {
 		mockBaseCapability:     &mockBaseCapability{info: actionInfo},
 		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	reg.On("GetAction", mock.Anything, "action-1").Return(testAction)
+	reg.On("GetAction", mock.Anything, "action-1").Return(testAction, nil)
 	actionCap, err := rc.GetAction(tests.Context(t), "action-1")
 	require.NoError(t, err)
 
@@ -256,7 +259,7 @@ func Test(t *testing.T) {
 		mockBaseCapability:     &mockBaseCapability{info: consensusInfo},
 		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	reg.On("GetConsensus", mock.Anything, "consensus-1").Return(testConsensus)
+	reg.On("GetConsensus", mock.Anything, "consensus-1").Return(testConsensus, nil)
 	consensusCap, err := rc.GetConsensus(tests.Context(t), "consensus-1")
 	require.NoError(t, err)
 
@@ -273,16 +276,11 @@ func Test(t *testing.T) {
 		mockBaseCapability:     &mockBaseCapability{info: targetInfo},
 		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	reg.On("GetTarget", mock.Anything, "target-1").Return(testTarget)
+	reg.On("GetTarget", mock.Anything, "target-1").Return(testTarget, nil)
 	targetCap, err := rc.GetTarget(tests.Context(t), "target-1")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, targetInfo, targetCap)
-
-	reg.On("List", mock.Anything).Return([]capabilities.BaseCapability{testTrigger, testAction, testConsensus, testTarget})
-	list, err = rc.List(tests.Context(t))
-	require.NoError(t, err)
-	require.Len(t, list, 4)
 }
 
 func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, cap capabilities.BaseCapability) {

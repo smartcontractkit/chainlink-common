@@ -383,7 +383,6 @@ func RunRelayer(t *testing.T, relayer internal.Relayer) {
 				gotMax, err = cd.GetMaxEncodingSize(ctx, codecN, itemType)
 				require.NoError(t, err)
 				assert.Equal(t, maxSize, gotMax)
-
 			})
 		})
 	})

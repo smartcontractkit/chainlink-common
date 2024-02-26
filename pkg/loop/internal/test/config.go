@@ -99,11 +99,11 @@ func (c staticCodec) GetMaxDecodingSize(ctx context.Context, n int, itemType str
 }
 
 func (c staticCodec) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
-	panic("unimplemented")
+	return nil, fmt.Errorf("encode:unused in tests")
 }
 
 func (c staticCodec) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
-	panic("unimplemented")
+	return fmt.Errorf("decode: unused in tests")
 }
 
 type staticChainReader struct{}

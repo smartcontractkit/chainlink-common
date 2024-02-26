@@ -19,6 +19,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
+	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/mercury"
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	keystore_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -53,6 +54,7 @@ type staticPluginRelayerConfig struct {
 	pluginArgs       types.PluginArgs
 	medianProvider   median_test.MedianProviderTester
 	agnosticProvider pluginprovider_test.PluginProviderTester
+	mercuryProvider  mercury_test.MercuryProviderTester
 	configProvider   pluginprovider_test.ConfigProviderTester
 	// TODO: add other Provider testers
 	nodeRequest        nodeRequest
@@ -75,6 +77,7 @@ func NewRelayerTester(staticChecks bool) RelayerTester {
 			relayArgs:        relayArgs,
 			pluginArgs:       pluginArgs,
 			medianProvider:   median_test.MedianProviderImpl,
+			mercuryProvider:  mercury_test.MercuryProviderImpl,
 			agnosticProvider: pluginprovider_test.AgnosticProviderImpl,
 			configProvider:   pluginprovider_test.ConfigProviderImpl,
 			nodeRequest: nodeRequest{
@@ -192,8 +195,7 @@ func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.Rel
 			return nil, fmt.Errorf("expected plugin args %v but got %v", mercury_common_test.PluginArgs, p)
 		}
 	}
-	return nil, nil
-	//return StaticMercuryProvider{}, nil
+	return s.mercuryProvider, nil
 }
 
 func (s staticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {

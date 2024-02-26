@@ -1,7 +1,10 @@
 package mercury_test
 
 import (
+	"time"
+
 	"github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
@@ -18,5 +21,25 @@ var (
 			Round:        17,
 		},
 		ExtraHash: [32]byte{1: 2, 3: 4, 5: 6},
+	}
+)
+
+var (
+	mercuryPluginConfig = ocr3types.MercuryPluginConfig{
+		ConfigDigest:           configDigest,
+		OracleID:               commontypes.OracleID(11),
+		N:                      12,
+		F:                      42,
+		OnchainConfig:          []byte{17: 11},
+		OffchainConfig:         []byte{32: 64},
+		EstimatedRoundInterval: time.Second,
+		MaxDurationObservation: time.Millisecond,
+	}
+	mercuryPluginInfo = ocr3types.MercuryPluginInfo{
+		Name: "test",
+		Limits: ocr3types.MercuryPluginLimits{
+			MaxObservationLength: 13,
+			MaxReportLength:      17,
+		},
 	}
 )

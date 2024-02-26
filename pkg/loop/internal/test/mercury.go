@@ -338,7 +338,7 @@ func (s StaticMercuryProvider) ChainReader() types.ChainReader {
 }
 
 func (s StaticMercuryProvider) MercuryServerFetcher() mercury_types.ServerFetcher {
-	return mercury_common_test.StaticServerFetcher{}
+	return mercury_common_test.ServerFetcherImpl
 }
 
 func (s StaticMercuryProvider) Codec() types.Codec {
@@ -388,6 +388,7 @@ func (s staticMercuryPluginFactory) NewMercuryPlugin(config ocr3types.MercuryPlu
 }
 
 func MercuryPluginFactory(t *testing.T, factory types.MercuryPluginFactory) {
+	panic("should not be calling this mercury plugin factory")
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
 		rp, gotRPI, err := factory.NewMercuryPlugin(mercuryPluginConfig)
 		require.NoError(t, err)

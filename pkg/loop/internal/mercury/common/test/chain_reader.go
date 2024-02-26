@@ -2,16 +2,56 @@ package mercury_common_test
 
 import (
 	"context"
+	"fmt"
 
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
+	"github.com/stretchr/testify/assert"
 )
 
-var ChainReaderImpl = StaticMercuryChainReader{}
+var ChainReaderImpl = staticMercuryChainReader{
+	staticMercuryChainReaderConfig: staticMercuryChainReaderConfig{
+		latestHeads: []mercury_types.Head{
+			{
+				Hash:   []byte{1},
+				Number: 1,
+			},
+			{
+				Hash:   []byte{2},
+				Number: 2,
+			},
+		},
+	},
+}
 
-type StaticMercuryChainReader struct{}
+type MercuryChainReaderEvaluator interface {
+	mercury_types.ChainReader
+	// Evaluate runs the other ChainReader and checks that
+	// the results are equal to this one
+	Evaluate(ctx context.Context, other mercury_types.ChainReader) error
+}
 
-var _ mercury_types.ChainReader = StaticMercuryChainReader{}
+type staticMercuryChainReaderConfig struct {
+	latestHeads []mercury_types.Head
+}
 
-func (StaticMercuryChainReader) LatestHeads(ctx context.Context, n int) ([]mercury_types.Head, error) {
-	return nil, nil
+type staticMercuryChainReader struct {
+	staticMercuryChainReaderConfig
+}
+
+var _ mercury_types.ChainReader = staticMercuryChainReader{}
+
+func (s staticMercuryChainReader) LatestHeads(ctx context.Context, n int) ([]mercury_types.Head, error) {
+	return s.latestHeads, nil
+}
+
+func (s staticMercuryChainReader) Evaluate(ctx context.Context, other mercury_types.ChainReader) error {
+	heads, err := other.LatestHeads(ctx, 2)
+	if err != nil {
+		return err
+	}
+	if !assert.ObjectsAreEqual(s.latestHeads, heads) {
+		return fmt.Errorf("expected lastestHeads %v but got %v", s.latestHeads, heads)
+	}
+
+	return nil
 }

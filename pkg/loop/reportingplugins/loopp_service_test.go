@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -48,7 +49,7 @@ func TestLOOPPService(t *testing.T) {
 		servicetest.Run(t, looppSvc)
 
 		t.Run("control", func(t *testing.T) {
-			test.ReportingPluginFactory(t, looppSvc)
+			reportingplugin_test.Factory(t, looppSvc)
 		})
 
 		t.Run("Kill", func(t *testing.T) {
@@ -57,7 +58,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * internal.KeepAliveTickDuration)
 
-			test.ReportingPluginFactory(t, looppSvc)
+			reportingplugin_test.Factory(t, looppSvc)
 		})
 
 		t.Run("Reset", func(t *testing.T) {
@@ -66,7 +67,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * internal.KeepAliveTickDuration)
 
-			test.ReportingPluginFactory(t, looppSvc)
+			reportingplugin_test.Factory(t, looppSvc)
 		})
 	}
 }
@@ -83,5 +84,5 @@ func TestLOOPPService_recovery(t *testing.T) {
 	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
 	servicetest.Run(t, looppSvc)
 
-	test.ReportingPluginFactory(t, looppSvc)
+	reportingplugin_test.Factory(t, looppSvc)
 }

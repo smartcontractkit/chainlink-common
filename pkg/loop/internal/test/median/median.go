@@ -45,7 +45,7 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		// we expect the static implementation to be used under the covers
 		// we can't compare the types directly because the returned reporting plugin may be a grpc client
 		// that wraps the static implementation
-		var expectedReportingPluginImpl = reportingplugin_test.StaticImpl
+		var expectedReportingPluginImpl = reportingplugin_test.ReportingPluginImpl
 
 		rp, gotRPI, err := factory.NewReportingPlugin(reportingPluginConfig)
 		require.NoError(t, err)
@@ -194,7 +194,7 @@ func (s staticReportingPluginFactory) NewReportingPlugin(config libocr.Reporting
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationShouldTransmitAcceptedReport %d but got %d", s.MaxDurationShouldTransmitAcceptedReport, config.MaxDurationShouldTransmitAcceptedReport)
 	}
 
-	return reportingplugin_test.StaticImpl, rpi, nil
+	return reportingplugin_test.ReportingPluginImpl, rpi, nil
 }
 
 type staticMedianProviderConfig struct {

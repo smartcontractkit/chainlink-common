@@ -18,8 +18,8 @@ const (
 )
 
 var (
-	// StaticImpl is a static implementation of the ReportingPluginTester interface for testing
-	StaticImpl = staticReportingPlugin{
+	// ReportingPluginImpl is a static implementation of the ReportingPluginTester interface for testing
+	ReportingPluginImpl = staticReportingPlugin{
 		staticReportingPluginConfig: staticReportingPluginConfig{
 			ReportContext:          reportContext,
 			Query:                  query,

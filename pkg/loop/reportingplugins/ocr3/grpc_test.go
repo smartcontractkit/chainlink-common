@@ -10,6 +10,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr3"
+	pipeline_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/pipeline"
+	telemetry_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -25,10 +27,16 @@ func newStopCh(t *testing.T) <-chan struct{} {
 func PluginGenericTest(t *testing.T, p types.OCR3ReportingPluginClient) {
 	t.Run("PluginServer", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewReportingPluginFactory(ctx, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{}, types.CapabilitiesRegistry(nil))
+		factory, err := p.NewReportingPluginFactory(ctx,
+			types.ReportingPluginServiceConfig{},
+			test.MockConn{},
+			pipeline_test.PipelineRunnerImpl,
+			telemetry_test.TelemetryImpl,
+			&test.StaticErrorLog{},
+			types.CapabilitiesRegistry(nil))
 		require.NoError(t, err)
 
-		test.OCR3ReportingPluginFactory(t, factory)
+		ocr3_test.OCR3ReportingPluginFactory(t, factory)
 	})
 }
 

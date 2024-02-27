@@ -10,40 +10,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var FactoryImpl = StaticFactory{
+	StaticFactoryConfig: StaticFactoryConfig{
+		config: libocr.ReportingPluginConfig{},
+		rpi: libocr.ReportingPluginInfo{
+			Name: "test-impl",
+		},
+		reportingPlugin: ReportingPluginImpl,
+	},
+}
+
 type StaticFactoryConfig struct {
-	Config  libocr.ReportingPluginConfig
-	RPI     libocr.ReportingPluginInfo
-	Factory libocr.ReportingPluginFactory
+	config          libocr.ReportingPluginConfig
+	rpi             libocr.ReportingPluginInfo
+	reportingPlugin ReportingPluginTester
 }
 
 type StaticFactory struct {
 	StaticFactoryConfig
 }
 
-func Factory(t *testing.T, s StaticFactory) {
+func Factory(t *testing.T, factory libocr.ReportingPluginFactory) {
+	expectedFactory := FactoryImpl
+	ctx := tests.Context(t)
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
-		rp, gotRPI, err := s.Factory.NewReportingPlugin(s.Config)
+		rp, gotRPI, err := factory.NewReportingPlugin(expectedFactory.config)
 		require.NoError(t, err)
-		assert.Equal(t, s.RPI, gotRPI)
+		assert.Equal(t, expectedFactory.rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := tests.Context(t)
-			gotQuery, err := rp.Query(ctx, reportContext.ReportTimestamp)
-			require.NoError(t, err)
-			assert.Equal(t, query, []byte(gotQuery))
-			gotObs, err := rp.Observation(ctx, reportContext.ReportTimestamp, query)
-			require.NoError(t, err)
-			assert.Equal(t, observation, gotObs)
-			gotOk, gotReport, err := rp.Report(ctx, reportContext.ReportTimestamp, query, obs)
-			require.NoError(t, err)
-			assert.True(t, gotOk)
-			assert.Equal(t, report, gotReport)
-			gotShouldAccept, err := rp.ShouldAcceptFinalizedReport(ctx, reportContext.ReportTimestamp, report)
-			require.NoError(t, err)
-			assert.True(t, gotShouldAccept)
-			gotShouldTransmit, err := rp.ShouldTransmitAcceptedReport(ctx, reportContext.ReportTimestamp, report)
-			require.NoError(t, err)
-			assert.True(t, gotShouldTransmit)
+			expectedFactory.reportingPlugin.AssertEqual(t, ctx, rp)
 		})
 	})
 }

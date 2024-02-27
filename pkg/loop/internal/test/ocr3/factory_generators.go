@@ -39,13 +39,13 @@ func (s MedianGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker in
 }
 
 func (s MedianGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.MedianProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog, capRegistry types.CapabilitiesRegistry) (types.OCR3ReportingPluginFactory, error) {
-	/*
-		err := s.medianProvider.Evaluate(ctx, provider)
-		if err != nil {
-			return nil, fmt.Errorf("failed to evaluate median provider: %w", err)
-		}
-	*/
-	err := s.pipeline.Evaluate(ctx, pipelineRunner)
+
+	err := s.medianProvider.Evaluate(ctx, provider)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate median provider: %w", err)
+	}
+
+	err = s.pipeline.Evaluate(ctx, pipelineRunner)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate pipeline runner: %w", err)
 	}

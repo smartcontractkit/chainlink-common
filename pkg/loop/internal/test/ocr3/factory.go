@@ -94,40 +94,6 @@ func OCR3ReportingPluginFactory(t *testing.T, factory types.OCR3ReportingPluginF
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("OCR3ReportingPlugin", func(t *testing.T) {
 			expectedFactory.reportingPlugin.AssertEqual(t, ctx, rp)
-			/*
-				ctx := tests.Context(t)
-
-				gotQuery, err := rp.Query(ctx, outcomeContext)
-				require.NoError(t, err)
-				assert.Equal(t, query, []byte(gotQuery))
-
-				gotObs, err := rp.Observation(ctx, outcomeContext, query)
-				require.NoError(t, err)
-				assert.Equal(t, observation, gotObs)
-
-				err = rp.ValidateObservation(outcomeContext, query, ao)
-				require.NoError(t, err)
-
-				gotQuorum, err := rp.ObservationQuorum(outcomeContext, query)
-				require.NoError(t, err)
-				assert.Equal(t, quorum, gotQuorum)
-
-				gotOutcome, err := rp.Outcome(outcomeContext, query, obs)
-				require.NoError(t, err)
-				assert.Equal(t, outcome, gotOutcome)
-
-				gotRI, err := rp.Reports(seqNr, outcome)
-				require.NoError(t, err)
-				assert.Equal(t, RIs, gotRI)
-
-				gotShouldAccept, err := rp.ShouldAcceptAttestedReport(ctx, seqNr, RI)
-				require.NoError(t, err)
-				assert.True(t, gotShouldAccept)
-
-				gotShouldTransmit, err := rp.ShouldTransmitAcceptedReport(ctx, seqNr, RI)
-				require.NoError(t, err)
-				assert.True(t, gotShouldTransmit)
-			*/
 		})
 	})
 }

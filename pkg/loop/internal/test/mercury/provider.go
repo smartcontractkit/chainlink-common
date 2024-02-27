@@ -37,7 +37,7 @@ var MercuryProviderImpl = staticMercuryProvider{
 
 type MercuryProviderTester interface {
 	types.MercuryProvider
-	AssertEqual(ctx context.Context, t *testing.T other types.MercuryProvider)
+	AssertEqual(ctx context.Context, t *testing.T, other types.MercuryProvider)
 }
 
 type staticMercuryProviderConfig struct {
@@ -116,7 +116,7 @@ func (s staticMercuryProvider) Codec() types.Codec {
 	return nil
 }
 
-func (s staticMercuryProvider) AssertEqual(ctx context.Context, t *testing.T other types.MercuryProvider) {
+func (s staticMercuryProvider) AssertEqual(ctx context.Context, t *testing.T, other types.MercuryProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
 		assert.NoError(t, s.offchainDigester.Evaluate(ctx, other.OffchainConfigDigester()))

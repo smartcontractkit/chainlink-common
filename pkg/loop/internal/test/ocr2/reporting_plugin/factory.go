@@ -103,7 +103,7 @@ func Factory(t *testing.T, factory libocr.ReportingPluginFactory) {
 		assert.Equal(t, expectedFactory.rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			expectedFactory.reportingPlugin.AssertEqual(t, ctx, rp)
+			expectedFactory.reportingPlugin.AssertEqual(ctx, t, rp)
 		})
 	})
 }

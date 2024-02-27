@@ -38,7 +38,6 @@ func TestPluginMercury(t *testing.T) {
 					pm.TestPluginMercury)
 			})
 	})
-
 }
 
 func TestPluginMercuryExec(t *testing.T) {

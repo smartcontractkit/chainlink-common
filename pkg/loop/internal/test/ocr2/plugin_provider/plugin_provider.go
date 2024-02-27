@@ -23,7 +23,7 @@ var AgnosticProviderImpl = staticPluginProvider{
 type PluginProviderTester interface {
 	types.PluginProvider
 	// AssertEqual tests equality of sub-components of the other PluginProvider in parallel
-	AssertEqual(ctx context.Context, t *testing.T other types.PluginProvider)
+	AssertEqual(ctx context.Context, t *testing.T, other types.PluginProvider)
 	// Evaluate runs all the method of the other PluginProvider and checks for equality with the embedded PluginProvider
 	// it returns the first error encountered
 	Evaluate(ctx context.Context, other types.PluginProvider) error
@@ -70,7 +70,7 @@ func (s staticPluginProvider) Codec() types.Codec {
 	return staticCodec{}
 }
 
-func (s staticPluginProvider) AssertEqual(ctx context.Context, t *testing.T provider types.PluginProvider) {
+func (s staticPluginProvider) AssertEqual(ctx context.Context, t *testing.T, provider types.PluginProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
 		assert.NoError(t, s.offchainConfigDigester.Evaluate(ctx, provider.OffchainConfigDigester()))

@@ -45,7 +45,6 @@ func TestRelayerService(t *testing.T) {
 
 		relayer_test.Run(t, relayer)
 	})
-
 }
 
 func TestRelayerService_recovery(t *testing.T) {

@@ -90,7 +90,7 @@ func (s staticMercuryPlugin) Report(timestamp libocr.ReportTimestamp, previousRe
 
 func (s staticMercuryPlugin) Close() error { return nil }
 
-func (s staticMercuryPlugin) AssertEqual(ctx context.Context, t *testing.T other ocr3types.MercuryPlugin) {
+func (s staticMercuryPlugin) AssertEqual(ctx context.Context, t *testing.T, other ocr3types.MercuryPlugin) {
 	gotObs, err := other.Observation(ctx, s.observationRequest.reportTimestamp, s.observationRequest.previousReport)
 	require.NoError(t, err)
 	assert.Equal(t, s.observationResponse.observation, gotObs)

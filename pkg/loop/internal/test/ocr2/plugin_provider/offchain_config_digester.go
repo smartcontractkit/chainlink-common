@@ -31,7 +31,7 @@ var _ libocr.OffchainConfigDigester = staticOffchainConfigDigester{}
 
 func (s staticOffchainConfigDigester) ConfigDigest(config libocr.ContractConfig) (libocr.ConfigDigest, error) {
 	if !assert.ObjectsAreEqual(s.contractConfig, config) {
-		return libocr.ConfigDigest{}, fmt.Errorf("expected contract config %v but got %v", s.ConfigDigest, config)
+		return libocr.ConfigDigest{}, fmt.Errorf("expected contract config %v but got %v", s.configDigest, config)
 	}
 	return s.configDigest, nil
 }

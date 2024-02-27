@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	blockHeight    = uint64(1337)
-	changedInBlock = uint64(14)
 	epoch          = uint32(88)
 	round          = uint8(74)
 	shouldAccept   = true
@@ -26,26 +24,13 @@ var (
 			Observation:            observation,
 			AttributedObservations: obs,
 			Report:                 report,
-			//	Sigs:           sigs,
-			ShouldAccept:   shouldAccept,
-			ShouldReport:   shouldReport,
-			ShouldTransmit: shouldTransmit,
+			ShouldAccept:           shouldAccept,
+			ShouldReport:           shouldReport,
+			ShouldTransmit:         shouldTransmit,
 		},
 	}
 
-	configDigest       = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
-	configDigestPrefix = libocr.ConfigDigestPrefix(99)
-
-	contractConfig = libocr.ContractConfig{
-		ConfigDigest:          configDigest,
-		ConfigCount:           42,
-		Signers:               []libocr.OnchainPublicKey{[]byte{15: 1}},
-		Transmitters:          []libocr.Account{"foo", "bar"},
-		F:                     11,
-		OnchainConfig:         []byte{2: 11, 14: 22, 31: 1},
-		OffchainConfigVersion: 2,
-		OffchainConfig:        []byte{1: 99, 12: 55},
-	}
+	configDigest = libocr.ConfigDigest([32]byte{2: 10, 12: 16})
 
 	observation = libocr.Observation([]byte{21: 19})
 	obs         = []libocr.AttributedObservation{{Observation: []byte{21: 19}, Observer: commontypes.OracleID(99)}}

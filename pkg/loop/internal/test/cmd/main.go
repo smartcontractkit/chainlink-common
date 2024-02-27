@@ -81,7 +81,7 @@ func main() {
 			HandshakeConfig: loop.PluginMedianHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginMedianName: &loop.GRPCPluginMedian{
-					PluginServer: median_test.PluginMedianImpl,
+					PluginServer: median_test.MedianFactoryGeneratorImpl,
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
@@ -182,7 +182,6 @@ func main() {
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %q\n", cmdS)
 		os.Exit(2)
-
 	}
 }
 

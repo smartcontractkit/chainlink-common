@@ -282,7 +282,6 @@ func (s ocr3staticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Cont
 func (s ocr3staticReportingPlugin) Close() error { return nil }
 
 func (s ocr3staticReportingPlugin) checkOutCtx(outcomeCtx ocr3types.OutcomeContext) error {
-
 	if outcomeCtx.SeqNr != s.expectedOutcomeContext.SeqNr {
 		return fmt.Errorf("expected %v but got %v", s.expectedOutcomeContext.SeqNr, outcomeCtx.SeqNr)
 	}
@@ -292,7 +291,7 @@ func (s ocr3staticReportingPlugin) checkOutCtx(outcomeCtx ocr3types.OutcomeConte
 	return nil
 }
 
-func (s ocr3staticReportingPlugin) AssertEqual(ctx context.Context, t *testing.T rp ocr3types.ReportingPlugin[[]byte]) {
+func (s ocr3staticReportingPlugin) AssertEqual(ctx context.Context, t *testing.T, rp ocr3types.ReportingPlugin[[]byte]) {
 	gotQuery, err := rp.Query(ctx, s.queryRequest.outcomeCtx)
 	require.NoError(t, err)
 	assert.Equal(t, s.queryResponse.query, gotQuery)
@@ -323,5 +322,4 @@ func (s ocr3staticReportingPlugin) AssertEqual(ctx context.Context, t *testing.T
 	gotShouldTransmit, err := rp.ShouldTransmitAcceptedReport(ctx, s.shouldTransmitAcceptedReportRequest.seq, s.shouldTransmitAcceptedReportRequest.r)
 	require.NoError(t, err)
 	assert.Equal(t, s.shouldTransmitAcceptedReportResponse.shouldTransmit, gotShouldTransmit)
-
 }

@@ -9,14 +9,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-const pipleine_spec = `
+const pipleineSpec = `
 answer [type=sum values=<[ $(val), 2 ]>]
 answer;
 `
 
 var PipelineRunnerImpl = staticPipelineRunnerService{
 	staticPipelineRunnerConfig: staticPipelineRunnerConfig{
-		spec: pipleine_spec,
+		spec: pipleineSpec,
 		vars: types.Vars{
 			Vars: map[string]interface{}{"foo": "baz"},
 		},

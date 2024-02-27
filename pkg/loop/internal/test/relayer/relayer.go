@@ -70,7 +70,7 @@ type RelayerTester interface {
 	internal.MercuryProvider
 	internal.MedianProvider
 
-	AssertEqual(ctx context.Context, t *testing.T relayer loop.Relayer)
+	AssertEqual(ctx context.Context, t *testing.T, relayer loop.Relayer)
 	mustEmbed()
 }
 
@@ -78,8 +78,8 @@ func NewRelayerTester(staticChecks bool) RelayerTester {
 	return staticPluginRelayer{
 		staticPluginRelayerConfig: staticPluginRelayerConfig{
 			StaticChecks:     staticChecks,
-			relayArgs:        relayArgs,
-			pluginArgs:       pluginArgs,
+			relayArgs:        RelayArgs,
+			pluginArgs:       PluginArgs,
 			medianProvider:   median_test.MedianProviderImpl,
 			mercuryProvider:  mercury_test.MercuryProviderImpl,
 			agnosticProvider: pluginprovider_test.AgnosticProviderImpl,
@@ -159,14 +159,13 @@ func (s staticPluginRelayer) NewConfigProvider(ctx context.Context, r types.Rela
 }
 
 func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
-
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
-			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", relayArgs, r)
+			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", RelayArgs, r)
 		}
-		if !reflect.DeepEqual(pluginArgs, p) {
-			return nil, fmt.Errorf("expected plugin args %v but got %v", pluginArgs, p)
+		if !reflect.DeepEqual(PluginArgs, p) {
+			return nil, fmt.Errorf("expected plugin args %v but got %v", PluginArgs, p)
 		}
 	}
 
@@ -177,10 +176,10 @@ func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.Rela
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
-			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", relayArgs, r)
+			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", RelayArgs, r)
 		}
-		if !reflect.DeepEqual(pluginArgs, p) {
-			return nil, fmt.Errorf("expected plugin args %v but got %v", pluginArgs, p)
+		if !reflect.DeepEqual(PluginArgs, p) {
+			return nil, fmt.Errorf("expected plugin args %v but got %v", PluginArgs, p)
 		}
 	}
 	return s.agnosticProvider, nil
@@ -235,21 +234,21 @@ func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.I
 	return nil
 }
 
-func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T relayer loop.Relayer) {
+func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T, relayer loop.Relayer) {
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
-		configProvider, err := relayer.NewConfigProvider(ctx, relayArgs)
+		configProvider, err := relayer.NewConfigProvider(ctx, RelayArgs)
 		require.NoError(t, err)
 		require.NoError(t, configProvider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, configProvider.Close()) })
 
-		s.configProvider.AssertEqual(t, ctx, configProvider)
+		s.configProvider.AssertEqual(ctx, t, configProvider)
 	})
 
 	t.Run("MedianProvider", func(t *testing.T) {
 		t.Parallel()
 		ra := newRelayArgsWithProviderType(types.Median)
-		p, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
+		p, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
 		require.NoError(t, err)
 		require.NotNil(t, p)
 		provider := p.(types.MedianProvider)
@@ -258,20 +257,20 @@ func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T relay
 
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
-			s.medianProvider.AssertEqual(t, ctx, provider)
+			s.medianProvider.AssertEqual(ctx, t, provider)
 		})
 	})
 
 	t.Run("PluginProvider", func(t *testing.T) {
 		t.Parallel()
 		ra := newRelayArgsWithProviderType(types.GenericPlugin)
-		provider, err := relayer.NewPluginProvider(ctx, ra, pluginArgs)
+		provider, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
 		require.NoError(t, err)
 		require.NoError(t, provider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
-			s.agnosticProvider.AssertEqual(t, ctx, provider)
+			s.agnosticProvider.AssertEqual(ctx, t, provider)
 		})
 	})
 
@@ -296,7 +295,6 @@ func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T relay
 		err := relayer.Transact(ctx, s.transactionRequest.from, s.transactionRequest.to, s.transactionRequest.amount, s.transactionRequest.balanceCheck)
 		require.NoError(t, err)
 	})
-
 }
 
 func equalRelayArgs(a, b types.RelayArgs) bool {
@@ -309,11 +307,11 @@ func equalRelayArgs(a, b types.RelayArgs) bool {
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 	return types.RelayArgs{
-		ExternalJobID: relayArgs.ExternalJobID,
-		JobID:         relayArgs.JobID,
-		ContractID:    relayArgs.ContractID,
-		New:           relayArgs.New,
-		RelayConfig:   relayArgs.RelayConfig,
+		ExternalJobID: RelayArgs.ExternalJobID,
+		JobID:         RelayArgs.JobID,
+		ContractID:    RelayArgs.ContractID,
+		New:           RelayArgs.New,
+		RelayConfig:   RelayArgs.RelayConfig,
 		ProviderType:  string(_type),
 	}
 }
@@ -333,8 +331,7 @@ func RunPlugin(t *testing.T, p internal.PluginRelayer) {
 func Run(t *testing.T, relayer internal.Relayer) {
 	ctx := tests.Context(t)
 	expectedRelayer := NewRelayerTester(false)
-	expectedRelayer.AssertEqual(t, ctx, relayer)
-
+	expectedRelayer.AssertEqual(ctx, t, relayer)
 }
 
 func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.PluginRelayer) {
@@ -343,7 +340,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Pl
 		signed  = []byte{5: 11}
 	)
 	f.Add("ABC\xa8\x8c\xb3G\xfc", "", true, []byte{}, true, true, "")
-	f.Add(ConfigTOML, string(account), false, signed, false, false, "")
+	f.Add(ConfigTOML, account, false, signed, false, false, "")
 
 	// nolint: gocognit
 	f.Fuzz(func(
@@ -367,7 +364,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Pl
 }
 
 func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer) {
-	validRaw := [16]byte(relayArgs.ExternalJobID)
+	validRaw := [16]byte(RelayArgs.ExternalJobID)
 	validRawBytes := make([]byte, 16)
 
 	copy(validRawBytes, validRaw[:])
@@ -421,7 +418,7 @@ func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer)
 type FuzzableProvider[K any] func(context.Context, types.RelayArgs, types.PluginArgs) (K, error)
 
 func RunFuzzProvider[K any](f *testing.F, providerFunc func(*testing.T) FuzzableProvider[K]) {
-	validRaw := [16]byte(relayArgs.ExternalJobID)
+	validRaw := [16]byte(RelayArgs.ExternalJobID)
 	validRawBytes := make([]byte, 16)
 
 	copy(validRawBytes, validRaw[:])

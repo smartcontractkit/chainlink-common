@@ -47,7 +47,6 @@ func (s StaticKeystore) Sign(ctx context.Context, id string, data []byte) ([]byt
 }
 
 func (s StaticKeystore) Evaluate(ctx context.Context, other StaticKeystore) error {
-
 	accounts, err := s.Accounts(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get accounts: %w", err)

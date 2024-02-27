@@ -43,12 +43,10 @@ func TestLOOPPService(t *testing.T) {
 			ProviderType: loop.PluginMedianName,
 		},
 		// A generic plugin with a plugin provider
-		/*
-			{
-				Plugin:       PluginServiceName,
-				ProviderType: loop.PluginRelayerName,
-			},
-		*/
+		{
+			Plugin:       PluginServiceName,
+			ProviderType: loop.PluginRelayerName,
+		},
 	}
 	for _, ts := range tests {
 		looppSvc := NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
@@ -58,7 +56,7 @@ func TestLOOPPService(t *testing.T) {
 			resources_test.MockConn{},
 			resources_test.PipelineRunnerImpl,
 			resources_test.TelemetryImpl,
-			&test.StaticErrorLog{},
+			&resources_test.ErrorLogImpl,
 			types.CapabilitiesRegistry(nil))
 		hook := looppSvc.XXXTestHook()
 		servicetest.Run(t, looppSvc)
@@ -101,7 +99,7 @@ func TestLOOPPService_recovery(t *testing.T) {
 		resources_test.MockConn{},
 		resources_test.PipelineRunnerImpl,
 		resources_test.TelemetryImpl,
-		&test.StaticErrorLog{},
+		&resources_test.ErrorLogImpl,
 		types.CapabilitiesRegistry(nil))
 	servicetest.Run(t, looppSvc)
 

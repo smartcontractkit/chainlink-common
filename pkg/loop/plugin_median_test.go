@@ -24,7 +24,7 @@ func TestPluginMedian(t *testing.T) {
 	stopCh := newStopCh(t)
 	test.PluginTest(t, loop.PluginMedianName,
 		&loop.GRPCPluginMedian{
-			PluginServer: median_test.PluginMedianImpl,
+			PluginServer: median_test.MedianFactoryGeneratorImpl,
 			BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh},
 		},
 		median_test.PluginMedian)
@@ -39,12 +39,11 @@ func TestPluginMedian(t *testing.T) {
 				pm := median_test.PluginMedianTest{MedianProvider: p}
 				test.PluginTest(t, loop.PluginMedianName,
 					&loop.GRPCPluginMedian{
-						PluginServer: median_test.PluginMedianImpl,
+						PluginServer: median_test.MedianFactoryGeneratorImpl,
 						BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
 					pm.TestPluginMedian)
 			})
 	})
-
 }
 
 func TestPluginMedianExec(t *testing.T) {
@@ -85,7 +84,7 @@ func newMedianProvider(t *testing.T, pr loop.PluginRelayer) types.MedianProvider
 	r, err := pr.NewRelayer(ctx, test.ConfigTOML, resources_test.KeystoreImpl)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
-	p, err := r.NewPluginProvider(ctx, test.RelayArgs, test.PluginArgs)
+	p, err := r.NewPluginProvider(ctx, relayer_test.RelayArgs, relayer_test.PluginArgs)
 	mp, ok := p.(types.MedianProvider)
 	require.True(t, ok)
 	require.NoError(t, err)
@@ -98,9 +97,9 @@ func newGenericPluginProvider(t *testing.T, pr loop.PluginRelayer) types.PluginP
 	r, err := pr.NewRelayer(ctx, test.ConfigTOML, resources_test.KeystoreImpl)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
-	ra := test.RelayArgs
+	ra := relayer_test.RelayArgs
 	ra.ProviderType = string(types.GenericPlugin)
-	p, err := r.NewPluginProvider(ctx, ra, test.PluginArgs)
+	p, err := r.NewPluginProvider(ctx, ra, relayer_test.PluginArgs)
 	require.NoError(t, err)
 	servicetest.Run(t, p)
 	return p

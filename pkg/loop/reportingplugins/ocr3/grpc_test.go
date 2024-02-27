@@ -31,7 +31,7 @@ func PluginGenericTest(t *testing.T, p types.OCR3ReportingPluginClient) {
 			resources_test.MockConn{},
 			resources_test.PipelineRunnerImpl,
 			resources_test.TelemetryImpl,
-			&test.StaticErrorLog{},
+			&resources_test.ErrorLogImpl,
 			types.CapabilitiesRegistry(nil))
 		require.NoError(t, err)
 

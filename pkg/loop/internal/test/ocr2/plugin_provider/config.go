@@ -15,7 +15,7 @@ import (
 type ConfigProviderTester interface {
 	types.ConfigProvider
 	// AssertEqual checks that the sub-components of the other ConfigProvider are equal to this one
-	AssertEqual(ctx context.Context, t *testing.T other types.ConfigProvider)
+	AssertEqual(ctx context.Context, t *testing.T, other types.ConfigProvider)
 }
 
 type staticConfigProviderConfig struct {
@@ -49,7 +49,7 @@ func (s staticConfigProvider) ContractConfigTracker() libocr.ContractConfigTrack
 	return s.contractConfigTracker
 }
 
-func (s staticConfigProvider) AssertEqual(ctx context.Context, t *testing.T cp types.ConfigProvider) {
+func (s staticConfigProvider) AssertEqual(ctx context.Context, t *testing.T, cp types.ConfigProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
 		assert.NoError(t, s.offchainDigester.Evaluate(ctx, cp.OffchainConfigDigester()))

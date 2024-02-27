@@ -42,7 +42,6 @@ func (s medianFactoryGenerator) ConnToProvider(conn grpc.ClientConnInterface, br
 }
 
 func (s medianFactoryGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.MedianProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
-
 	err := s.medianProvider.Evaluate(ctx, provider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate median provider: %w", err)

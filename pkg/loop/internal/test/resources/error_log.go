@@ -1,4 +1,4 @@
-package test
+package resources_test
 
 import (
 	"context"
@@ -7,13 +7,17 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+var ErrorLogImpl = StaticErrorLog{errMsg: "an error"}
+
 var _ types.ErrorLog = (*StaticErrorLog)(nil)
 
-type StaticErrorLog struct{}
+type StaticErrorLog struct {
+	errMsg string
+}
 
 func (s *StaticErrorLog) SaveError(ctx context.Context, msg string) error {
-	if msg != errMsg {
-		return fmt.Errorf("expected %q but got %q", errMsg, msg)
+	if msg != s.errMsg {
+		return fmt.Errorf("expected %q but got %q", s.errMsg, msg)
 	}
 	return nil
 }

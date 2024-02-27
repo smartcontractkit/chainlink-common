@@ -33,7 +33,7 @@ func PluginGenericTest(t *testing.T, p types.ReportingPluginClient) {
 			resources_test.MockConn{},
 			resources_test.PipelineRunnerImpl,
 			resources_test.TelemetryImpl,
-			&test.StaticErrorLog{})
+			&resources_test.ErrorLogImpl)
 		require.NoError(t, err)
 
 		reportingplugin_test.Factory(t, factory)

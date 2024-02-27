@@ -68,10 +68,6 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string
 }
 
 func (c staticChainReader) Evaluate(ctx context.Context, cr types.ChainReader) error {
-	fmt.Sprintf("Evaluating ChainReader %T", cr)
-	if cr == nil {
-		return fmt.Errorf("ChainReader is nil %T", cr)
-	}
 	gotLatestValue := make(map[string]any)
 	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, &c.params, &gotLatestValue)
 	if err != nil {

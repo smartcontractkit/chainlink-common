@@ -2,6 +2,7 @@ package relayer_test
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -21,11 +22,11 @@ URL = 'http://example.com'
 		Config: `Name = 'baz'
 URL = 'https://test.url'
 `}}
-	pluginArgs = types.PluginArgs{
+	PluginArgs = types.PluginArgs{
 		TransmitterID: "testtransmitter",
 		PluginConfig:  []byte{100: 88},
 	}
-	relayArgs = types.RelayArgs{
+	RelayArgs = types.RelayArgs{
 		ExternalJobID: uuid.MustParse("1051429b-aa66-11ed-b0d2-5cff35dfbe67"),
 		JobID:         123,
 		ContractID:    "testcontract",

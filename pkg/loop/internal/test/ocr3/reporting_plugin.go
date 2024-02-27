@@ -292,7 +292,7 @@ func (s ocr3staticReportingPlugin) checkOutCtx(outcomeCtx ocr3types.OutcomeConte
 	return nil
 }
 
-func (s ocr3staticReportingPlugin) AssertEqual(t *testing.T, ctx context.Context, rp ocr3types.ReportingPlugin[[]byte]) {
+func (s ocr3staticReportingPlugin) AssertEqual(ctx context.Context, t *testing.T rp ocr3types.ReportingPlugin[[]byte]) {
 	gotQuery, err := rp.Query(ctx, s.queryRequest.outcomeCtx)
 	require.NoError(t, err)
 	assert.Equal(t, s.queryResponse.query, gotQuery)

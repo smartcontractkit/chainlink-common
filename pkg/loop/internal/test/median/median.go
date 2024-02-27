@@ -215,7 +215,7 @@ type MedianProviderTester interface {
 	types.MedianProvider
 	// AssertEqual runs all the methods of the other MedianProvider and
 	// asserts equality with the embedded MedianProvider
-	AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider)
+	AssertEqual(ctx context.Context, t *testing.T provider types.MedianProvider)
 
 	// Evaluate runs all the methods of the other MedianProvider and
 	// checks for equality with the embedded MedianProvider
@@ -268,7 +268,7 @@ func (s staticMedianProvider) Codec() types.Codec {
 	return codec_test.StaticCodec{}
 }
 
-func (s staticMedianProvider) AssertEqual(t *testing.T, ctx context.Context, provider types.MedianProvider) {
+func (s staticMedianProvider) AssertEqual(ctx context.Context, t *testing.T provider types.MedianProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
 		assert.NoError(t, s.offchainDigester.Evaluate(ctx, provider.OffchainConfigDigester()))

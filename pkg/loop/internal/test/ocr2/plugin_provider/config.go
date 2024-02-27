@@ -4,17 +4,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 // ConfigProviderTester is a helper interface for testing ConfigProviders
 type ConfigProviderTester interface {
 	types.ConfigProvider
 	// AssertEqual checks that the sub-components of the other ConfigProvider are equal to this one
-	AssertEqual(t *testing.T, ctx context.Context, other types.ConfigProvider)
+	AssertEqual(ctx context.Context, t *testing.T other types.ConfigProvider)
 }
 
 type staticConfigProviderConfig struct {
@@ -48,7 +49,7 @@ func (s staticConfigProvider) ContractConfigTracker() libocr.ContractConfigTrack
 	return s.contractConfigTracker
 }
 
-func (s staticConfigProvider) AssertEqual(t *testing.T, ctx context.Context, cp types.ConfigProvider) {
+func (s staticConfigProvider) AssertEqual(ctx context.Context, t *testing.T cp types.ConfigProvider) {
 	t.Run("OffchainConfigDigester", func(t *testing.T) {
 		t.Parallel()
 		assert.NoError(t, s.offchainDigester.Evaluate(ctx, cp.OffchainConfigDigester()))

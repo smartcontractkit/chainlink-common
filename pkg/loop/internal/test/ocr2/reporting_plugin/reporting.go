@@ -15,7 +15,7 @@ import (
 type ReportingPluginTester interface {
 	libocr.ReportingPlugin
 	// AssertEqual checks that the sub-components of the other ReportingPlugin are equal to this one
-	AssertEqual(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin)
+	AssertEqual(ctx context.Context, t *testing.T rp libocr.ReportingPlugin)
 }
 
 type staticReportingPluginConfig struct {
@@ -87,7 +87,7 @@ func (s staticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context,
 
 func (s staticReportingPlugin) Close() error { return nil }
 
-func (s staticReportingPlugin) AssertEqual(t *testing.T, ctx context.Context, rp libocr.ReportingPlugin) {
+func (s staticReportingPlugin) AssertEqual(ctx context.Context, t *testing.T rp libocr.ReportingPlugin) {
 	gotQuery, err := rp.Query(ctx, reportContext.ReportTimestamp)
 	require.NoError(t, err)
 	assert.Equal(t, query, []byte(gotQuery))

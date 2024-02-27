@@ -5,8 +5,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var KeystoreImpl = StaticKeystore{

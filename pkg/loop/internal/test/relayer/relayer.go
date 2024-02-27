@@ -70,7 +70,7 @@ type RelayerTester interface {
 	internal.MercuryProvider
 	internal.MedianProvider
 
-	AssertEqual(t *testing.T, ctx context.Context, relayer loop.Relayer)
+	AssertEqual(ctx context.Context, t *testing.T relayer loop.Relayer)
 	mustEmbed()
 }
 
@@ -235,7 +235,7 @@ func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.I
 	return nil
 }
 
-func (s staticPluginRelayer) AssertEqual(t *testing.T, ctx context.Context, relayer loop.Relayer) {
+func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T relayer loop.Relayer) {
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
 		configProvider, err := relayer.NewConfigProvider(ctx, relayArgs)

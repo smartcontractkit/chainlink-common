@@ -250,7 +250,7 @@ func (o *capability) transmitResponse(ctx context.Context, resp response) error 
 
 	select {
 	case <-req.RequestCtx.Done():
-		return fmt.Errorf("request canceled: not propagating response %+v to caller", resp)
+		return fmt.Errorf("request canceled: not propagating response %+v to caller", "ctxErr", req.RequestCtx.Err(), "resp", resp)
 	case req.CallbackCh <- r:
 		close(req.CallbackCh)
 		o.store.evict(ctx, resp.WorkflowExecutionID)

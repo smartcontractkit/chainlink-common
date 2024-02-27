@@ -265,7 +265,7 @@ func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.Capabi
 	}
 
 	req := &request{
-		RequestCtx:          ctx,
+		RequestCtx:          context.Background(),
 		CallbackCh:          callback,
 		WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 		WorkflowID:          r.Metadata.WorkflowID,

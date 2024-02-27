@@ -21,7 +21,7 @@ import (
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
 	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/mercury"
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
-	keystore_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/keystore"
+	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -322,7 +322,7 @@ func RunPlugin(t *testing.T, p internal.PluginRelayer) {
 	ctx := tests.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
-		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystore_test.KeystoreImpl)
+		relayer, err := p.NewRelayer(ctx, ConfigTOML, resources_test.KeystoreImpl)
 		require.NoError(t, err)
 		require.NoError(t, relayer.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })

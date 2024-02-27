@@ -1,7 +1,6 @@
 package pluginprovider_test
 
 import (
-	keystore_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/keystore"
 	"github.com/smartcontractkit/libocr/commontypes"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
@@ -18,7 +17,7 @@ var (
 	ContractTransmitterImpl = staticContractTransmitter{
 		contractTransmitterTestConfig: contractTransmitterTestConfig{
 			ConfigDigest:  configDigest,
-			Account:       libocr.Account(keystore_test.DefaultKeystoreTestConfig.Account),
+			Account:       libocr.Account("some-account"),
 			Epoch:         epoch,
 			ReportContext: libocr.ReportContext{ReportTimestamp: reportTimestamp, ExtraHash: [32]byte{1: 3, 3: 5, 7: 11}},
 			Report:        libocr.Report{41: 131},
@@ -54,7 +53,12 @@ var (
 	}
 
 	// AgnosticPluginProviderImpl is a static implementation of the PluginProviderTester interface for testing
-	AgnosticPluginProviderImpl = staticPluginProvider{}
+	AgnosticPluginProviderImpl = staticPluginProvider{
+		offchainConfigDigester: OffchainConfigDigesterImpl,
+		contractConfigTracker:  ContractConfigTrackerImpl,
+		contractTransmitter:    ContractTransmitterImpl,
+		chainReader:            ChainReaderImpl,
+	}
 
 	configDigest       = libocr.ConfigDigest([32]byte{1: 7, 13: 11, 31: 23})
 	configDigestPrefix = libocr.ConfigDigestPrefix(99)

@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	agnosticapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/agnostic_api"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
 	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/mercury"
 	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr3"
@@ -102,7 +103,9 @@ func main() {
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.PluginProvider]{
-					PluginServer: test.StaticReportingPluginWithPluginProvider{},
+					//PluginServer: test.StaticReportingPluginWithPluginProvider{},
+					PluginServer: agnosticapi_test.AgnosticPluginGeneratorImpl,
+
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
 						StopCh: stopCh,
@@ -113,12 +116,13 @@ func main() {
 		})
 		os.Exit(0)
 
-	case test.ReportingPluginWithMedianProviderName:
+	case agnosticapi_test.MedianID:
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.MedianProvider]{
-					PluginServer: test.StaticReportingPluginWithMedianProvider{},
+					//PluginServer: test.StaticReportingPluginWithMedianProvider{},
+					PluginServer: agnosticapi_test.MedianGeneratorImpl,
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
 						StopCh: stopCh,

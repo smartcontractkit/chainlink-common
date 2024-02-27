@@ -21,7 +21,7 @@ var (
 		contractName:   "anyContract",
 		contractMethod: "anyMethod",
 		latestValue:    map[string]any{"ret1": "latestValue1", "ret2": "latestValue2"},
-		params:         map[string]string{"param1": "value1", "param2": "value2"},
+		params:         map[string]any{"param1": "value1", "param2": "value2"},
 	}
 )
 
@@ -30,7 +30,7 @@ type staticChainReader struct {
 	contractName   string
 	contractMethod string
 	latestValue    map[string]any
-	params         map[string]string
+	params         map[string]any
 }
 
 var _ ChainReaderEvaluator = staticChainReader{}
@@ -46,6 +46,7 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string
 	if method != c.contractMethod {
 		return fmt.Errorf("%w: expected generic contract method %v but got %v", types.ErrInvalidType, c.contractMethod, method)
 	}
+	//gotParams, ok := params.(*map[string]string)
 	gotParams, ok := params.(*map[string]any)
 	if !ok {
 		return fmt.Errorf("%w: Invalid parameter type received in GetLatestValue. Expected %T but received %T", types.ErrInvalidEncoding, c.params, params)
@@ -71,7 +72,7 @@ func (c staticChainReader) Evaluate(ctx context.Context, cr types.ChainReader) e
 		return fmt.Errorf("ChainReader is nil %T", cr)
 	}
 	gotLatestValue := make(map[string]any)
-	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, c.params, &gotLatestValue)
+	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, &c.params, &gotLatestValue)
 	if err != nil {
 		return fmt.Errorf("failed to call GetLatestValue(): %w", err)
 	}

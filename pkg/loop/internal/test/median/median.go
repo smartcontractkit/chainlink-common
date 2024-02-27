@@ -303,14 +303,8 @@ func (s staticMedianProvider) AssertEqual(t *testing.T, ctx context.Context, pro
 
 func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.MedianProvider) error {
 
-	cr := provider.ChainReader()
-	err := s.chainReader.Evaluate(ctx, cr)
-	if err != nil {
-		return fmt.Errorf("providers chain reader does not equal static chain reader: %w", err)
-	}
-
 	ocd := provider.OffchainConfigDigester()
-	err = s.offchainDigester.Evaluate(ctx, ocd)
+	err := s.offchainDigester.Evaluate(ctx, ocd)
 	if err != nil {
 		return fmt.Errorf("providers offchain digester does not equal static offchain digester: %w", err)
 	}
@@ -343,6 +337,12 @@ func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.Media
 	err = s.onchainConfigCodec.Evaluate(ctx, occ)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate onchain config codec: %w", err)
+	}
+
+	cr := provider.ChainReader()
+	err = s.chainReader.Evaluate(ctx, cr)
+	if err != nil {
+		return fmt.Errorf("providers chain reader does not equal static chain reader: %w", err)
 	}
 
 	return nil

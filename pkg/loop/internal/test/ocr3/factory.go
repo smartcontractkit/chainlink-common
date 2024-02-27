@@ -86,6 +86,7 @@ func (o ocr3staticPluginFactory) equalConfig(other ocr3types.ReportingPluginConf
 
 func OCR3ReportingPluginFactory(t *testing.T, factory types.OCR3ReportingPluginFactory) {
 	expectedFactory := FactoryImpl
+	//expectedFactory := MedianGeneratorImpl
 	ctx := tests.Context(t)
 	t.Run("OCR3ReportingPluginFactory", func(t *testing.T) {
 		rp, gotRPI, err := factory.NewReportingPlugin(ocr3reportingPluginConfig)
@@ -94,6 +95,7 @@ func OCR3ReportingPluginFactory(t *testing.T, factory types.OCR3ReportingPluginF
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("OCR3ReportingPlugin", func(t *testing.T) {
 			expectedFactory.reportingPlugin.AssertEqual(t, ctx, rp)
+			//MedianGeneratorImpl.medianProvider.AssertEqual(t, ctx, rp)
 		})
 	})
 }

@@ -1,4 +1,4 @@
-package telemetry_test
+package resources_test
 
 import (
 	"bytes"

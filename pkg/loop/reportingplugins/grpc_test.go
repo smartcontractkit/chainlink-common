@@ -9,7 +9,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	agnosticapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/agnostic_api"
 	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
+	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -26,7 +28,12 @@ func newStopCh(t *testing.T) <-chan struct{} {
 func PluginGenericTest(t *testing.T, p types.ReportingPluginClient) {
 	t.Run("PluginServer", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewReportingPluginFactory(ctx, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
+		factory, err := p.NewReportingPluginFactory(ctx,
+			types.ReportingPluginServiceConfig{},
+			resources_test.MockConn{},
+			resources_test.PipelineRunnerImpl,
+			resources_test.TelemetryImpl,
+			&test.StaticErrorLog{})
 		require.NoError(t, err)
 
 		reportingplugin_test.Factory(t, factory)
@@ -39,9 +46,9 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
-		test.ReportingPluginWithMedianProviderName,
+		agnosticapi_test.MedianID,
 		&reportingplugins.GRPCService[types.MedianProvider]{
-			PluginServer: test.StaticReportingPluginWithMedianProvider{},
+			PluginServer: agnosticapi_test.MedianGeneratorImpl,
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,
@@ -59,7 +66,7 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 		t,
 		reportingplugins.PluginServiceName,
 		&reportingplugins.GRPCService[types.PluginProvider]{
-			PluginServer: test.StaticReportingPluginWithPluginProvider{},
+			PluginServer: agnosticapi_test.AgnosticPluginGeneratorImpl,
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,

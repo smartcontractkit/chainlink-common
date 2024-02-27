@@ -1,4 +1,4 @@
-package pipeline_test
+package resources_test
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package ocr3_test
+package agnosticapi_test
 
 import (
 	"context"
@@ -9,11 +9,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var MedianGeneratorImpl = MedianGenerator{
+var MedianGeneratorImpl = medianFactoryGenerator{
 	medianGeneratorConfig: medianGeneratorConfig{
 		medianProvider: median_test.MedianProviderImpl,
 		pipeline:       resources_test.PipelineRunnerImpl,
@@ -21,7 +23,7 @@ var MedianGeneratorImpl = MedianGenerator{
 	},
 }
 
-const OCR3ReportingPluginWithMedianProviderName = "ocr3-reporting-plugin-with-median-provider"
+const MedianID = "ocr2-reporting-plugin-with-median-provider"
 
 type medianGeneratorConfig struct {
 	medianProvider median_test.MedianProviderTester
@@ -29,15 +31,17 @@ type medianGeneratorConfig struct {
 	telemetry      resources_test.TelemetryEvaluator
 }
 
-type MedianGenerator struct {
+type medianFactoryGenerator struct {
 	medianGeneratorConfig
 }
 
-func (s MedianGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
+var _ reportingplugins.ProviderServer[types.MedianProvider] = medianFactoryGenerator{}
+
+func (s medianFactoryGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
 	return s.medianProvider
 }
 
-func (s MedianGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.MedianProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog, capRegistry types.CapabilitiesRegistry) (types.OCR3ReportingPluginFactory, error) {
+func (s medianFactoryGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.MedianProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 
 	err := s.medianProvider.Evaluate(ctx, provider)
 	if err != nil {
@@ -54,7 +58,7 @@ func (s MedianGenerator) NewReportingPluginFactory(ctx context.Context, config t
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return FactoryImpl, nil
+	return reportingplugin_test.FactoryImpl, nil
 }
 
 var AgnosticPluginGeneratorImpl = AgnosticPluginGenerator{
@@ -62,6 +66,8 @@ var AgnosticPluginGeneratorImpl = AgnosticPluginGenerator{
 	pipelineRunner: resources_test.PipelineRunnerImpl,
 	telemetry:      resources_test.TelemetryImpl,
 }
+
+var _ reportingplugins.ProviderServer[types.PluginProvider] = AgnosticPluginGenerator{}
 
 type AgnosticPluginGenerator struct {
 	provider       pluginprovider_test.PluginProviderTester
@@ -73,7 +79,7 @@ func (s AgnosticPluginGenerator) ConnToProvider(conn grpc.ClientConnInterface, b
 	return s.provider
 }
 
-func (s AgnosticPluginGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog, capRegistry types.CapabilitiesRegistry) (types.OCR3ReportingPluginFactory, error) {
+func (s AgnosticPluginGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	err := s.provider.Evaluate(ctx, provider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate agnostic provider: %w", err)
@@ -89,5 +95,5 @@ func (s AgnosticPluginGenerator) NewReportingPluginFactory(ctx context.Context, 
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return FactoryImpl, nil
+	return reportingplugin_test.FactoryImpl, nil
 }

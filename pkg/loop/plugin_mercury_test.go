@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/mercury"
 	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
+	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -24,11 +25,18 @@ func TestPluginMercury(t *testing.T) {
 	test.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercury_test.FactoryGeneratorImpl, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, mercury_test.PluginMercury)
 
 	t.Run("proxy", func(t *testing.T) {
-		test.PluginTest(t, loop.PluginRelayerName, &loop.GRPCPluginRelayer{PluginServer: relayer_test.NewRelayerTester(false), BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, func(t *testing.T, pr loop.PluginRelayer) {
-			p := newMercuryProvider(t, pr)
-			pm := mercury_test.PluginMercuryTest{MercuryProvider: p}
-			test.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercury_test.FactoryGeneratorImpl, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, pm.TestPluginMercury)
-		})
+		test.PluginTest(t, loop.PluginRelayerName,
+			&loop.GRPCPluginRelayer{
+				PluginServer: relayer_test.NewRelayerTester(false),
+				BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+			func(t *testing.T, pr loop.PluginRelayer) {
+				p := newMercuryProvider(t, pr)
+				pm := mercury_test.PluginMercuryTest{MercuryProvider: p}
+				test.PluginTest(t, loop.PluginMercuryName,
+					&loop.GRPCPluginMercury{PluginServer: mercury_test.FactoryGeneratorImpl,
+						BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+					pm.TestPluginMercury)
+			})
 	})
 
 }
@@ -61,7 +69,7 @@ func TestPluginMercuryExec(t *testing.T) {
 
 func newMercuryProvider(t *testing.T, pr loop.PluginRelayer) types.MercuryProvider {
 	ctx := context.Background()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, test.StaticKeystore{})
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, resources_test.KeystoreImpl)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 	p, err := r.NewPluginProvider(ctx, mercury_common_test.RelayArgs, mercury_common_test.PluginArgs)

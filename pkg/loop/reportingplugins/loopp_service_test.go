@@ -10,7 +10,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	agnosticapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/agnostic_api"
 	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
+	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -37,14 +39,19 @@ func TestLOOPPService(t *testing.T) {
 		Plugin string
 	}{
 		// A generic plugin with a median provider
-		{Plugin: test.ReportingPluginWithMedianProviderName},
+		{Plugin: agnosticapi_test.MedianID},
 		// A generic plugin with a plugin provider
 		{Plugin: reportingplugins.PluginServiceName},
 	}
 	for _, ts := range tests {
 		looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 			return NewHelperProcessCommand(ts.Plugin)
-		}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
+		},
+			types.ReportingPluginServiceConfig{},
+			resources_test.MockConn{},
+			resources_test.PipelineRunnerImpl,
+			resources_test.TelemetryImpl,
+			&test.StaticErrorLog{})
 		hook := looppSvc.XXXTestHook()
 		servicetest.Run(t, looppSvc)
 
@@ -77,11 +84,16 @@ func TestLOOPPService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: test.ReportingPluginWithMedianProviderName,
+			Command: agnosticapi_test.MedianID,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, types.ReportingPluginServiceConfig{}, test.MockConn{}, &test.StaticPipelineRunnerService{}, &test.StaticTelemetry{}, &test.StaticErrorLog{})
+	},
+		types.ReportingPluginServiceConfig{},
+		resources_test.MockConn{},
+		resources_test.PipelineRunnerImpl,
+		resources_test.TelemetryImpl,
+		&test.StaticErrorLog{})
 	servicetest.Run(t, looppSvc)
 
 	reportingplugin_test.Factory(t, looppSvc)

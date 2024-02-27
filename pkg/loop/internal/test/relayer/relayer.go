@@ -64,8 +64,12 @@ type staticPluginRelayerConfig struct {
 }
 
 type RelayerTester interface {
-	loop.PluginRelayer
-	loop.Relayer
+	internal.PluginRelayer
+	internal.Relayer
+	// types from internal.Relayer
+	internal.MercuryProvider
+	internal.MedianProvider
+
 	AssertEqual(t *testing.T, ctx context.Context, relayer loop.Relayer)
 	mustEmbed()
 }
@@ -265,7 +269,6 @@ func (s staticPluginRelayer) AssertEqual(t *testing.T, ctx context.Context, rela
 		require.NoError(t, err)
 		require.NoError(t, provider.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
-		assert.NotNil(t, provider.ChainReader(), "ChainReader not implemented relayer provider %T", provider)
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
 			s.agnosticProvider.AssertEqual(t, ctx, provider)
@@ -319,7 +322,7 @@ func RunPlugin(t *testing.T, p internal.PluginRelayer) {
 	ctx := tests.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
-		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystore_test.StaticKeystore{})
+		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystore_test.KeystoreImpl)
 		require.NoError(t, err)
 		require.NoError(t, relayer.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })

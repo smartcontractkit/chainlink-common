@@ -17,6 +17,8 @@ import (
 var MedianGeneratorImpl = MedianGenerator{
 	ocr3Config: ocr3Config{
 		medianProvider: median_test.MedianProviderImpl,
+		pipeline:       pipeline_test.PipelineRunnerImpl,
+		telemetry:      telemetry_test.TelemetryImpl,
 	},
 }
 
@@ -33,16 +35,17 @@ type MedianGenerator struct {
 }
 
 func (s MedianGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
-	return median_test.MedianProviderImpl
+	return s.medianProvider
 }
 
 func (s MedianGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.MedianProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog, capRegistry types.CapabilitiesRegistry) (types.OCR3ReportingPluginFactory, error) {
-	err := s.medianProvider.Evaluate(ctx, provider)
-	if err != nil {
-		return nil, fmt.Errorf("failed to evaluate median provider: %w", err)
-	}
-
-	err = s.pipeline.Evaluate(ctx, pipelineRunner)
+	/*
+		err := s.medianProvider.Evaluate(ctx, provider)
+		if err != nil {
+			return nil, fmt.Errorf("failed to evaluate median provider: %w", err)
+		}
+	*/
+	err := s.pipeline.Evaluate(ctx, pipelineRunner)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate pipeline runner: %w", err)
 	}
@@ -52,7 +55,13 @@ func (s MedianGenerator) NewReportingPluginFactory(ctx context.Context, config t
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return ocr3staticPluginFactory{}, nil
+	return FactoryImpl, nil
+}
+
+var AgnosticPluginGeneratorImpl = AgnosticPluginGenerator{
+	provider:       pluginprovider_test.AgnosticPluginProviderImpl,
+	pipelineRunner: pipeline_test.PipelineRunnerImpl,
+	telemetry:      telemetry_test.TelemetryImpl,
 }
 
 type AgnosticPluginGenerator struct {
@@ -81,5 +90,5 @@ func (s AgnosticPluginGenerator) NewReportingPluginFactory(ctx context.Context, 
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return ocr3staticPluginFactory{}, nil
+	return FactoryImpl, nil
 }

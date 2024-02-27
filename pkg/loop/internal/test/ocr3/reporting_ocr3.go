@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
 	outcomeCtx = ocr3types.OutcomeContext{
 		SeqNr:           1,
-		PreviousOutcome: []byte{1, 2, 3},
+		PreviousOutcome: ocr3types.Outcome([]byte{1, 2, 3}),
 	}
 
 	query = libocr.Query{1, 2, 3}
@@ -288,4 +290,38 @@ func (s ocr3staticReportingPlugin) checkOutCtx(outcomeCtx ocr3types.OutcomeConte
 		return fmt.Errorf("expected %x but got %x", outcomeCtx.PreviousOutcome, s.expectedOutcomeContext.PreviousOutcome)
 	}
 	return nil
+}
+
+func (s ocr3staticReportingPlugin) AssertEqual(t *testing.T, ctx context.Context, rp ocr3types.ReportingPlugin[[]byte]) {
+	gotQuery, err := rp.Query(ctx, s.queryRequest.outcomeCtx)
+	require.NoError(t, err)
+	assert.Equal(t, s.queryResponse.query, gotQuery)
+
+	gotObs, err := rp.Observation(ctx, s.observationRequest.outcomeCtx, s.observationRequest.query)
+	require.NoError(t, err)
+	assert.Equal(t, s.observationResponse.observation, gotObs)
+
+	err = rp.ValidateObservation(s.validateObservationRequest.outcomeCtx, s.validateObservationRequest.query, s.validateObservationRequest.attributedObservation)
+	require.NoError(t, err)
+
+	gotQuorum, err := rp.ObservationQuorum(s.observationQuorumRequest.outcomeCtx, s.observationQuorumRequest.query)
+	require.NoError(t, err)
+	assert.Equal(t, s.observationQuorumResponse.quorum, gotQuorum)
+
+	gotOutcome, err := rp.Outcome(s.outcomeRequest.outcomeCtx, s.outcomeRequest.query, s.outcomeRequest.observations)
+	require.NoError(t, err)
+	assert.Equal(t, s.outcomeResponse.outcome, gotOutcome)
+
+	gotRI, err := rp.Reports(s.reportsRequest.seq, s.reportsRequest.outcome)
+	require.NoError(t, err)
+	assert.Equal(t, s.reportsResponse.reportWithInfo, gotRI)
+
+	gotShouldAccept, err := rp.ShouldAcceptAttestedReport(ctx, s.shouldAcceptAttestedReportRequest.seq, s.shouldAcceptAttestedReportRequest.r)
+	require.NoError(t, err)
+	assert.Equal(t, s.shouldAcceptAttestedReportResponse.shouldAccept, gotShouldAccept)
+
+	gotShouldTransmit, err := rp.ShouldTransmitAcceptedReport(ctx, s.shouldTransmitAcceptedReportRequest.seq, s.shouldTransmitAcceptedReportRequest.r)
+	require.NoError(t, err)
+	assert.Equal(t, s.shouldTransmitAcceptedReportResponse.shouldTransmit, gotShouldTransmit)
+
 }

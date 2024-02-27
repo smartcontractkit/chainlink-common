@@ -16,14 +16,14 @@ answer;
 
 var PipelineRunnerImpl = staticPipelineRunnerService{
 	staticPipelineRunnerConfig: staticPipelineRunnerConfig{
-		Spec: pipleine_spec,
-		Vars: types.Vars{
+		spec: pipleine_spec,
+		vars: types.Vars{
 			Vars: map[string]interface{}{"foo": "baz"},
 		},
-		Options: types.Options{
+		options: types.Options{
 			MaxTaskDuration: 10 * time.Second,
 		},
-		TaskResults: types.TaskResults([]types.TaskResult{
+		taskResults: types.TaskResults([]types.TaskResult{
 			{
 				TaskValue: types.TaskValue{
 					Value: "hello",
@@ -44,36 +44,36 @@ type PipelineRunnerEvaluator interface {
 var _ types.PipelineRunnerService = (*staticPipelineRunnerService)(nil)
 
 type staticPipelineRunnerConfig struct {
-	Spec        string
-	Vars        types.Vars
-	Options     types.Options
-	TaskResults types.TaskResults
+	spec        string
+	vars        types.Vars
+	options     types.Options
+	taskResults types.TaskResults
 }
 
 type staticPipelineRunnerService struct {
 	staticPipelineRunnerConfig
 }
 
-func (pr *staticPipelineRunnerService) ExecuteRun(ctx context.Context, s string, v types.Vars, o types.Options) (types.TaskResults, error) {
-	if s != pr.Spec {
-		return nil, fmt.Errorf("expected %s but got %s", pr.Spec, s)
+func (pr staticPipelineRunnerService) ExecuteRun(ctx context.Context, s string, v types.Vars, o types.Options) (types.TaskResults, error) {
+	if s != pr.spec {
+		return nil, fmt.Errorf("expected %s but got %s", pr.spec, s)
 	}
-	if !reflect.DeepEqual(v, pr.Vars) {
-		return nil, fmt.Errorf("expected %+v but got %+v", pr.Vars, v)
+	if !reflect.DeepEqual(v, pr.vars) {
+		return nil, fmt.Errorf("expected %+v but got %+v", pr.vars, v)
 	}
-	if !reflect.DeepEqual(o, pr.Options) {
-		return nil, fmt.Errorf("expected %+v but got %+v", pr.Options, o)
+	if !reflect.DeepEqual(o, pr.options) {
+		return nil, fmt.Errorf("expected %+v but got %+v", pr.options, o)
 	}
-	return pr.TaskResults, nil
+	return pr.taskResults, nil
 }
 
-func (pr *staticPipelineRunnerService) Evaluate(ctx context.Context, other types.PipelineRunnerService) error {
-	tr, err := pr.ExecuteRun(ctx, pr.Spec, pr.Vars, pr.Options)
+func (pr staticPipelineRunnerService) Evaluate(ctx context.Context, other types.PipelineRunnerService) error {
+	tr, err := pr.ExecuteRun(ctx, pr.spec, pr.vars, pr.options)
 	if err != nil {
 		return fmt.Errorf("failed to execute pipeline: %w", err)
 	}
-	if !reflect.DeepEqual(tr, pr.TaskResults) {
-		return fmt.Errorf("expected TaskResults %+v but got %+v", pr.TaskResults, tr)
+	if !reflect.DeepEqual(tr, pr.taskResults) {
+		return fmt.Errorf("expected TaskResults %+v but got %+v", pr.taskResults, tr)
 	}
 	return nil
 }

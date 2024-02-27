@@ -4,21 +4,27 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var FactoryImpl = ocr3staticPluginFactory{
 	ReportingPluginConfig: ocr3reportingPluginConfig,
+	reportingPlugin:       ReportingPluginImpl,
 }
 
 // OCR3
 type ocr3staticPluginFactory struct {
 	ocr3types.ReportingPluginConfig
+	reportingPlugin ocr3staticReportingPlugin
 }
 
 var _ types.OCR3ReportingPluginFactory = (*ocr3staticPluginFactory)(nil)
@@ -38,7 +44,7 @@ func (o ocr3staticPluginFactory) NewReportingPlugin(config ocr3types.ReportingPl
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("config mismatch: %w", err)
 	}
-	return ocr3staticReportingPlugin{}, ocr3rpi, nil
+	return o.reportingPlugin, ocr3rpi, nil
 }
 
 func (o ocr3staticPluginFactory) equalConfig(other ocr3types.ReportingPluginConfig) error {
@@ -76,6 +82,54 @@ func (o ocr3staticPluginFactory) equalConfig(other ocr3types.ReportingPluginConf
 		return fmt.Errorf("expected MaxDurationShouldTransmitAcceptedReport %d but got %d", o.MaxDurationShouldTransmitAcceptedReport, other.MaxDurationShouldTransmitAcceptedReport)
 	}
 	return nil
+}
+
+func OCR3ReportingPluginFactory(t *testing.T, factory types.OCR3ReportingPluginFactory) {
+	expectedFactory := FactoryImpl
+	ctx := tests.Context(t)
+	t.Run("OCR3ReportingPluginFactory", func(t *testing.T) {
+		rp, gotRPI, err := factory.NewReportingPlugin(ocr3reportingPluginConfig)
+		require.NoError(t, err)
+		assert.Equal(t, ocr3rpi, gotRPI)
+		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
+		t.Run("OCR3ReportingPlugin", func(t *testing.T) {
+			expectedFactory.reportingPlugin.AssertEqual(t, ctx, rp)
+			/*
+				ctx := tests.Context(t)
+
+				gotQuery, err := rp.Query(ctx, outcomeContext)
+				require.NoError(t, err)
+				assert.Equal(t, query, []byte(gotQuery))
+
+				gotObs, err := rp.Observation(ctx, outcomeContext, query)
+				require.NoError(t, err)
+				assert.Equal(t, observation, gotObs)
+
+				err = rp.ValidateObservation(outcomeContext, query, ao)
+				require.NoError(t, err)
+
+				gotQuorum, err := rp.ObservationQuorum(outcomeContext, query)
+				require.NoError(t, err)
+				assert.Equal(t, quorum, gotQuorum)
+
+				gotOutcome, err := rp.Outcome(outcomeContext, query, obs)
+				require.NoError(t, err)
+				assert.Equal(t, outcome, gotOutcome)
+
+				gotRI, err := rp.Reports(seqNr, outcome)
+				require.NoError(t, err)
+				assert.Equal(t, RIs, gotRI)
+
+				gotShouldAccept, err := rp.ShouldAcceptAttestedReport(ctx, seqNr, RI)
+				require.NoError(t, err)
+				assert.True(t, gotShouldAccept)
+
+				gotShouldTransmit, err := rp.ShouldTransmitAcceptedReport(ctx, seqNr, RI)
+				require.NoError(t, err)
+				assert.True(t, gotShouldTransmit)
+			*/
+		})
+	})
 }
 
 var (

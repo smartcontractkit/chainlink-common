@@ -5,27 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
-
-	"github.com/jonboulle/clockwork"
 )
 
 type store struct {
 	requestIDs []string
 	requests   map[string]*request
 
-	clock          clockwork.Clock
-	requestTimeout time.Duration
+	// for testing
+	evictedCh chan *request
 
 	mu sync.RWMutex
 }
 
-func newStore(requestTimeout time.Duration, clock clockwork.Clock) *store {
+func newStore() *store {
 	return &store{
-		requestIDs:     []string{},
-		requests:       map[string]*request{},
-		requestTimeout: requestTimeout,
-		clock:          clock,
+		requestIDs: []string{},
+		requests:   map[string]*request{},
 	}
 }
 
@@ -36,8 +31,6 @@ func (s *store) add(ctx context.Context, req *request) error {
 	if _, ok := s.requests[req.WorkflowExecutionID]; ok {
 		return fmt.Errorf("request with id %s already exists", req.WorkflowExecutionID)
 	}
-	now := s.clock.Now()
-	req.ExpiresAt = now.Add(s.requestTimeout)
 	s.requestIDs = append(s.requestIDs, req.WorkflowExecutionID)
 	s.requests[req.WorkflowExecutionID] = req
 	return nil
@@ -108,11 +101,17 @@ func (s *store) evict(ctx context.Context, requestID string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	_, ok := s.requests[requestID]
+	r, ok := s.requests[requestID]
 	if !ok {
 		return false
 	}
 
 	delete(s.requests, requestID)
+
+	// for testing
+	if s.evictedCh != nil {
+		s.evictedCh <- r
+	}
+
 	return true
 }

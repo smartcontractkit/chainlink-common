@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jonboulle/clockwork"
 	"github.com/mitchellh/mapstructure"
@@ -36,9 +37,10 @@ type capability struct {
 	wg     sync.WaitGroup
 	lggr   logger.Logger
 
-	clock clockwork.Clock
+	requestTimeout time.Duration
+	clock          clockwork.Clock
 
-	newExpiryWorkerCh chan *request
+	newCleanupWorkerCh chan *request
 
 	aggregators map[string]types.Aggregator
 
@@ -48,17 +50,18 @@ type capability struct {
 
 var _ capabilityIface = (*capability)(nil)
 
-func newCapability(s *store, clock clockwork.Clock, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
+func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
 	o := &capability{
-		CapabilityInfo:    info,
-		store:             s,
-		newExpiryWorkerCh: make(chan *request),
-		clock:             clock,
-		stopCh:            make(chan struct{}),
-		lggr:              logger.Named(lggr, "OCR3CapabilityClient"),
-		encoderFactory:    encoderFactory,
-		aggregators:       map[string]types.Aggregator{},
-		encoders:          map[string]types.Encoder{},
+		CapabilityInfo:     info,
+		store:              s,
+		newCleanupWorkerCh: make(chan *request),
+		clock:              clock,
+		requestTimeout:     requestTimeout,
+		stopCh:             make(chan struct{}),
+		lggr:               logger.Named(lggr, "OCR3CapabilityClient"),
+		encoderFactory:     encoderFactory,
+		aggregators:        map[string]types.Aggregator{},
+		encoders:           map[string]types.Encoder{},
 	}
 	return o
 }
@@ -186,7 +189,7 @@ func (o *capability) Execute(ctx context.Context, callback chan<- capabilities.C
 		return err
 	}
 
-	o.newExpiryWorkerCh <- r
+	o.newCleanupWorkerCh <- r
 	return nil
 }
 
@@ -199,14 +202,20 @@ func (o *capability) loop() {
 		select {
 		case <-ctx.Done():
 			return
-		case r := <-o.newExpiryWorkerCh:
+		case r := <-o.newCleanupWorkerCh:
 			o.wg.Add(1)
-			go o.expiryWorker(ctx, r)
+			go o.cleanupWorker(ctx, r)
 		}
 	}
 }
 
-func (o *capability) expiryWorker(ctx context.Context, r *request) {
+// cleanupWorker is responsible for closing the callback channel.
+// It does this either a) when the request has expired, or b)
+// when transmitResponse has been called, signalling that we expect no further responses
+// to be issued.
+// Both of these cases are handled in a single goroutine to ensure that closing the
+// channel can only happen once.
+func (o *capability) cleanupWorker(ctx context.Context, r *request) {
 	defer o.wg.Done()
 
 	d := r.ExpiresAt.Sub(o.clock.Now())
@@ -219,9 +228,7 @@ func (o *capability) expiryWorker(ctx context.Context, r *request) {
 	case <-tr.Chan():
 		wasPresent := o.store.evict(ctx, r.WorkflowExecutionID)
 		if !wasPresent {
-			// the item was already evicted,
-			// we'll assume it was processed successfully
-			// and return
+			o.lggr.Errorf("cleanupWorker timed out but could not find store entry for %s", r.WorkflowExecutionID)
 			return
 		}
 
@@ -232,6 +239,18 @@ func (o *capability) expiryWorker(ctx context.Context, r *request) {
 		select {
 		case <-r.RequestCtx.Done():
 		case r.CallbackCh <- timeoutResp:
+			close(r.CallbackCh)
+		}
+	case <-r.CleanupCh:
+		wasPresent := o.store.evict(ctx, r.WorkflowExecutionID)
+		if !wasPresent {
+			o.lggr.Errorf("cleanupWorker triggered by transmitResponse but could not find a store entry for %s", r.WorkflowExecutionID)
+			return
+		}
+
+		select {
+		case <-r.RequestCtx.Done():
+		default:
 			close(r.CallbackCh)
 		}
 	}
@@ -252,8 +271,7 @@ func (o *capability) transmitResponse(ctx context.Context, resp response) error 
 	case <-req.RequestCtx.Done():
 		return fmt.Errorf("request canceled: not propagating response %+v to caller", resp)
 	case req.CallbackCh <- r:
-		close(req.CallbackCh)
-		o.store.evict(ctx, resp.WorkflowExecutionID)
+		req.CleanupCh <- struct{}{}
 		return nil
 	}
 }
@@ -264,12 +282,15 @@ func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.Capabi
 		return nil, err
 	}
 
+	expiresAt := o.clock.Now().Add(o.requestTimeout)
 	req := &request{
 		RequestCtx:          context.Background(), // TODO: set correct context
+		CleanupCh:           make(chan struct{}),
 		CallbackCh:          callback,
 		WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 		WorkflowID:          r.Metadata.WorkflowID,
 		Observations:        r.Inputs.Underlying["observations"],
+		ExpiresAt:           expiresAt,
 	}
 	err = mapstructure.Decode(valuesMap, req)
 	if err != nil {

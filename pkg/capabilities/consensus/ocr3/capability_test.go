@@ -34,8 +34,11 @@ func TestOCR3Capability(t *testing.T) {
 	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
-	s := newStore(1*time.Second, fc)
-	cp := newCapability(s, fc, mockEncoderFactory, lggr)
+
+	s := newStore()
+	s.evictedCh = make(chan *request)
+
+	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	callback := make(chan capabilities.CapabilityResponse, 10)
@@ -76,6 +79,9 @@ func TestOCR3Capability(t *testing.T) {
 	}
 	assert.Len(t, callback, 1)
 	assert.Equal(t, expectedCapabilityResponse, <-callback)
+
+	gotR := <-s.evictedCh
+	assert.Equal(t, workflowExecutionTestID, gotR.WorkflowExecutionID)
 }
 
 func TestOCR3Capability_Eviction(t *testing.T) {
@@ -85,8 +91,8 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 
 	ctx := tests.Context(t)
 	rea := time.Second
-	s := newStore(rea, fc)
-	cp := newCapability(s, fc, mockEncoderFactory, lggr)
+	s := newStore()
+	cp := newCapability(s, fc, rea, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
@@ -124,8 +130,8 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
-	s := newStore(1*time.Second, fc)
-	cp := newCapability(s, fc, mockEncoderFactory, lggr)
+	s := newStore()
+	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})

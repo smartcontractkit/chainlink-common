@@ -24,11 +24,6 @@ var (
 		Description:    "capability-info-description",
 		Version:        "capability-info-version",
 	}
-
-	// codec
-	itemType = "string"
-	maxSize  = 42
-	codecN   = 12
 )
 
 var _ capabilities.BaseCapability = (*baseCapability)(nil)

@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 	"github.com/stretchr/testify/assert"
+
+	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )
 
 var ChainReaderImpl = staticMercuryChainReader{

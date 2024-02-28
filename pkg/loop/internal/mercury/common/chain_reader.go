@@ -5,7 +5,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	//nolint
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )

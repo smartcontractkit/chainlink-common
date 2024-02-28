@@ -123,21 +123,7 @@ func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 	if len(keys) == 0 {
 		return nil, fmt.Errorf("expected at least one key but got none")
 	}
-	/*
-		if s.StaticChecks && !reflect.DeepEqual([]string{string(account)}, keys) {
-			return nil, fmt.Errorf("expected keys %v but got %v", []string{string(account)}, keys)
-		}
-		gotSigned, err := keystore.Sign(ctx, string(account), encoded)
-		if err != nil {
-			return nil, err
-		}
-		if s.StaticChecks && !bytes.Equal(signed, gotSigned) {
-			return nil, fmt.Errorf("expected signed bytes %x but got %x", signed, gotSigned)
-		}
-	*/
-	if s.agnosticProvider.ChainReader() == nil {
-		panic("ChainReader not implemented in agnosticProvider")
-	}
+
 	return s, nil
 }
 

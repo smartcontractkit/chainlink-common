@@ -15,7 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var MedianGeneratorImpl = medianFactoryGenerator{
+var MedianProviderServerImpl = medianFactoryGenerator{
 	medianGeneratorConfig: medianGeneratorConfig{
 		medianProvider: median_test.MedianProviderImpl,
 		pipeline:       resources_test.PipelineRunnerImpl,
@@ -60,25 +60,25 @@ func (s medianFactoryGenerator) NewReportingPluginFactory(ctx context.Context, c
 	return reportingplugin_test.FactoryImpl, nil
 }
 
-var AgnosticPluginGeneratorImpl = AgnosticPluginGenerator{
+var AgnosticProviderServerImpl = agnosticPluginGenerator{
 	provider:       pluginprovider_test.AgnosticPluginProviderImpl,
 	pipelineRunner: resources_test.PipelineRunnerImpl,
 	telemetry:      resources_test.TelemetryImpl,
 }
 
-var _ reportingplugins.ProviderServer[types.PluginProvider] = AgnosticPluginGenerator{}
+var _ reportingplugins.ProviderServer[types.PluginProvider] = agnosticPluginGenerator{}
 
-type AgnosticPluginGenerator struct {
+type agnosticPluginGenerator struct {
 	provider       pluginprovider_test.PluginProviderTester
 	pipelineRunner resources_test.PipelineRunnerEvaluator
 	telemetry      resources_test.TelemetryEvaluator
 }
 
-func (s AgnosticPluginGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {
+func (s agnosticPluginGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {
 	return s.provider
 }
 
-func (s AgnosticPluginGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s agnosticPluginGenerator) NewReportingPluginFactory(ctx context.Context, config types.ReportingPluginServiceConfig, provider types.PluginProvider, pipelineRunner types.PipelineRunnerService, telemetry types.TelemetryClient, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	err := s.provider.Evaluate(ctx, provider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate agnostic provider: %w", err)

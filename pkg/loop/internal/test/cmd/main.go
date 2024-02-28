@@ -12,11 +12,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	agnosticapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/agnostic_api"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
 	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/mercury"
 	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr3"
 	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
+	coreapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/core_api"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -104,7 +104,7 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.PluginProvider]{
 					//PluginServer: test.StaticReportingPluginWithPluginProvider{},
-					PluginServer: agnosticapi_test.AgnosticPluginGeneratorImpl,
+					PluginServer: coreapi_test.AgnosticProviderServerImpl,
 
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
@@ -116,13 +116,13 @@ func main() {
 		})
 		os.Exit(0)
 
-	case agnosticapi_test.MedianID:
+	case coreapi_test.MedianID:
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.MedianProvider]{
 					//PluginServer: test.StaticReportingPluginWithMedianProvider{},
-					PluginServer: agnosticapi_test.MedianGeneratorImpl,
+					PluginServer: coreapi_test.MedianProviderServerImpl,
 					BrokerConfig: loop.BrokerConfig{
 						Logger: lggr,
 						StopCh: stopCh,

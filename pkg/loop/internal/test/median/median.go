@@ -17,7 +17,7 @@ import (
 
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
-	codec_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/codec"
+	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -33,7 +33,7 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSourceImpl, JuelsPerFeeCoinDataSourceImpl, &StaticErrorLog{})
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSourceImpl, JuelsPerFeeCoinDataSourceImpl, &resources_test.ErrorLogImpl)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -60,10 +60,10 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 }
 
 type staticPluginMedianConfig struct {
-	provider                  staticMedianProvider //types.MedianProvider
-	dataSource                staticDataSource     //median.DataSource
-	juelsPerFeeCoinDataSource staticDataSource     // median.DataSource
-	errorLog                  StaticErrorLog       //types.ErrorLog
+	provider                  staticMedianProvider          //types.MedianProvider
+	dataSource                staticDataSource              //median.DataSource
+	juelsPerFeeCoinDataSource staticDataSource              // median.DataSource
+	errorLog                  resources_test.StaticErrorLog //types.ErrorLog
 }
 
 type staticMedianFactoryGenerator struct {
@@ -90,7 +90,7 @@ func (s staticMedianFactoryGenerator) NewMedianFactory(ctx context.Context, prov
 		return nil, fmt.Errorf("NewMedianFactory: juelsPerFeeCoinDataSource does not equal a static test juels per fee coin data source implementation: %w", err)
 	}
 
-	if err := errorLog.SaveError(ctx, errMsg); err != nil {
+	if err := errorLog.SaveError(ctx, "an error"); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)
 	}
 	return staticReportingPluginFactory{ReportingPluginConfig: reportingPluginConfig}, nil
@@ -221,7 +221,7 @@ func (s staticMedianProvider) ChainReader() types.ChainReader {
 }
 
 func (s staticMedianProvider) Codec() types.Codec {
-	return codec_test.StaticCodec{}
+	return resources_test.CodecImpl
 }
 
 func (s staticMedianProvider) AssertEqual(ctx context.Context, t *testing.T, provider types.MedianProvider) {

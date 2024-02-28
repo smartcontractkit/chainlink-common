@@ -9,6 +9,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
 )
 
 const ConfigTOML = `[Foo]
@@ -16,7 +17,6 @@ Bar = "Baz"
 `
 
 const (
-	errMsg           = "test error"
 	lookbackDuration = time.Minute + 4*time.Second
 	max              = 101
 	n                = 12
@@ -28,7 +28,7 @@ var (
 			provider:                  MedianProviderImpl,
 			dataSource:                DataSourceImpl,
 			juelsPerFeeCoinDataSource: JuelsPerFeeCoinDataSourceImpl,
-			errorLog:                  StaticErrorLog{},
+			errorLog:                  resources_test.ErrorLogImpl,
 		},
 	}
 

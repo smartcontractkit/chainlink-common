@@ -7,8 +7,8 @@ import (
 type Nil struct {
 }
 
-func NewNil() (*Nil, error) {
-	return &Nil{}, nil
+func NewNil() *Nil {
+	return &Nil{}
 }
 
 func (n *Nil) Proto() (*pb.Value, error) {

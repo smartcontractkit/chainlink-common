@@ -25,21 +25,21 @@ func Wrap(v any) (Value, error) {
 	case map[string]any:
 		return NewMap(tv)
 	case string:
-		return NewString(tv)
+		return NewString(tv), nil
 	case bool:
-		return NewBool(tv)
+		return NewBool(tv), nil
 	case []byte:
-		return NewBytes(tv)
+		return NewBytes(tv), nil
 	case []any:
 		return NewList(tv)
 	case decimal.Decimal:
-		return NewDecimal(tv)
+		return NewDecimal(tv), nil
 	case int64:
-		return NewInt64(tv)
+		return NewInt64(tv), nil
 	case int:
-		return NewInt64(int64(tv))
+		return NewInt64(int64(tv)), nil
 	case nil:
-		return NewNil()
+		return NewNil(), nil
 
 	// Transparently wrap values.
 	// This is helpful for recursive wrapping of values.
@@ -77,15 +77,15 @@ func FromProto(val *pb.Value) (Value, error) {
 
 	switch val.Value.(type) {
 	case *pb.Value_NilValue:
-		return NewNil()
+		return NewNil(), nil
 	case *pb.Value_StringValue:
-		return NewString(val.GetStringValue())
+		return NewString(val.GetStringValue()), nil
 	case *pb.Value_BoolValue:
-		return NewBool(val.GetBoolValue())
+		return NewBool(val.GetBoolValue()), nil
 	case *pb.Value_DecimalValue:
 		return FromDecimalValueProto(val.GetDecimalValue())
 	case *pb.Value_Int64Value:
-		return NewInt64(val.GetInt64Value())
+		return NewInt64(val.GetInt64Value()), nil
 	case *pb.Value_BytesValue:
 		return FromBytesValueProto(val.GetBytesValue())
 	case *pb.Value_ListValue:
@@ -102,7 +102,7 @@ func FromBytesValueProto(bv string) (*Bytes, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewBytes(p)
+	return NewBytes(p), nil
 }
 
 func FromMapValueProto(mv *pb.Map) (*Map, error) {
@@ -137,5 +137,5 @@ func FromDecimalValueProto(decStr string) (*Decimal, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewDecimal(dec)
+	return NewDecimal(dec), nil
 }

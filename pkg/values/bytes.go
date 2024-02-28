@@ -8,8 +8,8 @@ type Bytes struct {
 	Underlying []byte
 }
 
-func NewBytes(b []byte) (*Bytes, error) {
-	return &Bytes{Underlying: b}, nil
+func NewBytes(b []byte) *Bytes {
+	return &Bytes{Underlying: b}
 }
 
 func (b *Bytes) Proto() (*pb.Value, error) {

@@ -49,7 +49,7 @@ func Test_Value(t *testing.T) {
 				if err != nil {
 					return nil, nil, err
 				}
-				decv, err := NewDecimal(dec)
+				decv := NewDecimal(dec)
 				return dec, decv, err
 			},
 		},
@@ -57,24 +57,24 @@ func Test_Value(t *testing.T) {
 			name: "string",
 			newValue: func() (any, Value, error) {
 				s := "hello"
-				sv, err := NewString(s)
-				return s, sv, err
+				sv := NewString(s)
+				return s, sv, nil
 			},
 		},
 		{
 			name: "bytes",
 			newValue: func() (any, Value, error) {
 				b := []byte("hello")
-				bv, err := NewBytes(b)
-				return b, bv, err
+				bv := NewBytes(b)
+				return b, bv, nil
 			},
 		},
 		{
 			name: "bool",
 			newValue: func() (any, Value, error) {
 				b := true
-				bv, err := NewBool(b)
-				return b, bv, err
+				bv := NewBool(b)
+				return b, bv, nil
 			},
 		},
 		{

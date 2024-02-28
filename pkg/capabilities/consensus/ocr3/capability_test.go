@@ -68,8 +68,10 @@ func TestOCR3Capability(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response
-	err = cp.transmitResponse(ctx, response{
-		Value:               obsv,
+	err = cp.transmitResponse(ctx, &response{
+		CapabilityResponse: capabilities.CapabilityResponse{
+			Value: obsv,
+		},
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
@@ -77,11 +79,11 @@ func TestOCR3Capability(t *testing.T) {
 	expectedCapabilityResponse := capabilities.CapabilityResponse{
 		Value: obsv,
 	}
-	assert.Len(t, callback, 1)
-	assert.Equal(t, expectedCapabilityResponse, <-callback)
 
 	gotR := <-s.evictedCh
 	assert.Equal(t, workflowExecutionTestID, gotR.WorkflowExecutionID)
+
+	assert.Equal(t, expectedCapabilityResponse, <-callback)
 }
 
 func TestOCR3Capability_Eviction(t *testing.T) {
@@ -120,8 +122,8 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	resp := <-callback
 	assert.ErrorContains(t, resp.Err, "timeout exceeded: could not process request before expiry")
 
-	_, err = s.get(ctx, rid)
-	assert.ErrorContains(t, err, "not found")
+	_, ok := s.requests[rid]
+	assert.False(t, ok)
 }
 
 func TestOCR3Capability_Registration(t *testing.T) {

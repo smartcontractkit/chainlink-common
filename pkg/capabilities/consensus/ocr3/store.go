@@ -36,18 +36,6 @@ func (s *store) add(ctx context.Context, req *request) error {
 	return nil
 }
 
-func (s *store) get(ctx context.Context, requestID string) (*request, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	r, ok := s.requests[requestID]
-	if !ok {
-		return nil, fmt.Errorf("request with id %s not found", requestID)
-	}
-
-	return r, nil
-}
-
 func (s *store) getN(ctx context.Context, requestIDs []string) ([]*request, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -97,13 +85,13 @@ func (s *store) firstN(ctx context.Context, batchSize int) ([]*request, error) {
 	return got, nil
 }
 
-func (s *store) evict(ctx context.Context, requestID string) bool {
+func (s *store) evict(ctx context.Context, requestID string) (*request, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	r, ok := s.requests[requestID]
 	if !ok {
-		return false
+		return nil, false
 	}
 
 	delete(s.requests, requestID)
@@ -113,5 +101,5 @@ func (s *store) evict(ctx context.Context, requestID string) bool {
 		s.evictedCh <- r
 	}
 
-	return true
+	return r, true
 }

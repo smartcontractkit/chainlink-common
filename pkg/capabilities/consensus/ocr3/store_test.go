@@ -32,14 +32,8 @@ func TestOCR3Store(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("get", func(t *testing.T) {
-		got, err := s.get(ctx, rid)
-		require.NoError(t, err)
-		assert.Equal(t, req, got)
-	})
-
 	t.Run("evict", func(t *testing.T) {
-		wasPresent := s.evict(ctx, rid)
+		_, wasPresent := s.evict(ctx, rid)
 		assert.True(t, wasPresent)
 		assert.Len(t, s.requests, 0)
 

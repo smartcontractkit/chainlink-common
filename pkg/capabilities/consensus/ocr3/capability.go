@@ -40,28 +40,31 @@ type capability struct {
 	requestTimeout time.Duration
 	clock          clockwork.Clock
 
-	newCleanupWorkerCh chan *request
-
 	aggregators map[string]types.Aggregator
 
 	encoderFactory EncoderFactory
 	encoders       map[string]types.Encoder
+
+	transmitCh chan *response
+	newTimerCh chan *request
 }
 
 var _ capabilityIface = (*capability)(nil)
 
 func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
 	o := &capability{
-		CapabilityInfo:     info,
-		store:              s,
-		newCleanupWorkerCh: make(chan *request),
-		clock:              clock,
-		requestTimeout:     requestTimeout,
-		stopCh:             make(chan struct{}),
-		lggr:               logger.Named(lggr, "OCR3CapabilityClient"),
-		encoderFactory:     encoderFactory,
-		aggregators:        map[string]types.Aggregator{},
-		encoders:           map[string]types.Encoder{},
+		CapabilityInfo: info,
+		store:          s,
+		clock:          clock,
+		requestTimeout: requestTimeout,
+		stopCh:         make(chan struct{}),
+		lggr:           logger.Named(lggr, "OCR3CapabilityClient"),
+		encoderFactory: encoderFactory,
+		aggregators:    map[string]types.Aggregator{},
+		encoders:       map[string]types.Encoder{},
+
+		transmitCh: make(chan *response),
+		newTimerCh: make(chan *request),
 	}
 	return o
 }
@@ -69,7 +72,7 @@ func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration
 func (o *capability) Start(ctx context.Context) error {
 	return o.StartOnce("OCR3Capability", func() error {
 		o.wg.Add(1)
-		go o.loop()
+		go o.worker()
 		return nil
 	})
 }
@@ -189,11 +192,11 @@ func (o *capability) Execute(ctx context.Context, callback chan<- capabilities.C
 		return err
 	}
 
-	o.newCleanupWorkerCh <- r
+	o.newTimerCh <- r
 	return nil
 }
 
-func (o *capability) loop() {
+func (o *capability) worker() {
 	ctx, cancel := o.stopCh.NewCtx()
 	defer cancel()
 	defer o.wg.Done()
@@ -202,20 +205,30 @@ func (o *capability) loop() {
 		select {
 		case <-ctx.Done():
 			return
-		case r := <-o.newCleanupWorkerCh:
+		case r := <-o.newTimerCh:
 			o.wg.Add(1)
-			go o.cleanupWorker(ctx, r)
+			go o.expiryTimer(ctx, r)
+		case resp := <-o.transmitCh:
+			o.handleTransmitMsg(ctx, resp)
 		}
 	}
 }
 
-// cleanupWorker is responsible for closing the callback channel.
-// It does this either a) when the request has expired, or b)
-// when transmitResponse has been called, signalling that we expect no further responses
-// to be issued.
-// Both of these cases are handled in a single goroutine to ensure that closing the
-// channel can only happen once.
-func (o *capability) cleanupWorker(ctx context.Context, r *request) {
+func (o *capability) handleTransmitMsg(ctx context.Context, resp *response) {
+	req, wasPresent := o.store.evict(ctx, resp.WorkflowExecutionID)
+	if !wasPresent {
+		o.lggr.Debugf("failed to clean up request with id %s", resp.WorkflowExecutionID)
+		return
+	}
+
+	select {
+	case <-req.RequestCtx.Done():
+	case req.CallbackCh <- resp.CapabilityResponse:
+		close(req.CallbackCh)
+	}
+}
+
+func (o *capability) expiryTimer(ctx context.Context, r *request) {
 	defer o.wg.Done()
 
 	d := r.ExpiresAt.Sub(o.clock.Now())
@@ -226,54 +239,21 @@ func (o *capability) cleanupWorker(ctx context.Context, r *request) {
 	case <-ctx.Done():
 		return
 	case <-tr.Chan():
-		wasPresent := o.store.evict(ctx, r.WorkflowExecutionID)
-		if !wasPresent {
-			o.lggr.Errorf("cleanupWorker timed out but could not find store entry for %s", r.WorkflowExecutionID)
-			return
+		resp := &response{
+			WorkflowExecutionID: r.WorkflowExecutionID,
+			CapabilityResponse: capabilities.CapabilityResponse{
+				Err:   fmt.Errorf("timeout exceeded: could not process request before expiry %s", r.WorkflowExecutionID),
+				Value: nil,
+			},
 		}
 
-		timeoutResp := capabilities.CapabilityResponse{
-			Err: fmt.Errorf("timeout exceeded: could not process request before expiry %+v", r.WorkflowExecutionID),
-		}
-
-		select {
-		case <-r.RequestCtx.Done():
-		case r.CallbackCh <- timeoutResp:
-			close(r.CallbackCh)
-		}
-	case <-r.CleanupCh:
-		wasPresent := o.store.evict(ctx, r.WorkflowExecutionID)
-		if !wasPresent {
-			o.lggr.Errorf("cleanupWorker triggered by transmitResponse but could not find a store entry for %s", r.WorkflowExecutionID)
-			return
-		}
-
-		select {
-		case <-r.RequestCtx.Done():
-		default:
-			close(r.CallbackCh)
-		}
+		o.transmitCh <- resp
 	}
 }
 
-func (o *capability) transmitResponse(ctx context.Context, resp response) error {
-	req, err := o.store.get(ctx, resp.WorkflowExecutionID)
-	if err != nil {
-		return err
-	}
-
-	r := capabilities.CapabilityResponse{
-		Value: resp.Value,
-		Err:   resp.Err,
-	}
-
-	select {
-	case <-req.RequestCtx.Done():
-		return fmt.Errorf("request canceled: not propagating response %+v to caller", resp)
-	case req.CallbackCh <- r:
-		req.CleanupCh <- struct{}{}
-		return nil
-	}
+func (o *capability) transmitResponse(ctx context.Context, resp *response) error {
+	o.transmitCh <- resp
+	return nil
 }
 
 func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.CapabilityRequest, callback chan<- capabilities.CapabilityResponse) (*request, error) {
@@ -285,7 +265,6 @@ func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.Capabi
 	expiresAt := o.clock.Now().Add(o.requestTimeout)
 	req := &request{
 		RequestCtx:          context.Background(), // TODO: set correct context
-		CleanupCh:           make(chan struct{}),
 		CallbackCh:          callback,
 		WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 		WorkflowID:          r.Metadata.WorkflowID,

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -14,11 +13,9 @@ import (
 
 func TestOCR3Store(t *testing.T) {
 	ctx := tests.Context(t)
-	rea := time.Second
 	n := time.Now()
-	fc := clockwork.NewFakeClockAt(n)
 
-	s := newStore(rea, fc)
+	s := newStore()
 	rid := uuid.New().String()
 	req := &request{
 		WorkflowExecutionID: rid,

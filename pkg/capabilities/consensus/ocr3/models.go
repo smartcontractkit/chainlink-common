@@ -13,6 +13,7 @@ type request struct {
 	ExpiresAt    time.Time
 
 	CallbackCh chan<- capabilities.CapabilityResponse
+	CleanupCh  chan struct{}
 	RequestCtx context.Context
 
 	WorkflowExecutionID string

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -26,24 +27,10 @@ var mercuryInfo = capabilities.MustNewCapabilityInfo(
 type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
 	chans                 map[workflowID]chan<- capabilities.CapabilityResponse
-	feedIdsForTriggerId   map[string][]uint64
+	feedIdsForTriggerId   map[string][]int64 // TODO: switch this to uint64 when value.go supports it
 	mu                    sync.Mutex
-	feedIdToWorkflowId    map[uint64]string
+	feedIdToWorkflowId    map[int64]string
 	triggerIdToWorkflowId map[string]string
-}
-
-type MercuryReport struct {
-	feedId               uint64
-	fullreport           []byte
-	benchmarkPrice       int64
-	observationTimestamp uint32
-}
-
-type MercuryTriggerEvent struct {
-	triggerType string // "mercury"
-	id          string // "sha256 of payload.feedId + payload.timestamp"
-	timestamp   string // "current time"
-	payload     []MercuryReport
 }
 
 var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
@@ -52,13 +39,13 @@ func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
 		CapabilityInfo:        mercuryInfo,
 		chans:                 map[workflowID]chan<- capabilities.CapabilityResponse{},
-		feedIdsForTriggerId:   make(map[string][]uint64),
+		feedIdsForTriggerId:   make(map[string][]int64),
 		triggerIdToWorkflowId: make(map[string]string),
 	}
 }
 
 // maybe use mercury-pipline reports.go report struct instead of MercuryReport struct, and then we can use the pipeline report generators
-func (o *MercuryTriggerService) ProcessReport(reports []MercuryReport) error {
+func (o *MercuryTriggerService) ProcessReport(reports []mercury.MercuryReport) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -69,7 +56,7 @@ func (o *MercuryTriggerService) ProcessReport(reports []MercuryReport) error {
 
 	for _, report := range reports {
 		// for each feed id, we need to find the triggerId associated with it.
-		reportFeedId := report.feedId
+		reportFeedId := report.FeedId
 		for triggerId, feedIds := range o.feedIdsForTriggerId {
 			for _, feedId := range feedIds {
 				if reportFeedId == feedId {
@@ -87,20 +74,20 @@ func (o *MercuryTriggerService) ProcessReport(reports []MercuryReport) error {
 	// Then for each trigger id, find which reports correspond to that trigger and create an event bundling the reports
 	// and send it to the channel associated with the trigger id.
 	for triggerId, reportIds := range triggerIdsForReports {
-		reportPayload := make([]MercuryReport, 0)
+		reportPayload := make([]mercury.MercuryReport, 0)
 		for _, reportId := range reportIds {
 			reportPayload = append(reportPayload, reports[reportId])
 		}
 
-		triggerEvent := MercuryTriggerEvent{
-			triggerType: "mercury",
-			id:          generateTriggerEventId(reportPayload),
-			timestamp:   strconv.FormatInt(unixTimestampMillis, 10),
-			payload:     reportPayload,
+		triggerEvent := mercury.MercuryTriggerEvent{
+			TriggerType: "mercury",
+			Id:          generateTriggerEventId(reportPayload),
+			Timestamp:   strconv.FormatInt(unixTimestampMillis, 10),
+			Payload:     reportPayload,
 		}
 
 		// TODO: Modify values.Wrap to handle MercuryTriggerEvent and MercuryReport structs
-		val, err := values.Wrap(triggerEvent)
+		val, err := mercury.Codec{}.WrapMercuryTriggerEvent(triggerEvent)
 		if err != nil {
 			return err
 		}
@@ -160,11 +147,11 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 }
 
 // Get array of feedIds from CapabilityRequest req
-func (o *MercuryTriggerService) GetFeedIds(req capabilities.CapabilityRequest) []uint64 {
-	feedIds := make([]uint64, 0)
+func (o *MercuryTriggerService) GetFeedIds(req capabilities.CapabilityRequest) []int64 {
+	feedIds := make([]int64, 0)
 	// Unwrap the inputs which should return pair (map, nil) and then get the feedIds from the map
 	if inputs, err := req.Inputs.Unwrap(); err == nil {
-		if feeds, ok := inputs.(map[string]interface{})["feedIds"].([]uint64); ok {
+		if feeds, ok := inputs.(map[string]interface{})["feedIds"].([]int64); ok {
 			// Copy to feedIds
 			feedIds = append(feedIds, feeds...)
 		}
@@ -191,9 +178,44 @@ func sha256Hash(s string) string {
 }
 
 // TODO: The generated id should probably be the sha256 of all the report feed ids and timestamps associated with this trigger event
-func generateTriggerEventId(reports []MercuryReport) string {
-	report := reports[0]
-	return sha256Hash(strconv.FormatUint(report.feedId, 10) + strconv.FormatUint(uint64(report.observationTimestamp), 10))
+func generateTriggerEventId(reports []mercury.MercuryReport) string {
+	// Let's hash all the feedIds and timestamps together
+	s := ""
+	for _, report := range reports {
+		s += strconv.FormatInt(report.FeedId, 10) + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
+	}
+	return sha256Hash(s)
 }
 
-// TODO: Capability Validation API stub out here
+func ValidateInput(mercuryTriggerEvent values.Value) error {
+	// TODO: Fill this in
+	return nil
+}
+
+func ExampleOutput() (values.Value, error) {
+	event := mercury.MercuryTriggerEvent{
+		TriggerType: "mercury",
+		Id:          "123",
+		Timestamp:   "2024-01-17T04:00:10Z",
+		Payload: []mercury.MercuryReport{
+			{
+				FeedId:               2,
+				Fullreport:           []byte("hello"),
+				BenchmarkPrice:       100,
+				ObservationTimestamp: 123,
+			},
+			{
+				FeedId:               3,
+				Fullreport:           []byte("world"),
+				BenchmarkPrice:       100,
+				ObservationTimestamp: 123,
+			},
+		},
+	}
+	return mercury.Codec{}.WrapMercuryTriggerEvent(event)
+}
+
+func ValidateConfig(config values.Value) error {
+	// TODO: Fill this in
+	return nil
+}

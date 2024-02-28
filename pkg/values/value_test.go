@@ -8,6 +8,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type TestValueEvent struct {
+	TriggerType string       `json:"triggerType"`
+	Id          string       `json:"id"`
+	Timestamp   string       `json:"timestamp"`
+	Payload     []TestReport `json:"payload"`
+}
+
+type TestReport struct {
+	FeedId     int64  `json:"feedId"`
+	Fullreport string `json:"fullreport"`
+}
+
 func Test_Value(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -90,6 +102,73 @@ func Test_Value(t *testing.T) {
 				}
 				mv, err := NewMap(m)
 				return m, mv, err
+			},
+		},
+		{
+			name: "struct",
+			newValue: func() (any, Value, error) {
+				v := TestReport{
+					FeedId:     2,
+					Fullreport: "hello",
+				}
+				m := map[string]any{
+					"feedId":     int64(2),
+					"fullreport": "hello",
+				}
+				vv, err := Wrap(v)
+				return m, vv, err
+			},
+		},
+		{
+			name: "structPointer",
+			newValue: func() (any, Value, error) {
+				v := &TestReport{
+					FeedId:     2,
+					Fullreport: "hello",
+				}
+				m := map[string]any{
+					"feedId":     int64(2),
+					"fullreport": "hello",
+				}
+				vv, err := Wrap(v)
+				return m, vv, err
+			},
+		},
+		{
+			name: "nestedStruct",
+			newValue: func() (any, Value, error) {
+				v := TestValueEvent{
+					TriggerType: "mercury",
+					Id:          "123",
+					Timestamp:   "123",
+					Payload: []TestReport{
+						{
+							FeedId:     2,
+							Fullreport: "hello",
+						},
+						{
+							FeedId:     3,
+							Fullreport: "world",
+						},
+					},
+				}
+				m := map[string]any{
+					"triggerType": "mercury",
+					"id":          "123",
+					"timestamp":   "123",
+					"payload": []any{
+						map[string]any{
+							"feedId":     int64(2),
+							"fullreport": "hello",
+						},
+						map[string]any{
+							"feedId":     int64(3),
+							"fullreport": "world",
+						},
+					},
+				}
+				vv, err := Wrap(v)
+				return m, vv, err
 			},
 		},
 	}

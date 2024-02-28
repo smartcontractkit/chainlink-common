@@ -1,6 +1,7 @@
 package mercury
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"strings"
@@ -50,6 +51,21 @@ type ReportInfo struct {
 	Price     float64
 }
 
+// TODO: fix this by adding support for uint64 in value.go
+type MercuryReport struct {
+	FeedId               int64  `json:"feedId"`
+	Fullreport           []byte `json:"fullreport"`
+	BenchmarkPrice       int64  `json:"benchmarkPrice"`
+	ObservationTimestamp int64  `json:"observationTimestamp"`
+}
+
+type MercuryTriggerEvent struct {
+	TriggerType string          `json:"triggerType"`
+	Id          string          `json:"id"`
+	Timestamp   string          `json:"timestamp"`
+	Payload     []MercuryReport `json:"payload"`
+}
+
 // TODO implement an actual codec
 type Codec struct {
 }
@@ -76,6 +92,38 @@ func (m Codec) Wrap(reportSet ReportSet) (values.Value, error) {
 			},
 		},
 	)
+}
+
+func (m Codec) WrapMercuryTriggerEvent(event MercuryTriggerEvent) (values.Value, error) {
+	return values.Wrap(event)
+}
+
+func (m Codec) UnwrapMercuryTriggerEvent(raw values.Value) (MercuryTriggerEvent, error) {
+	mercuryTriggerEvent := MercuryTriggerEvent{}
+	val, err := raw.Unwrap()
+	if err != nil {
+		return mercuryTriggerEvent, err
+	}
+	event := val.(map[string]any)
+	mercuryTriggerEvent.TriggerType = event["triggerType"].(string)
+	mercuryTriggerEvent.Id = event["id"].(string)
+	mercuryTriggerEvent.Timestamp = event["timestamp"].(string)
+	mercuryTriggerEvent.Payload = make([]MercuryReport, 0)
+	for _, report := range event["payload"].([]any) {
+		reportMap := report.(map[string]any)
+		decodedData, err := base64.StdEncoding.DecodeString(reportMap["fullreport"].(string))
+		if err != nil {
+			return MercuryTriggerEvent{}, err
+		}
+		mercuryReport := MercuryReport{
+			FeedId:               reportMap["feedId"].(int64),
+			Fullreport:           decodedData,
+			BenchmarkPrice:       reportMap["benchmarkPrice"].(int64),
+			ObservationTimestamp: reportMap["observationTimestamp"].(int64),
+		}
+		mercuryTriggerEvent.Payload = append(mercuryTriggerEvent.Payload, mercuryReport)
+	}
+	return mercuryTriggerEvent, nil
 }
 
 func NewCodec() Codec {

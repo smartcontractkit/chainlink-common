@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/shopspring/decimal"
 
@@ -40,6 +41,16 @@ func Wrap(v any) (Value, error) {
 		return NewInt64(int64(tv))
 	case nil:
 		return NewNil()
+	}
+
+	// Handle structs and pointers to structs
+	switch reflect.ValueOf(v).Kind() {
+	case reflect.Struct:
+		return createMapFromStruct(v)
+	case reflect.Pointer:
+		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
+			return createMapFromStruct(&v)
+		}
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
@@ -113,4 +124,39 @@ func FromDecimalValueProto(decStr string) (*Decimal, error) {
 		return nil, err
 	}
 	return NewDecimal(dec)
+}
+
+func createMapFromStruct(v any) (Value, error) {
+	var resultMap map[string]interface{}
+	jsonData, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	// convert to a map
+	err = json.Unmarshal(jsonData, &resultMap)
+	if err != nil {
+		return nil, err
+	}
+
+	convertedResultMap := convertFloat64ToInt64(resultMap) // TODO: Remove by supporting Float64
+	return NewMap(convertedResultMap.(map[string]any))
+}
+
+// Recursively converts float64 values to int64 and handles nested maps.
+func convertFloat64ToInt64(data any) any {
+	switch v := data.(type) {
+	case float64:
+		return int64(v)
+	case map[string]any:
+		// If the value is a map, iterate through its keys.
+		for key, value := range v {
+			v[key] = convertFloat64ToInt64(value)
+		}
+	case []any:
+		// If the value is a slice, iterate through its elements.
+		for i, value := range v {
+			v[i] = convertFloat64ToInt64(value)
+		}
+	}
+	return data
 }

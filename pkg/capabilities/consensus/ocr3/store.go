@@ -10,10 +10,6 @@ import (
 	"github.com/jonboulle/clockwork"
 )
 
-var (
-	errQueueEmpty = errors.New("queue is empty")
-)
-
 type store struct {
 	requestIDs []string
 	requests   map[string]*request
@@ -37,6 +33,9 @@ func (s *store) add(ctx context.Context, req *request) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if _, ok := s.requests[req.WorkflowExecutionID]; ok {
+		return fmt.Errorf("request with id %s already exists", req.WorkflowExecutionID)
+	}
 	now := s.clock.Now()
 	req.ExpiresAt = now.Add(s.requestTimeout)
 	s.requestIDs = append(s.requestIDs, req.WorkflowExecutionID)
@@ -74,14 +73,16 @@ func (s *store) getN(ctx context.Context, requestIDs []string) ([]*request, erro
 }
 
 func (s *store) firstN(ctx context.Context, batchSize int) ([]*request, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if batchSize == 0 {
 		return nil, errors.New("batchsize cannot be 0")
 	}
-	if len(s.requestIDs) < 1 {
-		return nil, errQueueEmpty
+	got := []*request{}
+	if len(s.requestIDs) == 0 {
+		return got, nil
 	}
 
-	got := []*request{}
 	newRequestIDs := []string{}
 	lastIdx := 0
 	for idx, r := range s.requestIDs {
@@ -98,10 +99,8 @@ func (s *store) firstN(ctx context.Context, batchSize int) ([]*request, error) {
 		}
 	}
 
+	// remove the ones that didn't have corresponding requests
 	s.requestIDs = append(newRequestIDs, s.requestIDs[lastIdx+1:]...)
-	if len(got) == 0 {
-		return nil, errQueueEmpty
-	}
 	return got, nil
 }
 

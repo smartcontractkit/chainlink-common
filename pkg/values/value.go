@@ -41,6 +41,23 @@ func Wrap(v any) (Value, error) {
 		return NewInt64(int64(tv))
 	case nil:
 		return NewNil()
+
+	// Transparently wrap values.
+	// This is helpful for recursive wrapping of values.
+	case *Map:
+		return tv, nil
+	case *List:
+		return tv, nil
+	case *String:
+		return tv, nil
+	case *Bytes:
+		return tv, nil
+	case *Decimal:
+		return tv, nil
+	case *Int64:
+		return tv, nil
+	case *Nil:
+		return tv, nil
 	}
 
 	// Handle structs and pointers to structs
@@ -56,6 +73,14 @@ func Wrap(v any) (Value, error) {
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
 }
 
+func Unwrap(v Value) (any, error) {
+	if v == nil {
+		return nil, nil
+	}
+
+	return v.Unwrap()
+}
+
 func FromProto(val *pb.Value) (Value, error) {
 	if val == nil {
 		return nil, nil
@@ -63,7 +88,7 @@ func FromProto(val *pb.Value) (Value, error) {
 
 	switch val.Value.(type) {
 	case *pb.Value_NilValue:
-		return nil, nil
+		return NewNil()
 	case *pb.Value_StringValue:
 		return NewString(val.GetStringValue())
 	case *pb.Value_BoolValue:

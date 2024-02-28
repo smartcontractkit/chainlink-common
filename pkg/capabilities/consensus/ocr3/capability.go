@@ -17,8 +17,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+const (
+	ocrCapabilityID = "offchain_reporting"
+)
+
 var info = capabilities.MustNewCapabilityInfo(
-	"ocr3",
+	ocrCapabilityID,
 	capabilities.CapabilityTypeConsensus,
 	"OCR3 consensus exposed as a capability.",
 	"v1.0.0",
@@ -51,7 +55,7 @@ func newCapability(s *store, clock clockwork.Clock, encoderFactory EncoderFactor
 		newExpiryWorkerCh: make(chan *request),
 		clock:             clock,
 		stopCh:            make(chan struct{}),
-		lggr:              lggr,
+		lggr:              logger.Named(lggr, "OCR3CapabilityClient"),
 		encoderFactory:    encoderFactory,
 		aggregators:       map[string]types.Aggregator{},
 		encoders:          map[string]types.Encoder{},
@@ -75,11 +79,17 @@ func (o *capability) Close() error {
 	})
 }
 
+func (o *capability) Name() string { return o.lggr.Name() }
+
+func (o *capability) HealthReport() map[string]error {
+	return map[string]error{o.Name(): o.Healthy()}
+}
+
 type workflowConfig struct {
-	AggregationMethod       string `mapstructure:"aggregation_method"`
-	AggregationMethodConfig map[string]any
-	Encoder                 string
-	EncoderConfig           map[string]any
+	AggregationMethod string         `mapstructure:"aggregation_method"`
+	AggregationConfig map[string]any `mapstructure:"aggregation_config"`
+	Encoder           string         `mapstructure:"encoder"`
+	EncoderConfig     map[string]any `mapstructure:"encoder_config"`
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
@@ -97,9 +107,18 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 
+	if c.AggregationConfig == nil {
+		o.lggr.Warn("aggregation_config is empty")
+		c.AggregationConfig = map[string]any{}
+	}
+	if c.EncoderConfig == nil {
+		o.lggr.Warn("encoder_config is empty")
+		c.EncoderConfig = map[string]any{}
+	}
+
 	switch c.AggregationMethod {
 	case "data_feeds_2_0":
-		cm, err := values.NewMap(c.AggregationMethodConfig)
+		cm, err := values.NewMap(c.AggregationConfig)
 		if err != nil {
 			return err
 		}
@@ -246,7 +265,7 @@ func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.Capabi
 	}
 
 	req := &request{
-		RequestCtx:          ctx,
+		RequestCtx:          context.Background(), // TODO: set correct context
 		CallbackCh:          callback,
 		WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 		WorkflowID:          r.Metadata.WorkflowID,

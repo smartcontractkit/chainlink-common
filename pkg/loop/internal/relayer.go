@@ -419,6 +419,8 @@ func (r *relayerServer) newPluginProvider(ctx context.Context, relayArgs types.R
 		pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
 		pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 		pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+		pb.RegisterCodecServer(s, &codecServer{impl: provider.Codec()})
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -510,4 +512,15 @@ func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
 	pb.RegisterReportCodecServer(s, &reportCodecServer{impl: p.ReportCodec()})
 	pb.RegisterMedianContractServer(s, &medianContractServer{impl: p.MedianContract()})
 	pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: p.OnchainConfigCodec()})
+}
+
+// RegisterStandAlonePluginProvider register the servers needed for a generic plugin provider,
+// this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed
+func RegisterStandAlonePluginProvider(s *grpc.Server, p types.PluginProvider) {
+	pb.RegisterServiceServer(s, &ServiceServer{Srv: p})
+	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: p.OffchainConfigDigester()})
+	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: p.ContractConfigTracker()})
+	pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: p.ContractTransmitter()})
+	pb.RegisterChainReaderServer(s, &chainReaderServer{impl: p.ChainReader()})
+	pb.RegisterCodecServer(s, &codecServer{impl: p.Codec()})
 }

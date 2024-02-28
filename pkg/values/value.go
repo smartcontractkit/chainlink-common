@@ -39,7 +39,7 @@ func Wrap(v any) (Value, error) {
 	case int:
 		return NewInt64(int64(tv)), nil
 	case nil:
-		return NewNil(), nil
+		return nil, nil
 
 	// Transparently wrap values.
 	// This is helpful for recursive wrapping of values.
@@ -55,8 +55,6 @@ func Wrap(v any) (Value, error) {
 		return tv, nil
 	case *Int64:
 		return tv, nil
-	case *Nil:
-		return tv, nil
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
@@ -70,14 +68,22 @@ func Unwrap(v Value) (any, error) {
 	return v.Unwrap()
 }
 
+func Proto(v Value) (*pb.Value, error) {
+	if v == nil {
+		return &pb.Value{}, nil
+	}
+
+	return v.Proto()
+}
+
 func FromProto(val *pb.Value) (Value, error) {
 	if val == nil {
 		return nil, nil
 	}
 
 	switch val.Value.(type) {
-	case *pb.Value_NilValue:
-		return NewNil(), nil
+	case nil:
+		return nil, nil
 	case *pb.Value_StringValue:
 		return NewString(val.GetStringValue()), nil
 	case *pb.Value_BoolValue:

@@ -29,7 +29,7 @@ func NewMap(m map[string]any) (*Map, error) {
 func (m *Map) Proto() (*pb.Value, error) {
 	pm := map[string]*pb.Value{}
 	for k, v := range m.Underlying {
-		pv, err := v.Proto()
+		pv, err := Proto(v)
 		if err != nil {
 			return nil, err
 		}

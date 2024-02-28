@@ -104,7 +104,7 @@ func Test_Value(t *testing.T) {
 				m := map[string]any{
 					"hello": map[string]any{
 						"string": str,
-						"nil":    &Nil{},
+						"nil":    nil,
 						"list":   l,
 					},
 				}
@@ -129,7 +129,7 @@ func Test_Value(t *testing.T) {
 			originalValue, wrapped, err := tc.newValue()
 			require.NoError(t, err)
 
-			pb, err := wrapped.Proto()
+			pb, err := Proto(wrapped)
 			require.NoError(t, err)
 
 			rehydratedValue, err := FromProto(pb)

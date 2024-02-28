@@ -82,7 +82,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 
 	obs := &pbtypes.Observations{}
 	for _, rq := range reqs {
-		obsPb, err := rq.Observations.Proto()
+		obsPb, err := values.Proto(rq.Observations)
 		if err != nil {
 			r.lggr.Errorw("could not marshal observation to proto", "error", err, "request", rq)
 			continue

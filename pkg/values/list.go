@@ -24,7 +24,7 @@ func NewList(l []any) (*List, error) {
 func (l *List) Proto() (*pb.Value, error) {
 	v := []*pb.Value{}
 	for _, e := range l.Underlying {
-		pe, err := e.Proto()
+		pe, err := Proto(e)
 		if err != nil {
 			return nil, err
 		}

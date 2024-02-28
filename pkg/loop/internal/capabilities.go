@@ -442,7 +442,7 @@ func toProto(req capabilities.CapabilityRequest) (*pb.CapabilityRequest, error) 
 		inputs = req.Inputs
 	}
 
-	inputsPb, err := inputs.Proto()
+	inputsPb, err := values.Proto(inputs)
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +452,7 @@ func toProto(req capabilities.CapabilityRequest) (*pb.CapabilityRequest, error) 
 		config = req.Config
 	}
 
-	configPb, err := config.Proto()
+	configPb, err := values.Proto(config)
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +499,7 @@ func (c *callbackExecutableClient) UnregisterFromWorkflow(ctx context.Context, r
 		config = req.Config
 	}
 
-	configPb, err := config.Proto()
+	configPb, err := values.Proto(config)
 	if err != nil {
 		return err
 	}
@@ -521,7 +521,7 @@ func (c *callbackExecutableClient) RegisterToWorkflow(ctx context.Context, req c
 		config = req.Config
 	}
 
-	configPb, err := config.Proto()
+	configPb, err := values.Proto(config)
 	if err != nil {
 		return err
 	}
@@ -601,20 +601,19 @@ func callbackIssuer(ctx context.Context, client pb.CallbackClient, callbackChann
 			if resp.Err != nil {
 				errStr = resp.Err.Error()
 			}
-			if resp.Value != nil {
-				v, err := resp.Value.Proto()
-				if err != nil {
-					errStr = err.Error()
-				} else {
-					val = v
-				}
+
+			v, err := values.Proto(resp.Value)
+			if err != nil {
+				errStr = err.Error()
+			} else {
+				val = v
 			}
 			cr := &pb.CapabilityResponse{
 				Error: errStr,
 				Value: val,
 			}
 
-			_, err := client.SendResponse(ctx, cr)
+			_, err = client.SendResponse(ctx, cr)
 			if err != nil {
 				logger.Error("error sending callback response", err)
 			}

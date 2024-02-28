@@ -113,7 +113,7 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 	if err != nil {
 		return nil, err
 	}
-	reportsProto, err := wrappedReportsNeedingUpdates.Proto()
+	reportsProto, err := values.Proto(wrappedReportsNeedingUpdates)
 	if err != nil {
 		return nil, err
 	}

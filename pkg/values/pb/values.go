@@ -72,11 +72,3 @@ func NewInt64Value(i int64) (*Value, error) {
 		},
 	}, nil
 }
-
-func NewNilValue() (*Value, error) {
-	return &Value{
-		Value: &Value_NilValue{
-			NilValue: &Nil{},
-		},
-	}, nil
-}

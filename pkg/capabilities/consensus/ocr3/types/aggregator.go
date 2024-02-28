@@ -22,7 +22,7 @@ func AppendWorkflowIDs(outcome *AggregationOutcome, workflowID string, workflowE
 	if err != nil {
 		return nil, err
 	}
-	protoWID, err := valueWID.Proto()
+	protoWID, err := values.Proto(valueWID)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func AppendWorkflowIDs(outcome *AggregationOutcome, workflowID string, workflowE
 	if err != nil {
 		return nil, err
 	}
-	protoWEID, err := valueWEID.Proto()
+	protoWEID, err := values.Proto(valueWEID)
 	if err != nil {
 		return nil, err
 	}

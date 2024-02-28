@@ -27,10 +27,9 @@ var mercuryInfo = capabilities.MustNewCapabilityInfo(
 type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
 	chans                 map[workflowID]chan<- capabilities.CapabilityResponse
-	feedIdsForTriggerId   map[string][]int64 // TODO: switch this to uint64 when value.go supports it
+	feedIDsForTriggerID   map[string][]int64 // TODO: switch this to uint64 when value.go supports it
 	mu                    sync.Mutex
-	feedIdToWorkflowId    map[int64]string
-	triggerIdToWorkflowId map[string]string
+	triggerIDToWorkflowID map[string]string
 }
 
 var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
@@ -39,49 +38,49 @@ func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
 		CapabilityInfo:        mercuryInfo,
 		chans:                 map[workflowID]chan<- capabilities.CapabilityResponse{},
-		feedIdsForTriggerId:   make(map[string][]int64),
-		triggerIdToWorkflowId: make(map[string]string),
+		feedIDsForTriggerID:   make(map[string][]int64),
+		triggerIDToWorkflowID: make(map[string]string),
 	}
 }
 
 // maybe use mercury-pipline reports.go report struct instead of MercuryReport struct, and then we can use the pipeline report generators
-func (o *MercuryTriggerService) ProcessReport(reports []mercury.MercuryReport) error {
+func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
 	currentTime := time.Now()
 	unixTimestampMillis := currentTime.UnixNano() / int64(time.Millisecond)
-	triggerIdsForReports := make(map[string][]int)
+	triggerIDsForReports := make(map[string][]int)
 	reportIndex := 0
 
 	for _, report := range reports {
 		// for each feed id, we need to find the triggerId associated with it.
-		reportFeedId := report.FeedId
-		for triggerId, feedIds := range o.feedIdsForTriggerId {
-			for _, feedId := range feedIds {
-				if reportFeedId == feedId {
-					// if its not initalized, initialize it
-					if _, ok := triggerIdsForReports[triggerId]; !ok {
-						triggerIdsForReports[triggerId] = make([]int, 0)
+		reportFeedID := report.FeedID
+		for triggerID, feedIDs := range o.feedIDsForTriggerID {
+			for _, feedID := range feedIDs {
+				if reportFeedID == feedID {
+					// if its not initialized, initialize it
+					if _, ok := triggerIDsForReports[triggerID]; !ok {
+						triggerIDsForReports[triggerID] = make([]int, 0)
 					}
-					triggerIdsForReports[triggerId] = append(triggerIdsForReports[triggerId], reportIndex)
+					triggerIDsForReports[triggerID] = append(triggerIDsForReports[triggerID], reportIndex)
 				}
 			}
 		}
-		reportIndex += 1
+		reportIndex++
 	}
 
 	// Then for each trigger id, find which reports correspond to that trigger and create an event bundling the reports
 	// and send it to the channel associated with the trigger id.
-	for triggerId, reportIds := range triggerIdsForReports {
-		reportPayload := make([]mercury.MercuryReport, 0)
-		for _, reportId := range reportIds {
-			reportPayload = append(reportPayload, reports[reportId])
+	for triggerID, reportIDs := range triggerIDsForReports {
+		reportPayload := make([]mercury.FeedReport, 0)
+		for _, reportID := range reportIDs {
+			reportPayload = append(reportPayload, reports[reportID])
 		}
 
-		triggerEvent := mercury.MercuryTriggerEvent{
+		triggerEvent := mercury.TriggerEvent{
 			TriggerType: "mercury",
-			Id:          generateTriggerEventId(reportPayload),
+			ID:          generateTriggerEventID(reportPayload),
 			Timestamp:   strconv.FormatInt(unixTimestampMillis, 10),
 			Payload:     reportPayload,
 		}
@@ -99,12 +98,12 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.MercuryReport) e
 
 		// If the FeedId is in the feedIdsForTriggerId map, then send the event to the channel.
 
-		wfID := o.triggerIdToWorkflowId[triggerId]
+		wfID := o.triggerIDToWorkflowID[triggerID]
 		ch, ok := o.chans[workflowID(wfID)]
 		if ok {
 			ch <- capabilityResponse
 		} else {
-			return fmt.Errorf("no registration for %s", triggerId)
+			return fmt.Errorf("no registration for %s", triggerID)
 		}
 	}
 	return nil
@@ -118,11 +117,11 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 
 	o.chans[workflowID(wid)] = callback // TODO: if this workflowID is already in the map, throw an error?
 	// set feedIdsForTriggerId
-	triggerId := o.GetTriggerId(req) // TODO: This is manadatory, so throw an error if its not present or already exists
-	feedIds := o.GetFeedIds(req)     // TODO: what if feedIds is empty? should we throw an error or allow it?
-	o.feedIdsForTriggerId[triggerId] = feedIds
+	triggerID := o.GetTriggerID(req) // TODO: This is manadatory, so throw an error if its not present or already exists
+	feedIDs := o.GetFeedIDs(req)     // TODO: what if feedIds is empty? should we throw an error or allow it?
+	o.feedIDsForTriggerID[triggerID] = feedIDs
 
-	o.triggerIdToWorkflowId[triggerId] = wid
+	o.triggerIDToWorkflowID[triggerID] = wid
 	return nil
 }
 
@@ -137,38 +136,38 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 		close(ch)
 	}
 
-	triggerId := o.GetTriggerId(req)
+	triggerID := o.GetTriggerID(req)
 
 	delete(o.chans, workflowID(wid))
-	delete(o.feedIdsForTriggerId, triggerId)
-	delete(o.triggerIdToWorkflowId, triggerId)
+	delete(o.feedIDsForTriggerID, triggerID)
+	delete(o.triggerIDToWorkflowID, triggerID)
 
 	return nil
 }
 
 // Get array of feedIds from CapabilityRequest req
-func (o *MercuryTriggerService) GetFeedIds(req capabilities.CapabilityRequest) []int64 {
-	feedIds := make([]int64, 0)
+func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) []int64 {
+	feedIDs := make([]int64, 0)
 	// Unwrap the inputs which should return pair (map, nil) and then get the feedIds from the map
 	if inputs, err := req.Inputs.Unwrap(); err == nil {
 		if feeds, ok := inputs.(map[string]interface{})["feedIds"].([]int64); ok {
 			// Copy to feedIds
-			feedIds = append(feedIds, feeds...)
+			feedIDs = append(feedIDs, feeds...)
 		}
 	}
-	return feedIds
+	return feedIDs
 }
 
 // Get the triggerId from the CapabilityRequest req map
-func (o *MercuryTriggerService) GetTriggerId(req capabilities.CapabilityRequest) string {
-	var triggerId string
+func (o *MercuryTriggerService) GetTriggerID(req capabilities.CapabilityRequest) string {
+	var triggerID string
 	// Unwrap the inputs which should return pair (map, nil) and then get the triggerId from the map
 	if inputs, err := req.Inputs.Unwrap(); err == nil {
 		if id, ok := inputs.(map[string]interface{})["triggerId"].(string); ok {
-			triggerId = id
+			triggerID = id
 		}
 	}
-	return triggerId
+	return triggerID
 }
 
 func sha256Hash(s string) string {
@@ -177,12 +176,11 @@ func sha256Hash(s string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-// TODO: The generated id should probably be the sha256 of all the report feed ids and timestamps associated with this trigger event
-func generateTriggerEventId(reports []mercury.MercuryReport) string {
+func generateTriggerEventID(reports []mercury.FeedReport) string {
 	// Let's hash all the feedIds and timestamps together
 	s := ""
 	for _, report := range reports {
-		s += strconv.FormatInt(report.FeedId, 10) + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
+		s += strconv.FormatInt(report.FeedID, 10) + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
 	}
 	return sha256Hash(s)
 }
@@ -193,19 +191,19 @@ func ValidateInput(mercuryTriggerEvent values.Value) error {
 }
 
 func ExampleOutput() (values.Value, error) {
-	event := mercury.MercuryTriggerEvent{
+	event := mercury.TriggerEvent{
 		TriggerType: "mercury",
-		Id:          "123",
+		ID:          "123",
 		Timestamp:   "2024-01-17T04:00:10Z",
-		Payload: []mercury.MercuryReport{
+		Payload: []mercury.FeedReport{
 			{
-				FeedId:               2,
+				FeedID:               2,
 				Fullreport:           []byte("hello"),
 				BenchmarkPrice:       100,
 				ObservationTimestamp: 123,
 			},
 			{
-				FeedId:               3,
+				FeedID:               3,
 				Fullreport:           []byte("world"),
 				BenchmarkPrice:       100,
 				ObservationTimestamp: 123,

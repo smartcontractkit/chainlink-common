@@ -68,6 +68,8 @@ func Wrap(v any) (Value, error) {
 		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
 			return createMapFromStruct(&v)
 		}
+	default:
+		return nil, fmt.Errorf("could not wrap into value: %+v", v)
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)

@@ -10,13 +10,13 @@ import (
 
 type TestValueEvent struct {
 	TriggerType string       `json:"triggerType"`
-	Id          string       `json:"id"`
+	ID          string       `json:"id"`
 	Timestamp   string       `json:"timestamp"`
 	Payload     []TestReport `json:"payload"`
 }
 
 type TestReport struct {
-	FeedId     int64  `json:"feedId"`
+	FeedID     int64  `json:"feedId"`
 	Fullreport string `json:"fullreport"`
 }
 
@@ -108,7 +108,7 @@ func Test_Value(t *testing.T) {
 			name: "struct",
 			newValue: func() (any, Value, error) {
 				v := TestReport{
-					FeedId:     2,
+					FeedID:     2,
 					Fullreport: "hello",
 				}
 				m := map[string]any{
@@ -123,7 +123,7 @@ func Test_Value(t *testing.T) {
 			name: "structPointer",
 			newValue: func() (any, Value, error) {
 				v := &TestReport{
-					FeedId:     2,
+					FeedID:     2,
 					Fullreport: "hello",
 				}
 				m := map[string]any{
@@ -139,15 +139,15 @@ func Test_Value(t *testing.T) {
 			newValue: func() (any, Value, error) {
 				v := TestValueEvent{
 					TriggerType: "mercury",
-					Id:          "123",
+					ID:          "123",
 					Timestamp:   "123",
 					Payload: []TestReport{
 						{
-							FeedId:     2,
+							FeedID:     2,
 							Fullreport: "hello",
 						},
 						{
-							FeedId:     3,
+							FeedID:     3,
 							Fullreport: "world",
 						},
 					},
@@ -169,8 +169,9 @@ func Test_Value(t *testing.T) {
 				}
 				vv, err := Wrap(v)
 				return m, vv, err
-    },
-    {
+			},
+		},
+		{
 			name: "map of values",
 			newValue: func() (any, Value, error) {
 				bar := "bar"

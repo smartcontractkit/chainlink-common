@@ -12,7 +12,7 @@ func NewBytes(b []byte) *Bytes {
 	return &Bytes{Underlying: b}
 }
 
-func (b *Bytes) Proto() (*pb.Value, error) {
+func (b *Bytes) Proto() *pb.Value {
 	return pb.NewBytesValue(b.Underlying)
 }
 

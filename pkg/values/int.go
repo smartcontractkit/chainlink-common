@@ -12,7 +12,7 @@ func NewInt64(i int64) *Int64 {
 	return &Int64{Underlying: i}
 }
 
-func (i *Int64) Proto() (*pb.Value, error) {
+func (i *Int64) Proto() *pb.Value {
 	return pb.NewInt64Value(i.Underlying)
 }
 

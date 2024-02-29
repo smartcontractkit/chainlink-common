@@ -15,7 +15,7 @@ type Unwrappable interface {
 }
 
 type Value interface {
-	Proto() (*pb.Value, error)
+	Proto() *pb.Value
 
 	Unwrappable
 }
@@ -68,9 +68,9 @@ func Unwrap(v Value) (any, error) {
 	return v.Unwrap()
 }
 
-func Proto(v Value) (*pb.Value, error) {
+func Proto(v Value) *pb.Value {
 	if v == nil {
-		return &pb.Value{}, nil
+		return &pb.Value{}
 	}
 
 	return v.Proto()

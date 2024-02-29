@@ -129,8 +129,7 @@ func Test_Value(t *testing.T) {
 			originalValue, wrapped, err := tc.newValue()
 			require.NoError(t, err)
 
-			pb, err := Proto(wrapped)
-			require.NoError(t, err)
+			pb := Proto(wrapped)
 
 			rehydratedValue, err := FromProto(pb)
 			require.NoError(t, err)

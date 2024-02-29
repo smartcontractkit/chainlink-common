@@ -217,12 +217,13 @@ func (o *capability) worker() {
 func (o *capability) handleTransmitMsg(ctx context.Context, resp *response) {
 	req, wasPresent := o.store.evict(ctx, resp.WorkflowExecutionID)
 	if !wasPresent {
-		o.lggr.Debugf("failed to clean up request with id %s", resp.WorkflowExecutionID)
 		return
 	}
 
 	select {
 	case <-req.RequestCtx.Done():
+		// This should only happen if the client has closed the upstream context.
+		// In this case, the request is cancelled and we shouldn't transmit.
 	case req.CallbackCh <- resp.CapabilityResponse:
 		close(req.CallbackCh)
 	}

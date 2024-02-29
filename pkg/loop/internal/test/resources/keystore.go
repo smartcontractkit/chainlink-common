@@ -7,6 +7,7 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -18,10 +19,9 @@ var KeystoreImpl = StaticKeystore{
 	},
 }
 
-type KeystoreEvaluator interface {
-	types.Keystore
-	Evaluate(ctx context.Context, other StaticKeystore) error
-}
+var _ types.Keystore = (*StaticKeystore)(nil)
+var _ test_types.Evaluator[types.Keystore] = (*StaticKeystore)(nil)
+
 type staticKeystoreConfig struct {
 	Account libocr.Account
 	encoded []byte
@@ -46,7 +46,7 @@ func (s StaticKeystore) Sign(ctx context.Context, id string, data []byte) ([]byt
 	return s.signed, nil
 }
 
-func (s StaticKeystore) Evaluate(ctx context.Context, other StaticKeystore) error {
+func (s StaticKeystore) Evaluate(ctx context.Context, other types.Keystore) error {
 	accounts, err := s.Accounts(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get accounts: %w", err)

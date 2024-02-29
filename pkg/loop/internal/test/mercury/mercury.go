@@ -59,25 +59,25 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 }
 
-var FactoryGeneratorImpl = StaticMercuryFactoryGenerator{
+var FactoryServer = staticMercuryServer{
 	provider:     MercuryProviderImpl,
 	dataSourceV1: mercury_v1_test.DataSourceImpl,
 	dataSourceV2: mercury_v2_test.DataSourceImpl,
 	dataSourceV3: mercury_v3_test.DataSourceImpl,
 }
 
-var _ types.PluginMercury = StaticMercuryFactoryGenerator{}
+var _ types.PluginMercury = staticMercuryServer{}
 
-type StaticMercuryFactoryGenerator struct {
+type staticMercuryServer struct {
 	provider     staticMercuryProvider
 	dataSourceV1 mercury_v1_test.DataSourceEvaluator
 	dataSourceV2 mercury_v2_test.DataSourceEvaluator
 	dataSourceV3 mercury_v3_test.DataSourceEvaluator
 }
 
-var _ types.PluginMercury = StaticMercuryFactoryGenerator{}
+var _ types.PluginMercury = staticMercuryServer{}
 
-func (s StaticMercuryFactoryGenerator) commonValidation(ctx context.Context, provider types.MercuryProvider) error {
+func (s staticMercuryServer) commonValidation(ctx context.Context, provider types.MercuryProvider) error {
 	ocd := provider.OffchainConfigDigester()
 	err := s.provider.offchainDigester.Evaluate(ctx, ocd)
 	if err != nil {
@@ -104,7 +104,7 @@ func (s StaticMercuryFactoryGenerator) commonValidation(ctx context.Context, pro
 	return nil
 }
 
-func (s StaticMercuryFactoryGenerator) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.MercuryPluginFactory, error) {
+func (s staticMercuryServer) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v3_types.DataSource) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -130,7 +130,7 @@ func (s StaticMercuryFactoryGenerator) NewMercuryV3Factory(ctx context.Context, 
 	return staticMercuryPluginFactory{}, nil
 }
 
-func (s StaticMercuryFactoryGenerator) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) (types.MercuryPluginFactory, error) {
+func (s staticMercuryServer) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v2_types.DataSource) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -155,7 +155,7 @@ func (s StaticMercuryFactoryGenerator) NewMercuryV2Factory(ctx context.Context, 
 	return staticMercuryPluginFactory{}, nil
 }
 
-func (s StaticMercuryFactoryGenerator) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) (types.MercuryPluginFactory, error) {
+func (s staticMercuryServer) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercury_v1_types.DataSource) (types.MercuryPluginFactory, error) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -220,11 +220,11 @@ func (s staticMercuryPluginFactory) NewMercuryPlugin(config ocr3types.MercuryPlu
 		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected MaxDurationObservation %d but got %d", mercuryPluginConfig.MaxDurationObservation, config.MaxDurationObservation)
 	}
 
-	return MercuryPluginImpl, mercuryPluginInfo, nil
+	return OCR3Plugin, mercuryPluginInfo, nil
 }
 
 func MercuryPluginFactory(t *testing.T, factory types.MercuryPluginFactory) {
-	expectedMercuryPlugin := MercuryPluginImpl
+	expectedMercuryPlugin := OCR3Plugin
 	ctx := tests.Context(t)
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
 		rp, gotRPI, err := factory.NewMercuryPlugin(mercuryPluginConfig)

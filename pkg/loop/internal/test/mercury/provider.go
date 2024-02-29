@@ -19,6 +19,7 @@ import (
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 var MercuryProviderImpl = staticMercuryProvider{
@@ -44,9 +45,9 @@ type staticMercuryProviderConfig struct {
 	// we use the static implementation type not the interface type
 	// because we always expect the static implementation to be used
 	// and it facilitates testing.
-	offchainDigester    pluginprovider_test.OffchainConfigDigesterEvaluator
-	contractTracker     pluginprovider_test.ContractConfigTrackerEvaluator
-	contractTransmitter pluginprovider_test.ContractTransmitterEvaluator
+	offchainDigester    test_types.OffchainConfigDigesterEvaluator
+	contractTracker     test_types.ContractConfigTrackerEvaluator
+	contractTransmitter test_types.ContractTransmitterEvaluator
 	reportCodecV1       mercury_v1_test.ReportCodecEvaluator
 	reportCodecV2       mercury_v2_test.ReportCodecEvaluator
 	reportCodecV3       mercury_v3_test.ReportCodecEvaluator

@@ -22,7 +22,7 @@ func TestPluginMercury(t *testing.T) {
 	t.Parallel()
 
 	stopCh := newStopCh(t)
-	test.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercury_test.FactoryGeneratorImpl, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, mercury_test.PluginMercury)
+	test.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercury_test.FactoryServer, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, mercury_test.PluginMercury)
 
 	t.Run("proxy", func(t *testing.T) {
 		test.PluginTest(t, loop.PluginRelayerName,
@@ -33,7 +33,7 @@ func TestPluginMercury(t *testing.T) {
 				p := newMercuryProvider(t, pr)
 				pm := mercury_test.PluginMercuryTest{MercuryProvider: p}
 				test.PluginTest(t, loop.PluginMercuryName,
-					&loop.GRPCPluginMercury{PluginServer: mercury_test.FactoryGeneratorImpl,
+					&loop.GRPCPluginMercury{PluginServer: mercury_test.FactoryServer,
 						BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
 					pm.TestPluginMercury)
 			})

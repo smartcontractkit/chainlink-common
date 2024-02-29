@@ -23,16 +23,16 @@ const (
 )
 
 var (
-	MedianFactoryGeneratorImpl = staticMedianFactoryGenerator{
+	MedianFactoryServer = staticMedianFactoryServer{
 		staticPluginMedianConfig: staticPluginMedianConfig{
-			provider:                  MedianProviderImpl,
-			dataSource:                DataSourceImpl,
-			juelsPerFeeCoinDataSource: JuelsPerFeeCoinDataSourceImpl,
+			provider:                  MedianProvider,
+			dataSource:                DataSource,
+			juelsPerFeeCoinDataSource: JuelsPerFeeCoinDataSource,
 			errorLog:                  resources_test.ErrorLogImpl,
 		},
 	}
 
-	MedianProviderImpl = staticMedianProvider{
+	MedianProvider = staticMedianProvider{
 		staticMedianProviderConfig: staticMedianProviderConfig{
 			offchainDigester:    pluginprovider_test.OffchainConfigDigesterImpl,
 			contractTracker:     pluginprovider_test.ContractConfigTrackerImpl,
@@ -49,7 +49,7 @@ var (
 				},
 			},
 			onchainConfigCodec: staticOnchainConfigCodec{},
-			chainReader:        pluginprovider_test.ChainReaderImpl,
+			chainReader:        pluginprovider_test.ChainReader,
 		},
 	}
 )

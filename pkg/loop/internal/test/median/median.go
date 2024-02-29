@@ -15,15 +15,15 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func PluginMedian(t *testing.T, p types.PluginMedian) {
-	PluginMedianTest{&MedianProviderImpl}.TestPluginMedian(t, p)
+	PluginMedianTest{&MedianProvider}.TestPluginMedian(t, p)
 }
 
 type PluginMedianTest struct {
@@ -33,7 +33,7 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSourceImpl, JuelsPerFeeCoinDataSourceImpl, &resources_test.ErrorLogImpl)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &resources_test.ErrorLogImpl)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -60,17 +60,19 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 }
 
 type staticPluginMedianConfig struct {
-	provider                  staticMedianProvider          //types.MedianProvider
-	dataSource                staticDataSource              //median.DataSource
-	juelsPerFeeCoinDataSource staticDataSource              // median.DataSource
-	errorLog                  resources_test.StaticErrorLog //types.ErrorLog
+	provider                  staticMedianProvider
+	dataSource                staticDataSource
+	juelsPerFeeCoinDataSource staticDataSource
+	errorLog                  resources_test.StaticErrorLog
 }
 
-type staticMedianFactoryGenerator struct {
+type staticMedianFactoryServer struct {
 	staticPluginMedianConfig
 }
 
-func (s staticMedianFactoryGenerator) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
+var _ types.PluginMedian = staticMedianFactoryServer{}
+
+func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
 	// the provider may be a grpc client, so we can't compare it directly
 	// but in all of these static tests, the implementation of the provider is expected
 	// to be the same static implementation, so we can compare the expected values
@@ -157,32 +159,21 @@ type staticMedianProviderConfig struct {
 	// we use the static implementation type not the interface type
 	// because we always expect the static implementation to be used
 	// and it facilitates testing.
-	offchainDigester    pluginprovider_test.OffchainConfigDigesterEvaluator
-	contractTracker     pluginprovider_test.ContractConfigTrackerEvaluator
-	contractTransmitter pluginprovider_test.ContractTransmitterEvaluator
+	offchainDigester    test_types.OffchainConfigDigesterEvaluator
+	contractTracker     test_types.ContractConfigTrackerEvaluator
+	contractTransmitter test_types.ContractTransmitterEvaluator
 	reportCodec         staticReportCodec
 	medianContract      staticMedianContract
 	onchainConfigCodec  staticOnchainConfigCodec
-	chainReader         pluginprovider_test.ChainReaderEvaluator //pluginprovider_test.StaticChainReader
-
+	chainReader         test_types.ChainReaderEvaluator
 }
 
-type MedianProviderTester interface {
-	types.MedianProvider
-	// AssertEqual runs all the methods of the other MedianProvider and
-	// asserts equality with the embedded MedianProvider
-	AssertEqual(ctx context.Context, t *testing.T, provider types.MedianProvider)
-
-	// Evaluate runs all the methods of the other MedianProvider and
-	// checks for equality with the embedded MedianProvider
-	Evaluate(ctx context.Context, provider types.MedianProvider) error
-}
-
+// implements types.MedianProvider and test_types.Evaluator[types.MedianProvider]
 type staticMedianProvider struct {
 	staticMedianProviderConfig
 }
 
-var _ MedianProviderTester = staticMedianProvider{}
+var _ test_types.MedianProviderTester = staticMedianProvider{}
 
 func (s staticMedianProvider) Start(ctx context.Context) error { return nil }
 
@@ -302,7 +293,11 @@ func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.Media
 	return nil
 }
 
+// implements median.ReportCodec and test_types.Evaluator[median.ReportCodec]
 type staticReportCodec struct{}
+
+var _ test_types.Evaluator[median.ReportCodec] = staticReportCodec{}
+var _ median.ReportCodec = staticReportCodec{}
 
 // TODO remove hard coded values
 func (s staticReportCodec) BuildReport(os []median.ParsedAttributedObservation) (libocr.Report, error) {
@@ -351,6 +346,7 @@ func (s staticReportCodec) Evaluate(ctx context.Context, rc median.ReportCodec) 
 	return nil
 }
 
+// configuration for the static median provider
 type staticMedianContractConfig struct {
 	configDigest     libocr.ConfigDigest
 	epoch            uint32
@@ -360,9 +356,13 @@ type staticMedianContractConfig struct {
 	lookbackDuration time.Duration
 }
 
+// implements median.MedianContract and test_types.Evaluator[median.MedianContract]
 type staticMedianContract struct {
 	staticMedianContractConfig
 }
+
+var _ test_types.Evaluator[median.MedianContract] = (*staticMedianContract)(nil)
+var _ median.MedianContract = (*staticMedianContract)(nil)
 
 func (s staticMedianContract) LatestTransmissionDetails(ctx context.Context) (libocr.ConfigDigest, uint32, uint8, *big.Int, time.Time, error) {
 	return s.configDigest, s.epoch, s.round, s.latestAnswer, s.latestTimestamp, nil
@@ -411,7 +411,11 @@ func (s staticMedianContract) Evaluate(ctx context.Context, mc median.MedianCont
 	return nil
 }
 
+// implements median.OnchainConfigCodec and test_types.Evaluator[median.OnchainConfigCodec]
 type staticOnchainConfigCodec struct{}
+
+var _ test_types.Evaluator[median.OnchainConfigCodec] = staticOnchainConfigCodec{}
+var _ median.OnchainConfigCodec = staticOnchainConfigCodec{}
 
 func (s staticOnchainConfigCodec) Encode(c median.OnchainConfig) ([]byte, error) {
 	if !assert.ObjectsAreEqual(onchainConfig.Max, c.Max) {

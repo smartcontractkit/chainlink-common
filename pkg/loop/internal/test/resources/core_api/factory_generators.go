@@ -11,24 +11,25 @@ import (
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var MedianProviderServerImpl = medianFactoryGenerator{
 	medianGeneratorConfig: medianGeneratorConfig{
-		medianProvider: median_test.MedianProviderImpl,
+		medianProvider: median_test.MedianProvider,
 		pipeline:       resources_test.PipelineRunnerImpl,
-		telemetry:      resources_test.TelemetryImpl,
+		telemetry:      resources_test.Telemetry,
 	},
 }
 
 const MedianID = "ocr2-reporting-plugin-with-median-provider"
 
 type medianGeneratorConfig struct {
-	medianProvider median_test.MedianProviderTester
-	pipeline       resources_test.PipelineRunnerEvaluator
-	telemetry      resources_test.TelemetryEvaluator
+	medianProvider test_types.MedianProviderTester
+	pipeline       test_types.Evaluator[types.PipelineRunnerService]
+	telemetry      test_types.Evaluator[types.TelemetryClient]
 }
 
 type medianFactoryGenerator struct {
@@ -63,15 +64,15 @@ func (s medianFactoryGenerator) NewReportingPluginFactory(ctx context.Context, c
 var AgnosticProviderServerImpl = agnosticPluginGenerator{
 	provider:       pluginprovider_test.AgnosticPluginProviderImpl,
 	pipelineRunner: resources_test.PipelineRunnerImpl,
-	telemetry:      resources_test.TelemetryImpl,
+	telemetry:      resources_test.Telemetry,
 }
 
 var _ reportingplugins.ProviderServer[types.PluginProvider] = agnosticPluginGenerator{}
 
 type agnosticPluginGenerator struct {
 	provider       pluginprovider_test.PluginProviderTester
-	pipelineRunner resources_test.PipelineRunnerEvaluator
-	telemetry      resources_test.TelemetryEvaluator
+	pipelineRunner test_types.Evaluator[types.PipelineRunnerService]
+	telemetry      test_types.TelemetryEvaluator
 }
 
 func (s agnosticPluginGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {

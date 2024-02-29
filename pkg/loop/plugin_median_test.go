@@ -24,7 +24,7 @@ func TestPluginMedian(t *testing.T) {
 	stopCh := newStopCh(t)
 	test.PluginTest(t, loop.PluginMedianName,
 		&loop.GRPCPluginMedian{
-			PluginServer: median_test.MedianFactoryGeneratorImpl,
+			PluginServer: median_test.MedianFactoryServer,
 			BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh},
 		},
 		median_test.PluginMedian)
@@ -39,7 +39,7 @@ func TestPluginMedian(t *testing.T) {
 				pm := median_test.PluginMedianTest{MedianProvider: p}
 				test.PluginTest(t, loop.PluginMedianName,
 					&loop.GRPCPluginMedian{
-						PluginServer: median_test.MedianFactoryGeneratorImpl,
+						PluginServer: median_test.MedianFactoryServer,
 						BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
 					pm.TestPluginMedian)
 			})

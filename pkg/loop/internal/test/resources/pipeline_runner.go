@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -34,14 +35,7 @@ var PipelineRunnerImpl = staticPipelineRunnerService{
 	},
 }
 
-type PipelineRunnerEvaluator interface {
-	types.PipelineRunnerService
-
-	// Evaluate runs the pipeline and returns the results
-	Evaluate(ctx context.Context, other types.PipelineRunnerService) error
-}
-
-var _ types.PipelineRunnerService = (*staticPipelineRunnerService)(nil)
+var _ test_types.PipelineEvaluator = (*staticPipelineRunnerService)(nil)
 
 type staticPipelineRunnerConfig struct {
 	spec        string

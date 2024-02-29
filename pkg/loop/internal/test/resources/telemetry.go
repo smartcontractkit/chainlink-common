@@ -10,10 +10,11 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var TelemetryImpl = staticTelemetry{
+var Telemetry = staticTelemetry{
 	staticTelemetryConfig: staticTelemetryConfig{
 		chainID:    "some-chainID",
 		contractID: "some-contractID",
@@ -23,11 +24,7 @@ var TelemetryImpl = staticTelemetry{
 	},
 }
 
-type TelemetryEvaluator interface {
-	types.TelemetryClient
-	// Evaluate checks that the sub-components of the other TelemetryClient are equal to this one
-	Evaluate(ctx context.Context, tc types.TelemetryClient) error
-}
+var _ test_types.TelemetryEvaluator = staticTelemetry{}
 
 var _ grpc.ClientConnInterface = (*mockClientConn)(nil)
 
@@ -99,6 +96,10 @@ func (s staticTelemetry) Evaluate(ctx context.Context, other types.TelemetryClie
 		return fmt.Errorf("failed to send log: %w", err)
 	}
 	return nil
+}
+
+func (s staticTelemetry) Expected() types.TelemetryClient {
+	return s
 }
 
 type mockClientConn struct{}

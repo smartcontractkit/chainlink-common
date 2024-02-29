@@ -7,6 +7,8 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
+
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 type contractTransmitterTestConfig struct {
@@ -19,15 +21,7 @@ type contractTransmitterTestConfig struct {
 	Epoch        uint32
 }
 
-// ContractTransmitterEvaluator is a helper interface for testing ContractTransmitters
-type ContractTransmitterEvaluator interface {
-	libocr.ContractTransmitter
-	// Evaluate runs all the method of the other ContractTransmitter and
-	// checks for equality with the embedded ContractTransmitter
-	Evaluate(ctx context.Context, other libocr.ContractTransmitter) error
-}
-
-var _ ContractTransmitterEvaluator = staticContractTransmitter{}
+var _ test_types.ContractTransmitterEvaluator = staticContractTransmitter{}
 
 type staticContractTransmitter struct {
 	contractTransmitterTestConfig

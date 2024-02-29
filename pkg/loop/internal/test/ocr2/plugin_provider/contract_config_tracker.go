@@ -6,15 +6,9 @@ import (
 	"reflect"
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-)
 
-// ContractConfigTrackerEvaluator is a helper interface for testing ContractConfigTrackers
-type ContractConfigTrackerEvaluator interface {
-	libocr.ContractConfigTracker
-	// Evaluate runs all the method of the other ContractConfigTracker and
-	// checks for equality with the embedded ContractConfigTracker
-	Evaluate(ctx context.Context, cct libocr.ContractConfigTracker) error
-}
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+)
 
 type staticConfigTrackerConfig struct {
 	contractConfig libocr.ContractConfig
@@ -27,7 +21,7 @@ type staticContractConfigTracker struct {
 	staticConfigTrackerConfig
 }
 
-var _ ContractConfigTrackerEvaluator = staticContractConfigTracker{}
+var _ test_types.ContractConfigTrackerEvaluator = staticContractConfigTracker{}
 
 func (s staticContractConfigTracker) Notify() <-chan struct{} { return nil }
 

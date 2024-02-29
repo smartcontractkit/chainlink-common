@@ -17,7 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-var FactoryImpl = ocr3staticPluginFactory{
+var Factory = ocr3staticPluginFactory{
 	ReportingPluginConfig: ocr3reportingPluginConfig,
 	reportingPlugin:       ReportingPluginImpl,
 }
@@ -86,7 +86,7 @@ func (o ocr3staticPluginFactory) equalConfig(other ocr3types.ReportingPluginConf
 }
 
 func OCR3ReportingPluginFactory(t *testing.T, factory types.OCR3ReportingPluginFactory) {
-	expectedFactory := FactoryImpl
+	expectedFactory := Factory
 	ctx := tests.Context(t)
 	t.Run("OCR3ReportingPluginFactory", func(t *testing.T) {
 		rp, gotRPI, err := factory.NewReportingPlugin(ocr3reportingPluginConfig)

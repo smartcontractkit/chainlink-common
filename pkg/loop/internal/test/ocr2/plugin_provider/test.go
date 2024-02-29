@@ -57,7 +57,7 @@ var (
 		offchainConfigDigester: OffchainConfigDigesterImpl,
 		contractConfigTracker:  ContractConfigTrackerImpl,
 		contractTransmitter:    ContractTransmitterImpl,
-		chainReader:            ChainReaderImpl,
+		chainReader:            ChainReader,
 	}
 
 	configDigest       = libocr.ConfigDigest([32]byte{1: 7, 13: 11, 31: 23})

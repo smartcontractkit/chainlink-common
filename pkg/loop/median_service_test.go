@@ -20,7 +20,7 @@ func TestMedianService(t *testing.T) {
 
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMedianName, false)
-	}, median_test.MedianProviderImpl, median_test.DataSourceImpl, median_test.JuelsPerFeeCoinDataSourceImpl, &resources_test.ErrorLogImpl)
+	}, median_test.MedianProvider, median_test.DataSource, median_test.JuelsPerFeeCoinDataSource, &resources_test.ErrorLogImpl)
 	hook := median.PluginService.XXXTestHook()
 	servicetest.Run(t, median)
 
@@ -56,7 +56,7 @@ func TestMedianService_recovery(t *testing.T) {
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, median_test.MedianProviderImpl, median_test.DataSourceImpl, median_test.JuelsPerFeeCoinDataSourceImpl, &resources_test.ErrorLogImpl)
+	}, median_test.MedianProvider, median_test.DataSource, median_test.JuelsPerFeeCoinDataSource, &resources_test.ErrorLogImpl)
 	servicetest.Run(t, median)
 
 	reportingplugin_test.Factory(t, median)

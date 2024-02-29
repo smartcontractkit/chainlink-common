@@ -22,6 +22,7 @@ import (
 	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/mercury"
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -52,7 +53,7 @@ type staticPluginRelayerConfig struct {
 	StaticChecks     bool
 	relayArgs        types.RelayArgs
 	pluginArgs       types.PluginArgs
-	medianProvider   median_test.MedianProviderTester
+	medianProvider   test_types.MedianProviderTester
 	agnosticProvider pluginprovider_test.PluginProviderTester
 	mercuryProvider  mercury_test.MercuryProviderTester
 	configProvider   pluginprovider_test.ConfigProviderTester
@@ -63,24 +64,13 @@ type staticPluginRelayerConfig struct {
 	chainStatus        types.ChainStatus
 }
 
-type RelayerTester interface {
-	internal.PluginRelayer
-	internal.Relayer
-	// types from internal.Relayer
-	internal.MercuryProvider
-	internal.MedianProvider
-
-	AssertEqual(ctx context.Context, t *testing.T, relayer loop.Relayer)
-	mustEmbed()
-}
-
-func NewRelayerTester(staticChecks bool) RelayerTester {
+func NewRelayerTester(staticChecks bool) test_types.RelayerTester {
 	return staticPluginRelayer{
 		staticPluginRelayerConfig: staticPluginRelayerConfig{
 			StaticChecks:     staticChecks,
 			relayArgs:        RelayArgs,
 			pluginArgs:       PluginArgs,
-			medianProvider:   median_test.MedianProviderImpl,
+			medianProvider:   median_test.MedianProvider,
 			mercuryProvider:  mercury_test.MercuryProviderImpl,
 			agnosticProvider: pluginprovider_test.AgnosticProviderImpl,
 			configProvider:   pluginprovider_test.ConfigProviderImpl,
@@ -104,13 +94,9 @@ func NewRelayerTester(staticChecks bool) RelayerTester {
 	}
 }
 
-var _ RelayerTester = staticPluginRelayer{}
-
 type staticPluginRelayer struct {
 	staticPluginRelayerConfig
 }
-
-func (s staticPluginRelayer) mustEmbed() {}
 
 func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (internal.Relayer, error) {
 	if s.StaticChecks && config != ConfigTOML {

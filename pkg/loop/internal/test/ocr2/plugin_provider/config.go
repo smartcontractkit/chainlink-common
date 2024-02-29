@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -19,8 +20,8 @@ type ConfigProviderTester interface {
 }
 
 type staticConfigProviderConfig struct {
-	offchainDigester      OffchainConfigDigesterEvaluator
-	contractConfigTracker ContractConfigTrackerEvaluator
+	offchainDigester      test_types.OffchainConfigDigesterEvaluator
+	contractConfigTracker test_types.ContractConfigTrackerEvaluator
 }
 
 // staticConfigProvider is a static implementation of ConfigProviderTester

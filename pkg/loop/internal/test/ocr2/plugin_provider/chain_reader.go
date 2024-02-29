@@ -6,19 +6,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-type ChainReaderEvaluator interface {
-	types.ChainReader
-	// Evaluate runs all the methods of the other chain reader and checks if they return
-	// the values of the embedded chain reader.
-	Evaluate(ctx context.Context, other types.ChainReader) error
-}
-
 var (
-	// ChainReaderImpl is a static implementation of ChainReaderEvaluator for testing
-	ChainReaderImpl = staticChainReader{
+	// ChainReader is a static implementation of [types.ChainReader], [test_types.Evaluator] and [types.PluginProvider
+	// it is used for testing the [types.PluginProvider] interface
+	ChainReader = staticChainReader{
 		contractName:   "anyContract",
 		contractMethod: "anyMethod",
 		latestValue:    map[string]any{"ret1": "latestValue1", "ret2": "latestValue2"},
@@ -34,7 +29,8 @@ type staticChainReader struct {
 	params         map[string]any
 }
 
-var _ ChainReaderEvaluator = staticChainReader{}
+var _ test_types.Evaluator[types.ChainReader] = staticChainReader{}
+var _ types.ChainReader = staticChainReader{}
 
 func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
 	return nil

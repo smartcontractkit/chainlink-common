@@ -10,23 +10,24 @@ import (
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
 	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var MedianGeneratorImpl = MedianGenerator{
 	medianGeneratorConfig: medianGeneratorConfig{
-		medianProvider: median_test.MedianProviderImpl,
+		medianProvider: median_test.MedianProvider,
 		pipeline:       resources_test.PipelineRunnerImpl,
-		telemetry:      resources_test.TelemetryImpl,
+		telemetry:      resources_test.Telemetry,
 	},
 }
 
 const OCR3ReportingPluginWithMedianProviderName = "ocr3-reporting-plugin-with-median-provider"
 
 type medianGeneratorConfig struct {
-	medianProvider median_test.MedianProviderTester
-	pipeline       resources_test.PipelineRunnerEvaluator
-	telemetry      resources_test.TelemetryEvaluator
+	medianProvider test_types.MedianProviderTester
+	pipeline       test_types.Evaluator[types.PipelineRunnerService]
+	telemetry      test_types.Evaluator[types.TelemetryClient]
 }
 
 type MedianGenerator struct {
@@ -53,19 +54,19 @@ func (s MedianGenerator) NewReportingPluginFactory(ctx context.Context, config t
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return FactoryImpl, nil
+	return Factory, nil
 }
 
 var AgnosticPluginGeneratorImpl = AgnosticPluginGenerator{
 	provider:       pluginprovider_test.AgnosticPluginProviderImpl,
 	pipelineRunner: resources_test.PipelineRunnerImpl,
-	telemetry:      resources_test.TelemetryImpl,
+	telemetry:      resources_test.Telemetry,
 }
 
 type AgnosticPluginGenerator struct {
 	provider       pluginprovider_test.PluginProviderTester
-	pipelineRunner resources_test.PipelineRunnerEvaluator
-	telemetry      resources_test.TelemetryEvaluator
+	pipelineRunner test_types.Evaluator[types.PipelineRunnerService]
+	telemetry      test_types.Evaluator[types.TelemetryClient]
 }
 
 func (s AgnosticPluginGenerator) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {
@@ -88,5 +89,5 @@ func (s AgnosticPluginGenerator) NewReportingPluginFactory(ctx context.Context, 
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return FactoryImpl, nil
+	return Factory, nil
 }

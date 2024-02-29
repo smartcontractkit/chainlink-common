@@ -50,7 +50,7 @@ func TestLOOPPService(t *testing.T) {
 			types.ReportingPluginServiceConfig{},
 			resources_test.MockConn{},
 			resources_test.PipelineRunnerImpl,
-			resources_test.TelemetryImpl,
+			resources_test.Telemetry,
 			&resources_test.ErrorLogImpl)
 		hook := looppSvc.XXXTestHook()
 		servicetest.Run(t, looppSvc)
@@ -92,7 +92,7 @@ func TestLOOPPService_recovery(t *testing.T) {
 		types.ReportingPluginServiceConfig{},
 		resources_test.MockConn{},
 		resources_test.PipelineRunnerImpl,
-		resources_test.TelemetryImpl,
+		resources_test.Telemetry,
 		&resources_test.ErrorLogImpl)
 	servicetest.Run(t, looppSvc)
 

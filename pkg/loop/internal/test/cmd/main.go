@@ -81,7 +81,7 @@ func main() {
 			HandshakeConfig: loop.PluginMedianHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginMedianName: &loop.GRPCPluginMedian{
-					PluginServer: median_test.MedianFactoryGeneratorImpl,
+					PluginServer: median_test.MedianFactoryServer,
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
@@ -139,7 +139,7 @@ func main() {
 			HandshakeConfig: loop.PluginMercuryHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginMercuryName: &loop.GRPCPluginMercury{
-					PluginServer: mercury_test.FactoryGeneratorImpl,
+					PluginServer: mercury_test.FactoryServer,
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,

@@ -15,51 +15,81 @@ In practice this is accomplished by exporting a static implementation and an int
 Example
 
 ```
+package test_types
+
+type Evaluator[T any] interface {
+     // run methods of other, returns first error or error if
+    // result of method invocation does not match expected value
+    Evaluate(ctx context.Context, other T) error
+}
+
+```
 package x_test
 
-var FooImpl = staticFoo{
+var FooEvaluator = staticFoo{
     expectedStr = "a"
     expectedInt = 1
 }
 
-type FooEvaluator interface {
-    foo // some interface in the used in the composition of a loop
-    // run methods of other, returns first error or error if
-    // result of method invocation does not match expected value of embedded foo
-    Evaluate(ctx context.Context, other foo) error
-}
 
 type staticFoo struct {
+    types.Foo // the interface to be tested, used to compose a loop
     expectedStr string
     expectedInt int
     ...
 }
 
-var _ FooEvaluator = staticFoo
+var _ test_types.Evaulator[Foo] = staticFoo
+var _ types.Foo = staticFoo
+
+func (f Foo) Evaluate(ctx context.Context, other Foo) {
+    // test implementation of types.Foo interface
+    s, err := other.GetStr()
+    if err ! = nil {
+        return fmt.Errorf("other failed to get str: %w", err)
+    } 
+    if s != f.expectedStr {
+        return fmt.Errorf(" expected str %s got %s", s.expectedStr, s)
+    }
+    ...
+}
+
+// implements types.Foo
+func (f Foo) GetStr() (string, error) {
+    return f.expectedStr, nil
+}
+...
 
 ```
 
 ```
 package y_test
 
-var BarImpl = staticBar{
+var BarEvaluator = staticBar{
     expectedFoo = x_test.FooImpl
     expectedBytes = []bytes{1:1}
 }
 
-type BarEvaluator interface {
-    bar // some interface in the used in the composition of a loop
-    // run methods of other, returns first error or error if
-    // result of method invocation does not match expected value of embedded foo
-    Evaluate(ctx context.Context, other foo) error
-}
 
 type staticBar struct {
-    expectedFoo x_test.FooEvaluator
+    types.Bar // test implementation of Bar interface
+    expectedFoo types_test[types.Foo]
     expectedInt int
     ...
 }
 
-var _ BarEvaluator = staticBar
+// BarEvaluation implement [types.Bar] and [types_test.Evaluator[types.Bar]] to be used in tests
+var _ BarEvaluator = staticBar {
+    expectedFoo x_test.FooEvaluator
+    expectedInt = 7
+    ...
+}
+
+var _ types_test[types.Bar] = staticBar
+
+// implement types.Bar
+...
+// implement types_test.Evaluator[types.Bar]
+...
 
 ```

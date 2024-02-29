@@ -10,9 +10,13 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
-var MercuryPluginImpl = staticMercuryPlugin{
+// MercuryPlugin is a test helper for testing [ocr3types.MercuryPlugin] implementations.
+// the name is adopted because ocr3 has a special mercury plugin type
+var OCR3Plugin = staticMercuryPlugin{
 	staticMercuryPluginConfig: staticMercuryPluginConfig{
 		observationRequest: observationRequest{
 			reportTimestamp: reportContext.ReportTimestamp,
@@ -64,6 +68,7 @@ type staticMercuryPlugin struct {
 }
 
 var _ ocr3types.MercuryPlugin = staticMercuryPlugin{}
+var _ test_types.AssertEqualer[ocr3types.MercuryPlugin] = staticMercuryPlugin{}
 
 func (s staticMercuryPlugin) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, previousReport libocr.Report) (libocr.Observation, error) {
 	if timestamp != s.observationRequest.reportTimestamp {

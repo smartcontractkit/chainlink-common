@@ -7,9 +7,12 @@ import (
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 var _ median.DataSource = (*staticDataSource)(nil)
+var _ test_types.Evaluator[median.DataSource] = (*staticDataSource)(nil)
 
 type staticDataSourceConfig struct {
 	ReportContext types.ReportContext
@@ -21,14 +24,14 @@ type staticDataSource struct {
 }
 
 var (
-	DataSourceImpl = staticDataSource{
+	DataSource = staticDataSource{
 		staticDataSourceConfig{
 			ReportContext: reportContext,
 			Value:         value,
 		},
 	}
 
-	JuelsPerFeeCoinDataSourceImpl = staticDataSource{
+	JuelsPerFeeCoinDataSource = staticDataSource{
 		staticDataSourceConfig{
 			ReportContext: reportContext,
 			Value:         juelsPerFeeCoin,

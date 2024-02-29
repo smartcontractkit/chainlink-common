@@ -11,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -30,16 +31,18 @@ type MercuryTriggerService struct {
 	feedIDsForTriggerID   map[string][]int64 // TODO: switch this to uint64 when value.go supports it
 	mu                    sync.Mutex
 	triggerIDToWorkflowID map[string]string
+	lggr                  logger.Logger
 }
 
 var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 
-func NewMercuryTriggerService() *MercuryTriggerService {
+func NewMercuryTriggerService(lggr logger.Logger) *MercuryTriggerService {
 	return &MercuryTriggerService{
 		CapabilityInfo:        mercuryInfo,
 		chans:                 map[workflowID]chan<- capabilities.CapabilityResponse{},
 		feedIDsForTriggerID:   make(map[string][]int64),
 		triggerIDToWorkflowID: make(map[string]string),
+		lggr:                  lggr,
 	}
 }
 
@@ -69,6 +72,7 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 		}
 		reportIndex++
 	}
+	o.lggr.Debugw("triggerIDsForReports", "triggerIDsForReports", triggerIDsForReports)
 
 	// Then for each trigger id, find which reports correspond to that trigger and create an event bundling the reports
 	// and send it to the channel associated with the trigger id.
@@ -120,6 +124,7 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 	triggerID := o.GetTriggerID(req) // TODO: This is manadatory, so throw an error if its not present or already exists
 	feedIDs := o.GetFeedIDs(req)     // TODO: what if feedIds is empty? should we throw an error or allow it?
 	o.feedIDsForTriggerID[triggerID] = feedIDs
+	o.lggr.Debugw("RegisterTrigger", "feedIDs", feedIDs, "triggerID", triggerID, "workflowID", wid)
 
 	o.triggerIDToWorkflowID[triggerID] = wid
 	return nil
@@ -150,9 +155,10 @@ func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) [
 	feedIDs := make([]int64, 0)
 	// Unwrap the inputs which should return pair (map, nil) and then get the feedIds from the map
 	if inputs, err := req.Inputs.Unwrap(); err == nil {
-		if feeds, ok := inputs.(map[string]interface{})["feedIds"].([]int64); ok {
-			// Copy to feedIds
-			feedIDs = append(feedIDs, feeds...)
+		if feeds, ok := inputs.(map[string]any)["feedIds"].([]any); ok {
+			for _, feed := range feeds {
+				feedIDs = append(feedIDs, feed.(int64))
+			}
 		}
 	}
 	return feedIDs

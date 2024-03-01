@@ -3,6 +3,7 @@ package values
 import (
 	"testing"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ type TestValueEvent struct {
 
 type TestReport struct {
 	FeedID     int64  `json:"feedId"`
-	Fullreport string `json:"fullreport"`
+	FullReport string `json:"fullreport"`
 }
 
 func Test_Value(t *testing.T) {
@@ -107,13 +108,14 @@ func Test_Value(t *testing.T) {
 		{
 			name: "struct",
 			newValue: func() (any, Value, error) {
-				v := TestReport{
-					FeedID:     2,
-					Fullreport: "hello",
-				}
+				var v TestReport
 				m := map[string]any{
-					"feedId":     int64(2),
-					"fullreport": "hello",
+					"FeedID":     int64(2),
+					"FullReport": "hello",
+				}
+				err := mapstructure.Decode(m, &v)
+				if err != nil {
+					return nil, nil, err
 				}
 				vv, err := Wrap(v)
 				return m, vv, err
@@ -122,50 +124,41 @@ func Test_Value(t *testing.T) {
 		{
 			name: "structPointer",
 			newValue: func() (any, Value, error) {
-				v := &TestReport{
-					FeedID:     2,
-					Fullreport: "hello",
-				}
+				var v TestReport
 				m := map[string]any{
-					"feedId":     int64(2),
-					"fullreport": "hello",
+					"FeedID":     int64(3),
+					"FullReport": "world",
 				}
-				vv, err := Wrap(v)
+				err := mapstructure.Decode(m, &v)
+				if err != nil {
+					return nil, nil, err
+				}
+				vv, err := Wrap(&v)
 				return m, vv, err
 			},
 		},
 		{
 			name: "nestedStruct",
 			newValue: func() (any, Value, error) {
-				v := TestValueEvent{
-					TriggerType: "mercury",
-					ID:          "123",
-					Timestamp:   "123",
-					Payload: []TestReport{
-						{
-							FeedID:     2,
-							Fullreport: "hello",
+				var v TestValueEvent
+				m := map[string]any{
+					"TriggerType": "mercury",
+					"ID":          "123",
+					"Timestamp":   "123",
+					"Payload": []any{
+						map[string]any{
+							"FeedID":     int64(4),
+							"FullReport": "hello",
 						},
-						{
-							FeedID:     3,
-							Fullreport: "world",
+						map[string]any{
+							"FeedID":     int64(5),
+							"FullReport": "world",
 						},
 					},
 				}
-				m := map[string]any{
-					"triggerType": "mercury",
-					"id":          "123",
-					"timestamp":   "123",
-					"payload": []any{
-						map[string]any{
-							"feedId":     int64(2),
-							"fullreport": "hello",
-						},
-						map[string]any{
-							"feedId":     int64(3),
-							"fullreport": "world",
-						},
-					},
+				err := mapstructure.Decode(m, &v)
+				if err != nil {
+					return nil, nil, err
 				}
 				vv, err := Wrap(v)
 				return m, vv, err

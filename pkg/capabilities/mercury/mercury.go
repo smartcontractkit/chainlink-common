@@ -1,7 +1,6 @@
 package mercury
 
 import (
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"strings"
@@ -55,7 +54,7 @@ type ReportInfo struct {
 // TODO: fix this by adding support for uint64 in value.go
 type FeedReport struct {
 	FeedID               int64  `json:"feedId"`
-	Fullreport           []byte `json:"fullreport"`
+	FullReport           []byte `json:"fullreport"`
 	BenchmarkPrice       int64  `json:"benchmarkPrice"`
 	ObservationTimestamp int64  `json:"observationTimestamp"`
 }
@@ -119,21 +118,17 @@ func (m Codec) UnwrapMercuryTriggerEvent(raw values.Value) (TriggerEvent, error)
 		return mercuryTriggerEvent, err
 	}
 	event := val.(map[string]any)
-	mercuryTriggerEvent.TriggerType = event["triggerType"].(string)
-	mercuryTriggerEvent.ID = event["id"].(string)
-	mercuryTriggerEvent.Timestamp = event["timestamp"].(string)
+	mercuryTriggerEvent.TriggerType = event["TriggerType"].(string)
+	mercuryTriggerEvent.ID = event["ID"].(string)
+	mercuryTriggerEvent.Timestamp = event["Timestamp"].(string)
 	mercuryTriggerEvent.Payload = make([]FeedReport, 0)
-	for _, report := range event["payload"].([]any) {
+	for _, report := range event["Payload"].([]any) {
 		reportMap := report.(map[string]any)
-		decodedData, err := base64.StdEncoding.DecodeString(reportMap["fullreport"].(string))
-		if err != nil {
-			return TriggerEvent{}, err
-		}
 		mercuryReport := FeedReport{
-			FeedID:               reportMap["feedId"].(int64),
-			Fullreport:           decodedData,
-			BenchmarkPrice:       reportMap["benchmarkPrice"].(int64),
-			ObservationTimestamp: reportMap["observationTimestamp"].(int64),
+			FeedID:               reportMap["FeedID"].(int64),
+			FullReport:           reportMap["FullReport"].([]byte),
+			BenchmarkPrice:       reportMap["BenchmarkPrice"].(int64),
+			ObservationTimestamp: reportMap["ObservationTimestamp"].(int64),
 		}
 		mercuryTriggerEvent.Payload = append(mercuryTriggerEvent.Payload, mercuryReport)
 	}

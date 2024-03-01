@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -58,19 +59,27 @@ func Wrap(v any) (Value, error) {
 		return tv, nil
 	}
 
-	// Handle structs and pointers to structs
+	// Handle slices, structs, and pointers to structs
 	switch reflect.ValueOf(v).Kind() {
+	case reflect.Slice:
+		val := reflect.ValueOf(v)
+		s := make([]any, val.Len())
+		for i := 0; i < val.Len(); i++ {
+			item := val.Index(i).Interface()
+			s[i] = item
+		}
+		return NewList(s) // can't just pass v in directly, so we have to copy it to a []any slice
 	case reflect.Struct:
 		return createMapFromStruct(v)
 	case reflect.Pointer:
 		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
-			return createMapFromStruct(&v)
+			return createMapFromStruct(reflect.Indirect(reflect.ValueOf(v)).Interface())
 		}
 	default:
 		return nil, fmt.Errorf("could not wrap into value: %+v", v)
 	}
 
-	return nil, fmt.Errorf("could not wrap into value: %+v", v)
+	return nil, fmt.Errorf("could not wrap into value: %+v", v) // Unreachable
 }
 
 func Unwrap(v Value) (any, error) {
@@ -161,35 +170,9 @@ func FromDecimalValueProto(decStr string) (*Decimal, error) {
 
 func createMapFromStruct(v any) (Value, error) {
 	var resultMap map[string]interface{}
-	jsonData, err := json.Marshal(v)
+	err := mapstructure.Decode(v, &resultMap)
 	if err != nil {
 		return nil, err
 	}
-	// convert to a map
-	err = json.Unmarshal(jsonData, &resultMap)
-	if err != nil {
-		return nil, err
-	}
-
-	convertedResultMap := convertFloat64ToInt64(resultMap) // TODO: Remove by supporting Float64
-	return NewMap(convertedResultMap.(map[string]any))
-}
-
-// Recursively converts float64 values to int64 and handles nested maps.
-func convertFloat64ToInt64(data any) any {
-	switch v := data.(type) {
-	case float64:
-		return int64(v)
-	case map[string]any:
-		// If the value is a map, iterate through its keys.
-		for key, value := range v {
-			v[key] = convertFloat64ToInt64(value)
-		}
-	case []any:
-		// If the value is a slice, iterate through its elements.
-		for i, value := range v {
-			v[i] = convertFloat64ToInt64(value)
-		}
-	}
-	return data
+	return NewMap(resultMap)
 }

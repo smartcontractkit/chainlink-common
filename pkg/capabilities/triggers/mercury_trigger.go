@@ -82,7 +82,6 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 			Payload:     reportPayload,
 		}
 
-		// TODO: Modify values.Wrap to handle MercuryTriggerEvent and MercuryReport structs
 		val, err := mercury.Codec{}.WrapMercuryTriggerEvent(triggerEvent)
 		if err != nil {
 			return err
@@ -110,17 +109,23 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	// set feedIdsForTriggerId
-	triggerID := o.GetTriggerID(req) // TODO: This is manadatory, so throw an error if its not present or already exists
-	feedIDs := o.GetFeedIDs(req)     // TODO: what if feedIds is empty? should we throw an error or allow it?
-	// concat wid and triggerID to get the key
+	triggerID, err := o.GetTriggerID(req)
+	if err != nil {
+		return err
+	}
+	// If triggerId is already registered, return an error
+	if _, ok := o.chans[wid+triggerID]; ok {
+		return fmt.Errorf("triggerId %s already registered", triggerID)
+	}
+	feedIDs := o.GetFeedIDs(req) // TODO: what if feedIds is empty? should we throw an error or allow it?
+
 	o.chans[wid+triggerID] = callback
+	o.triggerIDToWorkflowID[triggerID] = wid
 	o.feedIDsForTriggerID[triggerID] = feedIDs
 	for _, feedID := range feedIDs {
 		o.triggerIDsForFeedID[feedID] = append(o.triggerIDsForFeedID[feedID], triggerID)
 	}
 
-	o.triggerIDToWorkflowID[triggerID] = wid
 	return nil
 }
 
@@ -130,7 +135,10 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	triggerID := o.GetTriggerID(req)
+	triggerID, err := o.GetTriggerID(req)
+	if err != nil {
+		return err
+	}
 
 	ch, ok := o.chans[wid+triggerID]
 	if ok {
@@ -166,37 +174,17 @@ func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) [
 }
 
 // Get the triggerId from the CapabilityRequest req map
-func (o *MercuryTriggerService) GetTriggerID(req capabilities.CapabilityRequest) string {
-	var triggerID string
+func (o *MercuryTriggerService) GetTriggerID(req capabilities.CapabilityRequest) (string, error) {
 	// Unwrap the inputs which should return pair (map, nil) and then get the triggerId from the map
-	if inputs, err := req.Inputs.Unwrap(); err == nil {
-		if id, ok := inputs.(map[string]interface{})["triggerId"].(string); ok {
-			triggerID = id
-		}
+	inputs, err := req.Inputs.Unwrap()
+	if err != nil {
+		return "", err
 	}
-	return triggerID
-}
+	if id, ok := inputs.(map[string]interface{})["triggerId"].(string); ok {
+		return id, nil
+	}
 
-func sha256Hash(s string) string {
-	hash := sha256.New()
-	hash.Write([]byte(s))
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
-func removeFromSlice(list []string, element string) []string {
-	// Find the index of the element to delete
-	index := -1
-	for i, value := range list {
-		if value == element {
-			index = i
-			break
-		}
-	}
-	// Delete the element
-	if index != -1 {
-		return append(list[:index], list[index+1:]...)
-	}
-	return list
+	return "", fmt.Errorf("triggerId not found in inputs")
 }
 
 func GenerateTriggerEventID(reports []mercury.FeedReport) string {
@@ -245,4 +233,24 @@ func ExampleOutput() (values.Value, error) {
 func ValidateConfig(config values.Value) error {
 	// TODO: Fill this in
 	return nil
+}
+
+func sha256Hash(s string) string {
+	hash := sha256.New()
+	hash.Write([]byte(s))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func removeFromSlice(list []string, element string) []string {
+	index := -1
+	for i, value := range list {
+		if value == element {
+			index = i
+			break
+		}
+	}
+	if index != -1 {
+		return append(list[:index], list[index+1:]...)
+	}
+	return list
 }

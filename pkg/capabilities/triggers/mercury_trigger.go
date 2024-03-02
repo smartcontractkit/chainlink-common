@@ -29,6 +29,7 @@ type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
 	chans                 map[string]chan<- capabilities.CapabilityResponse
 	feedIDsForTriggerID   map[string][]int64 // TODO: switch this to uint64 when value.go supports it
+	triggerIDsForFeedID   map[int64][]string
 	mu                    sync.Mutex
 	triggerIDToWorkflowID map[string]string
 }
@@ -40,6 +41,7 @@ func NewMercuryTriggerService() *MercuryTriggerService {
 		CapabilityInfo:        mercuryInfo,
 		chans:                 map[string]chan<- capabilities.CapabilityResponse{},
 		feedIDsForTriggerID:   make(map[string][]int64),
+		triggerIDsForFeedID:   make(map[int64][]string),
 		triggerIDToWorkflowID: make(map[string]string),
 	}
 }
@@ -55,18 +57,12 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 	reportIndex := 0
 
 	for _, report := range reports {
-		// for each feed id, we need to find the triggerId associated with it.
-		reportFeedID := report.FeedID
-		for triggerID, feedIDs := range o.feedIDsForTriggerID {
-			for _, feedID := range feedIDs {
-				if reportFeedID == feedID {
-					// if its not initialized, initialize it
-					if _, ok := triggerIDsForReports[triggerID]; !ok {
-						triggerIDsForReports[triggerID] = make([]int, 0)
-					}
-					triggerIDsForReports[triggerID] = append(triggerIDsForReports[triggerID], reportIndex)
-				}
+		for _, triggerID := range o.triggerIDsForFeedID[report.FeedID] {
+			// if its not initialized, initialize it
+			if _, ok := triggerIDsForReports[triggerID]; !ok {
+				triggerIDsForReports[triggerID] = make([]int, 0)
 			}
+			triggerIDsForReports[triggerID] = append(triggerIDsForReports[triggerID], reportIndex)
 		}
 		reportIndex++
 	}
@@ -97,8 +93,6 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 			Value: val,
 		}
 
-		// If the FeedId is in the feedIdsForTriggerId map, then send the event to the channel.
-
 		wfID := o.triggerIDToWorkflowID[triggerID]
 		ch, ok := o.chans[wfID+triggerID]
 		if ok {
@@ -122,6 +116,9 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 	// concat wid and triggerID to get the key
 	o.chans[wid+triggerID] = callback
 	o.feedIDsForTriggerID[triggerID] = feedIDs
+	for _, feedID := range feedIDs {
+		o.triggerIDsForFeedID[feedID] = append(o.triggerIDsForFeedID[feedID], triggerID)
+	}
 
 	o.triggerIDToWorkflowID[triggerID] = wid
 	return nil
@@ -138,6 +135,10 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 	ch, ok := o.chans[wid+triggerID]
 	if ok {
 		close(ch)
+	}
+
+	for _, feedID := range o.feedIDsForTriggerID[triggerID] {
+		o.triggerIDsForFeedID[feedID] = removeFromSlice(o.triggerIDsForFeedID[feedID], triggerID)
 	}
 
 	delete(o.chans, wid+triggerID)
@@ -180,6 +181,22 @@ func sha256Hash(s string) string {
 	hash := sha256.New()
 	hash.Write([]byte(s))
 	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func removeFromSlice(list []string, element string) []string {
+	// Find the index of the element to delete
+	index := -1
+	for i, value := range list {
+		if value == element {
+			index = i
+			break
+		}
+	}
+	// Delete the element
+	if index != -1 {
+		return append(list[:index], list[index+1:]...)
+	}
+	return list
 }
 
 func GenerateTriggerEventID(reports []mercury.FeedReport) string {

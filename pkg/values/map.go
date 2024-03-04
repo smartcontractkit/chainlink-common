@@ -26,15 +26,10 @@ func NewMap(m map[string]any) (*Map, error) {
 	}, nil
 }
 
-func (m *Map) Proto() (*pb.Value, error) {
+func (m *Map) proto() *pb.Value {
 	pm := map[string]*pb.Value{}
 	for k, v := range m.Underlying {
-		pv, err := v.Proto()
-		if err != nil {
-			return nil, err
-		}
-
-		pm[k] = pv
+		pm[k] = Proto(v)
 	}
 
 	return pb.NewMapValue(pm)
@@ -43,7 +38,7 @@ func (m *Map) Proto() (*pb.Value, error) {
 func (m *Map) Unwrap() (any, error) {
 	nm := map[string]any{}
 	for k, v := range m.Underlying {
-		uv, err := v.Unwrap()
+		uv, err := Unwrap(v)
 		if err != nil {
 			return nil, err
 		}

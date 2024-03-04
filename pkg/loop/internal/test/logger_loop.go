@@ -80,10 +80,3 @@ func (g *GRPCPluginLoggerTestPanic) ClientConfig() *plugin.ClientConfig {
 		Logger:           loop.HCLogLogger(g.Logger),
 	}
 }
-
-//func PluginLoggerTestHandshakeConfig() plugin.HandshakeConfig {
-//	return plugin.HandshakeConfig{
-//		MagicCookieKey:   "CL_PLUGIN_LOGGER_TEST_MAGIC_COOKIE",
-//		MagicCookieValue: "272d1867cdc8042f9405d7c1da3762ec",
-//	}
-//}

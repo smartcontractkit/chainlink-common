@@ -1,4 +1,4 @@
-package pluginprovider_test
+package pluginprovider
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 type contractTransmitterTestConfig struct {
@@ -21,7 +21,7 @@ type contractTransmitterTestConfig struct {
 	Epoch        uint32
 }
 
-var _ test_types.ContractTransmitterEvaluator = staticContractTransmitter{}
+var _ testtypes.ContractTransmitterEvaluator = staticContractTransmitter{}
 
 type staticContractTransmitter struct {
 	contractTransmitterTestConfig

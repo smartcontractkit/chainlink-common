@@ -6,10 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )
 
-var ChainReaderImpl = staticMercuryChainReader{
+var ChainReader = staticMercuryChainReader{
 	staticMercuryChainReaderConfig: staticMercuryChainReaderConfig{
 		latestHeads: []mercury_types.Head{
 			{
@@ -26,9 +27,7 @@ var ChainReaderImpl = staticMercuryChainReader{
 
 type MercuryChainReaderEvaluator interface {
 	mercury_types.ChainReader
-	// Evaluate runs the other ChainReader and checks that
-	// the results are equal to this one
-	Evaluate(ctx context.Context, other mercury_types.ChainReader) error
+	testtypes.Evaluator[mercury_types.ChainReader]
 }
 
 type staticMercuryChainReaderConfig struct {

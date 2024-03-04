@@ -1,4 +1,4 @@
-package pluginprovider_test
+package pluginprovider
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 type staticConfigTrackerConfig struct {
@@ -21,7 +21,7 @@ type staticContractConfigTracker struct {
 	staticConfigTrackerConfig
 }
 
-var _ test_types.ContractConfigTrackerEvaluator = staticContractConfigTracker{}
+var _ testtypes.ContractConfigTrackerEvaluator = staticContractConfigTracker{}
 
 func (s staticContractConfigTracker) Notify() <-chan struct{} { return nil }
 

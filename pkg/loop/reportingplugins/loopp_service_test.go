@@ -10,9 +10,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
-	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
-	coreapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/core_api"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	testapi "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core/api"
+	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -39,7 +39,7 @@ func TestLOOPPService(t *testing.T) {
 		Plugin string
 	}{
 		// A generic plugin with a median provider
-		{Plugin: coreapi_test.MedianID},
+		{Plugin: testapi.MedianID},
 		// A generic plugin with a plugin provider
 		{Plugin: reportingplugins.PluginServiceName},
 	}
@@ -48,15 +48,15 @@ func TestLOOPPService(t *testing.T) {
 			return NewHelperProcessCommand(ts.Plugin)
 		},
 			types.ReportingPluginServiceConfig{},
-			resources_test.MockConn{},
-			resources_test.PipelineRunnerImpl,
-			resources_test.Telemetry,
-			&resources_test.ErrorLogImpl)
+			testcore.MockConn{},
+			testcore.PipelineRunner,
+			testcore.Telemetry,
+			&testcore.ErrorLog)
 		hook := looppSvc.XXXTestHook()
 		servicetest.Run(t, looppSvc)
 
 		t.Run("control", func(t *testing.T) {
-			reportingplugin_test.Factory(t, looppSvc)
+			testreportingplugin.RunFactory(t, looppSvc)
 		})
 
 		t.Run("Kill", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * internal.KeepAliveTickDuration)
 
-			reportingplugin_test.Factory(t, looppSvc)
+			testreportingplugin.RunFactory(t, looppSvc)
 		})
 
 		t.Run("Reset", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * internal.KeepAliveTickDuration)
 
-			reportingplugin_test.Factory(t, looppSvc)
+			testreportingplugin.RunFactory(t, looppSvc)
 		})
 	}
 }
@@ -84,17 +84,17 @@ func TestLOOPPService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: coreapi_test.MedianID,
+			Command: testapi.MedianID,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
 	},
 		types.ReportingPluginServiceConfig{},
-		resources_test.MockConn{},
-		resources_test.PipelineRunnerImpl,
-		resources_test.Telemetry,
-		&resources_test.ErrorLogImpl)
+		testcore.MockConn{},
+		testcore.PipelineRunner,
+		testcore.Telemetry,
+		&testcore.ErrorLog)
 	servicetest.Run(t, looppSvc)
 
-	reportingplugin_test.Factory(t, looppSvc)
+	testreportingplugin.RunFactory(t, looppSvc)
 }

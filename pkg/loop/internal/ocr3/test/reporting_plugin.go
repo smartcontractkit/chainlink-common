@@ -20,7 +20,7 @@ var (
 
 	query = libocr.Query{1, 2, 3}
 )
-var ReportingPluginImpl = ocr3staticReportingPlugin{
+var ReportingPlugin = ocr3staticReportingPlugin{
 	ocr3staticReportingPluginConfig: ocr3staticReportingPluginConfig{
 		expectedOutcomeContext: outcomeCtx,
 		queryRequest:           queryRequest{outcomeCtx: outcomeCtx},

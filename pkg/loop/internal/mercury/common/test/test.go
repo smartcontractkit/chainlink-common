@@ -1,4 +1,4 @@
-package mercury_test
+package mercury_common_test
 
 import (
 	"time"

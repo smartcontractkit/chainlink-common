@@ -1,4 +1,4 @@
-package pluginprovider_test
+package pluginprovider
 
 import (
 	"github.com/smartcontractkit/libocr/commontypes"
@@ -13,8 +13,8 @@ const (
 )
 
 var (
-	// ContractTransmitterImpl is a static implementation of the ContractTransmitterTester interface for testing
-	ContractTransmitterImpl = staticContractTransmitter{
+	// ContractTransmitter is a static implementation of the ContractTransmitterTester interface for testing
+	ContractTransmitter = staticContractTransmitter{
 		contractTransmitterTestConfig: contractTransmitterTestConfig{
 			ConfigDigest:  configDigest,
 			Account:       libocr.Account("some-account"),
@@ -25,8 +25,8 @@ var (
 		},
 	}
 
-	// OffchainConfigDigesterImpl is a static implementation of the OffchainConfigDigesterTester interface for testing
-	OffchainConfigDigesterImpl = staticOffchainConfigDigester{
+	// OffchainConfigDigester is a static implementation of the OffchainConfigDigesterTester interface for testing
+	OffchainConfigDigester = staticOffchainConfigDigester{
 		staticOffchainConfigDigesterConfig: staticOffchainConfigDigesterConfig{
 			contractConfig:     contractConfig,
 			configDigest:       configDigest,
@@ -34,8 +34,8 @@ var (
 		},
 	}
 
-	// ContractConfigTrackerImpl is a static implementation of the ContractConfigTrackerTester interface for testing
-	ContractConfigTrackerImpl = staticContractConfigTracker{
+	// ContractConfigTracker is a static implementation of the ContractConfigTrackerTester interface for testing
+	ContractConfigTracker = staticContractConfigTracker{
 		staticConfigTrackerConfig: staticConfigTrackerConfig{
 			contractConfig: contractConfig,
 			configDigest:   configDigest,
@@ -44,19 +44,19 @@ var (
 		},
 	}
 
-	// ChainReaderImpl is a static implementation of the ChainReaderTester interface for testing
-	ConfigProviderImpl = staticConfigProvider{
+	// ConfigProvider is a static implementation of the ConfigProviderTester interface for testing
+	ConfigProvider = staticConfigProvider{
 		staticConfigProviderConfig: staticConfigProviderConfig{
-			offchainDigester:      OffchainConfigDigesterImpl,
-			contractConfigTracker: ContractConfigTrackerImpl,
+			offchainDigester:      OffchainConfigDigester,
+			contractConfigTracker: ContractConfigTracker,
 		},
 	}
 
-	// AgnosticPluginProviderImpl is a static implementation of the PluginProviderTester interface for testing
-	AgnosticPluginProviderImpl = staticPluginProvider{
-		offchainConfigDigester: OffchainConfigDigesterImpl,
-		contractConfigTracker:  ContractConfigTrackerImpl,
-		contractTransmitter:    ContractTransmitterImpl,
+	// AgnosticPluginProvider is a static implementation of the PluginProviderTester interface for testing
+	AgnosticPluginProvider = staticPluginProvider{
+		offchainConfigDigester: OffchainConfigDigester,
+		contractConfigTracker:  ContractConfigTracker,
+		contractTransmitter:    ContractTransmitter,
 		chainReader:            ChainReader,
 	}
 

@@ -1,4 +1,4 @@
-package reportingplugin_test
+package reportingplugin
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
@@ -16,22 +17,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var FactoryImpl = staticFactory{
-	StaticFactoryConfig: StaticFactoryConfig{
+var Factory = staticFactory{
+	staticFactoryConfig: staticFactoryConfig{
 		ReportingPluginConfig: reportingPluginConfig,
 		rpi:                   rpi,
-		reportingPlugin:       ReportingPluginImpl,
+		reportingPlugin:       ReportingPlugin,
 	},
 }
 
-type StaticFactoryConfig struct {
+type staticFactoryConfig struct {
 	libocr.ReportingPluginConfig
 	rpi             libocr.ReportingPluginInfo
-	reportingPlugin ReportingPluginTester
+	reportingPlugin testtypes.ReportingPluginTester
 }
 
 type staticFactory struct {
-	StaticFactoryConfig
+	staticFactoryConfig
 }
 
 var _ types.ReportingPluginFactory = staticFactory{}
@@ -94,8 +95,8 @@ func (s staticFactory) equalConfig(other libocr.ReportingPluginConfig) error {
 	return nil
 }
 
-func Factory(t *testing.T, factory libocr.ReportingPluginFactory) {
-	expectedFactory := FactoryImpl
+func RunFactory(t *testing.T, factory libocr.ReportingPluginFactory) {
+	expectedFactory := Factory
 	ctx := tests.Context(t)
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
 		rp, gotRPI, err := factory.NewReportingPlugin(expectedFactory.ReportingPluginConfig)

@@ -9,9 +9,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr3/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr3"
-	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -53,10 +53,10 @@ func TestLOOPPService(t *testing.T) {
 			return NewHelperProcessCommand(ts.Plugin)
 		},
 			types.ReportingPluginServiceConfig{},
-			resources_test.MockConn{},
-			resources_test.PipelineRunnerImpl,
-			resources_test.Telemetry,
-			&resources_test.ErrorLogImpl,
+			testcore.MockConn{},
+			testcore.PipelineRunner,
+			testcore.Telemetry,
+			&testcore.ErrorLog,
 			types.CapabilitiesRegistry(nil))
 		hook := looppSvc.XXXTestHook()
 		servicetest.Run(t, looppSvc)
@@ -96,10 +96,10 @@ func TestLOOPPService_recovery(t *testing.T) {
 		return h.New()
 	},
 		types.ReportingPluginServiceConfig{},
-		resources_test.MockConn{},
-		resources_test.PipelineRunnerImpl,
-		resources_test.Telemetry,
-		&resources_test.ErrorLogImpl,
+		testcore.MockConn{},
+		testcore.PipelineRunner,
+		testcore.Telemetry,
+		&testcore.ErrorLog,
 		types.CapabilitiesRegistry(nil))
 	servicetest.Run(t, looppSvc)
 

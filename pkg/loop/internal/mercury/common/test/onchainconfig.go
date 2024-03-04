@@ -6,19 +6,18 @@ import (
 	"math/big"
 	"reflect"
 
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )
 
-// OnchainConfigCodecImpl is a static implementation of OnchainConfigCodec for testing
-var OnchainConfigCodecImpl = staticOnchainConfigCodec{
+// OnchainConfigCodec is a static implementation of OnchainConfigCodec for testing
+var OnchainConfigCodec = staticOnchainConfigCodec{
 	onChainConfigCodecParameters: StaticOnChainConfigCodecFixtures,
 }
 
 type OnchainConfigCodecEvaluator interface {
 	mercury_types.OnchainConfigCodec
-	// Evaluate runs the other OnchainConfigCodec and checks that
-	// the results are equal to this one
-	Evaluate(ctx context.Context, other mercury_types.OnchainConfigCodec) error
+	testtypes.Evaluator[mercury_types.OnchainConfigCodec]
 }
 
 type onChainConfigCodecParameters struct {

@@ -1,4 +1,4 @@
-package pluginprovider_test
+package pluginprovider
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var (
-	// ChainReader is a static implementation of [types.ChainReader], [test_types.Evaluator] and [types.PluginProvider
+	// ChainReader is a static implementation of [types.ChainReader], [testtypes.Evaluator] and [types.PluginProvider
 	// it is used for testing the [types.PluginProvider] interface
 	ChainReader = staticChainReader{
 		contractName:   "anyContract",
@@ -29,7 +29,7 @@ type staticChainReader struct {
 	params         map[string]any
 }
 
-var _ test_types.Evaluator[types.ChainReader] = staticChainReader{}
+var _ testtypes.Evaluator[types.ChainReader] = staticChainReader{}
 var _ types.ChainReader = staticChainReader{}
 
 func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {

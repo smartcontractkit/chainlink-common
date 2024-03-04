@@ -1,4 +1,4 @@
-package resources_test
+package core
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -15,7 +15,7 @@ answer [type=sum values=<[ $(val), 2 ]>]
 answer;
 `
 
-var PipelineRunnerImpl = staticPipelineRunnerService{
+var PipelineRunner = staticPipelineRunnerService{
 	staticPipelineRunnerConfig: staticPipelineRunnerConfig{
 		spec: pipleineSpec,
 		vars: types.Vars{
@@ -35,7 +35,7 @@ var PipelineRunnerImpl = staticPipelineRunnerService{
 	},
 }
 
-var _ test_types.PipelineEvaluator = (*staticPipelineRunnerService)(nil)
+var _ testtypes.PipelineEvaluator = (*staticPipelineRunnerService)(nil)
 
 type staticPipelineRunnerConfig struct {
 	spec        string

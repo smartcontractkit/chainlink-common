@@ -1,4 +1,4 @@
-package pluginprovider_test
+package pluginprovider
 
 import (
 	"context"
@@ -7,39 +7,30 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var _ types.PluginProvider = staticPluginProvider{}
 
-var AgnosticProviderImpl = staticPluginProvider{
-	offchainConfigDigester: OffchainConfigDigesterImpl,
-	contractConfigTracker:  ContractConfigTrackerImpl,
-	contractTransmitter:    ContractTransmitterImpl,
+var AgnosticProvider = staticPluginProvider{
+	offchainConfigDigester: OffchainConfigDigester,
+	contractConfigTracker:  ContractConfigTracker,
+	contractTransmitter:    ContractTransmitter,
 	chainReader:            ChainReader,
 	codec:                  staticCodec{},
-}
-
-type PluginProviderTester interface {
-	types.PluginProvider
-	// AssertEqual tests equality of sub-components of the other PluginProvider in parallel
-	AssertEqual(ctx context.Context, t *testing.T, other types.PluginProvider)
-	// Evaluate runs all the method of the other PluginProvider and checks for equality with the embedded PluginProvider
-	// it returns the first error encountered
-	Evaluate(ctx context.Context, other types.PluginProvider) error
 }
 
 // staticPluginProvider is a static implementation of PluginProviderTester
 type staticPluginProvider struct {
 	offchainConfigDigester staticOffchainConfigDigester
 	contractConfigTracker  staticContractConfigTracker
-	contractTransmitter    test_types.ContractTransmitterEvaluator
-	chainReader            test_types.ChainReaderEvaluator
+	contractTransmitter    testtypes.ContractTransmitterEvaluator
+	chainReader            testtypes.ChainReaderEvaluator
 	codec                  staticCodec
 }
 
-var _ PluginProviderTester = staticPluginProvider{}
+var _ testtypes.PluginProviderTester = staticPluginProvider{}
 
 func (s staticPluginProvider) Start(ctx context.Context) error { return nil }
 

@@ -1,21 +1,20 @@
-This package contains test implementations for all the components that compose OCR2 and OCR3 LOOPPs.
+This package contains test implementations for all the components that compose OCR2  LOOPPs. The existing of this directory is partially an intermediate term workaround for lack of packages within `loop/internal` the https://smartcontract-it.atlassian.net/browse/BCF-3039. When that issue is addressed, we can move these test implementations into specific `test` packages for each packaged component.
 
-The directory layout is intended to mirror the natural interfaces composition of libocr:
+With all that said, the directory layout is intended to mirror the natural interfaces composition of libocr:
 - ocr2: contains static test implementations for reuseable reporting plugin, factory, and plugin provider
-- ocr3: implements the ocr3 generic-based reporting plugin and reused common components from ocr2
-- resources: represents core-node provided resources used to in calls to core node api(s) eg pipeline_runner, keystore, etc
-- median: product specific test implementations required to fulfill the MedianProvider abstraction and median factory generator construction
-- mercury: product specific test implementation required to fulfill MercuryProvider and constructors
+- core: represents core-node provided resources used to in calls to core node api(s) eg pipeline_runner, keystore, etc
+- types: type definitions used in through tests
 
 Every test implementation follows the pattern wrapping an interface and provider one or more funcs to compare to another
-instance of the interface. Every package attempts to share exposed the bare minimum surface area to avoid entanglement with logically seperated tests and domains.
+instance of the interface. Every package attempts to share exposed the bare minimum surface area to avoid entanglement with logically separated tests and domains.
 
 In practice this is accomplished by exporting a static implementation and an interface that the implementation satisfies. The interface is used by other packages to declaration dependencies and the implementation is used in the test implementation of those other packaged
 
 Example
 
 ```
-package test_types
+go
+package types
 
 type Evaluator[T any] interface {
      // run methods of other, returns first error or error if
@@ -24,7 +23,12 @@ type Evaluator[T any] interface {
 }
 
 ```
-package x_test
+package x
+
+import (
+    testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+)
 
 var FooEvaluator = staticFoo{
     expectedStr = "a"
@@ -39,7 +43,7 @@ type staticFoo struct {
     ...
 }
 
-var _ test_types.Evaulator[Foo] = staticFoo
+var _ testtypes.Evaulator[Foo] = staticFoo
 var _ types.Foo = staticFoo
 
 func (f Foo) Evaluate(ctx context.Context, other Foo) {
@@ -63,7 +67,13 @@ func (f Foo) GetStr() (string, error) {
 ```
 
 ```
-package y_test
+package y
+
+import (
+    testx "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/x"
+    testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+)
 
 var BarEvaluator = staticBar{
     expectedFoo = x_test.FooImpl
@@ -85,7 +95,7 @@ var _ BarEvaluator = staticBar {
     ...
 }
 
-var _ types_test[types.Bar] = staticBar
+var _ testtypes[types.Bar] = staticBar
 
 // implement types.Bar
 ...

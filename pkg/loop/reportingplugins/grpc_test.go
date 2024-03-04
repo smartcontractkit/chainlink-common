@@ -9,9 +9,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
-	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
-	coreapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources/core_api"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	testcoreapi "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core/api"
+	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -30,13 +30,13 @@ func PluginGenericTest(t *testing.T, p types.ReportingPluginClient) {
 		ctx := tests.Context(t)
 		factory, err := p.NewReportingPluginFactory(ctx,
 			types.ReportingPluginServiceConfig{},
-			resources_test.MockConn{},
-			resources_test.PipelineRunnerImpl,
-			resources_test.Telemetry,
-			&resources_test.ErrorLogImpl)
+			testcore.MockConn{},
+			testcore.PipelineRunner,
+			testcore.Telemetry,
+			&testcore.ErrorLog)
 		require.NoError(t, err)
 
-		reportingplugin_test.Factory(t, factory)
+		testreportingplugin.RunFactory(t, factory)
 	})
 }
 
@@ -46,9 +46,9 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
-		coreapi_test.MedianID,
+		testcoreapi.MedianID,
 		&reportingplugins.GRPCService[types.MedianProvider]{
-			PluginServer: coreapi_test.MedianProviderServerImpl,
+			PluginServer: testcoreapi.MedianProviderServer,
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,
@@ -66,7 +66,7 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 		t,
 		reportingplugins.PluginServiceName,
 		&reportingplugins.GRPCService[types.PluginProvider]{
-			PluginServer: coreapi_test.AgnosticProviderServerImpl,
+			PluginServer: testcoreapi.AgnosticProviderServer,
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,

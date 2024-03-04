@@ -63,6 +63,18 @@ type PipelineEvaluator interface {
 	Evaluator[types.PipelineRunnerService]
 }
 
+// CodecEvaluator is a helper interface for testing Codecs
+type CodecEvaluator interface {
+	types.Codec
+	Evaluator[types.Codec]
+}
+
+// ErrorLogEvaluator is a helper interface for testing ErrorLogs
+type ErrorLogEvaluator interface {
+	types.ErrorLog
+	Evaluator[types.ErrorLog]
+}
+
 type MedianProviderTester interface {
 	types.MedianProvider
 	Evaluator[types.MedianProvider]
@@ -76,4 +88,15 @@ type RelayerTester interface {
 	internal.MedianProvider
 
 	AssertEqualer[loop.Relayer]
+}
+
+type ReportingPluginTester interface {
+	libocr.ReportingPlugin
+	AssertEqualer[libocr.ReportingPlugin]
+}
+
+type PluginProviderTester interface {
+	types.PluginProvider
+	AssertEqualer[types.PluginProvider]
+	Evaluator[types.PluginProvider]
 }

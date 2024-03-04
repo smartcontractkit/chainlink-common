@@ -7,16 +7,15 @@ import (
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
 
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 )
 
-var ReportCodecImpl = staticReportCodec{}
+var ReportCodec = staticReportCodec{}
 
 type ReportCodecEvaluator interface {
 	mercury_v2_types.ReportCodec
-	// Evaluate runs the other ReportCodec and checks that
-	// the results are equal to this one
-	Evaluate(ctx context.Context, other mercury_v2_types.ReportCodec) error
+	testtypes.Evaluator[mercury_v2_types.ReportCodec]
 }
 
 type staticReportCodec struct{}

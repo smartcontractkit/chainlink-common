@@ -1,4 +1,4 @@
-package reportingplugin_test
+package reportingplugin
 
 import (
 	"bytes"
@@ -11,12 +11,6 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
-
-type ReportingPluginTester interface {
-	libocr.ReportingPlugin
-	// AssertEqual checks that the sub-components of the other ReportingPlugin are equal to this one
-	AssertEqual(ctx context.Context, t *testing.T, rp libocr.ReportingPlugin)
-}
 
 type staticReportingPluginConfig struct {
 	ReportContext          libocr.ReportContext

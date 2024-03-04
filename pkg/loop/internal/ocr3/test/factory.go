@@ -19,7 +19,7 @@ import (
 
 var Factory = ocr3staticPluginFactory{
 	ReportingPluginConfig: ocr3reportingPluginConfig,
-	reportingPlugin:       ReportingPluginImpl,
+	reportingPlugin:       ReportingPlugin,
 }
 
 // OCR3

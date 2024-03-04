@@ -1,4 +1,4 @@
-package resources_test
+package core
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -24,7 +24,7 @@ var Telemetry = staticTelemetry{
 	},
 }
 
-var _ test_types.TelemetryEvaluator = staticTelemetry{}
+var _ testtypes.TelemetryEvaluator = staticTelemetry{}
 
 var _ grpc.ClientConnInterface = (*mockClientConn)(nil)
 

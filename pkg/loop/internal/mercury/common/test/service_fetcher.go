@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"math/big"
 
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )
 
-var ServerFetcherImpl = staticServerFetcher{}
+var ServerFetcher = staticServerFetcher{}
 
 type ServerFetcherEvaluator interface {
 	mercury_types.ServerFetcher
-	// Evaluate runs the other ServerFetcher and checks that
-	// the results are equal to this one
-	Evaluate(ctx context.Context, other mercury_types.ServerFetcher) error
+	testtypes.Evaluator[mercury_types.ServerFetcher]
 }
 
 var _ ServerFetcherEvaluator = staticServerFetcher{}

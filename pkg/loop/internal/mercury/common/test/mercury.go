@@ -1,4 +1,4 @@
-package mercury_test
+package mercury_common_test
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ import (
 )
 
 func PluginMercury(t *testing.T, p types.PluginMercury) {
-	PluginMercuryTest{MercuryProviderImpl}.TestPluginMercury(t, p)
+	PluginMercuryTest{MercuryProvider}.TestPluginMercury(t, p)
 }
 
 type PluginMercuryTest struct {
@@ -33,7 +33,7 @@ type PluginMercuryTest struct {
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
 	t.Run("PluginMercuryV3", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.DataSourceImpl)
+		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercury_v3_test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -42,7 +42,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV2", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.DataSourceImpl)
+		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercury_v2_test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -51,7 +51,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 
 	t.Run("PluginMercuryV1", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.DataSourceImpl)
+		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercury_v1_test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
@@ -60,10 +60,10 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 }
 
 var FactoryServer = staticMercuryServer{
-	provider:     MercuryProviderImpl,
-	dataSourceV1: mercury_v1_test.DataSourceImpl,
-	dataSourceV2: mercury_v2_test.DataSourceImpl,
-	dataSourceV3: mercury_v3_test.DataSourceImpl,
+	provider:     MercuryProvider,
+	dataSourceV1: mercury_v1_test.DataSource,
+	dataSourceV2: mercury_v2_test.DataSource,
+	dataSourceV3: mercury_v3_test.DataSource,
 }
 
 var _ types.PluginMercury = staticMercuryServer{}

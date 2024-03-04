@@ -15,9 +15,9 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	reportingplugin_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
-	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -33,7 +33,7 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &resources_test.ErrorLogImpl)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &testcore.ErrorLog)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -45,7 +45,7 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		// we expect the static implementation to be used under the covers
 		// we can't compare the types directly because the returned reporting plugin may be a grpc client
 		// that wraps the static implementation
-		var expectedReportingPluginImpl = reportingplugin_test.ReportingPluginImpl
+		var expectedReportingPlugin = testreportingplugin.ReportingPlugin
 
 		rp, gotRPI, err := factory.NewReportingPlugin(reportingPluginConfig)
 		require.NoError(t, err)
@@ -54,7 +54,7 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		t.Run("ReportingPlugin", func(t *testing.T) {
 			ctx := tests.Context(t)
 
-			expectedReportingPluginImpl.AssertEqual(ctx, t, rp)
+			expectedReportingPlugin.AssertEqual(ctx, t, rp)
 		})
 	})
 }
@@ -63,7 +63,7 @@ type staticPluginMedianConfig struct {
 	provider                  staticMedianProvider
 	dataSource                staticDataSource
 	juelsPerFeeCoinDataSource staticDataSource
-	errorLog                  resources_test.StaticErrorLog
+	errorLog                  testtypes.ErrorLogEvaluator
 }
 
 type staticMedianFactoryServer struct {
@@ -152,28 +152,29 @@ func (s staticReportingPluginFactory) NewReportingPlugin(config libocr.Reporting
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationShouldTransmitAcceptedReport %d but got %d", s.MaxDurationShouldTransmitAcceptedReport, config.MaxDurationShouldTransmitAcceptedReport)
 	}
 
-	return reportingplugin_test.ReportingPluginImpl, rpi, nil
+	return testreportingplugin.ReportingPlugin, rpi, nil
 }
 
 type staticMedianProviderConfig struct {
 	// we use the static implementation type not the interface type
 	// because we always expect the static implementation to be used
 	// and it facilitates testing.
-	offchainDigester    test_types.OffchainConfigDigesterEvaluator
-	contractTracker     test_types.ContractConfigTrackerEvaluator
-	contractTransmitter test_types.ContractTransmitterEvaluator
+	offchainDigester    testtypes.OffchainConfigDigesterEvaluator
+	contractTracker     testtypes.ContractConfigTrackerEvaluator
+	contractTransmitter testtypes.ContractTransmitterEvaluator
 	reportCodec         staticReportCodec
 	medianContract      staticMedianContract
 	onchainConfigCodec  staticOnchainConfigCodec
-	chainReader         test_types.ChainReaderEvaluator
+	chainReader         testtypes.ChainReaderEvaluator
+	codec               testtypes.CodecEvaluator
 }
 
-// implements types.MedianProvider and test_types.Evaluator[types.MedianProvider]
+// implements types.MedianProvider and testtypes.Evaluator[types.MedianProvider]
 type staticMedianProvider struct {
 	staticMedianProviderConfig
 }
 
-var _ test_types.MedianProviderTester = staticMedianProvider{}
+var _ testtypes.MedianProviderTester = staticMedianProvider{}
 
 func (s staticMedianProvider) Start(ctx context.Context) error { return nil }
 
@@ -212,7 +213,7 @@ func (s staticMedianProvider) ChainReader() types.ChainReader {
 }
 
 func (s staticMedianProvider) Codec() types.Codec {
-	return resources_test.CodecImpl
+	return s.codec
 }
 
 func (s staticMedianProvider) AssertEqual(ctx context.Context, t *testing.T, provider types.MedianProvider) {
@@ -293,10 +294,10 @@ func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.Media
 	return nil
 }
 
-// implements median.ReportCodec and test_types.Evaluator[median.ReportCodec]
+// implements median.ReportCodec and testtypes.Evaluator[median.ReportCodec]
 type staticReportCodec struct{}
 
-var _ test_types.Evaluator[median.ReportCodec] = staticReportCodec{}
+var _ testtypes.Evaluator[median.ReportCodec] = staticReportCodec{}
 var _ median.ReportCodec = staticReportCodec{}
 
 // TODO remove hard coded values
@@ -356,12 +357,12 @@ type staticMedianContractConfig struct {
 	lookbackDuration time.Duration
 }
 
-// implements median.MedianContract and test_types.Evaluator[median.MedianContract]
+// implements median.MedianContract and testtypes.Evaluator[median.MedianContract]
 type staticMedianContract struct {
 	staticMedianContractConfig
 }
 
-var _ test_types.Evaluator[median.MedianContract] = (*staticMedianContract)(nil)
+var _ testtypes.Evaluator[median.MedianContract] = (*staticMedianContract)(nil)
 var _ median.MedianContract = (*staticMedianContract)(nil)
 
 func (s staticMedianContract) LatestTransmissionDetails(ctx context.Context) (libocr.ConfigDigest, uint32, uint8, *big.Int, time.Time, error) {
@@ -411,10 +412,10 @@ func (s staticMedianContract) Evaluate(ctx context.Context, mc median.MedianCont
 	return nil
 }
 
-// implements median.OnchainConfigCodec and test_types.Evaluator[median.OnchainConfigCodec]
+// implements median.OnchainConfigCodec and testtypes.Evaluator[median.OnchainConfigCodec]
 type staticOnchainConfigCodec struct{}
 
-var _ test_types.Evaluator[median.OnchainConfigCodec] = staticOnchainConfigCodec{}
+var _ testtypes.Evaluator[median.OnchainConfigCodec] = staticOnchainConfigCodec{}
 var _ median.OnchainConfigCodec = staticOnchainConfigCodec{}
 
 func (s staticOnchainConfigCodec) Encode(c median.OnchainConfig) ([]byte, error) {

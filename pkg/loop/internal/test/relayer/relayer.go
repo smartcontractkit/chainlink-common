@@ -17,12 +17,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median/test"
 	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
-	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/median"
-	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/mercury"
-	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
-	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -53,10 +52,10 @@ type staticPluginRelayerConfig struct {
 	StaticChecks     bool
 	relayArgs        types.RelayArgs
 	pluginArgs       types.PluginArgs
-	medianProvider   test_types.MedianProviderTester
-	agnosticProvider pluginprovider_test.PluginProviderTester
-	mercuryProvider  mercury_test.MercuryProviderTester
-	configProvider   pluginprovider_test.ConfigProviderTester
+	medianProvider   testtypes.MedianProviderTester
+	agnosticProvider testtypes.PluginProviderTester
+	mercuryProvider  mercury_common_test.MercuryProviderTester
+	configProvider   testpluginprovider.ConfigProviderTester
 	// TODO: add other Provider testers
 	nodeRequest        nodeRequest
 	nodeResponse       nodeResponse
@@ -64,16 +63,16 @@ type staticPluginRelayerConfig struct {
 	chainStatus        types.ChainStatus
 }
 
-func NewRelayerTester(staticChecks bool) test_types.RelayerTester {
+func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
 	return staticPluginRelayer{
 		staticPluginRelayerConfig: staticPluginRelayerConfig{
 			StaticChecks:     staticChecks,
 			relayArgs:        RelayArgs,
 			pluginArgs:       PluginArgs,
 			medianProvider:   median_test.MedianProvider,
-			mercuryProvider:  mercury_test.MercuryProviderImpl,
-			agnosticProvider: pluginprovider_test.AgnosticProviderImpl,
-			configProvider:   pluginprovider_test.ConfigProviderImpl,
+			mercuryProvider:  mercury_common_test.MercuryProvider,
+			agnosticProvider: testpluginprovider.AgnosticProvider,
+			configProvider:   testpluginprovider.ConfigProvider,
 			nodeRequest: nodeRequest{
 				pageSize:  137,
 				pageToken: "",
@@ -292,7 +291,7 @@ func RunPlugin(t *testing.T, p internal.PluginRelayer) {
 	ctx := tests.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
-		relayer, err := p.NewRelayer(ctx, ConfigTOML, resources_test.KeystoreImpl)
+		relayer, err := p.NewRelayer(ctx, ConfigTOML, testcore.Keystore)
 		require.NoError(t, err)
 		require.NoError(t, relayer.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })

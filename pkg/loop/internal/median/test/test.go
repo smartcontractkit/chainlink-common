@@ -8,8 +8,8 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
-	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 )
 
 const ConfigTOML = `[Foo]
@@ -28,15 +28,15 @@ var (
 			provider:                  MedianProvider,
 			dataSource:                DataSource,
 			juelsPerFeeCoinDataSource: JuelsPerFeeCoinDataSource,
-			errorLog:                  resources_test.ErrorLogImpl,
+			errorLog:                  testcore.ErrorLog,
 		},
 	}
 
 	MedianProvider = staticMedianProvider{
 		staticMedianProviderConfig: staticMedianProviderConfig{
-			offchainDigester:    pluginprovider_test.OffchainConfigDigesterImpl,
-			contractTracker:     pluginprovider_test.ContractConfigTrackerImpl,
-			contractTransmitter: pluginprovider_test.ContractTransmitterImpl,
+			offchainDigester:    testpluginprovider.OffchainConfigDigester,
+			contractTracker:     testpluginprovider.ContractConfigTracker,
+			contractTransmitter: testpluginprovider.ContractTransmitter,
 			reportCodec:         staticReportCodec{},
 			medianContract: staticMedianContract{
 				staticMedianContractConfig: staticMedianContractConfig{
@@ -49,7 +49,7 @@ var (
 				},
 			},
 			onchainConfigCodec: staticOnchainConfigCodec{},
-			chainReader:        pluginprovider_test.ChainReader,
+			chainReader:        testpluginprovider.ChainReader,
 		},
 	}
 )
@@ -73,7 +73,7 @@ var (
 	}
 
 	reportingPluginConfig = libocr.ReportingPluginConfig{
-		ConfigDigest:                            libocr.ConfigDigest{}, //pluginprovider_test.ConfigDigest,
+		ConfigDigest:                            libocr.ConfigDigest{}, //testpluginprovider.ConfigDigest,
 		OracleID:                                commontypes.OracleID(10),
 		N:                                       12,
 		F:                                       42,

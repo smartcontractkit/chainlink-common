@@ -8,11 +8,11 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 var _ median.DataSource = (*staticDataSource)(nil)
-var _ test_types.Evaluator[median.DataSource] = (*staticDataSource)(nil)
+var _ testtypes.Evaluator[median.DataSource] = (*staticDataSource)(nil)
 
 type staticDataSourceConfig struct {
 	ReportContext types.ReportContext

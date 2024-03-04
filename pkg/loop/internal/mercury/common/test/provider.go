@@ -1,4 +1,4 @@
-package mercury_test
+package mercury_common_test
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
-	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
 	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1/test"
 	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v2/test"
 	mercury_v3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3/test"
@@ -18,21 +17,21 @@ import (
 	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 
-	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
-var MercuryProviderImpl = staticMercuryProvider{
+var MercuryProvider = staticMercuryProvider{
 	staticMercuryProviderConfig: staticMercuryProviderConfig{
-		offchainDigester:    pluginprovider_test.OffchainConfigDigesterImpl,
-		contractTracker:     pluginprovider_test.ContractConfigTrackerImpl,
-		contractTransmitter: pluginprovider_test.ContractTransmitterImpl,
-		reportCodecV1:       mercury_v1_test.ReportCodecImpl,
-		reportCodecV2:       mercury_v2_test.ReportCodecImpl,
-		reportCodecV3:       mercury_v3_test.ReportCodecImpl,
-		onchainConfigCodec:  mercury_common_test.OnchainConfigCodecImpl,
-		mercuryChainReader:  mercury_common_test.ChainReaderImpl,
-		serviceFetcher:      mercury_common_test.ServerFetcherImpl,
+		offchainDigester:    testpluginprovider.OffchainConfigDigester,
+		contractTracker:     testpluginprovider.ContractConfigTracker,
+		contractTransmitter: testpluginprovider.ContractTransmitter,
+		reportCodecV1:       mercury_v1_test.ReportCodec,
+		reportCodecV2:       mercury_v2_test.ReportCodec,
+		reportCodecV3:       mercury_v3_test.ReportCodec,
+		onchainConfigCodec:  OnchainConfigCodec,
+		mercuryChainReader:  ChainReader,
+		serviceFetcher:      ServerFetcher,
 	},
 }
 
@@ -45,15 +44,15 @@ type staticMercuryProviderConfig struct {
 	// we use the static implementation type not the interface type
 	// because we always expect the static implementation to be used
 	// and it facilitates testing.
-	offchainDigester    test_types.OffchainConfigDigesterEvaluator
-	contractTracker     test_types.ContractConfigTrackerEvaluator
-	contractTransmitter test_types.ContractTransmitterEvaluator
+	offchainDigester    testtypes.OffchainConfigDigesterEvaluator
+	contractTracker     testtypes.ContractConfigTrackerEvaluator
+	contractTransmitter testtypes.ContractTransmitterEvaluator
 	reportCodecV1       mercury_v1_test.ReportCodecEvaluator
 	reportCodecV2       mercury_v2_test.ReportCodecEvaluator
 	reportCodecV3       mercury_v3_test.ReportCodecEvaluator
-	onchainConfigCodec  mercury_common_test.OnchainConfigCodecEvaluator
-	mercuryChainReader  mercury_common_test.MercuryChainReaderEvaluator
-	serviceFetcher      mercury_common_test.ServerFetcherEvaluator
+	onchainConfigCodec  OnchainConfigCodecEvaluator
+	mercuryChainReader  MercuryChainReaderEvaluator
+	serviceFetcher      ServerFetcherEvaluator
 }
 
 var _ types.MercuryProvider = staticMercuryProvider{}

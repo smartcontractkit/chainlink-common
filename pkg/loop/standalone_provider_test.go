@@ -7,13 +7,13 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	pluginprovider_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 )
 
 func TestRegisterStandAloneProvider_Median(t *testing.T) {
 	s := grpc.NewServer()
 
-	p := pluginprovider_test.AgnosticPluginProviderImpl
+	p := testpluginprovider.AgnosticPluginProvider
 	err := loop.RegisterStandAloneProvider(s, p, "some-type-we-do-not-support")
 	require.ErrorContains(t, err, "unsupported stand alone provider")
 

@@ -1,4 +1,4 @@
-package reportingplugin_test
+package reportingplugin
 
 import (
 	"time"
@@ -16,8 +16,8 @@ const (
 )
 
 var (
-	// ReportingPluginImpl is a static implementation of the ReportingPluginTester interface for testing
-	ReportingPluginImpl = staticReportingPlugin{
+	// ReportingPlugin is a static implementation of the ReportingPluginTester interface for testing
+	ReportingPlugin = staticReportingPlugin{
 		staticReportingPluginConfig: staticReportingPluginConfig{
 			ReportContext:          reportContext,
 			Query:                  query,
@@ -48,7 +48,7 @@ var (
 	}
 
 	reportingPluginConfig = libocr.ReportingPluginConfig{
-		ConfigDigest:                            libocr.ConfigDigest{}, // pluginprovider_test.ConfigDigest,
+		ConfigDigest:                            libocr.ConfigDigest{}, // testpluginprovider.ConfigDigest,
 		OracleID:                                commontypes.OracleID(10),
 		N:                                       12,
 		F:                                       42,

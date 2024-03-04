@@ -7,16 +7,15 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	mercury_v1_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 )
 
-var DataSourceImpl = staticDataSource{}
+var DataSource = staticDataSource{}
 
 type DataSourceEvaluator interface {
 	mercury_v1_types.DataSource
-	// Evaluate runs the other DataSource and checks that
-	// the results are equal to this one
-	Evaluate(ctx context.Context, other mercury_v1_types.DataSource) error
+	testtypes.Evaluator[mercury_v1_types.DataSource]
 }
 
 type staticDataSource struct{}

@@ -8,9 +8,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr3/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr3"
-	resources_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/resources"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -28,10 +28,10 @@ func PluginGenericTest(t *testing.T, p types.OCR3ReportingPluginClient) {
 		ctx := tests.Context(t)
 		factory, err := p.NewReportingPluginFactory(ctx,
 			types.ReportingPluginServiceConfig{},
-			resources_test.MockConn{},
-			resources_test.PipelineRunnerImpl,
-			resources_test.Telemetry,
-			&resources_test.ErrorLogImpl,
+			testcore.MockConn{},
+			testcore.PipelineRunner,
+			testcore.Telemetry,
+			&testcore.ErrorLog,
 			types.CapabilitiesRegistry(nil))
 		require.NoError(t, err)
 
@@ -47,7 +47,7 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 		t,
 		ocr3_test.OCR3ReportingPluginWithMedianProviderName,
 		&GRPCService[types.MedianProvider]{
-			PluginServer: ocr3_test.MedianGeneratorImpl,
+			PluginServer: ocr3_test.MedianServer,
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,
@@ -65,7 +65,7 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 		t,
 		PluginServiceName,
 		&GRPCService[types.PluginProvider]{
-			PluginServer: ocr3_test.AgnosticPluginGeneratorImpl,
+			PluginServer: ocr3_test.AgnosticPluginServer,
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,

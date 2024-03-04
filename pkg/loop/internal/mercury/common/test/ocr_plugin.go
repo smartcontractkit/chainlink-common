@@ -1,4 +1,4 @@
-package mercury_test
+package mercury_common_test
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	test_types "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 // MercuryPlugin is a test helper for testing [ocr3types.MercuryPlugin] implementations.
@@ -68,7 +68,7 @@ type staticMercuryPlugin struct {
 }
 
 var _ ocr3types.MercuryPlugin = staticMercuryPlugin{}
-var _ test_types.AssertEqualer[ocr3types.MercuryPlugin] = staticMercuryPlugin{}
+var _ testtypes.AssertEqualer[ocr3types.MercuryPlugin] = staticMercuryPlugin{}
 
 func (s staticMercuryPlugin) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, previousReport libocr.Report) (libocr.Observation, error) {
 	if timestamp != s.observationRequest.reportTimestamp {

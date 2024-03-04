@@ -1,4 +1,4 @@
-package pluginprovider_test
+package pluginprovider
 
 import (
 	"context"
@@ -7,14 +7,6 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 )
-
-// OffchainConfigDigesterEvaluator is a helper interface for testing OffchainConfigDigesters
-type OffchainConfigDigesterEvaluator interface {
-	libocr.OffchainConfigDigester
-	// Evaluate runs all the methods of the other OffchainConfigDigester and
-	// checks for equality to this one
-	Evaluate(ctx context.Context, ocd libocr.OffchainConfigDigester) error
-}
 
 type staticOffchainConfigDigesterConfig struct {
 	contractConfig     libocr.ContractConfig

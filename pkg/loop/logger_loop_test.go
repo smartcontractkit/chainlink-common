@@ -22,7 +22,7 @@ func TestHCLogLogger(t *testing.T) {
 	t.Cleanup(c.Kill)
 	_, err := c.Client()
 	require.Error(t, err)
-	time.Sleep(time.Second * 2)
+
 	// Some logs should come through with plugin-side names
 	require.NotEmpty(t, ol.Filter(func(entry observer.LoggedEntry) bool {
 		return entry.LoggerName == test.LoggerTestName
@@ -38,7 +38,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 	t.Cleanup(c.Kill)
 	_, err := c.Client()
 	require.NoError(t, err)
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 2) //wait for panic
 
 	entrys := ol.All()
 	require.Len(t, entrys, 2)

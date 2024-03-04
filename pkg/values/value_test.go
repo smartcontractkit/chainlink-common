@@ -49,7 +49,7 @@ func Test_Value(t *testing.T) {
 				if err != nil {
 					return nil, nil, err
 				}
-				decv, err := NewDecimal(dec)
+				decv := NewDecimal(dec)
 				return dec, decv, err
 			},
 		},
@@ -57,24 +57,24 @@ func Test_Value(t *testing.T) {
 			name: "string",
 			newValue: func() (any, Value, error) {
 				s := "hello"
-				sv, err := NewString(s)
-				return s, sv, err
+				sv := NewString(s)
+				return s, sv, nil
 			},
 		},
 		{
 			name: "bytes",
 			newValue: func() (any, Value, error) {
 				b := []byte("hello")
-				bv, err := NewBytes(b)
-				return b, bv, err
+				bv := NewBytes(b)
+				return b, bv, nil
 			},
 		},
 		{
 			name: "bool",
 			newValue: func() (any, Value, error) {
 				b := true
-				bv, err := NewBool(b)
-				return b, bv, err
+				bv := NewBool(b)
+				return b, bv, nil
 			},
 		},
 		{
@@ -92,6 +92,36 @@ func Test_Value(t *testing.T) {
 				return m, mv, err
 			},
 		},
+		{
+			name: "map of values",
+			newValue: func() (any, Value, error) {
+				bar := "bar"
+				str := &String{Underlying: bar}
+				l, err := NewList([]any{1, 2, 3})
+				if err != nil {
+					return nil, nil, err
+				}
+				m := map[string]any{
+					"hello": map[string]any{
+						"string": str,
+						"nil":    nil,
+						"list":   l,
+					},
+				}
+				mv, err := NewMap(m)
+
+				list := []any{int64(1), int64(2), int64(3)}
+				expectedUnwrapped := map[string]any{
+					"hello": map[string]any{
+						"string": bar,
+						"nil":    nil,
+						"list":   list,
+					},
+				}
+
+				return expectedUnwrapped, mv, err
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -99,14 +129,12 @@ func Test_Value(t *testing.T) {
 			originalValue, wrapped, err := tc.newValue()
 			require.NoError(t, err)
 
-			pb, err := wrapped.Proto()
-			require.NoError(t, err)
+			pb := Proto(wrapped)
 
-			rehydratedValue, err := FromProto(pb)
-			require.NoError(t, err)
+			rehydratedValue := FromProto(pb)
 			assert.Equal(t, wrapped, rehydratedValue)
 
-			unwrapped, err := rehydratedValue.Unwrap()
+			unwrapped, err := Unwrap(rehydratedValue)
 			require.NoError(t, err)
 			if tc.equal != nil {
 				tc.equal(t, originalValue, unwrapped)

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -124,11 +125,10 @@ func (m Codec) UnwrapMercuryTriggerEvent(raw values.Value) (TriggerEvent, error)
 	mercuryTriggerEvent.Payload = make([]FeedReport, 0)
 	for _, report := range event["Payload"].([]any) {
 		reportMap := report.(map[string]any)
-		mercuryReport := FeedReport{
-			FeedID:               reportMap["FeedID"].(int64),
-			FullReport:           reportMap["FullReport"].([]byte),
-			BenchmarkPrice:       reportMap["BenchmarkPrice"].(int64),
-			ObservationTimestamp: reportMap["ObservationTimestamp"].(int64),
+		var mercuryReport FeedReport
+		err = mapstructure.Decode(reportMap, &mercuryReport)
+		if err != nil {
+			return mercuryTriggerEvent, err
 		}
 		mercuryTriggerEvent.Payload = append(mercuryTriggerEvent.Payload, mercuryReport)
 	}

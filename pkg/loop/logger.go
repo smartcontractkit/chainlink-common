@@ -52,6 +52,14 @@ func removeArg(args []interface{}, key string) ([]interface{}, string) {
 	return args, ""
 }
 
+func logDebug(msg string, l logger.Logger, args ...interface{}) {
+	if len(msg) > 7 && msg[:6] == "panic:" {
+		l.Errorw(msg, args...)
+	} else {
+		l.Debugw(msg, args...)
+	}
+}
+
 func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ...interface{}) {
 	if level == hclog.Off {
 		return
@@ -66,8 +74,10 @@ func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ..
 	case hclog.Off:
 		return // unreachable, but satisfies linter
 	case hclog.NoLevel:
-	case hclog.Debug, hclog.Trace:
+	case hclog.Trace:
 		l.Debugw(msg, args...)
+	case hclog.Debug:
+		logDebug(msg, l, args...)
 	case hclog.Info:
 		l.Infow(msg, args...)
 	case hclog.Warn:

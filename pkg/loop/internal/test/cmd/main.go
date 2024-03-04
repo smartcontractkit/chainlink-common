@@ -87,6 +87,15 @@ func main() {
 			},
 			GRPCServer: grpcServer,
 		})
+	case test.PluginLoggerTestPanicName:
+		loggerTest := &test.GRPCPluginLoggerTestPanic{Logger: logger.Named(lggr, test.LoggerTestName)}
+		plugin.Serve(&plugin.ServeConfig{
+			HandshakeConfig: test.PluginLoggerTestHandshakeConfig(),
+			Plugins: map[string]plugin.Plugin{
+				test.PluginLoggerTestPanicName: loggerTest,
+			},
+			GRPCServer: grpcServer,
+		})
 
 	case reportingplugins.PluginServiceName:
 		plugin.Serve(&plugin.ServeConfig{

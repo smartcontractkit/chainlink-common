@@ -13,6 +13,7 @@ import (
 )
 
 const PluginLoggerTestName = "logger-test"
+const PluginLoggerTestPanicName = "logger-test-panic"
 
 const LoggerTestName = "server-side-logger-name"
 
@@ -51,3 +52,38 @@ func PluginLoggerTestHandshakeConfig() plugin.HandshakeConfig {
 		MagicCookieValue: "272d1867cdc8042f9405d7c1da3762ec",
 	}
 }
+
+type GRPCPluginLoggerTestPanic struct {
+	plugin.NetRPCUnsupportedPlugin
+
+	logger.Logger
+}
+
+func (g *GRPCPluginLoggerTestPanic) GRPCServer(*plugin.GRPCBroker, *grpc.Server) (err error) {
+	//Simulate panic after GRPC is started
+	go func() {
+		time.Sleep(time.Second)
+		panic("test panic")
+	}()
+	return err
+}
+
+func (g *GRPCPluginLoggerTestPanic) GRPCClient(context.Context, *plugin.GRPCBroker, *grpc.ClientConn) (interface{}, error) {
+	return nil, errors.New("unimplemented")
+}
+
+func (g *GRPCPluginLoggerTestPanic) ClientConfig() *plugin.ClientConfig {
+	return &plugin.ClientConfig{
+		HandshakeConfig:  PluginLoggerTestHandshakeConfig(),
+		Plugins:          map[string]plugin.Plugin{PluginLoggerTestPanicName: g},
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		Logger:           loop.HCLogLogger(g.Logger),
+	}
+}
+
+//func PluginLoggerTestHandshakeConfig() plugin.HandshakeConfig {
+//	return plugin.HandshakeConfig{
+//		MagicCookieKey:   "CL_PLUGIN_LOGGER_TEST_MAGIC_COOKIE",
+//		MagicCookieValue: "272d1867cdc8042f9405d7c1da3762ec",
+//	}
+//}

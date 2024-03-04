@@ -12,6 +12,28 @@ service ChainReader {
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
+message AndFilter {
+  repeated QueryKeysRequest filters = 1;
+}
+
+message AddressFilter {
+  repeated string address = 1;
+}
+
+message KeysFilter {
+  repeated string event_sig = 1;
+}
+
+message QueryKeysRequest {
+  oneof filter {
+    AndFilter and_filter = 1;
+    AddressFilter address_filter = 2;
+    KeysFilter keys_filter = 3;
+  }
+}
+
+
+
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueRequest {
   string contractName = 1;
@@ -21,6 +43,11 @@ message GetLatestValueRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueReply {
+  VersionedBytes retVal = 1;
+}
+
+// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
+message QueryKeysReply {
   VersionedBytes retVal = 1;
 }
 

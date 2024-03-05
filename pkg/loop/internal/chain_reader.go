@@ -144,6 +144,8 @@ func logQueryFilterValues(queryFilter types.QueryFilter) error {
 		fmt.Println("****************************")
 		return nil
 	default:
+		fmt.Println("Unknown Filter value is: ", fmt.Sprintf("Unknown filter type %T ", queryFilter))
+
 		return status.Errorf(codes.InvalidArgument, fmt.Sprintf("Unknown filter type %T ", queryFilter))
 	}
 

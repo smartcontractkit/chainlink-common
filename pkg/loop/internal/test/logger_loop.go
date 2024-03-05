@@ -60,7 +60,8 @@ type GRPCPluginLoggerTestPanic struct {
 }
 
 func (g *GRPCPluginLoggerTestPanic) GRPCServer(*plugin.GRPCBroker, *grpc.Server) (err error) {
-	//Simulate panic after GRPC is started
+	//Simulate panic after GRPC is started, if a panic is thrown before the GRPC server is initialized
+	//it will not be caught as stderr will be closed before HashiCorp plugin will have a change to read from it
 	go func() {
 		time.Sleep(time.Second)
 		panic("test panic")

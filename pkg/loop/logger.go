@@ -52,6 +52,8 @@ func removeArg(args []interface{}, key string) ([]interface{}, string) {
 	return args, ""
 }
 
+// logDebug will parse msg and figure out if it's a panic, this is done here because the hashicorp plugin will push any
+// unrecognizable message from stderr as a debug statement
 func logDebug(msg string, l logger.Logger, args ...interface{}) {
 	if len(msg) > 7 && msg[:6] == "panic:" {
 		l.Errorw(msg, args...)

@@ -104,5 +104,4 @@ func TestHCLogLoggerPanic(t *testing.T) {
 
 		})
 	}
-
 }

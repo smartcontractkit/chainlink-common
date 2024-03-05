@@ -45,7 +45,6 @@ func (g *GRPCPluginLoggerTest) GRPCServer(*plugin.GRPCBroker, *grpc.Server) (err
 		case 6:
 			g.Debugw("some debug log", "custom-name-debug", "custom-value-debug")
 		}
-
 	}()
 	return err
 }

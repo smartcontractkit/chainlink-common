@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	jsonv2 "github.com/go-json-experiment/json"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -117,7 +118,7 @@ func (c *chainReaderClient) QueryKeys(ctx context.Context, queryFilter types.Que
 	fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! chainReaderClient Query Keys")
 	err := logQueryFilterValues(queryFilter)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "test debug")
 	}
 	return nil, nil
 }
@@ -146,7 +147,7 @@ func logQueryFilterValues(queryFilter types.QueryFilter) error {
 	default:
 		fmt.Println("Unknown Filter value is: ", fmt.Sprintf("Unknown filter type %T ", queryFilter))
 
-		return status.Errorf(codes.InvalidArgument, fmt.Sprintf("Unknown filter type %T ", queryFilter))
+		return status.Errorf(codes.InvalidArgument, fmt.Sprintf("Unknown filter typeoo %T ", queryFilter))
 	}
 
 	return nil

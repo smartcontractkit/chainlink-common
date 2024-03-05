@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jonboulle/clockwork"
 	"github.com/mitchellh/mapstructure"
@@ -17,8 +18,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+const (
+	ocrCapabilityID = "offchain_reporting"
+)
+
 var info = capabilities.MustNewCapabilityInfo(
-	"offchain_reporting",
+	ocrCapabilityID,
 	capabilities.CapabilityTypeConsensus,
 	"OCR3 consensus exposed as a capability.",
 	"v1.0.0",
@@ -32,29 +37,34 @@ type capability struct {
 	wg     sync.WaitGroup
 	lggr   logger.Logger
 
-	clock clockwork.Clock
-
-	newExpiryWorkerCh chan *request
+	requestTimeout time.Duration
+	clock          clockwork.Clock
 
 	aggregators map[string]types.Aggregator
 
 	encoderFactory EncoderFactory
 	encoders       map[string]types.Encoder
+
+	transmitCh chan *response
+	newTimerCh chan *request
 }
 
 var _ capabilityIface = (*capability)(nil)
 
-func newCapability(s *store, clock clockwork.Clock, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
+func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
 	o := &capability{
-		CapabilityInfo:    info,
-		store:             s,
-		newExpiryWorkerCh: make(chan *request),
-		clock:             clock,
-		stopCh:            make(chan struct{}),
-		lggr:              lggr,
-		encoderFactory:    encoderFactory,
-		aggregators:       map[string]types.Aggregator{},
-		encoders:          map[string]types.Encoder{},
+		CapabilityInfo: info,
+		store:          s,
+		clock:          clock,
+		requestTimeout: requestTimeout,
+		stopCh:         make(chan struct{}),
+		lggr:           logger.Named(lggr, "OCR3CapabilityClient"),
+		encoderFactory: encoderFactory,
+		aggregators:    map[string]types.Aggregator{},
+		encoders:       map[string]types.Encoder{},
+
+		transmitCh: make(chan *response),
+		newTimerCh: make(chan *request),
 	}
 	return o
 }
@@ -62,7 +72,7 @@ func newCapability(s *store, clock clockwork.Clock, encoderFactory EncoderFactor
 func (o *capability) Start(ctx context.Context) error {
 	return o.StartOnce("OCR3Capability", func() error {
 		o.wg.Add(1)
-		go o.loop()
+		go o.worker()
 		return nil
 	})
 }
@@ -75,58 +85,44 @@ func (o *capability) Close() error {
 	})
 }
 
+func (o *capability) Name() string { return o.lggr.Name() }
+
+func (o *capability) HealthReport() map[string]error {
+	return map[string]error{o.Name(): o.Healthy()}
+}
+
 type workflowConfig struct {
-	AggregationMethod string         `mapstructure:"aggregation_method"`
-	AggregationConfig map[string]any `mapstructure:"aggregation_config"`
-	Encoder           string         `mapstructure:"encoder"`
-	EncoderConfig     map[string]any `mapstructure:"encoder_config"`
+	AggregationMethod string      `mapstructure:"aggregation_method"`
+	AggregationConfig *values.Map `mapstructure:"aggregation_config"`
+	Encoder           string      `mapstructure:"encoder"`
+	EncoderConfig     *values.Map `mapstructure:"encoder_config"`
+}
+
+func newWorkflowConfig() *workflowConfig {
+	return &workflowConfig{
+		EncoderConfig:     values.EmptyMap(),
+		AggregationConfig: values.EmptyMap(),
+	}
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
-	confMap, err := request.Config.Unwrap()
+	c := newWorkflowConfig()
+	err := request.Config.UnwrapTo(c)
 	if err != nil {
 		return err
-	}
-
-	// TODO: values lib should a wrapped version of decode
-	// which can handle passthrough translations of maps to values.Map.
-	// This will avoid the need to translate/untranslate
-	c := &workflowConfig{}
-	err = mapstructure.Decode(confMap, c)
-	if err != nil {
-		return err
-	}
-
-	if c.AggregationConfig == nil {
-		o.lggr.Warn("aggregation_config is empty")
-		c.AggregationConfig = map[string]any{}
-	}
-	if c.EncoderConfig == nil {
-		o.lggr.Warn("encoder_config is empty")
-		c.EncoderConfig = map[string]any{}
 	}
 
 	switch c.AggregationMethod {
 	case "data_feeds_2_0":
-		cm, err := values.NewMap(c.AggregationConfig)
-		if err != nil {
-			return err
-		}
-
 		mc := mercury.NewCodec()
-		agg, err := datafeeds.NewDataFeedsAggregator(*cm, mc, o.lggr)
+		agg, err := datafeeds.NewDataFeedsAggregator(*c.AggregationConfig, mc, o.lggr)
 		if err != nil {
 			return err
 		}
 
 		o.aggregators[request.Metadata.WorkflowID] = agg
 
-		em, err := values.NewMap(c.EncoderConfig)
-		if err != nil {
-			return err
-		}
-
-		encoder, err := o.encoderFactory(em)
+		encoder, err := o.encoderFactory(c.EncoderConfig)
 		if err != nil {
 			return err
 		}
@@ -176,11 +172,11 @@ func (o *capability) Execute(ctx context.Context, callback chan<- capabilities.C
 		return err
 	}
 
-	o.newExpiryWorkerCh <- r
+	o.newTimerCh <- r
 	return nil
 }
 
-func (o *capability) loop() {
+func (o *capability) worker() {
 	ctx, cancel := o.stopCh.NewCtx()
 	defer cancel()
 	defer o.wg.Done()
@@ -189,14 +185,31 @@ func (o *capability) loop() {
 		select {
 		case <-ctx.Done():
 			return
-		case r := <-o.newExpiryWorkerCh:
+		case r := <-o.newTimerCh:
 			o.wg.Add(1)
-			go o.expiryWorker(ctx, r)
+			go o.expiryTimer(ctx, r)
+		case resp := <-o.transmitCh:
+			o.handleTransmitMsg(ctx, resp)
 		}
 	}
 }
 
-func (o *capability) expiryWorker(ctx context.Context, r *request) {
+func (o *capability) handleTransmitMsg(ctx context.Context, resp *response) {
+	req, wasPresent := o.store.evict(ctx, resp.WorkflowExecutionID)
+	if !wasPresent {
+		return
+	}
+
+	select {
+	case <-req.RequestCtx.Done():
+		// This should only happen if the client has closed the upstream context.
+		// In this case, the request is cancelled and we shouldn't transmit.
+	case req.CallbackCh <- resp.CapabilityResponse:
+		close(req.CallbackCh)
+	}
+}
+
+func (o *capability) expiryTimer(ctx context.Context, r *request) {
 	defer o.wg.Done()
 
 	d := r.ExpiresAt.Sub(o.clock.Now())
@@ -207,45 +220,21 @@ func (o *capability) expiryWorker(ctx context.Context, r *request) {
 	case <-ctx.Done():
 		return
 	case <-tr.Chan():
-		wasPresent := o.store.evict(ctx, r.WorkflowExecutionID)
-		if !wasPresent {
-			// the item was already evicted,
-			// we'll assume it was processed successfully
-			// and return
-			return
+		resp := &response{
+			WorkflowExecutionID: r.WorkflowExecutionID,
+			CapabilityResponse: capabilities.CapabilityResponse{
+				Err:   fmt.Errorf("timeout exceeded: could not process request before expiry %s", r.WorkflowExecutionID),
+				Value: nil,
+			},
 		}
 
-		timeoutResp := capabilities.CapabilityResponse{
-			Err: fmt.Errorf("timeout exceeded: could not process request before expiry %+v", r.WorkflowExecutionID),
-		}
-
-		select {
-		case <-r.RequestCtx.Done():
-		case r.CallbackCh <- timeoutResp:
-			close(r.CallbackCh)
-		}
+		o.transmitCh <- resp
 	}
 }
 
-func (o *capability) transmitResponse(ctx context.Context, resp response) error {
-	req, err := o.store.get(ctx, resp.WorkflowExecutionID)
-	if err != nil {
-		return err
-	}
-
-	r := capabilities.CapabilityResponse{
-		Value: resp.Value,
-		Err:   resp.Err,
-	}
-
-	select {
-	case <-req.RequestCtx.Done():
-		return fmt.Errorf("request canceled: not propagating response %+v to caller", resp)
-	case req.CallbackCh <- r:
-		close(req.CallbackCh)
-		o.store.evict(ctx, resp.WorkflowExecutionID)
-		return nil
-	}
+func (o *capability) transmitResponse(ctx context.Context, resp *response) error {
+	o.transmitCh <- resp
+	return nil
 }
 
 func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.CapabilityRequest, callback chan<- capabilities.CapabilityResponse) (*request, error) {
@@ -254,12 +243,14 @@ func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.Capabi
 		return nil, err
 	}
 
+	expiresAt := o.clock.Now().Add(o.requestTimeout)
 	req := &request{
-		RequestCtx:          ctx,
+		RequestCtx:          context.Background(), // TODO: set correct context
 		CallbackCh:          callback,
 		WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 		WorkflowID:          r.Metadata.WorkflowID,
 		Observations:        r.Inputs.Underlying["observations"],
+		ExpiresAt:           expiresAt,
 	}
 	err = mapstructure.Decode(valuesMap, req)
 	if err != nil {

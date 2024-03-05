@@ -21,15 +21,10 @@ func NewList(l []any) (*List, error) {
 	return &List{Underlying: lv}, nil
 }
 
-func (l *List) Proto() (*pb.Value, error) {
+func (l *List) proto() *pb.Value {
 	v := []*pb.Value{}
 	for _, e := range l.Underlying {
-		pe, err := e.Proto()
-		if err != nil {
-			return nil, err
-		}
-
-		v = append(v, pe)
+		v = append(v, Proto(e))
 	}
 	return pb.NewListValue(v)
 }
@@ -37,7 +32,7 @@ func (l *List) Proto() (*pb.Value, error) {
 func (l *List) Unwrap() (any, error) {
 	nl := []any{}
 	for _, v := range l.Underlying {
-		uv, err := v.Unwrap()
+		uv, err := Unwrap(v)
 		if err != nil {
 			return nil, err
 		}

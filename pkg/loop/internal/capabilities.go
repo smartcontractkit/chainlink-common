@@ -14,7 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type ActionCapabilityClient struct {
@@ -212,17 +211,8 @@ func (t *triggerExecutableServer) RegisterTrigger(ctx context.Context, request *
 	cr := request.CapabilityRequest
 	md := cr.Metadata
 
-	config, err := values.FromProto(cr.Config)
-	if err != nil {
-		connCancel()
-		return nil, err
-	}
-
-	inputs, err := values.FromProto(cr.Inputs)
-	if err != nil {
-		connCancel()
-		return nil, err
-	}
+	config := values.FromProto(cr.Config)
+	inputs := values.FromProto(cr.Inputs)
 
 	req := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
@@ -247,17 +237,10 @@ func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 	req := request.CapabilityRequest
 	md := req.Metadata
 
-	config, err := values.FromProto(req.Config)
-	if err != nil {
-		return nil, err
-	}
+	config := values.FromProto(req.Config)
+	inputs := values.FromProto(req.Inputs)
 
-	inputs, err := values.FromProto(req.Inputs)
-	if err != nil {
-		return nil, err
-	}
-
-	err = t.impl.UnregisterTrigger(ctx, capabilities.CapabilityRequest{
+	err := t.impl.UnregisterTrigger(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:          md.WorkflowId,
 			WorkflowExecutionID: md.WorkflowExecutionId,
@@ -348,12 +331,9 @@ func newCallbackExecutableServer(brokerExt *BrokerExt, impl capabilities.Callbac
 var _ pb.CallbackExecutableServer = (*callbackExecutableServer)(nil)
 
 func (c *callbackExecutableServer) RegisterToWorkflow(ctx context.Context, req *pb.RegisterToWorkflowRequest) (*emptypb.Empty, error) {
-	config, err := values.FromProto(req.Config)
-	if err != nil {
-		return nil, err
-	}
+	config := values.FromProto(req.Config)
 
-	err = c.impl.RegisterToWorkflow(ctx, capabilities.RegisterToWorkflowRequest{
+	err := c.impl.RegisterToWorkflow(ctx, capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
 			WorkflowID: req.Metadata.WorkflowId,
 		},
@@ -363,12 +343,9 @@ func (c *callbackExecutableServer) RegisterToWorkflow(ctx context.Context, req *
 }
 
 func (c *callbackExecutableServer) UnregisterFromWorkflow(ctx context.Context, req *pb.UnregisterFromWorkflowRequest) (*emptypb.Empty, error) {
-	config, err := values.FromProto(req.Config)
-	if err != nil {
-		return nil, err
-	}
+	config := values.FromProto(req.Config)
 
-	err = c.impl.UnregisterFromWorkflow(ctx, capabilities.UnregisterFromWorkflowRequest{
+	err := c.impl.UnregisterFromWorkflow(ctx, capabilities.UnregisterFromWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
 			WorkflowID: req.Metadata.WorkflowId,
 		},
@@ -391,17 +368,8 @@ func (c *callbackExecutableServer) Execute(ctx context.Context, req *pb.ExecuteR
 	cr := req.CapabilityRequest
 	md := cr.Metadata
 
-	config, err := values.FromProto(cr.Config)
-	if err != nil {
-		connCancel()
-		return nil, err
-	}
-
-	inputs, err := values.FromProto(cr.Inputs)
-	if err != nil {
-		connCancel()
-		return nil, err
-	}
+	config := values.FromProto(cr.Config)
+	inputs := values.FromProto(cr.Inputs)
 
 	r := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
@@ -442,19 +410,9 @@ func toProto(req capabilities.CapabilityRequest) (*pb.CapabilityRequest, error) 
 		inputs = req.Inputs
 	}
 
-	inputsPb, err := inputs.Proto()
-	if err != nil {
-		return nil, err
-	}
-
 	config := &values.Map{Underlying: map[string]values.Value{}}
 	if req.Config != nil {
 		config = req.Config
-	}
-
-	configPb, err := config.Proto()
-	if err != nil {
-		return nil, err
 	}
 
 	return &pb.CapabilityRequest{
@@ -462,8 +420,8 @@ func toProto(req capabilities.CapabilityRequest) (*pb.CapabilityRequest, error) 
 			WorkflowId:          req.Metadata.WorkflowID,
 			WorkflowExecutionId: req.Metadata.WorkflowExecutionID,
 		},
-		Inputs: inputsPb,
-		Config: configPb,
+		Inputs: values.Proto(inputs),
+		Config: values.Proto(config),
 	}, nil
 }
 
@@ -499,19 +457,14 @@ func (c *callbackExecutableClient) UnregisterFromWorkflow(ctx context.Context, r
 		config = req.Config
 	}
 
-	configPb, err := config.Proto()
-	if err != nil {
-		return err
-	}
-
 	r := &pb.UnregisterFromWorkflowRequest{
-		Config: configPb,
+		Config: values.Proto(config),
 		Metadata: &pb.RegistrationMetadata{
 			WorkflowId: req.Metadata.WorkflowID,
 		},
 	}
 
-	_, err = c.grpc.UnregisterFromWorkflow(ctx, r)
+	_, err := c.grpc.UnregisterFromWorkflow(ctx, r)
 	return err
 }
 
@@ -521,19 +474,14 @@ func (c *callbackExecutableClient) RegisterToWorkflow(ctx context.Context, req c
 		config = req.Config
 	}
 
-	configPb, err := config.Proto()
-	if err != nil {
-		return err
-	}
-
 	r := &pb.RegisterToWorkflowRequest{
-		Config: configPb,
+		Config: values.Proto(config),
 		Metadata: &pb.RegistrationMetadata{
 			WorkflowId: req.Metadata.WorkflowID,
 		},
 	}
 
-	_, err = c.grpc.RegisterToWorkflow(ctx, r)
+	_, err := c.grpc.RegisterToWorkflow(ctx, r)
 	return err
 }
 
@@ -556,12 +504,9 @@ func (c *callbackServer) SendResponse(ctx context.Context, req *pb.CapabilityRes
 		return nil, errors.New("cannot send response: the underlying channel has been closed")
 	}
 
-	val, err := values.FromProto(req.Value)
-	if err != nil {
-		return nil, err
-	}
+	val := values.FromProto(req.Value)
 
-	err = nil
+	var err error
 	if req.Error != "" {
 		err = errors.New(req.Error)
 	}
@@ -594,24 +539,15 @@ func callbackIssuer(ctx context.Context, client pb.CallbackClient, callbackChann
 				}
 				return
 			}
-			var (
-				val    *valuespb.Value
-				errStr string
-			)
+
+			errStr := ""
 			if resp.Err != nil {
 				errStr = resp.Err.Error()
 			}
-			if resp.Value != nil {
-				v, err := resp.Value.Proto()
-				if err != nil {
-					errStr = err.Error()
-				} else {
-					val = v
-				}
-			}
+
 			cr := &pb.CapabilityResponse{
 				Error: errStr,
-				Value: val,
+				Value: values.Proto(resp.Value),
 			}
 
 			_, err := client.SendResponse(ctx, cr)

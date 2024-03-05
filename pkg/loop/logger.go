@@ -1,9 +1,11 @@
 package loop
 
 import (
+	"encoding/json"
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"go.uber.org/zap"
@@ -53,11 +55,76 @@ func removeArg(args []interface{}, key string) ([]interface{}, string) {
 	return args, ""
 }
 
-// logDebug will parse msg and figure out if it's a panic, this is done here because the hashicorp plugin will push any
+// logMessage is the JSON payload that gets sent to Stderr from the plugin to the host
+type logMessage struct {
+	Message   string                 `json:"@message"`
+	Level     string                 `json:"@level"`
+	Timestamp time.Time              `json:"timestamp"`
+	ExtraArgs []*LogMessageExtraArgs `json:"extra_args"`
+}
+
+// LogMessageExtraArgs is a key value pair within the Output payload
+type LogMessageExtraArgs struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
+// flattenExtraArgs is used to flatten arguments of the log message
+func flattenExtraArgs(le *logMessage) []interface{} {
+	var result []interface{}
+	result = append(result, "level")
+	result = append(result, le.Level)
+	result = append(result, "timestamp")
+	result = append(result, le.Timestamp)
+	for _, kv := range le.ExtraArgs {
+		result = append(result, kv.Key)
+		result = append(result, kv.Value)
+	}
+
+	return result
+}
+
+// parseJSON handles parsing JSON output
+func parseJSON(input string) (*logMessage, error) {
+	var raw map[string]interface{}
+	entry := &logMessage{}
+
+	err := json.Unmarshal([]byte(input), &raw)
+	if err != nil {
+		return nil, err
+	}
+
+	if v, ok := raw["@message"]; ok {
+		entry.Message = v.(string)
+		delete(raw, "@message")
+	}
+
+	if v, ok := raw["@level"]; ok {
+		entry.Level = v.(string)
+		delete(raw, "@level")
+	}
+
+	for k, v := range raw {
+		entry.ExtraArgs = append(entry.ExtraArgs, &LogMessageExtraArgs{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	return entry, nil
+}
+
+// logDebug will parse msg and figure out if it's a panic, fatal or critical log message, this is done here because the hashicorp plugin will push any
 // unrecognizable message from stderr as a debug statement
 func logDebug(msg string, l logger.Logger, args ...interface{}) {
 	if strings.HasPrefix(msg, "panic:") {
 		l.Errorw(msg, args...)
+	} else if log, err := parseJSON(msg); err == nil {
+		if log.Level == "dpanic" || log.Level == "fatal" || log.Level == "critical" {
+			l.Errorw(log.Message, flattenExtraArgs(log)...)
+		} else {
+			l.Debugw(log.Message, flattenExtraArgs(log)...)
+		}
 	} else {
 		l.Debugw(msg, args...)
 	}

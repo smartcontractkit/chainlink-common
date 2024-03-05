@@ -138,7 +138,10 @@ func logQueryFilterValues(queryFilter types.QueryFilter) error {
 		fmt.Println("****************************")
 		fmt.Println("Address Filter values are: ", filter.Address)
 		fmt.Println("****************************")
-
+	case *types.KeysFilter:
+		fmt.Println("****************************")
+		fmt.Println("Keys Filter values are: ", filter.EventSig)
+		fmt.Println("****************************")
 		return nil
 	default:
 		return status.Errorf(codes.InvalidArgument, fmt.Sprintf("Unknown filter type %T ", queryFilter))

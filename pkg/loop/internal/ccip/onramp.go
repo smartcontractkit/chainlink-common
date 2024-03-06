@@ -61,6 +61,10 @@ func (o *OnRampReaderClient) RouterAddress() (cciptypes.Address, error) {
 	panic("unimplemented")
 }
 
+func (o *OnRampReaderClient) SourcePriceRegistryAddress(ctx context.Context) (cciptypes.Address, error) {
+	panic("unimplemented")
+}
+
 func onRampDynamicConfig(config *ccippb.OnRampDynamicConfig) cciptypes.OnRampDynamicConfig {
 	return cciptypes.OnRampDynamicConfig{
 		Router:                            cciptypes.Address(config.Router),

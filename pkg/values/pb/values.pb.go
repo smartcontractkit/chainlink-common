@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v4.25.1
-// source: values.proto
+// source: values/pb/values.proto
 
 package pb
 
@@ -41,7 +41,7 @@ type Value struct {
 func (x *Value) Reset() {
 	*x = Value{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_values_proto_msgTypes[0]
+		mi := &file_values_pb_values_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -54,7 +54,7 @@ func (x *Value) String() string {
 func (*Value) ProtoMessage() {}
 
 func (x *Value) ProtoReflect() protoreflect.Message {
-	mi := &file_values_proto_msgTypes[0]
+	mi := &file_values_pb_values_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -67,7 +67,7 @@ func (x *Value) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Value.ProtoReflect.Descriptor instead.
 func (*Value) Descriptor() ([]byte, []int) {
-	return file_values_proto_rawDescGZIP(), []int{0}
+	return file_values_pb_values_proto_rawDescGZIP(), []int{0}
 }
 
 func (m *Value) GetValue() isValue_Value {
@@ -196,7 +196,7 @@ type Map struct {
 func (x *Map) Reset() {
 	*x = Map{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_values_proto_msgTypes[1]
+		mi := &file_values_pb_values_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -209,7 +209,7 @@ func (x *Map) String() string {
 func (*Map) ProtoMessage() {}
 
 func (x *Map) ProtoReflect() protoreflect.Message {
-	mi := &file_values_proto_msgTypes[1]
+	mi := &file_values_pb_values_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -222,7 +222,7 @@ func (x *Map) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Map.ProtoReflect.Descriptor instead.
 func (*Map) Descriptor() ([]byte, []int) {
-	return file_values_proto_rawDescGZIP(), []int{1}
+	return file_values_pb_values_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Map) GetFields() map[string]*Value {
@@ -243,7 +243,7 @@ type List struct {
 func (x *List) Reset() {
 	*x = List{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_values_proto_msgTypes[2]
+		mi := &file_values_pb_values_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -256,7 +256,7 @@ func (x *List) String() string {
 func (*List) ProtoMessage() {}
 
 func (x *List) ProtoReflect() protoreflect.Message {
-	mi := &file_values_proto_msgTypes[2]
+	mi := &file_values_pb_values_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -269,7 +269,7 @@ func (x *List) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use List.ProtoReflect.Descriptor instead.
 func (*List) Descriptor() ([]byte, []int) {
-	return file_values_proto_rawDescGZIP(), []int{2}
+	return file_values_pb_values_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *List) GetFields() []*Value {
@@ -279,7 +279,7 @@ func (x *List) GetFields() []*Value {
 	return nil
 }
 
-var File_values_proto protoreflect.FileDescriptor
+var File_values_pb_values_proto protoreflect.FileDescriptor
 
 var file_values_proto_rawDesc = []byte{
 	0x0a, 0x0c, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x06,
@@ -323,25 +323,25 @@ var file_values_proto_rawDesc = []byte{
 }
 
 var (
-	file_values_proto_rawDescOnce sync.Once
-	file_values_proto_rawDescData = file_values_proto_rawDesc
+	file_values_pb_values_proto_rawDescOnce sync.Once
+	file_values_pb_values_proto_rawDescData = file_values_pb_values_proto_rawDesc
 )
 
-func file_values_proto_rawDescGZIP() []byte {
-	file_values_proto_rawDescOnce.Do(func() {
-		file_values_proto_rawDescData = protoimpl.X.CompressGZIP(file_values_proto_rawDescData)
+func file_values_pb_values_proto_rawDescGZIP() []byte {
+	file_values_pb_values_proto_rawDescOnce.Do(func() {
+		file_values_pb_values_proto_rawDescData = protoimpl.X.CompressGZIP(file_values_pb_values_proto_rawDescData)
 	})
-	return file_values_proto_rawDescData
+	return file_values_pb_values_proto_rawDescData
 }
 
-var file_values_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_values_proto_goTypes = []interface{}{
+var file_values_pb_values_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_values_pb_values_proto_goTypes = []interface{}{
 	(*Value)(nil), // 0: values.Value
 	(*Map)(nil),   // 1: values.Map
 	(*List)(nil),  // 2: values.List
 	nil,           // 3: values.Map.FieldsEntry
 }
-var file_values_proto_depIdxs = []int32{
+var file_values_pb_values_proto_depIdxs = []int32{
 	1, // 0: values.Value.map_value:type_name -> values.Map
 	2, // 1: values.Value.list_value:type_name -> values.List
 	3, // 2: values.Map.fields:type_name -> values.Map.FieldsEntry
@@ -354,13 +354,13 @@ var file_values_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_values_proto_init() }
-func file_values_proto_init() {
-	if File_values_proto != nil {
+func init() { file_values_pb_values_proto_init() }
+func file_values_pb_values_proto_init() {
+	if File_values_pb_values_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_values_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_values_pb_values_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Value); i {
 			case 0:
 				return &v.state
@@ -372,7 +372,7 @@ func file_values_proto_init() {
 				return nil
 			}
 		}
-		file_values_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_values_pb_values_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Map); i {
 			case 0:
 				return &v.state
@@ -384,7 +384,7 @@ func file_values_proto_init() {
 				return nil
 			}
 		}
-		file_values_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_values_pb_values_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*List); i {
 			case 0:
 				return &v.state
@@ -397,7 +397,7 @@ func file_values_proto_init() {
 			}
 		}
 	}
-	file_values_proto_msgTypes[0].OneofWrappers = []interface{}{
+	file_values_pb_values_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*Value_StringValue)(nil),
 		(*Value_BoolValue)(nil),
 		(*Value_BytesValue)(nil),
@@ -411,18 +411,18 @@ func file_values_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_values_proto_rawDesc,
+			RawDescriptor: file_values_pb_values_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_values_proto_goTypes,
-		DependencyIndexes: file_values_proto_depIdxs,
-		MessageInfos:      file_values_proto_msgTypes,
+		GoTypes:           file_values_pb_values_proto_goTypes,
+		DependencyIndexes: file_values_pb_values_proto_depIdxs,
+		MessageInfos:      file_values_pb_values_proto_msgTypes,
 	}.Build()
-	File_values_proto = out.File
-	file_values_proto_rawDesc = nil
-	file_values_proto_goTypes = nil
-	file_values_proto_depIdxs = nil
+	File_values_pb_values_proto = out.File
+	file_values_pb_values_proto_rawDesc = nil
+	file_values_pb_values_proto_goTypes = nil
+	file_values_pb_values_proto_depIdxs = nil
 }

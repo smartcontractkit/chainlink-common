@@ -20,13 +20,13 @@ type CCIPCommitProvider interface {
 type CCIPExecProvider interface {
 	PluginProvider
 
-	NewOnRampReader(ctx context.Context, addr ccip.Address) (ccip.OnRampReader, error)
-	NewOffRampReader(ctx context.Context, addr ccip.Address) (ccip.OffRampReader, error)
-	NewCommitStoreReader(ctx context.Context, addr ccip.Address) (ccip.CommitStoreReader, error)
-	NewPriceRegistryReader(ctx context.Context, addr ccip.Address) (ccip.PriceRegistryReader, error)
-	NewTokenDataReader(ctx context.Context, tokenAddress ccip.Address) (ccip.TokenDataReader, error)
+	OnRampReader(ctx context.Context) (ccip.OnRampReader, error)
+	OffRampReader(ctx context.Context) (ccip.OffRampReader, error)
+	CommitStoreReader(ctx context.Context) ccip.CommitStoreReader
+	PriceRegistryReader(ctx context.Context) (ccip.PriceRegistryReader, error)
+	TokenDataReader(ctx context.Context) (ccip.TokenDataReader, error)
 	SourceNativeToken(ctx context.Context) (ccip.Address, error)
-	NewTokenPoolBatchedReader(ctx context.Context) (ccip.TokenPoolBatchedReader, error)
+	TokenPoolBatchedReader(ctx context.Context) (ccip.TokenPoolBatchedReader, error)
 }
 
 type CCIPCommitFactoryGenerator interface {

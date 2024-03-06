@@ -61,6 +61,15 @@ func TestAddress_JSONUnmarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, exp, res)
 	})
+
+	t.Run("non evm", func(t *testing.T) {
+		js := []byte(`{"abCDefg": ["lalala"]}`)
+		exp := map[Address][]Address{Address("abCDefg"): {"lalala"}}
+		var res map[Address][]Address
+		err := json.Unmarshal(js, &res)
+		assert.NoError(t, err)
+		assert.Equal(t, exp, res)
+	})
 }
 
 func TestAddress_JSONMarshal(t *testing.T) {
@@ -109,6 +118,98 @@ func TestAddress_JSONMarshal(t *testing.T) {
 			assert.Equal(t, tc.expJson, string(b))
 		})
 	}
+}
+
+func TestAddress_UnmarshalText(t *testing.T) {
+	testCases := []struct {
+		name   string
+		txt    string
+		exp    Address
+		expErr bool
+	}{
+		{
+			name: "non-evm",
+			txt:  "something",
+			exp:  Address("something"),
+		},
+		{
+			name: "very large",
+			txt:  strings.Repeat("abc", 1000),
+			exp:  Address(strings.Repeat("abc", 1000)),
+		},
+		{
+			name: "lower evm leads to eip",
+			txt:  "0x507877c2e26f1387432d067d2daafa7d0420d90a",
+			exp:  Address("0x507877C2E26f1387432D067D2DaAfa7d0420d90a"),
+		},
+		{
+			name: "eip55 leads to eip55",
+			txt:  "0x507877C2E26f1387432D067D2DaAfa7d0420d90a",
+			exp:  Address("0x507877C2E26f1387432D067D2DaAfa7d0420d90a"),
+		},
+		{
+			name: "all caps leads to eip55",
+			txt:  "0x507877C2E26F1387432D067D2DAAFA7D0420D90A",
+			exp:  Address("0x507877C2E26f1387432D067D2DaAfa7d0420d90a"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var a Address
+			err := a.UnmarshalText([]byte(tc.txt))
+			if tc.expErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.exp, a)
+		})
+	}
+}
+
+func TestAddress_MarshalText(t *testing.T) {
+	testCases := []struct {
+		name   string
+		addr   Address
+		exp    string
+		expErr bool
+	}{
+		{
+			name: "non-evm",
+			addr: Address("something"),
+			exp:  "something",
+		},
+		{
+			name: "eip55 leads to lower",
+			addr: Address("0x507877C2E26f1387432D067D2DaAfa7d0420d90a"),
+			exp:  "0x507877c2e26f1387432d067d2daafa7d0420d90a",
+		},
+		{
+			name: "lower to lower",
+			addr: Address("0x507877c2e26f1387432d067d2daafa7d0420d90a"),
+			exp:  "0x507877c2e26f1387432d067d2daafa7d0420d90a",
+		},
+		{
+			name: "all caps to lower",
+			addr: Address("0x507877C2E26F1387432D067D2DAAFA7D0420D90A"),
+			exp:  "0x507877c2e26f1387432d067d2daafa7d0420d90a",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := tc.addr.MarshalText()
+			if tc.expErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.exp, string(res))
+		})
+
+	}
+
 }
 
 func TestEIP55(t *testing.T) {

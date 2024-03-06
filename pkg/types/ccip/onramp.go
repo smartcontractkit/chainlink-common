@@ -53,6 +53,10 @@ type OnRampReader interface {
 	// GetSendRequestsBetweenSeqNums returns all the finalized message send requests in the provided sequence numbers range (inclusive).
 	GetSendRequestsBetweenSeqNums(ctx context.Context, seqNumMin, seqNumMax uint64, finalized bool) ([]EVM2EVMMessageWithTxMeta, error)
 
+	// IsSourceCursed returns true if the source chain is cursed. OnRamp communicates with the underlying RMN
+	// to verify if source chain was cursed or not.
+	IsSourceCursed(ctx context.Context) (bool, error)
+
 	// RouterAddress returns the router address that is configured on the onRamp
 	RouterAddress() (Address, error)
 

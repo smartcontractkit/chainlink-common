@@ -51,6 +51,11 @@ func (o *OnRampReaderClient) GetSendRequestsBetweenSeqNums(ctx context.Context, 
 	return evm2EVMMessageWithTxMetaSlice(resp.SendRequests)
 }
 
+// IsSourceCursed implements ccip.OnRampReader.
+func (o *OnRampReaderClient) IsSourceCursed(ctx context.Context) (bool, error) {
+	panic("unimplemented")
+}
+
 // RouterAddress implements ccip.OnRampReader.
 func (o *OnRampReaderClient) RouterAddress() (cciptypes.Address, error) {
 	panic("unimplemented")

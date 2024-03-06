@@ -80,35 +80,11 @@ func (e *propertyExtractor) RetypeToOffChain(onChainType reflect.Type, itemType 
 }
 
 func (e *propertyExtractor) TransformToOnChain(offChainValue any, _ string) (any, error) {
-	rItem := reflect.ValueOf(offChainValue)
-
-	toType, ok := e.offToOnChainType[rItem.Type()]
-	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
-	}
-
-	output, err := expandWithMapsHelper(rItem, toType, e.fieldName)
-	if err != nil {
-		return reflect.Value{}, err
-	}
-
-	return output.Interface(), nil
+	return extractOrExpandWithMaps(offChainValue, e.offToOnChainType, e.fieldName, expandWithMapsHelper)
 }
 
 func (e *propertyExtractor) TransformToOffChain(onChainValue any, _ string) (any, error) {
-	rItem := reflect.ValueOf(onChainValue)
-
-	toType, ok := e.onToOffChainType[rItem.Type()]
-	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
-	}
-
-	output, err := extractWithMapsHelper(rItem, toType, e.fieldName)
-	if err != nil {
-		return reflect.Value{}, err
-	}
-
-	return output.Interface(), nil
+	return extractOrExpandWithMaps(onChainValue, e.onToOffChainType, e.fieldName, extractWithMapsHelper)
 }
 
 func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (reflect.Type, error) {
@@ -140,6 +116,24 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 	return field.Type, nil
 }
 
+type transformHelperFunc func(reflect.Value, reflect.Type, string) (reflect.Value, error)
+
+func extractOrExpandWithMaps(input any, typeMap map[reflect.Type]reflect.Type, field string, fn transformHelperFunc) (any, error) {
+	rItem := reflect.ValueOf(input)
+
+	toType, ok := typeMap[rItem.Type()]
+	if !ok {
+		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
+	}
+
+	output, err := fn(rItem, toType, field)
+	if err != nil {
+		return reflect.Value{}, err
+	}
+
+	return output.Interface(), err
+}
+
 func expandWithMapsHelper(rItem reflect.Value, toType reflect.Type, field string) (reflect.Value, error) {
 	switch toType.Kind() {
 	case reflect.Pointer:
@@ -161,22 +155,18 @@ func expandWithMapsHelper(rItem reflect.Value, toType reflect.Type, field string
 	case reflect.Slice:
 		length := rItem.Len()
 		into := reflect.MakeSlice(toType, length, length)
-		err := expandMany(rItem, into, field)
+		err := extractOrExpandMany(rItem, into, field, expandWithMapsHelper)
 		return into, err
 	case reflect.Array:
 		into := reflect.New(toType).Elem()
-		err := expandMany(rItem, into, field)
+		err := extractOrExpandMany(rItem, into, field, expandWithMapsHelper)
 		return into, err
 	default:
 		return reflect.Value{}, fmt.Errorf("%w: cannot retype", types.ErrInvalidType)
 	}
 }
 
-func extractWithMapsHelper(
-	rItem reflect.Value,
-	toType reflect.Type,
-	field string,
-) (reflect.Value, error) {
+func extractWithMapsHelper(rItem reflect.Value, toType reflect.Type, field string) (reflect.Value, error) {
 	switch rItem.Kind() {
 	case reflect.Pointer:
 		elm := rItem.Elem()
@@ -198,43 +188,27 @@ func extractWithMapsHelper(
 	case reflect.Slice:
 		length := rItem.Len()
 		into := reflect.MakeSlice(toType, length, length)
-		err := extractMany(rItem, into, field)
+		err := extractOrExpandMany(rItem, into, field, extractWithMapsHelper)
 		return into, err
 	case reflect.Array:
 		into := reflect.New(toType).Elem()
-		err := extractMany(rItem, into, field)
+		err := extractOrExpandMany(rItem, into, field, extractWithMapsHelper)
 		return into, err
 	default:
 		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
 	}
 }
 
-func extractMany(rInput, rOutput reflect.Value, field string) error {
+type extractOrExpandHelperFunc func(reflect.Value, reflect.Type, string) (reflect.Value, error)
+
+func extractOrExpandMany(rInput, rOutput reflect.Value, field string, fn extractOrExpandHelperFunc) error {
 	length := rInput.Len()
 
 	for i := 0; i < length; i++ {
 		inTmp := rInput.Index(i)
 		outTmp := rOutput.Index(i)
 
-		output, err := extractWithMapsHelper(inTmp, outTmp.Type(), field)
-		if err != nil {
-			return err
-		}
-
-		outTmp.Set(output)
-	}
-
-	return nil
-}
-
-func expandMany(rInput, rOutput reflect.Value, field string) error {
-	length := rInput.Len()
-
-	for i := 0; i < length; i++ {
-		inTmp := rInput.Index(i)
-		outTmp := rOutput.Index(i)
-
-		output, err := expandWithMapsHelper(inTmp, outTmp.Type(), field)
+		output, err := fn(inTmp, outTmp.Type(), field)
 		if err != nil {
 			return err
 		}
@@ -251,9 +225,7 @@ func extractElement(src any, field string) (reflect.Value, error) {
 		return reflect.Value{}, err
 	}
 
-	path := strings.Split(field, ".")
-	name := path[len(path)-1]
-	path = path[:len(path)-1]
+	path, name := pathAndName(field)
 
 	extractMaps, err := getMapsFromPath(valueMapping, path)
 	if err != nil {
@@ -280,9 +252,7 @@ func setFieldValue(src, dest any, field string) error {
 		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}
 
-	path := strings.Split(field, ".")
-	name := path[len(path)-1]
-	path = path[:len(path)-1]
+	path, name := pathAndName(field)
 
 	extractMaps, err := getMapsFromPath(valueMapping, path)
 	if err != nil {
@@ -306,4 +276,12 @@ func setFieldValue(src, dest any, field string) error {
 	}
 
 	return nil
+}
+
+func pathAndName(field string) ([]string, string) {
+	path := strings.Split(field, ".")
+	name := path[len(path)-1]
+	path = path[:len(path)-1]
+
+	return path, name
 }

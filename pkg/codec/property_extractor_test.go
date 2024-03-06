@@ -4,9 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 )
 
 func TestPropertyExtractor(t *testing.T) {

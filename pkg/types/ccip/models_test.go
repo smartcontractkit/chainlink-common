@@ -1,6 +1,13 @@
 package ccip
 
-import "testing"
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+
+	gojson "github.com/goccy/go-json"
+	"github.com/stretchr/testify/assert"
+)
 
 func TestHash_String(t *testing.T) {
 	tests := []struct {
@@ -29,6 +36,131 @@ func TestHash_String(t *testing.T) {
 			if got := tt.h.String(); got != tt.want {
 				t.Errorf("String() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestAddress_JSONUnmarshal(t *testing.T) {
+	addr1 := "0x507877c2e26f1387432d067d2daafa7d0420d90a"
+	addr1Eip55 := "0x507877C2E26f1387432D067D2DaAfa7d0420d90a"
+
+	t.Run("arrays lower case unmarshalled to eip55", func(t *testing.T) {
+		js := []byte(`["` + addr1 + `"]`)
+		exp := []Address{Address(addr1Eip55)}
+		var res []Address
+		err := json.Unmarshal(js, &res)
+		assert.NoError(t, err)
+		assert.Equal(t, exp, res)
+	})
+
+	t.Run("maps lower case unmarshalled to eip55", func(t *testing.T) {
+		js := []byte(`{"` + addr1 + `": 123}`)
+		exp := map[Address]int{Address(addr1Eip55): 123}
+		var res map[Address]int
+		err := json.Unmarshal(js, &res)
+		assert.NoError(t, err)
+		assert.Equal(t, exp, res)
+	})
+}
+
+func TestAddress_JSONMarshal(t *testing.T) {
+	addr1 := "0x507877c2e26f1387432d067d2daafa7d0420d90a"
+	addr1Eip55 := "0x507877C2E26f1387432D067D2DaAfa7d0420d90a"
+
+	testCases := []struct {
+		name    string
+		inp     any
+		expJson string
+		expErr  bool
+	}{
+		{
+			name:    "array values",
+			inp:     []Address{Address(addr1), Address(strings.ToLower(addr1))},
+			expJson: `["0x507877c2e26f1387432d067d2daafa7d0420d90a","0x507877c2e26f1387432d067d2daafa7d0420d90a"]`,
+			expErr:  false,
+		},
+		{
+			name: "map key lower should remain lower",
+			inp: map[Address]int{
+				Address(addr1): 1234,
+			},
+			expJson: `{"0x507877c2e26f1387432d067d2daafa7d0420d90a":1234}`,
+			expErr:  false,
+		},
+		{
+			name: "map key eip55 should be lower-case in json",
+			inp: map[Address]int{
+				Address(addr1Eip55): 1234,
+			},
+			expJson: `{"0x507877c2e26f1387432d067d2daafa7d0420d90a":1234}`,
+			expErr:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			b, err := gojson.Marshal(tc.inp) // ccip uses "github.com/goccy/go-json"
+			if tc.expErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expJson, string(b))
+		})
+	}
+}
+
+func TestEIP55(t *testing.T) {
+	testCases := []struct {
+		inp    string
+		exp    string
+		expErr bool
+	}{
+		{
+			inp:    "0x507877c2e26f1387432d067d2daafa7d0420d90a",
+			exp:    "0x507877C2E26f1387432D067D2DaAfa7d0420d90a",
+			expErr: false,
+		},
+		{
+			inp:    "0x001d3f1ef827552ae1114027bd3ecf1f086ba0f9",
+			exp:    "0x001d3F1ef827552Ae1114027BD3ECF1f086bA0F9",
+			expErr: false,
+		},
+		{
+			inp:    "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			exp:    "0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa",
+			expErr: false,
+		},
+		{
+			inp:    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			exp:    "0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa",
+			expErr: false,
+		},
+		{
+			inp:    "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 39 chars
+			expErr: true,
+		},
+		{
+			inp:    "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 41 chars
+			expErr: true,
+		},
+		{
+			inp:    "aaaaaaaaaaaaagaaaaaaaaaaaaaaaaaaaaaaaaaa", // contains g
+			expErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.inp, func(t *testing.T) {
+			res, err := EIP55(tc.inp)
+
+			if tc.expErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.exp, res)
 		})
 	}
 }

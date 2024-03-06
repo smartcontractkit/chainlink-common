@@ -14,7 +14,15 @@ import (
 
 const PluginLoggerTestName = "logger-test"
 
-const LoggerTestName = "server-side-logger-name"
+const (
+	UNEXPECTED_PANIC = iota
+	FATAL
+	CRITICAL
+	ERROR
+	INFO
+	WARN
+	DEBUG
+)
 
 // NOTE: This is part of the test package because it needs to be imported by the test binary at `./internal/test/cmd`
 // as well as the test at `./pkg/loop/logger_loop_test.go`
@@ -30,19 +38,19 @@ func (g *GRPCPluginLoggerTest) GRPCServer(*plugin.GRPCBroker, *grpc.Server) (err
 	go func() {
 		time.Sleep(time.Second)
 		switch g.ErrorType {
-		case 0:
+		case UNEXPECTED_PANIC:
 			panic("random panic")
-		case 1:
+		case FATAL:
 			g.Fatalw("some panic log", "custom-name-panic", "custom-value-panic")
-		case 2:
+		case CRITICAL:
 			g.Criticalw("some critical error log", "custom-name-critical", "custom-value-critical")
-		case 3:
+		case ERROR:
 			g.Errorw("some error log", "custom-name-error", "custom-value-error")
-		case 4:
+		case INFO:
 			g.Infow("some info log", "custom-name-info", "custom-value-info")
-		case 5:
+		case WARN:
 			g.Warnw("some warn log", "custom-name-warn", "custom-value-warn")
-		case 6:
+		case DEBUG:
 			g.Debugw("some debug log", "custom-name-debug", "custom-value-debug")
 		}
 	}()

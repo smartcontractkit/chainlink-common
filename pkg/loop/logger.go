@@ -84,7 +84,6 @@ func flattenExtraArgs(le *logMessage) []interface{} {
 	return result
 }
 
-// parseJSON handles parsing JSON output
 func parseJSON(input string) (*logMessage, error) {
 	var raw map[string]interface{}
 	entry := &logMessage{}

@@ -27,7 +27,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 
 	tests := []testCase{
 		{
-			level:               test.UNEXPECTED_PANIC,
+			level:               test.PANIC,
 			expectedMessage:     "panic: random panic",
 			expectedCustomKey:   "",
 			expectedCustomValue: "",
@@ -101,7 +101,6 @@ func TestHCLogLoggerPanic(t *testing.T) {
 				}
 				require.True(t, found, fmt.Sprintf("could not find expected values %s=%s", tt.expectedCustomKey, tt.expectedCustomValue))
 			}
-
 		})
 	}
 }

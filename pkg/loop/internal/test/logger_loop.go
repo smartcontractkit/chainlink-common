@@ -15,7 +15,7 @@ import (
 const PluginLoggerTestName = "logger-test"
 
 const (
-	UNEXPECTED_PANIC = iota
+	PANIC = iota
 	FATAL
 	CRITICAL
 	ERROR
@@ -38,7 +38,7 @@ func (g *GRPCPluginLoggerTest) GRPCServer(*plugin.GRPCBroker, *grpc.Server) (err
 	go func() {
 		time.Sleep(time.Second)
 		switch g.ErrorType {
-		case UNEXPECTED_PANIC:
+		case PANIC:
 			panic("random panic")
 		case FATAL:
 			g.Fatalw("some panic log", "custom-name-panic", "custom-value-panic")

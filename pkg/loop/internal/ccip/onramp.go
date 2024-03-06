@@ -61,6 +61,7 @@ func (o *OnRampReaderClient) RouterAddress() (cciptypes.Address, error) {
 	panic("unimplemented")
 }
 
+// SourcePriceRegistryAddress implements ccip.OnRampReader.
 func (o *OnRampReaderClient) SourcePriceRegistryAddress(ctx context.Context) (cciptypes.Address, error) {
 	panic("unimplemented")
 }

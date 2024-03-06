@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	gojson "github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -97,18 +96,18 @@ func TestAddress_JSONMarshal(t *testing.T) {
 			expErr:  false,
 		},
 		{
-			name: "map key eip55 should be lower-case in json",
+			name: "map key eip55 will be eip55 in json",
 			inp: map[Address]int{
 				Address(addr1Eip55): 1234,
 			},
-			expJson: `{"0x507877c2e26f1387432d067d2daafa7d0420d90a":1234}`,
+			expJson: `{"0x507877C2E26f1387432D067D2DaAfa7d0420d90a":1234}`,
 			expErr:  false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			b, err := gojson.Marshal(tc.inp) // ccip uses "github.com/goccy/go-json"
+			b, err := json.Marshal(tc.inp)
 			if tc.expErr {
 				assert.Error(t, err)
 				return

@@ -144,10 +144,7 @@ func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 }
 
 func registerCommonServices(s *grpc.Server, provider types.MercuryProvider) {
-	pb.RegisterServiceServer(s, &ServiceServer{Srv: provider})
-	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
-	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
-	pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+	registerPluginProviderServices(s, provider)
 	mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
 	mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
 	mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
@@ -181,7 +178,7 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 				registerCommonServices(s, provider)
 
 				mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(s, provider.ReportCodecV3()))
-
+				// don't register the other codecs, as they are not used in v3
 				mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
 				mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
 			})
@@ -348,7 +345,8 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 
 var (
 	_ types.MercuryProvider = (*mercuryProviderClient)(nil)
-	_ GRPCClientConn        = (*mercuryProviderClient)(nil)
+	// in practice, inherited from pluginProviderClient
+	_ GRPCClientConn = (*mercuryProviderClient)(nil)
 )
 
 type mercuryProviderClient struct {
@@ -361,8 +359,6 @@ type mercuryProviderClient struct {
 	chainReader        types.ChainReader
 	mercuryChainReader mercury.ChainReader
 }
-
-func (m *mercuryProviderClient) ClientConn() grpc.ClientConnInterface { return m.cc }
 
 func newMercuryProviderClient(b *BrokerExt, cc grpc.ClientConnInterface) *mercuryProviderClient {
 	m := &mercuryProviderClient{pluginProviderClient: newPluginProviderClient(b.WithName("MercuryProviderClient"), cc)}

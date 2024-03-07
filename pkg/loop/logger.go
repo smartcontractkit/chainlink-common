@@ -2,6 +2,7 @@ package loop
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -20,7 +21,7 @@ func HCLogLogger(l logger.Logger) hclog.Logger {
 	hcl := hclog.NewInterceptLogger(&hclog.LoggerOptions{
 		Output: io.Discard, // only write through p.Logger Sink
 	})
-	hcl.RegisterSink(&hclSinkAdapter{l: l})
+	hcl.RegisterSink(&hclSinkAdapter{l: logger.Sugared(l)})
 	return hcl
 }
 
@@ -28,16 +29,16 @@ var _ hclog.SinkAdapter = (*hclSinkAdapter)(nil)
 
 // hclSinkAdapter implements [hclog.SinkAdapter] with a [logger.Logger].
 type hclSinkAdapter struct {
-	l logger.Logger
+	l logger.SugaredLogger
 	m sync.Map // [string]func() l.Logger
 }
 
-func (h *hclSinkAdapter) named(name string) logger.Logger {
-	onceVal := onceValue(func() logger.Logger {
-		return logger.Named(h.l, name)
+func (h *hclSinkAdapter) named(name string) logger.SugaredLogger {
+	onceVal := onceValue(func() logger.SugaredLogger {
+		return h.l.Named(name)
 	})
 	v, _ := h.m.LoadOrStore(name, onceVal)
-	return v.(func() logger.Logger)()
+	return v.(func() logger.SugaredLogger)()
 }
 
 func removeArg(args []interface{}, key string) ([]interface{}, string) {
@@ -115,13 +116,16 @@ func parseJSON(input string) (*logMessage, error) {
 
 // logDebug will parse msg and figure out if it's a panic, fatal or critical log message, this is done here because the hashicorp plugin will push any
 // unrecognizable message from stderr as a debug statement
-func logDebug(msg string, l logger.Logger, args ...interface{}) {
+func logDebug(msg string, l logger.SugaredLogger, args ...interface{}) {
 	if strings.HasPrefix(msg, "panic:") {
-		l.Errorw(msg, args...)
+		l.Criticalw(msg, args...)
 	} else if log, err := parseJSON(msg); err == nil {
-		if log.Level == "dpanic" || log.Level == "fatal" || log.Level == "critical" {
-			l.Errorw(log.Message, flattenExtraArgs(log)...)
-		} else {
+		switch log.Level {
+		case "dpanic", "fatal":
+			l.Criticalw(fmt.Sprintf("[%s] %s", strings.ToUpper(log.Level), log.Message), flattenExtraArgs(log)...)
+		case "critical":
+			l.Criticalw(log.Message, flattenExtraArgs(log)...)
+		default:
 			l.Debugw(log.Message, flattenExtraArgs(log)...)
 		}
 	} else {

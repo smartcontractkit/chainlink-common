@@ -17,11 +17,11 @@ message AndFilter {
 }
 
 message AddressFilter {
-  repeated string address = 1;
+  repeated string addresses = 1;
 }
 
 message KeysFilter {
-  repeated string event_sig = 1;
+  repeated string keys = 1;
 }
 
 message QueryKeysRequest {

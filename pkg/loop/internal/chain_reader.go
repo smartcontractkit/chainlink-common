@@ -141,7 +141,7 @@ func logQueryFilterValues(queryFilter types.QueryFilter) error {
 		fmt.Println("****************************")
 	case *types.KeysFilter:
 		fmt.Println("****************************")
-		fmt.Println("Keys Filter values are: ", filter.EventSig)
+		fmt.Println("Keys Filter values are: ", filter.Keys)
 		fmt.Println("****************************")
 		return nil
 	default:
@@ -230,7 +230,7 @@ func parseQueryFilterRequest(request *pb.QueryKeysRequest) (types.QueryFilter, e
 	case *pb.QueryKeysRequest_AddressFilter:
 		return &types.AddressFilter{Address: filter.AddressFilter.Addresses}, nil
 	case *pb.QueryKeysRequest_KeysFilter:
-		return &types.KeysFilter{EventSig: filter.KeysFilter.EventSig}, nil
+		return &types.KeysFilter{Keys: filter.KeysFilter.Keys}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "Unknown filter type")
 	}

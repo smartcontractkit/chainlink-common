@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"math/big"
 	"time"
 )
 
@@ -45,18 +44,20 @@ type ChainReader interface {
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
 
+	// TODO accept sort and limit
 	QueryKeys(ctx context.Context, queryFilter QueryFilter) ([]Event, error)
 
-	//// give it same event filter and
-	//QueryKeysByValue()
-	//QueryKeysExcluding()
-	//RegisterFilter()
-	//
-	////  we don't want to tackle querying for arbitrary data right now so these should do
-	//// CCIP specific evm log data searching, these can be made into one function
-	//GetCommitReportMatchingSeqNum()
-	//GetSendRequestsBetweenSeqNums()
-	//GetCommitReportGreaterThanSeqNum()
+	// TODO
+	// QueryKeysExcluding()
+
+	// TODO some filters have to be dynamic, so this has to override chain reader bind that comes from config?
+	// RegisterFilter()
+	// UnRegisterFilter()
+
+	// TODO We don't want to tackle querying for arbitrary data right now so these should do CCIP specific evm log data searching, these can be made into one function
+	// GetCommitReportMatchingSeqNum()
+	// GetSendRequestsBetweenSeqNums()
+	// GetCommitReportGreaterThanSeqNum()
 }
 
 type BoundContract struct {
@@ -68,17 +69,22 @@ type BoundContract struct {
 type Event struct {
 	ChainID        string
 	SequenceCursor string
-	timestamp      time.Time
-	Data           []byte
+	Timestamp      time.Time
+	// TODO any or byte? Probably need to do codec transforms here too
+	Data []byte
 }
 
-// Multiple EventFilters per QueryEvent call?
-
-type EventFilter struct {
-	Name        string     // ??
-	AddressList []string   // contract Address
-	KeysList    [][]string // 2D list of indexed search Keys, outer dim = AND, inner dim = OR.  Params[0] is the name of the event (or "event type"), rest are any narrowing parameters that may help further specify the event
-	Retention   time.Duration
+// TODO define If Register should be done outside of Binding, probably yes because of remapping
+type KeysFilterer struct {
+	Name string // see FilterName(id, args) below
+	// TODO Retrieve key polling unique identifiers from chain reader config by using this identifier (evm eg. point to specific event sigs by contract name and event name)
+	Identifier string
+	//TODO Just Keys instead to do a similar thing?
+	// Keys []string
+	// Addresses [][]string
+	// TODO may need to be mapped to event sigs a bit more creatively because of Solana? But we currently don't have Solana polling component so this is fine for now.
+	Addresses []string
+	Retention time.Duration
 }
 
 type EventQuery struct {
@@ -179,11 +185,11 @@ func (f *AddressFilter) Accept(visitor Visitor) {
 }
 
 type KeysFilter struct {
-	keys []string
+	Keys []string
 }
 
 func NewKeysFilter(keys ...string) *KeysFilter {
-	return &KeysFilter{keys: keys}
+	return &KeysFilter{Keys: keys}
 }
 
 func (f *KeysFilter) Accept(visitor Visitor) {
@@ -204,11 +210,11 @@ func (f *KeysByValueFilter) Accept(visitor Visitor) {
 }
 
 type ConfirmationFilter struct {
-	confs string
+	Confs string
 }
 
 func NewConfirmationFilter(confs string) *ConfirmationFilter {
-	return &ConfirmationFilter{confs: confs}
+	return &ConfirmationFilter{Confs: confs}
 }
 
 func (f *ConfirmationFilter) Accept(visitor Visitor) {
@@ -227,8 +233,8 @@ func NewBlockRangeFilter(start, end int64) *AndFilter {
 }
 
 type BlockFilter struct {
-	operator ComparisonOperator
-	block    int64
+	Operator ComparisonOperator
+	Block    int64
 }
 
 func (f *BlockFilter) Accept(visitor Visitor) {
@@ -240,8 +246,8 @@ func NewTimeStampFilter(timestamp time.Time, operator ComparisonOperator) *Times
 }
 
 type TimestampFilter struct {
-	operator  ComparisonOperator
-	timestamp time.Time
+	Operator  ComparisonOperator
+	Timestamp time.Time
 }
 
 func (f *TimestampFilter) Accept(visitor Visitor) {
@@ -253,7 +259,7 @@ func NewTxHashFilter(txHash string) *TxHashFilter {
 }
 
 type TxHashFilter struct {
-	txHash string
+	TxHash string
 }
 
 func (f *TxHashFilter) Accept(visitor Visitor) {
@@ -261,12 +267,12 @@ func (f *TxHashFilter) Accept(visitor Visitor) {
 }
 
 type Visitor interface {
-	VisitAndFilter(node AndFilter)
-	VisitAddressFilter(node AddressFilter)
-	VisitKeysFilter(node KeysFilter)
-	VisitKeysByValueFilter(node KeysByValueFilter)
-	VisitBlockFilter(node BlockFilter)
-	VisitConfirmationFilter(node ConfirmationFilter)
-	VisitTimestampFilter(node TimestampFilter)
-	VisitTxHashFilter(node TxHashFilter)
+	VisitAndFilter(filter AndFilter)
+	VisitAddressFilter(filter AddressFilter)
+	VisitKeysFilter(filter KeysFilter)
+	VisitKeysByValueFilter(filter KeysByValueFilter)
+	VisitBlockFilter(filter BlockFilter)
+	VisitConfirmationFilter(filter ConfirmationFilter)
+	VisitTimestampFilter(filter TimestampFilter)
+	VisitTxHashFilter(filter TxHashFilter)
 }

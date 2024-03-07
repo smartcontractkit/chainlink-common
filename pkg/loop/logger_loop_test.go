@@ -28,7 +28,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 	tests := []testCase{
 		{
 			level:               test.PANIC,
-			expectedMessage:     "panic: random panic",
+			expectedMessage:     "[PANIC] panic: random panic",
 			expectedCustomKey:   "",
 			expectedCustomValue: "",
 			expectedLogLevel:    zapcore.DPanicLevel,

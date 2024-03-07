@@ -118,7 +118,7 @@ func parseJSON(input string) (*logMessage, error) {
 // unrecognizable message from stderr as a debug statement
 func logDebug(msg string, l logger.SugaredLogger, args ...interface{}) {
 	if strings.HasPrefix(msg, "panic:") {
-		l.Criticalw(msg, args...)
+		l.Criticalw(fmt.Sprintf("[PANIC] %s", msg), args...)
 	} else if log, err := parseJSON(msg); err == nil {
 		switch log.Level {
 		case "dpanic", "fatal":

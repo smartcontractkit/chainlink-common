@@ -45,6 +45,7 @@ type ChainReader interface {
 	Bind(ctx context.Context, bindings []BoundContract) error
 
 	// TODO accept sort and limit
+
 	QueryKeys(ctx context.Context, queryFilter QueryFilter) ([]Event, error)
 
 	// TODO
@@ -201,12 +202,19 @@ func (f *KeysByValueFilter) Accept(visitor Visitor) {
 	visitor.VisitKeysByValueFilter(*f)
 }
 
+type Confirmations int
+
+const (
+	Finalized   = Confirmations(-1)
+	Unconfirmed = Confirmations(0)
+)
+
 type ConfirmationFilter struct {
-	Confs string
+	Confirmations
 }
 
-func NewConfirmationFilter(confs string) *ConfirmationFilter {
-	return &ConfirmationFilter{Confs: confs}
+func NewConfirmationFilter(confs Confirmations) *ConfirmationFilter {
+	return &ConfirmationFilter{Confirmations: confs}
 }
 
 func (f *ConfirmationFilter) Accept(visitor Visitor) {

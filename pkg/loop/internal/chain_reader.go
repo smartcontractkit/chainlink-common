@@ -231,6 +231,26 @@ func parseQueryFilterRequest(request *pb.QueryKeysRequest) (types.QueryFilter, e
 		return &types.AddressFilter{Address: filter.AddressFilter.Addresses}, nil
 	case *pb.QueryKeysRequest_KeysFilter:
 		return &types.KeysFilter{Keys: filter.KeysFilter.Keys}, nil
+	case *pb.QueryKeysRequest_KeysByValueFilter:
+		var keysByValueFilter types.KeysByValueFilter
+		for _, k := range filter.KeysByValueFilter.Keys {
+			keysByValueFilter.Keys = append(keysByValueFilter.Keys, k.Keys...)
+		}
+		for _, v := range filter.KeysByValueFilter.Values {
+			keysByValueFilter.Values = append(keysByValueFilter.Values, v.Values)
+		}
+		return &keysByValueFilter, nil
+	case *pb.QueryKeysRequest_ConfirmationsFilter:
+		return &types.ConfirmationFilter{Confirmations: types.Confirmations(filter.ConfirmationsFilter.Confirmations.Confirmation)}, nil
+	case *pb.QueryKeysRequest_BlockFilter:
+		return &types.BlockFilter{Block: filter.BlockFilter.BlockNumber, Operator: types.ComparisonOperator(filter.BlockFilter.Operator.ComparisonOperator)}, nil
+	case *pb.QueryKeysRequest_TxHashFilter:
+		return &types.TxHashFilter{TxHash: filter.TxHashFilter.TxHash}, nil
+	case *pb.QueryKeysRequest_TimestampFilter:
+		return &types.TimestampFilter{
+			Timestamp: filter.TimestampFilter.Timestamp,
+			Operator:  types.ComparisonOperator(filter.TimestampFilter.Operator.ComparisonOperator),
+		}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "Unknown filter type")
 	}

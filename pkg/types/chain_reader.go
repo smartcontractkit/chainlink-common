@@ -44,12 +44,12 @@ type ChainReader interface {
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
 
-	// TODO accept sort and limit
+	// TODO accept chain agnostic sort and limit from common
 
 	QueryKeys(ctx context.Context, queryFilter QueryFilter) ([]Event, error)
+	// QueryKeysExcluding()
 
 	// TODO
-	// QueryKeysExcluding()
 
 	// TODO some filters have to be dynamic, so this has to override chain reader bind that comes from config?
 	// RegisterFilter()
@@ -221,11 +221,11 @@ func (f *ConfirmationFilter) Accept(visitor Visitor) {
 	visitor.VisitConfirmationFilter(*f)
 }
 
-func NewBlockFilter(block int64, operator ComparisonOperator) *BlockFilter {
-	return &BlockFilter{operator, block}
+func NewBlockFilter(block uint64, operator ComparisonOperator) *BlockFilter {
+	return &BlockFilter{block, operator}
 }
 
-func NewBlockRangeFilter(start, end int64) *AndFilter {
+func NewBlockRangeFilter(start, end uint64) *AndFilter {
 	return NewAndFilter(
 		NewBlockFilter(start, Gte),
 		NewBlockFilter(end, Lte),
@@ -233,21 +233,21 @@ func NewBlockRangeFilter(start, end int64) *AndFilter {
 }
 
 type BlockFilter struct {
+	Block    uint64
 	Operator ComparisonOperator
-	Block    int64
 }
 
 func (f *BlockFilter) Accept(visitor Visitor) {
 	visitor.VisitBlockFilter(*f)
 }
 
-func NewTimeStampFilter(timestamp time.Time, operator ComparisonOperator) *TimestampFilter {
-	return &TimestampFilter{operator, timestamp}
+func NewTimestampFilter(timestamp uint64, operator ComparisonOperator) *TimestampFilter {
+	return &TimestampFilter{timestamp, operator}
 }
 
 type TimestampFilter struct {
+	Timestamp uint64
 	Operator  ComparisonOperator
-	Timestamp time.Time
 }
 
 func (f *TimestampFilter) Accept(visitor Visitor) {

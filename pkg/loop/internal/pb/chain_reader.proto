@@ -24,11 +24,56 @@ message KeysFilter {
   repeated string keys = 1;
 }
 
+message KeysByValueFilter {
+  repeated Keys keys = 1;
+  repeated Values values = 2;
+
+}
+
+message Keys {
+  repeated string keys = 1;
+}
+
+message Values {
+  repeated string values = 1;
+}
+
+message Confirmations {
+  int32 confirmation = 1;
+}
+
+message ConfirmationsFilter{
+  Confirmations confirmations = 1;
+}
+
+message ComparisonOperator {
+  int32 comparisonOperator = 1;
+}
+
+message BlockFilter{
+  uint64 block_number = 1;
+  ComparisonOperator operator = 2;
+}
+
+message TimestampFilter{
+  uint64 timestamp = 1;
+  ComparisonOperator operator = 2;
+}
+
+message TxHashFilter{
+  string tx_hash = 1;
+}
+
 message QueryKeysRequest {
   oneof filter {
     AndFilter and_filter = 1;
     AddressFilter address_filter = 2;
     KeysFilter keys_filter = 3;
+    KeysByValueFilter keys_by_value_filter = 4;
+    ConfirmationsFilter confirmations_filter = 5;
+    BlockFilter block_filter = 6;
+    TimestampFilter timestamp_filter = 7;
+    TxHashFilter tx_hash_filter = 8;
   }
 }
 

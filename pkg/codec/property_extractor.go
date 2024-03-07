@@ -137,6 +137,10 @@ func extractOrExpandWithMaps(input any, typeMap map[reflect.Type]reflect.Type, f
 func expandWithMapsHelper(rItem reflect.Value, toType reflect.Type, field string) (reflect.Value, error) {
 	switch toType.Kind() {
 	case reflect.Pointer:
+		if rItem.Kind() != reflect.Pointer {
+			return reflect.Value{}, fmt.Errorf("%w: value to expand should be pointer", types.ErrInvalidType)
+		}
+
 		if toType.Elem().Kind() == reflect.Struct {
 			into := reflect.New(toType.Elem())
 			err := setFieldValue(rItem.Elem().Interface(), into.Interface(), field)
@@ -151,15 +155,26 @@ func expandWithMapsHelper(rItem reflect.Value, toType reflect.Type, field string
 	case reflect.Struct:
 		into := reflect.New(toType)
 		err := setFieldValue(rItem.Interface(), into.Interface(), field)
+
 		return into.Elem(), err
 	case reflect.Slice:
+		if rItem.Kind() != reflect.Slice {
+			return reflect.Value{}, fmt.Errorf("%w: value to expand should be slice", types.ErrInvalidType)
+		}
+
 		length := rItem.Len()
 		into := reflect.MakeSlice(toType, length, length)
 		err := extractOrExpandMany(rItem, into, field, expandWithMapsHelper)
+
 		return into, err
 	case reflect.Array:
+		if rItem.Kind() != reflect.Array {
+			return reflect.Value{}, fmt.Errorf("%w: value to expand should be array", types.ErrInvalidType)
+		}
+
 		into := reflect.New(toType).Elem()
 		err := extractOrExpandMany(rItem, into, field, expandWithMapsHelper)
+
 		return into, err
 	default:
 		return reflect.Value{}, fmt.Errorf("%w: cannot retype", types.ErrInvalidType)

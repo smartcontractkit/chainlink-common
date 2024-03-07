@@ -137,7 +137,7 @@ func NewSortBy(field string, dir SortDirection) SortBy {
 }
 
 type QueryFilter interface {
-	accept(visitor Visitor)
+	Accept(visitor Visitor)
 }
 
 type AndFilter struct {
@@ -162,7 +162,7 @@ func AppendedNewFilter(root *AndFilter, other ...QueryFilter) *AndFilter {
 	return NewAndFilter(filters...)
 }
 
-func (f *AndFilter) accept(visitor Visitor) {
+func (f *AndFilter) Accept(visitor Visitor) {
 	visitor.VisitAndFilter(*f)
 }
 
@@ -174,19 +174,19 @@ func NewAddressFilter(address ...string) *AddressFilter {
 	return &AddressFilter{Address: address}
 }
 
-func (f *AddressFilter) accept(visitor Visitor) {
+func (f *AddressFilter) Accept(visitor Visitor) {
 	visitor.VisitAddressFilter(*f)
 }
 
 type KeysFilter struct {
-	EventSig []string
+	keys []string
 }
 
 func NewKeysFilter(keys ...string) *KeysFilter {
-	return &KeysFilter{EventSig: keys}
+	return &KeysFilter{keys: keys}
 }
 
-func (f *KeysFilter) accept(visitor Visitor) {
+func (f *KeysFilter) Accept(visitor Visitor) {
 	visitor.VisitKeysFilter(*f)
 }
 
@@ -199,7 +199,7 @@ func NewKeysByValueFilter(keys []string, values [][]string) *KeysByValueFilter {
 	return &KeysByValueFilter{Keys: keys, Values: values}
 }
 
-func (f *KeysByValueFilter) accept(visitor Visitor) {
+func (f *KeysByValueFilter) Accept(visitor Visitor) {
 	visitor.VisitKeysByValueFilter(*f)
 }
 
@@ -211,7 +211,7 @@ func NewConfirmationFilter(confs string) *ConfirmationFilter {
 	return &ConfirmationFilter{confs: confs}
 }
 
-func (f *ConfirmationFilter) accept(visitor Visitor) {
+func (f *ConfirmationFilter) Accept(visitor Visitor) {
 	visitor.VisitConfirmationFilter(*f)
 }
 
@@ -231,7 +231,7 @@ type BlockFilter struct {
 	block    int64
 }
 
-func (f *BlockFilter) accept(visitor Visitor) {
+func (f *BlockFilter) Accept(visitor Visitor) {
 	visitor.VisitBlockFilter(*f)
 }
 
@@ -244,7 +244,7 @@ type TimestampFilter struct {
 	timestamp time.Time
 }
 
-func (f *TimestampFilter) accept(visitor Visitor) {
+func (f *TimestampFilter) Accept(visitor Visitor) {
 	visitor.VisitTimestampFilter(*f)
 }
 
@@ -256,7 +256,7 @@ type TxHashFilter struct {
 	txHash string
 }
 
-func (f *TxHashFilter) accept(visitor Visitor) {
+func (f *TxHashFilter) Accept(visitor Visitor) {
 	visitor.VisitTxHashFilter(*f)
 }
 

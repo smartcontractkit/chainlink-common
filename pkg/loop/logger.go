@@ -121,9 +121,9 @@ func logDebug(msg string, l logger.SugaredLogger, args ...interface{}) {
 		l.Criticalw(fmt.Sprintf("[PANIC] %s", msg), args...)
 	} else if log, err := parseJSON(msg); err == nil {
 		switch log.Level {
-		case "dpanic", "fatal":
-			l.Criticalw(fmt.Sprintf("[%s] %s", strings.ToUpper(log.Level), log.Message), flattenExtraArgs(log)...)
-		case "critical":
+		case "fatal":
+			l.Criticalw(fmt.Sprintf("[FATAL] %s", log.Message), flattenExtraArgs(log)...)
+		case "critical", "dpanic":
 			l.Criticalw(log.Message, flattenExtraArgs(log)...)
 		default:
 			l.Debugw(log.Message, flattenExtraArgs(log)...)

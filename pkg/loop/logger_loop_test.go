@@ -42,7 +42,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 		},
 		{
 			level:               test.CRITICAL,
-			expectedMessage:     "[DPANIC] some critical error log",
+			expectedMessage:     "some critical error log",
 			expectedCustomKey:   "custom-name-critical",
 			expectedCustomValue: "custom-value-critical",
 			expectedLogLevel:    zapcore.DPanicLevel,

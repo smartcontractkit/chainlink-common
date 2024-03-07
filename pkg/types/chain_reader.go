@@ -87,14 +87,6 @@ type KeysFilterer struct {
 	Retention time.Duration
 }
 
-type EventQuery struct {
-	TxHash             string
-	FromBlock, ToBlock *big.Int // either a hash or a big int
-	FromTime, ToTime   time.Time
-	Filter             EventFilter
-	Finality           string
-}
-
 type ComparisonOperator int
 
 const (

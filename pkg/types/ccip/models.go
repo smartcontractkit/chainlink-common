@@ -3,10 +3,15 @@ package ccip
 import (
 	"encoding/hex"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 
 	"golang.org/x/crypto/sha3"
+)
+
+var (
+	addressRgxEvm = regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
 )
 
 // Address is the generic address type used across CCIP plugins.
@@ -14,7 +19,7 @@ import (
 // NOTE: JSON codec had to be overridden for CCIP backwards compatibility.
 // Before this generic address type, CCIP was using common.Address from go-ethereum library which marshals
 // to lower-case and prints as EIP55. We have to maintain this behavior to keep nodes that run different
-// versions to come in consensus.
+// versions to come to consensus.
 type Address string
 
 func (a *Address) UnmarshalJSON(bytes []byte) error {
@@ -69,10 +74,11 @@ type TxMeta struct {
 // If the ith digit is a letter (ie. it’s one of abcdef) print it in uppercase if the 4*ith bit of the hash of the
 // lowercase hexadecimal address is 1 otherwise print it in lowercase.
 func EIP55(addr string) (string, error) {
-	addr = strings.ToLower(strings.TrimPrefix(addr, "0x"))
-	if len(addr) != 40 {
-		return "", fmt.Errorf("address is not the correct length")
+	if !IsEvmAddr(addr) {
+		return "", fmt.Errorf("not an evm address")
 	}
+
+	addr = strings.ToLower(strings.TrimPrefix(addr, "0x"))
 
 	keccak256 := sha3.NewLegacyKeccak256()
 	keccak256.Write([]byte(addr))
@@ -81,16 +87,6 @@ func EIP55(addr string) (string, error) {
 	addrEIP55 := "0x"
 	for i, c := range addr {
 		isAbcdef := c >= 'a' && c <= 'f'
-		isDigit := c >= '0' && c <= '9'
-
-		if !isAbcdef && !isDigit {
-			return "", fmt.Errorf("address contains a character that is not evm specific")
-		}
-
-		if i >= len(addrHash) {
-			return "", fmt.Errorf("invalid address hash")
-		}
-
 		if isAbcdef && addrHash[i] >= '8' {
 			addrEIP55 += string(unicode.ToUpper(c))
 			continue
@@ -99,4 +95,8 @@ func EIP55(addr string) (string, error) {
 	}
 
 	return addrEIP55, nil
+}
+
+func IsEvmAddr(addr string) bool {
+	return addressRgxEvm.MatchString(addr)
 }

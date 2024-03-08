@@ -233,9 +233,9 @@ func TestEIP55(t *testing.T) {
 			expErr: false,
 		},
 		{
-			inp:    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			inp:    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // missing 0x prefix
 			exp:    "0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa",
-			expErr: false,
+			expErr: true,
 		},
 		{
 			inp:    "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 39 chars

@@ -12,8 +12,8 @@ import (
 // Address is the generic address type used across CCIP plugins.
 //
 // NOTE: JSON codec had to be overridden for CCIP backwards compatibility.
-// Before this generic address type, CCIP was using common.Address from go-ethereum library which encodes
-// to lower-case and to EIP55 when marshaled. We have to maintain this behavior to keep nodes that run different
+// Before this generic address type, CCIP was using common.Address from go-ethereum library which marshals
+// to lower-case and prints as EIP55. We have to maintain this behavior to keep nodes that run different
 // versions to come in consensus.
 type Address string
 

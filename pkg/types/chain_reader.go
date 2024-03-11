@@ -44,9 +44,10 @@ type ChainReader interface {
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
 
-	// TODO accept chain agnostic sort and limit from common
+	//TODO Rebind binding address
+	//ReBind(ctx context.Context, name, address string)
 
-	QueryKeys(ctx context.Context, queryFilter QueryFilter) ([]Event, error)
+	QueryKeys(ctx context.Context, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Event, error)
 	// QueryKeysExcluding()
 
 	// TODO
@@ -106,33 +107,53 @@ const (
 	Desc
 )
 
-var (
-	DefaultSortAndLimit = SortAndLimit{
-		sortBy: []SortBy{
-			{field: "block_number", dir: Asc},
-			// sequence should convert to chain specific sequence unique identifier
-			{field: "sequence", dir: Asc},
-		},
-		limit: 0,
-	}
-)
-
-type SortAndLimit struct {
-	sortBy []SortBy
-	limit  int
+type SortBy interface {
+	GetDirection() SortDirection
 }
 
-type SortBy struct {
-	field string
-	dir   SortDirection
+type LimitAndSort struct {
+	SortBy []SortBy
+	Limit  uint64
 }
 
-func NewSortAndLimit(limit int, sortBy ...SortBy) SortAndLimit {
-	return SortAndLimit{sortBy: sortBy, limit: limit}
+func NewLimitAndSort(limit uint64, sortBy ...SortBy) LimitAndSort {
+	return LimitAndSort{SortBy: sortBy, Limit: limit}
 }
 
-func NewSortBy(field string, dir SortDirection) SortBy {
-	return SortBy{field: field, dir: dir}
+type SortByTimestamp struct {
+	dir SortDirection
+}
+
+func NewSortByTimestamp(sortDir SortDirection) SortByTimestamp {
+	return SortByTimestamp{dir: sortDir}
+}
+
+func (o SortByTimestamp) GetDirection() SortDirection {
+	return o.dir
+}
+
+type SortByBlock struct {
+	dir SortDirection
+}
+
+func NewSortByBlock(sortDir SortDirection) SortByBlock {
+	return SortByBlock{dir: sortDir}
+}
+
+func (o SortByBlock) GetDirection() SortDirection {
+	return o.dir
+}
+
+type SortBySequence struct {
+	dir SortDirection
+}
+
+func NewSortBySequence(sortDir SortDirection) SortBySequence {
+	return SortBySequence{dir: sortDir}
+}
+
+func (o SortBySequence) GetDirection() SortDirection {
+	return o.dir
 }
 
 type QueryFilter interface {

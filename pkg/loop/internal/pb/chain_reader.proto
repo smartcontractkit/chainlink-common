@@ -9,11 +9,12 @@ import "google/protobuf/empty.proto";
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc QueryKeys (QueryKeysRequest) returns (QueryKeysReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
 message AndFilter {
-  repeated QueryKeysRequest filters = 1;
+  repeated QueryKeysFilter filters = 1;
 }
 
 message AddressFilter {
@@ -64,7 +65,37 @@ message TxHashFilter{
   string tx_hash = 1;
 }
 
-message QueryKeysRequest {
+enum SortDirection {
+  Asc = 0;
+  Desc = 1;
+}
+
+message SortByTimestamp {
+  SortDirection sort_direction = 1;
+}
+
+message SortByBlock {
+  SortDirection sort_direction = 1;
+}
+
+message SortBySequence {
+  SortDirection sort_direction = 1;
+}
+
+message SortBy {
+  oneof sort_by {
+    SortByTimestamp sort_by_timestamp = 1;
+    SortByBlock sort_by_block = 2;
+    SortBySequence sort_by_sequence = 3;
+  }
+}
+
+message LimitAndSort{
+  uint64 limit = 1;
+  repeated SortBy sort_by = 2;
+}
+
+message QueryKeysFilter {
   oneof filter {
     AndFilter and_filter = 1;
     AddressFilter address_filter = 2;
@@ -75,6 +106,11 @@ message QueryKeysRequest {
     TimestampFilter timestamp_filter = 7;
     TxHashFilter tx_hash_filter = 8;
   }
+}
+
+message QueryKeysRequest {
+  QueryKeysFilter filter = 1;
+  LimitAndSort limit_and_sort = 2;
 }
 
 

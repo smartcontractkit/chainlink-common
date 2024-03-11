@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
+	ChainReader_QueryKeys_FullMethodName      = "/loop.ChainReader/QueryKeys"
 	ChainReader_Bind_FullMethodName           = "/loop.ChainReader/Bind"
 )
 
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
+	QueryKeys(ctx context.Context, in *QueryKeysRequest, opts ...grpc.CallOption) (*QueryKeysReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -49,6 +51,15 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestVal
 	return out, nil
 }
 
+func (c *chainReaderClient) QueryKeys(ctx context.Context, in *QueryKeysRequest, opts ...grpc.CallOption) (*QueryKeysReply, error) {
+	out := new(QueryKeysReply)
+	err := c.cc.Invoke(ctx, ChainReader_QueryKeys_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, ChainReader_Bind_FullMethodName, in, out, opts...)
@@ -63,6 +74,7 @@ func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...g
 // for forward compatibility
 type ChainReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
+	QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChainReaderServer()
 }
@@ -73,6 +85,9 @@ type UnimplementedChainReaderServer struct {
 
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
+}
+func (UnimplementedChainReaderServer) QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryKeys not implemented")
 }
 func (UnimplementedChainReaderServer) Bind(context.Context, *BindRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bind not implemented")
@@ -108,6 +123,24 @@ func _ChainReader_GetLatestValue_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChainReader_QueryKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainReaderServer).QueryKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainReader_QueryKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainReaderServer).QueryKeys(ctx, req.(*QueryKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ChainReader_Bind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BindRequest)
 	if err := dec(in); err != nil {
@@ -136,6 +169,10 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLatestValue",
 			Handler:    _ChainReader_GetLatestValue_Handler,
+		},
+		{
+			MethodName: "QueryKeys",
+			Handler:    _ChainReader_QueryKeys_Handler,
 		},
 		{
 			MethodName: "Bind",

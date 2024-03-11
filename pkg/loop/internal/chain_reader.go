@@ -114,10 +114,13 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *chainReaderClient) QueryKeys(ctx context.Context, queryFilter types.QueryFilter) ([]types.Event, error) {
+func (c *chainReaderClient) QueryKeys(ctx context.Context, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Event, error) {
 	fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! chainReaderClient Query Keys")
-	err := logQueryFilterValues(queryFilter)
-	if err != nil {
+	if err := logQueryFilterValues(queryFilter); err != nil {
+		return nil, errors.Wrap(err, "test debug")
+	}
+
+	if err := logLimitAndSortValue(limitAndSort); err != nil {
 		return nil, errors.Wrap(err, "test debug")
 	}
 	return nil, nil
@@ -152,6 +155,33 @@ func logQueryFilterValues(queryFilter types.QueryFilter) error {
 
 	return nil
 }
+
+func logLimitAndSortValue(limitAndSort types.LimitAndSort) error {
+	for _, sortBy := range limitAndSort.SortBy {
+		switch sort := sortBy.(type) {
+		case *types.SortByTimestamp:
+			fmt.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+			fmt.Println("SortByTimestamp ", sort.GetDirection())
+			fmt.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+			return nil
+		case *types.SortByBlock:
+			fmt.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+			fmt.Println("SortByBlock ", sort.GetDirection())
+			fmt.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+			return nil
+		case *types.SortBySequence:
+			fmt.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+			fmt.Println("SortBySequence ", sort.GetDirection())
+			fmt.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+			return nil
+		default:
+			fmt.Println("Unknown sort value is: ", fmt.Sprintf("Unknown filter type %T ", sortBy))
+			return status.Errorf(codes.InvalidArgument, fmt.Sprintf("Unknown filter typeoo %T ", sortBy))
+		}
+	}
+	return nil
+}
+
 func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
@@ -201,37 +231,40 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 }
 
 func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
-	fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  Query Keys server")
-
-	queryFilter, err := parseQueryFilterRequest(request)
+	queryFilter, err := parseQueryKeysFilter(request.GetFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = c.impl.QueryKeys(ctx, queryFilter)
+	limitAndSort, err := parseLimitAndSort(request.GetLimitAndSort())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.impl.QueryKeys(ctx, queryFilter, limitAndSort)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.QueryKeysReply{RetVal: nil}, nil
 }
 
-func parseQueryFilterRequest(request *pb.QueryKeysRequest) (types.QueryFilter, error) {
+func parseQueryKeysFilter(request *pb.QueryKeysFilter) (types.QueryFilter, error) {
 	switch filter := request.Filter.(type) {
-	case *pb.QueryKeysRequest_AndFilter:
+	case *pb.QueryKeysFilter_AndFilter:
 		var parsedQueryFilters []types.QueryFilter
 		for _, subQueryFilterRequest := range filter.AndFilter.Filters {
-			parsedQueryFilter, err := parseQueryFilterRequest(subQueryFilterRequest)
+			parsedQueryFilter, err := parseQueryKeysFilter(subQueryFilterRequest)
 			if err != nil {
 				return nil, err
 			}
 			parsedQueryFilters = append(parsedQueryFilters, parsedQueryFilter)
 		}
 		return &types.AndFilter{Filters: parsedQueryFilters}, nil
-	case *pb.QueryKeysRequest_AddressFilter:
+	case *pb.QueryKeysFilter_AddressFilter:
 		return &types.AddressFilter{Address: filter.AddressFilter.Addresses}, nil
-	case *pb.QueryKeysRequest_KeysFilter:
+	case *pb.QueryKeysFilter_KeysFilter:
 		return &types.KeysFilter{Keys: filter.KeysFilter.Keys}, nil
-	case *pb.QueryKeysRequest_KeysByValueFilter:
+	case *pb.QueryKeysFilter_KeysByValueFilter:
 		var keysByValueFilter types.KeysByValueFilter
 		for _, k := range filter.KeysByValueFilter.Keys {
 			keysByValueFilter.Keys = append(keysByValueFilter.Keys, k.Keys...)
@@ -240,13 +273,13 @@ func parseQueryFilterRequest(request *pb.QueryKeysRequest) (types.QueryFilter, e
 			keysByValueFilter.Values = append(keysByValueFilter.Values, v.Values)
 		}
 		return &keysByValueFilter, nil
-	case *pb.QueryKeysRequest_ConfirmationsFilter:
+	case *pb.QueryKeysFilter_ConfirmationsFilter:
 		return &types.ConfirmationFilter{Confirmations: types.Confirmations(filter.ConfirmationsFilter.Confirmations.Confirmation)}, nil
-	case *pb.QueryKeysRequest_BlockFilter:
+	case *pb.QueryKeysFilter_BlockFilter:
 		return &types.BlockFilter{Block: filter.BlockFilter.BlockNumber, Operator: types.ComparisonOperator(filter.BlockFilter.Operator.ComparisonOperator)}, nil
-	case *pb.QueryKeysRequest_TxHashFilter:
+	case *pb.QueryKeysFilter_TxHashFilter:
 		return &types.TxHashFilter{TxHash: filter.TxHashFilter.TxHash}, nil
-	case *pb.QueryKeysRequest_TimestampFilter:
+	case *pb.QueryKeysFilter_TimestampFilter:
 		return &types.TimestampFilter{
 			Timestamp: filter.TimestampFilter.Timestamp,
 			Operator:  types.ComparisonOperator(filter.TimestampFilter.Operator.ComparisonOperator),
@@ -254,6 +287,24 @@ func parseQueryFilterRequest(request *pb.QueryKeysRequest) (types.QueryFilter, e
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "Unknown filter type")
 	}
+}
+
+func parseLimitAndSort(limitAndSort *pb.LimitAndSort) (types.LimitAndSort, error) {
+	var sortByArr []types.SortBy
+	for _, sortBy := range limitAndSort.SortBy {
+		switch sort := sortBy.SortBy.(type) {
+		case *pb.SortBy_SortByTimestamp:
+			sortByArr = append(sortByArr, types.NewSortByTimestamp(types.SortDirection(sort.SortByTimestamp.GetSortDirection())))
+		case *pb.SortBy_SortByBlock:
+			sortByArr = append(sortByArr, types.NewSortByBlock(types.SortDirection(sort.SortByBlock.GetSortDirection())))
+		case *pb.SortBy_SortBySequence:
+			sortByArr = append(sortByArr, types.NewSortBySequence(types.SortDirection(sort.SortBySequence.GetSortDirection())))
+		default:
+			return types.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown order by type")
+		}
+	}
+
+	return types.NewLimitAndSort(limitAndSort.Limit, sortByArr...), nil
 }
 
 func (c *chainReaderServer) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {

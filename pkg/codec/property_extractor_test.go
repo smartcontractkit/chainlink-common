@@ -81,11 +81,11 @@ func TestPropertyExtractor(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "test", offChainValue)
 
-		lossyOnChain, err := extractor.TransformToOnChain("value", "")
+		lossyOnChain, err := extractor.TransformToOnChain(offChainValue, "")
 		require.NoError(t, err)
 
 		expected := nestedTestStruct{
-			A: "value",
+			A: "test",
 			B: testStruct{
 				A: false,
 				B: 0,
@@ -111,14 +111,14 @@ func TestPropertyExtractor(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, int64(42), offChainValue)
 
-		lossyOnChain, err := nestedExtractor.TransformToOnChain(int64(3), "")
+		lossyOnChain, err := nestedExtractor.TransformToOnChain(offChainValue, "")
 		require.NoError(t, err)
 
 		expected := nestedTestStruct{
 			A: "",
 			B: testStruct{
 				A: false,
-				B: 3,
+				B: 42,
 			},
 		}
 
@@ -143,16 +143,14 @@ func TestPropertyExtractor(t *testing.T) {
 		expectedVal := int64(42)
 		require.Equal(t, &expectedVal, offChainValue)
 
-		value := int64(3)
-
-		lossyOnChain, err := nestedExtractor.TransformToOnChain(&value, "")
+		lossyOnChain, err := nestedExtractor.TransformToOnChain(offChainValue, "")
 		require.NoError(t, err)
 
 		expected := &nestedTestStruct{
 			A: "",
 			B: testStruct{
 				A: false,
-				B: 3,
+				B: 42,
 			},
 		}
 
@@ -170,16 +168,16 @@ func TestPropertyExtractor(t *testing.T) {
 
 		expected := []int64{42, 43}
 
-		actual, err := nestedExtractor.TransformToOffChain(input, "")
+		offChainValue, err := nestedExtractor.TransformToOffChain(input, "")
 		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
+		assert.Equal(t, expected, offChainValue)
 
-		lossyOnChain, err := nestedExtractor.TransformToOnChain([]int64{3, 4}, "")
+		lossyOnChain, err := nestedExtractor.TransformToOnChain(offChainValue, "")
 		require.NoError(t, err)
 
 		expectedLossy := []nestedTestStruct{
-			{A: "", B: testStruct{A: false, B: 3}},
-			{A: "", B: testStruct{A: false, B: 4}},
+			{A: "", B: testStruct{A: false, B: 42}},
+			{A: "", B: testStruct{A: false, B: 43}},
 		}
 
 		assert.Equal(t, expectedLossy, lossyOnChain)
@@ -202,21 +200,21 @@ func TestPropertyExtractor(t *testing.T) {
 
 		expected := [][]int64{{42, 43}, {44, 45}}
 
-		actual, err := nestedExtractor.TransformToOffChain(input, "")
+		offChainValue, err := nestedExtractor.TransformToOffChain(input, "")
 		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
+		assert.Equal(t, expected, offChainValue)
 
-		lossyOnChain, err := nestedExtractor.TransformToOnChain([][]int64{{3, 4}, {5, 6}}, "")
+		lossyOnChain, err := nestedExtractor.TransformToOnChain(offChainValue, "")
 		require.NoError(t, err)
 
 		expectedLossy := [][]nestedTestStruct{
 			{
-				{A: "", B: testStruct{A: false, B: 3}},
-				{A: "", B: testStruct{A: false, B: 4}},
+				{A: "", B: testStruct{A: false, B: 42}},
+				{A: "", B: testStruct{A: false, B: 43}},
 			},
 			{
-				{A: "", B: testStruct{A: false, B: 5}},
-				{A: "", B: testStruct{A: false, B: 6}},
+				{A: "", B: testStruct{A: false, B: 44}},
+				{A: "", B: testStruct{A: false, B: 45}},
 			},
 		}
 
@@ -234,16 +232,16 @@ func TestPropertyExtractor(t *testing.T) {
 
 		expected := [2]int64{42, 43}
 
-		actual, err := nestedExtractor.TransformToOffChain(input, "")
+		offChainValue, err := nestedExtractor.TransformToOffChain(input, "")
 		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
+		assert.Equal(t, expected, offChainValue)
 
-		lossyOnChain, err := nestedExtractor.TransformToOnChain([2]int64{3, 4}, "")
+		lossyOnChain, err := nestedExtractor.TransformToOnChain(offChainValue, "")
 		require.NoError(t, err)
 
 		expectedLossy := [2]nestedTestStruct{
-			{A: "", B: testStruct{A: false, B: 3}},
-			{A: "", B: testStruct{A: false, B: 4}},
+			{A: "", B: testStruct{A: false, B: 42}},
+			{A: "", B: testStruct{A: false, B: 43}},
 		}
 
 		assert.Equal(t, expectedLossy, lossyOnChain)

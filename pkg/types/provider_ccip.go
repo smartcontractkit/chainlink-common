@@ -40,10 +40,11 @@ type CCIPExecFactoryGeneratorConfig struct {
 	TokenReaderAddress ccip.Address
 }
 
-type CCIPExecFactoryGenerator interface {
-	NewExecFactory(ctx context.Context, provider CCIPExecProvider, config CCIPExecFactoryGeneratorConfig) (ReportingPluginFactory, error)
+type CCIPExecutionFactoryGenerator interface {
+	//NewExecutionFactory(ctx context.Context, provider CCIPExecProvider, config CCIPExecFactoryGeneratorConfig) (ReportingPluginFactory, error)
+	NewExecutionFactory(ctx context.Context, provider CCIPExecProvider) (ReportingPluginFactory, error)
 }
 type CCIPFactoryGenerator interface {
 	CCIPCommitFactoryGenerator
-	CCIPExecFactoryGenerator
+	CCIPExecutionFactoryGenerator
 }

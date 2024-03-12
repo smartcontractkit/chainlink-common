@@ -19,41 +19,41 @@ import (
 // ExecName is the name for [types.PluginMedian]/[NewGRPCPluginMedian].
 const ExecName = "exec"
 
-func PluginCCIPExecHandshakeConfig() plugin.HandshakeConfig {
+func PluginCCIPExecutionHandshakeConfig() plugin.HandshakeConfig {
 	return plugin.HandshakeConfig{
 		MagicCookieKey:   "CL_PLUGIN_CCIP_EXEC_MAGIC_COOKIE",
 		MagicCookieValue: "b12a697e19748cd695dd1690c09745ee7cc03717179958e8eadd5a7ca4699999",
 	}
 }
 
-type ExecLoop struct {
+type ExecutionLoop struct {
 	plugin.NetRPCUnsupportedPlugin
 
 	BrokerConfig
 
-	PluginServer types.CCIPExecFactoryGenerator
+	PluginServer types.CCIPExecutionFactoryGenerator
 
-	pluginClient *internal.PluginMedianClient
+	pluginClient *internal.ExecutionLOOPClient
 }
 
-func (p *ExecLoop) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
+func (p *ExecutionLoop) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
 	return internal.RegisterExecutionLOOPServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginMedian], updated with the new broker and conn.
-func (p *ExecLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *ExecutionLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = internal.NewPluginMedianClient(broker, p.BrokerConfig, conn)
+		p.pluginClient = internal.NewExecutionLOOPClient(broker, p.BrokerConfig, conn) //internal.NewPluginMedianClient(broker, p.BrokerConfig, conn)
 	} else {
 		p.pluginClient.Refresh(broker, conn)
 	}
 
-	return types.PluginMedian(p.pluginClient), nil
+	return types.CCIPExecutionFactoryGenerator(p.pluginClient), nil
 }
 
-func (p *ExecLoop) ClientConfig() *plugin.ClientConfig {
+func (p *ExecutionLoop) ClientConfig() *plugin.ClientConfig {
 	return &plugin.ClientConfig{
-		HandshakeConfig:  PluginMedianHandshakeConfig(),
+		HandshakeConfig:  PluginCCIPExecutionHandshakeConfig(),
 		Plugins:          map[string]plugin.Plugin{ExecName: p},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		GRPCDialOptions:  p.DialOpts,
@@ -61,32 +61,32 @@ func (p *ExecLoop) ClientConfig() *plugin.ClientConfig {
 	}
 }
 
-var _ ocrtypes.ReportingPluginFactory = (*ExecFactoryService)(nil)
+var _ ocrtypes.ReportingPluginFactory = (*ExecutionFactoryService)(nil)
 
-// ExecFactoryService is a [types.Service] that maintains an internal [types.PluginMedian].
-type ExecFactoryService struct {
-	internal.PluginService[*ExecLoop, types.ReportingPluginFactory]
+// ExecutionFactoryService is a [types.Service] that maintains an internal [types.PluginMedian].
+type ExecutionFactoryService struct {
+	internal.PluginService[*ExecutionLoop, types.ReportingPluginFactory]
 }
 
-// NewExecService returns a new [*ExecFactoryService].
+// NewExecutionService returns a new [*ExecutionFactoryService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewExecService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.CCIPExecProvider, config types.CCIPExecFactoryGeneratorConfig) *ExecFactoryService {
+func NewExecutionService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.CCIPExecProvider, config types.CCIPExecFactoryGeneratorConfig) *ExecutionFactoryService {
 	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
-		plug, ok := instance.(types.CCIPExecFactoryGenerator)
+		plug, ok := instance.(types.CCIPExecutionFactoryGenerator)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMedian but got %T", instance)
 		}
-		return plug.NewExecFactory(ctx, provider, config)
+		return plug.NewExecutionFactory(ctx, provider)
 	}
 	stopCh := make(chan struct{})
-	lggr = logger.Named(lggr, "MedianService")
-	var efs ExecFactoryService
+	lggr = logger.Named(lggr, "CCIPExecutionService")
+	var efs ExecutionFactoryService
 	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
-	efs.Init(ExecName, &ExecLoop{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
+	efs.Init(ExecName, &ExecutionLoop{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &efs
 }
 
-func (m *ExecFactoryService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+func (m *ExecutionFactoryService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
 	if err := m.Wait(); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}

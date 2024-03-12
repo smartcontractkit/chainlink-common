@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"reflect"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +11,39 @@ import (
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
+
+var OffRamp = staticOffRamp{
+	staticOffRampConfig: staticOffRampConfig{
+		addressResponse: ccip.Address("addressResponse"),
+		changeConfigRequest: changeConfigRequest{
+			onchainConfig:  []byte("onchainConfig"),
+			offchainConfig: []byte("offchainConfig"),
+		},
+		changeConfigResponse: changeConfigResponse{
+			onchainConfigDigest:  ccip.Address("onchainConfigDigest"),
+			offchainConfigDigest: ccip.Address("offchainConfigDigest"),
+		},
+		currentRateLimiterStateResponse: ccip.TokenBucketRateLimit{
+			Tokens: big.NewInt(1),
+		},
+		decodeExecutionReportResponse: ccip.ExecReport{
+			Messages: []ccip.EVM2EVMMessage{
+				{
+					SequenceNumber: 1,
+					GasLimit:       big.NewInt(1),
+				},
+				{
+					SequenceNumber: 2,
+					GasLimit:       big.NewInt(2),
+				},
+			},
+			Proofs: [][32]byte{
+				{1},
+				{2},
+			},
+		},
+	},
+}
 
 type OffRampEvaluator interface {
 	ccip.OffRampReader
@@ -25,8 +59,10 @@ type staticOffRampConfig struct {
 
 	currentRateLimiterStateResponse ccip.TokenBucketRateLimit
 
+	decodeExecutionReportRequest  []byte
 	decodeExecutionReportResponse ccip.ExecReport
 
+	encodeExecutionReportRequest  ccip.ExecReport
 	encodeExecutionReportResponse []byte
 
 	gasPriceEstimatorExecResponse ccip.GasPriceEstimatorExec
@@ -78,16 +114,16 @@ func (s staticOffRamp) CurrentRateLimiterState(ctx context.Context) (ccip.TokenB
 
 // DecodeExecutionReport implements OffRampEvaluator.
 func (s staticOffRamp) DecodeExecutionReport(ctx context.Context, report []byte) (ccip.ExecReport, error) {
-	if !reflect.DeepEqual(report, s.decodeExecutionReportResponse) {
-		return ccip.ExecReport{}, fmt.Errorf("expected report %v but got %v", s.decodeExecutionReportResponse, report)
+	if !reflect.DeepEqual(report, s.decodeExecutionReportRequest) {
+		return ccip.ExecReport{}, fmt.Errorf("expected report %v but got %v", s.decodeExecutionReportRequest, report)
 	}
 	return s.decodeExecutionReportResponse, nil
 }
 
 // EncodeExecutionReport implements OffRampEvaluator.
 func (s staticOffRamp) EncodeExecutionReport(ctx context.Context, report ccip.ExecReport) ([]byte, error) {
-	if !reflect.DeepEqual(report, s.encodeExecutionReportResponse) {
-		return nil, fmt.Errorf("expected report %v but got %v", s.encodeExecutionReportResponse, report)
+	if !reflect.DeepEqual(report, s.encodeExecutionReportRequest) {
+		return nil, fmt.Errorf("expected report %v but got %v", s.encodeExecutionReportRequest, report)
 	}
 	return s.encodeExecutionReportResponse, nil
 }
@@ -170,7 +206,7 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 		return fmt.Errorf("expected currentRateLimiterState %v but got %v", s.currentRateLimiterStateResponse, currentRateLimiterState)
 	}
 
-	decodeExecutionReport, err := other.DecodeExecutionReport(ctx, s.encodeExecutionReportResponse)
+	decodeExecutionReport, err := other.DecodeExecutionReport(ctx, s.decodeExecutionReportRequest)
 	if err != nil {
 		return fmt.Errorf("failed to decodeExecutionReport: %w", err)
 	}
@@ -178,7 +214,7 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 		return fmt.Errorf("expected decodeExecutionReport %v but got %v", s.decodeExecutionReportResponse, decodeExecutionReport)
 	}
 
-	encodeExecutionReport, err := other.EncodeExecutionReport(ctx, s.decodeExecutionReportResponse)
+	encodeExecutionReport, err := other.EncodeExecutionReport(ctx, s.encodeExecutionReportRequest)
 	if err != nil {
 		return fmt.Errorf("failed to encodeExecutionReport: %w", err)
 	}

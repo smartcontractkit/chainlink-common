@@ -57,6 +57,55 @@ func (o *OnRampReaderClient) RouterAddress() (cciptypes.Address, error) {
 	panic("unimplemented")
 }
 
+// Server
+
+type OnRampReaderServer struct {
+	ccippb.UnimplementedOnRampReaderServer
+
+	impl cciptypes.OnRampReader
+}
+
+// mustEmbedUnimplementedOnRampReaderServer implements ccippb.OnRampReaderServer.
+
+var _ ccippb.OnRampReaderServer = (*OnRampReaderServer)(nil)
+
+func NewOnRampReaderServer(impl cciptypes.OnRampReader) *OnRampReaderServer {
+	return &OnRampReaderServer{impl: impl}
+}
+
+// Address implements ccippb.OnRampReaderServer.
+func (o *OnRampReaderServer) Address(context.Context, *emptypb.Empty) (*ccippb.OnrampAddressResponse, error) {
+	addr, err := o.impl.Address()
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.OnrampAddressResponse{Address: string(addr)}, nil
+}
+
+// GetDynamicConfig implements ccippb.OnRampReaderServer.
+func (o *OnRampReaderServer) GetDynamicConfig(context.Context, *emptypb.Empty) (*ccippb.GetDynamicConfigResponse, error) {
+	c, err := o.impl.GetDynamicConfig()
+	if err != nil {
+		return nil, err
+	}
+
+}
+
+// GetSendRequestsBetweenSeqNums implements ccippb.OnRampReaderServer.
+func (o *OnRampReaderServer) GetSendRequestsBetweenSeqNums(context.Context, *ccippb.GetSendRequestsBetweenSeqNumsRequest) (*ccippb.GetSendRequestsBetweenSeqNumsResponse, error) {
+	panic("unimplemented")
+}
+
+// RouterAddress implements ccippb.OnRampReaderServer.
+func (o *OnRampReaderServer) RouterAddress(context.Context, *emptypb.Empty) (*ccippb.RouterAddressResponse, error) {
+	panic("unimplemented")
+}
+
+// mustEmbedUnimplementedOnRampReaderServer implements ccippb.OnRampReaderServer.
+func (o *OnRampReaderServer) mustEmbedUnimplementedOnRampReaderServer() {
+	panic("unimplemented")
+}
+
 func onRampDynamicConfig(config *ccippb.OnRampDynamicConfig) cciptypes.OnRampDynamicConfig {
 	return cciptypes.OnRampDynamicConfig{
 		Router:                            cciptypes.Address(config.Router),

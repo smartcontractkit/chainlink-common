@@ -31,7 +31,7 @@ type ExecutionLOOPClient struct {
 }
 
 func NewExecutionLOOPClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *ExecutionLOOPClient {
-	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ExecutionAdapterClient")
+	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ExecutionLOOPClient")
 	pc := NewPluginClient(broker, brokerCfg, conn)
 	return &ExecutionLOOPClient{
 		PluginClient:  pc,
@@ -46,7 +46,9 @@ func NewExecutionLOOPClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.Cl
 // is run as an external process via hashicorp plugin. If the given provider is a GRPCClientConn, then the provider is proxied to the
 // to the relayer, which is its own process via hashicorp plugin. If the provider is not a GRPCClientConn, then the provider is a local
 // to the core node. The core must wrap the provider in a grpc server and serve it locally.
-func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider, config types.CCIPExecFactoryGeneratorConfig) (types.ReportingPluginFactory, error) {
+// func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider, config types.CCIPExecFactoryGeneratorConfig) (types.ReportingPluginFactory, error) {
+func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider) (types.ReportingPluginFactory, error) {
+
 	newExecClientFn := func(ctx context.Context) (id uint32, deps Resources, err error) {
 		// TODO are there any local resources that need to be passed to the executor and started as a server?
 
@@ -98,16 +100,16 @@ type ExecutionLOOPServer struct {
 	ccippb.UnimplementedExecutionFactoryGeneratorServer
 
 	*BrokerExt
-	impl types.CCIPExecFactoryGenerator
+	impl types.CCIPExecutionFactoryGenerator
 }
 
-func RegisterExecutionLOOPServer(s *grpc.Server, b Broker, cfg BrokerConfig, impl types.CCIPExecFactoryGenerator) error {
+func RegisterExecutionLOOPServer(s *grpc.Server, b Broker, cfg BrokerConfig, impl types.CCIPExecutionFactoryGenerator) error {
 	ext := &BrokerExt{Broker: b, BrokerConfig: cfg}
 	ccippb.RegisterExecutionFactoryGeneratorServer(s, newExecutionLOOPServer(impl, ext))
 	return nil
 }
 
-func newExecutionLOOPServer(impl types.CCIPExecFactoryGenerator, b *BrokerExt) *ExecutionLOOPServer {
+func newExecutionLOOPServer(impl types.CCIPExecutionFactoryGenerator, b *BrokerExt) *ExecutionLOOPServer {
 	return &ExecutionLOOPServer{impl: impl, BrokerExt: b.WithName("ExecutionLOOPServer")}
 }
 
@@ -128,7 +130,9 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 	deps.Add(Resource{providerConn, "ExecProvider"})
 	provider := newExecProviderClient(r.BrokerExt, providerConn)
 
-	factory, err := r.impl.NewExecFactory(ctx, provider, execFactoryConfig(request.Config))
+	// factory, err := r.impl.NewExecutionFactory(ctx, provider, execFactoryConfig(request.Config))
+	factory, err := r.impl.NewExecutionFactory(ctx, provider)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new execution factory: %w", err)
 	}
@@ -177,7 +181,7 @@ func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 	ctx, cancel := e.StopCtx()
 	defer cancel()
 
-	var req ccippb.NewOffRampReaderRequest
+	req := ccippb.NewOffRampReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpc.NewOffRampReader(ctx, &req)
 	if err != nil {
@@ -185,7 +189,7 @@ func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 	}
 	// this works because the broker is shared and the id refers to a resource served by the broker
 	grpcClient, err := e.BrokerExt.Dial(uint32(resp.OfframpReaderServiceId))
-	o, ok := grpcClient.(ccippb.OffRampReaderClient)
+
 	// need to wrap grpc client into the desired interface
 	client := ccipinternal.NewOffRampReaderClient(grpcClient)
 
@@ -196,7 +200,24 @@ func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 
 // NewOnRampReader implements types.CCIPExecProvider.
 func (e *execProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
-	panic("unimplemented")
+	ctx, cancel := e.StopCtx()
+	defer cancel()
+
+	req := ccippb.NewOnRampReaderRequest{Address: string(addr)}
+
+	resp, err := e.grpc.NewOnRampReader(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	// this works because the broker is shared and the id refers to a resource served by the broker
+	grpcClient, err := e.BrokerExt.Dial(uint32(resp.OnrampReaderServiceId))
+
+	// need to wrap grpc client into the desired interface
+	client := ccipinternal.NewOnRampReaderClient(grpcClient)
+
+	// how to convert resp to cciptypes.OnRampReader? i have an id and need to hydrate that into an instance of OnRampReader
+	return client, err
+
 }
 
 // NewPriceRegistryReader implements types.CCIPExecProvider.
@@ -297,7 +318,25 @@ func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 }
 
 func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
-	panic("unimplemented")
+
+	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address))
+	if err != nil {
+		return nil, err
+	}
+	// wrap the reader in a grpc server and serve it
+	srv := ccipinternal.NewOnRampReaderServer(reader)
+	// the id is handle to the broker, we will need it on the other sider to dial the resource
+	offRampID, offRampResource, err := e.ServeNew("OffRampReader", func(s *grpc.Server) {
+		ccippb.RegisterOffRampReaderServer(s, srv)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	e.mu.Lock()
+	e.deps = append(e.deps, offRampResource)
+	e.mu.Unlock()
+	return &ccippb.NewOnRampReaderResponse{OnrampReaderServiceId: int32(offRampID)}, nil
 }
 
 func (e *execProviderServer) Close(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
@@ -310,5 +349,6 @@ func (e *execProviderServer) Close(ctx context.Context, req *emptypb.Empty) (*em
 			err = errors.Join(err, cerr)
 		}
 	}
-	return &emptypb.Empty{}, errors.Join(err, e.impl.Close())
+	// don't
+	return &emptypb.Empty{}, err
 }

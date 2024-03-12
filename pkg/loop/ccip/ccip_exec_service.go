@@ -22,13 +22,13 @@ type ExecFactoryService struct {
 
 // NewExecService returns a new [*ExecFactoryService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewExecService(lggr logger.Logger, grpcOpts loop.GRPCOpts, cmd func() *exec.Cmd, provider types.CCIPExecProvider) *ExecFactoryService {
+func NewExecService(lggr logger.Logger, grpcOpts loop.GRPCOpts, cmd func() *exec.Cmd, provider types.CCIPExecProvider, config types.CCIPExecFactoryGeneratorConfig) *ExecFactoryService {
 	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
 		plug, ok := instance.(types.CCIPExecFactoryGenerator)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginMedian but got %T", instance)
 		}
-		return plug.NewExecFactory(ctx, provider)
+		return plug.NewExecFactory(ctx, provider, config)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "MedianService")

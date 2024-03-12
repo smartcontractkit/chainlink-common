@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
@@ -16,8 +17,8 @@ type OnRampReaderClient struct {
 	grpc ccippb.OnRampReaderClient
 }
 
-func NewOnRampReaderClient(grpc ccippb.OnRampReaderClient) *OnRampReaderClient {
-	return &OnRampReaderClient{grpc: grpc}
+func NewOnRampReaderClient(cc grpc.ClientConnInterface) *OnRampReaderClient {
+	return &OnRampReaderClient{grpc: ccippb.NewOnRampReaderClient(cc)}
 }
 
 // Address implements ccip.OnRampReader.

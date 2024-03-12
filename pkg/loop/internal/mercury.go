@@ -171,9 +171,11 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 			providerID  uint32
 			providerRes Resource
 		)
+		// loop mode; proxy to the relayer
 		if grpcProvider, ok := provider.(GRPCClientConn); ok {
 			providerID, providerRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
+			// legacy mode; serve the provider locally in the client process (ie the core node)
 			providerID, providerRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
 				registerCommonServices(s, provider)
 

@@ -206,6 +206,42 @@ func TestEpochToTimeHook(t *testing.T) {
 		assert.Equal(t, "foo", actual)
 	})
 
+	t.Run("pointers are maintained in non-converstion scenarios", func(t *testing.T) {
+		t.Run("*time.Time to *time.Time", func(t *testing.T) {
+			tp := reflect.PointerTo(reflect.TypeOf(testTime))
+			output, err := EpochToTimeHook(tp, tp, &testTime)
+
+			require.NoError(t, err)
+
+			value, ok := output.(*time.Time)
+
+			require.True(t, ok)
+			require.Equal(t, testTime.Unix(), value.Unix())
+		})
+
+		t.Run("*time.Time to time.Time", func(t *testing.T) {
+			output, err := EpochToTimeHook(reflect.PointerTo(reflect.TypeOf(testTime)), reflect.TypeOf(testTime), &testTime)
+
+			require.NoError(t, err)
+
+			value, ok := output.(time.Time)
+
+			require.True(t, ok)
+			require.Equal(t, testTime.Unix(), value.Unix())
+		})
+
+		t.Run("time.Time to *time.Time", func(t *testing.T) {
+			output, err := EpochToTimeHook(reflect.TypeOf(testTime), reflect.PointerTo(reflect.TypeOf(testTime)), testTime)
+
+			require.NoError(t, err)
+
+			value, ok := output.(*time.Time)
+
+			require.True(t, ok)
+			require.Equal(t, testTime.Unix(), value.Unix())
+		})
+	})
+
 	t.Run("Converts timestamps to integer type using mapstructure", func(t *testing.T) {
 		type A struct {
 			Val1 time.Time

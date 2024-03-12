@@ -223,7 +223,12 @@ func convertToTime(from reflect.Type, data any) any {
 
 func convertToEpoch(to reflect.Type, data time.Time) any {
 	if to == mapType || to == ptrMapType {
-		newMap := reflect.MakeMap(to)
+		tp := to
+		if tp == ptrMapType {
+			tp = tp.Elem()
+		}
+
+		newMap := reflect.MakeMap(tp)
 		reflect.Indirect(newMap).SetMapIndex(reflect.ValueOf(interMapKey), reflect.ValueOf(data.Unix()))
 
 		if to == mapType {
@@ -231,6 +236,13 @@ func convertToEpoch(to reflect.Type, data time.Time) any {
 		}
 
 		return newMap.Interface()
+	}
+
+	if to == timePtrType {
+		output := reflect.New(timeType)
+		reflect.Indirect(output).Set(reflect.ValueOf(data))
+
+		return output.Interface()
 	}
 
 	if to.ConvertibleTo(i64Type) {

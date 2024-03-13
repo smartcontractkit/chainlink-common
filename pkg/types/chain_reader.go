@@ -186,34 +186,39 @@ func (f *AndFilter) Accept(visitor Visitor) {
 }
 
 type AddressFilter struct {
-	Address []string
+	Addresses []string
 }
 
-func NewAddressFilter(address ...string) *AddressFilter {
-	return &AddressFilter{Address: address}
+func NewAddressesFilter(addresses ...string) *AddressFilter {
+	return &AddressFilter{Addresses: addresses}
 }
 
 func (f *AddressFilter) Accept(visitor Visitor) {
 	visitor.VisitAddressFilter(*f)
 }
 
-type Confirmations int
+type Confirmations int32
 
 const (
 	Finalized   = Confirmations(-1)
 	Unconfirmed = Confirmations(0)
 )
 
-type ConfirmationFilter struct {
+type ConfirmationsFilter struct {
 	Confirmations
 }
 
-func NewConfirmationFilter(confs Confirmations) *ConfirmationFilter {
-	return &ConfirmationFilter{Confirmations: confs}
+func NewConfirmationsFilter(confs Confirmations) *ConfirmationsFilter {
+	return &ConfirmationsFilter{Confirmations: confs}
 }
 
-func (f *ConfirmationFilter) Accept(visitor Visitor) {
+func (f *ConfirmationsFilter) Accept(visitor Visitor) {
 	visitor.VisitConfirmationFilter(*f)
+}
+
+type BlockFilter struct {
+	Block    uint64
+	Operator ComparisonOperator
 }
 
 func NewBlockFilter(block uint64, operator ComparisonOperator) *BlockFilter {
@@ -225,11 +230,6 @@ func NewBlockRangeFilter(start, end uint64) *AndFilter {
 		NewBlockFilter(start, Gte),
 		NewBlockFilter(end, Lte),
 	)
-}
-
-type BlockFilter struct {
-	Block    uint64
-	Operator ComparisonOperator
 }
 
 func (f *BlockFilter) Accept(visitor Visitor) {
@@ -265,7 +265,7 @@ type Visitor interface {
 	VisitAndFilter(filter AndFilter)
 	VisitAddressFilter(filter AddressFilter)
 	VisitBlockFilter(filter BlockFilter)
-	VisitConfirmationFilter(filter ConfirmationFilter)
+	VisitConfirmationFilter(filter ConfirmationsFilter)
 	VisitTimestampFilter(filter TimestampFilter)
 	VisitTxHashFilter(filter TxHashFilter)
 }

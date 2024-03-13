@@ -53,12 +53,11 @@ func NewOCR3(config Config) *Capability {
 	}
 
 	if config.store == nil {
-		s := newStore(*config.RequestTimeout, config.clock)
-		config.store = s
+		config.store = newStore()
 	}
 
 	if config.capability == nil {
-		ci := newCapability(config.store, config.clock, config.EncoderFactory, config.Logger)
+		ci := newCapability(config.store, config.clock, *config.RequestTimeout, config.EncoderFactory, config.Logger)
 		config.capability = ci
 	}
 
@@ -73,7 +72,7 @@ func NewOCR3(config Config) *Capability {
 }
 
 func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg commontypes.ReportingPluginServiceConfig, provider commontypes.PluginProvider, pipelineRunner commontypes.PipelineRunnerService, telemetry commontypes.TelemetryClient, errorLog commontypes.ErrorLog, capabilityRegistry commontypes.CapabilitiesRegistry) (commontypes.OCR3ReportingPluginFactory, error) {
-	factory, err := newFactory(o.config.store, o.config.BatchSize, o.config.Logger)
+	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.Logger)
 	if err != nil {
 		return nil, err
 	}

@@ -10,14 +10,18 @@ type Decimal struct {
 	Underlying decimal.Decimal
 }
 
-func NewDecimal(d decimal.Decimal) (*Decimal, error) {
-	return &Decimal{Underlying: d}, nil
+func NewDecimal(d decimal.Decimal) *Decimal {
+	return &Decimal{Underlying: d}
 }
 
-func (d *Decimal) Proto() (*pb.Value, error) {
+func (d *Decimal) proto() *pb.Value {
 	return pb.NewDecimalValue(d.Underlying)
 }
 
 func (d *Decimal) Unwrap() (any, error) {
 	return d.Underlying, nil
+}
+
+func (d *Decimal) UnwrapTo(to any) error {
+	return unwrapTo(d.Underlying, to)
 }

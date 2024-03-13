@@ -1,10 +1,11 @@
 package values
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"math/big"
+	"reflect"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -12,10 +13,11 @@ import (
 
 type Unwrappable interface {
 	Unwrap() (any, error)
+	UnwrapTo(any) error
 }
 
 type Value interface {
-	Proto() (*pb.Value, error)
+	proto() *pb.Value
 
 	Unwrappable
 }
@@ -25,21 +27,27 @@ func Wrap(v any) (Value, error) {
 	case map[string]any:
 		return NewMap(tv)
 	case string:
-		return NewString(tv)
+		return NewString(tv), nil
 	case bool:
-		return NewBool(tv)
+		return NewBool(tv), nil
 	case []byte:
-		return NewBytes(tv)
+		return NewBytes(tv), nil
 	case []any:
 		return NewList(tv)
 	case decimal.Decimal:
-		return NewDecimal(tv)
+		return NewDecimal(tv), nil
 	case int64:
-		return NewInt64(tv)
+		return NewInt64(tv), nil
 	case int:
-		return NewInt64(int64(tv))
+		return NewInt64(int64(tv)), nil
+	case uint64:
+		return NewInt64(int64(tv)), nil
+	case uint:
+		return NewInt64(int64(tv)), nil
+	case big.Int:
+		return NewBigInt(tv), nil
 	case nil:
-		return NewNil()
+		return nil, nil
 
 	// Transparently wrap values.
 	// This is helpful for recursive wrapping of values.
@@ -55,8 +63,40 @@ func Wrap(v any) (Value, error) {
 		return tv, nil
 	case *Int64:
 		return tv, nil
-	case *Nil:
-		return tv, nil
+	}
+
+	// Handle slices, structs, and pointers to structs
+	val := reflect.ValueOf(v)
+	// nolint
+	switch val.Kind() {
+	// Better complex type support for maps
+	case reflect.Map:
+		m := make(map[string]any, val.Len())
+		iter := val.MapRange()
+		for iter.Next() {
+			k := iter.Key()
+			ks, ok := k.Interface().(string)
+			if !ok {
+				return nil, fmt.Errorf("could not wrap into value %+v", v)
+			}
+			v := iter.Value()
+			m[ks] = v.Interface()
+		}
+		return NewMap(m)
+	// Better complex type support for slices
+	case reflect.Slice:
+		s := make([]any, val.Len())
+		for i := 0; i < val.Len(); i++ {
+			item := val.Index(i).Interface()
+			s[i] = item
+		}
+		return NewList(s)
+	case reflect.Struct:
+		return createMapFromStruct(v)
+	case reflect.Pointer:
+		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
+			return createMapFromStruct(reflect.Indirect(reflect.ValueOf(v)).Interface())
+		}
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
@@ -70,72 +110,98 @@ func Unwrap(v Value) (any, error) {
 	return v.Unwrap()
 }
 
-func FromProto(val *pb.Value) (Value, error) {
+func Proto(v Value) *pb.Value {
+	if v == nil {
+		return &pb.Value{}
+	}
+
+	return v.proto()
+}
+
+func FromProto(val *pb.Value) Value {
 	if val == nil {
-		return nil, nil
+		return nil
 	}
 
 	switch val.Value.(type) {
-	case *pb.Value_NilValue:
-		return NewNil()
+	case nil:
+		return nil
 	case *pb.Value_StringValue:
 		return NewString(val.GetStringValue())
 	case *pb.Value_BoolValue:
 		return NewBool(val.GetBoolValue())
 	case *pb.Value_DecimalValue:
-		return FromDecimalValueProto(val.GetDecimalValue())
+		return fromDecimalValueProto(val.GetDecimalValue())
 	case *pb.Value_Int64Value:
 		return NewInt64(val.GetInt64Value())
 	case *pb.Value_BytesValue:
-		return FromBytesValueProto(val.GetBytesValue())
+		return NewBytes(val.GetBytesValue())
 	case *pb.Value_ListValue:
 		return FromListValueProto(val.GetListValue())
 	case *pb.Value_MapValue:
 		return FromMapValueProto(val.GetMapValue())
+	case *pb.Value_BigintValue:
+		return fromBigIntValueProto(val.GetBigintValue())
 	}
 
-	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)
+	panic(fmt.Errorf("unsupported type %T: %+v", val, val))
 }
 
-func FromBytesValueProto(bv string) (*Bytes, error) {
-	p, err := base64.StdEncoding.DecodeString(bv)
-	if err != nil {
-		return nil, err
-	}
-	return NewBytes(p)
-}
-
-func FromMapValueProto(mv *pb.Map) (*Map, error) {
+func FromMapValueProto(mv *pb.Map) *Map {
 	nm := map[string]Value{}
 	for k, v := range mv.Fields {
-		val, err := FromProto(v)
-		if err != nil {
-			return nil, err
-		}
-
-		nm[k] = val
+		nm[k] = FromProto(v)
 	}
-	return &Map{Underlying: nm}, nil
+	return &Map{Underlying: nm}
 }
 
-func FromListValueProto(lv *pb.List) (*List, error) {
+func FromListValueProto(lv *pb.List) *List {
 	nl := []Value{}
 	for _, el := range lv.Fields {
-		elv, err := FromProto(el)
-		if err != nil {
-			return nil, err
-		}
-
-		nl = append(nl, elv)
+		nl = append(nl, FromProto(el))
 	}
-	return &List{Underlying: nl}, nil
+	return &List{Underlying: nl}
 }
 
-func FromDecimalValueProto(decStr string) (*Decimal, error) {
-	dec := decimal.Decimal{}
-	err := json.Unmarshal([]byte(decStr), &dec)
+func fromDecimalValueProto(decStr string) *Decimal {
+	dec, err := decimal.NewFromString(decStr)
+	if err != nil {
+		panic(err)
+	}
+
+	return NewDecimal(dec)
+}
+
+func fromBigIntValueProto(b []byte) *BigInt {
+	i := big.Int{}
+	bi := i.SetBytes(b)
+	return NewBigInt(*bi)
+}
+
+func createMapFromStruct(v any) (Value, error) {
+	var resultMap map[string]interface{}
+	err := mapstructure.Decode(v, &resultMap)
 	if err != nil {
 		return nil, err
 	}
-	return NewDecimal(dec)
+	return NewMap(resultMap)
+}
+
+func unwrapTo[T any](underlying T, to any) error {
+	switch tb := to.(type) {
+	case *T:
+		if tb == nil {
+			return fmt.Errorf("cannot unwrap to nil pointer")
+		}
+		*tb = underlying
+	case *any:
+		if tb == nil {
+			return fmt.Errorf("cannot unwrap to nil pointer")
+		}
+		*tb = underlying
+	default:
+		return fmt.Errorf("cannot unwrap to value of type: %T", to)
+	}
+
+	return nil
 }

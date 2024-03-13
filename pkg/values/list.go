@@ -1,6 +1,9 @@
 package values
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
@@ -21,29 +24,56 @@ func NewList(l []any) (*List, error) {
 	return &List{Underlying: lv}, nil
 }
 
-func (l *List) Proto() (*pb.Value, error) {
+func (l *List) proto() *pb.Value {
 	v := []*pb.Value{}
 	for _, e := range l.Underlying {
-		pe, err := e.Proto()
-		if err != nil {
-			return nil, err
-		}
-
-		v = append(v, pe)
+		v = append(v, Proto(e))
 	}
 	return pb.NewListValue(v)
 }
 
 func (l *List) Unwrap() (any, error) {
 	nl := []any{}
-	for _, v := range l.Underlying {
-		uv, err := Unwrap(v)
-		if err != nil {
-			return nil, err
-		}
+	return nl, l.UnwrapTo(&nl)
+}
 
-		nl = append(nl, uv)
+func (l *List) UnwrapTo(to any) error {
+	val := reflect.ValueOf(to)
+	if val.Kind() != reflect.Pointer {
+		return fmt.Errorf("cannot unwrap to non-pointer type %T", to)
 	}
 
-	return nl, nil
+	if val.IsNil() {
+		return fmt.Errorf("cannot unwrap to nil pointer: %+v", to)
+	}
+
+	ptrVal := reflect.Indirect(val)
+	switch ptrVal.Kind() {
+	case reflect.Slice:
+		newList := reflect.New(reflect.Indirect(val).Type()).Elem()
+		for _, el := range l.Underlying {
+			newEl := reflect.New(reflect.Indirect(val).Type().Elem()).Elem()
+			ptrEl := newEl.Addr().Interface()
+			err := el.UnwrapTo(ptrEl)
+			if err != nil {
+				return err
+			}
+			newList = reflect.Append(newList, reflect.Indirect(reflect.ValueOf(ptrEl)))
+		}
+		reflect.Indirect(val).Set(newList)
+		return nil
+	default:
+		dl := []any{}
+		err := l.UnwrapTo(&dl)
+		if err != nil {
+			return err
+		}
+
+		if reflect.TypeOf(dl).AssignableTo(ptrVal.Type()) {
+			ptrVal.Set(reflect.ValueOf(dl))
+			return nil
+		}
+
+		return fmt.Errorf("cannot unwrap to type %T", to)
+	}
 }

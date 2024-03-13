@@ -2,12 +2,9 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"sync"
 
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/mwitkow/grpc-proxy/proxy"
 
@@ -57,6 +54,9 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 			providerID       uint32
 			providerResource Resource
 			providerErr      error
+			// ccip provider can create resources that need to cleaned up when
+			// the reporting plugin (not the factory) is closed
+			reportingPluginDeps Resources
 		)
 		if grpcProvider, ok := provider.(GRPCClientConn); ok {
 			providerID, providerResource, err = c.Serve("ExecProvider", proxy.NewProxy(grpcProvider.ClientConn()))
@@ -67,7 +67,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 				registerPluginProviderServices(s, provider)
 				// unlike other products, the provider can create new interface instances, so we need to serve the
 				// servers rather than resources
-				c.registerCustomProviderServices(s, provider)
+				c.registerCustomProviderServices(s, provider, c.BrokerExt, reportingPluginDeps)
 			})
 		}
 		if providerErr != nil {
@@ -90,9 +90,9 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 	return newReportingPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
-func (c *ExecutionLOOPClient) registerCustomProviderServices(s *grpc.Server, provider types.CCIPExecProvider) {
+func (c *ExecutionLOOPClient) registerCustomProviderServices(s *grpc.Server, provider types.CCIPExecProvider, brokerExt *BrokerExt, deps Resources) {
 	// register the handler for the custom methods of the provider eg NewOffRampReader
-	ccippb.RegisterExecutionCustomHandlersServer(s, newExecProviderServer(provider))
+	ccippb.RegisterExecutionCustomHandlersServer(s, newExecProviderServer(provider, brokerExt, deps))
 }
 
 // ExecutionLOOPServer is a server that runs the execution LOOP
@@ -285,13 +285,14 @@ type execProviderServer struct {
 	// this has to be a shared pointer to the same impl as the client
 	*BrokerExt
 	impl types.CCIPExecProvider
-	// TODO how to prevent resource leaks?
-	mu   sync.Mutex
-	deps []Resource
+
+	// deps are the resources that are created by the provider and need to be closed when
+	// reporting plugin instance is closed
+	deps Resources
 }
 
-func newExecProviderServer(impl types.CCIPExecProvider) *execProviderServer {
-	return &execProviderServer{impl: impl}
+func newExecProviderServer(impl types.CCIPExecProvider, brokerExt *BrokerExt, deps Resources) *execProviderServer {
+	return &execProviderServer{impl: impl, deps: deps, BrokerExt: brokerExt}
 }
 
 func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.NewOffRampReaderRequest) (*ccippb.NewOffRampReaderResponse, error) {
@@ -310,9 +311,7 @@ func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 	if err != nil {
 		return nil, err
 	}
-	e.mu.Lock()
-	e.deps = append(e.deps, offRampResource)
-	e.mu.Unlock()
+	e.deps.Add(offRampResource)
 	return &ccippb.NewOffRampReaderResponse{OfframpReaderServiceId: int32(offRampID)}, nil
 
 }
@@ -326,29 +325,13 @@ func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.Ne
 	// wrap the reader in a grpc server and serve it
 	srv := ccipinternal.NewOnRampReaderServer(reader)
 	// the id is handle to the broker, we will need it on the other sider to dial the resource
-	offRampID, offRampResource, err := e.ServeNew("OffRampReader", func(s *grpc.Server) {
-		ccippb.RegisterOffRampReaderServer(s, srv)
+	onRampID, onRampResource, err := e.ServeNew("OnRampReader", func(s *grpc.Server) {
+		ccippb.RegisterOnRampReaderServer(s, srv)
 	})
 
 	if err != nil {
 		return nil, err
 	}
-	e.mu.Lock()
-	e.deps = append(e.deps, offRampResource)
-	e.mu.Unlock()
-	return &ccippb.NewOnRampReaderResponse{OnrampReaderServiceId: int32(offRampID)}, nil
-}
-
-func (e *execProviderServer) Close(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
-	var err error
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	for _, dep := range e.deps {
-		cerr := dep.Close()
-		if cerr != nil {
-			err = errors.Join(err, cerr)
-		}
-	}
-	// don't
-	return &emptypb.Empty{}, err
+	e.deps.Add(onRampResource)
+	return &ccippb.NewOnRampReaderResponse{OnrampReaderServiceId: int32(onRampID)}, nil
 }

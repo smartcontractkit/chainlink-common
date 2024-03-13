@@ -51,7 +51,7 @@ func TestExecService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: loop.PluginMedianName,
+			Command: loop.ExecName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()

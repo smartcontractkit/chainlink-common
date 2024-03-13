@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -164,6 +165,16 @@ func (rs *Resources) Stop(s interface{ Stop() }, name string) {
 
 func (rs *Resources) Close(c io.Closer, name string) {
 	rs.Add(Resource{c, name})
+}
+
+func (rs *Resources) CloseAll() error {
+	var err error
+	for _, r := range *rs {
+		if cerr := r.Close(); err != nil {
+			err = errors.Join(err, fmt.Errorf("Error closing %s: %w", r.Name, cerr))
+		}
+	}
+	return err
 }
 
 // fnCloser implements io.Closer with a func().

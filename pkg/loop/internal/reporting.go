@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"math"
 	"time"
 
@@ -18,10 +19,29 @@ type reportingPluginFactoryClient struct {
 	*BrokerExt
 	*ServiceClient
 	grpc pb.ReportingPluginFactoryClient
+
+	deps Resources
 }
 
-func newReportingPluginFactoryClient(b *BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
-	return &reportingPluginFactoryClient{b.WithName("ReportingPluginProviderClient"), NewServiceClient(b, cc), pb.NewReportingPluginFactoryClient(cc)}
+type reportingPluginFactoryOpts func(*reportingPluginFactoryClient)
+
+// depsToClose is a reportingPluginFactoryOpts that sets the Resources to close when the client is closed.
+func depsToClose(deps Resources) reportingPluginFactoryOpts {
+	return func(r *reportingPluginFactoryClient) {
+		r.deps = deps
+	}
+}
+
+func newReportingPluginFactoryClient(b *BrokerExt, cc grpc.ClientConnInterface, opts ...reportingPluginFactoryOpts) *reportingPluginFactoryClient {
+	c := &reportingPluginFactoryClient{
+		BrokerExt:     b.WithName("ReportingPluginProviderClient"),
+		ServiceClient: NewServiceClient(b, cc),
+		grpc:          pb.NewReportingPluginFactoryClient(cc),
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
 }
 
 func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
@@ -58,7 +78,7 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.Reportin
 	if err != nil {
 		return nil, libocr.ReportingPluginInfo{}, err
 	}
-	return newReportingPluginClient(r.BrokerExt, cc), rpi, nil
+	return newReportingPluginClient(r.BrokerExt, cc, r.deps), rpi, nil
 }
 
 var _ pb.ReportingPluginFactoryServer = (*reportingPluginFactoryServer)(nil)
@@ -123,10 +143,13 @@ var _ libocr.ReportingPlugin = (*reportingPluginClient)(nil)
 type reportingPluginClient struct {
 	*BrokerExt
 	grpc pb.ReportingPluginClient
+
+	// deps is the Resources to close when the client is closed.
+	deps Resources
 }
 
-func newReportingPluginClient(b *BrokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
-	return &reportingPluginClient{b.WithName("ReportingPluginClient"), pb.NewReportingPluginClient(cc)}
+func newReportingPluginClient(b *BrokerExt, cc grpc.ClientConnInterface, deps Resources) *reportingPluginClient {
+	return &reportingPluginClient{b.WithName("ReportingPluginClient"), pb.NewReportingPluginClient(cc), deps}
 }
 
 func (r *reportingPluginClient) Query(ctx context.Context, timestamp libocr.ReportTimestamp) (libocr.Query, error) {
@@ -187,8 +210,10 @@ func (r *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context
 func (r *reportingPluginClient) Close() error {
 	ctx, cancel := r.StopCtx()
 	defer cancel()
-
 	_, err := r.grpc.Close(ctx, &emptypb.Empty{})
+	if r.deps == nil {
+		err = errors.Join(err, r.deps.CloseAll())
+	}
 	return err
 }
 

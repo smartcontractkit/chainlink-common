@@ -47,16 +47,16 @@ type ChainReader interface {
 	//TODO Rebind binding address
 	//ReBind(ctx context.Context, name, address string)
 
-	QueryKeys(ctx context.Context, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Event, error)
-	// QueryKeysExcluding()
-
-	// TODO
+	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
+	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
+	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
+	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
 
 	// TODO some filters have to be dynamic, so this has to override chain reader bind that comes from config?
 	// RegisterFilter()
 	// UnRegisterFilter()
 
-	// TODO We don't want to tackle querying for arbitrary data right now so these should do CCIP specific evm log data searching, these can be made into one function
+	// TODO make EVM words map to a key and then do this through the query methods.
 	// GetCommitReportMatchingSeqNum()
 	// GetSendRequestsBetweenSeqNums()
 	// GetCommitReportGreaterThanSeqNum()
@@ -68,7 +68,7 @@ type BoundContract struct {
 	Pending bool
 }
 
-type Event struct {
+type Sequence struct {
 	ChainID        string
 	SequenceCursor string
 	Timestamp      time.Time
@@ -168,9 +168,8 @@ func NewAndFilter(filters ...QueryFilter) *AndFilter {
 	return &AndFilter{Filters: filters}
 }
 
-func NewBasicAndFilter(address string, eventSig string, filters ...QueryFilter) *AndFilter {
+func NewBasicAndFilter(filters ...QueryFilter) *AndFilter {
 	allFilters := make([]QueryFilter, 0, len(filters)+2)
-	allFilters = append(allFilters, NewAddressFilter(address), NewKeysFilter(eventSig))
 	allFilters = append(allFilters, filters...)
 	return NewAndFilter(allFilters...)
 }
@@ -196,31 +195,6 @@ func NewAddressFilter(address ...string) *AddressFilter {
 
 func (f *AddressFilter) Accept(visitor Visitor) {
 	visitor.VisitAddressFilter(*f)
-}
-
-type KeysFilter struct {
-	Keys []string
-}
-
-func NewKeysFilter(keys ...string) *KeysFilter {
-	return &KeysFilter{Keys: keys}
-}
-
-func (f *KeysFilter) Accept(visitor Visitor) {
-	visitor.VisitKeysFilter(*f)
-}
-
-type KeysByValueFilter struct {
-	Keys   []string
-	Values [][]string
-}
-
-func NewKeysByValueFilter(keys []string, values [][]string) *KeysByValueFilter {
-	return &KeysByValueFilter{Keys: keys, Values: values}
-}
-
-func (f *KeysByValueFilter) Accept(visitor Visitor) {
-	visitor.VisitKeysByValueFilter(*f)
 }
 
 type Confirmations int
@@ -290,8 +264,6 @@ func (f *TxHashFilter) Accept(visitor Visitor) {
 type Visitor interface {
 	VisitAndFilter(filter AndFilter)
 	VisitAddressFilter(filter AddressFilter)
-	VisitKeysFilter(filter KeysFilter)
-	VisitKeysByValueFilter(filter KeysByValueFilter)
 	VisitBlockFilter(filter BlockFilter)
 	VisitConfirmationFilter(filter ConfirmationFilter)
 	VisitTimestampFilter(filter TimestampFilter)

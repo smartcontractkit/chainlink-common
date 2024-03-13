@@ -8,27 +8,21 @@ import "codec.proto";
 import "google/protobuf/empty.proto";
 
 service ChainReader {
+  // TODO replies
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc QueryKey (QueryKeyRequest) returns (QueryKeysReply) {}
   rpc QueryKeys (QueryKeysRequest) returns (QueryKeysReply) {}
+  rpc QueryKeyByValues (QueryKeyByValuesRequest) returns (QueryKeysReply) {}
+  rpc QueryKeysByValues (QueryKeysByValuesRequest) returns (QueryKeysReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
 message AndFilter {
-  repeated QueryKeysFilter filters = 1;
+  repeated QueryFilter filters = 1;
 }
 
 message AddressFilter {
   repeated string addresses = 1;
-}
-
-message KeysFilter {
-  repeated string keys = 1;
-}
-
-message KeysByValueFilter {
-  repeated Keys keys = 1;
-  repeated Values values = 2;
-
 }
 
 message Keys {
@@ -95,25 +89,50 @@ message LimitAndSort{
   repeated SortBy sort_by = 2;
 }
 
-message QueryKeysFilter {
+message KeyValues{
+  repeated string value = 1;
+}
+
+message QueryFilter {
   oneof filter {
     AndFilter and_filter = 1;
     AddressFilter address_filter = 2;
-    KeysFilter keys_filter = 3;
-    KeysByValueFilter keys_by_value_filter = 4;
-    ConfirmationsFilter confirmations_filter = 5;
-    BlockFilter block_filter = 6;
-    TimestampFilter timestamp_filter = 7;
-    TxHashFilter tx_hash_filter = 8;
+    ConfirmationsFilter confirmations_filter = 3;
+    BlockFilter block_filter = 4;
+    TimestampFilter timestamp_filter = 5;
+    TxHashFilter tx_hash_filter = 6;
   }
 }
 
-message QueryKeysRequest {
-  QueryKeysFilter filter = 1;
-  LimitAndSort limit_and_sort = 2;
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyRequest].
+message QueryKeyRequest {
+  string key = 1;
+  QueryFilter filter = 2;
+  LimitAndSort limit_and_sort = 3;
 }
 
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysRequest].
+message QueryKeysRequest {
+  repeated string keys = 1;
+  QueryFilter filter = 2;
+  LimitAndSort limit_and_sort = 3;
+}
 
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValuesRequest].
+message QueryKeyByValuesRequest {
+  string key = 1;
+  KeyValues values = 2;
+  QueryFilter filter = 3;
+  LimitAndSort limit_and_sort = 4;
+}
+
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByValues].
+message QueryKeysByValuesRequest {
+  repeated string keys = 1;
+  repeated KeyValues values = 2;
+  QueryFilter filter = 3;
+  LimitAndSort limit_and_sort = 4;
+}
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueRequest {

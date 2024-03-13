@@ -114,8 +114,41 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *chainReaderClient) QueryKeys(ctx context.Context, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Event, error) {
+func (c *chainReaderClient) QueryKey(ctx context.Context, keys string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
+	if err := logQueryFilterValues(queryFilter); err != nil {
+		return nil, errors.Wrap(err, "test debug")
+	}
+
+	if err := logLimitAndSortValue(limitAndSort); err != nil {
+		return nil, errors.Wrap(err, "test debug")
+	}
+	return nil, nil
+}
+
+func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
 	fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! chainReaderClient Query Keys")
+	if err := logQueryFilterValues(queryFilter); err != nil {
+		return nil, errors.Wrap(err, "test debug")
+	}
+
+	if err := logLimitAndSortValue(limitAndSort); err != nil {
+		return nil, errors.Wrap(err, "test debug")
+	}
+	return nil, nil
+}
+
+func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, keys string, values []string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
+	if err := logQueryFilterValues(queryFilter); err != nil {
+		return nil, errors.Wrap(err, "test debug")
+	}
+
+	if err := logLimitAndSortValue(limitAndSort); err != nil {
+		return nil, errors.Wrap(err, "test debug")
+	}
+	return nil, nil
+}
+
+func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
 	if err := logQueryFilterValues(queryFilter); err != nil {
 		return nil, errors.Wrap(err, "test debug")
 	}
@@ -142,11 +175,6 @@ func logQueryFilterValues(queryFilter types.QueryFilter) error {
 		fmt.Println("****************************")
 		fmt.Println("Address Filter values are: ", filter.Address)
 		fmt.Println("****************************")
-	case *types.KeysFilter:
-		fmt.Println("****************************")
-		fmt.Println("Keys Filter values are: ", filter.Keys)
-		fmt.Println("****************************")
-		return nil
 	default:
 		fmt.Println("Unknown Filter value is: ", fmt.Sprintf("Unknown filter type %T ", queryFilter))
 
@@ -230,8 +258,8 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }
 
-func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
-	queryFilter, err := parseQueryKeysFilter(request.GetFilter())
+func (c *chainReaderServer) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb.QueryKeysReply, error) {
+	queryFilter, err := parseQueryFilter(request.GetFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -241,45 +269,92 @@ func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeys
 		return nil, err
 	}
 
-	_, err = c.impl.QueryKeys(ctx, queryFilter, limitAndSort)
+	_, err = c.impl.QueryKey(ctx, request.Key, queryFilter, limitAndSort)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.QueryKeysReply{RetVal: nil}, nil
 }
 
-func parseQueryKeysFilter(request *pb.QueryKeysFilter) (types.QueryFilter, error) {
+func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
+	queryFilter, err := parseQueryFilter(request.GetFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	limitAndSort, err := parseLimitAndSort(request.GetLimitAndSort())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.impl.QueryKeys(ctx, request.Keys, queryFilter, limitAndSort)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.QueryKeysReply{RetVal: nil}, nil
+}
+
+func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.QueryKeyByValuesRequest) (*pb.QueryKeysReply, error) {
+	queryFilter, err := parseQueryFilter(request.GetFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	limitAndSort, err := parseLimitAndSort(request.GetLimitAndSort())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.impl.QueryKeyByValues(ctx, request.Key, request.Values.Value, queryFilter, limitAndSort)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.QueryKeysReply{RetVal: nil}, nil
+}
+
+func (c *chainReaderServer) QueryKeysByValues(ctx context.Context, request *pb.QueryKeysByValuesRequest) (*pb.QueryKeysReply, error) {
+	queryFilter, err := parseQueryFilter(request.GetFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	limitAndSort, err := parseLimitAndSort(request.GetLimitAndSort())
+	if err != nil {
+		return nil, err
+	}
+
+	var values [][]string
+	for _, keyValues := range request.Values {
+		values = append(values, keyValues.Value)
+	}
+	_, err = c.impl.QueryKeysByValues(ctx, request.Keys, values, queryFilter, limitAndSort)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.QueryKeysReply{RetVal: nil}, nil
+}
+
+func parseQueryFilter(request *pb.QueryFilter) (types.QueryFilter, error) {
 	switch filter := request.Filter.(type) {
-	case *pb.QueryKeysFilter_AndFilter:
+	case *pb.QueryFilter_AndFilter:
 		var parsedQueryFilters []types.QueryFilter
 		for _, subQueryFilterRequest := range filter.AndFilter.Filters {
-			parsedQueryFilter, err := parseQueryKeysFilter(subQueryFilterRequest)
+			parsedQueryFilter, err := parseQueryFilter(subQueryFilterRequest)
 			if err != nil {
 				return nil, err
 			}
 			parsedQueryFilters = append(parsedQueryFilters, parsedQueryFilter)
 		}
 		return &types.AndFilter{Filters: parsedQueryFilters}, nil
-	case *pb.QueryKeysFilter_AddressFilter:
+	case *pb.QueryFilter_AddressFilter:
 		return &types.AddressFilter{Address: filter.AddressFilter.Addresses}, nil
-	case *pb.QueryKeysFilter_KeysFilter:
-		return &types.KeysFilter{Keys: filter.KeysFilter.Keys}, nil
-	case *pb.QueryKeysFilter_KeysByValueFilter:
-		var keysByValueFilter types.KeysByValueFilter
-		for _, k := range filter.KeysByValueFilter.Keys {
-			keysByValueFilter.Keys = append(keysByValueFilter.Keys, k.Keys...)
-		}
-		for _, v := range filter.KeysByValueFilter.Values {
-			keysByValueFilter.Values = append(keysByValueFilter.Values, v.Values)
-		}
-		return &keysByValueFilter, nil
-	case *pb.QueryKeysFilter_ConfirmationsFilter:
+	case *pb.QueryFilter_ConfirmationsFilter:
 		return &types.ConfirmationFilter{Confirmations: types.Confirmations(filter.ConfirmationsFilter.Confirmations.Confirmation)}, nil
-	case *pb.QueryKeysFilter_BlockFilter:
+	case *pb.QueryFilter_BlockFilter:
 		return &types.BlockFilter{Block: filter.BlockFilter.BlockNumber, Operator: types.ComparisonOperator(filter.BlockFilter.Operator.ComparisonOperator)}, nil
-	case *pb.QueryKeysFilter_TxHashFilter:
+	case *pb.QueryFilter_TxHashFilter:
 		return &types.TxHashFilter{TxHash: filter.TxHashFilter.TxHash}, nil
-	case *pb.QueryKeysFilter_TimestampFilter:
+	case *pb.QueryFilter_TimestampFilter:
 		return &types.TimestampFilter{
 			Timestamp: filter.TimestampFilter.Timestamp,
 			Operator:  types.ComparisonOperator(filter.TimestampFilter.Operator.ComparisonOperator),

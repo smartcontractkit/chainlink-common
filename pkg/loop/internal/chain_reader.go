@@ -283,7 +283,12 @@ func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.Qu
 		return nil, err
 	}
 
-	_, err = c.impl.QueryKeyByValues(ctx, request.Key, request.Values.Value, queryFilter, limitAndSort)
+	var values []string
+	if request.Values != nil {
+		values = request.Values.Value
+	}
+
+	_, err = c.impl.QueryKeyByValues(ctx, request.Key, values, queryFilter, limitAndSort)
 	if err != nil {
 		return nil, err
 	}
@@ -302,9 +307,12 @@ func (c *chainReaderServer) QueryKeysByValues(ctx context.Context, request *pb.Q
 	}
 
 	var values [][]string
-	for _, keyValues := range request.Values {
-		values = append(values, keyValues.Value)
+	if request.Values != nil {
+		for _, keyValues := range request.Values {
+			values = append(values, keyValues.Value)
+		}
 	}
+
 	_, err = c.impl.QueryKeysByValues(ctx, request.Keys, values, queryFilter, limitAndSort)
 	if err != nil {
 		return nil, err

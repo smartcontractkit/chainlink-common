@@ -108,11 +108,27 @@ func (c staticCodec) Decode(ctx context.Context, raw []byte, into any, itemType 
 
 type staticChainReader struct{}
 
-func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
+func (c staticChainReader) QueryKey(_ context.Context, _ string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+	return nil, nil
+}
+
+func (c staticChainReader) QueryKeys(_ context.Context, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+	return nil, nil
+}
+
+func (c staticChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+	return nil, nil
+}
+
+func (c staticChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+	return nil, nil
+}
+
+func (c staticChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string, params, returnVal any) error {
+func (c staticChainReader) GetLatestValue(_ context.Context, cn, method string, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(cn, contractName) {
 		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, contractName, cn)
 	}

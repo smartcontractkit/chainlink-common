@@ -33,16 +33,23 @@ message Values {
   repeated string values = 1;
 }
 
-message Confirmations {
-  int32 confirmation = 1;
+
+enum Confirmations {
+  Finalized   = 0;
+  Unconfirmed = 1;
 }
 
 message ConfirmationsFilter{
   Confirmations confirmations = 1;
 }
 
-message ComparisonOperator {
-  int32 comparisonOperator = 1;
+enum ComparisonOperator {
+    Eq = 0;
+    Neq = 1;
+    Gt = 2;
+    Lt = 3;
+    Gte = 4;
+    Lte = 5;
 }
 
 message BlockFilter{

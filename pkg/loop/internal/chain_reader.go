@@ -341,13 +341,13 @@ func convertQueryFilter(filter types.QueryFilter) (*pb.QueryFilter, error) {
 	case *types.ConfirmationsFilter:
 		return &pb.QueryFilter{Filter: &pb.QueryFilter_ConfirmationsFilter{
 			ConfirmationsFilter: &pb.ConfirmationsFilter{
-				Confirmations: &pb.Confirmations{Confirmation: int32(filter.Confirmations)},
+				Confirmations: pb.Confirmations(filter.Confirmations),
 			}}}, nil
 	case *types.BlockFilter:
 		return &pb.QueryFilter{Filter: &pb.QueryFilter_BlockFilter{
 			BlockFilter: &pb.BlockFilter{
 				BlockNumber: filter.Block,
-				Operator:    &pb.ComparisonOperator{ComparisonOperator: int32(filter.Operator)},
+				Operator:    pb.ComparisonOperator(filter.Operator),
 			},
 		}}, nil
 	case *types.TxHashFilter:
@@ -359,7 +359,7 @@ func convertQueryFilter(filter types.QueryFilter) (*pb.QueryFilter, error) {
 		return &pb.QueryFilter{Filter: &pb.QueryFilter_TimestampFilter{
 			TimestampFilter: &pb.TimestampFilter{
 				Timestamp: filter.Timestamp,
-				Operator:  &pb.ComparisonOperator{ComparisonOperator: int32(filter.Operator)},
+				Operator:  pb.ComparisonOperator(filter.Operator),
 			},
 		}}, nil
 	default:
@@ -412,15 +412,15 @@ func parseQueryFilter(request *pb.QueryFilter) (types.QueryFilter, error) {
 	case *pb.QueryFilter_AddressFilter:
 		return &types.AddressFilter{Addresses: filter.AddressFilter.Addresses}, nil
 	case *pb.QueryFilter_ConfirmationsFilter:
-		return &types.ConfirmationsFilter{Confirmations: types.Confirmations(filter.ConfirmationsFilter.Confirmations.Confirmation)}, nil
+		return &types.ConfirmationsFilter{Confirmations: types.Confirmations(filter.ConfirmationsFilter.Confirmations)}, nil
 	case *pb.QueryFilter_BlockFilter:
-		return &types.BlockFilter{Block: filter.BlockFilter.BlockNumber, Operator: types.ComparisonOperator(filter.BlockFilter.Operator.ComparisonOperator)}, nil
+		return &types.BlockFilter{Block: filter.BlockFilter.BlockNumber, Operator: types.ComparisonOperator(filter.BlockFilter.Operator)}, nil
 	case *pb.QueryFilter_TxHashFilter:
 		return &types.TxHashFilter{TxHash: filter.TxHashFilter.TxHash}, nil
 	case *pb.QueryFilter_TimestampFilter:
 		return &types.TimestampFilter{
 			Timestamp: filter.TimestampFilter.Timestamp,
-			Operator:  types.ComparisonOperator(filter.TimestampFilter.Operator.ComparisonOperator),
+			Operator:  types.ComparisonOperator(filter.TimestampFilter.Operator),
 		}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "Unknown filter type")

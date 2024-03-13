@@ -200,8 +200,8 @@ func (f *AddressFilter) Accept(visitor Visitor) {
 type Confirmations int32
 
 const (
-	Finalized   = Confirmations(-1)
-	Unconfirmed = Confirmations(0)
+	Finalized   = Confirmations(0)
+	Unconfirmed = Confirmations(1)
 )
 
 type ConfirmationsFilter struct {

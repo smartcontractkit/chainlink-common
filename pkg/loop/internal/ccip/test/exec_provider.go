@@ -3,8 +3,10 @@ package test
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	"github.com/stretchr/testify/assert"
 
 	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
@@ -17,14 +19,20 @@ type ExecProviderEvaluator interface {
 	testtypes.Evaluator[types.CCIPExecProvider]
 }
 
-var ExecConfig = types.CCIPExecFactoryGeneratorConfig{
+type ExecProviderTester interface {
+	types.CCIPExecProvider
+	testtypes.Evaluator[types.CCIPExecProvider]
+	testtypes.AssertEqualer[types.CCIPExecProvider]
+}
+
+var ExecutionConfig = types.CCIPExecFactoryGeneratorConfig{
 	OnRampAddress:      ccip.Address("onramp"),
 	OffRampAddress:     ccip.Address("offramp"),
 	CommitStoreAddress: ccip.Address("commitstore"),
 	TokenReaderAddress: ccip.Address("tokenreader"),
 }
 
-var ExecProvider = &staticExecProvider{
+var ExecutionProvider = &staticExecProvider{
 	staticExecProviderConfig: staticExecProviderConfig{
 		addr:                ccip.Address("some address"),
 		offchainDigester:    testpluginprovider.OffchainConfigDigester,
@@ -35,7 +43,7 @@ var ExecProvider = &staticExecProvider{
 	},
 }
 
-var _ ExecProviderEvaluator = (*staticExecProvider)(nil)
+var _ ExecProviderTester = (*staticExecProvider)(nil)
 
 type staticExecProviderConfig struct {
 	addr                ccip.Address
@@ -58,7 +66,7 @@ func (s *staticExecProvider) ChainReader() types.ChainReader {
 
 // Close implements ExecProviderEvaluator.
 func (s *staticExecProvider) Close() error {
-	panic("unimplemented")
+	return nil
 }
 
 // Codec implements ExecProviderEvaluator.
@@ -84,7 +92,7 @@ func (s *staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecP
 	}
 	err = s.onrampreader.Evaluate(ctx, otherOnRamp)
 	if err != nil {
-		return fmt.Errorf("on ramp reader evaulation failed: %w", err)
+		return fmt.Errorf("on ramp reader evaluation failed: %w", err)
 	}
 	// TODO othe components
 	return nil
@@ -137,7 +145,7 @@ func (s *staticExecProvider) OffchainConfigDigester() libocr.OffchainConfigDiges
 
 // Ready implements ExecProviderEvaluator.
 func (s *staticExecProvider) Ready() error {
-	panic("unimplemented")
+	return nil
 }
 
 // SourceNativeToken implements ExecProviderEvaluator.
@@ -147,5 +155,11 @@ func (s *staticExecProvider) SourceNativeToken(ctx context.Context) (ccip.Addres
 
 // Start implements ExecProviderEvaluator.
 func (s *staticExecProvider) Start(context.Context) error {
-	panic("unimplemented")
+	return nil
+}
+
+// AssertEqual implements ExecProviderTester.
+func (s *staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other types.CCIPExecProvider) {
+	// TODO fill this in with the rest of the components
+	assert.NoError(t, s.Evaluate(ctx, other))
 }

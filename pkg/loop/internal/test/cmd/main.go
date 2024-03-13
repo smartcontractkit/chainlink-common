@@ -75,6 +75,7 @@ func main() {
 			},
 			GRPCServer: grpcServer,
 		})
+		lggr.Info("Done serving relayer")
 		os.Exit(0)
 
 	case loop.PluginMedianName:

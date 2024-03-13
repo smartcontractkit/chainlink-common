@@ -45,7 +45,6 @@ func NewExecutionLOOPClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.Cl
 // to the core node. The core must wrap the provider in a grpc server and serve it locally.
 // func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider, config types.CCIPExecFactoryGeneratorConfig) (types.ReportingPluginFactory, error) {
 func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider) (types.ReportingPluginFactory, error) {
-
 	newExecClientFn := func(ctx context.Context) (id uint32, deps Resources, err error) {
 		// TODO are there any local resources that need to be passed to the executor and started as a server?
 
@@ -53,25 +52,21 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 		var (
 			providerID       uint32
 			providerResource Resource
-			providerErr      error
-			// ccip provider can create resources that need to cleaned up when
-			// the reporting plugin (not the factory) is closed
-			reportingPluginDeps Resources
 		)
 		if grpcProvider, ok := provider.(GRPCClientConn); ok {
+			// TODO: BCF-XXXX ccip provider can create new services. the proxying needs to be augmented
+			// to intercept and route to the created services. also, need to prevent leaks.
 			providerID, providerResource, err = c.Serve("ExecProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			// loop client runs in the core node. if the provider is not a grpc client conn, then we are in legacy mode
 			// and need to serve all the required services locally.
 			providerID, providerResource, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
 				registerPluginProviderServices(s, provider)
+				// TODO LEAKS!!!
 				// unlike other products, the provider can create new interface instances, so we need to serve the
 				// servers rather than resources
-				c.registerCustomProviderServices(s, provider, c.BrokerExt, reportingPluginDeps)
+				registerCustomExecutionProviderServices(s, provider, c.BrokerExt)
 			})
-		}
-		if providerErr != nil {
-			return 0, nil, fmt.Errorf("failed to serve exec provider due to provider error:%w", providerErr)
 		}
 		if err != nil {
 			return 0, nil, err
@@ -84,15 +79,15 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 		if err != nil {
 			return 0, nil, err
 		}
-		return uint32(resp.ExecutionFactoryServiceId), deps, nil
+		return resp.ExecutionFactoryServiceId, deps, nil
 	}
 	cc := c.NewClientConn("ExecutionFactory", newExecClientFn)
 	return newReportingPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
-func (c *ExecutionLOOPClient) registerCustomProviderServices(s *grpc.Server, provider types.CCIPExecProvider, brokerExt *BrokerExt, deps Resources) {
+func registerCustomExecutionProviderServices(s *grpc.Server, provider types.CCIPExecProvider, brokerExt *BrokerExt) {
 	// register the handler for the custom methods of the provider eg NewOffRampReader
-	ccippb.RegisterExecutionCustomHandlersServer(s, newExecProviderServer(provider, brokerExt, deps))
+	ccippb.RegisterExecutionCustomHandlersServer(s, newExecProviderServer(provider, brokerExt))
 }
 
 // ExecutionLOOPServer is a server that runs the execution LOOP
@@ -161,7 +156,7 @@ type execProviderClient struct {
 }
 
 // conn
-func newExecProviderClient(b *BrokerExt, conn *grpc.ClientConn) *execProviderClient {
+func newExecProviderClient(b *BrokerExt, conn grpc.ClientConnInterface) *execProviderClient {
 	pluginProviderClient := newPluginProviderClient(b, conn)
 	grpc := ccippb.NewExecutionCustomHandlersClient(conn)
 	return &execProviderClient{
@@ -195,7 +190,6 @@ func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 
 	// how to convert resp to cciptypes.OnRampReader? i have an id and need to hydrate that into an instance of OnRampReader
 	return client, err
-
 }
 
 // NewOnRampReader implements types.CCIPExecProvider.
@@ -209,15 +203,20 @@ func (e *execProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes
 	if err != nil {
 		return nil, err
 	}
-	// this works because the broker is shared and the id refers to a resource served by the broker
+	// TODO BCF-XXXX: make this work for proxied relayer
+	// currently this only work for an embedded relayer
+	// because the broker is shared  between the core node and relayer
+	// this effectively let us proxy connects to resources spawn by the embedded relay
+	// by hijacking the shared broker. id refers to a resource served by the shared broker
 	grpcClient, err := e.BrokerExt.Dial(uint32(resp.OnrampReaderServiceId))
-
+	if err != nil {
+		return nil, fmt.Errorf("failed to lookup on ramp reader service: %w", err)
+	}
 	// need to wrap grpc client into the desired interface
 	client := ccipinternal.NewOnRampReaderClient(grpcClient)
 
 	// how to convert resp to cciptypes.OnRampReader? i have an id and need to hydrate that into an instance of OnRampReader
 	return client, err
-
 }
 
 // NewPriceRegistryReader implements types.CCIPExecProvider.
@@ -286,17 +285,14 @@ type execProviderServer struct {
 	*BrokerExt
 	impl types.CCIPExecProvider
 
-	// deps are the resources that are created by the provider and need to be closed when
-	// reporting plugin instance is closed
 	deps Resources
 }
 
-func newExecProviderServer(impl types.CCIPExecProvider, brokerExt *BrokerExt, deps Resources) *execProviderServer {
-	return &execProviderServer{impl: impl, deps: deps, BrokerExt: brokerExt}
+func newExecProviderServer(impl types.CCIPExecProvider, brokerExt *BrokerExt) *execProviderServer {
+	return &execProviderServer{impl: impl, BrokerExt: brokerExt}
 }
 
 func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.NewOffRampReaderRequest) (*ccippb.NewOffRampReaderResponse, error) {
-
 	reader, err := e.impl.NewOffRampReader(ctx, cciptypes.Address(req.Address))
 	if err != nil {
 		return nil, err
@@ -311,13 +307,13 @@ func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 	if err != nil {
 		return nil, err
 	}
+	// TODO LEAKS!!!
+	// does this need an identifier so a reporting plugin, as a provider client, can hook into closing it?
 	e.deps.Add(offRampResource)
 	return &ccippb.NewOffRampReaderResponse{OfframpReaderServiceId: int32(offRampID)}, nil
-
 }
 
 func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
-
 	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address))
 	if err != nil {
 		return nil, err
@@ -332,6 +328,8 @@ func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.Ne
 	if err != nil {
 		return nil, err
 	}
+	// TODO LEAKS!!!
+	// does this need an identifier so a reporting plugin, as a provider client, can hook into closing it?
 	e.deps.Add(onRampResource)
 	return &ccippb.NewOnRampReaderResponse{OnrampReaderServiceId: int32(onRampID)}, nil
 }

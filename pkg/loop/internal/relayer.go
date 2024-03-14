@@ -229,7 +229,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 		// ensure that this relayer client has the same broker as the server. that doesn't really
 		// even make sense to me because the relayer client will in the reporting plugin loop
 		// for now we return an error and test for the this error case
-		//return nil, fmt.Errorf("need to fix BCF-3061")
+		// return nil, fmt.Errorf("need to fix BCF-3061")
 		return newExecProviderClient(r.BrokerExt, cc), fmt.Errorf("need to fix BCF-3061")
 	default:
 		return nil, fmt.Errorf("provider type not supported: %s", rargs.ProviderType)
@@ -483,7 +483,7 @@ func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.Rel
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		registerPluginProviderServices(s, provider)
-		// TODO LEAKS!!!
+		// TODO BCF-3067 LEAKS!!!
 		// the execution provider can create resources. how to prevent a leak?
 		// here we are a stand alone server in relayer. there is no reporting plugin instance
 		// maybe the best thing to do is promote all the ccip interfaces to services
@@ -528,12 +528,13 @@ func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNo
 	}
 	return &pb.ListNodeStatusesReply{Nodes: nodes, NextPageToken: nextPageToken, Total: int32(total)}, nil
 }
+
 func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionRequest) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, r.impl.Transact(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
 }
 
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,
-// this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed
+// this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
 	registerPluginProviderServices(s, p)
 	pb.RegisterReportCodecServer(s, &reportCodecServer{impl: p.ReportCodec()})
@@ -542,7 +543,7 @@ func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
 }
 
 // RegisterStandAlonePluginProvider register the servers needed for a generic plugin provider,
-// this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed
+// this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAlonePluginProvider(s *grpc.Server, p types.PluginProvider) {
 	registerPluginProviderServices(s, p)
 }

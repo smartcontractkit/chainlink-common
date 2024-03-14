@@ -68,7 +68,7 @@ func (e ExecutionLOOPTester) FixBCFXXX(t *testing.T, p types.CCIPExecutionFactor
 }
 
 func runReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) {
-	// TODO de-dupe this with the same function in median/test/median.go
+	// TODO BCF-3068 de-dupe this with the same function in median/test/median.go
 	rpi := libocr.ReportingPluginInfo{
 		Name:          "test",
 		UniqueReports: true,
@@ -83,18 +83,17 @@ func runReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactor
 		// we expect the static implementation to be used under the covers
 		// we can't compare the types directly because the returned reporting plugin may be a grpc client
 		// that wraps the static implementation
-		//	var expectedReportingPlugin = testreportingplugin.ReportingPlugin
+		var expectedReportingPlugin = testreportingplugin.ReportingPlugin
 
 		rp, gotRPI, err := factory.NewReportingPlugin(testreportingplugin.Factory.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
-		/*
-			t.Run("ReportingPlugin", func(t *testing.T) {
-				ctx := tests.Context(t)
 
-				expectedReportingPlugin.AssertEqual(ctx, t, rp)
-			})
-		*/
+		t.Run("ReportingPlugin", func(t *testing.T) {
+			ctx := tests.Context(t)
+
+			expectedReportingPlugin.AssertEqual(ctx, t, rp)
+		})
 	})
 }

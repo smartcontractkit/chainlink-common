@@ -52,7 +52,7 @@ type staticExecProviderConfig struct {
 	contractTransmitter testtypes.ContractTransmitterEvaluator
 	onrampreader        OnRampEvaluator
 	offrampreader       OffRampEvaluator
-	// TODO fill in the rest
+	// TODO BCF-2979 fill in the rest of exec provider components
 }
 
 type staticExecProvider struct {
@@ -94,7 +94,7 @@ func (s *staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecP
 	if err != nil {
 		return fmt.Errorf("on ramp reader evaluation failed: %w", err)
 	}
-	// TODO othe components
+	// TODO BCF-2979 other components of exec provider
 	return nil
 }
 
@@ -160,6 +160,6 @@ func (s *staticExecProvider) Start(context.Context) error {
 
 // AssertEqual implements ExecProviderTester.
 func (s *staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other types.CCIPExecProvider) {
-	// TODO fill this in with the rest of the components
+	// TODO BCF-2979 other components of exec provider
 	assert.NoError(t, s.Evaluate(ctx, other))
 }

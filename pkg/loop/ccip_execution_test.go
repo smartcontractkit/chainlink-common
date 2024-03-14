@@ -27,7 +27,7 @@ func TestExecService(t *testing.T) {
 	t.Parallel()
 
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return NewHelperProcessCommand(loop.ExecName, false)
+		return NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false)
 	}, ccip_test.ExecutionProvider, ccip_test.ExecutionConfig)
 	hook := exec.PluginService.XXXTestHook()
 	servicetest.Run(t, exec)
@@ -60,7 +60,7 @@ func TestExecService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: loop.ExecName,
+			Command: loop.CCIPExecutionLOOPName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
@@ -76,7 +76,7 @@ func TestExecLOOP(t *testing.T) {
 	stopCh := newStopCh(t)
 	exec := loop.ExecutionLoop{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := exec.ClientConfig()
-	cc.Cmd = NewHelperProcessCommand(loop.ExecName, false)
+	cc.Cmd = NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false)
 	c := plugin.NewClient(cc)
 	// make to kill the exec loop
 	t.Cleanup(c.Kill)
@@ -85,7 +85,7 @@ func TestExecLOOP(t *testing.T) {
 	defer client.Close()
 	require.NoError(t, client.Ping())
 	// get a concrete instance of the exec loop
-	instance, err := client.Dispense(loop.ExecName)
+	instance, err := client.Dispense(loop.CCIPExecutionLOOPName)
 	remoteExecFactory := instance.(types.CCIPExecutionFactoryGenerator)
 	require.NoError(t, err)
 

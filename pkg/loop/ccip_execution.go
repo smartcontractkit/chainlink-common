@@ -16,13 +16,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// ExecName is the name for [types.PluginMedian]/[NewGRPCPluginMedian].
-const ExecName = "exec"
+// CCIPExecutionLOOPName is the name for [types.CCIPExecutionFactoryGenerator]/[NewExecutionLOOP].
+const CCIPExecutionLOOPName = "ccip_execution"
 
 func PluginCCIPExecutionHandshakeConfig() plugin.HandshakeConfig {
 	return plugin.HandshakeConfig{
 		MagicCookieKey:   "CL_PLUGIN_CCIP_EXEC_MAGIC_COOKIE",
-		MagicCookieValue: "b12a697e19748cd695dd1690c09745ee7cc03717179958e8eadd5a7ca4699999",
+		MagicCookieValue: "5a2d1527-6c0f-4c7e-8c96-00aa4bececd2",
 	}
 }
 
@@ -40,10 +40,10 @@ func (p *ExecutionLoop) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serve
 	return internal.RegisterExecutionLOOPServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
-// GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginMedian], updated with the new broker and conn.
+// GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.CCIPExecutionFactoryGenerator], updated with the new broker and conn.
 func (p *ExecutionLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = internal.NewExecutionLOOPClient(broker, p.BrokerConfig, conn) //internal.NewPluginMedianClient(broker, p.BrokerConfig, conn)
+		p.pluginClient = internal.NewExecutionLOOPClient(broker, p.BrokerConfig, conn)
 	} else {
 		p.pluginClient.Refresh(broker, conn)
 	}
@@ -54,7 +54,7 @@ func (p *ExecutionLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker,
 func (p *ExecutionLoop) ClientConfig() *plugin.ClientConfig {
 	return &plugin.ClientConfig{
 		HandshakeConfig:  PluginCCIPExecutionHandshakeConfig(),
-		Plugins:          map[string]plugin.Plugin{ExecName: p},
+		Plugins:          map[string]plugin.Plugin{CCIPExecutionLOOPName: p},
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		GRPCDialOptions:  p.DialOpts,
 		Logger:           HCLogLogger(p.Logger),
@@ -63,7 +63,7 @@ func (p *ExecutionLoop) ClientConfig() *plugin.ClientConfig {
 
 var _ ocrtypes.ReportingPluginFactory = (*ExecutionFactoryService)(nil)
 
-// ExecutionFactoryService is a [types.Service] that maintains an internal [types.PluginMedian].
+// ExecutionFactoryService is a [types.Service] that maintains an internal [types.CCIPExecutionFactoryGenerator].
 type ExecutionFactoryService struct {
 	internal.PluginService[*ExecutionLoop, types.ReportingPluginFactory]
 }
@@ -82,7 +82,7 @@ func NewExecutionService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	lggr = logger.Named(lggr, "CCIPExecutionService")
 	var efs ExecutionFactoryService
 	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
-	efs.Init(ExecName, &ExecutionLoop{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
+	efs.Init(CCIPExecutionLOOPName, &ExecutionLoop{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &efs
 }
 

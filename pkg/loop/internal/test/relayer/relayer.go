@@ -57,9 +57,9 @@ type staticPluginRelayerConfig struct {
 	agnosticProvider  testtypes.PluginProviderTester
 	mercuryProvider   mercury_common_test.MercuryProviderTester
 	executionProvider ccip_test.ExecProviderTester
-
-	configProvider testpluginprovider.ConfigProviderTester
-	// TODO: add other Provider testers
+	configProvider    testpluginprovider.ConfigProviderTester
+	// Note: add other Provider testers here when we implement them
+	// eg Functions, Automation, etc
 	nodeRequest        nodeRequest
 	nodeResponse       nodeResponse
 	transactionRequest transactionRequest

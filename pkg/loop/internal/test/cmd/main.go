@@ -149,18 +149,18 @@ func main() {
 		lggr.Debugf("Done serving %s", loop.PluginMercuryName)
 		os.Exit(0)
 
-	case loop.ExecName:
-		lggr.Debugf("Starting %s", loop.ExecName)
+	case loop.CCIPExecutionLOOPName:
+		lggr.Debugf("Starting %s", loop.CCIPExecutionLOOPName)
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: loop.PluginCCIPExecutionHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
-				loop.ExecName: &loop.ExecutionLoop{
+				loop.CCIPExecutionLOOPName: &loop.ExecutionLoop{
 					PluginServer: ccip_test.ExecFactoryServer,
 					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			},
 			GRPCServer: grpcServer,
 		})
-		lggr.Debugf("Done serving %s", loop.ExecName)
+		lggr.Debugf("Done serving %s", loop.CCIPExecutionLOOPName)
 		os.Exit(0)
 
 	case ocr3.PluginServiceName:

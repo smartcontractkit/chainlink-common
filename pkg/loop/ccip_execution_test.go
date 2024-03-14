@@ -27,7 +27,7 @@ func TestExecService(t *testing.T) {
 	t.Parallel()
 
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		return NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false)
+		return NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false, 0)
 	}, ccip_test.ExecutionProvider, ccip_test.ExecutionConfig)
 	hook := exec.PluginService.XXXTestHook()
 	servicetest.Run(t, exec)
@@ -76,7 +76,7 @@ func TestExecLOOP(t *testing.T) {
 	stopCh := newStopCh(t)
 	exec := loop.ExecutionLoop{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := exec.ClientConfig()
-	cc.Cmd = NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false)
+	cc.Cmd = NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false, 0)
 	c := plugin.NewClient(cc)
 	// make to kill the exec loop
 	t.Cleanup(c.Kill)

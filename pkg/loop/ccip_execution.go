@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
-	//"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"

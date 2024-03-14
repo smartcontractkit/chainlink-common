@@ -96,13 +96,12 @@ func TestExecLOOP(t *testing.T) {
 		pr := newPluginRelayerExec(t, false, stopCh)
 		remoteProvider, err := newExecutionProvider(t, pr)
 		require.Error(t, err, "expected error")
-		assert.Contains(t, err.Error(), "BCF-XXXX")
+		assert.Contains(t, err.Error(), "BCF-3061")
 		if err == nil {
-			// test to run when BCF-XXXX is fixed
+			// test to run when BCF-3061 is fixed
 			ccip_test.ExecutionLOOPTester{CCIPExecProvider: remoteProvider}.Run(t, remoteExecFactory)
 		}
 	})
-
 }
 
 func newExecutionProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPExecProvider, error) {
@@ -111,16 +110,15 @@ func newExecutionProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPExecPr
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 
-	// TODO: fix BCF-XXXX. we expect an error here until then.
+	// TODO: fix BCF-3061. we expect an error here until then.
 	p, err := r.NewPluginProvider(ctx, ccip_test.ExecutionRelayArgs, ccip_test.ExecutionPluginArgs)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: this shouldn't run until BCF-XXXX is fixed
+	// TODO: this shouldn't run until BCF-3061 is fixed
 	require.NoError(t, err)
 	execProvider, ok := p.(types.CCIPExecProvider)
 	require.True(t, ok, "got %T", p)
 	servicetest.Run(t, execProvider)
 	return execProvider, nil
-
 }

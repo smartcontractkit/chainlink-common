@@ -221,7 +221,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 	case string(types.Mercury):
 		return newMercuryProviderClient(r.BrokerExt, cc), nil
 	case string(types.CCIPExecution):
-		// TODO BCF-XXXX
+		// TODO BCF-3061
 		// what do i do here? for the local embedded relayer, we are using the broker
 		// to share state so the the reporting plugin, as a client to the (embedded) relayer,
 		// calls the provider to get resources and then the provider calls the broker to serve them
@@ -229,8 +229,8 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 		// ensure that this relayer client has the same broker as the server. that doesn't really
 		// even make sense to me because the relayer client will in the reporting plugin loop
 		// for now we return an error and test for the this error case
-		//return nil, fmt.Errorf("need to fix BCF-XXXX")
-		return newExecProviderClient(r.BrokerExt, cc), fmt.Errorf("need to fix BCF-XXXX")
+		//return nil, fmt.Errorf("need to fix BCF-3061")
+		return newExecProviderClient(r.BrokerExt, cc), fmt.Errorf("need to fix BCF-3061")
 	default:
 		return nil, fmt.Errorf("provider type not supported: %s", rargs.ProviderType)
 	}

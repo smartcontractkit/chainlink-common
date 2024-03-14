@@ -54,7 +54,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 			providerResource Resource
 		)
 		if grpcProvider, ok := provider.(GRPCClientConn); ok {
-			// TODO: BCF-XXXX ccip provider can create new services. the proxying needs to be augmented
+			// TODO: BCF-3061 ccip provider can create new services. the proxying needs to be augmented
 			// to intercept and route to the created services. also, need to prevent leaks.
 			providerID, providerResource, err = c.Serve("ExecProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
@@ -203,7 +203,7 @@ func (e *execProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes
 	if err != nil {
 		return nil, err
 	}
-	// TODO BCF-XXXX: make this work for proxied relayer
+	// TODO BCF-3061: make this work for proxied relayer
 	// currently this only work for an embedded relayer
 	// because the broker is shared  between the core node and relayer
 	// this effectively let us proxy connects to resources spawn by the embedded relay

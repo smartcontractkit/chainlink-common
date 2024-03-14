@@ -46,15 +46,15 @@ type ChainReader interface {
 
 	//TODO Rebind binding address
 	//ReBind(ctx context.Context, name, address string)
+	// TODO some filters have to be dynamic, so this has to override chain reader bind that comes from config?
+	// Maube this should just be Bind?
+	// RegisterFilter()
+	// UnRegisterFilter()
 
 	QueryKey(ctx context.Context, keys string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
 	QueryKeys(ctx context.Context, keys []string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
 	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
 	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter []QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
-
-	// TODO some filters have to be dynamic, so this has to override chain reader bind that comes from config?
-	// RegisterFilter()
-	// UnRegisterFilter()
 
 	// TODO make EVM words map to a key and then do this through the query methods.
 	// GetCommitReportMatchingSeqNum()
@@ -69,14 +69,17 @@ type BoundContract struct {
 }
 
 type Sequence struct {
-	ChainID        string
+	// TODO SequenceCursor, this should be a unique sequence identifier that chain reader impl. understands.
+	// This way we can retrieve past/future sequences (EVM log events) very granularly but still hiding the chain detail.
 	SequenceCursor string
 	Timestamp      time.Time
-	// TODO any or byte? Probably need to do codec transforms here too
+	// TODO this is a general chain agnositc Head, it should be moved from mercury package.
+	//mercury.Head
+	// TODO any or byte? Probably need to do codec transforms here too?
 	Data []byte
 }
 
-// TODO define If Register should be done outside of Binding, probably yes because of remapping
+// TODO define If Register should be done outside of Binding?
 type KeysFilterer struct {
 	Name string // see FilterName(id, args) below
 	// TODO Retrieve key polling unique identifiers from chain reader config by using this identifier (evm eg. point to specific event sigs by contract name and event name)

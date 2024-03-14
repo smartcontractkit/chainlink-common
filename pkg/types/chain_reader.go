@@ -160,6 +160,24 @@ type QueryFilter interface {
 	Accept(visitor Visitor)
 }
 
+// Where eg. usage:
+//
+//	Where(
+//		NewAndFilter(
+//			NewOrFilter(
+//				NewBlockFilter(startBlock, Gte),
+//				NewBlockFilter(endBlock, Lte),
+//				),
+//			NewOrFilter(
+//				NewTimeStampFilter(startTs, Gte),
+//				NewTimeStampFilter(endTs, Lte),
+//			)
+//		)
+//	)
+func Where(filters ...QueryFilter) []QueryFilter {
+	return append([]QueryFilter{}, filters...)
+}
+
 // TODO add ORFilter
 type AndFilter struct {
 	Filters []QueryFilter
@@ -167,19 +185,6 @@ type AndFilter struct {
 
 func NewAndFilter(filters ...QueryFilter) *AndFilter {
 	return &AndFilter{Filters: filters}
-}
-
-func NewBasicAndFilter(filters ...QueryFilter) *AndFilter {
-	allFilters := make([]QueryFilter, 0, len(filters)+2)
-	allFilters = append(allFilters, filters...)
-	return NewAndFilter(allFilters...)
-}
-
-func AppendedNewFilter(root *AndFilter, other ...QueryFilter) *AndFilter {
-	filters := make([]QueryFilter, 0, len(root.Filters)+len(other))
-	filters = append(filters, root.Filters...)
-	filters = append(filters, other...)
-	return NewAndFilter(filters...)
 }
 
 func (f *AndFilter) Accept(visitor Visitor) {

@@ -21,6 +21,10 @@ message AndFilter {
   repeated QueryFilter filters = 1;
 }
 
+message OrFilter {
+  repeated QueryFilter filters = 1;
+}
+
 message AddressFilter {
   repeated string addresses = 1;
 }
@@ -97,47 +101,52 @@ message LimitAndSort{
 }
 
 message KeyValues{
-  repeated string value = 1;
+  repeated string values = 1;
 }
 
 message QueryFilter {
-  oneof filter {
+  oneof query_filter {
     AndFilter and_filter = 1;
-    AddressFilter address_filter = 2;
-    ConfirmationsFilter confirmations_filter = 3;
-    BlockFilter block_filter = 4;
-    TimestampFilter timestamp_filter = 5;
-    TxHashFilter tx_hash_filter = 6;
+    OrFilter or_filter = 2;
+    AddressFilter address_filter = 3;
+    ConfirmationsFilter confirmations_filter = 4;
+    BlockFilter block_filter = 5;
+    TimestampFilter timestamp_filter = 6;
+    TxHashFilter tx_hash_filter = 7;
   }
+}
+
+message QueryFilters {
+  repeated QueryFilter query_filters = 1;
 }
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyRequest].
 message QueryKeyRequest {
   string key = 1;
-  QueryFilter filter = 2;
+  QueryFilters query_filters = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysRequest].
 message QueryKeysRequest {
   repeated string keys = 1;
-  QueryFilter filter = 2;
+  QueryFilters query_filters = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValuesRequest].
 message QueryKeyByValuesRequest {
   string key = 1;
-  KeyValues values = 2;
-  QueryFilter filter = 3;
+  KeyValues key_values = 2;
+  QueryFilters query_filters = 3;
   LimitAndSort limit_and_sort = 4;
 }
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByValues].
 message QueryKeysByValuesRequest {
   repeated string keys = 1;
-  repeated KeyValues values = 2;
-  QueryFilter filter = 3;
+  repeated KeyValues keys_values = 2;
+  QueryFilters query_filters = 3;
   LimitAndSort limit_and_sort = 4;
 }
 

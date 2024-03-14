@@ -47,10 +47,10 @@ type ChainReader interface {
 	//TODO Rebind binding address
 	//ReBind(ctx context.Context, name, address string)
 
-	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
-	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
-	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
-	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
+	QueryKey(ctx context.Context, keys string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
+	QueryKeys(ctx context.Context, keys []string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
+	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
+	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter []QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
 
 	// TODO some filters have to be dynamic, so this has to override chain reader bind that comes from config?
 	// RegisterFilter()
@@ -160,6 +160,7 @@ type QueryFilter interface {
 	Accept(visitor Visitor)
 }
 
+// TODO add ORFilter
 type AndFilter struct {
 	Filters []QueryFilter
 }

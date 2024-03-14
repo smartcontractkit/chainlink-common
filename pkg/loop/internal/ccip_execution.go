@@ -173,9 +173,6 @@ func (e *execProviderClient) NewCommitStoreReader(ctx context.Context, addr ccip
 
 // NewOffRampReader implements types.CCIPExecProvider.
 func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OffRampReader, error) {
-	ctx, cancel := e.StopCtx()
-	defer cancel()
-
 	req := ccippb.NewOffRampReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpc.NewOffRampReader(ctx, &req)
@@ -194,9 +191,6 @@ func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 
 // NewOnRampReader implements types.CCIPExecProvider.
 func (e *execProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
-	ctx, cancel := e.StopCtx()
-	defer cancel()
-
 	req := ccippb.NewOnRampReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpc.NewOnRampReader(ctx, &req)
@@ -237,43 +231,6 @@ func (e *execProviderClient) NewTokenPoolBatchedReader(ctx context.Context) (cci
 // SourceNativeToken implements types.CCIPExecProvider.
 func (e *execProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.Address, error) {
 	panic("unimplemented")
-}
-
-type onRampReaderHandlerClient struct {
-	*BrokerExt
-	grpc ccippb.ExecutionCustomHandlersClient
-}
-
-func newOnRampReaderHandlerClient(b *BrokerExt, conn *grpc.ClientConn) *onRampReaderHandlerClient {
-	return &onRampReaderHandlerClient{BrokerExt: b, grpc: ccippb.NewExecutionCustomHandlersClient(conn)}
-}
-
-func (c *onRampReaderHandlerClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
-	ctx, cancel := c.StopCtx()
-	defer cancel()
-
-	var req ccippb.NewOnRampReaderRequest
-
-	resp, err := c.grpc.NewOnRampReader(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-	// this works because the id is served from the same broker
-	grpcClient, err := c.BrokerExt.Dial(uint32(resp.OnrampReaderServiceId))
-	// need to wrap grpc client into the desired interface
-	client := ccipinternal.NewOnRampReaderClient(grpcClient)
-
-	// how to convert resp to cciptypes.OnRampReader? i have an id and need to hydrate that into an instance of OnRampReader
-	return client, err
-}
-
-func execFactoryConfig(config *ccippb.ExecutionFactoryConfig) types.CCIPExecFactoryGeneratorConfig {
-	return types.CCIPExecFactoryGeneratorConfig{
-		OnRampAddress:      cciptypes.Address(config.OnRampAddress),
-		OffRampAddress:     cciptypes.Address(config.OffRampAddress),
-		CommitStoreAddress: cciptypes.Address(config.CommitStoreAddress),
-		TokenReaderAddress: cciptypes.Address(config.TokenReaderAddress),
-	}
 }
 
 // execProviderServer is a server that wraps the custom methods of the types.CCIPExecProvider

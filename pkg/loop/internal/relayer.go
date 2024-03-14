@@ -492,7 +492,6 @@ func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.Rel
 		// tell the provider to close all the resources it created on behalf of the plugin
 		// but this seems very intricate
 		registerCustomExecutionProviderServices(s, provider, r.BrokerExt)
-
 	}, providerRes)
 	if err != nil {
 		return 0, err

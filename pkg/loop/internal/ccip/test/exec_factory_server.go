@@ -32,7 +32,6 @@ type execFactoryServer struct {
 // NewExecutionFactory implements types.CCIPExecFactoryGenerator.
 // func (e execFactoryServer) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider, config types.CCIPExecFactoryGeneratorConfig) (types.ReportingPluginFactory, error) {
 func (e execFactoryServer) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider) (types.ReportingPluginFactory, error) {
-
 	err := e.provider.Evaluate(ctx, provider)
 	if err != nil {
 		return nil, err

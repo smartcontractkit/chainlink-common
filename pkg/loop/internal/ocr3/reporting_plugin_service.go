@@ -96,6 +96,17 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 	return newReportingPluginFactoryClient(o.PluginClient.BrokerExt, cc), nil
 }
 
+func (o *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	cc := o.NewClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps internal.Resources, err error) {
+		reply, err := o.reportingPluginService.NewValidationService(ctx, &pb.ValidationServiceRequest{})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.ID, nil, nil
+	})
+	return newValidationServiceClient(o.PluginClient.BrokerExt, cc), nil
+}
+
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)
 
 type reportingPluginServiceServer struct {

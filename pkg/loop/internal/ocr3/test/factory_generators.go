@@ -34,6 +34,11 @@ type medianServer struct {
 	medianGeneratorConfig
 }
 
+func (s medianServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s medianServer) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
 	return s.medianProvider
 }
@@ -67,6 +72,11 @@ type agnosticPluginServer struct {
 	provider       testtypes.PluginProviderTester
 	pipelineRunner testtypes.PipelineEvaluator
 	telemetry      testtypes.TelemetryEvaluator
+}
+
+func (s agnosticPluginServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (s agnosticPluginServer) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {

@@ -38,6 +38,10 @@ type medianFactoryServer struct {
 
 var _ reportingplugins.ProviderServer[types.MedianProvider] = medianFactoryServer{}
 
+func (s medianFactoryServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	return nil, nil
+}
+
 func (s medianFactoryServer) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
 	return s.medianProvider
 }
@@ -73,6 +77,10 @@ type agnosticPluginFactoryServer struct {
 	provider       testtypes.PluginProviderTester
 	pipelineRunner testtypes.PipelineEvaluator
 	telemetry      testtypes.TelemetryEvaluator
+}
+
+func (s agnosticPluginFactoryServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	return nil, nil
 }
 
 func (s agnosticPluginFactoryServer) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {

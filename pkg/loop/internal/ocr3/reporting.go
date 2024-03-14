@@ -10,6 +10,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -21,7 +22,30 @@ type reportingPluginFactoryClient struct {
 	*internal.ServiceClient
 	grpc ocr3.ReportingPluginFactoryClient
 }
+type validationServiceClient struct {
+	*internal.BrokerExt
+	*internal.ServiceClient
+	grpc pb.ValidationServiceClient
+}
 
+func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map[string]interface{}) error {
+	ctx, cancel := v.StopCtx()
+	defer cancel()
+
+	pbConfig, err := structpb.NewStruct(config)
+	if err != nil {
+		return err
+	}
+
+	_, err = v.grpc.ValidateConfig(ctx, &pb.ValidateConfigRequest{
+		Config: pbConfig,
+	})
+	return err
+}
+
+func newValidationServiceClient(b *internal.BrokerExt, cc grpc.ClientConnInterface) *validationServiceClient {
+	return &validationServiceClient{b.WithName("ReportingPluginProviderClient"), internal.NewServiceClient(b, cc), pb.NewValidationServiceClient(cc)}
+}
 func newReportingPluginFactoryClient(b *internal.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
 	return &reportingPluginFactoryClient{b.WithName("OCR3ReportingPluginProviderClient"), internal.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
 }

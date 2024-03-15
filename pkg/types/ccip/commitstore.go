@@ -7,9 +7,9 @@ import (
 )
 
 type CommitStoreReader interface {
-	GetExpectedNextSequenceNumber(context context.Context) (uint64, error)
+	GetExpectedNextSequenceNumber(ctx context.Context) (uint64, error)
 
-	GetLatestPriceEpochAndRound(context context.Context) (uint64, error)
+	GetLatestPriceEpochAndRound(ctx context.Context) (uint64, error)
 
 	// GetCommitReportMatchingSeqNum returns accepted commit report that satisfies Interval.Min <= seqNum <= Interval.Max. Returned slice should be empty or have exactly one element
 	GetCommitReportMatchingSeqNum(ctx context.Context, seqNum uint64, confirmations int) ([]CommitStoreReportWithTxMeta, error)
@@ -23,15 +23,15 @@ type CommitStoreReader interface {
 	IsBlessed(ctx context.Context, root [32]byte) (bool, error)
 
 	// ChangeConfig notifies the reader that the config has changed onchain
-	ChangeConfig(onchainConfig []byte, offchainConfig []byte) (Address, error)
+	ChangeConfig(ctx context.Context, onchainConfig []byte, offchainConfig []byte) (Address, error)
 
-	OffchainConfig() CommitOffchainConfig
+	OffchainConfig(ctx context.Context) (CommitOffchainConfig, error)
 
-	GasPriceEstimator() GasPriceEstimatorCommit
+	GasPriceEstimator(ctx context.Context) (GasPriceEstimatorCommit, error)
 
-	EncodeCommitReport(report CommitStoreReport) ([]byte, error)
+	EncodeCommitReport(ctx context.Context, report CommitStoreReport) ([]byte, error)
 
-	DecodeCommitReport(report []byte) (CommitStoreReport, error)
+	DecodeCommitReport(ctx context.Context, report []byte) (CommitStoreReport, error)
 
 	VerifyExecutionReport(ctx context.Context, report ExecReport) (bool, error)
 

@@ -156,9 +156,9 @@ message GetCommitStoreStaticConfigResponse {
 // [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip.CommitOffchainConfig]
 message CommitOffchainConfig {
     uint32 gas_price_deviation_ppb = 1;
-    google.protobuf.Duration gas_price_hearbeat = 2;
+    google.protobuf.Duration gas_price_heartbeat = 2;
     uint32 token_price_deviation_ppb = 3;
-    google.protobuf.Duration token_price_hearbeat = 4;
+    google.protobuf.Duration token_price_heartbeat = 4;
     google.protobuf.Duration inflight_cache_expiry = 5;
 }
 

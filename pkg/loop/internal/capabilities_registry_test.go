@@ -12,7 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -97,7 +97,7 @@ type mockTargetCapability struct {
 
 type testRegistryPlugin struct {
 	plugin.NetRPCUnsupportedPlugin
-	brokerExt *network.BrokerExt
+	brokerExt *net.BrokerExt
 	impl      *mocks.CapabilitiesRegistry
 }
 
@@ -130,8 +130,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		map[string]plugin.Plugin{
 			pluginName: &testRegistryPlugin{
 				impl: reg,
-				brokerExt: &network.BrokerExt{
-					BrokerConfig: network.BrokerConfig{
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
 						StopCh: stopCh,
 						Logger: logger,
 					},

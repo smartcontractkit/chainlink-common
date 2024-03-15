@@ -21,10 +21,10 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
+	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
 
-type GRPCOpts = network.GRPCOpts
+type GRPCOpts = loopnet.GRPCOpts
 
 type TracingConfig struct {
 	// NodeAttributes are the attributes to attach to traces.

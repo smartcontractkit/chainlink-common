@@ -11,7 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -21,7 +21,7 @@ type ActionCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewActionCapabilityClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) capabilities.ActionCapability {
+func NewActionCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.ActionCapability {
 	return &ActionCapabilityClient{
 		callbackExecutableClient: newCallbackExecutableClient(brokerExt, conn),
 		baseCapabilityClient:     newBaseCapabilityClient(brokerExt, conn),
@@ -33,7 +33,7 @@ type ConsensusCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewConsensusCapabilityClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) capabilities.ConsensusCapability {
+func NewConsensusCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.ConsensusCapability {
 	return &ConsensusCapabilityClient{
 		callbackExecutableClient: newCallbackExecutableClient(brokerExt, conn),
 		baseCapabilityClient:     newBaseCapabilityClient(brokerExt, conn),
@@ -45,7 +45,7 @@ type TargetCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewTargetCapabilityClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) capabilities.TargetCapability {
+func NewTargetCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.TargetCapability {
 	return &TargetCapabilityClient{
 		callbackExecutableClient: newCallbackExecutableClient(brokerExt, conn),
 		baseCapabilityClient:     newBaseCapabilityClient(brokerExt, conn),
@@ -57,7 +57,7 @@ type TriggerCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewTriggerCapabilityClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
+func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
 	return &TriggerCapabilityClient{
 		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -74,15 +74,15 @@ type CallbackCapability interface {
 	capabilities.BaseCapability
 }
 
-func NewCallbackCapabilityClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) CallbackCapability {
+func NewCallbackCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) CallbackCapability {
 	return &CallbackCapabilityClient{
 		callbackExecutableClient: newCallbackExecutableClient(brokerExt, conn),
 		baseCapabilityClient:     newBaseCapabilityClient(brokerExt, conn),
 	}
 }
 
-func RegisterCallbackCapabilityServer(server *grpc.Server, broker network.Broker, brokerCfg network.BrokerConfig, impl CallbackCapability) error {
-	bext := &network.BrokerExt{
+func RegisterCallbackCapabilityServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl CallbackCapability) error {
+	bext := &net.BrokerExt{
 		BrokerConfig: brokerCfg,
 		Broker:       broker,
 	}
@@ -91,8 +91,8 @@ func RegisterCallbackCapabilityServer(server *grpc.Server, broker network.Broker
 	return nil
 }
 
-func RegisterTriggerCapabilityServer(server *grpc.Server, broker network.Broker, brokerCfg network.BrokerConfig, impl capabilities.TriggerCapability) error {
-	bext := &network.BrokerExt{
+func RegisterTriggerCapabilityServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl capabilities.TriggerCapability) error {
+	bext := &net.BrokerExt{
 		BrokerConfig: brokerCfg,
 		Broker:       broker,
 	}
@@ -141,12 +141,12 @@ func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty)
 
 type baseCapabilityClient struct {
 	grpc pb.BaseCapabilityClient
-	*network.BrokerExt
+	*net.BrokerExt
 }
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
-func newBaseCapabilityClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
+func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
 	return &baseCapabilityClient{grpc: pb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
 }
 
@@ -180,14 +180,14 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 
 type triggerExecutableServer struct {
 	pb.UnimplementedTriggerExecutableServer
-	*network.BrokerExt
+	*net.BrokerExt
 
 	impl capabilities.TriggerExecutable
 
 	cancelFuncs map[string]func()
 }
 
-func newTriggerExecutableServer(brokerExt *network.BrokerExt, impl capabilities.TriggerExecutable) *triggerExecutableServer {
+func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.TriggerExecutable) *triggerExecutableServer {
 	return &triggerExecutableServer{
 		impl:        impl,
 		BrokerExt:   brokerExt,
@@ -262,7 +262,7 @@ func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 
 type triggerExecutableClient struct {
 	grpc pb.TriggerExecutableClient
-	*network.BrokerExt
+	*net.BrokerExt
 }
 
 var _ capabilities.TriggerExecutable = (*triggerExecutableClient)(nil)
@@ -307,20 +307,20 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 	return err
 }
 
-func newTriggerExecutableClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
+func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
 	return &triggerExecutableClient{grpc: pb.NewTriggerExecutableClient(conn), BrokerExt: brokerExt}
 }
 
 type callbackExecutableServer struct {
 	pb.UnimplementedCallbackExecutableServer
-	*network.BrokerExt
+	*net.BrokerExt
 
 	impl capabilities.CallbackExecutable
 
 	cancelFuncs map[string]func()
 }
 
-func newCallbackExecutableServer(brokerExt *network.BrokerExt, impl capabilities.CallbackExecutable) *callbackExecutableServer {
+func newCallbackExecutableServer(brokerExt *net.BrokerExt, impl capabilities.CallbackExecutable) *callbackExecutableServer {
 	return &callbackExecutableServer{
 		impl:        impl,
 		BrokerExt:   brokerExt,
@@ -392,10 +392,10 @@ func (c *callbackExecutableServer) Execute(ctx context.Context, req *pb.ExecuteR
 
 type callbackExecutableClient struct {
 	grpc pb.CallbackExecutableClient
-	*network.BrokerExt
+	*net.BrokerExt
 }
 
-func newCallbackExecutableClient(brokerExt *network.BrokerExt, conn *grpc.ClientConn) *callbackExecutableClient {
+func newCallbackExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *callbackExecutableClient {
 	return &callbackExecutableClient{
 		grpc:      pb.NewCallbackExecutableClient(conn),
 		BrokerExt: brokerExt,

@@ -14,7 +14,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -28,15 +28,15 @@ type PluginRelayerClient struct {
 	grpc pb.PluginRelayerClient
 }
 
-func NewPluginRelayerClient(broker network.Broker, brokerCfg network.BrokerConfig, conn *grpc.ClientConn) *PluginRelayerClient {
+func NewPluginRelayerClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginRelayerClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginRelayerClient")
 	pc := NewPluginClient(broker, brokerCfg, conn)
 	return &PluginRelayerClient{PluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
 }
 
 func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (Relayer, error) {
-	cc := p.NewClientConn("Relayer", func(ctx context.Context) (id uint32, deps network.Resources, err error) {
-		var ksRes network.Resource
+	cc := p.NewClientConn("Relayer", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+		var ksRes net.Resource
 		id, ksRes, err = p.ServeNew("Keystore", func(s *grpc.Server) {
 			pb.RegisterKeystoreServer(s, &keystoreServer{impl: keystore})
 		})
@@ -60,27 +60,27 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 type pluginRelayerServer struct {
 	pb.UnimplementedPluginRelayerServer
 
-	*network.BrokerExt
+	*net.BrokerExt
 
 	impl PluginRelayer
 }
 
-func RegisterPluginRelayerServer(server *grpc.Server, broker network.Broker, brokerCfg network.BrokerConfig, impl PluginRelayer) error {
+func RegisterPluginRelayerServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl PluginRelayer) error {
 	pb.RegisterPluginRelayerServer(server, newPluginRelayerServer(broker, brokerCfg, impl))
 	return nil
 }
 
-func newPluginRelayerServer(broker network.Broker, brokerCfg network.BrokerConfig, impl PluginRelayer) *pluginRelayerServer {
+func newPluginRelayerServer(broker net.Broker, brokerCfg net.BrokerConfig, impl PluginRelayer) *pluginRelayerServer {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "RelayerPluginServer")
-	return &pluginRelayerServer{BrokerExt: &network.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
+	return &pluginRelayerServer{BrokerExt: &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
 }
 
 func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRelayerRequest) (*pb.NewRelayerReply, error) {
 	ksConn, err := p.Dial(request.KeystoreID)
 	if err != nil {
-		return nil, network.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
+		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
 	}
-	ksRes := network.Resource{Closer: ksConn, Name: "Keystore"}
+	ksRes := net.Resource{Closer: ksConn, Name: "Keystore"}
 	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn))
 	if err != nil {
 		p.CloseAll(ksRes)
@@ -93,7 +93,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	}
 
 	const name = "Relayer"
-	rRes := network.Resource{Closer: r, Name: name}
+	rRes := net.Resource{Closer: r, Name: name}
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
@@ -159,19 +159,19 @@ var _ Relayer = (*relayerClient)(nil)
 
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
-	*network.BrokerExt
+	*net.BrokerExt
 	*ServiceClient
 
 	relayer pb.RelayerClient
 }
 
-func newRelayerClient(b *network.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
+func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("ChainRelayerClient")
 	return &relayerClient{b, NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
 func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {
-	cc := r.NewClientConn("ConfigProvider", func(ctx context.Context) (uint32, network.Resources, error) {
+	cc := r.NewClientConn("ConfigProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewConfigProvider(ctx, &pb.NewConfigProviderRequest{
 			RelayArgs: &pb.RelayArgs{
 				ExternalJobID: rargs.ExternalJobID[:],
@@ -190,7 +190,7 @@ func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.Relay
 }
 
 func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
-	cc := r.NewClientConn("PluginProvider", func(ctx context.Context) (uint32, network.Resources, error) {
+	cc := r.NewClientConn("PluginProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewPluginProvider(ctx, &pb.NewPluginProviderRequest{
 			RelayArgs: &pb.RelayArgs{
 				ExternalJobID: rargs.ExternalJobID[:],
@@ -290,12 +290,12 @@ var _ pb.RelayerServer = (*relayerServer)(nil)
 type relayerServer struct {
 	pb.UnimplementedRelayerServer
 
-	*network.BrokerExt
+	*net.BrokerExt
 
 	impl Relayer
 }
 
-func newChainRelayerServer(impl Relayer, b *network.BrokerExt) *relayerServer {
+func newChainRelayerServer(impl Relayer, b *net.BrokerExt) *relayerServer {
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
@@ -324,7 +324,7 @@ func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewCo
 		pb.RegisterServiceServer(s, &ServiceServer{Srv: cp})
 		pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: cp.OffchainConfigDigester()})
 		pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: cp.ContractConfigTracker()})
-	}, network.Resource{Closer: cp, Name: name})
+	}, net.Resource{Closer: cp, Name: name})
 	if err != nil {
 		return nil, err
 	}
@@ -394,7 +394,7 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 		return 0, err
 	}
 	const name = "MedianProvider"
-	providerRes := network.Resource{Name: name, Closer: provider}
+	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		registerPluginProviderServices(s, provider)
@@ -419,7 +419,7 @@ func (r *relayerServer) newPluginProvider(ctx context.Context, relayArgs types.R
 		return 0, err
 	}
 	const name = "PluginProvider"
-	providerRes := network.Resource{Name: name, Closer: provider}
+	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		registerPluginProviderServices(s, provider)
@@ -446,7 +446,7 @@ func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.
 		return 0, err
 	}
 	const name = "MercuryProvider"
-	providerRes := network.Resource{Name: name, Closer: provider}
+	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		registerPluginProviderServices(s, provider)
@@ -480,7 +480,7 @@ func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.Rel
 		return 0, err
 	}
 	const name = "CCIPExecutionProvider"
-	providerRes := network.Resource{Name: name, Closer: provider}
+	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		registerPluginProviderServices(s, provider)

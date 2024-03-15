@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -28,7 +28,7 @@ type Keystore = types.Keystore
 
 type Relayer = internal.Relayer
 
-type BrokerConfig = network.BrokerConfig
+type BrokerConfig = net.BrokerConfig
 
 var _ plugin.GRPCPlugin = (*GRPCPluginRelayer)(nil)
 

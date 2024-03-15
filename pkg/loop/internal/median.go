@@ -18,7 +18,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	median_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -32,14 +32,14 @@ type PluginMedianClient struct {
 	median pb.PluginMedianClient
 }
 
-func NewPluginMedianClient(broker network.Broker, brokerCfg network.BrokerConfig, conn *grpc.ClientConn) *PluginMedianClient {
+func NewPluginMedianClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginMedianClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginMedianClient")
 	pc := NewPluginClient(broker, brokerCfg, conn)
 	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
-	cc := m.NewClientConn("MedianPluginFactory", func(ctx context.Context) (id uint32, deps network.Resources, err error) {
+	cc := m.NewClientConn("MedianPluginFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		dataSourceID, dsRes, err := m.ServeNew("DataSource", func(s *grpc.Server) {
 			pb.RegisterDataSourceServer(s, median_internal.NewDataSourceServer(dataSource))
 		})
@@ -58,7 +58,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 
 		var (
 			providerID  uint32
-			providerRes network.Resource
+			providerRes net.Resource
 		)
 		if grpcProvider, ok := provider.(GRPCClientConn); ok {
 			providerID, providerRes, err = m.Serve("MedianProvider", proxy.NewProxy(grpcProvider.ClientConn()))
@@ -102,49 +102,49 @@ var _ pb.PluginMedianServer = (*pluginMedianServer)(nil)
 type pluginMedianServer struct {
 	pb.UnimplementedPluginMedianServer
 
-	*network.BrokerExt
+	*net.BrokerExt
 	impl types.PluginMedian
 }
 
-func RegisterPluginMedianServer(server *grpc.Server, broker network.Broker, brokerCfg network.BrokerConfig, impl types.PluginMedian) error {
-	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&network.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
+func RegisterPluginMedianServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl types.PluginMedian) error {
+	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
 
-func newPluginMedianServer(b *network.BrokerExt, mp types.PluginMedian) *pluginMedianServer {
+func newPluginMedianServer(b *net.BrokerExt, mp types.PluginMedian) *pluginMedianServer {
 	return &pluginMedianServer{BrokerExt: b.WithName("PluginMedian"), impl: mp}
 }
 
 func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.NewMedianFactoryRequest) (*pb.NewMedianFactoryReply, error) {
 	dsConn, err := m.Dial(request.DataSourceID)
 	if err != nil {
-		return nil, network.ErrConnDial{Name: "DataSource", ID: request.DataSourceID, Err: err}
+		return nil, net.ErrConnDial{Name: "DataSource", ID: request.DataSourceID, Err: err}
 	}
-	dsRes := network.Resource{Closer: dsConn, Name: "DataSource"}
+	dsRes := net.Resource{Closer: dsConn, Name: "DataSource"}
 	dataSource := median_internal.NewDataSourceClient(dsConn)
 
 	juelsConn, err := m.Dial(request.JuelsPerFeeCoinDataSourceID)
 	if err != nil {
 		m.CloseAll(dsRes)
-		return nil, network.ErrConnDial{Name: "JuelsPerFeeCoinDataSource", ID: request.JuelsPerFeeCoinDataSourceID, Err: err}
+		return nil, net.ErrConnDial{Name: "JuelsPerFeeCoinDataSource", ID: request.JuelsPerFeeCoinDataSourceID, Err: err}
 	}
-	juelsRes := network.Resource{Closer: juelsConn, Name: "JuelsPerFeeCoinDataSource"}
+	juelsRes := net.Resource{Closer: juelsConn, Name: "JuelsPerFeeCoinDataSource"}
 	juelsPerFeeCoin := median_internal.NewDataSourceClient(juelsConn)
 
 	providerConn, err := m.Dial(request.MedianProviderID)
 	if err != nil {
 		m.CloseAll(dsRes, juelsRes)
-		return nil, network.ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
+		return nil, net.ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
 	}
-	providerRes := network.Resource{Closer: providerConn, Name: "MedianProvider"}
+	providerRes := net.Resource{Closer: providerConn, Name: "MedianProvider"}
 	provider := newMedianProviderClient(m.BrokerExt, providerConn)
 
 	errorLogConn, err := m.Dial(request.ErrorLogID)
 	if err != nil {
 		m.CloseAll(dsRes, juelsRes, providerRes)
-		return nil, network.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
+		return nil, net.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
-	errorLogRes := network.Resource{Closer: errorLogConn, Name: "ErrorLog"}
+	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
 	errorLog := NewErrorLogClient(errorLogConn)
 
 	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
@@ -178,7 +178,7 @@ type medianProviderClient struct {
 	codec              types.Codec
 }
 
-func newMedianProviderClient(b *network.BrokerExt, cc grpc.ClientConnInterface) *medianProviderClient {
+func newMedianProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *medianProviderClient {
 	m := &medianProviderClient{pluginProviderClient: newPluginProviderClient(b.WithName("MedianProviderClient"), cc)}
 	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(m.cc)}
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(m.cc)}
@@ -223,7 +223,7 @@ func (m *medianProviderClient) Codec() types.Codec {
 var _ median.ReportCodec = (*reportCodecClient)(nil)
 
 type reportCodecClient struct {
-	*network.BrokerExt
+	*net.BrokerExt
 	grpc pb.ReportCodecClient
 }
 
@@ -400,7 +400,7 @@ func (m *medianContractServer) LatestRoundRequested(ctx context.Context, request
 var _ median.OnchainConfigCodec = (*onchainConfigCodecClient)(nil)
 
 type onchainConfigCodecClient struct {
-	*network.BrokerExt
+	*net.BrokerExt
 	grpc pb.OnchainConfigCodecClient
 }
 
@@ -461,7 +461,7 @@ func (o *onchainConfigCodecServer) Decode(ctx context.Context, request *pb.Decod
 
 type MedianProviderServer struct{}
 
-func (m MedianProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker network.Broker, brokerCfg network.BrokerConfig) types.MedianProvider {
-	be := &network.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}
+func (m MedianProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerCfg net.BrokerConfig) types.MedianProvider {
+	be := &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}
 	return newMedianProviderClient(be, conn)
 }

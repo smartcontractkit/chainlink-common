@@ -14,11 +14,20 @@ import (
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
-var _ cciptypes.OffRampReader = (*OffRampReaderClient)(nil)
-
+// OffRampReaderClient implement [cciptypes.OffRampReader] by wrapping a grpc client connection
+// this client will be used by the CCIP loop service to communicate with the offramp reader
 type OffRampReaderClient struct {
 	grpc ccippb.OffRampReaderClient
 }
+type OffRampReaderServer struct {
+	ccippb.UnimplementedOffRampReaderServer
+
+	impl cciptypes.OffRampReader
+}
+
+// ensure the types are satisfied
+var _ cciptypes.OffRampReader = (*OffRampReaderClient)(nil)
+var _ ccippb.OffRampReaderServer = (*OffRampReaderServer)(nil)
 
 func NewOffRampReaderClient(cc grpc.ClientConnInterface) *OffRampReaderClient {
 	return &OffRampReaderClient{grpc: ccippb.NewOffRampReaderClient(cc)}
@@ -176,14 +185,6 @@ func (o *OffRampReaderClient) OnchainConfig(ctx context.Context) (cciptypes.Exec
 }
 
 // Server implementation of OffRampReader
-
-type OffRampReaderServer struct {
-	ccippb.UnimplementedOffRampReaderServer
-
-	impl cciptypes.OffRampReader
-}
-
-var _ ccippb.OffRampReaderServer = (*OffRampReaderServer)(nil)
 
 func NewOffRampReaderServer(impl cciptypes.OffRampReader) *OffRampReaderServer {
 	return &OffRampReaderServer{impl: impl}

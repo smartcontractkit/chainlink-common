@@ -94,7 +94,7 @@ func (r *mercuryPluginFactoryServer) NewMercuryPlugin(ctx context.Context, reque
 	const mercuryname = "MercuryPlugin"
 	id, _, err := r.ServeNew(mercuryname, func(s *grpc.Server) {
 		mercurypb.RegisterMercuryPluginServer(s, &mercuryPluginServer{impl: rp})
-	}, network.Resource{rp, mercuryname})
+	}, network.Resource{Closer: rp, Name: mercuryname})
 	if err != nil {
 		return nil, err
 	}

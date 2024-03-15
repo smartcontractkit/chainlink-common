@@ -72,7 +72,7 @@ func RegisterPluginRelayerServer(server *grpc.Server, broker network.Broker, bro
 
 func newPluginRelayerServer(broker network.Broker, brokerCfg network.BrokerConfig, impl PluginRelayer) *pluginRelayerServer {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "RelayerPluginServer")
-	return &pluginRelayerServer{BrokerExt: &network.BrokerExt{broker, brokerCfg}, impl: impl}
+	return &pluginRelayerServer{BrokerExt: &network.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
 }
 
 func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRelayerRequest) (*pb.NewRelayerReply, error) {
@@ -80,7 +80,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	if err != nil {
 		return nil, network.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
 	}
-	ksRes := network.Resource{ksConn, "Keystore"}
+	ksRes := network.Resource{Closer: ksConn, Name: "Keystore"}
 	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn))
 	if err != nil {
 		p.CloseAll(ksRes)
@@ -93,7 +93,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	}
 
 	const name = "Relayer"
-	rRes := network.Resource{r, name}
+	rRes := network.Resource{Closer: r, Name: name}
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
@@ -324,7 +324,7 @@ func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewCo
 		pb.RegisterServiceServer(s, &ServiceServer{Srv: cp})
 		pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: cp.OffchainConfigDigester()})
 		pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: cp.ContractConfigTracker()})
-	}, network.Resource{cp, name})
+	}, network.Resource{Closer: cp, Name: name})
 	if err != nil {
 		return nil, err
 	}

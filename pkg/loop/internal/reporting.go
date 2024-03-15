@@ -106,7 +106,7 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 	const name = "ReportingPlugin"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp})
-	}, network.Resource{rp, name})
+	}, network.Resource{Closer: rp, Name: name})
 	if err != nil {
 		return nil, err
 	}

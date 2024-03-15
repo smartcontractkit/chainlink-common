@@ -216,7 +216,7 @@ type mercuryAdapterServer struct {
 }
 
 func RegisterMercuryAdapterServer(s *grpc.Server, broker network.Broker, brokerCfg network.BrokerConfig, impl types.PluginMercury) error {
-	mercury_pb.RegisterMercuryAdapterServer(s, newMercuryAdapterServer(&network.BrokerExt{broker, brokerCfg}, impl))
+	mercury_pb.RegisterMercuryAdapterServer(s, newMercuryAdapterServer(&network.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
 

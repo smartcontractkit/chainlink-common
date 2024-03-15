@@ -97,7 +97,7 @@ type reportingPluginServiceServer struct {
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker network.Broker, brokerCfg network.BrokerConfig, impl types.ReportingPluginClient) error {
-	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&network.BrokerExt{broker, brokerCfg}, impl))
+	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&network.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
 
@@ -110,7 +110,7 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	if err != nil {
 		return nil, network.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
-	errorLogRes := network.Resource{errorLogConn, "ErrorLog"}
+	errorLogRes := network.Resource{Closer: errorLogConn, Name: "ErrorLog"}
 	errorLog := NewErrorLogClient(errorLogConn)
 
 	providerConn, err := m.Dial(request.ProviderID)
@@ -118,14 +118,14 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 		m.CloseAll(errorLogRes)
 		return nil, network.ErrConnDial{Name: "PluginProvider", ID: request.ProviderID, Err: err}
 	}
-	providerRes := network.Resource{providerConn, "PluginProvider"}
+	providerRes := network.Resource{Closer: providerConn, Name: "PluginProvider"}
 
 	pipelineRunnerConn, err := m.Dial(request.PipelineRunnerID)
 	if err != nil {
 		m.CloseAll(errorLogRes, providerRes)
 		return nil, network.ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
 	}
-	pipelineRunnerRes := network.Resource{pipelineRunnerConn, "PipelineRunner"}
+	pipelineRunnerRes := network.Resource{Closer: pipelineRunnerConn, Name: "PipelineRunner"}
 	pipelineRunner := NewPipelineRunnerClient(pipelineRunnerConn)
 
 	telemetryConn, err := m.Dial(request.TelemetryID)
@@ -133,7 +133,7 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 		m.CloseAll(errorLogRes, providerRes, pipelineRunnerRes)
 		return nil, network.ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
 	}
-	telemetryRes := network.Resource{telemetryConn, "Telemetry"}
+	telemetryRes := network.Resource{Closer: telemetryConn, Name: "Telemetry"}
 	telemetry := NewTelemetryServiceClient(telemetryConn)
 
 	config := types.ReportingPluginServiceConfig{

@@ -107,7 +107,7 @@ type pluginMedianServer struct {
 }
 
 func RegisterPluginMedianServer(server *grpc.Server, broker network.Broker, brokerCfg network.BrokerConfig, impl types.PluginMedian) error {
-	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&network.BrokerExt{broker, brokerCfg}, impl))
+	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&network.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	if err != nil {
 		return nil, network.ErrConnDial{Name: "DataSource", ID: request.DataSourceID, Err: err}
 	}
-	dsRes := network.Resource{dsConn, "DataSource"}
+	dsRes := network.Resource{Closer: dsConn, Name: "DataSource"}
 	dataSource := median_internal.NewDataSourceClient(dsConn)
 
 	juelsConn, err := m.Dial(request.JuelsPerFeeCoinDataSourceID)
@@ -128,7 +128,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		m.CloseAll(dsRes)
 		return nil, network.ErrConnDial{Name: "JuelsPerFeeCoinDataSource", ID: request.JuelsPerFeeCoinDataSourceID, Err: err}
 	}
-	juelsRes := network.Resource{juelsConn, "JuelsPerFeeCoinDataSource"}
+	juelsRes := network.Resource{Closer: juelsConn, Name: "JuelsPerFeeCoinDataSource"}
 	juelsPerFeeCoin := median_internal.NewDataSourceClient(juelsConn)
 
 	providerConn, err := m.Dial(request.MedianProviderID)
@@ -136,7 +136,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		m.CloseAll(dsRes, juelsRes)
 		return nil, network.ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
 	}
-	providerRes := network.Resource{providerConn, "MedianProvider"}
+	providerRes := network.Resource{Closer: providerConn, Name: "MedianProvider"}
 	provider := newMedianProviderClient(m.BrokerExt, providerConn)
 
 	errorLogConn, err := m.Dial(request.ErrorLogID)
@@ -144,7 +144,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		m.CloseAll(dsRes, juelsRes, providerRes)
 		return nil, network.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
-	errorLogRes := network.Resource{errorLogConn, "ErrorLog"}
+	errorLogRes := network.Resource{Closer: errorLogConn, Name: "ErrorLog"}
 	errorLog := NewErrorLogClient(errorLogConn)
 
 	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)

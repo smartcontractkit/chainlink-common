@@ -119,7 +119,7 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 	if err != nil {
 		return nil, network.ErrConnDial{Name: "ExecProvider", ID: request.ProviderServiceId, Err: err}
 	}
-	deps.Add(network.Resource{providerConn, "ExecProvider"})
+	deps.Add(network.Resource{Closer: providerConn, Name: "ExecProvider"})
 	provider := newExecProviderClient(r.BrokerExt, providerConn)
 
 	// factory, err := r.impl.NewExecutionFactory(ctx, provider, execFactoryConfig(request.Config))

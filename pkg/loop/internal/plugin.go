@@ -14,7 +14,7 @@ type PluginClient struct {
 
 func NewPluginClient(broker network.Broker, brokerCfg network.BrokerConfig, conn *grpc.ClientConn) *PluginClient {
 	var pc PluginClient
-	pc.BrokerExt = &network.BrokerExt{&pc.AtomicBroker, brokerCfg}
+	pc.BrokerExt = &network.BrokerExt{Broker: &pc.AtomicBroker, BrokerConfig: brokerCfg}
 	pc.Refresh(broker, conn)
 	return &pc
 }

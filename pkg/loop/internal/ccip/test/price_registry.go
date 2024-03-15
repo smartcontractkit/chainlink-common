@@ -32,7 +32,7 @@ var PriceRegistryReader = staticPriceRegistryReader{
 		// GetGasPriceUpdatesCreatedAfter test data
 		getGasPriceUpdatesCreatedAfterRequest: getGasPriceUpdatesCreatedAfterRequest{
 			chainSelector: 1,
-			ts:            time.Unix(179, 13),
+			ts:            time.Unix(179, 13).UTC(),
 			confirmations: 2,
 		},
 		getGasPriceUpdatesCreatedAfterResponse: []ccip.GasPriceUpdateWithTxMeta{
@@ -70,7 +70,7 @@ var PriceRegistryReader = staticPriceRegistryReader{
 
 		// GetTokenPriceUpdatesCreatedAfter test data
 		getTokenPriceUpdatesCreatedAfterRequest: getTokenPriceUpdatesCreatedAfterRequest{
-			ts:            time.Unix(179, 13),
+			ts:            time.Unix(111111111, 17).UTC(),
 			confirmations: 2,
 		},
 		getTokenPriceUpdatesCreatedAfterResponse: []ccip.TokenPriceUpdateWithTxMeta{

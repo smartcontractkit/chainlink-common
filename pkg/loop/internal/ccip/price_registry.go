@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -21,6 +22,10 @@ type PriceRegistryGRPCClient struct {
 	grpc ccippb.PriceRegistryReaderClient
 }
 
+func NewPriceRegistryGRPCClient(cc grpc.ClientConnInterface) *PriceRegistryGRPCClient {
+	return &PriceRegistryGRPCClient{grpc: ccippb.NewPriceRegistryReaderClient(cc)}
+}
+
 // PriceRegistryGRPCServer implements [ccippb.PriceRegistryReaderServer] by wrapping a
 // [cciptypes.PriceRegistryReader] implementation.
 // This server is hosted by the relayer and is called ReportingPlugin via
@@ -30,6 +35,10 @@ type PriceRegistryGRPCServer struct {
 
 	impl cciptypes.PriceRegistryReader
 	done chan struct{}
+}
+
+func NewPriceRegistryGRPCServer(impl cciptypes.PriceRegistryReader) *PriceRegistryGRPCServer {
+	return &PriceRegistryGRPCServer{impl: impl, done: make(chan struct{})}
 }
 
 // ensure the types are satisfied

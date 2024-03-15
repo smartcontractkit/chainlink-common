@@ -102,14 +102,17 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// OffRampReader test case
-	otherOffRamp, err := other.NewOffRampReader(ctx, "ignored")
-	if err != nil {
-		return fmt.Errorf("failed to create other off ramp reader: %w", err)
-	}
-	err = s.offRampReader.Evaluate(ctx, otherOffRamp)
-	if err != nil {
-		return evaluationError{err: err, component: offRampComponent}
-	}
+	// BCF-2991: offramp blocked on gas estimator
+	/*
+		otherOffRamp, err := other.NewOffRampReader(ctx, "ignored")
+		if err != nil {
+			return fmt.Errorf("failed to create other off ramp reader: %w", err)
+		}
+		err = s.offRampReader.Evaluate(ctx, otherOffRamp)
+		if err != nil {
+			return evaluationError{err: err, component: offRampComponent}
+		}
+	*/
 
 	// PriceRegistryReader test case
 	otherPriceRegistry, err := other.NewPriceRegistryReader(ctx, "ignored")

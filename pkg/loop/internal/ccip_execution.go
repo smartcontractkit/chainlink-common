@@ -174,7 +174,7 @@ func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 	if err != nil {
 		return nil, err
 	}
-	// this works because the broker is shared and the id refers to a resource served by the broker
+	// TODO BCF-3061: this works because the broker is shared and the id refers to a resource served by the broker
 	offRampConn, err := e.BrokerExt.Dial(uint32(resp.OfframpReaderServiceId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.OfframpReaderServiceId, err)
@@ -206,12 +206,25 @@ func (e *execProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes
 	onRamp := ccipinternal.NewOnRampReaderClient(onRampConn)
 
 	// how to convert resp to cciptypes.OnRampReader? i have an id and need to hydrate that into an instance of OnRampReader
-	return onRamp, err
+	return onRamp, nil
 }
 
 // NewPriceRegistryReader implements types.CCIPExecProvider.
 func (e *execProviderClient) NewPriceRegistryReader(ctx context.Context, addr cciptypes.Address) (cciptypes.PriceRegistryReader, error) {
-	panic("unimplemented")
+	req := ccippb.NewPriceRegistryReaderRequest{Address: string(addr)}
+	resp, err := e.grpcClient.NewPriceRegistryReader(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	// TODO BCF-3061: make this work for proxied relayer
+	priceReaderConn, err := e.BrokerExt.Dial(uint32(resp.PriceRegistryReaderServiceId))
+	if err != nil {
+		return nil, fmt.Errorf("failed to lookup price registry reader service at %d: %w", resp.PriceRegistryReaderServiceId, err)
+	}
+	// need to wrap grpc priceReader into the desired interface
+	priceReader := ccipinternal.NewPriceRegistryGRPCClient(priceReaderConn)
+
+	return priceReader, nil
 }
 
 // NewTokenDataReader implements types.CCIPExecProvider.
@@ -229,12 +242,12 @@ func (e *execProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.A
 	panic("unimplemented")
 }
 
-// execProviderServer is a server that wraps the custom methods of the types.CCIPExecProvider
+// execProviderServer is a server that wraps the custom methods of the [types.CCIPExecProvider]
 // this is necessary because those method create new resources that need to be served by the broker
 // when we are running in legacy mode.
 type execProviderServer struct {
 	ccippb.UnimplementedExecutionCustomHandlersServer
-	// this has to be a shared pointer to the same impl as the client
+	// BCF-3061 this has to be a shared pointer to the same impl as the execProviderClient
 	*net.BrokerExt
 	impl types.CCIPExecProvider
 
@@ -273,7 +286,7 @@ func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.Ne
 	}
 	// wrap the reader in a grpc server and serve it
 	srv := ccipinternal.NewOnRampReaderServer(reader)
-	// the id is handle to the broker, we will need it on the other sider to dial the resource
+	// the id is handle to the broker, we will need it on the other side to dial the resource
 	onRampID, onRampResource, err := e.ServeNew("OnRampReader", func(s *grpc.Server) {
 		ccippb.RegisterOnRampReaderServer(s, srv)
 	})
@@ -285,4 +298,25 @@ func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.Ne
 	// should happen when the calling reporting plugin is closed/goes out of scope
 	e.deps.Add(onRampResource)
 	return &ccippb.NewOnRampReaderResponse{OnrampReaderServiceId: int32(onRampID)}, nil
+}
+
+func (e *execProviderServer) NewPriceRegistryReader(ctx context.Context, req *ccippb.NewPriceRegistryReaderRequest) (*ccippb.NewPriceRegistryReaderResponse, error) {
+	reader, err := e.impl.NewPriceRegistryReader(ctx, cciptypes.Address(req.Address))
+	if err != nil {
+		return nil, err
+	}
+	// wrap the reader in a grpc server and serve it
+	srv := ccipinternal.NewPriceRegistryGRPCServer(reader)
+	// the id is handle to the broker, we will need it on the other side to dial the resource
+	priceReaderID, priceReaderResource, err := e.ServeNew("PriceRegistryReader", func(s *grpc.Server) {
+		ccippb.RegisterPriceRegistryReaderServer(s, srv)
+	})
+	if err != nil {
+		return nil, err
+	}
+	// TODO BCF-3067 LEAKS!!!
+	// this dependency needs to be closed when the price registry reader is closed, which
+	// should happen when the calling reporting plugin is closed/goes out of scope
+	e.deps.Add(priceReaderResource)
+	return &ccippb.NewPriceRegistryReaderResponse{PriceRegistryReaderServiceId: int32(priceReaderID)}, nil
 }

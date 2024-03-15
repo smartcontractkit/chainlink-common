@@ -64,7 +64,7 @@ func (o *OffRampReaderClient) CurrentRateLimiterState(ctx context.Context) (ccip
 	return tokenBucketRateLimit(resp.RateLimiter), nil
 }
 
-// DecodeExecutionReport i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
+// DecodeExecutionReport [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
 func (o *OffRampReaderClient) DecodeExecutionReport(ctx context.Context, report []byte) (cciptypes.ExecReport, error) {
 	resp, err := o.grpc.DecodeExecutionReport(ctx, &ccippb.DecodeExecutionReportRequest{
 		Report: report,
@@ -76,7 +76,7 @@ func (o *OffRampReaderClient) DecodeExecutionReport(ctx context.Context, report 
 	return execReport(resp.Report)
 }
 
-// EncodeExecutionReport i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
+// EncodeExecutionReport [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
 func (o *OffRampReaderClient) EncodeExecutionReport(ctx context.Context, report cciptypes.ExecReport) ([]byte, error) {
 	reportPB := executionReportPB(report)
 
@@ -89,7 +89,7 @@ func (o *OffRampReaderClient) EncodeExecutionReport(ctx context.Context, report 
 	return resp.Report, nil
 }
 
-// GasPriceEstimator i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
+// GasPriceEstimator [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
 func (o *OffRampReaderClient) GasPriceEstimator(ctx context.Context) (cciptypes.GasPriceEstimatorExec, error) {
 	panic("BCF-2991 implement gas price estimator grpc service")
 }

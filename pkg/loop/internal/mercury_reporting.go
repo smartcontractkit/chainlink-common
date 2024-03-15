@@ -10,17 +10,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercurypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 )
 
 type mercuryPluginFactoryClient struct {
-	*BrokerExt
+	*network.BrokerExt
 	*ServiceClient
 	grpc mercurypb.MercuryPluginFactoryClient
 }
 
-func newMercuryPluginFactoryClient(b *BrokerExt, cc grpc.ClientConnInterface) *mercuryPluginFactoryClient {
+func newMercuryPluginFactoryClient(b *network.BrokerExt, cc grpc.ClientConnInterface) *mercuryPluginFactoryClient {
 	return &mercuryPluginFactoryClient{b.WithName("MercuryPluginProviderClient"), NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
 }
 
@@ -60,12 +61,12 @@ var _ mercurypb.MercuryPluginFactoryServer = (*mercuryPluginFactoryServer)(nil)
 type mercuryPluginFactoryServer struct {
 	mercurypb.UnimplementedMercuryPluginFactoryServer
 
-	*BrokerExt
+	*network.BrokerExt
 
 	impl ocr3types.MercuryPluginFactory
 }
 
-func newMercuryPluginFactoryServer(impl ocr3types.MercuryPluginFactory, b *BrokerExt) *mercuryPluginFactoryServer {
+func newMercuryPluginFactoryServer(impl ocr3types.MercuryPluginFactory, b *network.BrokerExt) *mercuryPluginFactoryServer {
 	return &mercuryPluginFactoryServer{impl: impl, BrokerExt: b.WithName("MercuryPluginFactoryServer")}
 }
 
@@ -93,7 +94,7 @@ func (r *mercuryPluginFactoryServer) NewMercuryPlugin(ctx context.Context, reque
 	const mercuryname = "MercuryPlugin"
 	id, _, err := r.ServeNew(mercuryname, func(s *grpc.Server) {
 		mercurypb.RegisterMercuryPluginServer(s, &mercuryPluginServer{impl: rp})
-	}, Resource{rp, mercuryname})
+	}, network.Resource{rp, mercuryname})
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +111,11 @@ func (r *mercuryPluginFactoryServer) NewMercuryPlugin(ctx context.Context, reque
 var _ ocr3types.MercuryPlugin = (*mercuryPluginClient)(nil)
 
 type mercuryPluginClient struct {
-	*BrokerExt
+	*network.BrokerExt
 	grpc mercurypb.MercuryPluginClient
 }
 
-func newMercuryPluginClient(b *BrokerExt, cc grpc.ClientConnInterface) *mercuryPluginClient {
+func newMercuryPluginClient(b *network.BrokerExt, cc grpc.ClientConnInterface) *mercuryPluginClient {
 	return &mercuryPluginClient{b.WithName("MercuryPluginClient"), mercurypb.NewMercuryPluginClient(cc)}
 }
 

@@ -8,6 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -15,7 +16,7 @@ import (
 var _ types.PipelineRunnerService = (*pipelineRunnerServiceClient)(nil)
 
 type pipelineRunnerServiceClient struct {
-	*BrokerExt
+	*network.BrokerExt
 	grpc pb.PipelineRunnerServiceClient
 }
 
@@ -67,7 +68,7 @@ var _ pb.PipelineRunnerServiceServer = (*PipelineRunnerServiceServer)(nil)
 
 type PipelineRunnerServiceServer struct {
 	pb.UnimplementedPipelineRunnerServiceServer
-	*BrokerExt
+	*network.BrokerExt
 
 	Impl types.PipelineRunnerService
 }

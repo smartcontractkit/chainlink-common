@@ -2,24 +2,26 @@ package internal
 
 import (
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/network"
 )
 
 type PluginClient struct {
-	atomicBroker
-	atomicClient
-	*BrokerExt
+	network.AtomicBroker
+	network.AtomicClient
+	*network.BrokerExt
 }
 
-func NewPluginClient(broker Broker, brokerCfg BrokerConfig, conn *grpc.ClientConn) *PluginClient {
+func NewPluginClient(broker network.Broker, brokerCfg network.BrokerConfig, conn *grpc.ClientConn) *PluginClient {
 	var pc PluginClient
-	pc.BrokerExt = &BrokerExt{&pc.atomicBroker, brokerCfg}
+	pc.BrokerExt = &network.BrokerExt{&pc.AtomicBroker, brokerCfg}
 	pc.Refresh(broker, conn)
 	return &pc
 }
 
-func (p *PluginClient) Refresh(broker Broker, conn *grpc.ClientConn) {
-	p.atomicBroker.store(broker)
-	p.atomicClient.store(conn)
+func (p *PluginClient) Refresh(broker network.Broker, conn *grpc.ClientConn) {
+	p.AtomicBroker.Store(broker)
+	p.AtomicClient.Store(conn)
 	p.Logger.Debugw("Refreshed PluginClient connection", "state", conn.GetState())
 }
 

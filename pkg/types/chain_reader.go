@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -159,47 +160,77 @@ func (o SortBySequence) GetDirection() SortDirection {
 	return o.dir
 }
 
-type QueryFilter interface {
+type Primitive interface {
 	Accept(visitor Visitor)
 }
 
-// Where eg. usage:
-//
-//	Where(
-//		NewAndFilter(
-//			NewOrFilter(
-//				NewBlockFilter(startBlock, Gte),
-//				NewBlockFilter(endBlock, Lte),
-//				),
-//			NewOrFilter(
-//				NewTimeStampFilter(startTs, Gte),
-//				NewTimeStampFilter(endTs, Lte),
-//			)
-//		)
-//	)
-func Where(filters ...QueryFilter) []QueryFilter {
-	return append([]QueryFilter{}, filters...)
+type QueryFilter struct {
+	Expressions []Expression
 }
 
-// TODO add ORFilter
-type AndFilter struct {
-	Filters []QueryFilter
+// Expression contains either a Primitive or a BooleanExpression.
+type Expression struct {
+	Primitive         Primitive
+	BooleanExpression BooleanExpression
 }
 
-func NewAndFilter(filters ...QueryFilter) *AndFilter {
-	return &AndFilter{Filters: filters}
+type BooleanOperator int
+
+const (
+	AND BooleanOperator = iota
+	OR
+)
+
+func (op BooleanOperator) String() string {
+	switch op {
+	case AND:
+		return "AND"
+	case OR:
+		return "OR"
+	default:
+		return "Unknown"
+	}
 }
 
-func (f *AndFilter) Accept(visitor Visitor) {
-	visitor.VisitAndFilter(*f)
+type BooleanExpression struct {
+	// should have minimum length of two
+	Expressions []Expression
+	BooleanOperator
+}
+
+type BlockFilter struct {
+	Block    uint64
+	Operator ComparisonOperator
+}
+
+func NewBlockFilter(block uint64, operator ComparisonOperator) Expression {
+	return Expression{
+		Primitive: &BlockFilter{Block: block, Operator: operator},
+	}
+}
+
+func NewBooleanExpression(operator BooleanOperator, expressions []Expression) (Expression, error) {
+	if len(expressions) < 2 {
+		return Expression{}, fmt.Errorf("boolean expression %s has to contain at least two expressions", operator)
+	}
+
+	return Expression{
+		BooleanExpression: BooleanExpression{Expressions: expressions, BooleanOperator: operator},
+	}, nil
+}
+
+func (f *BlockFilter) Accept(visitor Visitor) {
+	visitor.VisitBlockFilter(*f)
 }
 
 type AddressFilter struct {
 	Addresses []string
 }
 
-func NewAddressesFilter(addresses ...string) *AddressFilter {
-	return &AddressFilter{Addresses: addresses}
+func NewAddressesPrimitive(addresses ...string) Expression {
+	return Expression{
+		Primitive: &AddressFilter{Addresses: addresses},
+	}
 }
 
 func (f *AddressFilter) Accept(visitor Visitor) {
@@ -217,36 +248,14 @@ type ConfirmationsFilter struct {
 	Confirmations
 }
 
-func NewConfirmationsFilter(confs Confirmations) *ConfirmationsFilter {
-	return &ConfirmationsFilter{Confirmations: confs}
+func NewConfirmationsPrimitive(confs Confirmations) Expression {
+	return Expression{
+		Primitive: &ConfirmationsFilter{Confirmations: confs},
+	}
 }
 
 func (f *ConfirmationsFilter) Accept(visitor Visitor) {
 	visitor.VisitConfirmationFilter(*f)
-}
-
-type BlockFilter struct {
-	Block    uint64
-	Operator ComparisonOperator
-}
-
-func NewBlockFilter(block uint64, operator ComparisonOperator) *BlockFilter {
-	return &BlockFilter{block, operator}
-}
-
-func NewBlockRangeFilter(start, end uint64) *AndFilter {
-	return NewAndFilter(
-		NewBlockFilter(start, Gte),
-		NewBlockFilter(end, Lte),
-	)
-}
-
-func (f *BlockFilter) Accept(visitor Visitor) {
-	visitor.VisitBlockFilter(*f)
-}
-
-func NewTimestampFilter(timestamp uint64, operator ComparisonOperator) *TimestampFilter {
-	return &TimestampFilter{timestamp, operator}
 }
 
 type TimestampFilter struct {
@@ -254,24 +263,52 @@ type TimestampFilter struct {
 	Operator  ComparisonOperator
 }
 
-func (f *TimestampFilter) Accept(visitor Visitor) {
-	visitor.VisitTimestampFilter(*f)
+func NewTimestampPrimitive(timestamp uint64, operator ComparisonOperator) Expression {
+	return Expression{
+		Primitive: &TimestampFilter{timestamp, operator},
+	}
 }
 
-func NewTxHashFilter(txHash string) *TxHashFilter {
-	return &TxHashFilter{txHash}
+func (f *TimestampFilter) Accept(visitor Visitor) {
+	visitor.VisitTimestampFilter(*f)
 }
 
 type TxHashFilter struct {
 	TxHash string
 }
 
+func NewTxHashPrimitive(txHash string) Expression {
+	return Expression{
+		Primitive: &TxHashFilter{txHash},
+	}
+}
+
 func (f *TxHashFilter) Accept(visitor Visitor) {
 	visitor.VisitTxHashFilter(*f)
 }
 
+// Where eg. usage:
+// queryFilter := Where(
+//
+//		NewTxHashPrimitive("0xHash"),
+//		NewBooleanExpression("OR",
+//			NewBlockPrimitive(startBlock, Gte),
+//			NewBlockPrimitive(endBlock, Lte)),
+//		NewBooleanExpression("AND",
+//			NewBooleanExpression("OR",
+//				NewTimestampPrimitive(someTs1, Gte),
+//				NewTimestampPrimitive(otherTs1, Lte)),
+//			NewBooleanExpression("OR",(endBlock, Lte)),
+//				NewTimestampPrimitive(someTs2, Gte),
+//				NewTimestampPrimitive(otherTs2, Lte)))
+//	   )
+//
+// QueryKey(key, queryFilter)...
+func Where(expressions ...Expression) QueryFilter {
+	return QueryFilter{expressions}
+}
+
 type Visitor interface {
-	VisitAndFilter(filter AndFilter)
 	VisitAddressFilter(filter AddressFilter)
 	VisitBlockFilter(filter BlockFilter)
 	VisitConfirmationFilter(filter ConfirmationsFilter)

@@ -104,10 +104,23 @@ message KeyValues{
   repeated string values = 1;
 }
 
+// QueryFilter represents a lightweight orm like DSL defined for filtering over common blockchain primitives.
 message QueryFilter {
-  oneof query_filter {
-    AndFilter and_filter = 1;
-    OrFilter or_filter = 2;
+  repeated Expression expression = 1;
+}
+
+// Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
+// This allows for both simple and more complex nested expressions.
+message Expression {
+  oneof evaluator {
+    Primitive primitive = 1;
+    BooleanExpression composite = 2;
+  }
+}
+
+// Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
+message Primitive {
+  oneof comparator {
     AddressFilter address_filter = 3;
     ConfirmationsFilter confirmations_filter = 4;
     BlockFilter block_filter = 5;
@@ -116,21 +129,32 @@ message QueryFilter {
   }
 }
 
-message QueryFilters {
-  repeated QueryFilter query_filters = 1;
+message BooleanExpression {
+  oneof comparator {
+    And and = 1;
+    Or or = 2;
+  }
+}
+
+message And {
+  repeated Expression a = 1;
+}
+
+message Or {
+  repeated Expression a = 1;
 }
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyRequest].
 message QueryKeyRequest {
   string key = 1;
-  QueryFilters query_filters = 2;
+  QueryFilter query_filter = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysRequest].
 message QueryKeysRequest {
   repeated string keys = 1;
-  QueryFilters query_filters = 2;
+  QueryFilter query_filter = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
@@ -138,7 +162,7 @@ message QueryKeysRequest {
 message QueryKeyByValuesRequest {
   string key = 1;
   KeyValues key_values = 2;
-  QueryFilters query_filters = 3;
+  QueryFilter query_filter = 3;
   LimitAndSort limit_and_sort = 4;
 }
 
@@ -146,7 +170,7 @@ message QueryKeyByValuesRequest {
 message QueryKeysByValuesRequest {
   repeated string keys = 1;
   repeated KeyValues keys_values = 2;
-  QueryFilters query_filters = 3;
+  QueryFilter query_filter = 3;
   LimitAndSort limit_and_sort = 4;
 }
 
@@ -177,3 +201,5 @@ message BoundContract {
   string name = 2;
   bool pending = 3;
 }
+
+

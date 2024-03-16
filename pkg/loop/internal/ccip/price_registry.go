@@ -33,12 +33,12 @@ func NewPriceRegistryGRPCClient(cc grpc.ClientConnInterface) *PriceRegistryGRPCC
 type PriceRegistryGRPCServer struct {
 	ccippb.UnimplementedPriceRegistryReaderServer
 
-	impl cciptypes.PriceRegistryReader
-	done chan struct{}
+	impl    cciptypes.PriceRegistryReader
+	onClose func() error
 }
 
 func NewPriceRegistryGRPCServer(impl cciptypes.PriceRegistryReader) *PriceRegistryGRPCServer {
-	return &PriceRegistryGRPCServer{impl: impl, done: make(chan struct{})}
+	return &PriceRegistryGRPCServer{impl: impl}
 }
 
 // ensure the types are satisfied
@@ -133,7 +133,10 @@ func (p *PriceRegistryGRPCServer) Close(context.Context, *emptypb.Empty) (*empty
 	// TODO close this server and any resources it holds
 	// if i close the server, how do i make as response?
 	// close(p.done)
-	panic("unimplemented")
+	if p.onClose == nil {
+		return nil, nil
+	}
+	return nil, p.onClose()
 }
 
 // GetAddress implements ccippb.PriceRegistryReaderServer.
@@ -188,6 +191,12 @@ func (p *PriceRegistryGRPCServer) GetTokensDecimals(ctx context.Context, req *cc
 		return nil, err
 	}
 	return decimalsPB(decimals), nil
+}
+
+// WithCloseHandler returns a new PriceRegistryGRPCServer with the given onClose handler.
+func (p *PriceRegistryGRPCServer) WithCloseHandler(onClose func() error) *PriceRegistryGRPCServer {
+	p.onClose = onClose
+	return p
 }
 
 func gasPriceUpdateWithTxMetaSlice(in []*ccippb.GasPriceUpdateWithTxMeta) []cciptypes.GasPriceUpdateWithTxMeta {

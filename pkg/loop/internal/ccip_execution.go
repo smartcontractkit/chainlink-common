@@ -306,17 +306,18 @@ func (e *execProviderServer) NewPriceRegistryReader(ctx context.Context, req *cc
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	srv := ccipinternal.NewPriceRegistryGRPCServer(reader)
+	priceRegistryHandler := ccipinternal.NewPriceRegistryGRPCServer(reader)
 	// the id is handle to the broker, we will need it on the other side to dial the resource
-	priceReaderID, priceReaderResource, err := e.ServeNew("PriceRegistryReader", func(s *grpc.Server) {
-		ccippb.RegisterPriceRegistryReaderServer(s, srv)
+	priceReaderID, spawnedServer, err := e.ServeNew("PriceRegistryReader", func(s *grpc.Server) {
+		ccippb.RegisterPriceRegistryReaderServer(s, priceRegistryHandler)
 	})
 	if err != nil {
 		return nil, err
 	}
-	// TODO BCF-3067 LEAKS!!!
-	// this dependency needs to be closed when the price registry reader is closed, which
-	// should happen when the calling reporting plugin is closed/goes out of scope
-	e.deps.Add(priceReaderResource)
+	// There is a chicken-and-egg problem here. Our broker is responsible for spawning the grpc server.
+	// that server needs to be shutdown when the priceRegistry is closed. We don't have a handle to the
+	// grpc server until we after we have constructed the priceRegistry, so we can't configure the shutdown
+	// handler up front.
+	priceRegistryHandler.WithCloseHandler(func() error { return spawnedServer.Close() })
 	return &ccippb.NewPriceRegistryReaderResponse{PriceRegistryReaderServiceId: int32(priceReaderID)}, nil
 }

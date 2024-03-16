@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -59,6 +61,11 @@ func (p *PriceRegistryGRPCClient) Address(ctx context.Context) (cciptypes.Addres
 // Close implements ccip.PriceRegistryReader.
 func (p *PriceRegistryGRPCClient) Close(ctx context.Context) error {
 	_, err := p.grpc.Close(ctx, &emptypb.Empty{})
+	// due to the onClose handler in the server, it may shutdown before it sends a response to client
+	// in that case, we expect the client to receive an Unavailable error
+	if status.Code(err) == codes.Unavailable {
+		return nil
+	}
 	return err
 }
 

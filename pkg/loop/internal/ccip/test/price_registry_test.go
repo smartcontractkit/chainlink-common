@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
@@ -71,11 +72,10 @@ func TestPriceRegistryGRPC(t *testing.T) {
 	// test the client
 	roundTripPriceRegistryTests(ctx, t, client)
 	// closing the client executes the shutdown callback
-	// which stops the server. don't check for an error because
-	// depending on the timing, the server may stop before sending
-	// the response to the client. the wg.Wait() below ensures
+	// which stops the server.  the wg.Wait() below ensures
 	// that the server has stopped, which is what we care about.
-	client.Close(ctx)
+	cerr := client.Close(ctx)
+	require.NoError(t, cerr, "failed to close client %T, %v", cerr, status.Code(cerr))
 	wg.Wait()
 }
 

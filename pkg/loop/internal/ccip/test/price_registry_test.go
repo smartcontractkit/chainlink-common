@@ -21,5 +21,4 @@ func TestStaticPriceRegistry(t *testing.T) {
 	err := PriceRegistryReader.Evaluate(ctx, botched)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not what we expect")
-
 }

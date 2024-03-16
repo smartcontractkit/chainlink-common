@@ -109,7 +109,6 @@ func (p *PriceRegistryGRPCClient) GetTokenPrices(ctx context.Context, wantedToke
 	}
 
 	return tokenPriceUpdateSlice(resp.TokenPrices), nil
-
 }
 
 // GetTokensDecimals implements ccip.PriceRegistryReader.

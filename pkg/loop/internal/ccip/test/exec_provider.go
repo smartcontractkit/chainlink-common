@@ -215,7 +215,6 @@ func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other
 
 		// TODO BCF-2979 other components of exec provider
 	})
-
 }
 
 type evaluationError struct {

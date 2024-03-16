@@ -11,7 +11,6 @@ import (
 )
 
 func TestStaticExecProvider(t *testing.T) {
-
 	ctx := tests.Context(t)
 	t.Run("Self consistent Evaluate", func(t *testing.T) {
 		t.Parallel()

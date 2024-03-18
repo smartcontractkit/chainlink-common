@@ -33,6 +33,7 @@ func TestStaticExecGasEstimator(t *testing.T) {
 }
 
 func TestGasPriceEstimatorExecGRPC(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	// create a price registry server
 	port := freeport.GetOne(t)
@@ -70,8 +71,6 @@ func TestGasPriceEstimatorExecGRPC(t *testing.T) {
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
 func roundTripGasPriceEstimatorExecTests(ctx context.Context, t *testing.T, client *ccip.ExecGasEstimatorGRPCClient) {
-	t.Parallel()
-
 	t.Run("GetGasPrice", func(t *testing.T) {
 		price, err := client.GetGasPrice(ctx)
 		require.NoError(t, err)

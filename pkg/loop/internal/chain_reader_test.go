@@ -108,29 +108,42 @@ func TestChainReaderClient(t *testing.T) {
 	})
 }
 
-func generateQueryFilterTestCases() [][]types.QueryFilter {
-	var toTest [][]types.QueryFilter
+func generateQueryFilterTestCases(t *testing.T) []types.QueryFilter {
+	var queryFilters []types.QueryFilter
 	confirmationsValues := []types.Confirmations{types.Finalized, types.Unconfirmed}
 	operatorValues := []types.ComparisonOperator{types.Eq, types.Neq, types.Gt, types.Lt, types.Gte, types.Lte}
 
-	singleFilters := []types.QueryFilter{&types.TxHashFilter{TxHash: "txhash"}}
+	primitives := []types.Expression{types.NewTxHashPrimitive("txHash")}
 	for _, op := range operatorValues {
-		singleFilters = append(singleFilters, &types.BlockFilter{Block: 123, Operator: op})
-		singleFilters = append(singleFilters, &types.TimestampFilter{Timestamp: 123, Operator: op})
+		primitives = append(primitives, types.NewBlockPrimitive(123, op))
+		primitives = append(primitives, types.NewTimestampPrimitive(123, op))
 	}
+
 	for _, conf := range confirmationsValues {
-		singleFilters = append(singleFilters, &types.ConfirmationsFilter{Confirmations: conf})
-		singleFilters = append(singleFilters, &types.AddressFilter{Addresses: []string{"addr1", "addr2"}})
+		primitives = append(primitives, types.NewConfirmationsPrimitive(conf))
+		primitives = append(primitives, types.NewAddressesPrimitive([]string{"addr1", "addr2"}...))
 	}
-	toTest = append(toTest, singleFilters)
 
-	andFilter := &types.AndFilter{Filters: singleFilters}
-	nestedAndFilter := &types.AndFilter{Filters: append(singleFilters, andFilter)}
+	queryFilters = append(queryFilters, types.Where(primitives...))
 
-	return append(
-		toTest,
-		append([]types.QueryFilter{andFilter}, nestedAndFilter),
-	)
+	andOverPrimitivesBoolExpr, err := types.NewBooleanExpression(types.AND, primitives)
+	require.NoError(t, err)
+	orOverPrimitivesBoolExpr, err := types.NewBooleanExpression(types.AND, primitives)
+	require.NoError(t, err)
+
+	nestedBoolExpr, err := types.NewBooleanExpression(types.AND, []types.Expression{
+		types.NewTxHashPrimitive("txHash"),
+		andOverPrimitivesBoolExpr,
+		orOverPrimitivesBoolExpr,
+		types.NewTxHashPrimitive("txHash"),
+	})
+	require.NoError(t, err)
+
+	queryFilters = append(queryFilters, types.Where(andOverPrimitivesBoolExpr))
+	queryFilters = append(queryFilters, types.Where(orOverPrimitivesBoolExpr))
+	queryFilters = append(queryFilters, types.Where(nestedBoolExpr))
+
+	return queryFilters
 }
 
 func TestChainReaderProtoRequestsConversions(t *testing.T) {
@@ -139,10 +152,10 @@ func TestChainReaderProtoRequestsConversions(t *testing.T) {
 	crTester.Setup(t)
 	cr := crTester.GetChainReader(t)
 
-	queryFilterTestCases := generateQueryFilterTestCases()
+	queryFilterTestCases := generateQueryFilterTestCases(t)
 	t.Run("test QueryKey proto conversion", func(t *testing.T) {
 		for _, tc := range queryFilterTestCases {
-			impl.expectedQueryFilters = tc
+			impl.expectedQueryFilter = tc
 			_, err := cr.QueryKey(context.Background(), "", tc, types.LimitAndSort{})
 			require.NoError(t, err)
 		}
@@ -150,7 +163,7 @@ func TestChainReaderProtoRequestsConversions(t *testing.T) {
 
 	t.Run("test QueryKeys proto conversion", func(t *testing.T) {
 		for _, tc := range queryFilterTestCases {
-			impl.expectedQueryFilters = tc
+			impl.expectedQueryFilter = tc
 			_, err := cr.QueryKeys(context.Background(), []string{"", ""}, tc, types.LimitAndSort{})
 			require.NoError(t, err)
 		}
@@ -158,7 +171,7 @@ func TestChainReaderProtoRequestsConversions(t *testing.T) {
 
 	t.Run("test QueryKeyByValues proto conversion", func(t *testing.T) {
 		for _, tc := range queryFilterTestCases {
-			impl.expectedQueryFilters = tc
+			impl.expectedQueryFilter = tc
 			_, err := cr.QueryKeyByValues(context.Background(), "", []string{"", ""}, tc, types.LimitAndSort{})
 			require.NoError(t, err)
 		}
@@ -166,7 +179,7 @@ func TestChainReaderProtoRequestsConversions(t *testing.T) {
 
 	t.Run("test QueryKeysByValues proto conversion", func(t *testing.T) {
 		for _, tc := range queryFilterTestCases {
-			impl.expectedQueryFilters = tc
+			impl.expectedQueryFilter = tc
 			_, err := cr.QueryKeysByValues(context.Background(), []string{"", ""}, [][]string{{""}}, tc, types.LimitAndSort{})
 			require.NoError(t, err)
 		}
@@ -296,19 +309,19 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, name, method string,
 	return nil
 }
 
-func (f *fakeChainReader) QueryKey(_ context.Context, _ string, _ []types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+func (f *fakeChainReader) QueryKey(_ context.Context, _ string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (f *fakeChainReader) QueryKeys(_ context.Context, _ []string, _ []types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+func (f *fakeChainReader) QueryKeys(_ context.Context, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
 	return nil, nil
 }
 
-func (f *fakeChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ []types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+func (f *fakeChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (f *fakeChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ []types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+func (f *fakeChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
 	return nil, nil
 }
 
@@ -330,25 +343,25 @@ func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error 
 	return e.err
 }
 
-func (e *errChainReader) QueryKey(_ context.Context, _ string, _ []types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+func (e *errChainReader) QueryKey(_ context.Context, _ string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (e *errChainReader) QueryKeys(_ context.Context, _ []string, _ []types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+func (e *errChainReader) QueryKeys(_ context.Context, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
 	return nil, nil
 }
 
-func (e *errChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ []types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+func (e *errChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (e *errChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ []types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+func (e *errChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
 	return nil, nil
 }
 
 type protoConversionTestChainReader struct {
 	expectedBindings     types.BoundContract
-	expectedQueryFilters []types.QueryFilter
+	expectedQueryFilter  types.QueryFilter
 	expectedLimitAndSort types.LimitAndSort
 }
 
@@ -363,8 +376,8 @@ func (e *protoConversionTestChainReader) Bind(_ context.Context, bc []types.Boun
 	return nil
 }
 
-func (e *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, queryFilters []types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
-	if !reflect.DeepEqual(e.expectedQueryFilters, queryFilters) {
+func (e *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
+	if !reflect.DeepEqual(e.expectedQueryFilter, queryFilter) {
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 
@@ -374,8 +387,8 @@ func (e *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, q
 	return nil, nil
 }
 
-func (e *protoConversionTestChainReader) QueryKeys(_ context.Context, _ []string, queryFilters []types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
-	if !reflect.DeepEqual(e.expectedQueryFilters, queryFilters) {
+func (e *protoConversionTestChainReader) QueryKeys(_ context.Context, _ []string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
+	if !reflect.DeepEqual(e.expectedQueryFilter, queryFilter) {
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 
@@ -385,8 +398,8 @@ func (e *protoConversionTestChainReader) QueryKeys(_ context.Context, _ []string
 	return nil, nil
 }
 
-func (e *protoConversionTestChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, queryFilters []types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
-	if !reflect.DeepEqual(e.expectedQueryFilters, queryFilters) {
+func (e *protoConversionTestChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
+	if !reflect.DeepEqual(e.expectedQueryFilter, queryFilter) {
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 
@@ -396,8 +409,8 @@ func (e *protoConversionTestChainReader) QueryKeyByValues(_ context.Context, _ s
 	return nil, nil
 }
 
-func (e *protoConversionTestChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, queryFilters []types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
-	if !reflect.DeepEqual(e.expectedQueryFilters, queryFilters) {
+func (e *protoConversionTestChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
+	if !reflect.DeepEqual(e.expectedQueryFilter, queryFilter) {
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 

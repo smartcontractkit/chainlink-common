@@ -113,8 +113,8 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *chainReaderClient) QueryKey(ctx context.Context, key string, queryFilters []types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
-	pbQueryFilters, err := convertQueryFiltersToProto(queryFilters)
+func (c *chainReaderClient) QueryKey(ctx context.Context, key string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
+	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (c *chainReaderClient) QueryKey(ctx context.Context, key string, queryFilte
 		return nil, err
 	}
 
-	_, err = c.grpc.QueryKey(ctx, &pb.QueryKeyRequest{Key: key, QueryFilters: pbQueryFilters, LimitAndSort: pbLimitAndSort})
+	_, err = c.grpc.QueryKey(ctx, &pb.QueryKeyRequest{Key: key, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, wrapRPCErr(err)
 	}
@@ -132,8 +132,8 @@ func (c *chainReaderClient) QueryKey(ctx context.Context, key string, queryFilte
 	return nil, nil
 }
 
-func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queryFilters []types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
-	pbQueryFilters, err := convertQueryFiltersToProto(queryFilters)
+func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
+	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -143,15 +143,15 @@ func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queryF
 		return nil, err
 	}
 
-	_, err = c.grpc.QueryKeys(ctx, &pb.QueryKeysRequest{Keys: keys, QueryFilters: pbQueryFilters, LimitAndSort: pbLimitAndSort})
+	_, err = c.grpc.QueryKeys(ctx, &pb.QueryKeysRequest{Keys: keys, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, wrapRPCErr(err)
 	}
 	return nil, nil
 }
 
-func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter []types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
-	pbQueryFilters, err := convertQueryFiltersToProto(queryFilter)
+func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([]types.Sequence, error) {
+	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, key string, va
 		return nil, err
 	}
 
-	_, err = c.grpc.QueryKeyByValues(ctx, &pb.QueryKeyByValuesRequest{Key: key, KeyValues: &pb.KeyValues{Values: values}, QueryFilters: pbQueryFilters, LimitAndSort: pbLimitAndSort})
+	_, err = c.grpc.QueryKeyByValues(ctx, &pb.QueryKeyByValuesRequest{Key: key, KeyValues: &pb.KeyValues{Values: values}, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, wrapRPCErr(err)
 	}
@@ -169,8 +169,8 @@ func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, key string, va
 	return nil, nil
 }
 
-func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilters []types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
-	pbQueryFilters, err := convertQueryFiltersToProto(queryFilters)
+func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort) ([][]types.Sequence, error) {
+	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string
 		pbKeyValues = append(pbKeyValues, &pb.KeyValues{Values: keyValues})
 	}
 
-	_, err = c.grpc.QueryKeysByValues(ctx, &pb.QueryKeysByValuesRequest{Keys: keys, KeysValues: pbKeyValues, QueryFilters: pbQueryFilters, LimitAndSort: pbLimitAndSort})
+	_, err = c.grpc.QueryKeysByValues(ctx, &pb.QueryKeysByValuesRequest{Keys: keys, KeysValues: pbKeyValues, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, wrapRPCErr(err)
 	}
@@ -242,7 +242,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 }
 
 func (c *chainReaderServer) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb.QueryKeysReply, error) {
-	queryFilters, err := convertQueryFiltersFromProto(request.GetQueryFilters())
+	queryFilter, err := convertQueryFiltersFromProto(request.QueryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func (c *chainReaderServer) QueryKey(ctx context.Context, request *pb.QueryKeyRe
 		return nil, err
 	}
 
-	_, err = c.impl.QueryKey(ctx, request.Key, queryFilters, limitAndSort)
+	_, err = c.impl.QueryKey(ctx, request.Key, queryFilter, limitAndSort)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (c *chainReaderServer) QueryKey(ctx context.Context, request *pb.QueryKeyRe
 }
 
 func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
-	queryFilters, err := convertQueryFiltersFromProto(request.GetQueryFilters())
+	queryFilters, err := convertQueryFiltersFromProto(request.QueryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeys
 }
 
 func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.QueryKeyByValuesRequest) (*pb.QueryKeysReply, error) {
-	queryFilters, err := convertQueryFiltersFromProto(request.GetQueryFilters())
+	queryFilters, err := convertQueryFiltersFromProto(request.QueryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.Qu
 }
 
 func (c *chainReaderServer) QueryKeysByValues(ctx context.Context, request *pb.QueryKeysByValuesRequest) (*pb.QueryKeysReply, error) {
-	queryFilters, err := convertQueryFiltersFromProto(request.GetQueryFilters())
+	queryFilters, err := convertQueryFiltersFromProto(request.QueryFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -342,64 +342,73 @@ func getContractEncodedType(contractName, itemType string, possibleTypeProvider 
 	return &map[string]any{}, nil
 }
 
-func convertQueryFiltersToProto(queryFilters []types.QueryFilter) (*pb.QueryFilters, error) {
-	var pbQueryFilters []*pb.QueryFilter
-	for _, queryFilter := range queryFilters {
-		pbQueryFilter, err := convertQueryFilter(queryFilter)
+func convertQueryFilterToProto(queryFilter types.QueryFilter) (*pb.QueryFilter, error) {
+	pbQueryFilter := &pb.QueryFilter{}
+	for _, expression := range queryFilter.Expressions {
+		pbExpression, err := convertExpressionToProto(expression)
 		if err != nil {
 			return nil, err
 		}
-		pbQueryFilters = append(pbQueryFilters, pbQueryFilter)
+		pbQueryFilter.Expression = append(pbQueryFilter.Expression, pbExpression)
 	}
 
-	return &pb.QueryFilters{QueryFilters: pbQueryFilters}, nil
+	return pbQueryFilter, nil
 }
 
-func convertQueryFilter(queryFilter types.QueryFilter) (*pb.QueryFilter, error) {
-	switch filter := queryFilter.(type) {
-	case *types.AndFilter:
-		var parsedQueryFilters []*pb.QueryFilter
-		for _, subQueryFilterRequest := range filter.Filters {
-			parsedQueryFilter, err := convertQueryFilter(subQueryFilterRequest)
+func convertExpressionToProto(expression types.Expression) (*pb.Expression, error) {
+	pbExpression := &pb.Expression{}
+	if expression.IsPrimitive() {
+		pbExpression.Evaluator = &pb.Expression_Primitive{Primitive: &pb.Primitive{}}
+		switch primitive := expression.Primitive.(type) {
+		case *types.AddressFilter:
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_AddressFilter{
+				AddressFilter: &pb.AddressFilter{
+					Addresses: primitive.Addresses,
+				}}
+		case *types.ConfirmationsFilter:
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_ConfirmationsFilter{
+				ConfirmationsFilter: &pb.ConfirmationsFilter{
+					Confirmations: pb.Confirmations(primitive.Confirmations),
+				}}
+		case *types.BlockFilter:
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_BlockFilter{
+				BlockFilter: &pb.BlockFilter{
+					BlockNumber: primitive.Block,
+					Operator:    pb.ComparisonOperator(primitive.Operator),
+				}}
+		case *types.TxHashFilter:
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_TxHashFilter{
+				TxHashFilter: &pb.TxHashFilter{
+					TxHash: primitive.TxHash,
+				}}
+		case *types.TimestampFilter:
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_TimestampFilter{
+				TimestampFilter: &pb.TimestampFilter{
+					Timestamp: primitive.Timestamp,
+					Operator:  pb.ComparisonOperator(primitive.Operator),
+				}}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "Unknown expression type")
+		}
+		return pbExpression, nil
+	} else {
+		pbExpression.Evaluator = &pb.Expression_BooleanExpression{BooleanExpression: &pb.BooleanExpression{}}
+		var expressions []*pb.Expression
+		for _, expr := range expression.BooleanExpression.Expressions {
+			pbExpr, err := convertExpressionToProto(expr)
 			if err != nil {
 				return nil, err
 			}
-			parsedQueryFilters = append(parsedQueryFilters, parsedQueryFilter)
+			expressions = append(expressions, pbExpr)
 		}
-		return &pb.QueryFilter{QueryFilter: &pb.QueryFilter_AndFilter{
-			AndFilter: &pb.AndFilter{Filters: parsedQueryFilters},
-		}}, nil
-	case *types.AddressFilter:
-		return &pb.QueryFilter{QueryFilter: &pb.QueryFilter_AddressFilter{
-			AddressFilter: &pb.AddressFilter{Addresses: filter.Addresses},
-		}}, nil
-	case *types.ConfirmationsFilter:
-		return &pb.QueryFilter{QueryFilter: &pb.QueryFilter_ConfirmationsFilter{
-			ConfirmationsFilter: &pb.ConfirmationsFilter{
-				Confirmations: pb.Confirmations(filter.Confirmations),
-			}}}, nil
-	case *types.BlockFilter:
-		return &pb.QueryFilter{QueryFilter: &pb.QueryFilter_BlockFilter{
-			BlockFilter: &pb.BlockFilter{
-				BlockNumber: filter.Block,
-				Operator:    pb.ComparisonOperator(filter.Operator),
-			},
-		}}, nil
-	case *types.TxHashFilter:
-		return &pb.QueryFilter{QueryFilter: &pb.QueryFilter_TxHashFilter{
-			TxHashFilter: &pb.TxHashFilter{
-				TxHash: filter.TxHash},
-		}}, nil
-	case *types.TimestampFilter:
-		return &pb.QueryFilter{QueryFilter: &pb.QueryFilter_TimestampFilter{
-			TimestampFilter: &pb.TimestampFilter{
-				Timestamp: filter.Timestamp,
-				Operator:  pb.ComparisonOperator(filter.Operator),
-			},
-		}}, nil
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "Unknown filter type")
+		pbExpression.Evaluator = &pb.Expression_BooleanExpression{
+			BooleanExpression: &pb.BooleanExpression{
+				BooleanOperator: pb.BooleanOperator(expression.BooleanExpression.BooleanOperator),
+				Expression:      expressions,
+			}}
 	}
+
+	return pbExpression, nil
 }
 
 func convertLimitAndSortToProto(limitAndSort types.LimitAndSort) (*pb.LimitAndSort, error) {
@@ -432,45 +441,47 @@ func convertLimitAndSortToProto(limitAndSort types.LimitAndSort) (*pb.LimitAndSo
 	return &pb.LimitAndSort{Limit: limitAndSort.Limit, SortBy: sortByArr}, nil
 }
 
-func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryFilters) ([]types.QueryFilter, error) {
-	var queryFilters []types.QueryFilter
-	for _, pbQueryFilter := range pbQueryFilters.GetQueryFilters() {
-		queryFilter, err := convertQueryFilterFromProto(pbQueryFilter)
+func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryFilter) (types.QueryFilter, error) {
+	var queryFilter types.QueryFilter
+	for _, pbQueryFilter := range pbQueryFilters.Expression {
+		expression, err := convertExpressionFromProto(pbQueryFilter)
 		if err != nil {
-			return nil, err
+			return types.QueryFilter{}, err
 		}
-		queryFilters = append(queryFilters, queryFilter)
+		queryFilter.Expressions = append(queryFilter.Expressions, expression)
 	}
-	return queryFilters, nil
+	return queryFilter, nil
 }
 
-func convertQueryFilterFromProto(request *pb.QueryFilter) (types.QueryFilter, error) {
-	switch filter := request.QueryFilter.(type) {
-	case *pb.QueryFilter_AndFilter:
-		var parsedQueryFilters []types.QueryFilter
-		for _, subQueryFilterRequest := range filter.AndFilter.Filters {
-			parsedQueryFilter, err := convertQueryFilterFromProto(subQueryFilterRequest)
+func convertExpressionFromProto(pbExpression *pb.Expression) (types.Expression, error) {
+	switch pbEvaluatedExpr := pbExpression.Evaluator.(type) {
+	case *pb.Expression_BooleanExpression:
+		var expressions []types.Expression
+		for _, expression := range pbEvaluatedExpr.BooleanExpression.Expression {
+			convertedExpression, err := convertExpressionFromProto(expression)
 			if err != nil {
-				return nil, err
+				return types.Expression{}, err
 			}
-			parsedQueryFilters = append(parsedQueryFilters, parsedQueryFilter)
+			expressions = append(expressions, convertedExpression)
 		}
-		return &types.AndFilter{Filters: parsedQueryFilters}, nil
-	case *pb.QueryFilter_AddressFilter:
-		return &types.AddressFilter{Addresses: filter.AddressFilter.Addresses}, nil
-	case *pb.QueryFilter_ConfirmationsFilter:
-		return &types.ConfirmationsFilter{Confirmations: types.Confirmations(filter.ConfirmationsFilter.Confirmations)}, nil
-	case *pb.QueryFilter_BlockFilter:
-		return &types.BlockFilter{Block: filter.BlockFilter.BlockNumber, Operator: types.ComparisonOperator(filter.BlockFilter.Operator)}, nil
-	case *pb.QueryFilter_TxHashFilter:
-		return &types.TxHashFilter{TxHash: filter.TxHashFilter.TxHash}, nil
-	case *pb.QueryFilter_TimestampFilter:
-		return &types.TimestampFilter{
-			Timestamp: filter.TimestampFilter.Timestamp,
-			Operator:  types.ComparisonOperator(filter.TimestampFilter.Operator),
-		}, nil
+		return types.NewBooleanExpression(types.BooleanOperator(pbEvaluatedExpr.BooleanExpression.BooleanOperator), expressions)
+	case *pb.Expression_Primitive:
+		switch primitive := pbEvaluatedExpr.Primitive.Comparator.(type) {
+		case *pb.Primitive_AddressFilter:
+			return types.NewAddressesPrimitive(primitive.AddressFilter.Addresses...), nil
+		case *pb.Primitive_ConfirmationsFilter:
+			return types.NewConfirmationsPrimitive(types.Confirmations(primitive.ConfirmationsFilter.Confirmations)), nil
+		case *pb.Primitive_BlockFilter:
+			return types.NewBlockPrimitive(primitive.BlockFilter.BlockNumber, types.ComparisonOperator(primitive.BlockFilter.Operator)), nil
+		case *pb.Primitive_TxHashFilter:
+			return types.NewTxHashPrimitive(primitive.TxHashFilter.TxHash), nil
+		case *pb.Primitive_TimestampFilter:
+			return types.NewTimestampPrimitive(primitive.TimestampFilter.Timestamp, types.ComparisonOperator(primitive.TimestampFilter.Operator)), nil
+		default:
+			return types.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type")
+		}
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "Unknown filter type")
+		return types.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type")
 	}
 }
 

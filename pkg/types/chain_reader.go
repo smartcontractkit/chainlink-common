@@ -52,10 +52,10 @@ type ChainReader interface {
 	// RegisterFilter()
 	// UnRegisterFilter()
 
-	QueryKey(ctx context.Context, keys string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
-	QueryKeys(ctx context.Context, keys []string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
-	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilters []QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
-	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter []QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
+	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
+	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
+	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
+	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
 
 	// TODO make EVM words map to a key and then do this through the query methods.
 	// GetCommitReportMatchingSeqNum()
@@ -164,6 +164,10 @@ type Primitive interface {
 	Accept(visitor Visitor)
 }
 
+// QueryFilter can translate to any combination of nested OR and AND boolean expressions.
+// The base Expressions slice indicates AND logical operation over expressions, which can be primitives or nested boolean expressions.
+// eg. []Expression{primitive, primitive, BooleanExpression{AND, primitive, BooleanExpression{OR, primitive, primitive}} is
+// primitive AND primitive AND (primitive AND (primitive OR primitive)).
 type QueryFilter struct {
 	Expressions []Expression
 }
@@ -172,6 +176,10 @@ type QueryFilter struct {
 type Expression struct {
 	Primitive         Primitive
 	BooleanExpression BooleanExpression
+}
+
+func (expr Expression) IsPrimitive() bool {
+	return expr.Primitive != nil
 }
 
 type BooleanOperator int
@@ -192,21 +200,11 @@ func (op BooleanOperator) String() string {
 	}
 }
 
+// BooleanExpression allows nesting of boolean expressions with different BooleanOperator's.
 type BooleanExpression struct {
 	// should have minimum length of two
 	Expressions []Expression
 	BooleanOperator
-}
-
-type BlockFilter struct {
-	Block    uint64
-	Operator ComparisonOperator
-}
-
-func NewBlockFilter(block uint64, operator ComparisonOperator) Expression {
-	return Expression{
-		Primitive: &BlockFilter{Block: block, Operator: operator},
-	}
 }
 
 func NewBooleanExpression(operator BooleanOperator, expressions []Expression) (Expression, error) {
@@ -219,10 +217,23 @@ func NewBooleanExpression(operator BooleanOperator, expressions []Expression) (E
 	}, nil
 }
 
+// BlockFilter is a primitive of QueryFilter that filters search in comparison to block number.
+type BlockFilter struct {
+	Block    uint64
+	Operator ComparisonOperator
+}
+
+func NewBlockPrimitive(block uint64, operator ComparisonOperator) Expression {
+	return Expression{
+		Primitive: &BlockFilter{Block: block, Operator: operator},
+	}
+}
+
 func (f *BlockFilter) Accept(visitor Visitor) {
 	visitor.VisitBlockFilter(*f)
 }
 
+// AddressFilter is a primitive of QueryFilter that filters search to results that contain address in Addresses.
 type AddressFilter struct {
 	Addresses []string
 }
@@ -244,6 +255,8 @@ const (
 	Unconfirmed = Confirmations(1)
 )
 
+// ConfirmationsFilter is a primitive of QueryFilter that filters search to results that have a certain level of confirmation.
+// Confirmations map to different concepts on different blockchains.
 type ConfirmationsFilter struct {
 	Confirmations
 }
@@ -258,6 +271,7 @@ func (f *ConfirmationsFilter) Accept(visitor Visitor) {
 	visitor.VisitConfirmationFilter(*f)
 }
 
+// TimestampFilter is a primitive of QueryFilter that filters search in comparison to timestamp.
 type TimestampFilter struct {
 	Timestamp uint64
 	Operator  ComparisonOperator
@@ -273,6 +287,7 @@ func (f *TimestampFilter) Accept(visitor Visitor) {
 	visitor.VisitTimestampFilter(*f)
 }
 
+// TxHashFilter is a primitive of QueryFilter that filters search to results that contain txHash.
 type TxHashFilter struct {
 	TxHash string
 }

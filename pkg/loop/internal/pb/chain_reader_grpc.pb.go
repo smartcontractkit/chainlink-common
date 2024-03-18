@@ -32,12 +32,11 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
-	// TODO replies
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
-	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeysReply, error)
+	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error)
 	QueryKeys(ctx context.Context, in *QueryKeysRequest, opts ...grpc.CallOption) (*QueryKeysReply, error)
-	QueryKeyByValues(ctx context.Context, in *QueryKeyByValuesRequest, opts ...grpc.CallOption) (*QueryKeysReply, error)
-	QueryKeysByValues(ctx context.Context, in *QueryKeysByValuesRequest, opts ...grpc.CallOption) (*QueryKeysReply, error)
+	QueryKeyByValues(ctx context.Context, in *QueryKeyByValuesRequest, opts ...grpc.CallOption) (*QueryKeyByValuesReply, error)
+	QueryKeysByValues(ctx context.Context, in *QueryKeysByValuesRequest, opts ...grpc.CallOption) (*QueryKeysByValuesReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -58,8 +57,8 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestVal
 	return out, nil
 }
 
-func (c *chainReaderClient) QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeysReply, error) {
-	out := new(QueryKeysReply)
+func (c *chainReaderClient) QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error) {
+	out := new(QueryKeyReply)
 	err := c.cc.Invoke(ctx, ChainReader_QueryKey_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -76,8 +75,8 @@ func (c *chainReaderClient) QueryKeys(ctx context.Context, in *QueryKeysRequest,
 	return out, nil
 }
 
-func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, in *QueryKeyByValuesRequest, opts ...grpc.CallOption) (*QueryKeysReply, error) {
-	out := new(QueryKeysReply)
+func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, in *QueryKeyByValuesRequest, opts ...grpc.CallOption) (*QueryKeyByValuesReply, error) {
+	out := new(QueryKeyByValuesReply)
 	err := c.cc.Invoke(ctx, ChainReader_QueryKeyByValues_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -85,8 +84,8 @@ func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, in *QueryKeyBy
 	return out, nil
 }
 
-func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, in *QueryKeysByValuesRequest, opts ...grpc.CallOption) (*QueryKeysReply, error) {
-	out := new(QueryKeysReply)
+func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, in *QueryKeysByValuesRequest, opts ...grpc.CallOption) (*QueryKeysByValuesReply, error) {
+	out := new(QueryKeysByValuesReply)
 	err := c.cc.Invoke(ctx, ChainReader_QueryKeysByValues_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -107,12 +106,11 @@ func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...g
 // All implementations must embed UnimplementedChainReaderServer
 // for forward compatibility
 type ChainReaderServer interface {
-	// TODO replies
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
-	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeysReply, error)
+	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error)
 	QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error)
-	QueryKeyByValues(context.Context, *QueryKeyByValuesRequest) (*QueryKeysReply, error)
-	QueryKeysByValues(context.Context, *QueryKeysByValuesRequest) (*QueryKeysReply, error)
+	QueryKeyByValues(context.Context, *QueryKeyByValuesRequest) (*QueryKeyByValuesReply, error)
+	QueryKeysByValues(context.Context, *QueryKeysByValuesRequest) (*QueryKeysByValuesReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChainReaderServer()
 }
@@ -124,16 +122,16 @@ type UnimplementedChainReaderServer struct {
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
 }
-func (UnimplementedChainReaderServer) QueryKey(context.Context, *QueryKeyRequest) (*QueryKeysReply, error) {
+func (UnimplementedChainReaderServer) QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryKey not implemented")
 }
 func (UnimplementedChainReaderServer) QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryKeys not implemented")
 }
-func (UnimplementedChainReaderServer) QueryKeyByValues(context.Context, *QueryKeyByValuesRequest) (*QueryKeysReply, error) {
+func (UnimplementedChainReaderServer) QueryKeyByValues(context.Context, *QueryKeyByValuesRequest) (*QueryKeyByValuesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryKeyByValues not implemented")
 }
-func (UnimplementedChainReaderServer) QueryKeysByValues(context.Context, *QueryKeysByValuesRequest) (*QueryKeysReply, error) {
+func (UnimplementedChainReaderServer) QueryKeysByValues(context.Context, *QueryKeysByValuesRequest) (*QueryKeysByValuesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryKeysByValues not implemented")
 }
 func (UnimplementedChainReaderServer) Bind(context.Context, *BindRequest) (*emptypb.Empty, error) {

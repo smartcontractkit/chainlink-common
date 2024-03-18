@@ -34,6 +34,7 @@ func TestStaticPriceRegistry(t *testing.T) {
 }
 
 func TestPriceRegistryGRPC(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	// create a price registry server
 	port := freeport.GetOne(t)
@@ -83,8 +84,6 @@ func TestPriceRegistryGRPC(t *testing.T) {
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
 func roundTripPriceRegistryTests(ctx context.Context, t *testing.T, client *ccip.PriceRegistryGRPCClient) {
-	t.Parallel()
-	// test the client
 	t.Run("Address", func(t *testing.T) {
 		address, err := client.Address(ctx)
 		require.NoError(t, err)

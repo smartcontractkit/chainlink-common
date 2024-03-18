@@ -62,8 +62,8 @@ func (p *PriceRegistryGRPCClient) Address(ctx context.Context) (cciptypes.Addres
 func (p *PriceRegistryGRPCClient) Close(ctx context.Context) error {
 	_, err := p.grpc.Close(ctx, &emptypb.Empty{})
 	// due to the onClose handler in the server, it may shutdown before it sends a response to client
-	// in that case, we expect the client to receive an Unavailable error
-	if status.Code(err) == codes.Unavailable {
+	// in that case, we expect the client to receive an Unavailable or Internal error
+	if status.Code(err) == codes.Unavailable || status.Code(err) == codes.Internal {
 		return nil
 	}
 	return err
@@ -137,9 +137,6 @@ func (p *PriceRegistryGRPCClient) GetTokensDecimals(ctx context.Context, tokenAd
 
 // Close implements ccippb.PriceRegistryReaderServer.
 func (p *PriceRegistryGRPCServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
-	// TODO close this server and any resources it holds
-	// if i close the server, how do i make as response?
-	// close(p.done)
 	if p.onClose == nil {
 		return nil, nil
 	}

@@ -318,6 +318,6 @@ func (e *execProviderServer) NewPriceRegistryReader(ctx context.Context, req *cc
 	// that server needs to be shutdown when the priceRegistry is closed. We don't have a handle to the
 	// grpc server until we after we have constructed the priceRegistry, so we can't configure the shutdown
 	// handler up front.
-	priceRegistryHandler.WithCloseHandler(func() error { return spawnedServer.Close() })
+	priceRegistryHandler.WithCloseHandler(spawnedServer.Close)
 	return &ccippb.NewPriceRegistryReaderResponse{PriceRegistryReaderServiceId: int32(priceReaderID)}, nil
 }

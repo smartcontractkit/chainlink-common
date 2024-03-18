@@ -190,7 +190,6 @@ func (s staticExecProvider) Start(context.Context) error {
 
 // AssertEqual implements ExecProviderTester.
 func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other types.CCIPExecProvider) {
-	t.Parallel()
 	t.Run("StaticExecProvider", func(t *testing.T) {
 		// OnRampReader test case
 		t.Run(onRampComponent, func(t *testing.T) {

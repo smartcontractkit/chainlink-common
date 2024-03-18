@@ -92,7 +92,6 @@ func (o *OffRampReaderClient) EncodeExecutionReport(ctx context.Context, report 
 // GasPriceEstimator [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
 func (o *OffRampReaderClient) GasPriceEstimator(ctx context.Context) (cciptypes.GasPriceEstimatorExec, error) {
 	panic("BCF-3073 fix off ramp gas estimator fetching")
-
 }
 
 // GetExecutionState i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]

@@ -169,11 +169,11 @@ func (e *ExecGasEstimatorGRPCClient) DenoteInUSD(p *big.Int, wrappedNativePrice 
 
 // EstimateMsgCostUSD implements ccip.GasPriceEstimatorExec.
 func (e *ExecGasEstimatorGRPCClient) EstimateMsgCostUSD(p *big.Int, wrappedNativePrice *big.Int, msg cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta) (*big.Int, error) {
-	msgPB := evm2EVMOnRampCCIPSendRequestedWithMeta(msg)
+	msgPB := evm2EVMOnRampCCIPSendRequestedWithMeta(&msg)
 	resp, err := e.client.EstimateMsgCostUSD(context.Background(), &ccippb.EstimateMsgCostUSDRequest{
 		P:                  pb.NewBigIntFromInt(p),
 		WrappedNativePrice: pb.NewBigIntFromInt(wrappedNativePrice),
-		Msg:                &msgPB,
+		Msg:                msgPB,
 	})
 	if err != nil {
 		return nil, err
@@ -212,11 +212,11 @@ func (e *ExecGasEstimatorGRPCServer) DenoteInUSD(ctx context.Context, req *ccipp
 
 // EstimateMsgCostUSD implements ccippb.GasPriceEstimatorExecServer.
 func (e *ExecGasEstimatorGRPCServer) EstimateMsgCostUSD(ctx context.Context, req *ccippb.EstimateMsgCostUSDRequest) (*ccippb.EstimateMsgCostUSDResponse, error) {
-	msg, err := evm2EVMOnRampCCIPSendRequestedWithMetaPB(*req.Msg)
+	msg, err := evm2EVMOnRampCCIPSendRequestedWithMetaPB(req.Msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert evm2evm msg: %w", err)
 	}
-	cost, err := e.impl.EstimateMsgCostUSD(req.P.Int(), req.WrappedNativePrice.Int(), msg)
+	cost, err := e.impl.EstimateMsgCostUSD(req.P.Int(), req.WrappedNativePrice.Int(), *msg)
 	if err != nil {
 		return nil, err
 	}
@@ -257,8 +257,8 @@ func bigIntSlice(in []*pb.BigInt) []*big.Int {
 	return out
 }
 
-func evm2EVMOnRampCCIPSendRequestedWithMeta(in cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta) ccippb.EVM2EVMOnRampCCIPSendRequestedWithMeta {
-	return ccippb.EVM2EVMOnRampCCIPSendRequestedWithMeta{
+func evm2EVMOnRampCCIPSendRequestedWithMeta(in *cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta) *ccippb.EVM2EVMOnRampCCIPSendRequestedWithMeta {
+	return &ccippb.EVM2EVMOnRampCCIPSendRequestedWithMeta{
 		EvmToEvmMsg:    evm2EVMMessagePB(in.EVM2EVMMessage),
 		BlockTimestamp: timestamppb.New(in.BlockTimestamp),
 		Executed:       in.Executed,
@@ -268,12 +268,12 @@ func evm2EVMOnRampCCIPSendRequestedWithMeta(in cciptypes.EVM2EVMOnRampCCIPSendRe
 	}
 }
 
-func evm2EVMOnRampCCIPSendRequestedWithMetaPB(pb ccippb.EVM2EVMOnRampCCIPSendRequestedWithMeta) (cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta, error) {
+func evm2EVMOnRampCCIPSendRequestedWithMetaPB(pb *ccippb.EVM2EVMOnRampCCIPSendRequestedWithMeta) (*cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta, error) {
 	msg, err := evm2EVMMessage(pb.EvmToEvmMsg)
 	if err != nil {
-		return cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta{}, err
+		return nil, err
 	}
-	return cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta{
+	return &cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta{
 		EVM2EVMMessage: msg,
 		BlockTimestamp: pb.BlockTimestamp.AsTime(),
 		Executed:       pb.Executed,

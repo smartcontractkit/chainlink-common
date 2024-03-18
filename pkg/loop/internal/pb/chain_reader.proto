@@ -114,7 +114,7 @@ message QueryFilter {
 message Expression {
   oneof evaluator {
     Primitive primitive = 1;
-    BooleanExpression composite = 2;
+    BooleanExpression boolean_expression = 2;
   }
 }
 
@@ -129,11 +129,14 @@ message Primitive {
   }
 }
 
+enum BooleanOperator {
+  AND = 0;
+  OR = 1;
+}
+
 message BooleanExpression {
-  oneof comparator {
-    And and = 1;
-    Or or = 2;
-  }
+  BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
 }
 
 message And {

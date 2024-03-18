@@ -514,7 +514,8 @@ func offchainTokenDataToPB(in [][][]byte) []*ccippb.TokenData {
 func byte32SliceToPB(in [][32]byte) [][]byte {
 	out := make([][]byte, len(in))
 	for i, b := range in {
-		out[i] = b[:]
+		out[i] = make([]byte, 32)
+		copy(out[i][:], b[:])
 	}
 	return out
 }

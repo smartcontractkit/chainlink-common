@@ -60,8 +60,8 @@ var OffRampReader = staticOffRamp{
 				},
 			},
 			Proofs: [][32]byte{
-				{1},
-				{2},
+				{11},
+				{79},
 			},
 			OffchainTokenData: [][][]byte{
 				{
@@ -346,8 +346,46 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 	if err != nil {
 		return fmt.Errorf("failed to get gasPriceEstimator: %w", err)
 	}
-	if !reflect.DeepEqual(gasPriceEstimator, s.gasPriceEstimatorResponse) {
-		return fmt.Errorf("expected gasPriceEstimator %v but got %v", s.gasPriceEstimatorResponse, gasPriceEstimator)
+	// exercise all the gas price estimator methods
+	// GetGasPrice test case
+	price, err := gasPriceEstimator.GetGasPrice(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get other gasPrice: %w", err)
+	}
+	expectedGas, err := GasPriceEstimatorExec.GetGasPrice(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get expected gasPrice: %w", err)
+	}
+	if price.Cmp(expectedGas) != 0 {
+		return fmt.Errorf("expected gasPrice %v but got %v", GasPriceEstimatorExec.getGasPriceResponse, price)
+	}
+	// DenoteInUSD test case
+	gotusd, err := gasPriceEstimator.DenoteInUSD(GasPriceEstimatorExec.denoteInUSDRequest.p, GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice)
+	if err != nil {
+		return fmt.Errorf("failed to get other usd: %w", err)
+	}
+	if gotusd.Cmp(GasPriceEstimatorExec.denoteInUSDResponse.result) != 0 {
+		return fmt.Errorf("expected usd %v but got %v", GasPriceEstimatorExec.denoteInUSDResponse.result, gotusd)
+	}
+	// EstimateMsgCostUSD test case
+	cost, err := gasPriceEstimator.EstimateMsgCostUSD(
+		GasPriceEstimatorExec.estimateMsgCostUSDRequest.p,
+		GasPriceEstimatorExec.estimateMsgCostUSDRequest.wrappedNativePrice,
+		GasPriceEstimatorExec.estimateMsgCostUSDRequest.msg,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get other cost: %w", err)
+	}
+	if cost.Cmp(GasPriceEstimatorExec.estimateMsgCostUSDResponse) != 0 {
+		return fmt.Errorf("expected cost %v but got %v", GasPriceEstimatorExec.estimateMsgCostUSDResponse, cost)
+	}
+	// Median test case
+	median, err := gasPriceEstimator.Median(GasPriceEstimatorExec.medianRequest.gasPrices)
+	if err != nil {
+		return fmt.Errorf("failed to get other median: %w", err)
+	}
+	if median.Cmp(GasPriceEstimatorExec.medianResponse) != 0 {
+		return fmt.Errorf("expected median %v but got %v", GasPriceEstimatorExec.medianResponse, median)
 	}
 
 	getExecutionState, err := other.GetExecutionState(ctx, s.getExecutionStateRequest)

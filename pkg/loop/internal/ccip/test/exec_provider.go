@@ -102,7 +102,6 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// OffRampReader test case
-
 	otherOffRamp, err := other.NewOffRampReader(ctx, "ignored")
 	if err != nil {
 		return fmt.Errorf("failed to create other off ramp reader: %w", err)

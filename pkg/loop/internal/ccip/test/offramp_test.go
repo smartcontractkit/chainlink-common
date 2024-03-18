@@ -53,11 +53,12 @@ func TestOffRampGRPC(t *testing.T) {
 	shutdown := make(chan struct{})
 	shutdownCallback := func() error { close(shutdown); return nil }
 	lggr := logger.Test(t)
-	b := &loopnet.BrokerExt{
-		Broker:       &loopnettest.Broker{T: t},
+	broker := &loopnettest.Broker{T: t}
+	brokerExt := &loopnet.BrokerExt{
+		Broker:       broker,
 		BrokerConfig: loopnet.BrokerConfig{Logger: lggr, StopCh: make(chan struct{})},
 	}
-	offRamp, err := ccip.NewOffRampReaderGRPCServer(OffRampReader, b)
+	offRamp, err := ccip.NewOffRampReaderGRPCServer(OffRampReader, brokerExt)
 	require.NoError(t, err)
 	offRamp = offRamp.WithCloseHandler(shutdownCallback)
 
@@ -80,7 +81,7 @@ func TestOffRampGRPC(t *testing.T) {
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err, "failed to dial %s", addr)
 	t.Cleanup(func() { conn.Close() })
-	client := ccip.NewOffRampReaderGRPCClient(conn, b)
+	client := ccip.NewOffRampReaderGRPCClient(conn, brokerExt)
 
 	// test the client
 	roundTripOffRampTests(ctx, t, client)

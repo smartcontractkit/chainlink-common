@@ -24,18 +24,27 @@ type Broker struct {
 	// The listeners that have been created.
 	// use lazy initialization
 	listeners map[uint32]net.Listener
+
+	once sync.Once
 }
 
 var _ loopnet.Broker = (*Broker)(nil)
 
-// Accept implements net.Broker.
-func (v *Broker) Accept(id uint32) (net.Listener, error) {
+func (v *Broker) init() {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-
 	if v.listeners == nil {
 		v.listeners = make(map[uint32]net.Listener)
 	}
+	v.T.Cleanup(func() { v.close() })
+}
+
+// Accept implements net.Broker.
+func (v *Broker) Accept(id uint32) (net.Listener, error) {
+	v.once.Do(v.init)
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
 
 	if l, exists := v.listeners[id]; exists {
 		return l, nil
@@ -53,6 +62,7 @@ func (v *Broker) Accept(id uint32) (net.Listener, error) {
 
 // DialWithOptions implements net.Broker.
 func (v *Broker) DialWithOptions(id uint32, opts ...grpc.DialOption) (conn *grpc.ClientConn, err error) {
+	v.once.Do(v.init)
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
@@ -78,7 +88,7 @@ func (v *Broker) NextId() uint32 {
 	return v.nextID
 }
 
-func (v *Broker) Close() error {
+func (v *Broker) close() error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 

@@ -2,6 +2,7 @@ package ccip
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -40,7 +41,7 @@ type PriceRegistryGRPCServer struct {
 }
 
 func NewPriceRegistryGRPCServer(impl cciptypes.PriceRegistryReader) *PriceRegistryGRPCServer {
-	return &PriceRegistryGRPCServer{impl: impl}
+	return &PriceRegistryGRPCServer{impl: impl, onClose: emptyCloser}
 }
 
 // ensure the types are satisfied
@@ -136,11 +137,8 @@ func (p *PriceRegistryGRPCClient) GetTokensDecimals(ctx context.Context, tokenAd
 //
 
 // Close implements ccippb.PriceRegistryReaderServer.
-func (p *PriceRegistryGRPCServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
-	if p.onClose == nil {
-		return nil, nil
-	}
-	return nil, p.onClose()
+func (p *PriceRegistryGRPCServer) Close(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, errors.Join(p.impl.Close(ctx), p.onClose())
 }
 
 // GetAddress implements ccippb.PriceRegistryReaderServer.

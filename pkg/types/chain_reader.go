@@ -52,10 +52,10 @@ type ChainReader interface {
 	// RegisterFilter()
 	// UnRegisterFilter()
 
-	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
-	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
-	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([]Sequence, error)
-	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter QueryFilter, limitAndSort LimitAndSort) ([][]Sequence, error)
+	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
+	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 
 	// TODO make EVM words map to a key and then do this through the query methods.
 	// GetCommitReportMatchingSeqNum()
@@ -73,11 +73,10 @@ type Sequence struct {
 	// TODO SequenceCursor, this should be a unique sequence identifier that chain reader impl. understands.
 	// This way we can retrieve past/future sequences (EVM log events) very granularly but still hiding the chain detail.
 	SequenceCursor string
-	Timestamp      time.Time
+	Timestamp      uint64
 	// TODO this is a general chain agnositc Head, it should be moved from mercury package.
 	//mercury.Head
-	// TODO any or byte? Probably need to do codec transforms here too?
-	Data []byte
+	Data any
 }
 
 // TODO define If Register should be done outside of Binding?

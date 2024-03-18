@@ -8,12 +8,11 @@ import "codec.proto";
 import "google/protobuf/empty.proto";
 
 service ChainReader {
-  // TODO replies
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
-  rpc QueryKey (QueryKeyRequest) returns (QueryKeysReply) {}
+  rpc QueryKey (QueryKeyRequest) returns (QueryKeyReply) {}
   rpc QueryKeys (QueryKeysRequest) returns (QueryKeysReply) {}
-  rpc QueryKeyByValues (QueryKeyByValuesRequest) returns (QueryKeysReply) {}
-  rpc QueryKeysByValues (QueryKeysByValuesRequest) returns (QueryKeysReply) {}
+  rpc QueryKeyByValues (QueryKeyByValuesRequest) returns (QueryKeyByValuesReply) {}
+  rpc QueryKeysByValues (QueryKeysByValuesRequest) returns (QueryKeysByValuesReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
@@ -189,9 +188,34 @@ message GetLatestValueReply {
   VersionedBytes retVal = 1;
 }
 
+message Sequence {
+  string sequence_cursor = 1;
+  uint64 timestamp = 2;
+  VersionedBytes data = 3;
+}
+
+message Sequences {
+  repeated Sequence sequences = 1;
+}
+
+// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
+message QueryKeyReply {
+  Sequences sequences = 1;
+}
+
 // QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
 message QueryKeysReply {
-  VersionedBytes retVal = 1;
+ repeated Sequences sequences = 1;
+}
+
+// QueryKeyByValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValues].
+message QueryKeyByValuesReply {
+  Sequences sequences = 1;
+}
+
+// QueryKeysByValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByValues].
+message QueryKeysByValuesReply {
+  repeated Sequences sequences = 1;
 }
 
 message BindRequest {

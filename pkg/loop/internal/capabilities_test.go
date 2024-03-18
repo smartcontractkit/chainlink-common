@@ -13,6 +13,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -49,6 +50,7 @@ func (m *mockCallback) RegisterToWorkflow(ctx context.Context, request capabilit
 	m.regRequest = request
 	return nil
 }
+
 func (m *mockCallback) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	m.unregRequest = request
 	return nil
@@ -67,12 +69,12 @@ func mustMockCallback(t *testing.T, _type capabilities.CapabilityType) *mockCall
 
 type capabilityPlugin struct {
 	plugin.NetRPCUnsupportedPlugin
-	brokerCfg  BrokerConfig
+	brokerCfg  net.BrokerConfig
 	capability capabilities.BaseCapability
 }
 
 func (c *capabilityPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
-	bext := &BrokerExt{
+	bext := &net.BrokerExt{
 		BrokerConfig: c.brokerCfg,
 		Broker:       broker,
 	}
@@ -107,7 +109,7 @@ func newCapabilityPlugin(t *testing.T, capability capabilities.BaseCapability) (
 		false,
 		map[string]plugin.Plugin{
 			pluginName: &capabilityPlugin{
-				brokerCfg: BrokerConfig{
+				brokerCfg: net.BrokerConfig{
 					StopCh: stopCh,
 					Logger: logger,
 				},

@@ -4,15 +4,18 @@ import (
 	"context"
 	"math"
 
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var _ types.ConfigProvider = (*configProviderClient)(nil)
+var (
+	_ types.ConfigProvider = (*configProviderClient)(nil)
+	_ GRPCClientConn       = (*configProviderClient)(nil)
+)
 
 type configProviderClient struct {
 	*ServiceClient
@@ -20,7 +23,7 @@ type configProviderClient struct {
 	contractTracker  libocr.ContractConfigTracker
 }
 
-func newConfigProviderClient(b *BrokerExt, cc grpc.ClientConnInterface) *configProviderClient {
+func newConfigProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *configProviderClient {
 	c := &configProviderClient{ServiceClient: NewServiceClient(b, cc)}
 	c.offchainDigester = &offchainConfigDigesterClient{b, pb.NewOffchainConfigDigesterClient(cc)}
 	c.contractTracker = &contractConfigTrackerClient{pb.NewContractConfigTrackerClient(cc)}
@@ -38,7 +41,7 @@ func (c *configProviderClient) ContractConfigTracker() libocr.ContractConfigTrac
 var _ libocr.OffchainConfigDigester = (*offchainConfigDigesterClient)(nil)
 
 type offchainConfigDigesterClient struct {
-	*BrokerExt
+	*net.BrokerExt
 	grpc pb.OffchainConfigDigesterClient
 }
 
@@ -224,4 +227,20 @@ func pbContractConfig(cc libocr.ContractConfig) *pb.ContractConfig {
 		r.Transmitters = append(r.Transmitters, string(t))
 	}
 	return r
+}
+
+func registerPluginProviderServices(s *grpc.Server, provider types.PluginProvider) {
+	pb.RegisterServiceServer(s, &ServiceServer{Srv: provider})
+	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
+	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
+	pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
+	// although these are part of the plugin provider interface, they are not actually implemented by all plugin providers (ie median)
+	// once we transition all plugins to the core node api, we can remove these checks
+	if provider.ChainReader() != nil {
+		pb.RegisterChainReaderServer(s, &chainReaderServer{impl: provider.ChainReader()})
+	}
+
+	if provider.Codec() != nil {
+		pb.RegisterCodecServer(s, &codecServer{impl: provider.Codec()})
+	}
 }

@@ -19,3 +19,7 @@ func (s *String) proto() *pb.Value {
 func (s *String) Unwrap() (any, error) {
 	return s.Underlying, nil
 }
+
+func (s *String) UnwrapTo(to any) error {
+	return unwrapTo(s.Underlying, to)
+}

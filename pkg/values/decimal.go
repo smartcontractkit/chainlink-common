@@ -21,3 +21,7 @@ func (d *Decimal) proto() *pb.Value {
 func (d *Decimal) Unwrap() (any, error) {
 	return d.Underlying, nil
 }
+
+func (d *Decimal) UnwrapTo(to any) error {
+	return unwrapTo(d.Underlying, to)
+}

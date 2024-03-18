@@ -19,3 +19,7 @@ func (b *Bool) proto() *pb.Value {
 func (b *Bool) Unwrap() (any, error) {
 	return b.Underlying, nil
 }
+
+func (b *Bool) UnwrapTo(to any) error {
+	return unwrapTo[bool](b.Underlying, to)
+}

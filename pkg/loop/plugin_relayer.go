@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -27,7 +28,7 @@ type Keystore = types.Keystore
 
 type Relayer = internal.Relayer
 
-type BrokerConfig = internal.BrokerConfig
+type BrokerConfig = net.BrokerConfig
 
 var _ plugin.GRPCPlugin = (*GRPCPluginRelayer)(nil)
 
@@ -47,6 +48,7 @@ func (p *GRPCPluginRelayer) GRPCServer(broker *plugin.GRPCBroker, server *grpc.S
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginRelayer], updated with the new broker and conn.
+
 func (p *GRPCPluginRelayer) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = internal.NewPluginRelayerClient(broker, p.BrokerConfig, conn)

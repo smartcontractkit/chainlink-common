@@ -1,6 +1,8 @@
 package values
 
 import (
+	"math"
+	"math/big"
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
@@ -87,6 +89,14 @@ func Test_Value(t *testing.T) {
 			newValue: func() (any, Value, error) {
 				b := true
 				bv := NewBool(b)
+				return b, bv, nil
+			},
+		},
+		{
+			name: "bigInt",
+			newValue: func() (any, Value, error) {
+				b := *big.NewInt(math.MaxInt64)
+				bv := NewBigInt(b)
 				return b, bv, nil
 			},
 		},
@@ -199,19 +209,19 @@ func Test_Value(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
 			originalValue, wrapped, err := tc.newValue()
-			require.NoError(t, err)
+			require.NoError(st, err)
 
 			pb := Proto(wrapped)
 
 			rehydratedValue := FromProto(pb)
-			assert.Equal(t, wrapped, rehydratedValue)
+			assert.Equal(st, wrapped, rehydratedValue)
 
 			unwrapped, err := Unwrap(rehydratedValue)
-			require.NoError(t, err)
+			require.NoError(st, err)
 			if tc.equal != nil {
-				tc.equal(t, originalValue, unwrapped)
+				tc.equal(st, originalValue, unwrapped)
 			} else {
-				assert.Equal(t, originalValue, unwrapped)
+				assert.Equal(st, originalValue, unwrapped)
 			}
 		})
 	}

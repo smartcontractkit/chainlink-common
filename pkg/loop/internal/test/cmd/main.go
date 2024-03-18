@@ -11,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip/test"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median/test"
 	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
 	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr3/test"
@@ -31,6 +32,9 @@ func main() {
 
 	var staticChecks bool
 	flag.BoolVar(&staticChecks, "static-checks", false, "run static var checks on static relayer")
+
+	throwErrorType := 0
+	flag.IntVar(&throwErrorType, "throw-error-type", 0, "make the PluginLoggerTest throw a specific error")
 
 	flag.Parse()
 	defer os.Exit(0)
@@ -74,6 +78,7 @@ func main() {
 			},
 			GRPCServer: grpcServer,
 		})
+		lggr.Info("Done serving relayer")
 		os.Exit(0)
 
 	case loop.PluginMedianName:
@@ -89,7 +94,7 @@ func main() {
 		os.Exit(0)
 
 	case test.PluginLoggerTestName:
-		loggerTest := &test.GRPCPluginLoggerTest{Logger: logger.Named(lggr, test.LoggerTestName)}
+		loggerTest := &test.GRPCPluginLoggerTest{SugaredLogger: logger.Sugared(lggr), ErrorType: throwErrorType}
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: test.PluginLoggerTestHandshakeConfig(),
 			Plugins: map[string]plugin.Plugin{
@@ -145,6 +150,20 @@ func main() {
 			GRPCServer: grpcServer,
 		})
 		lggr.Debugf("Done serving %s", loop.PluginMercuryName)
+		os.Exit(0)
+
+	case loop.CCIPExecutionLOOPName:
+		lggr.Debugf("Starting %s", loop.CCIPExecutionLOOPName)
+		plugin.Serve(&plugin.ServeConfig{
+			HandshakeConfig: loop.PluginCCIPExecutionHandshakeConfig(),
+			Plugins: map[string]plugin.Plugin{
+				loop.CCIPExecutionLOOPName: &loop.ExecutionLoop{
+					PluginServer: ccip_test.ExecFactoryServer,
+					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+			},
+			GRPCServer: grpcServer,
+		})
+		lggr.Debugf("Done serving %s", loop.CCIPExecutionLOOPName)
 		os.Exit(0)
 
 	case ocr3.PluginServiceName:

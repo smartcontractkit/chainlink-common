@@ -117,6 +117,23 @@ type reportingPluginServiceServer struct {
 	impl types.OCR3ReportingPluginClient
 }
 
+func (m reportingPluginServiceServer) NewValidationService(ctx context.Context, request *pb.ValidationServiceRequest) (*pb.ValidationServiceResponse, error) {
+	service, err := m.impl.NewValidationService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	id, _, err := m.ServeNew("ValidationService", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &internal.ServiceServer{Srv: service})
+		pb.RegisterValidationServiceServer(s, internal.NewValidationServiceServer(service, m.BrokerExt))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.ValidationServiceResponse{ID: id}, nil
+}
+
 func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Context, request *pb.NewReportingPluginFactoryRequest) (*pb.NewReportingPluginFactoryReply, error) {
 	errorLogConn, err := m.Dial(request.ErrorLogID)
 	if err != nil {

@@ -38,6 +38,13 @@ func PluginGenericTest(t *testing.T, p types.ReportingPluginClient) {
 
 		testreportingplugin.RunFactory(t, factory)
 	})
+	t.Run("ValidationService", func(t *testing.T) {
+		ctx := tests.Context(t)
+		validationService, err := p.NewValidationService(ctx)
+		require.NoError(t, err)
+
+		testreportingplugin.RunValidation(t, validationService)
+	})
 }
 
 func TestGRPCService_MedianProvider(t *testing.T) {

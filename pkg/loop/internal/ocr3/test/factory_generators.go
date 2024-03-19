@@ -8,6 +8,7 @@ import (
 
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
@@ -16,18 +17,20 @@ import (
 
 var MedianServer = medianServer{
 	medianGeneratorConfig: medianGeneratorConfig{
-		medianProvider: median_test.MedianProvider,
-		pipeline:       testcore.PipelineRunner,
-		telemetry:      testcore.Telemetry,
+		medianProvider:    median_test.MedianProvider,
+		pipeline:          testcore.PipelineRunner,
+		telemetry:         testcore.Telemetry,
+		validationService: test.ValidationService,
 	},
 }
 
 const OCR3ReportingPluginWithMedianProviderName = "ocr3-reporting-plugin-with-median-provider"
 
 type medianGeneratorConfig struct {
-	medianProvider testtypes.MedianProviderTester
-	pipeline       testtypes.Evaluator[types.PipelineRunnerService]
-	telemetry      testtypes.Evaluator[types.TelemetryClient]
+	medianProvider    testtypes.MedianProviderTester
+	pipeline          testtypes.Evaluator[types.PipelineRunnerService]
+	telemetry         testtypes.Evaluator[types.TelemetryClient]
+	validationService testtypes.ValidationEvaluator
 }
 
 type medianServer struct {
@@ -35,8 +38,7 @@ type medianServer struct {
 }
 
 func (s medianServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
-	//TODO implement me
-	panic("implement me")
+	return s.validationService, nil
 }
 func (s medianServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerConfig net.BrokerConfig) types.MedianProvider {
 	return s.medianProvider
@@ -62,20 +64,21 @@ func (s medianServer) NewReportingPluginFactory(ctx context.Context, config type
 }
 
 var AgnosticPluginServer = agnosticPluginServer{
-	provider:       testpluginprovider.AgnosticPluginProvider,
-	pipelineRunner: testcore.PipelineRunner,
-	telemetry:      testcore.Telemetry,
+	provider:          testpluginprovider.AgnosticPluginProvider,
+	pipelineRunner:    testcore.PipelineRunner,
+	telemetry:         testcore.Telemetry,
+	validationService: test.ValidationService,
 }
 
 type agnosticPluginServer struct {
-	provider       testtypes.PluginProviderTester
-	pipelineRunner testtypes.PipelineEvaluator
-	telemetry      testtypes.TelemetryEvaluator
+	provider          testtypes.PluginProviderTester
+	pipelineRunner    testtypes.PipelineEvaluator
+	telemetry         testtypes.TelemetryEvaluator
+	validationService testtypes.ValidationEvaluator
 }
 
 func (s agnosticPluginServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
-	//TODO implement me
-	panic("implement me")
+	return s.validationService, nil
 }
 
 func (s agnosticPluginServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerConfig net.BrokerConfig) types.PluginProvider {

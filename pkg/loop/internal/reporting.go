@@ -23,9 +23,6 @@ type validationServiceClient struct {
 }
 
 func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map[string]interface{}) error {
-	ctx, cancel := v.StopCtx()
-	defer cancel()
-
 	pbConfig, err := structpb.NewStruct(config)
 	if err != nil {
 		return err
@@ -56,7 +53,7 @@ func (v *validationServiceServer) ValidateConfig(ctx context.Context, c *pb.Vali
 	return &pb.ValidateConfigResponse{}, nil
 }
 
-func newValidationServiceServer(impl types.ValidationServiceServer, b *net.BrokerExt) *validationServiceServer {
+func NewValidationServiceServer(impl types.ValidationServiceServer, b *net.BrokerExt) *validationServiceServer {
 	return &validationServiceServer{impl: impl, BrokerExt: b.WithName("ReportingPluginFactoryServer")}
 }
 

@@ -173,15 +173,14 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 }
 
 func (m *reportingPluginServiceServer) NewValidationService(ctx context.Context, request *pb.ValidationServiceRequest) (*pb.ValidationServiceResponse, error) {
-
-	factory, err := m.impl.NewValidationService(ctx)
+	service, err := m.impl.NewValidationService(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	id, _, err := m.ServeNew("ValidationService", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: factory})
-		pb.RegisterValidationServiceServer(s, newValidationServiceServer(factory, m.BrokerExt))
+		pb.RegisterServiceServer(s, &ServiceServer{Srv: service})
+		pb.RegisterValidationServiceServer(s, NewValidationServiceServer(service, m.BrokerExt))
 	})
 	if err != nil {
 		return nil, err

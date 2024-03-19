@@ -11,6 +11,7 @@ import (
 	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr3/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -36,6 +37,13 @@ func PluginGenericTest(t *testing.T, p types.OCR3ReportingPluginClient) {
 		require.NoError(t, err)
 
 		ocr3_test.OCR3ReportingPluginFactory(t, factory)
+	})
+	t.Run("ValidationService", func(t *testing.T) {
+		ctx := tests.Context(t)
+		validationService, err := p.NewValidationService(ctx)
+		require.NoError(t, err)
+
+		testreportingplugin.RunValidation(t, validationService)
 	})
 }
 

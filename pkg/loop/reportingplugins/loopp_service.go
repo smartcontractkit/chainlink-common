@@ -76,7 +76,7 @@ func NewLOOPPServiceValidation(
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "GenericService")
 	var ps LOOPPServiceValidation
-	broker := internal.BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
+	broker := net.BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
 	ps.Init(PluginServiceName, &GRPCService[types.PluginProvider]{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &ps
 }

@@ -33,6 +33,7 @@ type medianGeneratorConfig struct {
 type medianServer struct {
 	medianGeneratorConfig
 }
+
 func (s medianServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
 	//TODO implement me
 	panic("implement me")
@@ -72,7 +73,7 @@ type agnosticPluginServer struct {
 	telemetry      testtypes.TelemetryEvaluator
 }
 
-func (s medianServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+func (s agnosticPluginServer) NewValidationService(ctx context.Context) (types.ValidationService, error) {
 	//TODO implement me
 	panic("implement me")
 }

@@ -19,7 +19,7 @@ import (
 )
 
 type validationServiceClient struct {
-	*internal.BrokerExt
+	*net.BrokerExt
 	*internal.ServiceClient
 	grpc pb.ValidationServiceClient
 }
@@ -39,7 +39,7 @@ func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map
 	return err
 }
 
-func newValidationServiceClient(b *internal.BrokerExt, cc grpc.ClientConnInterface) *validationServiceClient {
+func newValidationServiceClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *validationServiceClient {
 	return &validationServiceClient{b.WithName("ReportingPluginProviderClient"), internal.NewServiceClient(b, cc), pb.NewValidationServiceClient(cc)}
 }
 

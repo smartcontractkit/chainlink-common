@@ -88,7 +88,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 }
 
 func (m *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (types.ValidationService, error) {
-	cc := m.NewClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps Resources, err error) {
+	cc := m.NewClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		reply, err := m.reportingPluginService.NewValidationService(ctx, &pb.ValidationServiceRequest{})
 		if err != nil {
 			return 0, nil, err

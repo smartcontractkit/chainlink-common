@@ -9,6 +9,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -16,7 +17,7 @@ import (
 )
 
 type validationServiceClient struct {
-	*BrokerExt
+	*net.BrokerExt
 	*ServiceClient
 	grpc pb.ValidationServiceClient
 }
@@ -35,14 +36,14 @@ func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map
 	return err
 }
 
-func newValidationServiceClient(b *BrokerExt, cc grpc.ClientConnInterface) *validationServiceClient {
+func newValidationServiceClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *validationServiceClient {
 	return &validationServiceClient{b.WithName("ReportingPluginProviderClient"), NewServiceClient(b, cc), pb.NewValidationServiceClient(cc)}
 }
 
 type validationServiceServer struct {
 	pb.UnimplementedValidationServiceServer
 
-	*BrokerExt
+	*net.BrokerExt
 
 	impl types.ValidationServiceServer
 }
@@ -55,7 +56,7 @@ func (v *validationServiceServer) ValidateConfig(ctx context.Context, c *pb.Vali
 	return &pb.ValidateConfigResponse{}, nil
 }
 
-func newValidationServiceServer(impl types.ValidationServiceServer, b *BrokerExt) *validationServiceServer {
+func newValidationServiceServer(impl types.ValidationServiceServer, b *net.BrokerExt) *validationServiceServer {
 	return &validationServiceServer{impl: impl, BrokerExt: b.WithName("ReportingPluginFactoryServer")}
 }
 

@@ -36,6 +36,8 @@ type CommitStoreReader interface {
 	VerifyExecutionReport(ctx context.Context, report ExecReport) (bool, error)
 
 	GetCommitStoreStaticConfig(ctx context.Context) (CommitStoreStaticConfig, error)
+
+	Close() error
 }
 
 type CommitStoreReportWithTxMeta struct {

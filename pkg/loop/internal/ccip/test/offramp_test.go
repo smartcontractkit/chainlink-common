@@ -93,12 +93,6 @@ func TestOffRampGRPC(t *testing.T) {
 	wg.Wait()
 }
 
-type serviceCloser struct {
-	closeFn func() error
-}
-
-func (s *serviceCloser) Close() error { return s.closeFn() }
-
 // roundTripOffRampTests tests the round trip of the client<->server.
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
@@ -223,3 +217,9 @@ func roundTripOffRampTests(ctx context.Context, t *testing.T, client *ccip.OffRa
 		assert.Equal(t, OffRampReader.onchainConfigResponse, config)
 	})
 }
+
+type serviceCloser struct {
+	closeFn func() error
+}
+
+func (s *serviceCloser) Close() error { return s.closeFn() }

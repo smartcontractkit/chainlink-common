@@ -3,13 +3,19 @@ package ccip
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
@@ -19,10 +25,18 @@ import (
 // is hosted by the relayer
 type CommitStoreGRPCClient struct {
 	client ccippb.CommitStoreReaderClient
+
+	//  brokerExt is use to allocate and serve the gas estimator server.
+	//  must be the same as that used by the server
+	//  TODO BCF-3061: note unsure if this really has to change for the proxy case or not
+	//  marking it so that it is considered when we implement the proxy.
+	//  the reason it may not need to change is that the gas estimator server is
+	//  a static resource of the offramp reader server. It is not created directly by the client.
+	b *net.BrokerExt
 }
 
-func NewCommitStoreGRPCClient(cc grpc.ClientConnInterface) *CommitStoreGRPCClient {
-	return &CommitStoreGRPCClient{client: ccippb.NewCommitStoreReaderClient(cc)}
+func NewCommitStoreReaderGRPCClient(cc grpc.ClientConnInterface, brokerExt *net.BrokerExt) *CommitStoreGRPCClient {
+	return &CommitStoreGRPCClient{client: ccippb.NewCommitStoreReaderClient(cc), b: brokerExt}
 }
 
 // CommitStoreGRPCServer implements [ccippb.CommitStoreReaderServer] by wrapping a
@@ -32,12 +46,36 @@ func NewCommitStoreGRPCClient(cc grpc.ClientConnInterface) *CommitStoreGRPCClien
 type CommitStoreGRPCServer struct {
 	ccippb.UnimplementedCommitStoreReaderServer
 
-	impl    ccip.CommitStoreReader
-	onClose func() error
+	impl ccip.CommitStoreReader
+
+	//  brokerExt is use to allocate and serve the gas estimator server.
+	//  must be the same as that used by the server
+	//  TODO BCF-3061. see the comment in OffRampReaderGRPCClient for more details
+	b                    *net.BrokerExt
+	gasEstimatorServerID uint32 // allocated by the broker on creation of the off ramp server
+
+	deps []io.Closer
 }
 
-func NewCommitStoreGRPCServer(impl ccip.CommitStoreReader) *CommitStoreGRPCServer {
-	return &CommitStoreGRPCServer{impl: impl}
+func NewCommitStoreReaderGRPCServer(impl ccip.CommitStoreReader, brokerExt *net.BrokerExt) (*CommitStoreGRPCServer, error) {
+	estimator, err := impl.GasPriceEstimator(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	// wrap the reader in a grpc server and serve it
+	estimatorHandler := NewCommitGasEstimatorGRPCServer(estimator)
+	// the id is handle to the broker, we will need it on the other side to dial the resource
+	estimatorID, spawnedServer, err := brokerExt.ServeNew("OffRamapGasEstimator", func(s *grpc.Server) {
+		ccippb.RegisterGasPriceEstimatorCommitServer(s, estimatorHandler)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var deps []io.Closer
+	deps = append(deps, impl, spawnedServer)
+
+	return &CommitStoreGRPCServer{impl: impl, deps: deps, b: brokerExt, gasEstimatorServerID: estimatorID}, nil
 }
 
 // ensure the types are satisfied
@@ -56,6 +94,16 @@ func (c *CommitStoreGRPCClient) ChangeConfig(ctx context.Context, onchainConfig 
 	return ccip.Address(resp.Address), nil
 }
 
+func (c *CommitStoreGRPCClient) Close() error {
+	_, err := c.client.Close(context.Background(), &emptypb.Empty{})
+	// due to the onClose handler in the server, it may shutdown before it sends a response to client
+	// in that case, we expect the client to receive an Unavailable or Internal error
+	if status.Code(err) == codes.Unavailable || status.Code(err) == codes.Internal {
+		return nil
+	}
+	return err
+}
+
 // DecodeCommitReport implements ccip.CommitStoreReader.
 func (c *CommitStoreGRPCClient) DecodeCommitReport(ctx context.Context, report []byte) (ccip.CommitStoreReport, error) {
 	resp, err := c.client.DecodeCommitReport(ctx, &ccippb.DecodeCommitReportRequest{EncodedReport: report})
@@ -63,7 +111,6 @@ func (c *CommitStoreGRPCClient) DecodeCommitReport(ctx context.Context, report [
 		return ccip.CommitStoreReport{}, err
 	}
 	return commitStoreReport(resp.Report)
-
 }
 
 // EncodeCommitReport implements ccip.CommitStoreReader.
@@ -81,7 +128,19 @@ func (c *CommitStoreGRPCClient) EncodeCommitReport(ctx context.Context, report c
 
 // GasPriceEstimator implements ccip.CommitStoreReader.
 func (c *CommitStoreGRPCClient) GasPriceEstimator(ctx context.Context) (ccip.GasPriceEstimatorCommit, error) {
-	panic("unimplemented: GasPriceEstimator BCF-2991")
+	resp, err := c.client.GetCommitGasPriceEstimator(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	// TODO BCF-3061: this works because the broker is shared and the id refers to a resource served by the broker
+	gasEstimatorConn, err := c.b.Dial(resp.GasPriceEstimatorId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to lookup gas estimator service for off ramp reader at %d: %w", resp.GasPriceEstimatorId, err)
+	}
+	// need to wrap grpc offRamp into the desired interface
+	gasEstimator := NewCommitGasEstimatorGRPCClient(gasEstimatorConn)
+	// need to hydrate the gas price estimator from the server id
+	return gasEstimator, nil
 }
 
 // GetAcceptedCommitReportsGteTimestamp implements ccip.CommitStoreReader.
@@ -98,7 +157,7 @@ func (c *CommitStoreGRPCClient) GetAcceptedCommitReportsGteTimestamp(ctx context
 
 // GetCommitReportMatchingSeqNum implements ccip.CommitStoreReader.
 func (c *CommitStoreGRPCClient) GetCommitReportMatchingSeqNum(ctx context.Context, seqNum uint64, confirmations int) ([]ccip.CommitStoreReportWithTxMeta, error) {
-	resp, err := c.client.GeteCommitReportMatchingSequenceNumber(ctx, &ccippb.GetCommitReportMatchingSequenceNumberRequest{
+	resp, err := c.client.GetCommitReportMatchingSequenceNumber(ctx, &ccippb.GetCommitReportMatchingSequenceNumberRequest{
 		SequenceNumber: seqNum,
 		Confirmations:  uint64(confirmations),
 	})
@@ -193,6 +252,10 @@ func (c *CommitStoreGRPCServer) ChangeConfig(ctx context.Context, req *ccippb.Co
 	return &ccippb.CommitStoreChangeConfigResponse{Address: string(addr)}, nil
 }
 
+func (c *CommitStoreGRPCServer) Close(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, services.MultiCloser(c.deps).Close()
+}
+
 // DecodeCommitReport implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) DecodeCommitReport(ctx context.Context, req *ccippb.DecodeCommitReportRequest) (*ccippb.DecodeCommitReportResponse, error) {
 	r, err := c.impl.DecodeCommitReport(ctx, req.EncodedReport)
@@ -234,47 +297,110 @@ func (c *CommitStoreGRPCServer) GetAcceptedCommitReportsGteTimestamp(ctx context
 
 // GetCommitGasPriceEstimator implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) GetCommitGasPriceEstimator(ctx context.Context, req *emptypb.Empty) (*ccippb.GetCommitGasPriceEstimatorResponse, error) {
-	panic("unimplemented")
+	return &ccippb.GetCommitGasPriceEstimatorResponse{GasPriceEstimatorId: c.gasEstimatorServerID}, nil
 }
 
 // GetCommitStoreStaticConfig implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) GetCommitStoreStaticConfig(ctx context.Context, req *emptypb.Empty) (*ccippb.GetCommitStoreStaticConfigResponse, error) {
-	panic("unimplemented")
+	config, err := c.impl.GetCommitStoreStaticConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetCommitStoreStaticConfigResponse{StaticConfig: &ccippb.CommitStoreStaticConfig{
+		ChainSelector:       config.ChainSelector,
+		SourceChainSelector: config.SourceChainSelector,
+		OnRamp:              string(config.OnRamp),
+		ArmProxy:            string(config.ArmProxy),
+	}}, nil
 }
 
 // GetExpectedNextSequenceNumber implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) GetExpectedNextSequenceNumber(ctx context.Context, req *emptypb.Empty) (*ccippb.GetExpectedNextSequenceNumberResponse, error) {
-	panic("unimplemented")
+	seqNum, err := c.impl.GetExpectedNextSequenceNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetExpectedNextSequenceNumberResponse{SequenceNumber: seqNum}, nil
 }
 
 // GetLatestPriceEpochAndRound implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) GetLatestPriceEpochAndRound(ctx context.Context, req *emptypb.Empty) (*ccippb.GetLatestPriceEpochAndRoundResponse, error) {
-	panic("unimplemented")
+	epoch, err := c.impl.GetLatestPriceEpochAndRound(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetLatestPriceEpochAndRoundResponse{EpochAndRound: epoch}, nil
 }
 
 // GetOffchainConfig implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) GetOffchainConfig(ctx context.Context, req *emptypb.Empty) (*ccippb.GetOffchainConfigResponse, error) {
-	panic("unimplemented")
+	config, err := c.impl.OffchainConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetOffchainConfigResponse{
+		OffchainConfig: &ccippb.CommitOffchainConfig{
+			GasPriceDeviationPpb:   config.GasPriceDeviationPPB,
+			GasPriceHeartbeat:      durationpb.New(config.GasPriceHeartBeat),
+			TokenPriceDeviationPpb: config.TokenPriceDeviationPPB,
+			TokenPriceHeartbeat:    durationpb.New(config.TokenPriceHeartBeat),
+			InflightCacheExpiry:    durationpb.New(config.InflightCacheExpiry),
+		},
+	}, nil
 }
 
 // GeteCommitReportMatchingSequenceNumber implements ccippb.CommitStoreReaderServer.
-func (c *CommitStoreGRPCServer) GeteCommitReportMatchingSequenceNumber(ctx context.Context, req *ccippb.GetCommitReportMatchingSequenceNumberRequest) (*ccippb.GetCommitReportMatchingSequenceNumberResponse, error) {
-	panic("unimplemented")
+func (c *CommitStoreGRPCServer) GetCommitReportMatchingSequenceNumber(ctx context.Context, req *ccippb.GetCommitReportMatchingSequenceNumberRequest) (*ccippb.GetCommitReportMatchingSequenceNumberResponse, error) {
+	reports, err := c.impl.GetCommitReportMatchingSeqNum(ctx, req.SequenceNumber, int(req.Confirmations))
+	if err != nil {
+		return nil, err
+	}
+	pbReports, err := commitStoreReportWithTxMetaPBSlice(reports)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetCommitReportMatchingSequenceNumberResponse{Reports: pbReports}, nil
 }
 
 // IsBlessed implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) IsBlessed(ctx context.Context, req *ccippb.IsBlessedRequest) (*ccippb.IsBlessedResponse, error) {
-	panic("unimplemented")
+	r, err := merkleRoot(req.Root)
+	if err != nil {
+		return nil, err
+	}
+	blessed, err := c.impl.IsBlessed(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.IsBlessedResponse{IsBlessed: blessed}, nil
 }
 
 // IsDown implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) IsDown(ctx context.Context, req *emptypb.Empty) (*ccippb.IsDownResponse, error) {
-	panic("unimplemented")
+	down, err := c.impl.IsDown(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.IsDownResponse{IsDown: down}, nil
 }
 
 // VerifyExecutionReport implements ccippb.CommitStoreReaderServer.
 func (c *CommitStoreGRPCServer) VerifyExecutionReport(ctx context.Context, req *ccippb.VerifyExecutionReportRequest) (*ccippb.VerifyExecutionReportResponse, error) {
-	panic("unimplemented")
+	r, err := execReport(req.Report)
+	if err != nil {
+		return nil, err
+	}
+	valid, err := c.impl.VerifyExecutionReport(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.VerifyExecutionReportResponse{IsValid: valid}, nil
+}
+
+// WithCloser adds a closer to the list of dependencies that will be closed when the server is closed.
+func (c *CommitStoreGRPCServer) WithCloser(dep io.Closer) *CommitStoreGRPCServer {
+	c.deps = append(c.deps, dep)
+	return c
 }
 
 func commitStoreReport(pb *ccippb.CommitStoreReport) (ccip.CommitStoreReport, error) {

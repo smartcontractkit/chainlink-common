@@ -13,7 +13,7 @@ import "models.proto";
 service CommitStoreReader {
     rpc GetExpectedNextSequenceNumber(google.protobuf.Empty) returns (GetExpectedNextSequenceNumberResponse);
     rpc GetLatestPriceEpochAndRound(google.protobuf.Empty) returns (GetLatestPriceEpochAndRoundResponse);
-    rpc GeteCommitReportMatchingSequenceNumber(GetCommitReportMatchingSequenceNumberRequest) returns (GetCommitReportMatchingSequenceNumberResponse);
+    rpc GetCommitReportMatchingSequenceNumber(GetCommitReportMatchingSequenceNumberRequest) returns (GetCommitReportMatchingSequenceNumberResponse);
     rpc GetAcceptedCommitReportsGteTimestamp(GetAcceptedCommitReportsGteTimestampRequest) returns (GetAcceptedCommitReportsGteTimestampResponse);
     rpc IsDown(google.protobuf.Empty) returns (IsDownResponse);
     rpc IsBlessed(IsBlessedRequest) returns (IsBlessedResponse);
@@ -24,6 +24,7 @@ service CommitStoreReader {
     rpc DecodeCommitReport(DecodeCommitReportRequest) returns (DecodeCommitReportResponse);
     rpc VerifyExecutionReport(VerifyExecutionReportRequest) returns (VerifyExecutionReportResponse);
     rpc GetCommitStoreStaticConfig(google.protobuf.Empty) returns (GetCommitStoreStaticConfigResponse);
+    rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 // GetExpectedNextSequenceNumberResponse returns the expected next sequence number. It is a gRPC adapter to the return values of

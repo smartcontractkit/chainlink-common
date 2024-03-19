@@ -133,10 +133,14 @@ func (c *chainReaderClient) QueryKey(ctx context.Context, key string, queryFilte
 	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
 }
 
-func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
-	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
-	if err != nil {
-		return nil, err
+func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queriesFilters []types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
+	var pbQueriesFilter []*pb.QueryFilter
+	for _, queryFilter := range queriesFilters {
+		pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
+		if err != nil {
+			return nil, err
+		}
+		pbQueriesFilter = append(pbQueriesFilter, pbQueryFilter)
 	}
 
 	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
@@ -144,7 +148,7 @@ func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queryF
 		return nil, err
 	}
 
-	pbSequencesMatrix, err := c.grpc.QueryKeys(ctx, &pb.QueryKeysRequest{Keys: keys, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
+	pbSequencesMatrix, err := c.grpc.QueryKeys(ctx, &pb.QueryKeysRequest{Keys: keys, QueriesFilters: pbQueriesFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, wrapRPCErr(err)
 	}
@@ -171,12 +175,15 @@ func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, key string, va
 	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
 }
 
-func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
-	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
-	if err != nil {
-		return nil, wrapRPCErr(err)
+func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queriesFilters []types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
+	var pbQueriesFilter []*pb.QueryFilter
+	for _, queryFilter := range queriesFilters {
+		pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
+		if err != nil {
+			return nil, err
+		}
+		pbQueriesFilter = append(pbQueriesFilter, pbQueryFilter)
 	}
-
 	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
 	if err != nil {
 		return nil, wrapRPCErr(err)
@@ -187,7 +194,7 @@ func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string
 		pbKeyValues = append(pbKeyValues, &pb.KeyValues{Values: keyValues})
 	}
 
-	pbSequencesMatrix, err := c.grpc.QueryKeysByValues(ctx, &pb.QueryKeysByValuesRequest{Keys: keys, KeysValues: pbKeyValues, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
+	pbSequencesMatrix, err := c.grpc.QueryKeysByValues(ctx, &pb.QueryKeysByValuesRequest{Keys: keys, KeysValues: pbKeyValues, QueriesFilters: pbQueriesFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, wrapRPCErr(err)
 	}
@@ -273,9 +280,13 @@ func (c *chainReaderServer) QueryKey(ctx context.Context, request *pb.QueryKeyRe
 }
 
 func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
-	queryFilters, err := convertQueryFiltersFromProto(request.QueryFilter)
-	if err != nil {
-		return nil, err
+	var queriesFilters []types.QueryFilter
+	for _, queryFilter := range request.QueriesFilters {
+		queryFilters, err := convertQueryFiltersFromProto(queryFilter)
+		if err != nil {
+			return nil, err
+		}
+		queriesFilters = append(queriesFilters, queryFilters)
 	}
 
 	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
@@ -293,13 +304,9 @@ func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeys
 		sequenceDataTypes = append(sequenceDataTypes, sequenceDataType)
 	}
 
-	sequencesMatrix, err := c.impl.QueryKeys(ctx, request.Keys, queryFilters, limitAndSort, sequenceDataTypes)
+	sequencesMatrix, err := c.impl.QueryKeys(ctx, request.Keys, queriesFilters, limitAndSort, sequenceDataTypes)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(sequenceDataTypes) != len(sequencesMatrix) {
-		return nil, fmt.Errorf("not all sequences have a defined data type")
 	}
 
 	var pbSequencesMatrix []*pb.Sequences
@@ -349,9 +356,13 @@ func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.Qu
 }
 
 func (c *chainReaderServer) QueryKeysByValues(ctx context.Context, request *pb.QueryKeysByValuesRequest) (*pb.QueryKeysByValuesReply, error) {
-	queryFilters, err := convertQueryFiltersFromProto(request.QueryFilter)
-	if err != nil {
-		return nil, err
+	var queriesFilters []types.QueryFilter
+	for _, queryFilter := range request.QueriesFilters {
+		queryFilters, err := convertQueryFiltersFromProto(queryFilter)
+		if err != nil {
+			return nil, err
+		}
+		queriesFilters = append(queriesFilters, queryFilters)
 	}
 
 	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
@@ -376,13 +387,9 @@ func (c *chainReaderServer) QueryKeysByValues(ctx context.Context, request *pb.Q
 		sequenceDataTypes = append(sequenceDataTypes, sequenceDataType)
 	}
 
-	sequencesMatrix, err := c.impl.QueryKeysByValues(ctx, request.Keys, values, queryFilters, limitAndSort, sequenceDataTypes)
+	sequencesMatrix, err := c.impl.QueryKeysByValues(ctx, request.Keys, values, queriesFilters, limitAndSort, sequenceDataTypes)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(sequenceDataTypes) != len(sequencesMatrix) {
-		return nil, fmt.Errorf("not all sequences have a defined data type")
 	}
 
 	var pbSequencesMatrix []*pb.Sequences
@@ -418,6 +425,7 @@ func getContractEncodedTypeByKey(key string, possibleTypeProvider any, forEncodi
 	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
 		return ctp.CreateContractTypeByKey(key, forEncoding)
 	}
+
 	return &map[string]any{}, nil
 }
 

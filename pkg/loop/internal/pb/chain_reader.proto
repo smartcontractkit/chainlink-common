@@ -146,21 +146,21 @@ message Or {
   repeated Expression a = 1;
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyRequest].
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
 message QueryKeyRequest {
   string key = 1;
   QueryFilter query_filter = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysRequest].
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
 message QueryKeysRequest {
   repeated string keys = 1;
-  QueryFilter query_filter = 2;
+  repeated QueryFilter queries_filters = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValuesRequest].
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValues].
 message QueryKeyByValuesRequest {
   string key = 1;
   KeyValues key_values = 2;
@@ -172,7 +172,7 @@ message QueryKeyByValuesRequest {
 message QueryKeysByValuesRequest {
   repeated string keys = 1;
   repeated KeyValues keys_values = 2;
-  QueryFilter query_filter = 3;
+  repeated QueryFilter queries_filters = 3;
   LimitAndSort limit_and_sort = 4;
 }
 

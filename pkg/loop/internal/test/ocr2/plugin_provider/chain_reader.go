@@ -63,19 +63,19 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string
 	return nil
 }
 
-func (c staticChainReader) QueryKey(_ context.Context, _ string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+func (c staticChainReader) QueryKey(_ context.Context, _ string, _ types.QueryFilter, _ types.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (c staticChainReader) QueryKeys(_ context.Context, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+func (c staticChainReader) QueryKeys(_ context.Context, _ []string, _ []types.QueryFilter, _ types.LimitAndSort, _ []any) ([][]types.Sequence, error) {
 	return nil, nil
 }
 
-func (c staticChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ types.QueryFilter, _ types.LimitAndSort) ([]types.Sequence, error) {
+func (c staticChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ types.QueryFilter, _ types.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (c staticChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ types.QueryFilter, _ types.LimitAndSort) ([][]types.Sequence, error) {
+func (c staticChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ []types.QueryFilter, _ types.LimitAndSort, _ []any) ([][]types.Sequence, error) {
 	return nil, nil
 }
 

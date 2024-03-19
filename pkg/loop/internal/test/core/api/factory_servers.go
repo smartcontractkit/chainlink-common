@@ -6,8 +6,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
@@ -42,7 +42,7 @@ func (s medianFactoryServer) NewValidationService(ctx context.Context) (types.Va
 	return nil, nil
 }
 
-func (s medianFactoryServer) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.MedianProvider {
+func (s medianFactoryServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerConfig net.BrokerConfig) types.MedianProvider {
 	return s.medianProvider
 }
 
@@ -83,7 +83,7 @@ func (s agnosticPluginFactoryServer) NewValidationService(ctx context.Context) (
 	return nil, nil
 }
 
-func (s agnosticPluginFactoryServer) ConnToProvider(conn grpc.ClientConnInterface, broker internal.Broker, brokerConfig internal.BrokerConfig) types.PluginProvider {
+func (s agnosticPluginFactoryServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerConfig net.BrokerConfig) types.PluginProvider {
 	return s.provider
 }
 

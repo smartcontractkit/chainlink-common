@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
 
 package loop.internal.pb.ccip;
+import "google/protobuf/empty.proto";
 
 // ExecutionFactoryGenerator is a gRPC service that generates a execution factory
 // It is a gRPC service adapter for the https://github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipexec/NewExecutionReportingPluginFactory
@@ -12,21 +13,63 @@ service ExecutionFactoryGenerator {
 
 // NewExecutionFactoryRequest is a gRPC adapter to the factory configuration [https://github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipexec/ExecutionPluginStaticConfig]
 message NewExecutionFactoryRequest {
-    int32 onramp_reader_service_id = 1;
-    int32 offramp_reader_service_id = 2;
-    int32 commit_store_service_id = 3;
-    int32 source_price_registiry_service_id = 4;
-    string source_wrapped_native_token = 5; // Address
-    // TODO BCF-2979: what is this? there is no type in the common repo for it. seems like it can be 
-    // moved to an implementation detail of the ccipexec plugin
-    int32 token_data_worker_service_id = 6;
-    uint64 dest_chain_selector = 7;
-    int32 price_registry_service_id = 8;
-    int32 token_pool_batch_reader_service_id = 9;
-    // TODO: there is a metrics collector defined in the corresponding config. what to do with it?
+    uint32 provider_service_id = 1;
 }
 
 // NewExecutionFactoryResponse is a contains the id of the created execution factory
 message NewExecutionFactoryResponse {
-    int32 execution_factory_service_id = 1;
+    uint32 execution_factory_service_id = 1;
 }
+
+// ExecutionCustomHandlers is a gRPC service that services the custom
+// resource generation requests for the execution provider
+service ExecutionCustomHandlers {
+    rpc NewOnRampReader(NewOnRampReaderRequest) returns (NewOnRampReaderResponse) {}
+    rpc NewOffRampReader(NewOffRampReaderRequest) returns (NewOffRampReaderResponse) {}
+    rpc NewPriceRegistryReader(NewPriceRegistryReaderRequest) returns (NewPriceRegistryReaderResponse) {}
+    // TODO: BCF-2993: Add more custom handlers
+    rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+
+}
+
+// NewOnRampReaderRequest is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewOnRampReader]
+message NewOnRampReaderRequest {
+    string address = 1;
+}
+
+// NewOnRampReaderResponse is a gRPC wrapper for the return value of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewOnRampReader]
+// It contains the id of the created onramp reader service that was created
+message NewOnRampReaderResponse {
+    int32 onramp_reader_service_id = 1;
+}
+
+// NewOffRampReaderRequest is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewOffRampReader]
+message NewOffRampReaderRequest {
+    string address = 1;
+}
+
+// NewOffRampReaderResponse is a gRPC adapter for the output arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewOffRampReader]
+// It contains the id of the created offramp reader service that was created
+message NewOffRampReaderResponse {
+    int32 offramp_reader_service_id = 1;
+}
+
+// NewPriceRegistryRequest is a gRPC adapter for the input arguments of 
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewPriceRegistryReader]
+message NewPriceRegistryReaderRequest {
+    string address = 1;
+}
+
+// NewPriceRegistryReaderResponse is a gRPC adapter for the output arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewPriceRegistryReader]
+// It contains the id of the created price registry reader service that was created
+message NewPriceRegistryReaderResponse {
+    int32 price_registry_reader_service_id = 1;
+}
+
+
+

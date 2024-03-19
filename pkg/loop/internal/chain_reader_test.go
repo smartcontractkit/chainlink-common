@@ -124,7 +124,9 @@ func generateQueryFilterTestCases(t *testing.T) []types.QueryFilter {
 		primitives = append(primitives, types.NewAddressesPrimitive([]string{"addr1", "addr2"}...))
 	}
 
-	queryFilters = append(queryFilters, types.Where(primitives...))
+	qf, err := types.Where(primitives...)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
 
 	andOverPrimitivesBoolExpr, err := types.NewBooleanExpression(types.AND, primitives)
 	require.NoError(t, err)
@@ -139,9 +141,17 @@ func generateQueryFilterTestCases(t *testing.T) []types.QueryFilter {
 	})
 	require.NoError(t, err)
 
-	queryFilters = append(queryFilters, types.Where(andOverPrimitivesBoolExpr))
-	queryFilters = append(queryFilters, types.Where(orOverPrimitivesBoolExpr))
-	queryFilters = append(queryFilters, types.Where(nestedBoolExpr))
+	qf, err = types.Where(andOverPrimitivesBoolExpr)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
+
+	qf, err = types.Where(orOverPrimitivesBoolExpr)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
+
+	qf, err = types.Where(nestedBoolExpr)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
 
 	return queryFilters
 }

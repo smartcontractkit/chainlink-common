@@ -196,14 +196,10 @@ type BooleanExpression struct {
 	BooleanOperator
 }
 
-func NewBooleanExpression(operator BooleanOperator, expressions []Expression) (Expression, error) {
-	if len(expressions) < 2 {
-		return Expression{}, fmt.Errorf("boolean expression %s has to contain at least two expressions", operator)
-	}
-
+func NewBooleanExpression(operator BooleanOperator, expressions []Expression) Expression {
 	return Expression{
 		BooleanExpression: BooleanExpression{Expressions: expressions, BooleanOperator: operator},
-	}, nil
+	}
 }
 
 // BlockFilter is a primitive of QueryFilter that filters search in comparison to block number.
@@ -292,7 +288,7 @@ func (f *TxHashFilter) Accept(visitor Visitor) {
 }
 
 // Where eg. usage:
-// queryFilter := Where(
+// queryFilter, err := Where(
 //
 //		NewTxHashPrimitive("0xHash"),
 //		NewBooleanExpression("OR",
@@ -306,10 +302,18 @@ func (f *TxHashFilter) Accept(visitor Visitor) {
 //				NewTimestampPrimitive(someTs2, Gte),
 //				NewTimestampPrimitive(otherTs2, Lte)))
 //	   )
+//	if err != nil{return nil, err}
 //
 // QueryKey(key, queryFilter)...
-func Where(expressions ...Expression) QueryFilter {
-	return QueryFilter{expressions}
+func Where(expressions ...Expression) (QueryFilter, error) {
+	for _, expr := range expressions {
+		if !expr.IsPrimitive() {
+			if len(expr.BooleanExpression.Expressions) < 2 {
+				return QueryFilter{}, fmt.Errorf("all boolean expressions should have at least 2 expressions")
+			}
+		}
+	}
+	return QueryFilter{expressions}, nil
 }
 
 type Visitor interface {

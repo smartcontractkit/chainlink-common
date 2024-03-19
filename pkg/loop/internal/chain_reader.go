@@ -256,12 +256,12 @@ func (c *chainReaderServer) QueryKey(ctx context.Context, request *pb.QueryKeyRe
 		return nil, err
 	}
 
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
+	sequenceDataType, err := getContractEncodedTypeByKey(request.Key, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
 
-	sequenceDataType, err := getContractEncodedTypeByKey(request.Key, c.impl, false)
+	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -322,6 +322,10 @@ func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeys
 }
 
 func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.QueryKeyByValuesRequest) (*pb.QueryKeyByValuesReply, error) {
+	if request.KeyValues == nil {
+		return nil, fmt.Errorf("all key values should be defined")
+	}
+
 	queryFilters, err := convertQueryFiltersFromProto(request.QueryFilter)
 	if err != nil {
 		return nil, err
@@ -332,17 +336,12 @@ func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.Qu
 		return nil, err
 	}
 
-	var values []string
-	if request.KeyValues != nil {
-		values = request.KeyValues.Values
-	}
-
 	sequenceDataType, err := getContractEncodedTypeByKey(request.Key, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
 
-	sequences, err := c.impl.QueryKeyByValues(ctx, request.Key, values, queryFilters, limitAndSort, sequenceDataType)
+	sequences, err := c.impl.QueryKeyByValues(ctx, request.Key, request.KeyValues.Values, queryFilters, limitAndSort, sequenceDataType)
 	if err != nil {
 		return nil, err
 	}
@@ -356,6 +355,18 @@ func (c *chainReaderServer) QueryKeyByValues(ctx context.Context, request *pb.Qu
 }
 
 func (c *chainReaderServer) QueryKeysByValues(ctx context.Context, request *pb.QueryKeysByValuesRequest) (*pb.QueryKeysByValuesReply, error) {
+	if request.KeysValues != nil {
+		return nil, fmt.Errorf("all key values should be defined")
+	}
+
+	var values [][]string
+	for _, keyValues := range request.KeysValues {
+		if keyValues == nil {
+			return nil, fmt.Errorf("all key values should be defined")
+		}
+		values = append(values, keyValues.Values)
+	}
+
 	var queriesFilters []types.QueryFilter
 	for _, queryFilter := range request.QueriesFilters {
 		queryFilters, err := convertQueryFiltersFromProto(queryFilter)
@@ -368,13 +379,6 @@ func (c *chainReaderServer) QueryKeysByValues(ctx context.Context, request *pb.Q
 	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
-	}
-
-	var values [][]string
-	if request.KeysValues != nil {
-		for _, keyValues := range request.KeysValues {
-			values = append(values, keyValues.Values)
-		}
 	}
 
 	var sequenceDataTypes []any

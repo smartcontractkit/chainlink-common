@@ -3,7 +3,6 @@ package types
 import (
 	"context"
 	"fmt"
-	"time"
 )
 
 // Errors exposed to product plugins
@@ -44,13 +43,11 @@ type ChainReader interface {
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
+	// TODO UnBind?, doesn't seem like its needed?
 
-	//TODO Rebind binding address
-	//ReBind(ctx context.Context, name, address string)
-	// TODO some filters have to be dynamic, so this has to override chain reader bind that comes from config?
-	// Maube this should just be Bind?
-	// RegisterFilter()
-	// UnRegisterFilter()
+	//TODO ReBindByKey, UnBindByKey, this is needed in some places where addresses change but the contract stays the same
+	// ReBindByKey(ctx context.Context, key, address string)
+	// UnBindByKey() or UnBindByKey(ctx context.Context, key, address string)
 
 	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
 	QueryKeys(ctx context.Context, keys []string, queryFilter []QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
@@ -69,8 +66,8 @@ type BoundContract struct {
 	Pending bool
 }
 
-// Head is a duplicate from chain agnostic head tracker used in mercury.ChainReader.
-// To be merged with standard Chain Reader.
+// Head TODO this is a general chain agnostic Head, its copied from mercury Chain Reader.
+// Mercury Chain Reader should be merged with this Chain Reader, so we won't have duplicate Head definitions.
 type Head struct {
 	Number    uint64
 	Hash      []byte
@@ -79,24 +76,10 @@ type Head struct {
 
 type Sequence struct {
 	// TODO SequenceCursor, this should be a unique sequence identifier that chain reader impl. understands.
-	// This way we can retrieve past/future sequences (EVM log events) very granularly but still hiding the chain detail.
+	// This way we can retrieve past/future sequences (EVM log events) very granularly, but still hide the chain detail.
 	SequenceCursor string
-	// TODO this is a general chain agnositc Head, it should be moved from mercury package.
 	Head
 	Data any
-}
-
-// TODO define If Register should be done outside of Binding?
-type KeysFilterer struct {
-	Name string // see FilterName(id, args) below
-	// TODO Retrieve key polling unique identifiers from chain reader config by using this identifier (evm eg. point to specific event sigs by contract name and event name)
-	Identifier string
-	//TODO Just Keys instead to do a similar thing?
-	// Keys []string
-	// Addresses [][]string
-	// TODO may need to be mapped to event sigs a bit more creatively because of Solana? But we currently don't have Solana polling component so this is fine for now.
-	Addresses []string
-	Retention time.Duration
 }
 
 type ComparisonOperator int

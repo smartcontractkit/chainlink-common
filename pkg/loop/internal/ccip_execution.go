@@ -275,7 +275,7 @@ func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 		return nil, err
 	}
 	// ensure the grpc server is closed when the offRamp is closed. See comment in NewPriceRegistryReader for more details
-	offRampHandler.WithCloseHandler(offRampResource.Close)
+	offRampHandler.WithCloser(offRampResource)
 	return &ccippb.NewOffRampReaderResponse{OfframpReaderServiceId: int32(offRampID)}, nil
 }
 
@@ -318,6 +318,6 @@ func (e *execProviderServer) NewPriceRegistryReader(ctx context.Context, req *cc
 	// that server needs to be shutdown when the priceRegistry is closed. We don't have a handle to the
 	// grpc server until we after we have constructed the priceRegistry, so we can't configure the shutdown
 	// handler up front.
-	priceRegistryHandler.WithCloseHandler(spawnedServer.Close)
+	priceRegistryHandler.WithCloser(spawnedServer)
 	return &ccippb.NewPriceRegistryReaderResponse{PriceRegistryReaderServiceId: int32(priceReaderID)}, nil
 }

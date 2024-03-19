@@ -2,8 +2,8 @@ package ccip
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"google.golang.org/grpc"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
@@ -36,12 +37,12 @@ func NewPriceRegistryGRPCClient(cc grpc.ClientConnInterface) *PriceRegistryGRPCC
 type PriceRegistryGRPCServer struct {
 	ccippb.UnimplementedPriceRegistryReaderServer
 
-	impl    cciptypes.PriceRegistryReader
-	onClose []func() error
+	impl cciptypes.PriceRegistryReader
+	deps []io.Closer
 }
 
 func NewPriceRegistryGRPCServer(impl cciptypes.PriceRegistryReader) *PriceRegistryGRPCServer {
-	return &PriceRegistryGRPCServer{impl: impl, onClose: []func() error{impl.Close}}
+	return &PriceRegistryGRPCServer{impl: impl, deps: []io.Closer{impl}}
 }
 
 // ensure the types are satisfied
@@ -138,11 +139,7 @@ func (p *PriceRegistryGRPCClient) GetTokensDecimals(ctx context.Context, tokenAd
 
 // Close implements ccippb.PriceRegistryReaderServer.
 func (p *PriceRegistryGRPCServer) Close(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
-	var err error
-	for _, f := range p.onClose {
-		err = errors.Join(err, f())
-	}
-	return nil, err
+	return &emptypb.Empty{}, services.MultiCloser(p.deps).Close()
 }
 
 // GetAddress implements ccippb.PriceRegistryReaderServer.
@@ -199,9 +196,9 @@ func (p *PriceRegistryGRPCServer) GetTokensDecimals(ctx context.Context, req *cc
 	return decimalsPB(decimals), nil
 }
 
-// WithCloseHandler returns a new PriceRegistryGRPCServer with the given onClose handler.
-func (p *PriceRegistryGRPCServer) WithCloseHandler(onClose func() error) *PriceRegistryGRPCServer {
-	p.onClose = append(p.onClose, onClose)
+// WithCloser returns a new PriceRegistryGRPCServer with the given onClose handler.
+func (p *PriceRegistryGRPCServer) WithCloser(dep io.Closer) *PriceRegistryGRPCServer {
+	p.deps = append(p.deps, dep)
 	return p
 }
 

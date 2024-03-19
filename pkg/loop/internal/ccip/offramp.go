@@ -2,8 +2,8 @@ package ccip
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
@@ -49,7 +50,7 @@ type OffRampReaderGRPCServer struct {
 
 	// must support multiple close handlers because the offramp reader server needs to serve the gas estimator server,
 	// which needs to be close when the offramp reader server is closed, as well as the offramp reader server itself
-	onClose []func() error
+	deps []io.Closer
 }
 
 func NewOffRampReaderGRPCServer(impl cciptypes.OffRampReader, brokerExt *net.BrokerExt) (*OffRampReaderGRPCServer, error) {
@@ -68,13 +69,13 @@ func NewOffRampReaderGRPCServer(impl cciptypes.OffRampReader, brokerExt *net.Bro
 		return nil, err
 	}
 
-	var toClose []func() error
-	toClose = append(toClose, impl.Close, spawnedServer.Close)
+	var toClose []io.Closer
+	toClose = append(toClose, impl, spawnedServer)
 	return &OffRampReaderGRPCServer{
 		impl:                 impl,
 		gasEstimatorServerID: estimatorID,
 		b:                    brokerExt,
-		onClose:              toClose}, nil
+		deps:                 toClose}, nil
 }
 
 // ensure the types are satisfied
@@ -279,14 +280,7 @@ func (o *OffRampReaderGRPCServer) ChangeConfig(ctx context.Context, req *ccippb.
 
 // Close implements ccippb.OffRampReaderServer.
 func (o *OffRampReaderGRPCServer) Close(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
-	closeAll := func() error {
-		var err error
-		for _, f := range o.onClose {
-			err = errors.Join(err, f())
-		}
-		return err
-	}
-	return &emptypb.Empty{}, closeAll()
+	return &emptypb.Empty{}, services.MultiCloser(o.deps).Close()
 }
 
 // CurrentRateLimiterState implements ccippb.OffRampReaderServer.
@@ -410,8 +404,9 @@ func (o *OffRampReaderGRPCServer) OnchainConfig(ctx context.Context, req *emptyp
 	return &ccippb.OnchainConfigResponse{Config: &pbConfig}, nil
 }
 
-func (o *OffRampReaderGRPCServer) WithCloseHandler(handler func() error) *OffRampReaderGRPCServer {
-	o.onClose = append(o.onClose, handler)
+// WithCloser adds a closer to the list of dependencies that will be closed when the server is closed.
+func (o *OffRampReaderGRPCServer) WithCloser(dep io.Closer) *OffRampReaderGRPCServer {
+	o.deps = append(o.deps, dep)
 	return o
 }
 

@@ -51,7 +51,7 @@ func TestOffRampGRPC(t *testing.T) {
 	testServer := grpc.NewServer()
 	// handle client close and server stop
 	shutdown := make(chan struct{})
-	shutdownCallback := func() error { close(shutdown); return nil }
+	closer := &serviceCloser{closeFn: func() error { close(shutdown); return nil }}
 	lggr := logger.Test(t)
 	broker := &loopnettest.Broker{T: t}
 	brokerExt := &loopnet.BrokerExt{
@@ -60,7 +60,7 @@ func TestOffRampGRPC(t *testing.T) {
 	}
 	offRamp, err := ccip.NewOffRampReaderGRPCServer(OffRampReader, brokerExt)
 	require.NoError(t, err)
-	offRamp = offRamp.WithCloseHandler(shutdownCallback)
+	offRamp = offRamp.WithCloser(closer)
 
 	ccippb.RegisterOffRampReaderServer(testServer, offRamp)
 	// start the server and shutdown handler
@@ -92,6 +92,12 @@ func TestOffRampGRPC(t *testing.T) {
 	require.NoError(t, cerr, "failed to close client %T, %v", cerr, status.Code(cerr))
 	wg.Wait()
 }
+
+type serviceCloser struct {
+	closeFn func() error
+}
+
+func (s *serviceCloser) Close() error { return s.closeFn() }
 
 // roundTripOffRampTests tests the round trip of the client<->server.
 // it should exercise all the methods of the client.

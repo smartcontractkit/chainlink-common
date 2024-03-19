@@ -5,23 +5,27 @@ import (
 	"math"
 	"time"
 
+	"github.com/smartcontractkit/libocr/commontypes"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/libocr/commontypes"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
 type reportingPluginFactoryClient struct {
-	*BrokerExt
+	*net.BrokerExt
 	*ServiceClient
 	grpc pb.ReportingPluginFactoryClient
 }
 
-func newReportingPluginFactoryClient(b *BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
-	return &reportingPluginFactoryClient{b.WithName("ReportingPluginProviderClient"), NewServiceClient(b, cc), pb.NewReportingPluginFactoryClient(cc)}
+func newReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
+	return &reportingPluginFactoryClient{
+		BrokerExt:     b.WithName("ReportingPluginProviderClient"),
+		ServiceClient: NewServiceClient(b, cc),
+		grpc:          pb.NewReportingPluginFactoryClient(cc),
+	}
 }
 
 func (r *reportingPluginFactoryClient) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
@@ -66,12 +70,12 @@ var _ pb.ReportingPluginFactoryServer = (*reportingPluginFactoryServer)(nil)
 type reportingPluginFactoryServer struct {
 	pb.UnimplementedReportingPluginFactoryServer
 
-	*BrokerExt
+	*net.BrokerExt
 
 	impl libocr.ReportingPluginFactory
 }
 
-func newReportingPluginFactoryServer(impl libocr.ReportingPluginFactory, b *BrokerExt) *reportingPluginFactoryServer {
+func newReportingPluginFactoryServer(impl libocr.ReportingPluginFactory, b *net.BrokerExt) *reportingPluginFactoryServer {
 	return &reportingPluginFactoryServer{impl: impl, BrokerExt: b.WithName("ReportingPluginFactoryServer")}
 }
 
@@ -102,7 +106,7 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 	const name = "ReportingPlugin"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp})
-	}, Resource{rp, name})
+	}, net.Resource{Closer: rp, Name: name})
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +125,11 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 var _ libocr.ReportingPlugin = (*reportingPluginClient)(nil)
 
 type reportingPluginClient struct {
-	*BrokerExt
+	*net.BrokerExt
 	grpc pb.ReportingPluginClient
 }
 
-func newReportingPluginClient(b *BrokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
+func newReportingPluginClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
 	return &reportingPluginClient{b.WithName("ReportingPluginClient"), pb.NewReportingPluginClient(cc)}
 }
 
@@ -187,7 +191,6 @@ func (r *reportingPluginClient) ShouldTransmitAcceptedReport(ctx context.Context
 func (r *reportingPluginClient) Close() error {
 	ctx, cancel := r.StopCtx()
 	defer cancel()
-
 	_, err := r.grpc.Close(ctx, &emptypb.Empty{})
 	return err
 }

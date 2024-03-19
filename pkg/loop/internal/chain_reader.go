@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/fxamacker/cbor/v2"
 	jsonv2 "github.com/go-json-experiment/json"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/fxamacker/cbor/v2"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -21,24 +21,24 @@ import (
 var _ types.ChainReader = (*chainReaderClient)(nil)
 
 // NewChainReaderTestClient is a test client for [types.ChainReader]
-// internal users should instantiate a client directly and set all private fields
+// internal users should instantiate a client directly and set all private fields.
 func NewChainReaderTestClient(conn *grpc.ClientConn) types.ChainReader {
 	return &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
 }
 
 type chainReaderClient struct {
-	*BrokerExt
+	*net.BrokerExt
 	grpc pb.ChainReaderClient
 }
 
-// enum of all known encoding formats for versioned data
+// enum of all known encoding formats for versioned data.
 const (
 	JSONEncodingVersion1 = iota
 	JSONEncodingVersion2
 	CBOREncodingVersion
 )
 
-// Version to be used for encoding (version used for decoding is determined by data received)
+// Version to be used for encoding (version used for decoding is determined by data received).
 const CurrentEncodingVersion = CBOREncodingVersion
 
 func EncodeVersionedBytes(data any, version uint32) (*pb.VersionedBytes, error) {
@@ -108,7 +108,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 
 	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams})
 	if err != nil {
-		return wrapRPCErr(err)
+		return net.WrapRPCErr(err)
 	}
 
 	return DecodeVersionedBytes(retVal, reply.RetVal)
@@ -208,7 +208,7 @@ func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundCont
 		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
 	}
 	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
-	return wrapRPCErr(err)
+	return net.WrapRPCErr(err)
 }
 
 var _ pb.ChainReaderServer = (*chainReaderServer)(nil)

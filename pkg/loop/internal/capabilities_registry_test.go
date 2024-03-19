@@ -12,6 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -96,7 +97,7 @@ type mockTargetCapability struct {
 
 type testRegistryPlugin struct {
 	plugin.NetRPCUnsupportedPlugin
-	brokerExt *BrokerExt
+	brokerExt *net.BrokerExt
 	impl      *mocks.CapabilitiesRegistry
 }
 
@@ -129,8 +130,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		map[string]plugin.Plugin{
 			pluginName: &testRegistryPlugin{
 				impl: reg,
-				brokerExt: &BrokerExt{
-					BrokerConfig: BrokerConfig{
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
 						StopCh: stopCh,
 						Logger: logger,
 					},
@@ -148,7 +149,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	rc, ok := regClient.(*capabilitiesRegistryClient)
 	require.True(t, ok)
 
-	//No capabilities in register
+	// No capabilities in register
 	reg.On("Get", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.Get(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
@@ -174,7 +175,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, list, 0)
 
-	//Add capability Trigger
+	// Add capability Trigger
 	triggerInfo := capabilities.CapabilityInfo{
 		ID:             "trigger-1",
 		CapabilityType: capabilities.CapabilityTypeTrigger,
@@ -195,10 +196,10 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	triggerCap, err := rc.GetTrigger(tests.Context(t), "trigger-1")
 	require.NoError(t, err)
 
-	//Test trigger Info()
+	// Test trigger Info()
 	testCapabilityInfo(t, triggerInfo, triggerCap)
 
-	//Test TriggerExecutable
+	// Test TriggerExecutable
 	err = triggerCap.RegisterTrigger(tests.Context(t), callbackChan, capabilities.CapabilityRequest{
 		Inputs: &values.Map{},
 		Config: &values.Map{},
@@ -215,7 +216,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, testTrigger.callback)
 
-	//Add capability Trigger
+	// Add capability Trigger
 	actionInfo := capabilities.CapabilityInfo{
 		ID:             "action-1",
 		CapabilityType: capabilities.CapabilityTypeAction,
@@ -232,7 +233,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	testCapabilityInfo(t, actionInfo, actionCap)
 
-	//Test Executable
+	// Test Executable
 	workflowRequest := capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
 			WorkflowID: "workflow-ID",
@@ -248,7 +249,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, testAction.registeredWorkflowRequest)
 
-	//Add capability Consensus
+	// Add capability Consensus
 	consensusInfo := capabilities.CapabilityInfo{
 		ID:             "consensus-1",
 		CapabilityType: capabilities.CapabilityTypeConsensus,
@@ -265,7 +266,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	testCapabilityInfo(t, consensusInfo, consensusCap)
 
-	//Add capability Target
+	// Add capability Target
 	targetInfo := capabilities.CapabilityInfo{
 		ID:             "target-1",
 		CapabilityType: capabilities.CapabilityTypeTarget,

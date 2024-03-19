@@ -10,6 +10,7 @@ service ReportingPluginService {
 }
 
 message ValidationServiceRequest {
+//Add services as needed
 }
 
 message ValidationServiceResponse {

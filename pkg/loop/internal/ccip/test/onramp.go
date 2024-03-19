@@ -81,9 +81,12 @@ type OnRampEvaluator interface {
 var _ OnRampEvaluator = staticOnRamp{}
 
 type staticOnRampConfig struct {
-	addressResponse ccip.Address
-	routerResponse  ccip.Address
-	configResponse  ccip.OnRampDynamicConfig
+	addressResponse              ccip.Address
+	routerResponse               ccip.Address
+	configResponse               ccip.OnRampDynamicConfig
+	isSourceChainHealthyResponse bool
+	isSourceCursedResponse       bool
+	sourcePriceRegistryResponse  ccip.Address
 	getSendRequestsBetweenSeqNums
 	getSendRequestsBetweenSeqNumsResponse
 }
@@ -156,6 +159,18 @@ func (s staticOnRamp) GetSendRequestsBetweenSeqNums(ctx context.Context, seqNumM
 // RouterAddress implements OnRampEvaluator.
 func (s staticOnRamp) RouterAddress() (ccip.Address, error) {
 	return s.routerResponse, nil
+}
+
+func (s staticOnRamp) IsSourceChainHealthy(ctx context.Context) (bool, error) {
+	return s.isSourceChainHealthyResponse, nil
+}
+
+func (s staticOnRamp) IsSourceCursed(ctx context.Context) (bool, error) {
+	return s.isSourceCursedResponse, nil
+}
+
+func (s staticOnRamp) SourcePriceRegistryAddress(ctx context.Context) (ccip.Address, error) {
+	return s.sourcePriceRegistryResponse, nil
 }
 
 type getSendRequestsBetweenSeqNums struct {

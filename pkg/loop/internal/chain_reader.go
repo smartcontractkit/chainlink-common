@@ -577,7 +577,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (types.Expression, 
 			}
 			expressions = append(expressions, convertedExpression)
 		}
-		return types.NewBooleanExpression(types.BooleanOperator(pbEvaluatedExpr.BooleanExpression.BooleanOperator), expressions)
+		return types.NewBooleanExpression(types.BooleanOperator(pbEvaluatedExpr.BooleanExpression.BooleanOperator), expressions...), nil
 	case *pb.Expression_Primitive:
 		switch primitive := pbEvaluatedExpr.Primitive.Comparator.(type) {
 		case *pb.Primitive_AddressFilter:

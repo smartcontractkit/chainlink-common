@@ -128,17 +128,15 @@ func generateQueryFilterTestCases(t *testing.T) []types.QueryFilter {
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	andOverPrimitivesBoolExpr, err := types.NewBooleanExpression(types.AND, primitives)
-	require.NoError(t, err)
-	orOverPrimitivesBoolExpr, err := types.NewBooleanExpression(types.AND, primitives)
-	require.NoError(t, err)
+	andOverPrimitivesBoolExpr := types.NewBooleanExpression(types.AND, primitives...)
+	orOverPrimitivesBoolExpr := types.NewBooleanExpression(types.AND, primitives...)
 
-	nestedBoolExpr, err := types.NewBooleanExpression(types.AND, []types.Expression{
+	nestedBoolExpr := types.NewBooleanExpression(types.AND,
 		types.NewTxHashPrimitive("txHash"),
 		andOverPrimitivesBoolExpr,
 		orOverPrimitivesBoolExpr,
 		types.NewTxHashPrimitive("txHash"),
-	})
+	)
 	require.NoError(t, err)
 
 	qf, err = types.Where(andOverPrimitivesBoolExpr)

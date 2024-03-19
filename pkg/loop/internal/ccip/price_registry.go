@@ -37,11 +37,11 @@ type PriceRegistryGRPCServer struct {
 	ccippb.UnimplementedPriceRegistryReaderServer
 
 	impl    cciptypes.PriceRegistryReader
-	onClose func() error
+	onClose []func() error
 }
 
 func NewPriceRegistryGRPCServer(impl cciptypes.PriceRegistryReader) *PriceRegistryGRPCServer {
-	return &PriceRegistryGRPCServer{impl: impl, onClose: emptyCloser}
+	return &PriceRegistryGRPCServer{impl: impl, onClose: []func() error{impl.Close}}
 }
 
 // ensure the types are satisfied
@@ -60,8 +60,8 @@ func (p *PriceRegistryGRPCClient) Address(ctx context.Context) (cciptypes.Addres
 }
 
 // Close implements ccip.PriceRegistryReader.
-func (p *PriceRegistryGRPCClient) Close(ctx context.Context) error {
-	_, err := p.grpc.Close(ctx, &emptypb.Empty{})
+func (p *PriceRegistryGRPCClient) Close() error {
+	_, err := p.grpc.Close(context.Background(), &emptypb.Empty{})
 	// due to the onClose handler in the server, it may shutdown before it sends a response to client
 	// in that case, we expect the client to receive an Unavailable or Internal error
 	if status.Code(err) == codes.Unavailable || status.Code(err) == codes.Internal {
@@ -138,7 +138,11 @@ func (p *PriceRegistryGRPCClient) GetTokensDecimals(ctx context.Context, tokenAd
 
 // Close implements ccippb.PriceRegistryReaderServer.
 func (p *PriceRegistryGRPCServer) Close(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
-	return nil, errors.Join(p.impl.Close(ctx), p.onClose())
+	var err error
+	for _, f := range p.onClose {
+		err = errors.Join(err, f())
+	}
+	return nil, err
 }
 
 // GetAddress implements ccippb.PriceRegistryReaderServer.
@@ -197,7 +201,7 @@ func (p *PriceRegistryGRPCServer) GetTokensDecimals(ctx context.Context, req *cc
 
 // WithCloseHandler returns a new PriceRegistryGRPCServer with the given onClose handler.
 func (p *PriceRegistryGRPCServer) WithCloseHandler(onClose func() error) *PriceRegistryGRPCServer {
-	p.onClose = onClose
+	p.onClose = append(p.onClose, onClose)
 	return p
 }
 

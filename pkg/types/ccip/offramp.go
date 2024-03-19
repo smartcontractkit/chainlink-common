@@ -44,7 +44,7 @@ type OffRampReader interface {
 
 	GetTokens(ctx context.Context) (OffRampTokens, error)
 
-	Close(ctx context.Context) error
+	Close() error
 }
 
 type ExecReport struct {

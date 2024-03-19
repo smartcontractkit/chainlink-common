@@ -69,7 +69,7 @@ func NewOffRampReaderGRPCServer(impl cciptypes.OffRampReader, brokerExt *net.Bro
 	}
 
 	var toClose []func() error
-	toClose = append(toClose, spawnedServer.Close)
+	toClose = append(toClose, impl.Close, spawnedServer.Close)
 	return &OffRampReaderGRPCServer{
 		impl:                 impl,
 		gasEstimatorServerID: estimatorID,
@@ -103,8 +103,8 @@ func (o *OffRampReaderGRPCClient) ChangeConfig(ctx context.Context, onchainConfi
 	return cciptypes.Address(resp.OnchainConfigAddress), cciptypes.Address(resp.OffchainConfigAddress), nil
 }
 
-func (o *OffRampReaderGRPCClient) Close(ctx context.Context) error {
-	_, err := o.client.Close(ctx, &emptypb.Empty{})
+func (o *OffRampReaderGRPCClient) Close() error {
+	_, err := o.client.Close(context.Background(), &emptypb.Empty{})
 	// due to the onClose handler in the server, it may shutdown before it sends a response to client
 	// in that case, we expect the client to receive an Unavailable or Internal error
 	if status.Code(err) == codes.Unavailable || status.Code(err) == codes.Internal {
@@ -286,7 +286,7 @@ func (o *OffRampReaderGRPCServer) Close(ctx context.Context, req *emptypb.Empty)
 		}
 		return err
 	}
-	return &emptypb.Empty{}, errors.Join(o.impl.Close(ctx), closeAll())
+	return &emptypb.Empty{}, closeAll()
 }
 
 // CurrentRateLimiterState implements ccippb.OffRampReaderServer.

@@ -86,5 +86,4 @@ func Test_byte32Slice(t *testing.T) {
 			t.Errorf("byte32SlicePB() = %v, want %v", got, expected)
 		}
 	})
-
 }

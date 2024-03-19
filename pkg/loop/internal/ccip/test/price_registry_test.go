@@ -75,7 +75,7 @@ func TestPriceRegistryGRPC(t *testing.T) {
 	// closing the client executes the shutdown callback
 	// which stops the server.  the wg.Wait() below ensures
 	// that the server has stopped, which is what we care about.
-	cerr := client.Close(ctx)
+	cerr := client.Close()
 	require.NoError(t, cerr, "failed to close client %T, %v", cerr, status.Code(cerr))
 	wg.Wait()
 }

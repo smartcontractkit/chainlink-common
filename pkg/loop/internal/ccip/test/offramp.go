@@ -212,7 +212,7 @@ func (s staticOffRamp) ChangeConfig(ctx context.Context, onchainConfig []byte, o
 	return s.onchainConfigDigest, s.offchainConfigDigest, nil
 }
 
-func (s staticOffRamp) Close(ctx context.Context) error {
+func (s staticOffRamp) Close() error {
 	return nil
 }
 

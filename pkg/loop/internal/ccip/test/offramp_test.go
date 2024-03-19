@@ -88,7 +88,7 @@ func TestOffRampGRPC(t *testing.T) {
 	// closing the client executes the shutdown callback
 	// which stops the server.  the wg.Wait() below ensures
 	// that the server has stopped, which is what we care about.
-	cerr := client.Close(ctx)
+	cerr := client.Close()
 	require.NoError(t, cerr, "failed to close client %T, %v", cerr, status.Code(cerr))
 	wg.Wait()
 }
@@ -179,7 +179,6 @@ func roundTripOffRampTests(ctx context.Context, t *testing.T, client *ccip.OffRa
 		if !reflect.DeepEqual(OffRampReader.getExecutionStateChangesBetweenSeqNumsResponse.executionStateChangedWithTxMeta, state) {
 			t.Errorf("expected %v, got %v", OffRampReader.getExecutionStateChangesBetweenSeqNumsResponse, state)
 		}
-		//assert.Equal(t, OffRampReader.getExecutionStateChangesBetweenSeqNumsResponse, state)
 	})
 
 	t.Run("GetSenderNonce", func(t *testing.T) {

@@ -196,7 +196,7 @@ type BooleanExpression struct {
 	BooleanOperator
 }
 
-func NewBooleanExpression(operator BooleanOperator, expressions []Expression) Expression {
+func NewBooleanExpression(operator BooleanOperator, expressions ...Expression) Expression {
 	return Expression{
 		BooleanExpression: BooleanExpression{Expressions: expressions, BooleanOperator: operator},
 	}

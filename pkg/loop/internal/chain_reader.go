@@ -127,7 +127,7 @@ func (c *chainReaderClient) QueryKey(ctx context.Context, key string, queryFilte
 
 	pbSequences, err := c.grpc.QueryKey(ctx, &pb.QueryKeyRequest{Key: key, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
-		return nil, wrapRPCErr(err)
+		return nil, net.WrapRPCErr(err)
 	}
 
 	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
@@ -150,7 +150,7 @@ func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, querie
 
 	pbSequencesMatrix, err := c.grpc.QueryKeys(ctx, &pb.QueryKeysRequest{Keys: keys, QueriesFilters: pbQueriesFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
-		return nil, wrapRPCErr(err)
+		return nil, net.WrapRPCErr(err)
 	}
 
 	return convertSequencesMatrixFromProto(pbSequencesMatrix.Sequences, sequenceDataTypes)
@@ -169,7 +169,7 @@ func (c *chainReaderClient) QueryKeyByValues(ctx context.Context, key string, va
 
 	pbSequences, err := c.grpc.QueryKeyByValues(ctx, &pb.QueryKeyByValuesRequest{Key: key, KeyValues: &pb.KeyValues{Values: values}, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
-		return nil, wrapRPCErr(err)
+		return nil, net.WrapRPCErr(err)
 	}
 
 	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
@@ -186,7 +186,7 @@ func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string
 	}
 	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
 	if err != nil {
-		return nil, wrapRPCErr(err)
+		return nil, err
 	}
 
 	var pbKeyValues []*pb.KeyValues
@@ -196,7 +196,7 @@ func (c *chainReaderClient) QueryKeysByValues(ctx context.Context, keys []string
 
 	pbSequencesMatrix, err := c.grpc.QueryKeysByValues(ctx, &pb.QueryKeysByValuesRequest{Keys: keys, KeysValues: pbKeyValues, QueriesFilters: pbQueriesFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
-		return nil, wrapRPCErr(err)
+		return nil, net.WrapRPCErr(err)
 	}
 
 	return convertSequencesMatrixFromProto(pbSequencesMatrix.Sequences, sequenceDataTypes)
@@ -538,8 +538,12 @@ func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (
 
 		pbSequence := &pb.Sequence{
 			SequenceCursor: sequence.SequenceCursor,
-			Timestamp:      sequence.Timestamp,
-			Data:           versionedSequenceDataType,
+			Head: &pb.Head{
+				Number:    sequence.Number,
+				Hash:      sequence.Hash,
+				Timestamp: sequence.Timestamp,
+			},
+			Data: versionedSequenceDataType,
 		}
 		pbSequences = append(pbSequences, pbSequence)
 	}
@@ -631,8 +635,12 @@ func convertSequencesFromProto(pbSequences *pb.Sequences, sequenceDataType any) 
 
 		sequence := types.Sequence{
 			SequenceCursor: pbSequence.SequenceCursor,
-			Timestamp:      pbSequence.Timestamp,
-			Data:           data,
+			Head: types.Head{
+				Number:    pbSequence.Head.Number,
+				Hash:      pbSequence.Head.Hash,
+				Timestamp: pbSequence.Head.Timestamp,
+			},
+			Data: data,
 		}
 		sequences = append(sequences, sequence)
 	}

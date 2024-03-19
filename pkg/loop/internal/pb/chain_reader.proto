@@ -16,14 +16,6 @@ service ChainReader {
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
-message AndFilter {
-  repeated QueryFilter filters = 1;
-}
-
-message OrFilter {
-  repeated QueryFilter filters = 1;
-}
-
 message AddressFilter {
   repeated string addresses = 1;
 }
@@ -36,6 +28,12 @@ message Values {
   repeated string values = 1;
 }
 
+// Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].
+message Head {
+  uint64 number = 1;
+  bytes hash = 2;
+  uint64 timestamp = 3;
+}
 
 enum Confirmations {
   Finalized   = 0;
@@ -190,7 +188,7 @@ message GetLatestValueReply {
 
 message Sequence {
   string sequence_cursor = 1;
-  uint64 timestamp = 2;
+  Head head = 2;
   VersionedBytes data = 3;
 }
 

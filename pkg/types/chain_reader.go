@@ -69,13 +69,20 @@ type BoundContract struct {
 	Pending bool
 }
 
+// Head is a duplicate from chain agnostic head tracker used in mercury.ChainReader.
+// To be merged with standard Chain Reader.
+type Head struct {
+	Number    uint64
+	Hash      []byte
+	Timestamp uint64
+}
+
 type Sequence struct {
 	// TODO SequenceCursor, this should be a unique sequence identifier that chain reader impl. understands.
 	// This way we can retrieve past/future sequences (EVM log events) very granularly but still hiding the chain detail.
 	SequenceCursor string
-	Timestamp      uint64
 	// TODO this is a general chain agnositc Head, it should be moved from mercury package.
-	//mercury.Head
+	Head
 	Data any
 }
 

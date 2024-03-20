@@ -11,8 +11,10 @@ service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
   rpc QueryKey (QueryKeyRequest) returns (QueryKeyReply) {}
   rpc QueryKeys (QueryKeysRequest) returns (QueryKeysReply) {}
-  rpc QueryKeyByValues (QueryKeyByValuesRequest) returns (QueryKeyByValuesReply) {}
-  rpc QueryKeysByValues (QueryKeysByValuesRequest) returns (QueryKeysByValuesReply) {}
+  rpc QueryKeyByValuesIn (QueryKeyByValuesInRequest) returns (QueryKeyByValuesInReply) {}
+  rpc QueryKeysByValuesIn (QueryKeysByValuesInRequest) returns (QueryKeysByValuesInReply) {}
+  rpc QueryKeyByEquality (QueryKeyByEqualityRequest) returns (QueryKeyByEqualityReply) {}
+  rpc QueryKeysByEquality (QueryKeysByEqualityRequest) returns (QueryKeysByEqualityReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
@@ -144,6 +146,28 @@ message Or {
   repeated Expression a = 1;
 }
 
+message KeyValueIn{
+  string key = 1;
+  // TODO pass []interface{} here
+  repeated string values = 2;
+}
+
+message ValueEquality {
+  // TODO pass interface{} here
+  string value = 1;
+  ComparisonOperator operator = 2;
+}
+
+message KeyByEquality{
+  string key = 1;
+  ValueEquality value_equality =2;
+}
+
+message KeysByEquality{
+  string key = 1; 
+  repeated ValueEquality values_equality =2;
+}
+
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
 message QueryKeyRequest {
   string key = 1;
@@ -158,20 +182,32 @@ message QueryKeysRequest {
   LimitAndSort limit_and_sort = 3;
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValues].
-message QueryKeyByValuesRequest {
-  string key = 1;
-  KeyValues key_values = 2;
-  QueryFilter query_filter = 3;
-  LimitAndSort limit_and_sort = 4;
+// QueryKeyByValuesInRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValuesIn].
+message QueryKeyByValuesInRequest {
+  KeyValueIn key_values_in = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByValues].
-message QueryKeysByValuesRequest {
-  repeated string keys = 1;
-  repeated KeyValues keys_values = 2;
-  QueryFilter query_filter = 3;
-  LimitAndSort limit_and_sort = 4;
+// QueryKeysByValuesInRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByValuesIn].
+message QueryKeysByValuesInRequest {
+  repeated KeyValueIn keys_values_in = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
+}
+
+// QueryKeyByEqualityRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByEquality].
+message QueryKeyByEqualityRequest {
+  KeyByEquality key_by_equality = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
+}
+
+// QueryKeysByEqualityRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByEquality].
+message QueryKeysByEqualityRequest {
+  repeated KeysByEquality keys_by_equality = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
@@ -206,13 +242,23 @@ message QueryKeysReply {
  repeated Sequences sequences = 1;
 }
 
-// QueryKeyByValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValues].
-message QueryKeyByValuesReply {
+// QueryKeyByValuesInReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByValuesIn].
+message QueryKeyByValuesInReply {
   Sequences sequences = 1;
 }
 
-// QueryKeysByValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByValues].
-message QueryKeysByValuesReply {
+// QueryKeysByValuesInReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByValuesIn].
+message QueryKeysByValuesInReply {
+  repeated Sequences sequences = 1;
+}
+
+// QueryKeyByEqualityReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByEquality].
+message QueryKeyByEqualityReply {
+  Sequences sequences = 1;
+}
+
+// QueryKeysByEqualityReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByEquality].
+message QueryKeysByEqualityReply {
   repeated Sequences sequences = 1;
 }
 

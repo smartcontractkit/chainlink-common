@@ -208,6 +208,15 @@ func (c *CommitStoreGRPCClient) IsBlessed(ctx context.Context, root [32]byte) (b
 	return resp.IsBlessed, nil
 }
 
+// IsDestChainHealthy implements ccip.CommitStoreReader.
+func (c *CommitStoreGRPCClient) IsDestChainHealthy(ctx context.Context) (bool, error) {
+	resp, err := c.client.IsDestChainHealthy(ctx, &emptypb.Empty{})
+	if err != nil {
+		return false, err
+	}
+	return resp.IsHealthy, nil
+}
+
 // IsDown implements ccip.CommitStoreReader.
 func (c *CommitStoreGRPCClient) IsDown(ctx context.Context) (bool, error) {
 	resp, err := c.client.IsDown(ctx, &emptypb.Empty{})
@@ -373,6 +382,15 @@ func (c *CommitStoreGRPCServer) IsBlessed(ctx context.Context, req *ccippb.IsBle
 		return nil, err
 	}
 	return &ccippb.IsBlessedResponse{IsBlessed: blessed}, nil
+}
+
+// IsDestChainHealthy implements ccippb.CommitStoreReaderServer.
+func (c *CommitStoreGRPCServer) IsDestChainHealthy(ctx context.Context, req *emptypb.Empty) (*ccippb.IsDestChainHealthyResponse, error) {
+	healthy, err := c.impl.IsDestChainHealthy(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.IsDestChainHealthyResponse{IsHealthy: healthy}, nil
 }
 
 // IsDown implements ccippb.CommitStoreReaderServer.

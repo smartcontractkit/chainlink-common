@@ -158,6 +158,9 @@ var CommitStoreReader = staticCommitStoreReader{
 		isBlessedRequest:  [32]byte{0: 1, 31: 7},
 		isBlessedResponse: true,
 
+		// is dest chain healthy test data
+		isDestChainHealthyResponse: true,
+
 		// is down test data
 		isDownResponse: true,
 
@@ -458,6 +461,11 @@ func (s staticCommitStoreReader) IsBlessed(ctx context.Context, root [32]byte) (
 	return s.isBlessedResponse, nil
 }
 
+// IsDestChainHealthy implements CommitStoreReaderEvaluator.
+func (s staticCommitStoreReader) IsDestChainHealthy(ctx context.Context) (bool, error) {
+	return s.isDestChainHealthyResponse, nil
+}
+
 // IsDown implements CommitStoreReaderEvaluator.
 func (s staticCommitStoreReader) IsDown(ctx context.Context) (bool, error) {
 	return s.isDownResponse, nil
@@ -502,6 +510,8 @@ type staticCommitStoreReaderConfig struct {
 
 	isBlessedRequest  [32]byte
 	isBlessedResponse bool
+
+	isDestChainHealthyResponse bool
 
 	isDownResponse bool
 

@@ -199,6 +199,12 @@ func roundTripCommitStoreTests(ctx context.Context, t *testing.T, client *ccip.C
 		assert.Equal(t, CommitStoreReader.isBlessedResponse, got)
 	})
 
+	t.Run("IsDestChainHealthy", func(t *testing.T) {
+		got, err := client.IsDestChainHealthy(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, CommitStoreReader.isDestChainHealthyResponse, got)
+	})
+
 	t.Run("IsDown", func(t *testing.T) {
 		got, err := client.IsDown(ctx)
 		require.NoError(t, err)

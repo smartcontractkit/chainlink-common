@@ -253,10 +253,10 @@ type staticCommitStoreReader struct {
 
 // ChangeConfig implements CommitStoreReaderEvaluator.
 func (s staticCommitStoreReader) ChangeConfig(ctx context.Context, onchainConfig []byte, offchainConfig []byte) (ccip.Address, error) {
-	if bytes.Compare(onchainConfig, s.changeConfigRequest.onchainConfig) != 0 {
+	if !bytes.Equal(onchainConfig, s.changeConfigRequest.onchainConfig) {
 		return ccip.Address(""), fmt.Errorf("change config expected onchain config %v, got %v", s.changeConfigRequest.onchainConfig, onchainConfig)
 	}
-	if bytes.Compare(offchainConfig, s.changeConfigRequest.offchainConfig) != 0 {
+	if !bytes.Equal(offchainConfig, s.changeConfigRequest.offchainConfig) {
 		return ccip.Address(""), fmt.Errorf("change config expected offchain config %v, got %v", s.changeConfigRequest.offchainConfig, offchainConfig)
 	}
 	return s.changeConfigResponse, nil
@@ -269,7 +269,7 @@ func (s staticCommitStoreReader) Close() error {
 
 // DecodeCommitReport implements CommitStoreReaderEvaluator.
 func (s staticCommitStoreReader) DecodeCommitReport(ctx context.Context, report []byte) (ccip.CommitStoreReport, error) {
-	if bytes.Compare(report, s.decodeCommitReportRequest) != 0 {
+	if !bytes.Equal(report, s.decodeCommitReportRequest) {
 		return ccip.CommitStoreReport{}, fmt.Errorf("decode commit report expected %v, got %v", s.decodeCommitReportRequest, report)
 	}
 	return s.decodeCommitReportResponse, nil
@@ -308,7 +308,7 @@ func (s staticCommitStoreReader) Evaluate(ctx context.Context, other ccip.Commit
 	if err != nil {
 		return fmt.Errorf("failed to call other.EncodeCommitReport: %w", err)
 	}
-	if bytes.Compare(s.decodeCommitReportRequest, gotEncodedCommit) != 0 {
+	if !bytes.Equal(s.decodeCommitReportRequest, gotEncodedCommit) {
 		return fmt.Errorf("encode commit expected %v, got %v", s.decodeCommitReportRequest, gotEncodedCommit)
 	}
 

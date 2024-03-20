@@ -158,12 +158,7 @@ message ValueEquality {
   ComparisonOperator operator = 2;
 }
 
-message KeyByEquality{
-  string key = 1;
-  ValueEquality value_equality =2;
-}
-
-message KeysByEquality{
+message KeyValuesByEquality{
   string key = 1; 
   repeated ValueEquality values_equality =2;
 }
@@ -198,14 +193,14 @@ message QueryKeysByValuesInRequest {
 
 // QueryKeyByEqualityRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeyByEquality].
 message QueryKeyByEqualityRequest {
-  KeyByEquality key_by_equality = 1;
+  KeyValuesByEquality key_values_by_equality = 1;
   QueryFilter query_filter = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
 // QueryKeysByEqualityRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeysByEquality].
 message QueryKeysByEqualityRequest {
-  repeated KeysByEquality keys_by_equality = 1;
+  repeated KeyValuesByEquality keys_values_by_equality = 1;
   QueryFilter query_filter = 2;
   LimitAndSort limit_and_sort = 3;
 }

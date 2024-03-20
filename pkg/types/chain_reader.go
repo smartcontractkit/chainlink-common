@@ -53,8 +53,8 @@ type ChainReader interface {
 	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 	QueryByKeyValuesIn(ctx context.Context, keyValueIn KeyValueIn, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
 	QueryByKeysValuesIn(ctx context.Context, keysValuesIn []KeyValueIn, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
-	QueryByKeyValueEquality(ctx context.Context, keyByEquality KeyByEquality, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	QueryByKeysValuesEquality(ctx context.Context, keysByEquality []KeysByEquality, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
+	QueryByKeyValueEquality(ctx context.Context, KeyValuesByEquality KeyValuesByEquality, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryByKeysValuesEquality(ctx context.Context, KeysValuesByEquality []KeyValuesByEquality, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 
 	// TODO make EVM words map to a key and then do this through the QueryByEquality methods.
 	// GetCommitReportMatchingSeqNum()
@@ -67,14 +67,9 @@ type ValueEquality struct {
 	Operator ComparisonOperator
 }
 
-type KeysByEquality struct {
+type KeyValuesByEquality struct {
 	Key              string
 	ValuesEqualities []ValueEquality
-}
-
-type KeyByEquality struct {
-	Key           string
-	ValueEquality ValueEquality
 }
 
 type KeyValueIn struct {

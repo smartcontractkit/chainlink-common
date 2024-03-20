@@ -154,7 +154,7 @@ message QueryKeyRequest {
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
 message QueryKeysRequest {
   repeated string keys = 1;
-  repeated QueryFilter queries_filters = 2;
+  QueryFilter query_filter = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
@@ -170,7 +170,7 @@ message QueryKeyByValuesRequest {
 message QueryKeysByValuesRequest {
   repeated string keys = 1;
   repeated KeyValues keys_values = 2;
-  repeated QueryFilter queries_filters = 3;
+  QueryFilter query_filter = 3;
   LimitAndSort limit_and_sort = 4;
 }
 

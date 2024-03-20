@@ -50,14 +50,9 @@ type ChainReader interface {
 	// UnBindByKey() or UnBindByKey(ctx context.Context, key, address string)
 
 	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	// TODO seems like querying for multiple keys(Log events...) is always done with same filters. This means that we probably don't have
-	// TODO to allow queryFilter per key. Change this.
-	QueryKeys(ctx context.Context, keys []string, queryFilter []QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
+	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 	QueryKeyByValues(ctx context.Context, key string, values []string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
-
-	// TODO seems like querying for multiple keys(Log events...) is always done with same filters. This means that we probably don't have
-	// TODO to allow queryFilter per key. Change this.
-	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter []QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
+	QueryKeysByValues(ctx context.Context, keys []string, values [][]string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 
 	// TODO define querying over a range of values. Do we have to define common type that forces comparability and pass that into here?
 	// QueryKeyOverValues(ctx context.Context, keys []string, valuesRanges ??, queryFilter []QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)

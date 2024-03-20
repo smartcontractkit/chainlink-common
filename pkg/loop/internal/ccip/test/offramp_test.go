@@ -119,8 +119,8 @@ func roundTripOffRampTests(ctx context.Context, t *testing.T, client *ccip.OffRa
 	t.Run("DecodeExecutionReport", func(t *testing.T) {
 		report, err := client.DecodeExecutionReport(ctx, OffRampReader.decodeExecutionReportRequest)
 		require.NoError(t, err)
-		if !reflect.DeepEqual(OffRampReader.decodeExecutionReportResponse.Messages, report.Messages) {
-			t.Errorf("expected messages %v, got %v", OffRampReader.decodeExecutionReportResponse.Messages, report.Messages)
+		if !reflect.DeepEqual(OffRampReader.decodeExecutionReportResponse, report) {
+			t.Errorf("expected messages %v, got %v", OffRampReader.decodeExecutionReportResponse, report)
 		}
 	})
 

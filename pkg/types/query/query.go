@@ -80,9 +80,15 @@ type BoolExpression struct {
 	BoolOperator
 }
 
-func NewBoolExpression(operator BoolOperator, expressions ...Expression) Expression {
+func NewAndBoolExpression(expressions ...Expression) Expression {
 	return Expression{
-		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: operator},
+		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: AND},
+	}
+}
+
+func NewOrBoolExpression(expressions ...Expression) Expression {
+	return Expression{
+		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: OR},
 	}
 }
 
@@ -175,14 +181,14 @@ func (f *TxHashPrimitive) Accept(visitor Visitor) {
 // queryFilter, err := Where(
 //
 //		NewTxHashPrimitive("0xHash"),
-//		NewBoolExpression("OR",
+//		NewOrBoolExpression("OR",
 //			NewBlockPrimitive(startBlock, Gte),
 //			NewBlockPrimitive(endBlock, Lte)),
-//		NewBoolExpression("AND",
-//			NewBoolExpression("OR",
+//		NewOrBoolExpression("AND",
+//			NewOrBoolExpression("OR",
 //				NewTimestampPrimitive(someTs1, Gte),
 //				NewTimestampPrimitive(otherTs1, Lte)),
-//			NewBoolExpression("OR",(endBlock, Lte)),
+//			NewOrBoolExpression("OR",(endBlock, Lte)),
 //				NewTimestampPrimitive(someTs2, Gte),
 //				NewTimestampPrimitive(otherTs2, Lte)))
 //	   )

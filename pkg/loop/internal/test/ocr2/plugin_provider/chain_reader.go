@@ -38,11 +38,11 @@ func (c staticChainReader) QueryKeys(_ context.Context, _ []string, _ query.Filt
 	return nil, nil
 }
 
-func (c staticChainReader) QueryByKeyValuesComparison(_ context.Context, _ query.keyValuesComparator, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (c staticChainReader) QueryByKeyValuesComparison(_ context.Context, _ query.KeyValuesComparator, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (c staticChainReader) QueryByKeysValuesComparison(_ context.Context, _ []query.keyValuesComparator, _ query.Filter, _ query.LimitAndSort, sequenceDataType []any) ([][]types.Sequence, error) {
+func (c staticChainReader) QueryByKeysValuesComparison(_ context.Context, _ []query.KeyValuesComparator, _ query.Filter, _ query.LimitAndSort, _ []any) ([][]types.Sequence, error) {
 	return nil, nil
 }
 

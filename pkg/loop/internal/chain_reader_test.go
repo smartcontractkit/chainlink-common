@@ -129,10 +129,10 @@ func generateQueryFilterTestCases(t *testing.T) []query.Filter {
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	andOverPrimitivesBoolExpr := query.NewBoolExpression(query.AND, primitives...)
-	orOverPrimitivesBoolExpr := query.NewBoolExpression(query.AND, primitives...)
+	andOverPrimitivesBoolExpr := query.NewAndBoolExpression(primitives...)
+	orOverPrimitivesBoolExpr := query.NewOrBoolExpression(primitives...)
 
-	nestedBoolExpr := query.NewBoolExpression(query.AND,
+	nestedBoolExpr := query.NewAndBoolExpression(
 		query.NewTxHashPrimitive("txHash"),
 		andOverPrimitivesBoolExpr,
 		orOverPrimitivesBoolExpr,

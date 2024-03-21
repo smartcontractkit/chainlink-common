@@ -8,6 +8,7 @@ import (
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 )
 
 var (
@@ -29,6 +30,22 @@ type staticChainReader struct {
 	params         map[string]any
 }
 
+func (c staticChainReader) QueryKey(_ context.Context, _ string, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+	return nil, nil
+}
+
+func (c staticChainReader) QueryKeys(_ context.Context, _ []string, _ query.Filter, _ query.LimitAndSort, _ []any) ([][]types.Sequence, error) {
+	return nil, nil
+}
+
+func (c staticChainReader) QueryByKeyValuesComparison(_ context.Context, _ query.keyValuesComparator, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+	return nil, nil
+}
+
+func (c staticChainReader) QueryByKeysValuesComparison(_ context.Context, _ []query.keyValuesComparator, _ query.Filter, _ query.LimitAndSort, sequenceDataType []any) ([][]types.Sequence, error) {
+	return nil, nil
+}
+
 var _ testtypes.Evaluator[types.ChainReader] = staticChainReader{}
 var _ types.ChainReader = staticChainReader{}
 
@@ -36,7 +53,7 @@ func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string, params, returnVal any) error {
+func (c staticChainReader) GetLatestValue(_ context.Context, cn, method string, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(cn, c.contractName) {
 		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, cn)
 	}
@@ -61,22 +78,6 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string
 	(*ret)["ret2"] = c.latestValue["ret2"]
 
 	return nil
-}
-
-func (c staticChainReader) QueryKey(_ context.Context, _ string, _ types.QueryFilter, _ types.LimitAndSort, _ any) ([]types.Sequence, error) {
-	return nil, nil
-}
-
-func (c staticChainReader) QueryKeys(_ context.Context, _ []string, _ types.QueryFilter, _ types.LimitAndSort, _ []any) ([][]types.Sequence, error) {
-	return nil, nil
-}
-
-func (c staticChainReader) QueryKeyByValues(_ context.Context, _ string, _ []string, _ types.QueryFilter, _ types.LimitAndSort, _ any) ([]types.Sequence, error) {
-	return nil, nil
-}
-
-func (c staticChainReader) QueryKeysByValues(_ context.Context, _ []string, _ [][]string, _ types.QueryFilter, _ types.LimitAndSort, _ []any) ([][]types.Sequence, error) {
-	return nil, nil
 }
 
 func (c staticChainReader) Evaluate(ctx context.Context, cr types.ChainReader) error {

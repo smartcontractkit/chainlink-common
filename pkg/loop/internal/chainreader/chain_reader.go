@@ -1,4 +1,4 @@
-package internal
+package chainreader
 
 import (
 	"context"
@@ -15,17 +15,21 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var _ types.ChainReader = (*chainReaderClient)(nil)
+var _ types.ChainReader = (*ChainReaderClient)(nil)
 
 // NewChainReaderTestClient is a test client for [types.ChainReader]
 // internal users should instantiate a client directly and set all private fields.
 func NewChainReaderTestClient(conn *grpc.ClientConn) types.ChainReader {
-	return &chainReaderClient{grpc: pb.NewChainReaderClient(conn)}
+	return &ChainReaderClient{grpc: pb.NewChainReaderClient(conn)}
 }
 
-type chainReaderClient struct {
+type ChainReaderClient struct {
 	*net.BrokerExt
 	grpc pb.ChainReaderClient
+}
+
+func NewChainReaderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ChainReaderClient {
+	return &ChainReaderClient{BrokerExt: b, grpc: pb.NewChainReaderClient(cc)}
 }
 
 // enum of all known encoding formats for versioned data.
@@ -97,7 +101,7 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
-func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
+func (c *ChainReaderClient) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
 	versionedParams, err := EncodeVersionedBytes(params, CurrentEncodingVersion)
 	if err != nil {
 		return err
@@ -111,7 +115,7 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, contractName, me
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundContract) error {
+func (c *ChainReaderClient) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
 		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
@@ -120,18 +124,18 @@ func (c *chainReaderClient) Bind(ctx context.Context, bindings []types.BoundCont
 	return net.WrapRPCErr(err)
 }
 
-var _ pb.ChainReaderServer = (*chainReaderServer)(nil)
+var _ pb.ChainReaderServer = (*ChainReaderServer)(nil)
 
 func NewChainReaderServer(impl types.ChainReader) pb.ChainReaderServer {
-	return &chainReaderServer{impl: impl}
+	return &ChainReaderServer{impl: impl}
 }
 
-type chainReaderServer struct {
+type ChainReaderServer struct {
 	pb.UnimplementedChainReaderServer
 	impl types.ChainReader
 }
 
-func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+func (c *ChainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
 	contractName := request.ContractName
 	params, err := getContractEncodedType(contractName, request.Method, c.impl, true)
 	if err != nil {
@@ -159,7 +163,7 @@ func (c *chainReaderServer) GetLatestValue(ctx context.Context, request *pb.GetL
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }
 
-func (c *chainReaderServer) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
+func (c *ChainReaderServer) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
 	tBindings := make([]types.BoundContract, len(bindings.Bindings))
 	for i, b := range bindings.Bindings {
 		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}

@@ -8,11 +8,14 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
 	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
 	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1"
 	mercury_v2_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v2"
 	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_v1_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1"
@@ -26,18 +29,18 @@ import (
 )
 
 type MercuryAdapterClient struct {
-	*PluginClient
-	*ServiceClient
+	*core.PluginClient
+	*core.ServiceClient
 
 	mercury mercury_pb.MercuryAdapterClient
 }
 
 func NewMercuryAdapterClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *MercuryAdapterClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "MercuryAdapterClient")
-	pc := NewPluginClient(broker, brokerCfg, conn)
+	pc := core.NewPluginClient(broker, brokerCfg, conn)
 	return &MercuryAdapterClient{
 		PluginClient:  pc,
-		ServiceClient: NewServiceClient(pc.BrokerExt, pc),
+		ServiceClient: core.NewServiceClient(pc.BrokerExt, pc),
 		mercury:       mercury_pb.NewMercuryAdapterClient(pc),
 	}
 }
@@ -63,7 +66,7 @@ func (c *MercuryAdapterClient) NewMercuryV1Factory(ctx context.Context,
 			providerID  uint32
 			providerRes net.Resource
 		)
-		if grpcProvider, ok := provider.(GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
 			providerID, providerRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
@@ -114,7 +117,7 @@ func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 			providerID  uint32
 			providerRes net.Resource
 		)
-		if grpcProvider, ok := provider.(GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
 			providerID, providerRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
@@ -146,7 +149,7 @@ func (c *MercuryAdapterClient) NewMercuryV2Factory(ctx context.Context,
 }
 
 func registerCommonServices(s *grpc.Server, provider types.MercuryProvider) {
-	registerPluginProviderServices(s, provider)
+	ocr2.RegisterPluginProviderServices(s, provider)
 	mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
 	mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
 	mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
@@ -174,7 +177,7 @@ func (c *MercuryAdapterClient) NewMercuryV3Factory(ctx context.Context,
 			providerRes net.Resource
 		)
 		// loop mode; proxy to the relayer
-		if grpcProvider, ok := provider.(GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
 			providerID, providerRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			// legacy mode; serve the provider locally in the client process (ie the core node)
@@ -255,7 +258,7 @@ func (ms *mercuryAdapterServer) NewMercuryV1Factory(ctx context.Context, req *me
 	}
 
 	id, _, err := ms.ServeNew("MercuryV1Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -296,7 +299,7 @@ func (ms *mercuryAdapterServer) NewMercuryV2Factory(ctx context.Context, req *me
 	}
 
 	id, _, err := ms.ServeNew("MercuryV2Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -337,7 +340,7 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 	}
 
 	id, _, err := ms.ServeNew("MercuryV3Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -350,11 +353,11 @@ func (ms *mercuryAdapterServer) NewMercuryV3Factory(ctx context.Context, req *me
 var (
 	_ types.MercuryProvider = (*mercuryProviderClient)(nil)
 	// in practice, inherited from pluginProviderClient.
-	_ GRPCClientConn = (*mercuryProviderClient)(nil)
+	_ core.GRPCClientConn = (*mercuryProviderClient)(nil)
 )
 
 type mercuryProviderClient struct {
-	*pluginProviderClient
+	*ocr2.PluginProviderClient
 	reportCodecV3      mercury_v3.ReportCodec
 	reportCodecV2      mercury_v2.ReportCodec
 	reportCodecV1      mercury_v1.ReportCodec
@@ -365,17 +368,17 @@ type mercuryProviderClient struct {
 }
 
 func newMercuryProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *mercuryProviderClient {
-	m := &mercuryProviderClient{pluginProviderClient: newPluginProviderClient(b.WithName("MercuryProviderClient"), cc)}
+	m := &mercuryProviderClient{PluginProviderClient: ocr2.NewPluginProviderClient(b.WithName("MercuryProviderClient"), cc)}
 
-	m.reportCodecV1 = mercury_common_internal.NewReportCodecV1Client(mercury_v1_internal.NewReportCodecClient(m.cc))
-	m.reportCodecV2 = mercury_common_internal.NewReportCodecV2Client(mercury_v2_internal.NewReportCodecClient(m.cc))
-	m.reportCodecV3 = mercury_common_internal.NewReportCodecV3Client(mercury_v3_internal.NewReportCodecClient(m.cc))
+	m.reportCodecV1 = mercury_common_internal.NewReportCodecV1Client(mercury_v1_internal.NewReportCodecClient(cc))
+	m.reportCodecV2 = mercury_common_internal.NewReportCodecV2Client(mercury_v2_internal.NewReportCodecClient(cc))
+	m.reportCodecV3 = mercury_common_internal.NewReportCodecV3Client(mercury_v3_internal.NewReportCodecClient(cc))
 
-	m.onchainConfigCodec = mercury_common_internal.NewOnchainConfigCodecClient(m.cc)
-	m.serverFetcher = mercury_common_internal.NewServerFetcherClient(m.cc)
-	m.mercuryChainReader = mercury_common_internal.NewChainReaderClient(m.cc)
+	m.onchainConfigCodec = mercury_common_internal.NewOnchainConfigCodecClient(cc)
+	m.serverFetcher = mercury_common_internal.NewServerFetcherClient(cc)
+	m.mercuryChainReader = mercury_common_internal.NewChainReaderClient(cc)
 
-	m.chainReader = &chainReaderClient{b, pb.NewChainReaderClient(m.cc)}
+	m.chainReader = chainreader.NewChainReaderClient(b, cc)
 	return m
 }
 

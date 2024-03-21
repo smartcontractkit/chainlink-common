@@ -1,4 +1,4 @@
-package internal_test
+package chainreader_test
 
 import (
 	"errors"

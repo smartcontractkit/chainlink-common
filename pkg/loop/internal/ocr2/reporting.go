@@ -1,4 +1,4 @@
-package internal
+package ocr2
 
 import (
 	"context"
@@ -10,20 +10,21 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
-type reportingPluginFactoryClient struct {
+type ReportingPluginFactoryClient struct {
 	*net.BrokerExt
-	*ServiceClient
+	*core.ServiceClient
 	grpc pb.ReportingPluginFactoryClient
 }
 
-func newReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
-	return &reportingPluginFactoryClient{
+func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ReportingPluginFactoryClient {
+	return &ReportingPluginFactoryClient{
 		BrokerExt:     b.WithName("ReportingPluginProviderClient"),
-		ServiceClient: NewServiceClient(b, cc),
+		ServiceClient: core.NewServiceClient(b, cc),
 		grpc:          pb.NewReportingPluginFactoryClient(cc),
 	}
 }
@@ -62,9 +63,9 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, c
 	return newReportingPluginClient(r.BrokerExt, cc), rpi, nil
 }
 
-var _ pb.ReportingPluginFactoryServer = (*reportingPluginFactoryServer)(nil)
+var _ pb.ReportingPluginFactoryServer = (*ReportingPluginFactoryServer)(nil)
 
-type reportingPluginFactoryServer struct {
+type ReportingPluginFactoryServer struct {
 	pb.UnimplementedReportingPluginFactoryServer
 
 	*net.BrokerExt
@@ -72,11 +73,11 @@ type reportingPluginFactoryServer struct {
 	impl libocr.ReportingPluginFactory
 }
 
-func newReportingPluginFactoryServer(impl libocr.ReportingPluginFactory, b *net.BrokerExt) *reportingPluginFactoryServer {
-	return &reportingPluginFactoryServer{impl: impl, BrokerExt: b.WithName("ReportingPluginFactoryServer")}
+func NewReportingPluginFactoryServer(impl libocr.ReportingPluginFactory, b *net.BrokerExt) *ReportingPluginFactoryServer {
+	return &ReportingPluginFactoryServer{impl: impl, BrokerExt: b.WithName("ReportingPluginFactoryServer")}
 }
 
-func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, request *pb.NewReportingPluginRequest) (*pb.NewReportingPluginReply, error) {
+func (r *ReportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, request *pb.NewReportingPluginRequest) (*pb.NewReportingPluginReply, error) {
 	cfg := libocr.ReportingPluginConfig{
 		OracleID:                                commontypes.OracleID(request.ReportingPluginConfig.OracleID),
 		N:                                       int(request.ReportingPluginConfig.N),

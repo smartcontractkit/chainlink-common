@@ -1,4 +1,4 @@
-package test
+package chainreader_test
 
 import (
 	"context"

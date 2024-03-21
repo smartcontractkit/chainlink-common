@@ -17,8 +17,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/api"
 	median_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -26,16 +30,16 @@ import (
 var _ types.PluginMedian = (*PluginMedianClient)(nil)
 
 type PluginMedianClient struct {
-	*PluginClient
-	*ServiceClient
+	*core.PluginClient
+	*core.ServiceClient
 
 	median pb.PluginMedianClient
 }
 
 func NewPluginMedianClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginMedianClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginMedianClient")
-	pc := NewPluginClient(broker, brokerCfg, conn)
-	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: NewServiceClient(pc.BrokerExt, pc)}
+	pc := core.NewPluginClient(broker, brokerCfg, conn)
+	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: core.NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
@@ -60,11 +64,11 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			providerID  uint32
 			providerRes net.Resource
 		)
-		if grpcProvider, ok := provider.(GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
 			providerID, providerRes, err = m.Serve("MedianProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = m.ServeNew("MedianProvider", func(s *grpc.Server) {
-				registerPluginProviderServices(s, provider)
+				ocr2.RegisterPluginProviderServices(s, provider)
 				pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 				pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
 				pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
@@ -76,7 +80,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		deps.Add(providerRes)
 
 		errorLogID, errorLogRes, err := m.ServeNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &ErrorLogServer{Impl: errorLog})
+			pb.RegisterErrorLogServer(s, &api.ErrorLogServer{Impl: errorLog})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -94,7 +98,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		}
 		return reply.ReportingPluginFactoryID, nil, nil
 	})
-	return newReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
+	return ocr2.NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
 }
 
 var _ pb.PluginMedianServer = (*pluginMedianServer)(nil)
@@ -145,7 +149,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		return nil, net.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
-	errorLog := NewErrorLogClient(errorLogConn)
+	errorLog := api.NewErrorLogClient(errorLogConn)
 
 	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
 	if err != nil {
@@ -154,8 +158,8 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	}
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: factory})
-		pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.BrokerExt))
+		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
+		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, dsRes, juelsRes, providerRes, errorLogRes)
 	if err != nil {
 		return nil, err
@@ -166,11 +170,11 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 var (
 	_ types.MedianProvider = (*medianProviderClient)(nil)
-	_ GRPCClientConn       = (*medianProviderClient)(nil)
+	_ core.GRPCClientConn  = (*medianProviderClient)(nil)
 )
 
 type medianProviderClient struct {
-	*pluginProviderClient
+	*ocr2.PluginProviderClient
 	reportCodec        median.ReportCodec
 	medianContract     median.MedianContract
 	onchainConfigCodec median.OnchainConfigCodec
@@ -179,19 +183,19 @@ type medianProviderClient struct {
 }
 
 func newMedianProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *medianProviderClient {
-	m := &medianProviderClient{pluginProviderClient: newPluginProviderClient(b.WithName("MedianProviderClient"), cc)}
-	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(m.cc)}
-	m.medianContract = &medianContractClient{pb.NewMedianContractClient(m.cc)}
-	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(m.cc)}
+	m := &medianProviderClient{PluginProviderClient: ocr2.NewPluginProviderClient(b.WithName("MedianProviderClient"), cc)}
+	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(cc)}
+	m.medianContract = &medianContractClient{pb.NewMedianContractClient(cc)}
+	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(cc)}
 
-	maybeCr := &chainReaderClient{b, pb.NewChainReaderClient(m.cc)}
+	maybeCr := chainreader.NewChainReaderClient(b, cc)
 	var anyRetVal int
 	err := maybeCr.GetLatestValue(context.Background(), "", "", nil, &anyRetVal)
 	if status.Convert(err).Code() != codes.Unimplemented {
 		m.chainReader = maybeCr
 	}
 
-	maybeCodec := &codecClient{b, pb.NewCodecClient(m.cc)}
+	maybeCodec := chainreader.NewCodecClient(b, cc)
 	err = maybeCodec.Decode(context.Background(), []byte{}, &anyRetVal, "")
 	if status.Convert(err).Code() != codes.Unimplemented {
 		m.codec = maybeCodec

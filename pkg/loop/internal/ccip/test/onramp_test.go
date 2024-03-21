@@ -2,13 +2,11 @@ package test
 
 import (
 	"context"
-	"fmt"
-	"net"
+
 	"reflect"
 	"sync"
 	"testing"
 
-	"github.com/hashicorp/consul/sdk/freeport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -24,7 +22,7 @@ func TestStaticOnRamp(t *testing.T) {
 	t.Parallel()
 
 	// static test implementation is self consistent
-	ctx := context.Background()
+	ctx := tests.Context(t)
 	assert.NoError(t, OnRampReader.Evaluate(ctx, OnRampReader))
 
 	// error when the test implementation is evaluates something that differs from the static implementation
@@ -39,19 +37,14 @@ func TestOnRampGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 	// create a price registry server
-	port := freeport.GetOne(t)
-	addr := fmt.Sprintf("localhost:%d", port)
-	lis, err := net.Listen("tcp", addr)
-	require.NoError(t, err, "failed to listen on port %d", port)
-	t.Cleanup(func() { lis.Close() })
 	// we explicitly stop the server later, do not add a cleanup function here
-	testServer := grpc.NewServer()
+	lis, testServer, addr := tests.SetupServer(t)
+
 	// handle client close and server stop
 	shutdown := make(chan struct{})
 	closer := &serviceCloser{closeFn: func() error { close(shutdown); return nil }}
 
 	onRamp := ccip.NewOnRampReaderGRPCServer(OnRampReader)
-	require.NoError(t, err)
 	onRamp = onRamp.AddDep(closer)
 
 	ccippb.RegisterOnRampReaderServer(testServer, onRamp)
@@ -65,12 +58,12 @@ func TestOnRampGRPC(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		<-shutdown
+		tests.RequireSignal(t, shutdown, "Failed to receive shutdown signal")
 		t.Log("shutting down server")
 		testServer.Stop()
 	}()
 	// create a price registry client
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := tests.SetupClientConnWithOptsAndTimeout(t, addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err, "failed to dial %s", addr)
 	t.Cleanup(func() { conn.Close() })
 	client := ccip.NewOnRampReaderGRPCClient(conn)

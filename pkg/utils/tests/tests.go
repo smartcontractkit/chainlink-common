@@ -2,11 +2,15 @@ package tests
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/consul/sdk/freeport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 type TestingT interface {
@@ -67,4 +71,35 @@ func RequireSignal(t *testing.T, ch <-chan struct{}, failMsg string) {
 	case <-time.After(WaitTimeout(t)):
 		t.Fatal(failMsg)
 	}
+}
+
+// Convenience method to setup a client connection with a default timeout of 5 seconds
+func SetupClientConnWithOptsAndTimeout(t *testing.T, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	ctx, cancel := context.WithTimeout(Context(t), 5*time.Second)
+	t.Cleanup(cancel)
+
+	return grpc.DialContext(ctx, target, opts...)
+}
+
+// SetupServer is a convenience method to set up a grpc server for most testing
+// usecases.
+func SetupServer(t *testing.T, opts ...grpc.ServerOption) (net.Listener, *grpc.Server, string) {
+	// Attempt to reconnect to the port which the OS may not have had time
+	// to clean up between tests.
+	var (
+		lis net.Listener
+		err error
+	)
+
+	port := freeport.GetOne(t)
+	addr := fmt.Sprintf("localhost:%d", port)
+	require.Eventually(t, func() bool {
+		lis, err = net.Listen("tcp", addr)
+
+		return err == nil
+	}, 5*time.Second, TestInterval)
+
+	t.Cleanup(func() { lis.Close() })
+
+	return lis, grpc.NewServer(opts...), addr
 }

@@ -152,7 +152,7 @@ func (c *chainReaderClient) QueryKeys(ctx context.Context, keys []string, queryF
 	return convertSequencesMatrixFromProto(pbSequencesMatrix.Sequences, sequenceDataTypes)
 }
 
-func (c *chainReaderClient) QueryByKeyValuesIn(ctx context.Context, keyValueIn types.KeyValueIn, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+func (c *chainReaderClient) QueryByKeyValuesComparison(ctx context.Context, keyValuesComparator types.KeyValuesComparator, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
 	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
 	if err != nil {
 		return nil, err
@@ -163,14 +163,7 @@ func (c *chainReaderClient) QueryByKeyValuesIn(ctx context.Context, keyValueIn t
 		return nil, err
 	}
 
-	pbSequences, err := c.grpc.QueryKeyByValuesIn(ctx,
-		&pb.QueryKeyByValuesInRequest{
-			KeyValuesIn: &pb.KeyValueIn{
-				Key:    keyValueIn.Key,
-				Values: keyValueIn.Values,
-			},
-			QueryFilter:  pbQueryFilter,
-			LimitAndSort: pbLimitAndSort})
+	pbSequences, err := c.grpc.QueryByKeyValuesComparison(ctx, &pb.QueryByKeyValuesComparisonRequest{KeyValuesComparator: keyValuesByEqualityToProto(keyValuesComparator), QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -178,7 +171,7 @@ func (c *chainReaderClient) QueryByKeyValuesIn(ctx context.Context, keyValueIn t
 	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
 }
 
-func (c *chainReaderClient) QueryByKeysValuesIn(ctx context.Context, keyValuesIn []types.KeyValueIn, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
+func (c *chainReaderClient) QueryByKeysValuesComparison(ctx context.Context, keysValuesComparator []types.KeyValuesComparator, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
 	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
 	if err != nil {
 		return nil, err
@@ -189,57 +182,12 @@ func (c *chainReaderClient) QueryByKeysValuesIn(ctx context.Context, keyValuesIn
 		return nil, err
 	}
 
-	var pbKeysValuesIn []*pb.KeyValueIn
-	for _, kvIn := range keyValuesIn {
-		pbKeysValuesIn = append(pbKeysValuesIn, &pb.KeyValueIn{
-			Key:    kvIn.Key,
-			Values: kvIn.Values})
+	var pbKeysValuesComparator []*pb.KeyValuesComparator
+	for _, kvComparator := range keysValuesComparator {
+		pbKeysValuesComparator = append(pbKeysValuesComparator, keyValuesByEqualityToProto(kvComparator))
 	}
 
-	pbSequencesMatrix, err := c.grpc.QueryKeysByValuesIn(ctx, &pb.QueryKeysByValuesInRequest{KeysValuesIn: pbKeysValuesIn, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
-	if err != nil {
-		return nil, net.WrapRPCErr(err)
-	}
-
-	return convertSequencesMatrixFromProto(pbSequencesMatrix.Sequences, sequenceDataTypes)
-}
-
-func (c *chainReaderClient) QueryByKeyValueEquality(ctx context.Context, keyByEquality types.KeyValuesByEquality, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
-	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
-	if err != nil {
-		return nil, err
-	}
-
-	pbSequences, err := c.grpc.QueryKeyByEquality(ctx, &pb.QueryKeyByEqualityRequest{KeyValuesByEquality: keyValuesByEqualityToProto(keyByEquality), QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
-	if err != nil {
-		return nil, net.WrapRPCErr(err)
-	}
-
-	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
-}
-
-func (c *chainReaderClient) QueryByKeysValuesEquality(ctx context.Context, keysByEquality []types.KeyValuesByEquality, queryFilter types.QueryFilter, limitAndSort types.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
-	pbQueryFilter, err := convertQueryFilterToProto(queryFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
-	if err != nil {
-		return nil, err
-	}
-
-	var pbKeysByEquality []*pb.KeyValuesByEquality
-	for _, kvByEquality := range keysByEquality {
-		pbKeysByEquality = append(pbKeysByEquality, keyValuesByEqualityToProto(kvByEquality))
-	}
-
-	pbSequencesMatrix, err := c.grpc.QueryKeysByEquality(ctx, &pb.QueryKeysByEqualityRequest{KeysValuesByEquality: pbKeysByEquality, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
+	pbSequencesMatrix, err := c.grpc.QueryByKeysValuesComparison(ctx, &pb.QueryByKeysValuesComparisonRequest{KeysValuesComparator: pbKeysValuesComparator, QueryFilter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -363,8 +311,8 @@ func (c *chainReaderServer) QueryKeys(ctx context.Context, request *pb.QueryKeys
 	return &pb.QueryKeysReply{Sequences: pbSequencesMatrix}, nil
 }
 
-func (c *chainReaderServer) QueryByKeyValuesIn(ctx context.Context, request *pb.QueryKeyByValuesInRequest) (*pb.QueryKeyByValuesInReply, error) {
-	if request.KeyValuesIn == nil {
+func (c *chainReaderServer) QueryByKeyValuesComparison(ctx context.Context, request *pb.QueryByKeyValuesComparisonRequest) (*pb.QueryByKeyValuesComparisonReply, error) {
+	if request.KeyValuesComparator == nil {
 		return nil, fmt.Errorf("key and values not defined")
 	}
 
@@ -378,95 +326,12 @@ func (c *chainReaderServer) QueryByKeyValuesIn(ctx context.Context, request *pb.
 		return nil, err
 	}
 
-	sequenceDataType, err := getContractEncodedTypeByKey(request.KeyValuesIn.Key, c.impl, false)
-	if err != nil {
-		return nil, err
-	}
-	kvIn := types.KeyValueIn{
-		Key:    request.KeyValuesIn.Key,
-		Values: request.KeyValuesIn.Values,
-	}
-	sequences, err := c.impl.QueryByKeyValuesIn(ctx, kvIn, queryFilters, limitAndSort, sequenceDataType)
+	sequenceDataType, err := getContractEncodedTypeByKey(request.KeyValuesComparator.Key, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
 
-	pbSequences, err := convertSequencesToProto(sequences, sequenceDataType)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.QueryKeyByValuesInReply{Sequences: pbSequences}, nil
-}
-
-func (c *chainReaderServer) QueryByKeysValuesIn(ctx context.Context, request *pb.QueryKeysByValuesInRequest) (*pb.QueryKeysByValuesInReply, error) {
-	if request.KeysValuesIn != nil {
-		return nil, fmt.Errorf("keys and values not defined")
-	}
-
-	var keysValuesIn []types.KeyValueIn
-	var sequenceDataTypes []any
-	for _, kvIn := range request.KeysValuesIn {
-		sequenceDataType, err := getContractEncodedTypeByKey(kvIn.Key, c.impl, false)
-		if err != nil {
-			return nil, err
-		}
-
-		sequenceDataTypes = append(sequenceDataTypes, sequenceDataType)
-		keysValuesIn = append(keysValuesIn, types.KeyValueIn{
-			Key:    kvIn.Key,
-			Values: kvIn.Values,
-		})
-	}
-
-	queryFilter, err := convertQueryFiltersFromProto(request.QueryFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
-	if err != nil {
-		return nil, err
-	}
-
-	sequencesMatrix, err := c.impl.QueryByKeysValuesIn(ctx, keysValuesIn, queryFilter, limitAndSort, sequenceDataTypes)
-	if err != nil {
-		return nil, err
-	}
-
-	var pbSequencesMatrix []*pb.Sequences
-	for i, sequences := range sequencesMatrix {
-		pbSequences, err := convertSequencesToProto(sequences, sequenceDataTypes[i])
-		if err != nil {
-			return nil, err
-		}
-		pbSequencesMatrix = append(pbSequencesMatrix, pbSequences)
-	}
-
-	return &pb.QueryKeysByValuesInReply{Sequences: pbSequencesMatrix}, nil
-}
-
-func (c *chainReaderServer) QueryKeyByEquality(ctx context.Context, request *pb.QueryKeyByEqualityRequest) (*pb.QueryKeyByEqualityReply, error) {
-	if request.KeyValuesByEquality == nil {
-		return nil, fmt.Errorf("key and value not defined")
-	}
-
-	queryFilters, err := convertQueryFiltersFromProto(request.QueryFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
-	if err != nil {
-		return nil, err
-	}
-
-	sequenceDataType, err := getContractEncodedTypeByKey(request.KeyValuesByEquality.Key, c.impl, false)
-	if err != nil {
-		return nil, err
-	}
-
-	sequences, err := c.impl.QueryByKeyValueEquality(ctx, keyValuesByEqualityFromProto(request.KeyValuesByEquality), queryFilters, limitAndSort, sequenceDataType)
+	sequences, err := c.impl.QueryByKeyValuesComparison(ctx, keyValuesComparatorFromProto(request.KeyValuesComparator), queryFilters, limitAndSort, sequenceDataType)
 	if err != nil {
 		return nil, err
 	}
@@ -476,17 +341,17 @@ func (c *chainReaderServer) QueryKeyByEquality(ctx context.Context, request *pb.
 		return nil, err
 	}
 
-	return &pb.QueryKeyByEqualityReply{Sequences: pbSequences}, nil
+	return &pb.QueryByKeyValuesComparisonReply{Sequences: pbSequences}, nil
 }
 
-func (c *chainReaderServer) QueryKeysByEquality(ctx context.Context, request *pb.QueryKeysByEqualityRequest) (*pb.QueryKeysByEqualityReply, error) {
-	if request.KeysValuesByEquality != nil {
+func (c *chainReaderServer) QueryByKeysValuesComparison(ctx context.Context, request *pb.QueryByKeysValuesComparisonRequest) (*pb.QueryByKeysValuesComparisonReply, error) {
+	if request.KeysValuesComparator != nil {
 		return nil, fmt.Errorf("keys and values not defined")
 	}
 
-	var keysValuesByEquality []types.KeyValuesByEquality
-	for _, keyValuesByEquality := range request.KeysValuesByEquality {
-		keysValuesByEquality = append(keysValuesByEquality, keyValuesByEqualityFromProto(keyValuesByEquality))
+	var keysValuesByEquality []types.KeyValuesComparator
+	for _, keyValuesByEquality := range request.KeysValuesComparator {
+		keysValuesByEquality = append(keysValuesByEquality, keyValuesComparatorFromProto(keyValuesByEquality))
 	}
 
 	var sequenceDataTypes []any
@@ -508,7 +373,7 @@ func (c *chainReaderServer) QueryKeysByEquality(ctx context.Context, request *pb
 		return nil, err
 	}
 
-	sequencesMatrix, err := c.impl.QueryByKeysValuesEquality(ctx, keysValuesByEquality, queryFilter, limitAndSort, sequenceDataTypes)
+	sequencesMatrix, err := c.impl.QueryByKeysValuesComparison(ctx, keysValuesByEquality, queryFilter, limitAndSort, sequenceDataTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -522,7 +387,7 @@ func (c *chainReaderServer) QueryKeysByEquality(ctx context.Context, request *pb
 		pbSequencesMatrix = append(pbSequencesMatrix, pbSequences)
 	}
 
-	return &pb.QueryKeysByEqualityReply{Sequences: pbSequencesMatrix}, nil
+	return &pb.QueryByKeysValuesComparisonReply{Sequences: pbSequencesMatrix}, nil
 }
 
 func (c *chainReaderServer) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
@@ -619,15 +484,15 @@ func convertExpressionToProto(expression types.Expression) (*pb.Expression, erro
 	return pbExpression, nil
 }
 
-func keyValuesByEqualityToProto(keyByEquality types.KeyValuesByEquality) *pb.KeyValuesByEquality {
-	var pbValuesEquality []*pb.ValueEquality
-	for _, valueEquality := range keyByEquality.ValuesEqualities {
-		pbValuesEquality = append(pbValuesEquality, &pb.ValueEquality{
-			Value:    valueEquality.Value,
-			Operator: pb.ComparisonOperator(valueEquality.Operator),
+func keyValuesByEqualityToProto(keyValuesComparator types.KeyValuesComparator) *pb.KeyValuesComparator {
+	var pbValueComparator []*pb.ValueComparator
+	for _, valueComparators := range keyValuesComparator.ValueComparators {
+		pbValueComparator = append(pbValueComparator, &pb.ValueComparator{
+			Value:    valueComparators.Value,
+			Operator: pb.ComparisonOperator(valueComparators.Operator),
 		})
 	}
-	return &pb.KeyValuesByEquality{Key: keyByEquality.Key, ValuesEquality: pbValuesEquality}
+	return &pb.KeyValuesComparator{Key: keyValuesComparator.Key, ValueComparators: pbValueComparator}
 }
 
 func convertLimitAndSortToProto(limitAndSort types.LimitAndSort) (*pb.LimitAndSort, error) {
@@ -726,18 +591,18 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (types.Expression, 
 	}
 }
 
-func keyValuesByEqualityFromProto(pbKeysByEquality *pb.KeyValuesByEquality) types.KeyValuesByEquality {
-	var valuesEqualities []types.ValueEquality
-	for _, valueEquality := range pbKeysByEquality.ValuesEquality {
-		valuesEqualities = append(valuesEqualities, types.ValueEquality{
+func keyValuesComparatorFromProto(pbKeysByEquality *pb.KeyValuesComparator) types.KeyValuesComparator {
+	var valuesEqualities []types.ValueComparator
+	for _, valueEquality := range pbKeysByEquality.ValueComparators {
+		valuesEqualities = append(valuesEqualities, types.ValueComparator{
 			Value:    valueEquality.Value,
 			Operator: types.ComparisonOperator(valueEquality.Operator),
 		})
 	}
 
-	return types.KeyValuesByEquality{
+	return types.KeyValuesComparator{
 		Key:              pbKeysByEquality.Key,
-		ValuesEqualities: valuesEqualities,
+		ValueComparators: valuesEqualities,
 	}
 }
 

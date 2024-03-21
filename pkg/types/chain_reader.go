@@ -51,10 +51,8 @@ type ChainReader interface {
 
 	QueryKey(ctx context.Context, keys string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
 	QueryKeys(ctx context.Context, keys []string, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
-	QueryByKeyValuesIn(ctx context.Context, keyValueIn KeyValueIn, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	QueryByKeysValuesIn(ctx context.Context, keysValuesIn []KeyValueIn, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
-	QueryByKeyValueEquality(ctx context.Context, KeyValuesByEquality KeyValuesByEquality, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	QueryByKeysValuesEquality(ctx context.Context, KeysValuesByEquality []KeyValuesByEquality, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
+	QueryByKeyValuesComparison(ctx context.Context, KeyValuesComparator KeyValuesComparator, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryByKeysValuesComparison(ctx context.Context, KeysValuesComparators []KeyValuesComparator, queryFilter QueryFilter, limitAndSort LimitAndSort, sequenceDataType []any) ([][]Sequence, error)
 
 	// TODO make EVM words map to a key and then do this through the QueryByEquality methods.
 	// GetCommitReportMatchingSeqNum()
@@ -62,19 +60,14 @@ type ChainReader interface {
 	// GetCommitReportGreaterThanSeqNum()
 }
 
-type ValueEquality struct {
+type ValueComparator struct {
 	Value    string
 	Operator ComparisonOperator
 }
 
-type KeyValuesByEquality struct {
+type KeyValuesComparator struct {
 	Key              string
-	ValuesEqualities []ValueEquality
-}
-
-type KeyValueIn struct {
-	Key    string
-	Values []string
+	ValueComparators []ValueComparator
 }
 
 type BoundContract struct {

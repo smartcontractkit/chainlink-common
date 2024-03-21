@@ -1,4 +1,4 @@
-package internal_test
+package chainreader_test
 
 import (
 	"context"
@@ -14,9 +14,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -24,27 +23,27 @@ import (
 
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
-	t.Run("internal.EncodeVersionedBytes unsupported type", func(t *testing.T) {
+	t.Run("chainreader.EncodeVersionedBytes unsupported type", func(t *testing.T) {
 		invalidData := make(chan int)
 
-		_, err := internal.EncodeVersionedBytes(invalidData, internal.JSONEncodingVersion2)
+		_, err := chainreader.EncodeVersionedBytes(invalidData, chainreader.JSONEncodingVersion2)
 
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("internal.EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
+	t.Run("chainreader.EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
 		expected := fmt.Errorf("%w: unsupported encoding version %d for data map[key:value]", types.ErrInvalidEncoding, unsupportedVer)
 		data := map[string]interface{}{
 			"key": "value",
 		}
 
-		_, err := internal.EncodeVersionedBytes(data, unsupportedVer)
+		_, err := chainreader.EncodeVersionedBytes(data, unsupportedVer)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
 
-	t.Run("internal.DecodeVersionedBytes", func(t *testing.T) {
+	t.Run("chainreader.DecodeVersionedBytes", func(t *testing.T) {
 		var decodedData map[string]interface{}
 		expected := fmt.Errorf("unsupported encoding version %d for versionedData [97 98 99 100 102]", unsupportedVer)
 		versionedBytes := &pb.VersionedBytes{
@@ -52,7 +51,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 			Data:    []byte("abcdf"),
 		}
 
-		err := internal.DecodeVersionedBytes(&decodedData, versionedBytes)
+		err := chainreader.DecodeVersionedBytes(&decodedData, versionedBytes)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
@@ -61,10 +60,10 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 func TestChainReaderClient(t *testing.T) {
 	fake := &fakeChainReader{}
-	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+	RunChainReaderInterfaceTests(t, WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
 
 	es := &errChainReader{}
-	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	errTester := WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
 	errTester.Setup(t)
 	chainReader := errTester.GetChainReader(t)
 
@@ -97,7 +96,7 @@ func TestChainReaderClient(t *testing.T) {
 	t.Run("nil reader should return unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
 
-		nilTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+		nilTester := WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCr := nilTester.GetChainReader(t)
 

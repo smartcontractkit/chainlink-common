@@ -15,14 +15,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
 	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip/test"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median/test"
 	mercury_common_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -101,7 +100,7 @@ type staticPluginRelayer struct {
 	staticPluginRelayerConfig
 }
 
-func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (internal.Relayer, error) {
+func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (looptypes.Relayer, error) {
 	if s.StaticChecks && config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
@@ -221,7 +220,7 @@ func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.I
 	return nil
 }
 
-func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T, relayer loop.Relayer) {
+func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T, relayer looptypes.Relayer) {
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
 		configProvider, err := relayer.NewConfigProvider(ctx, RelayArgs)
@@ -303,7 +302,7 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 	}
 }
 
-func RunPlugin(t *testing.T, p internal.PluginRelayer) {
+func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 	ctx := tests.Context(t)
 
 	t.Run("Relayer", func(t *testing.T) {
@@ -315,13 +314,13 @@ func RunPlugin(t *testing.T, p internal.PluginRelayer) {
 	})
 }
 
-func Run(t *testing.T, relayer internal.Relayer) {
+func Run(t *testing.T, relayer looptypes.Relayer) {
 	ctx := tests.Context(t)
 	expectedRelayer := NewRelayerTester(false)
 	expectedRelayer.AssertEqual(ctx, t, relayer)
 }
 
-func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.PluginRelayer) {
+func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.PluginRelayer) {
 	var (
 		account = "testaccount"
 		signed  = []byte{5: 11}
@@ -350,7 +349,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Pl
 	})
 }
 
-func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) internal.Relayer) {
+func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.Relayer) {
 	validRaw := [16]byte(RelayArgs.ExternalJobID)
 	validRawBytes := make([]byte, 16)
 

@@ -13,28 +13,31 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
 	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
+	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var _ PluginRelayer = (*PluginRelayerClient)(nil)
+var _ looptypes.PluginRelayer = (*PluginRelayerClient)(nil)
 
 type PluginRelayerClient struct {
-	*PluginClient
+	*core.PluginClient
 
 	grpc pb.PluginRelayerClient
 }
 
 func NewPluginRelayerClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginRelayerClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginRelayerClient")
-	pc := NewPluginClient(broker, brokerCfg, conn)
+	pc := core.NewPluginClient(broker, brokerCfg, conn)
 	return &PluginRelayerClient{PluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
 }
 
-func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (Relayer, error) {
+func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (looptypes.Relayer, error) {
 	cc := p.NewClientConn("Relayer", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
 		id, ksRes, err = p.ServeNew("Keystore", func(s *grpc.Server) {
@@ -62,15 +65,15 @@ type pluginRelayerServer struct {
 
 	*net.BrokerExt
 
-	impl PluginRelayer
+	impl looptypes.PluginRelayer
 }
 
-func RegisterPluginRelayerServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl PluginRelayer) error {
+func RegisterPluginRelayerServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl looptypes.PluginRelayer) error {
 	pb.RegisterPluginRelayerServer(server, newPluginRelayerServer(broker, brokerCfg, impl))
 	return nil
 }
 
-func newPluginRelayerServer(broker net.Broker, brokerCfg net.BrokerConfig, impl PluginRelayer) *pluginRelayerServer {
+func newPluginRelayerServer(broker net.Broker, brokerCfg net.BrokerConfig, impl looptypes.PluginRelayer) *pluginRelayerServer {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "RelayerPluginServer")
 	return &pluginRelayerServer{BrokerExt: &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
 }
@@ -95,7 +98,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	const name = "Relayer"
 	rRes := net.Resource{Closer: r, Name: name}
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: r})
+		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
 	}, rRes, ksRes)
 	if err != nil {
@@ -155,19 +158,19 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 	return &pb.SignReply{SignedData: signed}, nil
 }
 
-var _ Relayer = (*relayerClient)(nil)
+var _ looptypes.Relayer = (*relayerClient)(nil)
 
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
 	*net.BrokerExt
-	*ServiceClient
+	*core.ServiceClient
 
 	relayer pb.RelayerClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("ChainRelayerClient")
-	return &relayerClient{b, NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
+	return &relayerClient{b, core.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
 func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {
@@ -186,7 +189,7 @@ func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.Relay
 		}
 		return reply.ConfigProviderID, nil, nil
 	})
-	return newConfigProviderClient(r.WithName("ConfigProviderClient"), cc), nil
+	return ocr2.NewConfigProviderClient(r.WithName("ConfigProviderClient"), cc), nil
 }
 
 func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
@@ -218,7 +221,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 	case string(types.Median):
 		return newMedianProviderClient(r.BrokerExt, cc), nil
 	case string(types.GenericPlugin):
-		return newPluginProviderClient(r.BrokerExt, cc), nil
+		return NewPluginProviderClient(r.BrokerExt, cc), nil
 	case string(types.Mercury):
 		return newMercuryProviderClient(r.BrokerExt, cc), nil
 	case string(types.CCIPExecution):
@@ -292,10 +295,10 @@ type relayerServer struct {
 
 	*net.BrokerExt
 
-	impl Relayer
+	impl looptypes.Relayer
 }
 
-func newChainRelayerServer(impl Relayer, b *net.BrokerExt) *relayerServer {
+func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerServer {
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
@@ -321,9 +324,9 @@ func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewCo
 
 	const name = "ConfigProvider"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: cp})
-		pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: cp.OffchainConfigDigester()})
-		pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: cp.ContractConfigTracker()})
+		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: cp})
+		pb.RegisterOffchainConfigDigesterServer(s, &OffchainConfigDigesterServer{impl: cp.OffchainConfigDigester()})
+		pb.RegisterContractConfigTrackerServer(s, &ContractConfigTrackerServer{impl: cp.ContractConfigTracker()})
 	}, net.Resource{Closer: cp, Name: name})
 	if err != nil {
 		return nil, err
@@ -380,7 +383,7 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 }
 
 func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
-	i, ok := r.impl.(MedianProvider)
+	i, ok := r.impl.(looptypes.MedianProvider)
 	if !ok {
 		return 0, status.Error(codes.Unimplemented, "median not supported")
 	}
@@ -397,7 +400,7 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		registerPluginProviderServices(s, provider)
+		ocr2.RegisterPluginProviderServices(s, provider)
 		pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 		pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
 		pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
@@ -422,7 +425,7 @@ func (r *relayerServer) newPluginProvider(ctx context.Context, relayArgs types.R
 	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		registerPluginProviderServices(s, provider)
+		ocr2.RegisterPluginProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -432,7 +435,7 @@ func (r *relayerServer) newPluginProvider(ctx context.Context, relayArgs types.R
 }
 
 func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
-	i, ok := r.impl.(MercuryProvider)
+	i, ok := r.impl.(looptypes.MercuryProvider)
 	if !ok {
 		return 0, status.Error(codes.Unimplemented, fmt.Sprintf("mercury not supported by %T", r.impl))
 	}
@@ -449,7 +452,7 @@ func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.
 	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		registerPluginProviderServices(s, provider)
+		ocr2.RegisterPluginProviderServices(s, provider)
 
 		mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
 		mercury_pb.RegisterReportCodecV1Server(s, mercury_common_internal.NewReportCodecV1Server(s, provider.ReportCodecV1()))
@@ -483,7 +486,7 @@ func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.Rel
 	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		registerPluginProviderServices(s, provider)
+		ocr2.RegisterPluginProviderServices(s, provider)
 		registerCustomExecutionProviderServices(s, provider, r.BrokerExt)
 	}, providerRes)
 	if err != nil {
@@ -529,7 +532,7 @@ func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionReq
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
-	registerPluginProviderServices(s, p)
+	ocr2.RegisterPluginProviderServices(s, p)
 	pb.RegisterReportCodecServer(s, &reportCodecServer{impl: p.ReportCodec()})
 	pb.RegisterMedianContractServer(s, &medianContractServer{impl: p.MedianContract()})
 	pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: p.OnchainConfigCodec()})
@@ -538,5 +541,5 @@ func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
 // RegisterStandAlonePluginProvider register the servers needed for a generic plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAlonePluginProvider(s *grpc.Server, p types.PluginProvider) {
-	registerPluginProviderServices(s, p)
+	ocr2.RegisterPluginProviderServices(s, p)
 }

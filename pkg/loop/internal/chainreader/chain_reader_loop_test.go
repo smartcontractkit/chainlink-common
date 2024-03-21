@@ -1,11 +1,11 @@
-package test
+package chainreader_test
 
 import (
 	"testing"
 
 	"google.golang.org/grpc"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
@@ -26,7 +26,7 @@ func (c *chainReaderLoopTester) Setup(t *testing.T) {
 	chainReader := c.ChainReaderInterfaceTester.GetChainReader(t)
 	c.lst.registerHook = func(server *grpc.Server) {
 		if chainReader != nil {
-			impl := internal.NewChainReaderServer(chainReader)
+			impl := chainreader.NewChainReaderServer(chainReader)
 			pb.RegisterChainReaderServer(server, impl)
 		}
 	}
@@ -34,7 +34,7 @@ func (c *chainReaderLoopTester) Setup(t *testing.T) {
 }
 
 func (c *chainReaderLoopTester) GetChainReader(t *testing.T) types.ChainReader {
-	return internal.NewChainReaderTestClient(c.lst.GetConn(t))
+	return chainreader.NewChainReaderClient(nil, c.lst.GetConn(t))
 }
 
 func (c *chainReaderLoopTester) Name() string {

@@ -7,7 +7,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/capability"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/api"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
@@ -15,16 +17,16 @@ import (
 )
 
 type ReportingPluginServiceClient struct {
-	*internal.PluginClient
-	*internal.ServiceClient
+	*core.PluginClient
+	*core.ServiceClient
 
 	reportingPluginService pb.ReportingPluginServiceClient
 }
 
 func NewReportingPluginServiceClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *ReportingPluginServiceClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ReportingPluginServiceClient")
-	pc := internal.NewPluginClient(broker, brokerCfg, conn)
-	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: internal.NewServiceClient(pc.BrokerExt, pc)}
+	pc := core.NewPluginClient(broker, brokerCfg, conn)
+	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: core.NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
@@ -44,7 +46,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(providerRes)
 
 		pipelineRunnerID, pipelineRunnerRes, err := o.ServeNew("PipelineRunner", func(s *grpc.Server) {
-			pb.RegisterPipelineRunnerServiceServer(s, &internal.PipelineRunnerServiceServer{Impl: pipelineRunner})
+			pb.RegisterPipelineRunnerServiceServer(s, &api.PipelineRunnerServiceServer{Impl: pipelineRunner})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -52,7 +54,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(pipelineRunnerRes)
 
 		telemetryID, telemetryRes, err := o.ServeNew("Telemetry", func(s *grpc.Server) {
-			pb.RegisterTelemetryServer(s, internal.NewTelemetryServer(telemetry))
+			pb.RegisterTelemetryServer(s, api.NewTelemetryServer(telemetry))
 		})
 		if err != nil {
 			return 0, nil, err
@@ -60,7 +62,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(telemetryRes)
 
 		errorLogID, errorLogRes, err := o.ServeNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &internal.ErrorLogServer{Impl: errorLog})
+			pb.RegisterErrorLogServer(s, &api.ErrorLogServer{Impl: errorLog})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -68,7 +70,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(errorLogRes)
 
 		capRegistryID, capRegistryRes, err := o.ServeNew("CapRegistry", func(s *grpc.Server) {
-			pb.RegisterCapabilitiesRegistryServer(s, internal.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry))
+			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry))
 		})
 		if err != nil {
 			return 0, nil, err
@@ -112,7 +114,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, net.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
-	errorLog := internal.NewErrorLogClient(errorLogConn)
+	errorLog := api.NewErrorLogClient(errorLogConn)
 
 	providerConn, err := m.Dial(request.ProviderID)
 	if err != nil {
@@ -127,7 +129,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, net.ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
 	}
 	pipelineRunnerRes := net.Resource{Closer: pipelineRunnerConn, Name: "PipelineRunner"}
-	pipelineRunner := internal.NewPipelineRunnerClient(pipelineRunnerConn)
+	pipelineRunner := api.NewPipelineRunnerClient(pipelineRunnerConn)
 
 	telemetryConn, err := m.Dial(request.TelemetryID)
 	if err != nil {
@@ -135,7 +137,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, net.ErrConnDial{Name: "Telemetry", ID: request.TelemetryID, Err: err}
 	}
 	telemetryRes := net.Resource{Closer: telemetryConn, Name: "Telemetry"}
-	telemetry := internal.NewTelemetryServiceClient(telemetryConn)
+	telemetry := api.NewTelemetryServiceClient(telemetryConn)
 
 	capRegistryConn, err := m.Dial(request.CapRegistryID)
 	if err != nil {
@@ -143,7 +145,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, net.ErrConnDial{Name: "CapabilitiesRegistry", ID: request.CapRegistryID, Err: err}
 	}
 	capRegistryRes := net.Resource{Closer: capRegistryConn, Name: "CapabilitiesRegistry"}
-	capRegistry := internal.NewCapabilitiesRegistryClient(capRegistryConn, m.BrokerExt)
+	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, m.BrokerExt)
 
 	config := types.ReportingPluginServiceConfig{
 		ProviderType:  request.ReportingPluginServiceConfig.ProviderType,
@@ -160,7 +162,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 	}
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &internal.ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
 		ocr3pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes)
 	if err != nil {

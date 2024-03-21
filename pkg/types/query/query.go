@@ -80,13 +80,13 @@ type BoolExpression struct {
 	BoolOperator
 }
 
-func NewAndBoolExpression(expressions ...Expression) Expression {
+func And(expressions ...Expression) Expression {
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: AND},
 	}
 }
 
-func NewOrBoolExpression(expressions ...Expression) Expression {
+func Or(expressions ...Expression) Expression {
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: OR},
 	}
@@ -98,7 +98,7 @@ type BlockPrimitive struct {
 	Operator ComparisonOperator
 }
 
-func NewBlockPrimitive(block uint64, operator ComparisonOperator) Expression {
+func Block(block uint64, operator ComparisonOperator) Expression {
 	return Expression{
 		Primitive: &BlockPrimitive{Block: block, Operator: operator},
 	}
@@ -113,7 +113,8 @@ type AddressPrimitive struct {
 	Addresses []string
 }
 
-func NewAddressesPrimitive(addresses ...string) Expression {
+// TODO adress is fetched through bindings, so this is most likely not necessary
+func Address(addresses ...string) Expression {
 	return Expression{
 		Primitive: &AddressPrimitive{Addresses: addresses},
 	}
@@ -123,22 +124,22 @@ func (f *AddressPrimitive) Accept(visitor Visitor) {
 	visitor.AddressPrimitive(*f)
 }
 
-type Confirmations int32
+type ConfirmationLevel int32
 
 const (
-	Finalized   = Confirmations(0)
-	Unconfirmed = Confirmations(1)
+	Finalized   = ConfirmationLevel(0)
+	Unconfirmed = ConfirmationLevel(1)
 )
 
 // ConfirmationsPrimitive is a primitive of Filter that filters search to results that have a certain level of confirmation.
-// Confirmations map to different concepts on different blockchains.
+// Confirmation map to different concepts on different blockchains.
 type ConfirmationsPrimitive struct {
-	Confirmations
+	ConfirmationLevel
 }
 
-func NewConfirmationsPrimitive(confs Confirmations) Expression {
+func Confirmation(confLevel ConfirmationLevel) Expression {
 	return Expression{
-		Primitive: &ConfirmationsPrimitive{Confirmations: confs},
+		Primitive: &ConfirmationsPrimitive{ConfirmationLevel: confLevel},
 	}
 }
 
@@ -152,7 +153,7 @@ type TimestampPrimitive struct {
 	Operator  ComparisonOperator
 }
 
-func NewTimestampPrimitive(timestamp uint64, operator ComparisonOperator) Expression {
+func Timestamp(timestamp uint64, operator ComparisonOperator) Expression {
 	return Expression{
 		Primitive: &TimestampPrimitive{timestamp, operator},
 	}
@@ -167,7 +168,7 @@ type TxHashPrimitive struct {
 	TxHash string
 }
 
-func NewTxHashPrimitive(txHash string) Expression {
+func TxHash(txHash string) Expression {
 	return Expression{
 		Primitive: &TxHashPrimitive{txHash},
 	}
@@ -178,23 +179,31 @@ func (f *TxHashPrimitive) Accept(visitor Visitor) {
 }
 
 // Where is a helper function for building Filter, eg. usage:
-// queryFilter, err := Where(
 //
-//		NewTxHashPrimitive("0xHash"),
-//		NewOrBoolExpression("OR",
-//			NewBlockPrimitive(startBlock, Gte),
-//			NewBlockPrimitive(endBlock, Lte)),
-//		NewOrBoolExpression("AND",
-//			NewOrBoolExpression("OR",
-//				NewTimestampPrimitive(someTs1, Gte),
-//				NewTimestampPrimitive(otherTs1, Lte)),
-//			NewOrBoolExpression("OR",(endBlock, Lte)),
-//				NewTimestampPrimitive(someTs2, Gte),
-//				NewTimestampPrimitive(otherTs2, Lte)))
-//	   )
-//	if err != nil{return nil, err}
+//	 queryFilter, err := Where(
 //
-// QueryKey(key, queryFilter)...
+//				TxHash("0xHash"),
+//				And(Block(startBlock, Gte),
+//					Block(endBlock, Lte)),
+//					Or(
+//						And(
+//							Timestamp(someTs1, Gte),
+//							Timestamp(otherTs1, Lte)),
+//						And(
+//							Timestamp(someTs2, Gte),
+//							Timestamp(otherTs2, Lte))
+//					)
+//			  	 )
+//		 ==> `txHash = txHash AND (
+//									 block > startBlock AND block < endBlock
+//									 AND (
+//										 (timestamp > someTs1 And timestamp < otherTs1)
+//										 OR
+//										 (timestamp > someTs2 And timestamp < otherTs2)
+//									 )
+//							 )`
+//		if err != nil{return nil, err}
+//		QueryKey(key, queryFilter)...
 func Where(expressions ...Expression) (Filter, error) {
 	for _, expr := range expressions {
 		if !expr.IsPrimitive() {

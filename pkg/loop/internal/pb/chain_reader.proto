@@ -16,16 +16,69 @@ service ChainReader {
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
-message AddressFilter {
-  repeated string addresses = 1;
+// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
+message GetLatestValueRequest {
+  string contractName = 1;
+  string method = 2;
+  VersionedBytes params = 3;
 }
 
-message Keys {
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
+message QueryKeyRequest {
+  string key = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
+}
+
+// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
+message QueryKeysRequest {
   repeated string keys = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
 }
 
-message Values {
-  repeated string values = 1;
+// QueryByKeyValuesComparisonRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeyValuesComparison].
+message QueryByKeyValuesComparisonRequest {
+  KeyValuesComparator key_values_comparator = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
+}
+
+// QueryByKeysValuesComparisonRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeysValuesComparison].
+message QueryByKeysValuesComparisonRequest {
+  repeated KeyValuesComparator keys_values_comparator = 1;
+  QueryFilter query_filter = 2;
+  LimitAndSort limit_and_sort = 3;
+}
+
+// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BindRequest].
+message BindRequest {
+  repeated BoundContract bindings = 1;
+}
+
+// GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
+message GetLatestValueReply {
+  VersionedBytes retVal = 1;
+}
+
+// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
+message QueryKeyReply {
+  Sequences sequences = 1;
+}
+
+// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
+message QueryKeysReply {
+ repeated Sequences sequences = 1;
+}
+
+// QueryByKeyValuesComparisonReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeyValuesComparison].
+message QueryByKeyValuesComparisonReply {
+  Sequences sequences = 1;
+}
+
+// QueryByKeysValuesComparisonReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeysValuesComparison].
+message QueryByKeysValuesComparisonReply {
+  repeated Sequences sequences = 1;
 }
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].
@@ -35,36 +88,112 @@ message Head {
   uint64 timestamp = 3;
 }
 
-enum Confirmations {
+// Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Sequence].
+message Sequence {
+  string sequence_cursor = 1;
+  Head head = 2;
+  VersionedBytes data = 3;
+}
+
+message Sequences {
+  repeated Sequence sequences = 1;
+}
+
+// BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].
+message BoundContract {
+  string address = 1;
+  string name = 2;
+  bool pending = 3;
+}
+
+enum ComparisonOperator {
+  Eq = 0;
+  Neq = 1;
+  Gt = 2;
+  Lt = 3;
+  Gte = 4;
+  Lte = 5;
+}
+
+message ValueComparator {
+  // TODO pass interface{} here
+  string value = 1;
+  ComparisonOperator operator = 2;
+}
+
+message KeyValuesComparator{
+  string key = 1;
+  repeated ValueComparator value_comparators = 2;
+}
+
+// QueryFilter represents a lightweight orm like DSL defined for filtering over common blockchain primitives.
+message QueryFilter {
+  repeated Expression expression = 1;
+}
+
+// Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
+// This allows for both simple and more complex nested expressions.
+message Expression {
+  oneof evaluator {
+    Primitive primitive = 1;
+    BooleanExpression boolean_expression = 2;
+  }
+}
+
+enum BooleanOperator {
+  AND = 0;
+  OR = 1;
+}
+
+message BooleanExpression {
+  BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
+}
+
+message And {
+  repeated Expression a = 1;
+}
+
+message Or {
+  repeated Expression a = 1;
+}
+
+message Address {
+  repeated string addresses = 1;
+}
+
+enum ConfirmationLevel {
   Finalized   = 0;
   Unconfirmed = 1;
 }
 
-message ConfirmationsFilter{
-  Confirmations confirmations = 1;
+message Confirmations {
+  ConfirmationLevel confirmations = 1;
 }
 
-enum ComparisonOperator {
-    Eq = 0;
-    Neq = 1;
-    Gt = 2;
-    Lt = 3;
-    Gte = 4;
-    Lte = 5;
-}
-
-message BlockFilter{
+message Block{
   uint64 block_number = 1;
   ComparisonOperator operator = 2;
 }
 
-message TimestampFilter{
+message Timestamp{
   uint64 timestamp = 1;
   ComparisonOperator operator = 2;
 }
 
-message TxHashFilter{
+message TxHash{
   string tx_hash = 1;
+}
+
+// Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
+message Primitive {
+  oneof comparator {
+    Address address = 3;
+    Confirmations confirmations = 4;
+    Block block = 5;
+    Timestamp timestamp = 6;
+    TxHash tx_hash = 7;
+  }
 }
 
 enum SortDirection {
@@ -96,144 +225,3 @@ message LimitAndSort{
   uint64 limit = 1;
   repeated SortBy sort_by = 2;
 }
-
-message KeyValues{
-  repeated string values = 1;
-}
-
-// QueryFilter represents a lightweight orm like DSL defined for filtering over common blockchain primitives.
-message QueryFilter {
-  repeated Expression expression = 1;
-}
-
-// Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
-// This allows for both simple and more complex nested expressions.
-message Expression {
-  oneof evaluator {
-    Primitive primitive = 1;
-    BooleanExpression boolean_expression = 2;
-  }
-}
-
-// Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
-message Primitive {
-  oneof comparator {
-    AddressFilter address_filter = 3;
-    ConfirmationsFilter confirmations_filter = 4;
-    BlockFilter block_filter = 5;
-    TimestampFilter timestamp_filter = 6;
-    TxHashFilter tx_hash_filter = 7;
-  }
-}
-
-enum BooleanOperator {
-  AND = 0;
-  OR = 1;
-}
-
-message BooleanExpression {
-  BooleanOperator boolean_operator = 1;
-  repeated Expression expression = 2;
-}
-
-message And {
-  repeated Expression a = 1;
-}
-
-message Or {
-  repeated Expression a = 1;
-}
-
-message ValueComparator {
-  // TODO pass interface{} here
-  string value = 1;
-  ComparisonOperator operator = 2;
-}
-
-message KeyValuesComparator{
-  string key = 1; 
-  repeated ValueComparator value_comparators = 2;
-}
-
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
-message QueryKeyRequest {
-  string key = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
-}
-
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
-message QueryKeysRequest {
-  repeated string keys = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
-}
-
-// QueryByKeyValuesComparisonRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeyValuesComparison].
-message QueryByKeyValuesComparisonRequest {
-  KeyValuesComparator key_values_comparator = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
-}
-
-// QueryByKeysValuesComparisonRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeysValuesComparison].
-message QueryByKeysValuesComparisonRequest {
-  repeated KeyValuesComparator keys_values_comparator = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
-}
-
-// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
-message GetLatestValueRequest {
-  string contractName = 1;
-  string method = 2;
-  VersionedBytes params = 3;
-}
-
-// GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
-message GetLatestValueReply {
-  VersionedBytes retVal = 1;
-}
-
-message Sequence {
-  string sequence_cursor = 1;
-  Head head = 2;
-  VersionedBytes data = 3;
-}
-
-message Sequences {
-  repeated Sequence sequences = 1;
-}
-
-// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
-message QueryKeyReply {
-  Sequences sequences = 1;
-}
-
-// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
-message QueryKeysReply {
- repeated Sequences sequences = 1;
-}
-
-// QueryByKeyValuesComparisonReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeyValuesComparison].
-message QueryByKeyValuesComparisonReply {
-  Sequences sequences = 1;
-}
-
-// QueryByKeysValuesComparisonReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeysValuesComparison].
-message QueryByKeysValuesComparisonReply {
-  repeated Sequences sequences = 1;
-}
-
-message BindRequest {
-  repeated BoundContract bindings = 1;
-}
-
-// BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].
-message BoundContract {
-  string address = 1;
-  string name = 2;
-  bool pending = 3;
-}
-
-

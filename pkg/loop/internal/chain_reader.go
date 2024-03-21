@@ -435,29 +435,29 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 		pbExpression.Evaluator = &pb.Expression_Primitive{Primitive: &pb.Primitive{}}
 		switch primitive := expression.Primitive.(type) {
 		case *query.AddressPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_AddressFilter{
-				AddressFilter: &pb.AddressFilter{
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Address{
+				Address: &pb.Address{
 					Addresses: primitive.Addresses,
 				}}
 		case *query.ConfirmationsPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_ConfirmationsFilter{
-				ConfirmationsFilter: &pb.ConfirmationsFilter{
-					Confirmations: pb.Confirmations(primitive.Confirmations),
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Confirmations{
+				Confirmations: &pb.Confirmations{
+					Confirmations: pb.ConfirmationLevel(primitive.ConfirmationLevel),
 				}}
 		case *query.BlockPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_BlockFilter{
-				BlockFilter: &pb.BlockFilter{
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Block{
+				Block: &pb.Block{
 					BlockNumber: primitive.Block,
 					Operator:    pb.ComparisonOperator(primitive.Operator),
 				}}
 		case *query.TxHashPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_TxHashFilter{
-				TxHashFilter: &pb.TxHashFilter{
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_TxHash{
+				TxHash: &pb.TxHash{
 					TxHash: primitive.TxHash,
 				}}
 		case *query.TimestampPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_TimestampFilter{
-				TimestampFilter: &pb.TimestampFilter{
+			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Timestamp{
+				Timestamp: &pb.Timestamp{
 					Timestamp: primitive.Timestamp,
 					Operator:  pb.ComparisonOperator(primitive.Operator),
 				}}
@@ -573,21 +573,21 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 		}
 
 		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == pb.BooleanOperator_AND {
-			return query.NewAndBoolExpression(expressions...), nil
+			return query.And(expressions...), nil
 		}
-		return query.NewOrBoolExpression(expressions...), nil
+		return query.Or(expressions...), nil
 	case *pb.Expression_Primitive:
 		switch primitive := pbEvaluatedExpr.Primitive.Comparator.(type) {
-		case *pb.Primitive_AddressFilter:
-			return query.NewAddressesPrimitive(primitive.AddressFilter.Addresses...), nil
-		case *pb.Primitive_ConfirmationsFilter:
-			return query.NewConfirmationsPrimitive(query.Confirmations(primitive.ConfirmationsFilter.Confirmations)), nil
-		case *pb.Primitive_BlockFilter:
-			return query.NewBlockPrimitive(primitive.BlockFilter.BlockNumber, query.ComparisonOperator(primitive.BlockFilter.Operator)), nil
-		case *pb.Primitive_TxHashFilter:
-			return query.NewTxHashPrimitive(primitive.TxHashFilter.TxHash), nil
-		case *pb.Primitive_TimestampFilter:
-			return query.NewTimestampPrimitive(primitive.TimestampFilter.Timestamp, query.ComparisonOperator(primitive.TimestampFilter.Operator)), nil
+		case *pb.Primitive_Address:
+			return query.Address(primitive.Address.Addresses...), nil
+		case *pb.Primitive_Confirmations:
+			return query.Confirmation(query.ConfirmationLevel(primitive.Confirmations.Confirmations)), nil
+		case *pb.Primitive_Block:
+			return query.Block(primitive.Block.BlockNumber, query.ComparisonOperator(primitive.Block.Operator)), nil
+		case *pb.Primitive_TxHash:
+			return query.TxHash(primitive.TxHash.TxHash), nil
+		case *pb.Primitive_Timestamp:
+			return query.Timestamp(primitive.Timestamp.Timestamp, query.ComparisonOperator(primitive.Timestamp.Operator)), nil
 		default:
 			return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type")
 		}

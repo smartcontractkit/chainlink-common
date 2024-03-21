@@ -111,32 +111,32 @@ func TestChainReaderClient(t *testing.T) {
 
 func generateQueryFilterTestCases(t *testing.T) []query.Filter {
 	var queryFilters []query.Filter
-	confirmationsValues := []query.Confirmations{query.Finalized, query.Unconfirmed}
+	confirmationsValues := []query.ConfirmationLevel{query.Finalized, query.Unconfirmed}
 	operatorValues := []query.ComparisonOperator{query.Eq, query.Neq, query.Gt, query.Lt, query.Gte, query.Lte}
 
-	primitives := []query.Expression{query.NewTxHashPrimitive("txHash")}
+	primitives := []query.Expression{query.TxHash("txHash")}
 	for _, op := range operatorValues {
-		primitives = append(primitives, query.NewBlockPrimitive(123, op))
-		primitives = append(primitives, query.NewTimestampPrimitive(123, op))
+		primitives = append(primitives, query.Block(123, op))
+		primitives = append(primitives, query.Timestamp(123, op))
 	}
 
 	for _, conf := range confirmationsValues {
-		primitives = append(primitives, query.NewConfirmationsPrimitive(conf))
-		primitives = append(primitives, query.NewAddressesPrimitive([]string{"addr1", "addr2"}...))
+		primitives = append(primitives, query.Confirmation(conf))
+		primitives = append(primitives, query.Address([]string{"addr1", "addr2"}...))
 	}
 
 	qf, err := query.Where(primitives...)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	andOverPrimitivesBoolExpr := query.NewAndBoolExpression(primitives...)
-	orOverPrimitivesBoolExpr := query.NewOrBoolExpression(primitives...)
+	andOverPrimitivesBoolExpr := query.And(primitives...)
+	orOverPrimitivesBoolExpr := query.Or(primitives...)
 
-	nestedBoolExpr := query.NewAndBoolExpression(
-		query.NewTxHashPrimitive("txHash"),
+	nestedBoolExpr := query.And(
+		query.TxHash("txHash"),
 		andOverPrimitivesBoolExpr,
 		orOverPrimitivesBoolExpr,
-		query.NewTxHashPrimitive("txHash"),
+		query.TxHash("txHash"),
 	)
 	require.NoError(t, err)
 

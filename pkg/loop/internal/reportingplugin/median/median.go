@@ -68,7 +68,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		deps.Add(providerRes)
 
 		errorLogID, errorLogRes, err := m.ServeNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &errorlog.ErrorLogServer{Impl: errorLog})
+			pb.RegisterErrorLogServer(s, &errorlog.Server{Impl: errorLog})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -137,7 +137,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		return nil, net.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
-	errorLog := errorlog.NewErrorLogClient(errorLogConn)
+	errorLog := errorlog.NewClient(errorLogConn)
 
 	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
 	if err != nil {

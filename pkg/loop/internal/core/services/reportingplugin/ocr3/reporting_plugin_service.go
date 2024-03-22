@@ -48,7 +48,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(providerRes)
 
 		pipelineRunnerID, pipelineRunnerRes, err := o.ServeNew("PipelineRunner", func(s *grpc.Server) {
-			pb.RegisterPipelineRunnerServiceServer(s, &pipeline.PipelineRunnerServiceServer{Impl: pipelineRunner})
+			pb.RegisterPipelineRunnerServiceServer(s, &pipeline.RunnerServer{Impl: pipelineRunner})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -64,7 +64,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(telemetryRes)
 
 		errorLogID, errorLogRes, err := o.ServeNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &errorlog.ErrorLogServer{Impl: errorLog})
+			pb.RegisterErrorLogServer(s, &errorlog.Server{Impl: errorLog})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -116,7 +116,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, net.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
-	errorLog := errorlog.NewErrorLogClient(errorLogConn)
+	errorLog := errorlog.NewClient(errorLogConn)
 
 	providerConn, err := m.Dial(request.ProviderID)
 	if err != nil {
@@ -131,7 +131,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, net.ErrConnDial{Name: "PipelineRunner", ID: request.PipelineRunnerID, Err: err}
 	}
 	pipelineRunnerRes := net.Resource{Closer: pipelineRunnerConn, Name: "PipelineRunner"}
-	pipelineRunner := pipeline.NewPipelineRunnerClient(pipelineRunnerConn)
+	pipelineRunner := pipeline.NewRunnerClient(pipelineRunnerConn)
 
 	telemetryConn, err := m.Dial(request.TelemetryID)
 	if err != nil {

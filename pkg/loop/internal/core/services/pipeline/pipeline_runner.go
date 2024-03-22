@@ -20,7 +20,7 @@ type pipelineRunnerServiceClient struct {
 	grpc pb.PipelineRunnerServiceClient
 }
 
-func NewPipelineRunnerClient(cc grpc.ClientConnInterface) *pipelineRunnerServiceClient {
+func NewRunnerClient(cc grpc.ClientConnInterface) *pipelineRunnerServiceClient {
 	return &pipelineRunnerServiceClient{grpc: pb.NewPipelineRunnerServiceClient(cc)}
 }
 
@@ -64,16 +64,16 @@ func (p pipelineRunnerServiceClient) ExecuteRun(ctx context.Context, spec string
 	return trs, nil
 }
 
-var _ pb.PipelineRunnerServiceServer = (*PipelineRunnerServiceServer)(nil)
+var _ pb.PipelineRunnerServiceServer = (*RunnerServer)(nil)
 
-type PipelineRunnerServiceServer struct {
+type RunnerServer struct {
 	pb.UnimplementedPipelineRunnerServiceServer
 	*net.BrokerExt
 
 	Impl types.PipelineRunnerService
 }
 
-func (p *PipelineRunnerServiceServer) ExecuteRun(ctx context.Context, rr *pb.RunRequest) (*pb.RunResponse, error) {
+func (p *RunnerServer) ExecuteRun(ctx context.Context, rr *pb.RunRequest) (*pb.RunResponse, error) {
 	vars := types.Vars{
 		Vars: rr.Vars.AsMap(),
 	}

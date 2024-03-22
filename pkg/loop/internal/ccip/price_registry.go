@@ -196,8 +196,8 @@ func (p *PriceRegistryGRPCServer) GetTokensDecimals(ctx context.Context, req *cc
 	return decimalsPB(decimals), nil
 }
 
-// WithCloser returns a new PriceRegistryGRPCServer with the given onClose handler.
-func (p *PriceRegistryGRPCServer) WithCloser(dep io.Closer) *PriceRegistryGRPCServer {
+// AddDep adds a dependency to the server that will be closed when the server is closed
+func (p *PriceRegistryGRPCServer) AddDep(dep io.Closer) *PriceRegistryGRPCServer {
 	p.deps = append(p.deps, dep)
 	return p
 }

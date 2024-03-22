@@ -1,4 +1,4 @@
-package api
+package pipeline
 
 import (
 	"context"

@@ -7,10 +7,11 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
+	pluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -102,5 +103,5 @@ func (g *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
 // These implement `ConnToProvider` and return the conn wrapped as
 // the specified provider type. They can be embedded into the server struct
 // for ease of use.
-type PluginProviderServer = ocr2.PluginProviderServer
+type PluginProviderServer = pluginprovider.PluginProviderServer
 type MedianProviderServer = median.ProviderServer

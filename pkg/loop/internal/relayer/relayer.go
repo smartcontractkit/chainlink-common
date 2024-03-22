@@ -15,11 +15,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -399,7 +399,6 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr2.RegisterPluginProviderServices(s, provider)
 		median.RegisterProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
@@ -523,7 +522,6 @@ func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionReq
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
-	ocr2.RegisterPluginProviderServices(s, p)
 	median.RegisterProviderServices(s, p)
 }
 

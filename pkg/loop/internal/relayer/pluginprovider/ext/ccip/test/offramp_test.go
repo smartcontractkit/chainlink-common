@@ -19,7 +19,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	loopnettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 

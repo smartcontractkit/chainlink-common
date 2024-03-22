@@ -7,9 +7,9 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
-	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v1/test"
-	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v2/test"
-	mercury_v3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v3/test"
+	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1/test"
+	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2/test"
+	mercury_v3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"

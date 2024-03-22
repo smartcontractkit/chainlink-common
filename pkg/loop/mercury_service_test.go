@@ -9,10 +9,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
-	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/test"
-	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v1/test"
-	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v2/test"
-	mercury_v3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v3/test"
+	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
+	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1/test"
+	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2/test"
+	mercury_v3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 

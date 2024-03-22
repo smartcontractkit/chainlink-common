@@ -16,9 +16,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
-	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip/test"
-	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/median/test"
-	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/test"
+	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
+	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
+	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
@@ -55,8 +55,8 @@ type staticPluginRelayerConfig struct {
 	pluginArgs        types.PluginArgs
 	medianProvider    testtypes.MedianProviderTester
 	agnosticProvider  testtypes.PluginProviderTester
-	mercuryProvider   mercury_test.MercuryProviderTester
-	executionProvider ccip_test.ExecProviderTester
+	mercuryProvider   mercurytest.MercuryProviderTester
+	executionProvider cciptest.ExecProviderTester
 	configProvider    testpluginprovider.ConfigProviderTester
 	// Note: add other Provider testers here when we implement them
 	// eg Functions, Automation, etc
@@ -72,9 +72,9 @@ func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
 			StaticChecks:      staticChecks,
 			relayArgs:         RelayArgs,
 			pluginArgs:        PluginArgs,
-			medianProvider:    median_test.MedianProvider,
-			mercuryProvider:   mercury_test.MercuryProvider,
-			executionProvider: ccip_test.ExecutionProvider,
+			medianProvider:    mediantest.MedianProvider,
+			mercuryProvider:   mercurytest.MercuryProvider,
+			executionProvider: cciptest.ExecutionProvider,
 			agnosticProvider:  testpluginprovider.AgnosticProvider,
 			configProvider:    testpluginprovider.ConfigProvider,
 			nodeRequest: nodeRequest{
@@ -162,11 +162,11 @@ func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.Rela
 
 func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
 	if s.StaticChecks {
-		if !equalRelayArgs(r, mercury_test.RelayArgs) {
-			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercury_test.RelayArgs, r)
+		if !equalRelayArgs(r, mercurytest.RelayArgs) {
+			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercurytest.RelayArgs, r)
 		}
-		if !reflect.DeepEqual(mercury_test.PluginArgs, p) {
-			return nil, fmt.Errorf("expected plugin args %v but got %v", mercury_test.PluginArgs, p)
+		if !reflect.DeepEqual(mercurytest.PluginArgs, p) {
+			return nil, fmt.Errorf("expected plugin args %v but got %v", mercurytest.PluginArgs, p)
 		}
 	}
 	return s.mercuryProvider, nil
@@ -174,11 +174,11 @@ func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.Rel
 
 func (s staticPluginRelayer) NewExecutionProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.CCIPExecProvider, error) {
 	if s.StaticChecks {
-		if !equalRelayArgs(r, ccip_test.ExecutionRelayArgs) {
-			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercury_test.RelayArgs, r)
+		if !equalRelayArgs(r, cciptest.ExecutionRelayArgs) {
+			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercurytest.RelayArgs, r)
 		}
-		if !reflect.DeepEqual(ccip_test.ExecutionPluginArgs, p) {
-			return nil, fmt.Errorf("expected plugin args %v but got %v", mercury_test.PluginArgs, p)
+		if !reflect.DeepEqual(cciptest.ExecutionPluginArgs, p) {
+			return nil, fmt.Errorf("expected plugin args %v but got %v", mercurytest.PluginArgs, p)
 		}
 	}
 	return s.executionProvider, nil

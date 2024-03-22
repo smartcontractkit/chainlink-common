@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 

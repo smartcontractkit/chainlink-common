@@ -26,7 +26,7 @@ func (c *chainReaderLoopTester) Setup(t *testing.T) {
 	chainReader := c.ChainReaderInterfaceTester.GetChainReader(t)
 	c.lst.registerHook = func(server *grpc.Server) {
 		if chainReader != nil {
-			impl := chainreader.NewChainReaderServer(chainReader)
+			impl := chainreader.NewServer(chainReader)
 			pb.RegisterChainReaderServer(server, impl)
 		}
 	}
@@ -34,7 +34,7 @@ func (c *chainReaderLoopTester) Setup(t *testing.T) {
 }
 
 func (c *chainReaderLoopTester) GetChainReader(t *testing.T) types.ChainReader {
-	return chainreader.NewChainReaderClient(nil, c.lst.GetConn(t))
+	return chainreader.NewClient(nil, c.lst.GetConn(t))
 }
 
 func (c *chainReaderLoopTester) Name() string {

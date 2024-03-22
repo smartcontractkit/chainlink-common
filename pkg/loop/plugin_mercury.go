@@ -27,7 +27,7 @@ type GRPCPluginMercury struct {
 
 	PluginServer types.PluginMercury
 
-	pluginClient *mercury.MercuryAdapterClient
+	pluginClient *mercury.AdapterClient
 }
 
 func (p *GRPCPluginMercury) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {

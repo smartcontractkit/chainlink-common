@@ -238,7 +238,7 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 	// although these are part of the plugin provider interface, they are not actually implemented by all plugin providers (ie median)
 	// once we transition all plugins to the core node api, we can remove these checks
 	if provider.ChainReader() != nil {
-		pb.RegisterChainReaderServer(s, chainreader.NewChainReaderServer(provider.ChainReader()))
+		pb.RegisterChainReaderServer(s, chainreader.NewServer(provider.ChainReader()))
 	}
 
 	if provider.Codec() != nil {

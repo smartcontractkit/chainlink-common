@@ -103,4 +103,4 @@ func (g *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
 // the specified provider type. They can be embedded into the server struct
 // for ease of use.
 type PluginProviderServer = ocr2.PluginProviderServer
-type MedianProviderServer = median.MedianProviderServer
+type MedianProviderServer = median.ProviderServer

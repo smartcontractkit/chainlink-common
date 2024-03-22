@@ -188,7 +188,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	}
 
 	// After adding the trigger, we'll expect something wrapped by the internal client type below.
-	reg.On("Add", mock.Anything, mock.AnythingOfType("*internal.TriggerCapabilityClient")).Return(nil)
+	reg.On("Add", mock.Anything, mock.AnythingOfType("*capability.TriggerCapabilityClient")).Return(nil)
 	err = rc.Add(tests.Context(t), testTrigger)
 	require.NoError(t, err)
 

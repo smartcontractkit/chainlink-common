@@ -75,7 +75,7 @@ type ErrorLogEvaluator interface {
 	Evaluator[types.ErrorLog]
 }
 
-// ValidationEvaluator is a helper interface for testing ErrorLogs
+// ValidationEvaluator is a helper interface for testing ValidationService
 type ValidationEvaluator interface {
 	types.ValidationService
 	Evaluator[types.ValidationService]

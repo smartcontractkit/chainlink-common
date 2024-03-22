@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 

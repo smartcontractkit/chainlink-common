@@ -11,9 +11,9 @@ import (
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
-	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1/test"
-	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v2/test"
-	mercury_v3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3/test"
+	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v1/test"
+	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v2/test"
+	mercury_v3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v3/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 

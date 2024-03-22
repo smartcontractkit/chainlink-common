@@ -1,4 +1,4 @@
-package common
+package mercury
 
 import (
 	"context"
@@ -6,13 +6,13 @@ import (
 	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
-	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v1"
-	mercury_v2_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v2"
-	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/v3"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 	mercury_v1_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1"
 	mercury_v2_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v2"
 	mercury_v3_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
+	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v1"
+	mercury_v2_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v2"
+	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v3"
 	mercury_v1_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"

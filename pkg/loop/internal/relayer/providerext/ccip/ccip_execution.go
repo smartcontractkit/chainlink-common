@@ -1,4 +1,4 @@
-package internal
+package ccip
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	ccipinternal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
@@ -65,7 +64,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 			// and need to serve all the required services locally.
 			providerID, providerResource, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
 				ocr2.RegisterPluginProviderServices(s, provider)
-				registerCustomExecutionProviderServices(s, provider, c.BrokerExt)
+				RegisterExecutionProviderServices(s, provider, c.BrokerExt)
 			})
 		}
 		if err != nil {
@@ -85,9 +84,9 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 	return ocr2.NewReportingPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
-func registerCustomExecutionProviderServices(s *grpc.Server, provider types.CCIPExecProvider, brokerExt *net.BrokerExt) {
+func RegisterExecutionProviderServices(s *grpc.Server, provider types.CCIPExecProvider, brokerExt *net.BrokerExt) {
 	// register the handler for the custom methods of the provider eg NewOffRampReader
-	ccippb.RegisterExecutionCustomHandlersServer(s, newExecProviderServer(provider, brokerExt))
+	ccippb.RegisterExecutionCustomHandlersServer(s, NewExecProviderServer(provider, brokerExt))
 }
 
 // ExecutionLOOPServer is a server that runs the execution LOOP.
@@ -123,7 +122,7 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 		return nil, net.ErrConnDial{Name: "ExecProvider", ID: request.ProviderServiceId, Err: err}
 	}
 	deps.Add(net.Resource{Closer: providerConn, Name: "ExecProvider"})
-	provider := newExecProviderClient(r.BrokerExt, providerConn)
+	provider := NewExecProviderClient(r.BrokerExt, providerConn)
 
 	factory, err := r.impl.NewExecutionFactory(ctx, provider)
 	if err != nil {
@@ -141,11 +140,11 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 }
 
 var (
-	_ types.CCIPExecProvider = (*execProviderClient)(nil)
-	_ core.GRPCClientConn    = (*execProviderClient)(nil)
+	_ types.CCIPExecProvider = (*ExecProviderClient)(nil)
+	_ core.GRPCClientConn    = (*ExecProviderClient)(nil)
 )
 
-type execProviderClient struct {
+type ExecProviderClient struct {
 	*ocr2.PluginProviderClient
 
 	// must be shared with the server
@@ -153,10 +152,10 @@ type execProviderClient struct {
 	grpcClient ccippb.ExecutionCustomHandlersClient
 }
 
-func newExecProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *execProviderClient {
+func NewExecProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *ExecProviderClient {
 	pluginProviderClient := ocr2.NewPluginProviderClient(b, conn)
 	grpc := ccippb.NewExecutionCustomHandlersClient(conn)
-	return &execProviderClient{
+	return &ExecProviderClient{
 		PluginProviderClient: pluginProviderClient,
 		BrokerExt:            b,
 		grpcClient:           grpc,
@@ -164,7 +163,7 @@ func newExecProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *exe
 }
 
 // NewCommitStoreReader implements types.CCIPExecProvider.
-func (e *execProviderClient) NewCommitStoreReader(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreReader, error) {
+func (e *ExecProviderClient) NewCommitStoreReader(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreReader, error) {
 	req := ccippb.NewCommitStoreReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpcClient.NewCommitStoreReader(ctx, &req)
@@ -177,13 +176,13 @@ func (e *execProviderClient) NewCommitStoreReader(ctx context.Context, addr ccip
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.CommitStoreReaderServiceId, err)
 	}
 	// need to wrap grpc commitStore into the desired interface
-	commitStore := ccipinternal.NewCommitStoreReaderGRPCClient(commitStoreConn, e.BrokerExt)
+	commitStore := NewCommitStoreReaderGRPCClient(commitStoreConn, e.BrokerExt)
 
 	return commitStore, nil
 }
 
 // NewOffRampReader implements types.CCIPExecProvider.
-func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OffRampReader, error) {
+func (e *ExecProviderClient) NewOffRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OffRampReader, error) {
 	req := ccippb.NewOffRampReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpcClient.NewOffRampReader(ctx, &req)
@@ -196,13 +195,13 @@ func (e *execProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.OfframpReaderServiceId, err)
 	}
 	// need to wrap grpc offRamp into the desired interface
-	offRamp := ccipinternal.NewOffRampReaderGRPCClient(offRampConn, e.BrokerExt)
+	offRamp := NewOffRampReaderGRPCClient(offRampConn, e.BrokerExt)
 
 	return offRamp, nil
 }
 
 // NewOnRampReader implements types.CCIPExecProvider.
-func (e *execProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
+func (e *ExecProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
 	req := ccippb.NewOnRampReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpcClient.NewOnRampReader(ctx, &req)
@@ -219,14 +218,14 @@ func (e *execProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes
 		return nil, fmt.Errorf("failed to lookup on ramp reader service at %d: %w", resp.OnrampReaderServiceId, err)
 	}
 	// need to wrap grpc onRamp into the desired interface
-	onRamp := ccipinternal.NewOnRampReaderGRPCClient(onRampConn)
+	onRamp := NewOnRampReaderGRPCClient(onRampConn)
 
 	// how to convert resp to cciptypes.OnRampReader? i have an id and need to hydrate that into an instance of OnRampReader
 	return onRamp, nil
 }
 
 // NewPriceRegistryReader implements types.CCIPExecProvider.
-func (e *execProviderClient) NewPriceRegistryReader(ctx context.Context, addr cciptypes.Address) (cciptypes.PriceRegistryReader, error) {
+func (e *ExecProviderClient) NewPriceRegistryReader(ctx context.Context, addr cciptypes.Address) (cciptypes.PriceRegistryReader, error) {
 	req := ccippb.NewPriceRegistryReaderRequest{Address: string(addr)}
 	resp, err := e.grpcClient.NewPriceRegistryReader(ctx, &req)
 	if err != nil {
@@ -238,13 +237,13 @@ func (e *execProviderClient) NewPriceRegistryReader(ctx context.Context, addr cc
 		return nil, fmt.Errorf("failed to lookup price registry reader service at %d: %w", resp.PriceRegistryReaderServiceId, err)
 	}
 	// need to wrap grpc priceReader into the desired interface
-	priceReader := ccipinternal.NewPriceRegistryGRPCClient(priceReaderConn)
+	priceReader := NewPriceRegistryGRPCClient(priceReaderConn)
 
 	return priceReader, nil
 }
 
 // NewTokenDataReader implements types.CCIPExecProvider.
-func (e *execProviderClient) NewTokenDataReader(ctx context.Context, tokenAddress cciptypes.Address) (cciptypes.TokenDataReader, error) {
+func (e *ExecProviderClient) NewTokenDataReader(ctx context.Context, tokenAddress cciptypes.Address) (cciptypes.TokenDataReader, error) {
 	req := ccippb.NewTokenDataRequest{Address: string(tokenAddress)}
 	resp, err := e.grpcClient.NewTokenDataReader(ctx, &req)
 	if err != nil {
@@ -256,13 +255,13 @@ func (e *execProviderClient) NewTokenDataReader(ctx context.Context, tokenAddres
 		return nil, fmt.Errorf("failed to lookup token data reader service at %d: %w", resp.TokenDataReaderServiceId, err)
 	}
 	// need to wrap grpc tokenDataReader into the desired interface
-	tokenDataReader := ccipinternal.NewTokenDataReaderGRPCClient(tokenDataConn)
+	tokenDataReader := NewTokenDataReaderGRPCClient(tokenDataConn)
 
 	return tokenDataReader, nil
 }
 
 // NewTokenPoolBatchedReader implements types.CCIPExecProvider.
-func (e *execProviderClient) NewTokenPoolBatchedReader(ctx context.Context) (cciptypes.TokenPoolBatchedReader, error) {
+func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context) (cciptypes.TokenPoolBatchedReader, error) {
 	resp, err := e.grpcClient.NewTokenPoolBatchedReader(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, err
@@ -272,12 +271,12 @@ func (e *execProviderClient) NewTokenPoolBatchedReader(ctx context.Context) (cci
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup token poll batched reader service at %d: %w", resp.TokenPoolBatchedReaderServiceId, err)
 	}
-	tokenPool := ccipinternal.NewTokenPoolBatchedReaderGRPCClient(tokenPoolConn)
+	tokenPool := NewTokenPoolBatchedReaderGRPCClient(tokenPoolConn)
 	return tokenPool, nil
 }
 
 // SourceNativeToken implements types.CCIPExecProvider.
-func (e *execProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.Address, error) {
+func (e *ExecProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.Address, error) {
 	// unlike the other methods, this one does not create a new resource, so we do not
 	// need the broker to serve it. we can just call the grpc method directly.
 	resp, err := e.grpcClient.SourceNativeToken(ctx, &emptypb.Empty{})
@@ -287,10 +286,10 @@ func (e *execProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.A
 	return cciptypes.Address(resp.NativeTokenAddress), nil
 }
 
-// execProviderServer is a server that wraps the custom methods of the [types.CCIPExecProvider]
+// ExecProviderServer is a server that wraps the custom methods of the [types.CCIPExecProvider]
 // this is necessary because those method create new resources that need to be served by the broker
 // when we are running in legacy mode.
-type execProviderServer struct {
+type ExecProviderServer struct {
 	ccippb.UnimplementedExecutionCustomHandlersServer
 	// BCF-3061 this has to be a shared pointer to the same impl as the execProviderClient
 	*net.BrokerExt
@@ -298,18 +297,18 @@ type execProviderServer struct {
 }
 
 // Close implements ccippb.ExecutionCustomHandlersServer.
-func (e *execProviderServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+func (e *ExecProviderServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, e.impl.Close()
 }
 
 // NewCommitStoreReader implements ccippb.ExecutionCustomHandlersServer.
-func (e *execProviderServer) NewCommitStoreReader(ctx context.Context, req *ccippb.NewCommitStoreReaderRequest) (*ccippb.NewCommitStoreReaderResponse, error) {
+func (e *ExecProviderServer) NewCommitStoreReader(ctx context.Context, req *ccippb.NewCommitStoreReaderRequest) (*ccippb.NewCommitStoreReaderResponse, error) {
 	reader, err := e.impl.NewCommitStoreReader(context.Background(), ccip.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	commitStoreHandler, err := ccipinternal.NewCommitStoreReaderGRPCServer(reader, e.BrokerExt)
+	commitStoreHandler, err := NewCommitStoreReaderGRPCServer(reader, e.BrokerExt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create offramp reader grpc server: %w", err)
 	}
@@ -325,19 +324,19 @@ func (e *execProviderServer) NewCommitStoreReader(ctx context.Context, req *ccip
 	return &ccippb.NewCommitStoreReaderResponse{CommitStoreReaderServiceId: int32(commitStoreID)}, nil
 }
 
-var _ ccippb.ExecutionCustomHandlersServer = (*execProviderServer)(nil)
+var _ ccippb.ExecutionCustomHandlersServer = (*ExecProviderServer)(nil)
 
-func newExecProviderServer(impl types.CCIPExecProvider, brokerExt *net.BrokerExt) *execProviderServer {
-	return &execProviderServer{impl: impl, BrokerExt: brokerExt}
+func NewExecProviderServer(impl types.CCIPExecProvider, brokerExt *net.BrokerExt) *ExecProviderServer {
+	return &ExecProviderServer{impl: impl, BrokerExt: brokerExt}
 }
 
-func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.NewOffRampReaderRequest) (*ccippb.NewOffRampReaderResponse, error) {
+func (e *ExecProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.NewOffRampReaderRequest) (*ccippb.NewOffRampReaderResponse, error) {
 	reader, err := e.impl.NewOffRampReader(ctx, cciptypes.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	offRampHandler, err := ccipinternal.NewOffRampReaderGRPCServer(reader, e.BrokerExt)
+	offRampHandler, err := NewOffRampReaderGRPCServer(reader, e.BrokerExt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create offramp reader grpc server: %w", err)
 	}
@@ -353,13 +352,13 @@ func (e *execProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 	return &ccippb.NewOffRampReaderResponse{OfframpReaderServiceId: int32(offRampID)}, nil
 }
 
-func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
+func (e *ExecProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
 	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	srv := ccipinternal.NewOnRampReaderGRPCServer(reader)
+	srv := NewOnRampReaderGRPCServer(reader)
 	// the id is handle to the broker, we will need it on the other side to dial the resource
 	onRampID, onRampResource, err := e.ServeNew("OnRampReader", func(s *grpc.Server) {
 		ccippb.RegisterOnRampReaderServer(s, srv)
@@ -372,13 +371,13 @@ func (e *execProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.Ne
 	return &ccippb.NewOnRampReaderResponse{OnrampReaderServiceId: int32(onRampID)}, nil
 }
 
-func (e *execProviderServer) NewPriceRegistryReader(ctx context.Context, req *ccippb.NewPriceRegistryReaderRequest) (*ccippb.NewPriceRegistryReaderResponse, error) {
+func (e *ExecProviderServer) NewPriceRegistryReader(ctx context.Context, req *ccippb.NewPriceRegistryReaderRequest) (*ccippb.NewPriceRegistryReaderResponse, error) {
 	reader, err := e.impl.NewPriceRegistryReader(ctx, cciptypes.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	priceRegistryHandler := ccipinternal.NewPriceRegistryGRPCServer(reader)
+	priceRegistryHandler := NewPriceRegistryGRPCServer(reader)
 	// the id is handle to the broker, we will need it on the other side to dial the resource
 	priceReaderID, spawnedServer, err := e.ServeNew("PriceRegistryReader", func(s *grpc.Server) {
 		ccippb.RegisterPriceRegistryReaderServer(s, priceRegistryHandler)
@@ -394,13 +393,13 @@ func (e *execProviderServer) NewPriceRegistryReader(ctx context.Context, req *cc
 	return &ccippb.NewPriceRegistryReaderResponse{PriceRegistryReaderServiceId: int32(priceReaderID)}, nil
 }
 
-func (e *execProviderServer) NewTokenDataReader(ctx context.Context, req *ccippb.NewTokenDataRequest) (*ccippb.NewTokenDataResponse, error) {
+func (e *ExecProviderServer) NewTokenDataReader(ctx context.Context, req *ccippb.NewTokenDataRequest) (*ccippb.NewTokenDataResponse, error) {
 	reader, err := e.impl.NewTokenDataReader(ctx, cciptypes.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	tokenDataHandler := ccipinternal.NewTokenDataReaderGRPCServer(reader)
+	tokenDataHandler := NewTokenDataReaderGRPCServer(reader)
 	// the id is handle to the broker, we will need it on the other side to dial the resource
 	tokeDataReaderID, spawnedServer, err := e.ServeNew("TokenDataReader", func(s *grpc.Server) {
 		ccippb.RegisterTokenDataReaderServer(s, tokenDataHandler)
@@ -413,13 +412,13 @@ func (e *execProviderServer) NewTokenDataReader(ctx context.Context, req *ccippb
 	return &ccippb.NewTokenDataResponse{TokenDataReaderServiceId: int32(tokeDataReaderID)}, nil
 }
 
-func (e *execProviderServer) NewTokenPoolBatchedReader(ctx context.Context, _ *emptypb.Empty) (*ccippb.NewTokenPoolBatchedReaderResponse, error) {
+func (e *ExecProviderServer) NewTokenPoolBatchedReader(ctx context.Context, _ *emptypb.Empty) (*ccippb.NewTokenPoolBatchedReaderResponse, error) {
 	reader, err := e.impl.NewTokenPoolBatchedReader(ctx)
 	if err != nil {
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	tokenPoolHandler := ccipinternal.NewTokenPoolBatchedReaderGRPCServer(reader)
+	tokenPoolHandler := NewTokenPoolBatchedReaderGRPCServer(reader)
 	// the id is handle to the broker, we will need it on the other side to dial the resource
 	tokenPoolID, spawnedServer, err := e.ServeNew("TokenPoolBatchedReader", func(s *grpc.Server) {
 		ccippb.RegisterTokenPoolBatcherReaderServer(s, tokenPoolHandler)
@@ -432,7 +431,7 @@ func (e *execProviderServer) NewTokenPoolBatchedReader(ctx context.Context, _ *e
 	return &ccippb.NewTokenPoolBatchedReaderResponse{TokenPoolBatchedReaderServiceId: int32(tokenPoolID)}, nil
 }
 
-func (e *execProviderServer) SourceNativeToken(ctx context.Context, _ *emptypb.Empty) (*ccippb.SourceNativeTokenResponse, error) {
+func (e *ExecProviderServer) SourceNativeToken(ctx context.Context, _ *emptypb.Empty) (*ccippb.SourceNativeTokenResponse, error) {
 	addr, err := e.impl.SourceNativeToken(ctx)
 	if err != nil {
 		return nil, err

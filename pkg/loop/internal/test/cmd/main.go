@@ -11,10 +11,10 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip/test"
-	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/median/test"
-	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common/test"
 	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr3/test"
+	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip/test"
+	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/median/test"
+	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	coreapi_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core/api"
 	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"

@@ -14,28 +14,27 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-func TestStaticTokenPool(t *testing.T) {
+func TestStaticTokenData(t *testing.T) {
 	t.Parallel()
 
 	// static test implementation is self consistent
 	ctx := context.Background()
-	assert.NoError(t, TokenPoolBatchedReader.Evaluate(ctx, TokenPoolBatchedReader))
+	assert.NoError(t, TokenDataReader.Evaluate(ctx, TokenDataReader))
 
 	// error when the test implementation is evaluates something that differs from the static implementation
-	botched := TokenPoolBatchedReader
-	botched.getInboundTokenPoolRateLimitsRequest = []cciptypes.Address{"not the right request"}
-	err := TokenPoolBatchedReader.Evaluate(ctx, botched)
+	botched := TokenDataReader
+	botched.readTokenDataResponse = []byte("not the right response")
+	err := TokenDataReader.Evaluate(ctx, botched)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not the right request")
 }
 
-func TestTokenPoolGRPC(t *testing.T) {
+func TestTokenDataGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 	// create a price registry server
@@ -50,11 +49,11 @@ func TestTokenPoolGRPC(t *testing.T) {
 	shutdown := make(chan struct{})
 	closer := &serviceCloser{closeFn: func() error { close(shutdown); return nil }}
 
-	tokenPool := ccip.NewTokenPoolBatchedReaderGRPCServer(TokenPoolBatchedReader)
+	tokenData := ccip.NewTokenDataReaderGRPCServer(TokenDataReader)
 	require.NoError(t, err)
-	tokenPool = tokenPool.AddDep(closer)
+	tokenData = tokenData.AddDep(closer)
 
-	ccippb.RegisterTokenPoolBatcherReaderServer(testServer, tokenPool)
+	ccippb.RegisterTokenDataReaderServer(testServer, tokenData)
 	// start the server and shutdown handler
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -73,10 +72,10 @@ func TestTokenPoolGRPC(t *testing.T) {
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err, "failed to dial %s", addr)
 	t.Cleanup(func() { conn.Close() })
-	client := ccip.NewTokenPoolBatchedReaderGRPCClient(conn)
+	client := ccip.NewTokenDataReaderGRPCClient(conn)
 
 	// test the client
-	roundTripTokenPoolTests(ctx, t, client)
+	roundTripTokenDataTests(ctx, t, client)
 	// closing the client executes the shutdown callback
 	// which stops the server.  the wg.Wait() below ensures
 	// that the server has stopped, which is what we care about.
@@ -85,10 +84,10 @@ func TestTokenPoolGRPC(t *testing.T) {
 	wg.Wait()
 }
 
-func roundTripTokenPoolTests(ctx context.Context, t *testing.T, client cciptypes.TokenPoolBatchedReader) {
+func roundTripTokenDataTests(ctx context.Context, t *testing.T, client cciptypes.TokenDataReader) {
 	t.Helper()
 	// test read token data
-	limits, err := client.GetInboundTokenPoolRateLimits(ctx, TokenPoolBatchedReader.getInboundTokenPoolRateLimitsRequest)
+	tokenData, err := client.ReadTokenData(ctx, TokenDataReader.readTokenDataRequest.msg, TokenDataReader.readTokenDataRequest.tokenIndex)
 	require.NoError(t, err)
-	assert.Equal(t, TokenPoolBatchedReader.getInboundTokenPoolRateLimitsResponse, limits)
+	assert.Equal(t, TokenDataReader.readTokenDataResponse, tokenData)
 }

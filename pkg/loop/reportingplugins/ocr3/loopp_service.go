@@ -10,14 +10,14 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 type LOOPPService struct {
-	internal.PluginService[*GRPCService[types.PluginProvider], types.OCR3ReportingPluginFactory]
+	core.PluginService[*GRPCService[types.PluginProvider], types.OCR3ReportingPluginFactory]
 }
 
 func NewLOOPPService(

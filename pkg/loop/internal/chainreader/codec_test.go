@@ -13,21 +13,22 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestCodecClient(t *testing.T) {
-	interfaceTester := WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: &fakeCodec{}})
-	RunCodecInterfaceTests(t, interfaceTester)
+	interfaceTester := test.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: &fakeCodec{}})
+	interfacetests.RunCodecInterfaceTests(t, interfaceTester)
 
 	es := &errCodec{}
-	esTester := WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: es})
+	esTester := test.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: es})
 	esTester.Setup(t)
 	esCodec := esTester.GetCodec(t)
 
-	anyObj := &TestStruct{}
+	anyObj := &interfacetests.TestStruct{}
 	for _, errorType := range errorTypes {
 		es.err = errorType
 		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
@@ -64,30 +65,30 @@ func TestCodecClient(t *testing.T) {
 		interfaceTester.Setup(t)
 		c := interfaceTester.GetCodec(t)
 		fv := int32(1)
-		toDecode, err := c.Encode(tests.Context(t), &TestStruct{Field: &fv}, TestItemType)
+		toDecode, err := c.Encode(tests.Context(t), &interfacetests.TestStruct{Field: &fv}, interfacetests.TestItemType)
 		require.NoError(t, err)
-		err = c.Decode(tests.Context(t), toDecode, &cannotEncode{}, TestItemType)
+		err = c.Decode(tests.Context(t), toDecode, &cannotEncode{}, interfacetests.TestItemType)
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("Nil esCodec returns unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
-		nilTester := WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: nil})
+		nilTester := test.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCodec := nilTester.GetCodec(t)
 
-		item := &TestStruct{}
+		item := &interfacetests.TestStruct{}
 
-		_, err := nilCodec.Encode(ctx, item, TestItemType)
+		_, err := nilCodec.Encode(ctx, item, interfacetests.TestItemType)
 		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 
-		err = nilCodec.Decode(ctx, []byte("does not matter"), &item, TestItemType)
+		err = nilCodec.Decode(ctx, []byte("does not matter"), &item, interfacetests.TestItemType)
 		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 
-		_, err = nilCodec.GetMaxEncodingSize(ctx, 1, TestItemType)
+		_, err = nilCodec.GetMaxEncodingSize(ctx, 1, interfacetests.TestItemType)
 		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 
-		_, err = nilCodec.GetMaxDecodingSize(ctx, 1, TestItemType)
+		_, err = nilCodec.GetMaxDecodingSize(ctx, 1, interfacetests.TestItemType)
 		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 	})
 }
@@ -114,14 +115,14 @@ func (f *fakeCodec) GetMaxDecodingSize(ctx context.Context, n int, itemType stri
 
 func (f *fakeCodec) GetMaxEncodingSize(_ context.Context, _ int, itemType string) (int, error) {
 	switch itemType {
-	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
+	case interfacetests.TestItemType, interfacetests.TestItemSliceType, interfacetests.TestItemArray2Type, interfacetests.TestItemArray1Type:
 		return 1, nil
 	}
 	return 0, types.ErrInvalidType
 }
 
-func (it *fakeCodecInterfaceTester) EncodeFields(t *testing.T, request *EncodeRequest) []byte {
-	if request.TestOn == TestItemType {
+func (it *fakeCodecInterfaceTester) EncodeFields(t *testing.T, request *interfacetests.EncodeRequest) []byte {
+	if request.TestOn == interfacetests.TestItemType {
 		bytes, err := encoder.Marshal(request.TestStructs[0])
 		require.NoError(t, err)
 		return bytes
@@ -139,20 +140,20 @@ func (it *fakeCodecInterfaceTester) IncludeArrayEncodingSizeEnforcement() bool {
 func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) ([]byte, error) {
 	f.lastItem = item
 	switch itemType {
-	case NilType:
+	case interfacetests.NilType:
 		return []byte{}, nil
-	case TestItemWithConfigExtra:
-		ts := item.(*TestStruct)
+	case interfacetests.TestItemWithConfigExtra:
+		ts := item.(*interfacetests.TestStruct)
 		ts.Account = anyAccountBytes
 		ts.BigField = big.NewInt(2)
 		return encoder.Marshal(ts)
-	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
+	case interfacetests.TestItemType, interfacetests.TestItemSliceType, interfacetests.TestItemArray2Type, interfacetests.TestItemArray1Type:
 		switch i := item.(type) {
-		case *TestStruct:
+		case *interfacetests.TestStruct:
 			if i.Field == nil {
 				return nil, types.ErrInvalidType
 			}
-		case *TestStructMissingField:
+		case *interfacetests.TestStructMissingField:
 			return nil, types.ErrInvalidType
 		}
 		return encoder.Marshal(item)
@@ -165,7 +166,7 @@ func (f *fakeCodec) Decode(_ context.Context, _ []byte, into any, itemType strin
 		return fmt.Errorf("%w: no item to decode", types.ErrInvalidEncoding)
 	}
 	switch itemType {
-	case TestItemWithConfigExtra:
+	case interfacetests.TestItemWithConfigExtra:
 		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Squash: true, Result: into})
 		if err != nil {
 			return err
@@ -174,10 +175,10 @@ func (f *fakeCodec) Decode(_ context.Context, _ []byte, into any, itemType strin
 		if err = decoder.Decode(f.lastItem); err != nil {
 			return err
 		}
-		extra := into.(*TestStructWithExtraField)
-		extra.ExtraField = AnyExtraValue
+		extra := into.(*interfacetests.TestStructWithExtraField)
+		extra.ExtraField = interfacetests.AnyExtraValue
 		return nil
-	case TestItemType, TestItemSliceType, TestItemArray2Type, TestItemArray1Type:
+	case interfacetests.TestItemType, interfacetests.TestItemSliceType, interfacetests.TestItemArray2Type, interfacetests.TestItemArray1Type:
 		return mapstructure.Decode(f.lastItem, into)
 	}
 	return types.ErrInvalidType

@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
@@ -60,10 +61,10 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 func TestChainReaderClient(t *testing.T) {
 	fake := &fakeChainReader{}
-	RunChainReaderInterfaceTests(t, WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
 
 	es := &errChainReader{}
-	errTester := WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
 	errTester.Setup(t)
 	chainReader := errTester.GetChainReader(t)
 
@@ -96,7 +97,7 @@ func TestChainReaderClient(t *testing.T) {
 	t.Run("nil reader should return unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
 
-		nilTester := WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+		nilTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCr := nilTester.GetChainReader(t)
 

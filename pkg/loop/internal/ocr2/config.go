@@ -227,9 +227,7 @@ func pbContractConfig(cc libocr.ContractConfig) *pb.ContractConfig {
 
 // TODO: where to put this helper?
 func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvider) {
-	pb.RegisterServiceServer(s, &core.ServiceServer{Srv: provider})
-	pb.RegisterOffchainConfigDigesterServer(s, &OffchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
-	pb.RegisterContractConfigTrackerServer(s, &ContractConfigTrackerServer{impl: provider.ContractConfigTracker()})
+	RegisterConfigProviderServices(s, provider)
 	pb.RegisterContractTransmitterServer(s, &ContractTransmitterServer{impl: provider.ContractTransmitter()})
 	// although these are part of the plugin provider interface, they are not actually implemented by all plugin providers (ie median)
 	// once we transition all plugins to the core node api, we can remove these checks
@@ -240,4 +238,10 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 	if provider.Codec() != nil {
 		pb.RegisterCodecServer(s, chainreader.NewCodecServer(provider.Codec()))
 	}
+}
+
+func RegisterConfigProviderServices(s *grpc.Server, provider types.ConfigProvider) {
+	pb.RegisterServiceServer(s, &core.ServiceServer{Srv: provider})
+	pb.RegisterOffchainConfigDigesterServer(s, &OffchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
+	pb.RegisterContractConfigTrackerServer(s, &ContractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 }

@@ -1,4 +1,4 @@
-package chainreader_test
+package test
 
 import (
 	"testing"

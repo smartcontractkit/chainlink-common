@@ -1,4 +1,4 @@
-package internal
+package relayer
 
 import (
 	"context"
@@ -14,11 +14,12 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
-	mercury_common_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/mercury/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/median"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -219,11 +220,11 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 	// for interoperability with legacy code.
 	switch rargs.ProviderType {
 	case string(types.Median):
-		return newMedianProviderClient(r.BrokerExt, cc), nil
+		return median.NewMedianProviderClient(r.BrokerExt, cc), nil
 	case string(types.GenericPlugin):
-		return NewPluginProviderClient(r.BrokerExt, cc), nil
+		return ocr2.NewPluginProviderClient(r.BrokerExt, cc), nil
 	case string(types.Mercury):
-		return newMercuryProviderClient(r.BrokerExt, cc), nil
+		return mercury.NewMercuryProviderClient(r.BrokerExt, cc), nil
 	case string(types.CCIPExecution):
 		// TODO BCF-3061
 		// what do i do here? for the local embedded relayer, we are using the broker
@@ -234,7 +235,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 		// even make sense to me because the relayer client will in the reporting plugin loop
 		// for now we return an error and test for the this error case
 		// return nil, fmt.Errorf("need to fix BCF-3061")
-		return newExecProviderClient(r.BrokerExt, cc), fmt.Errorf("need to fix BCF-3061")
+		return ccip.NewExecProviderClient(r.BrokerExt, cc), fmt.Errorf("need to fix BCF-3061")
 	default:
 		return nil, fmt.Errorf("provider type not supported: %s", rargs.ProviderType)
 	}
@@ -324,9 +325,7 @@ func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewCo
 
 	const name = "ConfigProvider"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: cp})
-		pb.RegisterOffchainConfigDigesterServer(s, &OffchainConfigDigesterServer{impl: cp.OffchainConfigDigester()})
-		pb.RegisterContractConfigTrackerServer(s, &ContractConfigTrackerServer{impl: cp.ContractConfigTracker()})
+		ocr2.RegisterConfigProviderServices(s, cp)
 	}, net.Resource{Closer: cp, Name: name})
 	if err != nil {
 		return nil, err
@@ -401,9 +400,7 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
-		pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
-		pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
-		pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})
+		median.RegisterMedianProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -453,13 +450,7 @@ func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
-
-		mercury_pb.RegisterOnchainConfigCodecServer(s, mercury_common_internal.NewOnchainConfigCodecServer(provider.OnchainConfigCodec()))
-		mercury_pb.RegisterReportCodecV1Server(s, mercury_common_internal.NewReportCodecV1Server(s, provider.ReportCodecV1()))
-		mercury_pb.RegisterReportCodecV2Server(s, mercury_common_internal.NewReportCodecV2Server(s, provider.ReportCodecV2()))
-		mercury_pb.RegisterReportCodecV3Server(s, mercury_common_internal.NewReportCodecV3Server(s, provider.ReportCodecV3()))
-		mercury_pb.RegisterServerFetcherServer(s, mercury_common_internal.NewServerFetcherServer(provider.MercuryServerFetcher()))
-		mercury_pb.RegisterMercuryChainReaderServer(s, mercury_common_internal.NewChainReaderServer(provider.MercuryChainReader()))
+		mercury.RegisterMercuryProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -469,7 +460,7 @@ func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.
 }
 
 func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
-	i, ok := r.impl.(CCIPExecProvider)
+	i, ok := r.impl.(looptypes.CCIPExecProvider)
 	if !ok {
 		return 0, status.Error(codes.Unimplemented, fmt.Sprintf("ccip execution not supported by %T", r.impl))
 	}
@@ -487,7 +478,7 @@ func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.Rel
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
-		registerCustomExecutionProviderServices(s, provider, r.BrokerExt)
+		ccip.RegisterExecutionProviderServices(s, provider, r.BrokerExt)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -533,9 +524,7 @@ func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionReq
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
 	ocr2.RegisterPluginProviderServices(s, p)
-	pb.RegisterReportCodecServer(s, &reportCodecServer{impl: p.ReportCodec()})
-	pb.RegisterMedianContractServer(s, &medianContractServer{impl: p.MedianContract()})
-	pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: p.OnchainConfigCodec()})
+	median.RegisterMedianProviderServices(s, p)
 }
 
 // RegisterStandAlonePluginProvider register the servers needed for a generic plugin provider,

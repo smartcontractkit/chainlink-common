@@ -8,7 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	mercury_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/test"
 	mercury_v1_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v1/test"
 	mercury_v2_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/mercury/v2/test"
@@ -33,7 +33,7 @@ func TestMercuryV3Service(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * core.KeepAliveTickDuration)
+		time.Sleep(2 * base.KeepAliveTickDuration)
 
 		mercury_test.MercuryPluginFactory(t, mercuryV3)
 	})
@@ -42,7 +42,7 @@ func TestMercuryV3Service(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * core.KeepAliveTickDuration)
+		time.Sleep(2 * base.KeepAliveTickDuration)
 
 		mercury_test.MercuryPluginFactory(t, mercuryV3)
 	})
@@ -80,7 +80,7 @@ func TestMercuryV1Service(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * core.KeepAliveTickDuration)
+		time.Sleep(2 * base.KeepAliveTickDuration)
 
 		mercury_test.MercuryPluginFactory(t, mercuryV1)
 	})
@@ -89,7 +89,7 @@ func TestMercuryV1Service(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * core.KeepAliveTickDuration)
+		time.Sleep(2 * base.KeepAliveTickDuration)
 
 		mercury_test.MercuryPluginFactory(t, mercuryV1)
 	})
@@ -127,7 +127,7 @@ func TestMercuryV2Service(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * core.KeepAliveTickDuration)
+		time.Sleep(2 * base.KeepAliveTickDuration)
 
 		mercury_test.MercuryPluginFactory(t, mercuryV2)
 	})
@@ -136,7 +136,7 @@ func TestMercuryV2Service(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * core.KeepAliveTickDuration)
+		time.Sleep(2 * base.KeepAliveTickDuration)
 
 		mercury_test.MercuryPluginFactory(t, mercuryV2)
 	})

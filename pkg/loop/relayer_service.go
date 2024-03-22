@@ -7,7 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -15,7 +15,7 @@ var _ Relayer = (*RelayerService)(nil)
 
 // RelayerService is a [types.Service] that maintains an internal [Relayer].
 type RelayerService struct {
-	core.PluginService[*GRPCPluginRelayer, Relayer]
+	base.PluginService[*GRPCPluginRelayer, Relayer]
 }
 
 // NewRelayerService returns a new [*RelayerService].

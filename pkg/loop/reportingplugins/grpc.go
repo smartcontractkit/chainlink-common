@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/api"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/coreapi"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/median"
@@ -72,7 +72,7 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 		el types.ErrorLog,
 	) (types.ReportingPluginFactory, error) {
 		provider := g.PluginServer.ConnToProvider(conn, broker, g.BrokerConfig)
-		tc := api.NewTelemetryClient(ts)
+		tc := coreapi.NewTelemetryClient(ts)
 		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el)
 	}
 	return ocr2.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter(adapter))

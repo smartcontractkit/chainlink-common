@@ -8,7 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	core "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	ocr3_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr3/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"

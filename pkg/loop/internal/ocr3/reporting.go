@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
@@ -19,12 +19,12 @@ import (
 
 type reportingPluginFactoryClient struct {
 	*net.BrokerExt
-	*core.ServiceClient
+	*base.ServiceClient
 	grpc ocr3.ReportingPluginFactoryClient
 }
 
 func newReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
-	return &reportingPluginFactoryClient{b.WithName("OCR3ReportingPluginProviderClient"), core.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
+	return &reportingPluginFactoryClient{b.WithName("OCR3ReportingPluginProviderClient"), base.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
 }
 
 func (r *reportingPluginFactoryClient) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {

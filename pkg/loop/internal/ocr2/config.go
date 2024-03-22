@@ -7,8 +7,8 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -16,17 +16,17 @@ import (
 
 var (
 	_ types.ConfigProvider = (*ConfigProviderClient)(nil)
-	_ core.GRPCClientConn  = (*ConfigProviderClient)(nil)
+	_ base.GRPCClientConn  = (*ConfigProviderClient)(nil)
 )
 
 type ConfigProviderClient struct {
-	*core.ServiceClient
+	*base.ServiceClient
 	offchainDigester libocr.OffchainConfigDigester
 	contractTracker  libocr.ContractConfigTracker
 }
 
 func NewConfigProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ConfigProviderClient {
-	c := &ConfigProviderClient{ServiceClient: core.NewServiceClient(b, cc)}
+	c := &ConfigProviderClient{ServiceClient: base.NewServiceClient(b, cc)}
 	c.offchainDigester = &OffchainConfigDigesterClient{b, pb.NewOffchainConfigDigesterClient(cc)}
 	c.contractTracker = &ContractConfigTrackerClient{pb.NewContractConfigTrackerClient(cc)}
 	return c
@@ -247,7 +247,7 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 }
 
 func RegisterConfigProviderServices(s *grpc.Server, provider types.ConfigProvider) {
-	pb.RegisterServiceServer(s, &core.ServiceServer{Srv: provider})
+	pb.RegisterServiceServer(s, &base.ServiceServer{Srv: provider})
 	pb.RegisterOffchainConfigDigesterServer(s, &OffchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
 	pb.RegisterContractConfigTrackerServer(s, &ContractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 }

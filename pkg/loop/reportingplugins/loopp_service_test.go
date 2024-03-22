@@ -8,10 +8,10 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	core "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
-	testapi "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core/api"
+	testcoreapi "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core/api"
 	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
@@ -39,7 +39,7 @@ func TestLOOPPService(t *testing.T) {
 		Plugin string
 	}{
 		// A generic plugin with a median provider
-		{Plugin: testapi.MedianID},
+		{Plugin: testcoreapi.MedianID},
 		// A generic plugin with a plugin provider
 		{Plugin: reportingplugins.PluginServiceName},
 	}
@@ -84,7 +84,7 @@ func TestLOOPPService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: testapi.MedianID,
+			Command: testcoreapi.MedianID,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()

@@ -1,4 +1,4 @@
-package core
+package base
 
 import (
 	"google.golang.org/grpc"

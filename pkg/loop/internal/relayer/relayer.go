@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -27,14 +27,14 @@ import (
 var _ looptypes.PluginRelayer = (*PluginRelayerClient)(nil)
 
 type PluginRelayerClient struct {
-	*core.PluginClient
+	*base.PluginClient
 
 	grpc pb.PluginRelayerClient
 }
 
 func NewPluginRelayerClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginRelayerClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginRelayerClient")
-	pc := core.NewPluginClient(broker, brokerCfg, conn)
+	pc := base.NewPluginClient(broker, brokerCfg, conn)
 	return &PluginRelayerClient{PluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
 }
 
@@ -99,7 +99,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	const name = "Relayer"
 	rRes := net.Resource{Closer: r, Name: name}
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: r})
+		pb.RegisterServiceServer(s, &base.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
 	}, rRes, ksRes)
 	if err != nil {
@@ -164,14 +164,14 @@ var _ looptypes.Relayer = (*relayerClient)(nil)
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
 	*net.BrokerExt
-	*core.ServiceClient
+	*base.ServiceClient
 
 	relayer pb.RelayerClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("ChainRelayerClient")
-	return &relayerClient{b, core.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
+	return &relayerClient{b, base.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
 func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {

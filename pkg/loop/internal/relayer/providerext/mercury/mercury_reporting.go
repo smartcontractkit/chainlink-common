@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercurypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
@@ -18,12 +18,12 @@ import (
 
 type PluginFactoryClient struct {
 	*net.BrokerExt
-	*core.ServiceClient
+	*base.ServiceClient
 	grpc mercurypb.MercuryPluginFactoryClient
 }
 
 func NewPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *PluginFactoryClient {
-	return &PluginFactoryClient{b.WithName("MercuryPluginProviderClient"), core.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
+	return &PluginFactoryClient{b.WithName("MercuryPluginProviderClient"), base.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
 }
 
 func (r *PluginFactoryClient) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {

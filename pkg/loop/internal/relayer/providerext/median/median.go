@@ -18,9 +18,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/api"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/base"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/coreapi"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -30,16 +30,16 @@ import (
 var _ types.PluginMedian = (*PluginMedianClient)(nil)
 
 type PluginMedianClient struct {
-	*core.PluginClient
-	*core.ServiceClient
+	*base.PluginClient
+	*base.ServiceClient
 
 	median pb.PluginMedianClient
 }
 
 func NewPluginMedianClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginMedianClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginMedianClient")
-	pc := core.NewPluginClient(broker, brokerCfg, conn)
-	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: core.NewServiceClient(pc.BrokerExt, pc)}
+	pc := base.NewPluginClient(broker, brokerCfg, conn)
+	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: base.NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin median.DataSource, errorLog types.ErrorLog) (types.ReportingPluginFactory, error) {
@@ -64,7 +64,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			providerID  uint32
 			providerRes net.Resource
 		)
-		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(base.GRPCClientConn); ok {
 			providerID, providerRes, err = m.Serve("MedianProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = m.ServeNew("MedianProvider", func(s *grpc.Server) {
@@ -78,7 +78,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		deps.Add(providerRes)
 
 		errorLogID, errorLogRes, err := m.ServeNew("ErrorLog", func(s *grpc.Server) {
-			pb.RegisterErrorLogServer(s, &api.ErrorLogServer{Impl: errorLog})
+			pb.RegisterErrorLogServer(s, &coreapi.ErrorLogServer{Impl: errorLog})
 		})
 		if err != nil {
 			return 0, nil, err
@@ -147,7 +147,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		return nil, net.ErrConnDial{Name: "ErrorLog", ID: request.ErrorLogID, Err: err}
 	}
 	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
-	errorLog := api.NewErrorLogClient(errorLogConn)
+	errorLog := coreapi.NewErrorLogClient(errorLogConn)
 
 	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, errorLog)
 	if err != nil {
@@ -156,7 +156,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	}
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &base.ServiceServer{Srv: factory})
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, dsRes, juelsRes, providerRes, errorLogRes)
 	if err != nil {
@@ -168,7 +168,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 var (
 	_ types.MedianProvider = (*ProviderClient)(nil)
-	_ core.GRPCClientConn  = (*ProviderClient)(nil)
+	_ base.GRPCClientConn  = (*ProviderClient)(nil)
 )
 
 type ProviderClient struct {

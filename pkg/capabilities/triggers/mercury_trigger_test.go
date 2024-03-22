@@ -17,8 +17,9 @@ func TestMercuryTrigger(t *testing.T) {
 	ctx := tests.Context(t)
 	require.NotNil(t, ts)
 
+	feedID := "0x1111111111111111111100000000000000000000000000000000000000000000"
 	m := map[string]interface{}{
-		"feedIds":   []int64{1},
+		"feedIds":   []string{feedID},
 		"triggerId": "test-id-1",
 	}
 
@@ -37,7 +38,7 @@ func TestMercuryTrigger(t *testing.T) {
 	// Send events to trigger and check for them in the callback
 	fr := []mercury.FeedReport{
 		{
-			FeedID:               1,
+			FeedID:               feedID,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       2,
 			ObservationTimestamp: 3,
@@ -66,12 +67,19 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	require.NotNil(t, ts)
 
 	m1 := map[string]interface{}{
-		"feedIds":   []int64{1, 3, 4},
+		"feedIds": []string{
+			"0x1111111111111111111100000000000000000000000000000000000000000000",
+			"0x3333333333333333333300000000000000000000000000000000000000000000",
+			"0x4444444444444444444400000000000000000000000000000000000000000000"},
 		"triggerId": "test-id-1",
 	}
 
 	m2 := map[string]interface{}{
-		"feedIds":   []int64{2, 3, 5},
+		"feedIds": []string{
+			"0x2222222222222222222200000000000000000000000000000000000000000000",
+			"0x3333333333333333333300000000000000000000000000000000000000000000",
+			"0x5555555555555555555500000000000000000000000000000000000000000000",
+		},
 		"triggerId": "test-id-2",
 	}
 
@@ -103,25 +111,25 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	// Send events to trigger and check for them in the callback
 	fr1 := []mercury.FeedReport{
 		{
-			FeedID:               1,
+			FeedID:               "0x1111111111111111111100000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       20,
 			ObservationTimestamp: 5,
 		},
 		{
-			FeedID:               3,
+			FeedID:               "0x3333333333333333333300000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       25,
 			ObservationTimestamp: 8,
 		},
 		{
-			FeedID:               2,
+			FeedID:               "0x2222222222222222222200000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       30,
 			ObservationTimestamp: 10,
 		},
 		{
-			FeedID:               4,
+			FeedID:               "0x4444444444444444444400000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       40,
 			ObservationTimestamp: 15,
@@ -157,7 +165,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr1))
 	fr2 := []mercury.FeedReport{
 		{
-			FeedID:               3,
+			FeedID:               "0x3333333333333333333300000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       50,
 			ObservationTimestamp: 20,

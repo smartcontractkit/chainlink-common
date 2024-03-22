@@ -54,7 +54,7 @@ type ReportInfo struct {
 
 // TODO: fix this by adding support for uint64 in value.go
 type FeedReport struct {
-	FeedID               int64  `json:"feedId"`
+	FeedID               string `json:"feedId"`
 	FullReport           []byte `json:"fullreport"`
 	BenchmarkPrice       int64  `json:"benchmarkPrice"`
 	ObservationTimestamp int64  `json:"observationTimestamp"`

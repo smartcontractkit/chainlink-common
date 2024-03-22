@@ -26,8 +26,8 @@ var mercuryInfo = capabilities.MustNewCapabilityInfo(
 type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
 	chans               map[string]chan<- capabilities.CapabilityResponse
-	feedIDsForTriggerID map[string][]int64 // TODO: switch this to uint64 when value.go supports it
-	triggerIDsForFeedID map[int64]map[string]bool
+	feedIDsForTriggerID map[string][]string // TODO: switch this to uint64 when value.go supports it
+	triggerIDsForFeedID map[string]map[string]bool
 	mu                  sync.Mutex
 }
 
@@ -37,8 +37,8 @@ func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
 		CapabilityInfo:      mercuryInfo,
 		chans:               map[string]chan<- capabilities.CapabilityResponse{},
-		feedIDsForTriggerID: make(map[string][]int64),
-		triggerIDsForFeedID: make(map[int64]map[string]bool),
+		feedIDsForTriggerID: make(map[string][]string),
+		triggerIDsForFeedID: make(map[string]map[string]bool),
 	}
 }
 
@@ -155,14 +155,14 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 }
 
 // Get array of feedIds from CapabilityRequest req
-func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) []int64 {
-	feedIDs := make([]int64, 0)
+func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) []string {
+	feedIDs := make([]string, 0)
 	// Unwrap the inputs which should return pair (map, nil) and then get the feedIds from the map
 	if inputs, err := req.Inputs.Unwrap(); err == nil {
 		if feeds, ok := inputs.(map[string]interface{})["feedIds"].([]any); ok {
 			// Copy to feedIds
 			for _, feed := range feeds {
-				if id, ok := feed.(int64); ok {
+				if id, ok := feed.(string); ok {
 					feedIDs = append(feedIDs, id)
 				}
 			}
@@ -196,7 +196,7 @@ func GenerateTriggerEventID(reports []mercury.FeedReport) string {
 	})
 	s := ""
 	for _, report := range reports {
-		s += strconv.FormatInt(report.FeedID, 10) + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
+		s += report.FeedID + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
 	}
 	return sha256Hash(s)
 }
@@ -213,13 +213,13 @@ func ExampleOutput() (values.Value, error) {
 		Timestamp:   "2024-01-17T04:00:10Z",
 		Payload: []mercury.FeedReport{
 			{
-				FeedID:               2,
+				FeedID:               "0x111111111111111111110000000000000000000000000000000000000000",
 				FullReport:           []byte("hello"),
 				BenchmarkPrice:       100,
 				ObservationTimestamp: 123,
 			},
 			{
-				FeedID:               3,
+				FeedID:               "0x222222222222222222220000000000000000000000000000000000000000",
 				FullReport:           []byte("world"),
 				BenchmarkPrice:       100,
 				ObservationTimestamp: 123,

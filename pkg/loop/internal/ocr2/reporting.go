@@ -10,21 +10,21 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
 type ReportingPluginFactoryClient struct {
 	*net.BrokerExt
-	*core.ServiceClient
+	*goplugin.ServiceClient
 	grpc pb.ReportingPluginFactoryClient
 }
 
 func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ReportingPluginFactoryClient {
 	return &ReportingPluginFactoryClient{
 		BrokerExt:     b.WithName("ReportingPluginProviderClient"),
-		ServiceClient: core.NewServiceClient(b, cc),
+		ServiceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewReportingPluginFactoryClient(cc),
 	}
 }

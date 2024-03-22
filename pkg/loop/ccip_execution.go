@@ -11,7 +11,7 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/providerext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -65,7 +65,7 @@ var _ ocrtypes.ReportingPluginFactory = (*ExecutionFactoryService)(nil)
 
 // ExecutionFactoryService is a [types.Service] that maintains an internal [types.CCIPExecutionFactoryGenerator].
 type ExecutionFactoryService struct {
-	core.PluginService[*ExecutionLoop, types.ReportingPluginFactory]
+	goplugin.PluginService[*ExecutionLoop, types.ReportingPluginFactory]
 }
 
 // NewExecutionService returns a new [*ExecutionFactoryService].

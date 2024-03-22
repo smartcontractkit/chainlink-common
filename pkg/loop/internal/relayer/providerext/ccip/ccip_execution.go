@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -22,9 +22,9 @@ import (
 // ExecutionLOOPClient is a client is run on the core node to connect to the execution LOOP server.
 type ExecutionLOOPClient struct {
 	// hashicorp plugin client
-	*core.PluginClient
+	*goplugin.PluginClient
 	// client to base service
-	*core.ServiceClient
+	*goplugin.ServiceClient
 
 	// creates new execution factory instances
 	generator ccippb.ExecutionFactoryGeneratorClient
@@ -32,10 +32,10 @@ type ExecutionLOOPClient struct {
 
 func NewExecutionLOOPClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *ExecutionLOOPClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ExecutionLOOPClient")
-	pc := core.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
 	return &ExecutionLOOPClient{
 		PluginClient:  pc,
-		ServiceClient: core.NewServiceClient(pc.BrokerExt, pc),
+		ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc),
 		generator:     ccippb.NewExecutionFactoryGeneratorClient(pc),
 	}
 }
@@ -55,7 +55,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, provider 
 			providerID       uint32
 			providerResource net.Resource
 		)
-		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(goplugin.GRPCClientConn); ok {
 			// TODO: BCF-3061 ccip provider can create new services. the proxying needs to be augmented
 			// to intercept and route to the created services. also, need to prevent leaks.
 			providerID, providerResource, err = c.Serve("ExecProvider", proxy.NewProxy(grpcProvider.ClientConn()))
@@ -130,7 +130,7 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 	}
 
 	id, _, err := r.ServeNew("ExecutionFactory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, r.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -140,8 +140,8 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 }
 
 var (
-	_ types.CCIPExecProvider = (*ExecProviderClient)(nil)
-	_ core.GRPCClientConn    = (*ExecProviderClient)(nil)
+	_ types.CCIPExecProvider  = (*ExecProviderClient)(nil)
+	_ goplugin.GRPCClientConn = (*ExecProviderClient)(nil)
 )
 
 type ExecProviderClient struct {

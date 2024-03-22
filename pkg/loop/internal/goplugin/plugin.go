@@ -1,4 +1,4 @@
-package core
+package goplugin
 
 import (
 	"google.golang.org/grpc"

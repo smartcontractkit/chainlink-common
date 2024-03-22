@@ -7,9 +7,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/capability"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/api"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
@@ -17,16 +17,16 @@ import (
 )
 
 type ReportingPluginServiceClient struct {
-	*core.PluginClient
-	*core.ServiceClient
+	*goplugin.PluginClient
+	*goplugin.ServiceClient
 
 	reportingPluginService pb.ReportingPluginServiceClient
 }
 
 func NewReportingPluginServiceClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *ReportingPluginServiceClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ReportingPluginServiceClient")
-	pc := core.NewPluginClient(broker, brokerCfg, conn)
-	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: core.NewServiceClient(pc.BrokerExt, pc)}
+	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
@@ -162,7 +162,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 	}
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		ocr3pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes)
 	if err != nil {

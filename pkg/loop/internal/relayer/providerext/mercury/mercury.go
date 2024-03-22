@@ -9,7 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/chainreader"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -29,18 +29,18 @@ import (
 )
 
 type AdapterClient struct {
-	*core.PluginClient
-	*core.ServiceClient
+	*goplugin.PluginClient
+	*goplugin.ServiceClient
 
 	mercury mercury_pb.MercuryAdapterClient
 }
 
 func NewMercuryAdapterClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *AdapterClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "MercuryAdapterClient")
-	pc := core.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
 	return &AdapterClient{
 		PluginClient:  pc,
-		ServiceClient: core.NewServiceClient(pc.BrokerExt, pc),
+		ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc),
 		mercury:       mercury_pb.NewMercuryAdapterClient(pc),
 	}
 }
@@ -66,7 +66,7 @@ func (c *AdapterClient) NewMercuryV1Factory(ctx context.Context,
 			providerID  uint32
 			providerRes net.Resource
 		)
-		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(goplugin.GRPCClientConn); ok {
 			providerID, providerRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
@@ -118,7 +118,7 @@ func (c *AdapterClient) NewMercuryV2Factory(ctx context.Context,
 			providerID  uint32
 			providerRes net.Resource
 		)
-		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(goplugin.GRPCClientConn); ok {
 			providerID, providerRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, providerRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
@@ -172,7 +172,7 @@ func (c *AdapterClient) NewMercuryV3Factory(ctx context.Context,
 			providerRes net.Resource
 		)
 		// loop mode; proxy to the relayer
-		if grpcProvider, ok := provider.(core.GRPCClientConn); ok {
+		if grpcProvider, ok := provider.(goplugin.GRPCClientConn); ok {
 			providerID, providerRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			// legacy mode; serve the provider locally in the client process (ie the core node)
@@ -254,7 +254,7 @@ func (ms *AdapterServer) NewMercuryV1Factory(ctx context.Context, req *mercury_p
 	}
 
 	id, _, err := ms.ServeNew("MercuryV1Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -295,7 +295,7 @@ func (ms *AdapterServer) NewMercuryV2Factory(ctx context.Context, req *mercury_p
 	}
 
 	id, _, err := ms.ServeNew("MercuryV2Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -336,7 +336,7 @@ func (ms *AdapterServer) NewMercuryV3Factory(ctx context.Context, req *mercury_p
 	}
 
 	id, _, err := ms.ServeNew("MercuryV3Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &core.ServiceServer{Srv: factory})
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		mercury_pb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -349,7 +349,7 @@ func (ms *AdapterServer) NewMercuryV3Factory(ctx context.Context, req *mercury_p
 var (
 	_ types.MercuryProvider = (*ProviderClient)(nil)
 	// in practice, inherited from pluginProviderClient.
-	_ core.GRPCClientConn = (*ProviderClient)(nil)
+	_ goplugin.GRPCClientConn = (*ProviderClient)(nil)
 )
 
 type ProviderClient struct {

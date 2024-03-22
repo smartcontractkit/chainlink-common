@@ -1,5 +1,7 @@
 package loop
 
-import "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core"
+import (
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+)
 
-var ErrPluginUnavailable = core.ErrPluginUnavailable
+var ErrPluginUnavailable = goplugin.ErrPluginUnavailable

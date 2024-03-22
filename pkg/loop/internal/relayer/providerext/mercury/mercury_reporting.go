@@ -16,14 +16,14 @@ import (
 	mercurypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
 )
 
-type MercuryPluginFactoryClient struct {
+type PluginFactoryClient struct {
 	*net.BrokerExt
 	*core.ServiceClient
 	grpc mercurypb.MercuryPluginFactoryClient
 }
 
-func NewMercuryPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *MercuryPluginFactoryClient {
-	return &MercuryPluginFactoryClient{b.WithName("MercuryPluginProviderClient"), core.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
+func NewPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *PluginFactoryClient {
+	return &PluginFactoryClient{b.WithName("MercuryPluginProviderClient"), core.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
 }
 
 func (r *mercuryPluginFactoryClient) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {

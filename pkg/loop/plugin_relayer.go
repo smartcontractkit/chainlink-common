@@ -8,7 +8,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
-	internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -46,14 +45,14 @@ type GRPCPluginRelayer struct {
 }
 
 func (p *GRPCPluginRelayer) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
-	return internal.RegisterPluginRelayerServer(server, broker, p.BrokerConfig, p.PluginServer)
+	return relayer.RegisterPluginRelayerServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginRelayer], updated with the new broker and conn.
 
 func (p *GRPCPluginRelayer) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = internal.NewPluginRelayerClient(broker, p.BrokerConfig, conn)
+		p.pluginClient = relayer.NewPluginRelayerClient(broker, p.BrokerConfig, conn)
 	} else {
 		p.pluginClient.Refresh(broker, conn)
 	}

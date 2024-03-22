@@ -69,7 +69,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		} else {
 			providerID, providerRes, err = m.ServeNew("MedianProvider", func(s *grpc.Server) {
 				ocr2.RegisterPluginProviderServices(s, provider)
-				RegisterMedianProviderServices(s, provider)
+				RegisterProviderServices(s, provider)
 			})
 		}
 		if err != nil {
@@ -139,7 +139,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		return nil, net.ErrConnDial{Name: "MedianProvider", ID: request.MedianProviderID, Err: err}
 	}
 	providerRes := net.Resource{Closer: providerConn, Name: "MedianProvider"}
-	provider := NewMedianProviderClient(m.BrokerExt, providerConn)
+	provider := NewProviderClient(m.BrokerExt, providerConn)
 
 	errorLogConn, err := m.Dial(request.ErrorLogID)
 	if err != nil {
@@ -167,11 +167,11 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 }
 
 var (
-	_ types.MedianProvider = (*MedianProviderClient)(nil)
-	_ core.GRPCClientConn  = (*MedianProviderClient)(nil)
+	_ types.MedianProvider = (*ProviderClient)(nil)
+	_ core.GRPCClientConn  = (*ProviderClient)(nil)
 )
 
-type MedianProviderClient struct {
+type ProviderClient struct {
 	*ocr2.PluginProviderClient
 	reportCodec        median.ReportCodec
 	medianContract     median.MedianContract
@@ -180,13 +180,13 @@ type MedianProviderClient struct {
 	codec              types.Codec
 }
 
-func NewMedianProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *MedianProviderClient {
-	m := &MedianProviderClient{PluginProviderClient: ocr2.NewPluginProviderClient(b.WithName("MedianProviderClient"), cc)}
+func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderClient {
+	m := &ProviderClient{PluginProviderClient: ocr2.NewPluginProviderClient(b.WithName("MedianProviderClient"), cc)}
 	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(cc)}
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(cc)}
 	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(cc)}
 
-	maybeCr := chainreader.NewChainReaderClient(b, cc)
+	maybeCr := chainreader.NewClient(b, cc)
 	var anyRetVal int
 	err := maybeCr.GetLatestValue(context.Background(), "", "", nil, &anyRetVal)
 	if status.Convert(err).Code() != codes.Unimplemented {
@@ -202,23 +202,23 @@ func NewMedianProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *Med
 	return m
 }
 
-func (m *MedianProviderClient) ReportCodec() median.ReportCodec {
+func (m *ProviderClient) ReportCodec() median.ReportCodec {
 	return m.reportCodec
 }
 
-func (m *MedianProviderClient) MedianContract() median.MedianContract {
+func (m *ProviderClient) MedianContract() median.MedianContract {
 	return m.medianContract
 }
 
-func (m *MedianProviderClient) OnchainConfigCodec() median.OnchainConfigCodec {
+func (m *ProviderClient) OnchainConfigCodec() median.OnchainConfigCodec {
 	return m.onchainConfigCodec
 }
 
-func (m *MedianProviderClient) ChainReader() types.ChainReader {
+func (m *ProviderClient) ChainReader() types.ChainReader {
 	return m.chainReader
 }
 
-func (m *MedianProviderClient) Codec() types.Codec {
+func (m *ProviderClient) Codec() types.Codec {
 	return m.codec
 }
 
@@ -446,14 +446,14 @@ func (o *onchainConfigCodecServer) Decode(ctx context.Context, request *pb.Decod
 	}}, nil
 }
 
-type MedianProviderServer struct{}
+type ProviderServer struct{}
 
-func (m MedianProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerCfg net.BrokerConfig) types.MedianProvider {
+func (m ProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerCfg net.BrokerConfig) types.MedianProvider {
 	be := &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}
-	return NewMedianProviderClient(be, conn)
+	return NewProviderClient(be, conn)
 }
 
-func RegisterMedianProviderServices(s *grpc.Server, provider types.MedianProvider) {
+func RegisterProviderServices(s *grpc.Server, provider types.MedianProvider) {
 	pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 	pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
 	pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})

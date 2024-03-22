@@ -220,11 +220,11 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 	// for interoperability with legacy code.
 	switch rargs.ProviderType {
 	case string(types.Median):
-		return median.NewMedianProviderClient(r.BrokerExt, cc), nil
+		return median.NewProviderClient(r.BrokerExt, cc), nil
 	case string(types.GenericPlugin):
 		return ocr2.NewPluginProviderClient(r.BrokerExt, cc), nil
 	case string(types.Mercury):
-		return mercury.NewMercuryProviderClient(r.BrokerExt, cc), nil
+		return mercury.NewProviderClient(r.BrokerExt, cc), nil
 	case string(types.CCIPExecution):
 		// TODO BCF-3061
 		// what do i do here? for the local embedded relayer, we are using the broker
@@ -400,7 +400,7 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
-		median.RegisterMedianProviderServices(s, provider)
+		median.RegisterProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -450,7 +450,7 @@ func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
-		mercury.RegisterMercuryProviderServices(s, provider)
+		mercury.RegisterProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -524,7 +524,7 @@ func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionReq
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
 	ocr2.RegisterPluginProviderServices(s, p)
-	median.RegisterMedianProviderServices(s, p)
+	median.RegisterProviderServices(s, p)
 }
 
 // RegisterStandAlonePluginProvider register the servers needed for a generic plugin provider,

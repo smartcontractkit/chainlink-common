@@ -47,7 +47,7 @@ type OffchainConfigDigesterClient struct {
 	grpc pb.OffchainConfigDigesterClient
 }
 
-func (o *offchainConfigDigesterClient) ConfigDigest(ctx context.Context, config libocr.ContractConfig) (digest libocr.ConfigDigest, err error) {
+func (o *OffchainConfigDigesterClient) ConfigDigest(ctx context.Context, config libocr.ContractConfig) (digest libocr.ConfigDigest, err error) {
 	var reply *pb.ConfigDigestReply
 	reply, err = o.grpc.ConfigDigest(ctx, &pb.ConfigDigestRequest{
 		ContractConfig: pbContractConfig(config),
@@ -63,7 +63,7 @@ func (o *offchainConfigDigesterClient) ConfigDigest(ctx context.Context, config 
 	return
 }
 
-func (o *offchainConfigDigesterClient) ConfigDigestPrefix(ctx context.Context) (libocr.ConfigDigestPrefix, error) {
+func (o *OffchainConfigDigesterClient) ConfigDigestPrefix(ctx context.Context) (libocr.ConfigDigestPrefix, error) {
 	reply, err := o.grpc.ConfigDigestPrefix(ctx, &pb.ConfigDigestPrefixRequest{})
 	if err != nil {
 		return 0, err
@@ -103,7 +103,7 @@ func (o *OffchainConfigDigesterServer) ConfigDigest(ctx context.Context, request
 	return &pb.ConfigDigestReply{ConfigDigest: cd[:]}, nil
 }
 
-func (o *offchainConfigDigesterServer) ConfigDigestPrefix(ctx context.Context, request *pb.ConfigDigestPrefixRequest) (*pb.ConfigDigestPrefixReply, error) {
+func (o *OffchainConfigDigesterServer) ConfigDigestPrefix(ctx context.Context, request *pb.ConfigDigestPrefixRequest) (*pb.ConfigDigestPrefixReply, error) {
 	p, err := o.impl.ConfigDigestPrefix(ctx)
 	if err != nil {
 		return nil, err

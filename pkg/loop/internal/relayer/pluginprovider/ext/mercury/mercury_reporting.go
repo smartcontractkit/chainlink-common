@@ -19,15 +19,15 @@ import (
 type PluginFactoryClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
-	grpc mercurypb.MercuryPluginFactoryClient
+	client mercurypb.MercuryPluginFactoryClient
 }
 
 func NewPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *PluginFactoryClient {
 	return &PluginFactoryClient{b.WithName("MercuryPluginProviderClient"), goplugin.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
 }
 
-func (r *mercuryPluginFactoryClient) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
-	response, err := r.grpc.NewMercuryPlugin(ctx, &mercurypb.NewMercuryPluginRequest{MercuryPluginConfig: &mercurypb.MercuryPluginConfig{
+func (r *PluginFactoryClient) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+	response, err := r.client.NewMercuryPlugin(ctx, &mercurypb.NewMercuryPluginRequest{MercuryPluginConfig: &mercurypb.MercuryPluginConfig{
 		ConfigDigest:           config.ConfigDigest[:],
 		OracleID:               uint32(config.OracleID),
 		N:                      uint32(config.N),

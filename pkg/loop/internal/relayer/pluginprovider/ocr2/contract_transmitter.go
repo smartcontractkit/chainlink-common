@@ -60,7 +60,7 @@ func (c *ContractTransmitterClient) LatestConfigDigestAndEpoch(ctx context.Conte
 	return
 }
 
-func (c *contractTransmitterClient) FromAccount(ctx context.Context) (libocr.Account, error) {
+func (c *ContractTransmitterClient) FromAccount(ctx context.Context) (libocr.Account, error) {
 	reply, err := c.grpc.FromAccount(ctx, &pb.FromAccountRequest{})
 	if err != nil {
 		return "", err
@@ -111,13 +111,8 @@ func (c *ContractTransmitterServer) LatestConfigDigestAndEpoch(ctx context.Conte
 	return &pb.LatestConfigDigestAndEpochReply{ConfigDigest: digest[:], Epoch: epoch}, nil
 }
 
-<<<<<<< HEAD:pkg/loop/internal/contract_transmitter.go
-func (c *contractTransmitterServer) FromAccount(ctx context.Context, request *pb.FromAccountRequest) (*pb.FromAccountReply, error) {
-	a, err := c.impl.FromAccount(ctx)
-=======
 func (c *ContractTransmitterServer) FromAccount(ctx context.Context, request *pb.FromAccountRequest) (*pb.FromAccountReply, error) {
-	a, err := c.impl.FromAccount()
->>>>>>> 2b7053b (logical packages for internal/loop components):pkg/loop/internal/ocr2/contract_transmitter.go
+	a, err := c.impl.FromAccount(ctx)
 	if err != nil {
 		return nil, err
 	}

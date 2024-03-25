@@ -196,6 +196,19 @@ message Primitive {
   }
 }
 
+// CursorDirection defines the direction for cursor-based data fetching.
+enum CursorDirection {
+  Preceding = 0;
+  Following = 1;
+}
+
+// Limit defines a structure for limiting the results of a query, including optional cursor-based pagination.
+message Limit {
+  optional string cursor = 1;
+  optional CursorDirection direction = 2;
+  uint64 count = 3;
+}
+
 enum SortDirection {
   Asc = 0;
   Desc = 1;
@@ -221,7 +234,9 @@ message SortBy {
   }
 }
 
-message LimitAndSort{
-  uint64 limit = 1;
-  repeated SortBy sort_by = 2;
+
+// LimitAndSort combines sorting criteria with pagination limits.
+message LimitAndSort {
+  repeated SortBy sortBy = 1; // A list of sorting criteria.
+  Limit limit = 2; // Pagination limit and direction.
 }

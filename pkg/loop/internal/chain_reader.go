@@ -523,7 +523,22 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown order by type")
 		}
 	}
-	return &pb.LimitAndSort{Limit: limitAndSort.Limit, SortBy: sortByArr}, nil
+
+	pbLimitAndSort := &pb.LimitAndSort{
+		SortBy: sortByArr,
+		Limit:  &pb.Limit{Count: limitAndSort.Limit.Count},
+	}
+
+	cursorDefined := limitAndSort.Limit.Cursor != nil
+	cursorDirectionDefined := limitAndSort.Limit.CursorDirection != nil
+	if cursorDefined && cursorDirectionDefined {
+		pbLimitAndSort.Limit.Cursor = limitAndSort.Limit.Cursor
+		pbLimitAndSort.Limit.Direction = (*pb.CursorDirection)(limitAndSort.Limit.CursorDirection)
+	} else if !cursorDefined && !cursorDirectionDefined {
+		return nil, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
+	}
+
+	return pbLimitAndSort, nil
 }
 
 func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (*pb.Sequences, error) {
@@ -626,7 +641,16 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 		}
 	}
 
-	return query.NewLimitAndSort(limitAndSort.Limit, sortByArr...), nil
+	limit := limitAndSort.Limit
+	cursorDefined := limit.Cursor != nil
+	cursorDirectionDefined := limit.Direction != nil
+	if cursorDefined && cursorDirectionDefined {
+		return query.NewLimitAndSort(query.CursorLimit(*limit.Cursor, (query.CursorDirection)(*limit.Direction), limit.Count)), nil
+	} else if !cursorDefined && !cursorDirectionDefined {
+		return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
+	}
+
+	return query.NewLimitAndSort(query.CountLimit(limit.Count), sortByArr...), nil
 }
 
 func convertSequencesMatrixFromProto(pbSequencesMatrix []*pb.Sequences, sequenceDataTypes []any) ([][]types.Sequence, error) {

@@ -226,12 +226,37 @@ type SortBy interface {
 	GetDirection() SortDirection
 }
 
-type LimitAndSort struct {
-	SortBy []SortBy
-	Limit  uint64
+type CursorDirection int32
+
+const (
+	Previous CursorDirection = iota
+	Following
+)
+
+type Limit struct {
+	Cursor          *string
+	CursorDirection *CursorDirection
+	Count           uint64
 }
 
-func NewLimitAndSort(limit uint64, sortBy ...SortBy) LimitAndSort {
+func CursorLimit(cursor string, cursorDirection CursorDirection, count uint64) Limit {
+	return Limit{
+		Cursor:          &cursor,
+		CursorDirection: &cursorDirection,
+		Count:           count,
+	}
+}
+
+func CountLimit(count uint64) Limit {
+	return Limit{Count: count}
+}
+
+type LimitAndSort struct {
+	SortBy []SortBy
+	Limit  Limit
+}
+
+func NewLimitAndSort(limit Limit, sortBy ...SortBy) LimitAndSort {
 	return LimitAndSort{SortBy: sortBy, Limit: limit}
 }
 

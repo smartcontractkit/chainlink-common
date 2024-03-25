@@ -171,6 +171,53 @@ func (ConfirmationLevel) EnumDescriptor() ([]byte, []int) {
 	return file_chain_reader_proto_rawDescGZIP(), []int{2}
 }
 
+// CursorDirection defines the direction for cursor-based data fetching.
+type CursorDirection int32
+
+const (
+	CursorDirection_Preceding CursorDirection = 0
+	CursorDirection_Following CursorDirection = 1
+)
+
+// Enum value maps for CursorDirection.
+var (
+	CursorDirection_name = map[int32]string{
+		0: "Preceding",
+		1: "Following",
+	}
+	CursorDirection_value = map[string]int32{
+		"Preceding": 0,
+		"Following": 1,
+	}
+)
+
+func (x CursorDirection) Enum() *CursorDirection {
+	p := new(CursorDirection)
+	*p = x
+	return p
+}
+
+func (x CursorDirection) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CursorDirection) Descriptor() protoreflect.EnumDescriptor {
+	return file_chain_reader_proto_enumTypes[3].Descriptor()
+}
+
+func (CursorDirection) Type() protoreflect.EnumType {
+	return &file_chain_reader_proto_enumTypes[3]
+}
+
+func (x CursorDirection) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CursorDirection.Descriptor instead.
+func (CursorDirection) EnumDescriptor() ([]byte, []int) {
+	return file_chain_reader_proto_rawDescGZIP(), []int{3}
+}
+
 type SortDirection int32
 
 const (
@@ -201,11 +248,11 @@ func (x SortDirection) String() string {
 }
 
 func (SortDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_chain_reader_proto_enumTypes[3].Descriptor()
+	return file_chain_reader_proto_enumTypes[4].Descriptor()
 }
 
 func (SortDirection) Type() protoreflect.EnumType {
-	return &file_chain_reader_proto_enumTypes[3]
+	return &file_chain_reader_proto_enumTypes[4]
 }
 
 func (x SortDirection) Number() protoreflect.EnumNumber {
@@ -214,7 +261,7 @@ func (x SortDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SortDirection.Descriptor instead.
 func (SortDirection) EnumDescriptor() ([]byte, []int) {
-	return file_chain_reader_proto_rawDescGZIP(), []int{3}
+	return file_chain_reader_proto_rawDescGZIP(), []int{4}
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
@@ -1830,6 +1877,70 @@ func (*Primitive_Timestamp) isPrimitive_Comparator() {}
 
 func (*Primitive_TxHash) isPrimitive_Comparator() {}
 
+// Limit defines a structure for limiting the results of a query, including optional cursor-based pagination.
+type Limit struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Cursor    *string          `protobuf:"bytes,1,opt,name=cursor,proto3,oneof" json:"cursor,omitempty"`
+	Direction *CursorDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=loop.CursorDirection,oneof" json:"direction,omitempty"`
+	Count     uint64           `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+}
+
+func (x *Limit) Reset() {
+	*x = Limit{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_chain_reader_proto_msgTypes[28]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Limit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Limit) ProtoMessage() {}
+
+func (x *Limit) ProtoReflect() protoreflect.Message {
+	mi := &file_chain_reader_proto_msgTypes[28]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Limit.ProtoReflect.Descriptor instead.
+func (*Limit) Descriptor() ([]byte, []int) {
+	return file_chain_reader_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *Limit) GetCursor() string {
+	if x != nil && x.Cursor != nil {
+		return *x.Cursor
+	}
+	return ""
+}
+
+func (x *Limit) GetDirection() CursorDirection {
+	if x != nil && x.Direction != nil {
+		return *x.Direction
+	}
+	return CursorDirection_Preceding
+}
+
+func (x *Limit) GetCount() uint64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 type SortByTimestamp struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1841,7 +1952,7 @@ type SortByTimestamp struct {
 func (x *SortByTimestamp) Reset() {
 	*x = SortByTimestamp{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_chain_reader_proto_msgTypes[28]
+		mi := &file_chain_reader_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1854,7 +1965,7 @@ func (x *SortByTimestamp) String() string {
 func (*SortByTimestamp) ProtoMessage() {}
 
 func (x *SortByTimestamp) ProtoReflect() protoreflect.Message {
-	mi := &file_chain_reader_proto_msgTypes[28]
+	mi := &file_chain_reader_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1867,7 +1978,7 @@ func (x *SortByTimestamp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortByTimestamp.ProtoReflect.Descriptor instead.
 func (*SortByTimestamp) Descriptor() ([]byte, []int) {
-	return file_chain_reader_proto_rawDescGZIP(), []int{28}
+	return file_chain_reader_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *SortByTimestamp) GetSortDirection() SortDirection {
@@ -1888,7 +1999,7 @@ type SortByBlock struct {
 func (x *SortByBlock) Reset() {
 	*x = SortByBlock{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_chain_reader_proto_msgTypes[29]
+		mi := &file_chain_reader_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1901,7 +2012,7 @@ func (x *SortByBlock) String() string {
 func (*SortByBlock) ProtoMessage() {}
 
 func (x *SortByBlock) ProtoReflect() protoreflect.Message {
-	mi := &file_chain_reader_proto_msgTypes[29]
+	mi := &file_chain_reader_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1914,7 +2025,7 @@ func (x *SortByBlock) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortByBlock.ProtoReflect.Descriptor instead.
 func (*SortByBlock) Descriptor() ([]byte, []int) {
-	return file_chain_reader_proto_rawDescGZIP(), []int{29}
+	return file_chain_reader_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *SortByBlock) GetSortDirection() SortDirection {
@@ -1935,7 +2046,7 @@ type SortBySequence struct {
 func (x *SortBySequence) Reset() {
 	*x = SortBySequence{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_chain_reader_proto_msgTypes[30]
+		mi := &file_chain_reader_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1948,7 +2059,7 @@ func (x *SortBySequence) String() string {
 func (*SortBySequence) ProtoMessage() {}
 
 func (x *SortBySequence) ProtoReflect() protoreflect.Message {
-	mi := &file_chain_reader_proto_msgTypes[30]
+	mi := &file_chain_reader_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1961,7 +2072,7 @@ func (x *SortBySequence) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBySequence.ProtoReflect.Descriptor instead.
 func (*SortBySequence) Descriptor() ([]byte, []int) {
-	return file_chain_reader_proto_rawDescGZIP(), []int{30}
+	return file_chain_reader_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *SortBySequence) GetSortDirection() SortDirection {
@@ -1987,7 +2098,7 @@ type SortBy struct {
 func (x *SortBy) Reset() {
 	*x = SortBy{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_chain_reader_proto_msgTypes[31]
+		mi := &file_chain_reader_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2000,7 +2111,7 @@ func (x *SortBy) String() string {
 func (*SortBy) ProtoMessage() {}
 
 func (x *SortBy) ProtoReflect() protoreflect.Message {
-	mi := &file_chain_reader_proto_msgTypes[31]
+	mi := &file_chain_reader_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2013,7 +2124,7 @@ func (x *SortBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBy.ProtoReflect.Descriptor instead.
 func (*SortBy) Descriptor() ([]byte, []int) {
-	return file_chain_reader_proto_rawDescGZIP(), []int{31}
+	return file_chain_reader_proto_rawDescGZIP(), []int{32}
 }
 
 func (m *SortBy) GetSortBy() isSortBy_SortBy {
@@ -2066,19 +2177,20 @@ func (*SortBy_SortByBlock) isSortBy_SortBy() {}
 
 func (*SortBy_SortBySequence) isSortBy_SortBy() {}
 
+// LimitAndSort combines sorting criteria with pagination limits.
 type LimitAndSort struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Limit  uint64    `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	SortBy []*SortBy `protobuf:"bytes,2,rep,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"`
+	SortBy []*SortBy `protobuf:"bytes,1,rep,name=sortBy,proto3" json:"sortBy,omitempty"` // A list of sorting criteria.
+	Limit  *Limit    `protobuf:"bytes,2,opt,name=limit,proto3" json:"limit,omitempty"`   // Pagination limit and direction.
 }
 
 func (x *LimitAndSort) Reset() {
 	*x = LimitAndSort{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_chain_reader_proto_msgTypes[32]
+		mi := &file_chain_reader_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2091,7 +2203,7 @@ func (x *LimitAndSort) String() string {
 func (*LimitAndSort) ProtoMessage() {}
 
 func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
-	mi := &file_chain_reader_proto_msgTypes[32]
+	mi := &file_chain_reader_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2104,19 +2216,19 @@ func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LimitAndSort.ProtoReflect.Descriptor instead.
 func (*LimitAndSort) Descriptor() ([]byte, []int) {
-	return file_chain_reader_proto_rawDescGZIP(), []int{32}
-}
-
-func (x *LimitAndSort) GetLimit() uint64 {
-	if x != nil {
-		return x.Limit
-	}
-	return 0
+	return file_chain_reader_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *LimitAndSort) GetSortBy() []*SortBy {
 	if x != nil {
 		return x.SortBy
+	}
+	return nil
+}
+
+func (x *LimitAndSort) GetLimit() *Limit {
+	if x != nil {
+		return x.Limit
 	}
 	return nil
 }
@@ -2311,7 +2423,16 @@ var file_chain_reader_proto_rawDesc = []byte{
 	0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x6c, 0x6f,
 	0x6f, 0x70, 0x2e, 0x54, 0x78, 0x48, 0x61, 0x73, 0x68, 0x48, 0x00, 0x52, 0x06, 0x74, 0x78, 0x48,
 	0x61, 0x73, 0x68, 0x42, 0x0c, 0x0a, 0x0a, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x61, 0x74, 0x6f,
-	0x72, 0x22, 0x4d, 0x0a, 0x0f, 0x53, 0x6f, 0x72, 0x74, 0x42, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x73,
+	0x72, 0x22, 0x8d, 0x01, 0x0a, 0x05, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x12, 0x1b, 0x0a, 0x06, 0x63,
+	0x75, 0x72, 0x73, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x06, 0x63,
+	0x75, 0x72, 0x73, 0x6f, 0x72, 0x88, 0x01, 0x01, 0x12, 0x38, 0x0a, 0x09, 0x64, 0x69, 0x72, 0x65,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x15, 0x2e, 0x6c, 0x6f,
+	0x6f, 0x70, 0x2e, 0x43, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x48, 0x01, 0x52, 0x09, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x88,
+	0x01, 0x01, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x09, 0x0a, 0x07, 0x5f, 0x63, 0x75, 0x72,
+	0x73, 0x6f, 0x72, 0x42, 0x0c, 0x0a, 0x0a, 0x5f, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x22, 0x4d, 0x0a, 0x0f, 0x53, 0x6f, 0x72, 0x74, 0x42, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x73,
 	0x74, 0x61, 0x6d, 0x70, 0x12, 0x3a, 0x0a, 0x0e, 0x73, 0x6f, 0x72, 0x74, 0x5f, 0x64, 0x69, 0x72,
 	0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x13, 0x2e, 0x6c,
 	0x6f, 0x6f, 0x70, 0x2e, 0x53, 0x6f, 0x72, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f,
@@ -2339,59 +2460,63 @@ var file_chain_reader_proto_rawDesc = []byte{
 	0x6f, 0x6f, 0x70, 0x2e, 0x53, 0x6f, 0x72, 0x74, 0x42, 0x79, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e,
 	0x63, 0x65, 0x48, 0x00, 0x52, 0x0e, 0x73, 0x6f, 0x72, 0x74, 0x42, 0x79, 0x53, 0x65, 0x71, 0x75,
 	0x65, 0x6e, 0x63, 0x65, 0x42, 0x09, 0x0a, 0x07, 0x73, 0x6f, 0x72, 0x74, 0x5f, 0x62, 0x79, 0x22,
-	0x4b, 0x0a, 0x0c, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x41, 0x6e, 0x64, 0x53, 0x6f, 0x72, 0x74, 0x12,
-	0x14, 0x0a, 0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05,
-	0x6c, 0x69, 0x6d, 0x69, 0x74, 0x12, 0x25, 0x0a, 0x07, 0x73, 0x6f, 0x72, 0x74, 0x5f, 0x62, 0x79,
-	0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x53, 0x6f,
-	0x72, 0x74, 0x42, 0x79, 0x52, 0x06, 0x73, 0x6f, 0x72, 0x74, 0x42, 0x79, 0x2a, 0x47, 0x0a, 0x12,
-	0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69, 0x73, 0x6f, 0x6e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74,
-	0x6f, 0x72, 0x12, 0x06, 0x0a, 0x02, 0x45, 0x71, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x4e, 0x65,
-	0x71, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x47, 0x74, 0x10, 0x02, 0x12, 0x06, 0x0a, 0x02, 0x4c,
-	0x74, 0x10, 0x03, 0x12, 0x07, 0x0a, 0x03, 0x47, 0x74, 0x65, 0x10, 0x04, 0x12, 0x07, 0x0a, 0x03,
-	0x4c, 0x74, 0x65, 0x10, 0x05, 0x2a, 0x22, 0x0a, 0x0f, 0x42, 0x6f, 0x6f, 0x6c, 0x65, 0x61, 0x6e,
-	0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x07, 0x0a, 0x03, 0x41, 0x4e, 0x44, 0x10,
-	0x00, 0x12, 0x06, 0x0a, 0x02, 0x4f, 0x52, 0x10, 0x01, 0x2a, 0x33, 0x0a, 0x11, 0x43, 0x6f, 0x6e,
-	0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x0d,
-	0x0a, 0x09, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x10, 0x00, 0x12, 0x0f, 0x0a,
-	0x0b, 0x55, 0x6e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x10, 0x01, 0x2a, 0x22,
-	0x0a, 0x0d, 0x53, 0x6f, 0x72, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12,
-	0x07, 0x0a, 0x03, 0x41, 0x73, 0x63, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x44, 0x65, 0x73, 0x63,
-	0x10, 0x01, 0x32, 0xe8, 0x03, 0x0a, 0x0b, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x52, 0x65, 0x61, 0x64,
-	0x65, 0x72, 0x12, 0x4a, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56,
-	0x61, 0x6c, 0x75, 0x65, 0x12, 0x1b, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x4c,
-	0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x19, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65,
-	0x73, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x38,
-	0x0a, 0x08, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x12, 0x15, 0x2e, 0x6c, 0x6f, 0x6f,
-	0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x13, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65,
-	0x79, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x4b, 0x65, 0x79, 0x73, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x4b, 0x65, 0x79, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e,
-	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x73, 0x52, 0x65,
-	0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x6e, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79,
-	0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69,
-	0x73, 0x6f, 0x6e, 0x12, 0x27, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x42, 0x79, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61,
-	0x72, 0x69, 0x73, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6c,
-	0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79, 0x4b, 0x65, 0x79, 0x56, 0x61,
-	0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69, 0x73, 0x6f, 0x6e, 0x52, 0x65,
-	0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79,
-	0x4b, 0x65, 0x79, 0x73, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72,
-	0x69, 0x73, 0x6f, 0x6e, 0x12, 0x28, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x42, 0x79, 0x4b, 0x65, 0x79, 0x73, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d,
-	0x70, 0x61, 0x72, 0x69, 0x73, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26,
-	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79, 0x4b, 0x65, 0x79,
+	0x57, 0x0a, 0x0c, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x41, 0x6e, 0x64, 0x53, 0x6f, 0x72, 0x74, 0x12,
+	0x24, 0x0a, 0x06, 0x73, 0x6f, 0x72, 0x74, 0x42, 0x79, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x0c, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x53, 0x6f, 0x72, 0x74, 0x42, 0x79, 0x52, 0x06, 0x73,
+	0x6f, 0x72, 0x74, 0x42, 0x79, 0x12, 0x21, 0x0a, 0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x4c, 0x69, 0x6d, 0x69,
+	0x74, 0x52, 0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x2a, 0x47, 0x0a, 0x12, 0x43, 0x6f, 0x6d, 0x70,
+	0x61, 0x72, 0x69, 0x73, 0x6f, 0x6e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x06,
+	0x0a, 0x02, 0x45, 0x71, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x4e, 0x65, 0x71, 0x10, 0x01, 0x12,
+	0x06, 0x0a, 0x02, 0x47, 0x74, 0x10, 0x02, 0x12, 0x06, 0x0a, 0x02, 0x4c, 0x74, 0x10, 0x03, 0x12,
+	0x07, 0x0a, 0x03, 0x47, 0x74, 0x65, 0x10, 0x04, 0x12, 0x07, 0x0a, 0x03, 0x4c, 0x74, 0x65, 0x10,
+	0x05, 0x2a, 0x22, 0x0a, 0x0f, 0x42, 0x6f, 0x6f, 0x6c, 0x65, 0x61, 0x6e, 0x4f, 0x70, 0x65, 0x72,
+	0x61, 0x74, 0x6f, 0x72, 0x12, 0x07, 0x0a, 0x03, 0x41, 0x4e, 0x44, 0x10, 0x00, 0x12, 0x06, 0x0a,
+	0x02, 0x4f, 0x52, 0x10, 0x01, 0x2a, 0x33, 0x0a, 0x11, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x0d, 0x0a, 0x09, 0x46, 0x69,
+	0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x10, 0x00, 0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x6e, 0x63,
+	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x10, 0x01, 0x2a, 0x2f, 0x0a, 0x0f, 0x43, 0x75,
+	0x72, 0x73, 0x6f, 0x72, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x0d, 0x0a,
+	0x09, 0x50, 0x72, 0x65, 0x63, 0x65, 0x64, 0x69, 0x6e, 0x67, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09,
+	0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x69, 0x6e, 0x67, 0x10, 0x01, 0x2a, 0x22, 0x0a, 0x0d, 0x53,
+	0x6f, 0x72, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x07, 0x0a, 0x03,
+	0x41, 0x73, 0x63, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x44, 0x65, 0x73, 0x63, 0x10, 0x01, 0x32,
+	0xe8, 0x03, 0x0a, 0x0b, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12,
+	0x4a, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x12, 0x1b, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65,
+	0x73, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19,
+	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56,
+	0x61, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x38, 0x0a, 0x08, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x12, 0x15, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13,
+	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x52, 0x65,
+	0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65,
+	0x79, 0x73, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b,
+	0x65, 0x79, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x6c, 0x6f, 0x6f,
+	0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79,
+	0x22, 0x00, 0x12, 0x6e, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79, 0x4b, 0x65, 0x79,
+	0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69, 0x73, 0x6f, 0x6e,
+	0x12, 0x27, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79, 0x4b,
+	0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69, 0x73,
+	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6c, 0x6f, 0x6f, 0x70,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65,
+	0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69, 0x73, 0x6f, 0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79,
+	0x22, 0x00, 0x12, 0x71, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79, 0x4b, 0x65, 0x79,
 	0x73, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69, 0x73, 0x6f,
-	0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x33, 0x0a, 0x04, 0x42, 0x69, 0x6e, 0x64,
-	0x12, 0x11, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x42, 0x69, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x42, 0x43, 0x5a,
-	0x41, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72,
-	0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61,
-	0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b,
-	0x67, 0x2f, 0x6c, 0x6f, 0x6f, 0x70, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x12, 0x28, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79,
+	0x4b, 0x65, 0x79, 0x73, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72,
+	0x69, 0x73, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6c, 0x6f,
+	0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x79, 0x4b, 0x65, 0x79, 0x73, 0x56, 0x61,
+	0x6c, 0x75, 0x65, 0x73, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x69, 0x73, 0x6f, 0x6e, 0x52, 0x65,
+	0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x33, 0x0a, 0x04, 0x42, 0x69, 0x6e, 0x64, 0x12, 0x11, 0x2e,
+	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x42, 0x69, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x42, 0x43, 0x5a, 0x41, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72, 0x74, 0x63, 0x6f,
+	0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x6c,
+	0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x6c,
+	0x6f, 0x6f, 0x70, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x62, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2406,111 +2531,115 @@ func file_chain_reader_proto_rawDescGZIP() []byte {
 	return file_chain_reader_proto_rawDescData
 }
 
-var file_chain_reader_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_chain_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_chain_reader_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_chain_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_chain_reader_proto_goTypes = []interface{}{
 	(ComparisonOperator)(0),                    // 0: loop.ComparisonOperator
 	(BooleanOperator)(0),                       // 1: loop.BooleanOperator
 	(ConfirmationLevel)(0),                     // 2: loop.ConfirmationLevel
-	(SortDirection)(0),                         // 3: loop.SortDirection
-	(*GetLatestValueRequest)(nil),              // 4: loop.GetLatestValueRequest
-	(*QueryKeyRequest)(nil),                    // 5: loop.QueryKeyRequest
-	(*QueryKeysRequest)(nil),                   // 6: loop.QueryKeysRequest
-	(*QueryByKeyValuesComparisonRequest)(nil),  // 7: loop.QueryByKeyValuesComparisonRequest
-	(*QueryByKeysValuesComparisonRequest)(nil), // 8: loop.QueryByKeysValuesComparisonRequest
-	(*BindRequest)(nil),                        // 9: loop.BindRequest
-	(*GetLatestValueReply)(nil),                // 10: loop.GetLatestValueReply
-	(*QueryKeyReply)(nil),                      // 11: loop.QueryKeyReply
-	(*QueryKeysReply)(nil),                     // 12: loop.QueryKeysReply
-	(*QueryByKeyValuesComparisonReply)(nil),    // 13: loop.QueryByKeyValuesComparisonReply
-	(*QueryByKeysValuesComparisonReply)(nil),   // 14: loop.QueryByKeysValuesComparisonReply
-	(*Head)(nil),                               // 15: loop.Head
-	(*Sequence)(nil),                           // 16: loop.Sequence
-	(*Sequences)(nil),                          // 17: loop.Sequences
-	(*BoundContract)(nil),                      // 18: loop.BoundContract
-	(*ValueComparator)(nil),                    // 19: loop.ValueComparator
-	(*KeyValuesComparator)(nil),                // 20: loop.KeyValuesComparator
-	(*QueryFilter)(nil),                        // 21: loop.QueryFilter
-	(*Expression)(nil),                         // 22: loop.Expression
-	(*BooleanExpression)(nil),                  // 23: loop.BooleanExpression
-	(*And)(nil),                                // 24: loop.And
-	(*Or)(nil),                                 // 25: loop.Or
-	(*Address)(nil),                            // 26: loop.Address
-	(*Confirmations)(nil),                      // 27: loop.Confirmations
-	(*Block)(nil),                              // 28: loop.Block
-	(*Timestamp)(nil),                          // 29: loop.Timestamp
-	(*TxHash)(nil),                             // 30: loop.TxHash
-	(*Primitive)(nil),                          // 31: loop.Primitive
-	(*SortByTimestamp)(nil),                    // 32: loop.SortByTimestamp
-	(*SortByBlock)(nil),                        // 33: loop.SortByBlock
-	(*SortBySequence)(nil),                     // 34: loop.SortBySequence
-	(*SortBy)(nil),                             // 35: loop.SortBy
-	(*LimitAndSort)(nil),                       // 36: loop.LimitAndSort
-	(*VersionedBytes)(nil),                     // 37: loop.VersionedBytes
-	(*emptypb.Empty)(nil),                      // 38: google.protobuf.Empty
+	(CursorDirection)(0),                       // 3: loop.CursorDirection
+	(SortDirection)(0),                         // 4: loop.SortDirection
+	(*GetLatestValueRequest)(nil),              // 5: loop.GetLatestValueRequest
+	(*QueryKeyRequest)(nil),                    // 6: loop.QueryKeyRequest
+	(*QueryKeysRequest)(nil),                   // 7: loop.QueryKeysRequest
+	(*QueryByKeyValuesComparisonRequest)(nil),  // 8: loop.QueryByKeyValuesComparisonRequest
+	(*QueryByKeysValuesComparisonRequest)(nil), // 9: loop.QueryByKeysValuesComparisonRequest
+	(*BindRequest)(nil),                        // 10: loop.BindRequest
+	(*GetLatestValueReply)(nil),                // 11: loop.GetLatestValueReply
+	(*QueryKeyReply)(nil),                      // 12: loop.QueryKeyReply
+	(*QueryKeysReply)(nil),                     // 13: loop.QueryKeysReply
+	(*QueryByKeyValuesComparisonReply)(nil),    // 14: loop.QueryByKeyValuesComparisonReply
+	(*QueryByKeysValuesComparisonReply)(nil),   // 15: loop.QueryByKeysValuesComparisonReply
+	(*Head)(nil),                               // 16: loop.Head
+	(*Sequence)(nil),                           // 17: loop.Sequence
+	(*Sequences)(nil),                          // 18: loop.Sequences
+	(*BoundContract)(nil),                      // 19: loop.BoundContract
+	(*ValueComparator)(nil),                    // 20: loop.ValueComparator
+	(*KeyValuesComparator)(nil),                // 21: loop.KeyValuesComparator
+	(*QueryFilter)(nil),                        // 22: loop.QueryFilter
+	(*Expression)(nil),                         // 23: loop.Expression
+	(*BooleanExpression)(nil),                  // 24: loop.BooleanExpression
+	(*And)(nil),                                // 25: loop.And
+	(*Or)(nil),                                 // 26: loop.Or
+	(*Address)(nil),                            // 27: loop.Address
+	(*Confirmations)(nil),                      // 28: loop.Confirmations
+	(*Block)(nil),                              // 29: loop.Block
+	(*Timestamp)(nil),                          // 30: loop.Timestamp
+	(*TxHash)(nil),                             // 31: loop.TxHash
+	(*Primitive)(nil),                          // 32: loop.Primitive
+	(*Limit)(nil),                              // 33: loop.Limit
+	(*SortByTimestamp)(nil),                    // 34: loop.SortByTimestamp
+	(*SortByBlock)(nil),                        // 35: loop.SortByBlock
+	(*SortBySequence)(nil),                     // 36: loop.SortBySequence
+	(*SortBy)(nil),                             // 37: loop.SortBy
+	(*LimitAndSort)(nil),                       // 38: loop.LimitAndSort
+	(*VersionedBytes)(nil),                     // 39: loop.VersionedBytes
+	(*emptypb.Empty)(nil),                      // 40: google.protobuf.Empty
 }
 var file_chain_reader_proto_depIdxs = []int32{
-	37, // 0: loop.GetLatestValueRequest.params:type_name -> loop.VersionedBytes
-	21, // 1: loop.QueryKeyRequest.query_filter:type_name -> loop.QueryFilter
-	36, // 2: loop.QueryKeyRequest.limit_and_sort:type_name -> loop.LimitAndSort
-	21, // 3: loop.QueryKeysRequest.query_filter:type_name -> loop.QueryFilter
-	36, // 4: loop.QueryKeysRequest.limit_and_sort:type_name -> loop.LimitAndSort
-	20, // 5: loop.QueryByKeyValuesComparisonRequest.key_values_comparator:type_name -> loop.KeyValuesComparator
-	21, // 6: loop.QueryByKeyValuesComparisonRequest.query_filter:type_name -> loop.QueryFilter
-	36, // 7: loop.QueryByKeyValuesComparisonRequest.limit_and_sort:type_name -> loop.LimitAndSort
-	20, // 8: loop.QueryByKeysValuesComparisonRequest.keys_values_comparator:type_name -> loop.KeyValuesComparator
-	21, // 9: loop.QueryByKeysValuesComparisonRequest.query_filter:type_name -> loop.QueryFilter
-	36, // 10: loop.QueryByKeysValuesComparisonRequest.limit_and_sort:type_name -> loop.LimitAndSort
-	18, // 11: loop.BindRequest.bindings:type_name -> loop.BoundContract
-	37, // 12: loop.GetLatestValueReply.retVal:type_name -> loop.VersionedBytes
-	17, // 13: loop.QueryKeyReply.sequences:type_name -> loop.Sequences
-	17, // 14: loop.QueryKeysReply.sequences:type_name -> loop.Sequences
-	17, // 15: loop.QueryByKeyValuesComparisonReply.sequences:type_name -> loop.Sequences
-	17, // 16: loop.QueryByKeysValuesComparisonReply.sequences:type_name -> loop.Sequences
-	15, // 17: loop.Sequence.head:type_name -> loop.Head
-	37, // 18: loop.Sequence.data:type_name -> loop.VersionedBytes
-	16, // 19: loop.Sequences.sequences:type_name -> loop.Sequence
+	39, // 0: loop.GetLatestValueRequest.params:type_name -> loop.VersionedBytes
+	22, // 1: loop.QueryKeyRequest.query_filter:type_name -> loop.QueryFilter
+	38, // 2: loop.QueryKeyRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	22, // 3: loop.QueryKeysRequest.query_filter:type_name -> loop.QueryFilter
+	38, // 4: loop.QueryKeysRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	21, // 5: loop.QueryByKeyValuesComparisonRequest.key_values_comparator:type_name -> loop.KeyValuesComparator
+	22, // 6: loop.QueryByKeyValuesComparisonRequest.query_filter:type_name -> loop.QueryFilter
+	38, // 7: loop.QueryByKeyValuesComparisonRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	21, // 8: loop.QueryByKeysValuesComparisonRequest.keys_values_comparator:type_name -> loop.KeyValuesComparator
+	22, // 9: loop.QueryByKeysValuesComparisonRequest.query_filter:type_name -> loop.QueryFilter
+	38, // 10: loop.QueryByKeysValuesComparisonRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	19, // 11: loop.BindRequest.bindings:type_name -> loop.BoundContract
+	39, // 12: loop.GetLatestValueReply.retVal:type_name -> loop.VersionedBytes
+	18, // 13: loop.QueryKeyReply.sequences:type_name -> loop.Sequences
+	18, // 14: loop.QueryKeysReply.sequences:type_name -> loop.Sequences
+	18, // 15: loop.QueryByKeyValuesComparisonReply.sequences:type_name -> loop.Sequences
+	18, // 16: loop.QueryByKeysValuesComparisonReply.sequences:type_name -> loop.Sequences
+	16, // 17: loop.Sequence.head:type_name -> loop.Head
+	39, // 18: loop.Sequence.data:type_name -> loop.VersionedBytes
+	17, // 19: loop.Sequences.sequences:type_name -> loop.Sequence
 	0,  // 20: loop.ValueComparator.operator:type_name -> loop.ComparisonOperator
-	19, // 21: loop.KeyValuesComparator.value_comparators:type_name -> loop.ValueComparator
-	22, // 22: loop.QueryFilter.expression:type_name -> loop.Expression
-	31, // 23: loop.Expression.primitive:type_name -> loop.Primitive
-	23, // 24: loop.Expression.boolean_expression:type_name -> loop.BooleanExpression
+	20, // 21: loop.KeyValuesComparator.value_comparators:type_name -> loop.ValueComparator
+	23, // 22: loop.QueryFilter.expression:type_name -> loop.Expression
+	32, // 23: loop.Expression.primitive:type_name -> loop.Primitive
+	24, // 24: loop.Expression.boolean_expression:type_name -> loop.BooleanExpression
 	1,  // 25: loop.BooleanExpression.boolean_operator:type_name -> loop.BooleanOperator
-	22, // 26: loop.BooleanExpression.expression:type_name -> loop.Expression
-	22, // 27: loop.And.a:type_name -> loop.Expression
-	22, // 28: loop.Or.a:type_name -> loop.Expression
+	23, // 26: loop.BooleanExpression.expression:type_name -> loop.Expression
+	23, // 27: loop.And.a:type_name -> loop.Expression
+	23, // 28: loop.Or.a:type_name -> loop.Expression
 	2,  // 29: loop.Confirmations.confirmations:type_name -> loop.ConfirmationLevel
 	0,  // 30: loop.Block.operator:type_name -> loop.ComparisonOperator
 	0,  // 31: loop.Timestamp.operator:type_name -> loop.ComparisonOperator
-	26, // 32: loop.Primitive.address:type_name -> loop.Address
-	27, // 33: loop.Primitive.confirmations:type_name -> loop.Confirmations
-	28, // 34: loop.Primitive.block:type_name -> loop.Block
-	29, // 35: loop.Primitive.timestamp:type_name -> loop.Timestamp
-	30, // 36: loop.Primitive.tx_hash:type_name -> loop.TxHash
-	3,  // 37: loop.SortByTimestamp.sort_direction:type_name -> loop.SortDirection
-	3,  // 38: loop.SortByBlock.sort_direction:type_name -> loop.SortDirection
-	3,  // 39: loop.SortBySequence.sort_direction:type_name -> loop.SortDirection
-	32, // 40: loop.SortBy.sort_by_timestamp:type_name -> loop.SortByTimestamp
-	33, // 41: loop.SortBy.sort_by_block:type_name -> loop.SortByBlock
-	34, // 42: loop.SortBy.sort_by_sequence:type_name -> loop.SortBySequence
-	35, // 43: loop.LimitAndSort.sort_by:type_name -> loop.SortBy
-	4,  // 44: loop.ChainReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
-	5,  // 45: loop.ChainReader.QueryKey:input_type -> loop.QueryKeyRequest
-	6,  // 46: loop.ChainReader.QueryKeys:input_type -> loop.QueryKeysRequest
-	7,  // 47: loop.ChainReader.QueryByKeyValuesComparison:input_type -> loop.QueryByKeyValuesComparisonRequest
-	8,  // 48: loop.ChainReader.QueryByKeysValuesComparison:input_type -> loop.QueryByKeysValuesComparisonRequest
-	9,  // 49: loop.ChainReader.Bind:input_type -> loop.BindRequest
-	10, // 50: loop.ChainReader.GetLatestValue:output_type -> loop.GetLatestValueReply
-	11, // 51: loop.ChainReader.QueryKey:output_type -> loop.QueryKeyReply
-	12, // 52: loop.ChainReader.QueryKeys:output_type -> loop.QueryKeysReply
-	13, // 53: loop.ChainReader.QueryByKeyValuesComparison:output_type -> loop.QueryByKeyValuesComparisonReply
-	14, // 54: loop.ChainReader.QueryByKeysValuesComparison:output_type -> loop.QueryByKeysValuesComparisonReply
-	38, // 55: loop.ChainReader.Bind:output_type -> google.protobuf.Empty
-	50, // [50:56] is the sub-list for method output_type
-	44, // [44:50] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	27, // 32: loop.Primitive.address:type_name -> loop.Address
+	28, // 33: loop.Primitive.confirmations:type_name -> loop.Confirmations
+	29, // 34: loop.Primitive.block:type_name -> loop.Block
+	30, // 35: loop.Primitive.timestamp:type_name -> loop.Timestamp
+	31, // 36: loop.Primitive.tx_hash:type_name -> loop.TxHash
+	3,  // 37: loop.Limit.direction:type_name -> loop.CursorDirection
+	4,  // 38: loop.SortByTimestamp.sort_direction:type_name -> loop.SortDirection
+	4,  // 39: loop.SortByBlock.sort_direction:type_name -> loop.SortDirection
+	4,  // 40: loop.SortBySequence.sort_direction:type_name -> loop.SortDirection
+	34, // 41: loop.SortBy.sort_by_timestamp:type_name -> loop.SortByTimestamp
+	35, // 42: loop.SortBy.sort_by_block:type_name -> loop.SortByBlock
+	36, // 43: loop.SortBy.sort_by_sequence:type_name -> loop.SortBySequence
+	37, // 44: loop.LimitAndSort.sortBy:type_name -> loop.SortBy
+	33, // 45: loop.LimitAndSort.limit:type_name -> loop.Limit
+	5,  // 46: loop.ChainReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
+	6,  // 47: loop.ChainReader.QueryKey:input_type -> loop.QueryKeyRequest
+	7,  // 48: loop.ChainReader.QueryKeys:input_type -> loop.QueryKeysRequest
+	8,  // 49: loop.ChainReader.QueryByKeyValuesComparison:input_type -> loop.QueryByKeyValuesComparisonRequest
+	9,  // 50: loop.ChainReader.QueryByKeysValuesComparison:input_type -> loop.QueryByKeysValuesComparisonRequest
+	10, // 51: loop.ChainReader.Bind:input_type -> loop.BindRequest
+	11, // 52: loop.ChainReader.GetLatestValue:output_type -> loop.GetLatestValueReply
+	12, // 53: loop.ChainReader.QueryKey:output_type -> loop.QueryKeyReply
+	13, // 54: loop.ChainReader.QueryKeys:output_type -> loop.QueryKeysReply
+	14, // 55: loop.ChainReader.QueryByKeyValuesComparison:output_type -> loop.QueryByKeyValuesComparisonReply
+	15, // 56: loop.ChainReader.QueryByKeysValuesComparison:output_type -> loop.QueryByKeysValuesComparisonReply
+	40, // 57: loop.ChainReader.Bind:output_type -> google.protobuf.Empty
+	52, // [52:58] is the sub-list for method output_type
+	46, // [46:52] is the sub-list for method input_type
+	46, // [46:46] is the sub-list for extension type_name
+	46, // [46:46] is the sub-list for extension extendee
+	0,  // [0:46] is the sub-list for field type_name
 }
 
 func init() { file_chain_reader_proto_init() }
@@ -2857,7 +2986,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SortByTimestamp); i {
+			switch v := v.(*Limit); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2869,7 +2998,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SortByBlock); i {
+			switch v := v.(*SortByTimestamp); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2881,7 +3010,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SortBySequence); i {
+			switch v := v.(*SortByBlock); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2893,7 +3022,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SortBy); i {
+			switch v := v.(*SortBySequence); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2905,6 +3034,18 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SortBy); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_chain_reader_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*LimitAndSort); i {
 			case 0:
 				return &v.state
@@ -2928,7 +3069,8 @@ func file_chain_reader_proto_init() {
 		(*Primitive_Timestamp)(nil),
 		(*Primitive_TxHash)(nil),
 	}
-	file_chain_reader_proto_msgTypes[31].OneofWrappers = []interface{}{
+	file_chain_reader_proto_msgTypes[28].OneofWrappers = []interface{}{}
+	file_chain_reader_proto_msgTypes[32].OneofWrappers = []interface{}{
 		(*SortBy_SortByTimestamp)(nil),
 		(*SortBy_SortByBlock)(nil),
 		(*SortBy_SortBySequence)(nil),
@@ -2938,8 +3080,8 @@ func file_chain_reader_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_chain_reader_proto_rawDesc,
-			NumEnums:      4,
-			NumMessages:   33,
+			NumEnums:      5,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

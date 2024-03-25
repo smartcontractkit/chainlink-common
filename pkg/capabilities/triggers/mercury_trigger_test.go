@@ -18,19 +18,26 @@ func TestMercuryTrigger(t *testing.T) {
 	require.NotNil(t, ts)
 
 	feedID := "0x1111111111111111111100000000000000000000000000000000000000000000"
-	m := map[string]interface{}{
-		"feedIds":   []string{feedID},
+	im := map[string]interface{}{
 		"triggerId": "test-id-1",
 	}
 
-	wrapped, err := values.NewMap(m)
+	iMap, err := values.NewMap(im)
+	require.NoError(t, err)
+
+	cm := map[string]interface{}{
+		"feedIds": []string{feedID},
+	}
+
+	cMap, err := values.NewMap(cm)
 	require.NoError(t, err)
 
 	cr := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
-		Inputs: wrapped,
+		Inputs: iMap,
+		Config: cMap,
 	}
 	callback := make(chan capabilities.CapabilityResponse, 10)
 	require.NoError(t, ts.RegisterTrigger(ctx, callback, cr))
@@ -57,7 +64,7 @@ func TestMercuryTrigger(t *testing.T) {
 	// Unregister the trigger and check that events no longer go on the callback
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr))
 	err = ts.ProcessReport(fr)
-	assert.NoError(t, err)
+	assert.ErrorContains(t, err, "no registered triggers for feed")
 	assert.Len(t, callback, 0)
 }
 
@@ -67,20 +74,26 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	require.NotNil(t, ts)
 
 	m1 := map[string]interface{}{
+		"triggerId": "test-id-1",
+	}
+
+	c1 := map[string]interface{}{
 		"feedIds": []string{
 			"0x1111111111111111111100000000000000000000000000000000000000000000",
 			"0x3333333333333333333300000000000000000000000000000000000000000000",
 			"0x4444444444444444444400000000000000000000000000000000000000000000"},
-		"triggerId": "test-id-1",
 	}
 
 	m2 := map[string]interface{}{
+		"triggerId": "test-id-2",
+	}
+
+	c2 := map[string]interface{}{
 		"feedIds": []string{
 			"0x2222222222222222222200000000000000000000000000000000000000000000",
 			"0x3333333333333333333300000000000000000000000000000000000000000000",
 			"0x5555555555555555555500000000000000000000000000000000000000000000",
 		},
-		"triggerId": "test-id-2",
 	}
 
 	wrapped1, err := values.NewMap(m1)
@@ -89,17 +102,25 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	wrapped2, err := values.NewMap(m2)
 	require.NoError(t, err)
 
+	config1, err := values.NewMap(c1)
+	require.NoError(t, err)
+
+	config2, err := values.NewMap(c2)
+	require.NoError(t, err)
+
 	cr1 := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
 		Inputs: wrapped1,
+		Config: config1,
 	}
 	cr2 := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
 		Inputs: wrapped2,
+		Config: config2,
 	}
 
 	callback1 := make(chan capabilities.CapabilityResponse, 10)
@@ -187,7 +208,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr2))
 	err = ts.ProcessReport(fr1)
-	assert.NoError(t, err)
+	assert.ErrorContains(t, err, "no registered triggers for feed")
 	assert.Len(t, callback1, 0)
 	assert.Len(t, callback2, 0)
 }

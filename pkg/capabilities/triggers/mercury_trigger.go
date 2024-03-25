@@ -51,7 +51,11 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 	triggerIDsToReports := make(map[string][]int)
 
 	for reportIndex, report := range reports {
-		for triggerID := range o.triggerIDsForFeedID[report.FeedID] {
+		triggers := o.triggerIDsForFeedID[report.FeedID]
+		if len(triggers) == 0 {
+			return fmt.Errorf("no registered triggers for feed %s", report.FeedID)
+		}
+		for triggerID := range triggers {
 			// if its not initialized, initialize it
 			if _, ok := triggerIDsToReports[triggerID]; !ok {
 				triggerIDsToReports[triggerID] = make([]int, 0)
@@ -109,7 +113,11 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 	if _, ok := o.chans[triggerID]; ok {
 		return fmt.Errorf("triggerId %s already registered", triggerID)
 	}
-	feedIDs := o.GetFeedIDs(req) // TODO: what if feedIds is empty? should we throw an error or allow it?
+
+	feedIDs := o.GetFeedIDs(req)
+	if len(feedIDs) == 0 {
+		return fmt.Errorf("no feed IDs found in config: %+v", feedIDs)
+	}
 
 	o.chans[triggerID] = callback
 	o.feedIDsForTriggerID[triggerID] = feedIDs
@@ -158,8 +166,8 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) []string {
 	feedIDs := make([]string, 0)
 	// Unwrap the inputs which should return pair (map, nil) and then get the feedIds from the map
-	if inputs, err := req.Inputs.Unwrap(); err == nil {
-		if feeds, ok := inputs.(map[string]interface{})["feedIds"].([]any); ok {
+	if config, err := req.Config.Unwrap(); err == nil {
+		if feeds, ok := config.(map[string]interface{})["feedIds"].([]any); ok {
 			// Copy to feedIds
 			for _, feed := range feeds {
 				if id, ok := feed.(string); ok {

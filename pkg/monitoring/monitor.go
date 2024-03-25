@@ -116,7 +116,6 @@ func NewMonitorPrometheusOnly(
 
 		HTTPServer: httpServer,
 	}, nil
-
 }
 
 // NewMonitor builds a new Monitor instance using dependency injection.

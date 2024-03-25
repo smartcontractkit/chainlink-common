@@ -129,7 +129,7 @@ type AddressPrimitive struct {
 	Addresses []string
 }
 
-// TODO adress is fetched through bindings, so this is most likely not necessary
+// TODO Address is fetched through bindings, so this is most likely not necessary
 func Address(addresses ...string) Expression {
 	return Expression{
 		Primitive: &AddressPrimitive{Addresses: addresses},

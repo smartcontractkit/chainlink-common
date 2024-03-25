@@ -362,22 +362,22 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 			return nil, status.Errorf(codes.InvalidArgument, "Unknown expression type")
 		}
 		return pbExpression, nil
-	} else {
-		pbExpression.Evaluator = &pb.Expression_BooleanExpression{BooleanExpression: &pb.BooleanExpression{}}
-		var expressions []*pb.Expression
-		for _, expr := range expression.BoolExpression.Expressions {
-			pbExpr, err := convertExpressionToProto(expr)
-			if err != nil {
-				return nil, err
-			}
-			expressions = append(expressions, pbExpr)
-		}
-		pbExpression.Evaluator = &pb.Expression_BooleanExpression{
-			BooleanExpression: &pb.BooleanExpression{
-				BooleanOperator: pb.BooleanOperator(expression.BoolExpression.BoolOperator),
-				Expression:      expressions,
-			}}
 	}
+
+	pbExpression.Evaluator = &pb.Expression_BooleanExpression{BooleanExpression: &pb.BooleanExpression{}}
+	var expressions []*pb.Expression
+	for _, expr := range expression.BoolExpression.Expressions {
+		pbExpr, err := convertExpressionToProto(expr)
+		if err != nil {
+			return nil, err
+		}
+		expressions = append(expressions, pbExpr)
+	}
+	pbExpression.Evaluator = &pb.Expression_BooleanExpression{
+		BooleanExpression: &pb.BooleanExpression{
+			BooleanOperator: pb.BooleanOperator(expression.BoolExpression.BoolOperator),
+			Expression:      expressions,
+		}}
 
 	return pbExpression, nil
 }

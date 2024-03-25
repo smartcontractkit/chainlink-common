@@ -8,9 +8,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
@@ -20,7 +20,7 @@ func TestMedianService(t *testing.T) {
 
 	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMedianName, false, 0)
-	}, median_test.MedianProvider, median_test.DataSource, median_test.JuelsPerFeeCoinDataSource, testcore.ErrorLog)
+	}, median_test.MedianProvider, median_test.DataSource, median_test.JuelsPerFeeCoinDataSource, errorlogtest.ErrorLog)
 	hook := median.PluginService.XXXTestHook()
 	servicetest.Run(t, median)
 
@@ -56,7 +56,7 @@ func TestMedianService_recovery(t *testing.T) {
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, median_test.MedianProvider, median_test.DataSource, median_test.JuelsPerFeeCoinDataSource, &testcore.ErrorLog)
+	}, median_test.MedianProvider, median_test.DataSource, median_test.JuelsPerFeeCoinDataSource, errorlogtest.ErrorLog)
 	servicetest.Run(t, median)
 
 	testreportingplugin.RunFactory(t, median)

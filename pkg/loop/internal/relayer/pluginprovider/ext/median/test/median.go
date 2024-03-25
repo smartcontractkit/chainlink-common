@@ -15,7 +15,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -33,7 +33,7 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p types.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &testcore.ErrorLog)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &errorlogtest.ErrorLog)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)

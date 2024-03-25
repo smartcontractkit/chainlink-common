@@ -10,9 +10,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"

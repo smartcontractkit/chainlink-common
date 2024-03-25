@@ -8,7 +8,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
+	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
 )
 
@@ -28,7 +28,7 @@ var (
 			provider:                  MedianProvider,
 			dataSource:                DataSource,
 			juelsPerFeeCoinDataSource: JuelsPerFeeCoinDataSource,
-			errorLog:                  testcore.ErrorLog,
+			errorLog:                  errorlogtest.ErrorLog,
 		},
 	}
 

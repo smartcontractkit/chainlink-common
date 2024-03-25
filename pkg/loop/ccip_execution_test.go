@@ -14,10 +14,10 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -106,7 +106,7 @@ func TestExecLOOP(t *testing.T) {
 
 func newExecutionProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPExecProvider, error) {
 	ctx := context.Background()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, testcore.Keystore)
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 

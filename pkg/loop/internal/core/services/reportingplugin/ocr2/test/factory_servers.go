@@ -9,7 +9,7 @@ import (
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
+	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
@@ -19,7 +19,7 @@ import (
 
 var MedianProviderServer = medianFactoryServer{
 	medianGeneratorConfig: medianGeneratorConfig{
-		medianProvider: median_test.MedianProvider,
+		medianProvider: mediantest.MedianProvider,
 		pipeline:       pipelinetest.PipelineRunner,
 		telemetry:      telemetrytest.Telemetry,
 	},

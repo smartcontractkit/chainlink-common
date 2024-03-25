@@ -26,8 +26,8 @@ var mercuryInfo = capabilities.MustNewCapabilityInfo(
 type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
 	chans               map[string]chan<- capabilities.CapabilityResponse
-	feedIDsForTriggerID map[string][]string // TODO: switch this to uint64 when value.go supports it
-	triggerIDsForFeedID map[string]map[string]bool
+	feedIDsForTriggerID map[string][]mercury.FeedID
+	triggerIDsForFeedID map[mercury.FeedID]map[string]bool
 	mu                  sync.Mutex
 }
 
@@ -37,8 +37,8 @@ func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
 		CapabilityInfo:      mercuryInfo,
 		chans:               map[string]chan<- capabilities.CapabilityResponse{},
-		feedIDsForTriggerID: make(map[string][]string),
-		triggerIDsForFeedID: make(map[string]map[string]bool),
+		feedIDsForTriggerID: make(map[string][]mercury.FeedID),
+		triggerIDsForFeedID: make(map[mercury.FeedID]map[string]bool),
 	}
 }
 
@@ -109,7 +109,11 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 	if _, ok := o.chans[triggerID]; ok {
 		return fmt.Errorf("triggerId %s already registered", triggerID)
 	}
-	feedIDs := o.GetFeedIDs(req) // TODO: what if feedIds is empty? should we throw an error or allow it?
+
+	feedIDs, err := o.GetFeedIDs(req) // TODO: what if feedIds is empty? should we throw an error or allow it?
+	if err != nil {
+		return err
+	}
 
 	o.chans[triggerID] = callback
 	o.feedIDsForTriggerID[triggerID] = feedIDs
@@ -155,20 +159,25 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 }
 
 // Get array of feedIds from CapabilityRequest req
-func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) []string {
-	feedIDs := make([]string, 0)
+func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) ([]mercury.FeedID, error) {
+	feedIDs := make([]mercury.FeedID, 0)
 	// Unwrap the inputs which should return pair (map, nil) and then get the feedIds from the map
-	if inputs, err := req.Inputs.Unwrap(); err == nil {
-		if feeds, ok := inputs.(map[string]interface{})["feedIds"].([]any); ok {
+	if config, err := req.Config.Unwrap(); err == nil {
+		if feeds, ok := config.(map[string]interface{})["feedIds"].([]any); ok {
 			// Copy to feedIds
 			for _, feed := range feeds {
 				if id, ok := feed.(string); ok {
-					feedIDs = append(feedIDs, id)
+					fid, err := mercury.FromFeedIDString(id)
+					if err != nil {
+						return nil, err
+					}
+					feedIDs = append(feedIDs, fid)
 				}
 			}
 		}
 	}
-	return feedIDs
+
+	return feedIDs, nil
 }
 
 // Get the triggerId from the CapabilityRequest req map
@@ -192,11 +201,11 @@ func GenerateTriggerEventID(reports []mercury.FeedReport) string {
 		if reports[i].FeedID == reports[j].FeedID {
 			return reports[i].ObservationTimestamp < reports[j].ObservationTimestamp
 		}
-		return reports[i].FeedID < reports[j].FeedID
+		return reports[i].FeedID.String() < reports[j].FeedID.String()
 	})
 	s := ""
 	for _, report := range reports {
-		s += report.FeedID + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
+		s += report.FeedID.String() + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
 	}
 	return sha256Hash(s)
 }
@@ -207,19 +216,22 @@ func ValidateInput(mercuryTriggerEvent values.Value) error {
 }
 
 func ExampleOutput() (values.Value, error) {
+	feedOne := mercury.Must(mercury.FromFeedIDString("0x111111111111111111110000000000000000000000000000000000000000"))
+	feedTwo := mercury.Must(mercury.FromFeedIDString("0x222222222222222222220000000000000000000000000000000000000000"))
+
 	event := mercury.TriggerEvent{
 		TriggerType: "mercury",
 		ID:          "123",
 		Timestamp:   "2024-01-17T04:00:10Z",
 		Payload: []mercury.FeedReport{
 			{
-				FeedID:               "0x111111111111111111110000000000000000000000000000000000000000",
+				FeedID:               feedOne,
 				FullReport:           []byte("hello"),
 				BenchmarkPrice:       100,
 				ObservationTimestamp: 123,
 			},
 			{
-				FeedID:               "0x222222222222222222220000000000000000000000000000000000000000",
+				FeedID:               feedTwo,
 				FullReport:           []byte("world"),
 				BenchmarkPrice:       100,
 				ObservationTimestamp: 123,

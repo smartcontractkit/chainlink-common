@@ -12,25 +12,39 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+var (
+	feedOne   = mercury.Must(mercury.FromFeedIDString("0x1111111111111111111100000000000000000000000000000000000000000000"))
+	feedTwo   = mercury.Must(mercury.FromFeedIDString("0x2222222222222222222200000000000000000000000000000000000000000000"))
+	feedThree = mercury.Must(mercury.FromFeedIDString("0x3333333333333333333300000000000000000000000000000000000000000000"))
+	feedFour  = mercury.Must(mercury.FromFeedIDString("0x4444444444444444444400000000000000000000000000000000000000000000"))
+	feedFive  = mercury.Must(mercury.FromFeedIDString("0x5555555555555555555500000000000000000000000000000000000000000000"))
+)
+
 func TestMercuryTrigger(t *testing.T) {
 	ts := NewMercuryTriggerService()
 	ctx := tests.Context(t)
 	require.NotNil(t, ts)
 
-	feedID := "0x1111111111111111111100000000000000000000000000000000000000000000"
-	m := map[string]interface{}{
-		"feedIds":   []string{feedID},
+	cm := map[string]interface{}{
+		"feedIds": []string{feedOne.String()},
+	}
+
+	configWrapped, err := values.NewMap(cm)
+	require.NoError(t, err)
+
+	im := map[string]interface{}{
 		"triggerId": "test-id-1",
 	}
 
-	wrapped, err := values.NewMap(m)
+	inputsWrapped, err := values.NewMap(im)
 	require.NoError(t, err)
 
 	cr := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
-		Inputs: wrapped,
+		Config: configWrapped,
+		Inputs: inputsWrapped,
 	}
 	callback := make(chan capabilities.CapabilityResponse, 10)
 	require.NoError(t, ts.RegisterTrigger(ctx, callback, cr))
@@ -38,7 +52,7 @@ func TestMercuryTrigger(t *testing.T) {
 	// Send events to trigger and check for them in the callback
 	fr := []mercury.FeedReport{
 		{
-			FeedID:               feedID,
+			FeedID:               feedOne,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       2,
 			ObservationTimestamp: 3,
@@ -66,40 +80,56 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	ctx := tests.Context(t)
 	require.NotNil(t, ts)
 
-	m1 := map[string]interface{}{
-		"feedIds": []string{
-			"0x1111111111111111111100000000000000000000000000000000000000000000",
-			"0x3333333333333333333300000000000000000000000000000000000000000000",
-			"0x4444444444444444444400000000000000000000000000000000000000000000"},
+	im1 := map[string]interface{}{
 		"triggerId": "test-id-1",
 	}
 
-	m2 := map[string]interface{}{
-		"feedIds": []string{
-			"0x2222222222222222222200000000000000000000000000000000000000000000",
-			"0x3333333333333333333300000000000000000000000000000000000000000000",
-			"0x5555555555555555555500000000000000000000000000000000000000000000",
-		},
-		"triggerId": "test-id-2",
-	}
-
-	wrapped1, err := values.NewMap(m1)
+	iwrapped1, err := values.NewMap(im1)
 	require.NoError(t, err)
 
-	wrapped2, err := values.NewMap(m2)
+	cm1 := map[string]interface{}{
+		"feedIds": []string{
+			feedOne.String(),
+			feedThree.String(),
+			feedFour.String(),
+		},
+	}
+
+	cwrapped1, err := values.NewMap(cm1)
 	require.NoError(t, err)
 
 	cr1 := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
-		Inputs: wrapped1,
+		Inputs: iwrapped1,
+		Config: cwrapped1,
 	}
+
+	im2 := map[string]interface{}{
+		"triggerId": "test-id-2",
+	}
+
+	iwrapped2, err := values.NewMap(im2)
+	require.NoError(t, err)
+
+	cm2 := map[string]interface{}{
+		"feedIds": []string{
+			feedTwo.String(),
+			feedThree.String(),
+			feedFive.String(),
+		},
+	}
+
+	cwrapped2, err := values.NewMap(cm2)
+	require.NoError(t, err)
+
 	cr2 := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
-		Inputs: wrapped2,
+		Inputs: iwrapped2,
+		Config: cwrapped2,
 	}
 
 	callback1 := make(chan capabilities.CapabilityResponse, 10)
@@ -111,25 +141,25 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	// Send events to trigger and check for them in the callback
 	fr1 := []mercury.FeedReport{
 		{
-			FeedID:               "0x1111111111111111111100000000000000000000000000000000000000000000",
+			FeedID:               feedOne,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       20,
 			ObservationTimestamp: 5,
 		},
 		{
-			FeedID:               "0x3333333333333333333300000000000000000000000000000000000000000000",
+			FeedID:               feedThree,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       25,
 			ObservationTimestamp: 8,
 		},
 		{
-			FeedID:               "0x2222222222222222222200000000000000000000000000000000000000000000",
+			FeedID:               feedTwo,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       30,
 			ObservationTimestamp: 10,
 		},
 		{
-			FeedID:               "0x4444444444444444444400000000000000000000000000000000000000000000",
+			FeedID:               feedFour,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       40,
 			ObservationTimestamp: 15,
@@ -165,7 +195,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr1))
 	fr2 := []mercury.FeedReport{
 		{
-			FeedID:               "0x3333333333333333333300000000000000000000000000000000000000000000",
+			FeedID:               feedThree,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       50,
 			ObservationTimestamp: 20,

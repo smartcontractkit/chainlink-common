@@ -9,7 +9,7 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -17,7 +17,7 @@ var _ ocrtypes.ReportingPluginFactory = (*MedianService)(nil)
 
 // MedianService is a [types.Service] that maintains an internal [types.PluginMedian].
 type MedianService struct {
-	internal.PluginService[*GRPCPluginMedian, types.ReportingPluginFactory]
+	goplugin.PluginService[*GRPCPluginMedian, types.ReportingPluginFactory]
 }
 
 // NewMedianService returns a new [*MedianService].
@@ -38,9 +38,9 @@ func NewMedianService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cm
 	return &ms
 }
 
-func (m *MedianService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+func (m *MedianService) NewReportingPlugin(ctx context.Context, config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
 	if err := m.Wait(); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(config)
+	return m.Service.NewReportingPlugin(ctx, config)
 }

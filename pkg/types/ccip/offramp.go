@@ -43,6 +43,10 @@ type OffRampReader interface {
 	GetSourceToDestTokensMapping(ctx context.Context) (map[Address]Address, error)
 
 	GetTokens(ctx context.Context) (OffRampTokens, error)
+
+	GetRouter(ctx context.Context) (Address, error)
+
+	Close() error
 }
 
 type ExecReport struct {
@@ -90,12 +94,14 @@ type ExecOffchainConfig struct {
 
 type ExecOnchainConfig struct {
 	PermissionLessExecutionThresholdSeconds time.Duration
+	Router                                  Address
 }
 
 func (c ExecOnchainConfig) Validate() error {
 	if c.PermissionLessExecutionThresholdSeconds == 0 {
 		return errors.New("must set PermissionLessExecutionThresholdSeconds")
 	}
+	// skipping validation for Router, it could be set to 0 address
 	return nil
 }
 

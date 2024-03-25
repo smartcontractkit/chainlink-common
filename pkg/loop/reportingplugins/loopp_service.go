@@ -10,7 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -19,7 +19,7 @@ var _ ocrtypes.ReportingPluginFactory = (*LOOPPService)(nil)
 
 // LOOPPService is a [types.Service] that maintains an internal [types.PluginClient].
 type LOOPPService struct {
-	internal.PluginService[*GRPCService[types.PluginProvider], types.ReportingPluginFactory]
+	goplugin.PluginService[*GRPCService[types.PluginProvider], types.ReportingPluginFactory]
 }
 
 // NewLOOPPService returns a new [*PluginService].
@@ -50,9 +50,9 @@ func NewLOOPPService(
 	return &ps
 }
 
-func (g *LOOPPService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+func (g *LOOPPService) NewReportingPlugin(ctx context.Context, config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
 	if err := g.Wait(); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
-	return g.Service.NewReportingPlugin(config)
+	return g.Service.NewReportingPlugin(ctx, config)
 }

@@ -14,8 +14,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
-	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/ccip/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	ccip_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
 	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
@@ -28,7 +28,7 @@ func TestExecService(t *testing.T) {
 
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false, 0)
-	}, ccip_test.ExecutionProvider, ccip_test.ExecutionConfig)
+	}, ccip_test.ExecutionProvider)
 	hook := exec.PluginService.XXXTestHook()
 	servicetest.Run(t, exec)
 
@@ -40,7 +40,7 @@ func TestExecService(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * internal.KeepAliveTickDuration)
+		time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
 		testreportingplugin.RunFactory(t, exec)
 	})
@@ -49,7 +49,7 @@ func TestExecService(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * internal.KeepAliveTickDuration)
+		time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
 		testreportingplugin.RunFactory(t, exec)
 	})
@@ -64,7 +64,7 @@ func TestExecService_recovery(t *testing.T) {
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, ccip_test.ExecutionProvider, ccip_test.ExecutionConfig)
+	}, ccip_test.ExecutionProvider)
 	servicetest.Run(t, exec)
 
 	testreportingplugin.RunFactory(t, exec)

@@ -55,7 +55,7 @@ message QueryKeysReply {
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].
 message Head {
-  uint64 number = 1;
+  string identifier = 1;
   bytes hash = 2;
   uint64 timestamp = 3;
 }

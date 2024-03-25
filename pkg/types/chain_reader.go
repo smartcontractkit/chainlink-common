@@ -53,12 +53,10 @@ type ChainReader interface {
 	QueryKeys(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 }
 
-// Head TODO this is a general chain agnostic Head, its copied from mercury Chain Reader.
-// Mercury Chain Reader should be merged with this Chain Reader, so we won't have duplicate Head definitions.
 type Head struct {
-	Number    uint64
-	Hash      []byte
-	Timestamp uint64
+	Identifier string
+	Hash       []byte
+	Timestamp  uint64
 }
 
 type Sequence struct {

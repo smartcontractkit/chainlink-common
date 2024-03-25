@@ -420,7 +420,7 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 	if cursorDefined && cursorDirectionDefined {
 		pbLimitAndSort.Limit.Cursor = limitAndSort.Limit.Cursor
 		pbLimitAndSort.Limit.Direction = (*pb.CursorDirection)(limitAndSort.Limit.CursorDirection)
-	} else if !cursorDefined && !cursorDirectionDefined {
+	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {
 		return nil, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
 	}
 
@@ -438,9 +438,9 @@ func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (
 		pbSequence := &pb.Sequence{
 			SequenceCursor: sequence.Cursor,
 			Head: &pb.Head{
-				Number:    sequence.Number,
-				Hash:      sequence.Hash,
-				Timestamp: sequence.Timestamp,
+				Identifier: sequence.Identifier,
+				Hash:       sequence.Hash,
+				Timestamp:  sequence.Timestamp,
 			},
 			Data: versionedSequenceDataType,
 		}
@@ -517,7 +517,7 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 	cursorDirectionDefined := limit.Direction != nil
 	if cursorDefined && cursorDirectionDefined {
 		return query.NewLimitAndSort(query.CursorLimit(*limit.Cursor, (query.CursorDirection)(*limit.Direction), limit.Count)), nil
-	} else if !cursorDefined && !cursorDirectionDefined {
+	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {
 		return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
 	}
 
@@ -548,9 +548,9 @@ func convertSequencesFromProto(pbSequences *pb.Sequences, sequenceDataType any) 
 		sequence := types.Sequence{
 			Cursor: pbSequence.SequenceCursor,
 			Head: types.Head{
-				Number:    pbSequence.Head.Number,
-				Hash:      pbSequence.Head.Hash,
-				Timestamp: pbSequence.Head.Timestamp,
+				Identifier: pbSequence.Head.Identifier,
+				Hash:       pbSequence.Head.Hash,
+				Timestamp:  pbSequence.Head.Timestamp,
 			},
 			Data: data,
 		}

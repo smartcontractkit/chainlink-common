@@ -89,3 +89,41 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 
 	return nil, types.ErrInvalidType
 }
+
+func (fakeTypeProvider) CreateContractTypeByKey(key string, isEncode bool) (any, error) {
+	switch key {
+	case NilType:
+		return &struct{}{}, nil
+	case TestItemType:
+		return &TestStruct{}, nil
+	case TestItemSliceType:
+		return &[]TestStruct{}, nil
+	case TestItemArray2Type:
+		return &[2]TestStruct{}, nil
+	case TestItemArray1Type:
+		return &[1]TestStruct{}, nil
+	case MethodTakingLatestParamsReturningTestStruct:
+		if isEncode {
+			return &LatestParams{}, nil
+		}
+		return &TestStruct{}, nil
+	case MethodReturningUint64, DifferentMethodReturningUint64:
+		tmp := uint64(0)
+		return &tmp, nil
+	case MethodReturningUint64Slice:
+		var tmp []uint64
+		return &tmp, nil
+	case MethodReturningSeenStruct, TestItemWithConfigExtra:
+		if isEncode {
+			return &TestStruct{}, nil
+		}
+		return &TestStructWithExtraField{}, nil
+	case EventName, EventWithFilterName:
+		if isEncode {
+			return &FilterEventParams{}, nil
+		}
+		return &TestStruct{}, nil
+	}
+
+	return nil, types.ErrInvalidType
+}

@@ -9,7 +9,8 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
-	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 )
 
 const ConfigTOML = `[Foo]
@@ -34,9 +35,9 @@ var (
 
 	MedianProvider = staticMedianProvider{
 		staticMedianProviderConfig: staticMedianProviderConfig{
-			offchainDigester:    testpluginprovider.OffchainConfigDigester,
-			contractTracker:     testpluginprovider.ContractConfigTracker,
-			contractTransmitter: testpluginprovider.ContractTransmitter,
+			offchainDigester:    ocr2test.OffchainConfigDigester,
+			contractTracker:     ocr2test.ContractConfigTracker,
+			contractTransmitter: ocr2test.ContractTransmitter,
 			reportCodec:         staticReportCodec{},
 			medianContract: staticMedianContract{
 				staticMedianContractConfig: staticMedianContractConfig{
@@ -49,7 +50,7 @@ var (
 				},
 			},
 			onchainConfigCodec: staticOnchainConfigCodec{},
-			chainReader:        testpluginprovider.ChainReader,
+			chainReader:        chainreadertest.ChainReader,
 		},
 	}
 )

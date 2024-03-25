@@ -12,7 +12,7 @@ import (
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
 	ocr3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr3/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
+	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -31,7 +31,7 @@ func PluginGenericTest(t *testing.T, p types.OCR3ReportingPluginClient) {
 		ctx := tests.Context(t)
 		factory, err := p.NewReportingPluginFactory(ctx,
 			types.ReportingPluginServiceConfig{},
-			testcore.MockConn{},
+			nettest.MockConn{},
 			pipelinetest.PipelineRunner,
 			telemetrytest.Telemetry,
 			errorlogtest.ErrorLog,

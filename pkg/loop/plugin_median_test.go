@@ -10,8 +10,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
-	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
+	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
+	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
@@ -25,10 +25,10 @@ func TestPluginMedian(t *testing.T) {
 	t.Run("no proxy", func(t *testing.T) {
 		test.PluginTest(t, loop.PluginMedianName,
 			&loop.GRPCPluginMedian{
-				PluginServer: median_test.MedianFactoryServer,
+				PluginServer: mediantest.MedianFactoryServer,
 				BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh},
 			},
-			median_test.PluginMedian)
+			mediantest.PluginMedian)
 	})
 
 	t.Run("proxy", func(t *testing.T) {
@@ -38,10 +38,10 @@ func TestPluginMedian(t *testing.T) {
 				BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
 			func(t *testing.T, pr loop.PluginRelayer) {
 				p := newMedianProvider(t, pr)
-				pm := median_test.PluginMedianTest{MedianProvider: p}
+				pm := mediantest.PluginMedianTest{MedianProvider: p}
 				test.PluginTest(t, loop.PluginMedianName,
 					&loop.GRPCPluginMedian{
-						PluginServer: median_test.MedianFactoryServer,
+						PluginServer: mediantest.MedianFactoryServer,
 						BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
 					pm.TestPluginMedian)
 			})
@@ -63,12 +63,12 @@ func TestPluginMedianExec(t *testing.T) {
 	i, err := client.Dispense(loop.PluginMedianName)
 	require.NoError(t, err)
 
-	median_test.PluginMedian(t, i.(types.PluginMedian))
+	mediantest.PluginMedian(t, i.(types.PluginMedian))
 
 	t.Run("proxy", func(t *testing.T) {
 		pr := newPluginRelayerExec(t, false, stopCh)
 		p := newMedianProvider(t, pr)
-		pm := median_test.PluginMedianTest{MedianProvider: p}
+		pm := mediantest.PluginMedianTest{MedianProvider: p}
 		pm.TestPluginMedian(t, i.(types.PluginMedian))
 	})
 }
@@ -83,7 +83,7 @@ func newStopCh(t *testing.T) <-chan struct{} {
 
 func newMedianProvider(t *testing.T, pr loop.PluginRelayer) types.MedianProvider {
 	ctx := context.Background()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, testcore.Keystore)
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 	p, err := r.NewPluginProvider(ctx, relayer_test.RelayArgs, relayer_test.PluginArgs)
@@ -96,7 +96,7 @@ func newMedianProvider(t *testing.T, pr loop.PluginRelayer) types.MedianProvider
 
 func newGenericPluginProvider(t *testing.T, pr loop.PluginRelayer) types.PluginProvider {
 	ctx := context.Background()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, testcore.Keystore)
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 	ra := relayer_test.RelayArgs

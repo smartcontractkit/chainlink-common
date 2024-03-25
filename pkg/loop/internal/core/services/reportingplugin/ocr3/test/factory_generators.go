@@ -6,20 +6,20 @@ import (
 
 	"google.golang.org/grpc"
 
-	testpipeline "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
-	testtelemetry "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
+	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
+	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
-	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
+	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 var MedianServer = medianServer{
 	medianGeneratorConfig: medianGeneratorConfig{
-		medianProvider: median_test.MedianProvider,
-		pipeline:       testpipeline.PipelineRunner,
-		telemetry:      testtelemetry.Telemetry,
+		medianProvider: mediantest.MedianProvider,
+		pipeline:       pipelinetest.PipelineRunner,
+		telemetry:      telemetrytest.Telemetry,
 	},
 }
 
@@ -59,9 +59,9 @@ func (s medianServer) NewReportingPluginFactory(ctx context.Context, config type
 }
 
 var AgnosticPluginServer = agnosticPluginServer{
-	provider:       testpluginprovider.AgnosticPluginProvider,
-	pipelineRunner: testpipeline.PipelineRunner,
-	telemetry:      testtelemetry.Telemetry,
+	provider:       ocr2test.AgnosticPluginProvider,
+	pipelineRunner: pipelinetest.PipelineRunner,
+	telemetry:      telemetrytest.Telemetry,
 }
 
 type agnosticPluginServer struct {

@@ -17,15 +17,15 @@ import (
 	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
 
-	testpluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/plugin_provider"
+	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
 var MercuryProvider = staticMercuryProvider{
 	staticMercuryProviderConfig: staticMercuryProviderConfig{
-		offchainDigester:    testpluginprovider.OffchainConfigDigester,
-		contractTracker:     testpluginprovider.ContractConfigTracker,
-		contractTransmitter: testpluginprovider.ContractTransmitter,
+		offchainDigester:    ocr2test.OffchainConfigDigester,
+		contractTracker:     ocr2test.ContractConfigTracker,
+		contractTransmitter: ocr2test.ContractTransmitter,
 		reportCodecV1:       mercury_v1_test.ReportCodec,
 		reportCodecV2:       mercury_v2_test.ReportCodec,
 		reportCodecV3:       mercury_v3_test.ReportCodec,

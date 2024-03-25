@@ -16,7 +16,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
-	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
+	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -45,7 +45,7 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		// we expect the static implementation to be used under the covers
 		// we can't compare the types directly because the returned reporting plugin may be a grpc client
 		// that wraps the static implementation
-		var expectedReportingPlugin = testreportingplugin.ReportingPlugin
+		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
 		rp, gotRPI, err := factory.NewReportingPlugin(tests.Context(t), reportingPluginConfig)
 		require.NoError(t, err)
@@ -152,7 +152,7 @@ func (s staticReportingPluginFactory) NewReportingPlugin(ctx context.Context, co
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected MaxDurationShouldTransmitAcceptedReport %d but got %d", s.MaxDurationShouldTransmitAcceptedReport, config.MaxDurationShouldTransmitAcceptedReport)
 	}
 
-	return testreportingplugin.ReportingPlugin, rpi, nil
+	return reportingplugintest.ReportingPlugin, rpi, nil
 }
 
 type staticMedianProviderConfig struct {

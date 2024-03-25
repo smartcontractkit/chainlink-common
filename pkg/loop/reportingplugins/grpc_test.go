@@ -13,8 +13,8 @@ import (
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr2/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
+	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -39,7 +39,7 @@ func PluginGenericTest(t *testing.T, p types.ReportingPluginClient) {
 			errorlogtest.ErrorLog)
 		require.NoError(t, err)
 
-		testreportingplugin.RunFactory(t, factory)
+		reportingplugintest.RunFactory(t, factory)
 	})
 }
 

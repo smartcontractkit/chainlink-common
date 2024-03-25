@@ -11,7 +11,7 @@ import (
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
-	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
+	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
@@ -25,7 +25,7 @@ func TestMedianService(t *testing.T) {
 	servicetest.Run(t, median)
 
 	t.Run("control", func(t *testing.T) {
-		testreportingplugin.RunFactory(t, median)
+		reportingplugintest.RunFactory(t, median)
 	})
 
 	t.Run("Kill", func(t *testing.T) {
@@ -34,7 +34,7 @@ func TestMedianService(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-		testreportingplugin.RunFactory(t, median)
+		reportingplugintest.RunFactory(t, median)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -43,7 +43,7 @@ func TestMedianService(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-		testreportingplugin.RunFactory(t, median)
+		reportingplugintest.RunFactory(t, median)
 	})
 }
 
@@ -59,5 +59,5 @@ func TestMedianService_recovery(t *testing.T) {
 	}, median_test.MedianProvider, median_test.DataSource, median_test.JuelsPerFeeCoinDataSource, errorlogtest.ErrorLog)
 	servicetest.Run(t, median)
 
-	testreportingplugin.RunFactory(t, median)
+	reportingplugintest.RunFactory(t, median)
 }

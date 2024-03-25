@@ -11,7 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	median_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
-	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
+	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -59,7 +59,7 @@ func (s medianFactoryServer) NewReportingPluginFactory(ctx context.Context, conf
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return testreportingplugin.Factory, nil
+	return reportingplugintest.Factory, nil
 }
 
 var AgnosticProviderServer = agnosticPluginFactoryServer{
@@ -96,5 +96,5 @@ func (s agnosticPluginFactoryServer) NewReportingPluginFactory(ctx context.Conte
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return testreportingplugin.Factory, nil
+	return reportingplugintest.Factory, nil
 }

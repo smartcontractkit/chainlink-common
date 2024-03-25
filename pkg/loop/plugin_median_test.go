@@ -12,8 +12,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
+	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -34,7 +34,7 @@ func TestPluginMedian(t *testing.T) {
 	t.Run("proxy", func(t *testing.T) {
 		test.PluginTest(t, loop.PluginRelayerName,
 			&loop.GRPCPluginRelayer{
-				PluginServer: relayer_test.NewRelayerTester(false),
+				PluginServer: relayertest.NewRelayerTester(false),
 				BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
 			func(t *testing.T, pr loop.PluginRelayer) {
 				p := newMedianProvider(t, pr)
@@ -86,7 +86,7 @@ func newMedianProvider(t *testing.T, pr loop.PluginRelayer) types.MedianProvider
 	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
-	p, err := r.NewPluginProvider(ctx, relayer_test.RelayArgs, relayer_test.PluginArgs)
+	p, err := r.NewPluginProvider(ctx, relayertest.RelayArgs, relayertest.PluginArgs)
 	mp, ok := p.(types.MedianProvider)
 	require.True(t, ok)
 	require.NoError(t, err)
@@ -99,9 +99,9 @@ func newGenericPluginProvider(t *testing.T, pr loop.PluginRelayer) types.PluginP
 	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
-	ra := relayer_test.RelayArgs
+	ra := relayertest.RelayArgs
 	ra.ProviderType = string(types.GenericPlugin)
-	p, err := r.NewPluginProvider(ctx, ra, relayer_test.PluginArgs)
+	p, err := r.NewPluginProvider(ctx, ra, relayertest.PluginArgs)
 	require.NoError(t, err)
 	servicetest.Run(t, p)
 	return p

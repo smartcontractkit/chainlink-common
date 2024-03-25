@@ -11,8 +11,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
+	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -26,7 +26,7 @@ func TestPluginMercury(t *testing.T) {
 	t.Run("proxy", func(t *testing.T) {
 		test.PluginTest(t, loop.PluginRelayerName,
 			&loop.GRPCPluginRelayer{
-				PluginServer: relayer_test.NewRelayerTester(false),
+				PluginServer: relayertest.NewRelayerTester(false),
 				BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
 			func(t *testing.T, pr loop.PluginRelayer) {
 				p := newMercuryProvider(t, pr)

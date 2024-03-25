@@ -10,8 +10,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	relayer_test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
@@ -24,7 +24,7 @@ func TestRelayerService(t *testing.T) {
 	servicetest.Run(t, relayer)
 
 	t.Run("control", func(t *testing.T) {
-		relayer_test.Run(t, relayer)
+		relayertest.Run(t, relayer)
 	})
 
 	t.Run("Kill", func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestRelayerService(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-		relayer_test.Run(t, relayer)
+		relayertest.Run(t, relayer)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestRelayerService(t *testing.T) {
 		// wait for relaunch
 		time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-		relayer_test.Run(t, relayer)
+		relayertest.Run(t, relayer)
 	})
 }
 
@@ -58,5 +58,5 @@ func TestRelayerService_recovery(t *testing.T) {
 	}, test.ConfigTOML, keystoretest.Keystore)
 	servicetest.Run(t, relayer)
 
-	relayer_test.Run(t, relayer)
+	relayertest.Run(t, relayer)
 }

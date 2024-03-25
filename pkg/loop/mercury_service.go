@@ -8,7 +8,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	mercury_v1_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
@@ -19,7 +19,7 @@ var _ ocr3types.MercuryPluginFactory = (*MercuryV3Service)(nil)
 
 // MercuryV3Service is a [types.Service] that maintains an internal [types.PluginMedian].
 type MercuryV3Service struct {
-	internal.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
+	goplugin.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV3Service)(nil)
@@ -42,16 +42,16 @@ func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &ms
 }
 
-func (m *MercuryV3Service) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+func (m *MercuryV3Service) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
 	if err := m.Wait(); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewMercuryPlugin(config)
+	return m.Service.NewMercuryPlugin(ctx, config)
 }
 
 // MercuryV1Service is a [types.Service] that maintains an internal [types.PluginMedian].
 type MercuryV1Service struct {
-	internal.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
+	goplugin.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV1Service)(nil)
@@ -74,18 +74,18 @@ func NewMercuryV1Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &ms
 }
 
-func (m *MercuryV1Service) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+func (m *MercuryV1Service) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
 	if err := m.Wait(); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewMercuryPlugin(config)
+	return m.Service.NewMercuryPlugin(ctx, config)
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV1Service)(nil)
 
 // MercuryV2Service is a [types.Service] that maintains an internal [types.PluginMedian].
 type MercuryV2Service struct {
-	internal.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
+	goplugin.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV2Service)(nil)
@@ -108,11 +108,11 @@ func NewMercuryV2Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &ms
 }
 
-func (m *MercuryV2Service) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+func (m *MercuryV2Service) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
 	if err := m.Wait(); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewMercuryPlugin(config)
+	return m.Service.NewMercuryPlugin(ctx, config)
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV2Service)(nil)

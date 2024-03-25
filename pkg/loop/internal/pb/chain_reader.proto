@@ -11,8 +11,6 @@ service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
   rpc QueryKey (QueryKeyRequest) returns (QueryKeyReply) {}
   rpc QueryKeys (QueryKeysRequest) returns (QueryKeysReply) {}
-  rpc QueryByKeyValuesComparison (QueryByKeyValuesComparisonRequest) returns (QueryByKeyValuesComparisonReply) {}
-  rpc QueryByKeysValuesComparison (QueryByKeysValuesComparisonRequest) returns (QueryByKeysValuesComparisonReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
@@ -25,30 +23,14 @@ message GetLatestValueRequest {
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
 message QueryKeyRequest {
-  string key = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
+  KeyFilter key_filter = 1;
+  LimitAndSort limit_and_sort = 2;
 }
 
 // QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
 message QueryKeysRequest {
-  repeated string keys = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
-}
-
-// QueryByKeyValuesComparisonRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeyValuesComparison].
-message QueryByKeyValuesComparisonRequest {
-  KeyValuesComparator key_values_comparator = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
-}
-
-// QueryByKeysValuesComparisonRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeysValuesComparison].
-message QueryByKeysValuesComparisonRequest {
-  repeated KeyValuesComparator keys_values_comparator = 1;
-  QueryFilter query_filter = 2;
-  LimitAndSort limit_and_sort = 3;
+  repeated KeyFilter keys_filters = 1;
+  repeated LimitAndSort limits_and_sorts = 2;
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BindRequest].
@@ -69,16 +51,6 @@ message QueryKeyReply {
 // QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
 message QueryKeysReply {
  repeated Sequences sequences = 1;
-}
-
-// QueryByKeyValuesComparisonReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeyValuesComparison].
-message QueryByKeyValuesComparisonReply {
-  Sequences sequences = 1;
-}
-
-// QueryByKeysValuesComparisonReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryByKeysValuesComparison].
-message QueryByKeysValuesComparisonReply {
-  repeated Sequences sequences = 1;
 }
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].
@@ -129,6 +101,11 @@ message KeyValuesComparator{
 // QueryFilter represents a lightweight orm like DSL defined for filtering over common blockchain primitives.
 message QueryFilter {
   repeated Expression expression = 1;
+}
+
+message KeyFilter {
+  string key = 1;
+  QueryFilter query_filter = 2;
 }
 
 // Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
@@ -233,7 +210,6 @@ message SortBy {
     SortBySequence sort_by_sequence = 3;
   }
 }
-
 
 // LimitAndSort combines sorting criteria with pagination limits.
 message LimitAndSort {

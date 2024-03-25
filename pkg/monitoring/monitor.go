@@ -38,6 +38,87 @@ type Monitor struct {
 	HTTPServer HTTPServer
 }
 
+// Builds monitor instance with only the prometheus exporter.
+// Does not contain kafka exporter.
+func NewMonitorPrometheusOnly(
+	rootCtx context.Context,
+	log Logger,
+	chainConfig ChainConfig,
+	envelopeSourceFactory SourceFactory,
+	txResultsSourceFactory SourceFactory,
+	feedsParser FeedsParser,
+	nodesParser NodesParser,
+) (*Monitor, error) {
+	// KAFKA env variables will not be set
+	cfg, err := config.ParseWithoutKafka()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse generic configuration: %w", err)
+	}
+
+	metrics := NewMetrics(logger.With(log, "component", "metrics"))
+	chainMetrics := NewChainMetrics(chainConfig)
+
+	sourceFactories := []SourceFactory{envelopeSourceFactory, txResultsSourceFactory}
+
+	prometheusExporterFactory := NewPrometheusExporterFactory(
+		logger.With(log, "component", "prometheus-exporter"),
+		metrics,
+	)
+
+	exporterFactories := []ExporterFactory{prometheusExporterFactory}
+
+	rddSource := NewRDDSource(
+		cfg.Feeds.URL, feedsParser, cfg.Feeds.IgnoreIDs,
+		cfg.Nodes.URL, nodesParser,
+		logger.With(log, "component", "rdd-source"),
+	)
+
+	rddPoller := NewSourcePoller(
+		rddSource,
+		logger.With(log, "component", "rdd-poller"),
+		cfg.Feeds.RDDPollInterval,
+		cfg.Feeds.RDDReadTimeout,
+		0, // no buffering!
+	)
+
+	manager := NewManager(
+		logger.With(log, "component", "manager"),
+		rddPoller,
+	)
+
+	// Configure HTTP server
+	httpServer := NewHTTPServer(rootCtx, cfg.HTTP.Address, logger.With(log, "component", "http-server"))
+	httpServer.Handle("/metrics", metrics.HTTPHandler())
+	httpServer.Handle("/debug", manager.HTTPHandler())
+	// Required for k8s.
+	httpServer.Handle("/health", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	return &Monitor{
+		RootContext: rootCtx,
+		ChainConfig: chainConfig,
+		Config:      cfg,
+		Log:         log,
+		// no kafka
+		Producer:     nil,
+		Metrics:      metrics,
+		ChainMetrics: chainMetrics,
+		// no kafka
+		SchemaRegistry:    nil,
+		SourceFactories:   sourceFactories,
+		ExporterFactories: exporterFactories,
+
+		RDDSource: rddSource,
+		RDDPoller: rddPoller,
+
+		Manager: manager,
+
+		HTTPServer: httpServer,
+	}, nil
+
+}
+
 // NewMonitor builds a new Monitor instance using dependency injection.
 // If advanced configurations of the Monitor are required - for instance,
 // adding a custom third party service to send data to - this method

@@ -21,6 +21,20 @@ func Parse() (Config, error) {
 	return cfg, err
 }
 
+func ParseWithoutKafka() (Config, error) {
+	cfg := Config{}
+
+	if err := parseEnvVars(&cfg); err != nil {
+		return cfg, err
+	}
+
+	applyDefaults(&cfg)
+
+	err := validateConfigWithoutKafka(cfg)
+
+	return cfg, err
+}
+
 func parseEnvVars(cfg *Config) error {
 	if value, isPresent := os.LookupEnv("KAFKA_BROKERS"); isPresent {
 		cfg.Kafka.Brokers = value
@@ -103,6 +117,31 @@ func applyDefaults(cfg *Config) {
 	if cfg.Feeds.RDDPollInterval == 0 {
 		cfg.Feeds.RDDPollInterval = 10 * time.Second
 	}
+}
+
+func validateConfigWithoutKafka(cfg Config) error {
+	// Required config
+	for envVarName, currentValue := range map[string]string{
+		"FEEDS_URL": cfg.Feeds.URL,
+		"NODES_URL": cfg.Nodes.URL,
+
+		"HTTP_ADDRESS": cfg.HTTP.Address,
+	} {
+		if currentValue == "" {
+			return fmt.Errorf("'%s' env var is required", envVarName)
+		}
+	}
+	// Validate URLs.
+	for envVarName, currentValue := range map[string]string{
+		"FEEDS_URL": cfg.Feeds.URL,
+		"NODES_URL": cfg.Nodes.URL,
+	} {
+		if _, err := url.ParseRequestURI(currentValue); err != nil {
+			return fmt.Errorf("%s='%s' is not a valid URL: %w", envVarName, currentValue, err)
+		}
+	}
+
+	return nil
 }
 
 func validateConfig(cfg Config) error {

@@ -17,6 +17,40 @@ import (
 
 const testMonitorDurationSec = 15
 
+func TestMonitorPrometheusOnly(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	os.Setenv("FEEDS_URL", "http://some-feeds.com")
+	os.Setenv("NODES_URL", "http://some-nodes.com")
+	os.Setenv("HTTP_ADDRESS", "http://localhost:3000")
+
+	defer os.Unsetenv("FEEDS_URL")
+	defer os.Unsetenv("HTTP_ADDRESS")
+	defer os.Unsetenv("NODES_URL")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	chainConfig := fakeChainConfig{
+		ReadTimeout:  100 * time.Millisecond,
+		PollInterval: 100 * time.Millisecond,
+	}
+
+	sourceFactory1 := &fakeRandomDataSourceFactory{make(chan interface{})}
+	sourceFactory2 := &fakeRandomDataSourceFactory{make(chan interface{})}
+
+	_, err := NewMonitorPrometheusOnly(
+		ctx,
+		newNullLogger(),
+		chainConfig,
+		sourceFactory1,
+		sourceFactory2,
+		func(buf io.ReadCloser) ([]FeedConfig, error) { return []FeedConfig{}, nil },
+		func(buf io.ReadCloser) ([]NodeConfig, error) { return []NodeConfig{}, nil },
+	)
+	require.NoError(t, err)
+}
+
 func TestMonitor(t *testing.T) {
 	if _, isPresent := os.LookupEnv("FEATURE_TEST_ONLY_ENV_RUNNING"); !isPresent {
 		t.Skip()

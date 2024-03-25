@@ -46,14 +46,11 @@ type ChainReader interface {
 	Bind(ctx context.Context, bindings []BoundContract) error
 	// TODO UnBind?, doesn't seem like its needed?
 
-	//TODO ReBindByKey, UnBindByKey, this is needed in some places where addresses change but the contract stays the same
-	// ReBindByKey(ctx context.Context, key, address string)
+	//TODO UnBindByKey, this is needed in some places where addresses change but the contract stays the same
 	// UnBindByKey() or UnBindByKey(ctx context.Context, key, address string)
 
-	QueryKey(ctx context.Context, keys string, queryFilter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	QueryKeys(ctx context.Context, keys []string, queryFilter query.Filter, limitAndSort query.LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
-	QueryByKeyValuesComparison(ctx context.Context, keyValuesComparator query.KeyValuesComparator, queryFilter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	QueryByKeysValuesComparison(ctx context.Context, keysValuesComparators []query.KeyValuesComparator, queryFilter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType []any) ([][]Sequence, error)
+	QueryKey(ctx context.Context, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryKeys(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 }
 
 // Head TODO this is a general chain agnostic Head, its copied from mercury Chain Reader.

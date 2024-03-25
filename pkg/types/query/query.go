@@ -2,29 +2,9 @@ package query
 
 import "fmt"
 
-type ValueComparator struct {
-	Value    string
-	Operator ComparisonOperator
-}
-
-type KeyValuesComparator struct {
-	Key              string
-	ValueComparators []ValueComparator
-}
-
-type ComparisonOperator int
-
-const (
-	Eq ComparisonOperator = iota
-	Neq
-	Gt
-	Lt
-	Gte
-	Lte
-)
-
 // Visitor should have a per chain per db type implementation that converts primitives to db queries.
 type Visitor interface {
+	ValuesComparatorPrimitive(primitive ValuesComparatorPrimitive)
 	AddressPrimitive(primitive AddressPrimitive)
 	BlockPrimitive(primitive BlockPrimitive)
 	ConfirmationPrimitive(primitive ConfirmationsPrimitive)
@@ -43,6 +23,11 @@ type Primitive interface {
 // primitive AND primitive AND (primitive AND (primitive OR primitive)).
 type Filter struct {
 	Expressions []Expression
+}
+
+type KeyFilter struct {
+	Key    string
+	Filter Filter
 }
 
 // Expression contains either a Primitive or a BoolExpression.
@@ -90,6 +75,37 @@ func Or(expressions ...Expression) Expression {
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: OR},
 	}
+}
+
+type ComparisonOperator int
+
+const (
+	Eq ComparisonOperator = iota
+	Neq
+	Gt
+	Lt
+	Gte
+	Lte
+)
+
+type Comparator struct {
+	Value    string
+	Operator ComparisonOperator
+}
+
+type ValuesComparatorPrimitive struct {
+	Name             string
+	ValueComparators []Comparator
+}
+
+// ValuesComparator is used for filtering through specific key values.
+// e.g. of filtering for key that belongs to a token transfer by values: ValuesComparator("transferValue", [{"150",LTE}, {"300",GTE}])
+func ValuesComparator(name string, valueComparators ...Comparator) ValuesComparatorPrimitive {
+	return ValuesComparatorPrimitive{Name: name, ValueComparators: valueComparators}
+}
+
+func (f *ValuesComparatorPrimitive) Accept(visitor Visitor) {
+	visitor.ValuesComparatorPrimitive(*f)
 }
 
 // BlockPrimitive is a primitive of Filter that filters search in comparison to block number.

@@ -20,12 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ChainReader_GetLatestValue_FullMethodName              = "/loop.ChainReader/GetLatestValue"
-	ChainReader_QueryKey_FullMethodName                    = "/loop.ChainReader/QueryKey"
-	ChainReader_QueryKeys_FullMethodName                   = "/loop.ChainReader/QueryKeys"
-	ChainReader_QueryByKeyValuesComparison_FullMethodName  = "/loop.ChainReader/QueryByKeyValuesComparison"
-	ChainReader_QueryByKeysValuesComparison_FullMethodName = "/loop.ChainReader/QueryByKeysValuesComparison"
-	ChainReader_Bind_FullMethodName                        = "/loop.ChainReader/Bind"
+	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
+	ChainReader_QueryKey_FullMethodName       = "/loop.ChainReader/QueryKey"
+	ChainReader_QueryKeys_FullMethodName      = "/loop.ChainReader/QueryKeys"
+	ChainReader_Bind_FullMethodName           = "/loop.ChainReader/Bind"
 )
 
 // ChainReaderClient is the client API for ChainReader service.
@@ -35,8 +33,6 @@ type ChainReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
 	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error)
 	QueryKeys(ctx context.Context, in *QueryKeysRequest, opts ...grpc.CallOption) (*QueryKeysReply, error)
-	QueryByKeyValuesComparison(ctx context.Context, in *QueryByKeyValuesComparisonRequest, opts ...grpc.CallOption) (*QueryByKeyValuesComparisonReply, error)
-	QueryByKeysValuesComparison(ctx context.Context, in *QueryByKeysValuesComparisonRequest, opts ...grpc.CallOption) (*QueryByKeysValuesComparisonReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -75,24 +71,6 @@ func (c *chainReaderClient) QueryKeys(ctx context.Context, in *QueryKeysRequest,
 	return out, nil
 }
 
-func (c *chainReaderClient) QueryByKeyValuesComparison(ctx context.Context, in *QueryByKeyValuesComparisonRequest, opts ...grpc.CallOption) (*QueryByKeyValuesComparisonReply, error) {
-	out := new(QueryByKeyValuesComparisonReply)
-	err := c.cc.Invoke(ctx, ChainReader_QueryByKeyValuesComparison_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *chainReaderClient) QueryByKeysValuesComparison(ctx context.Context, in *QueryByKeysValuesComparisonRequest, opts ...grpc.CallOption) (*QueryByKeysValuesComparisonReply, error) {
-	out := new(QueryByKeysValuesComparisonReply)
-	err := c.cc.Invoke(ctx, ChainReader_QueryByKeysValuesComparison_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, ChainReader_Bind_FullMethodName, in, out, opts...)
@@ -109,8 +87,6 @@ type ChainReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
 	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error)
 	QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error)
-	QueryByKeyValuesComparison(context.Context, *QueryByKeyValuesComparisonRequest) (*QueryByKeyValuesComparisonReply, error)
-	QueryByKeysValuesComparison(context.Context, *QueryByKeysValuesComparisonRequest) (*QueryByKeysValuesComparisonReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChainReaderServer()
 }
@@ -127,12 +103,6 @@ func (UnimplementedChainReaderServer) QueryKey(context.Context, *QueryKeyRequest
 }
 func (UnimplementedChainReaderServer) QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryKeys not implemented")
-}
-func (UnimplementedChainReaderServer) QueryByKeyValuesComparison(context.Context, *QueryByKeyValuesComparisonRequest) (*QueryByKeyValuesComparisonReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryByKeyValuesComparison not implemented")
-}
-func (UnimplementedChainReaderServer) QueryByKeysValuesComparison(context.Context, *QueryByKeysValuesComparisonRequest) (*QueryByKeysValuesComparisonReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryByKeysValuesComparison not implemented")
 }
 func (UnimplementedChainReaderServer) Bind(context.Context, *BindRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bind not implemented")
@@ -204,42 +174,6 @@ func _ChainReader_QueryKeys_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ChainReader_QueryByKeyValuesComparison_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryByKeyValuesComparisonRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).QueryByKeyValuesComparison(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_QueryByKeyValuesComparison_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).QueryByKeyValuesComparison(ctx, req.(*QueryByKeyValuesComparisonRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChainReader_QueryByKeysValuesComparison_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryByKeysValuesComparisonRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainReaderServer).QueryByKeysValuesComparison(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainReader_QueryByKeysValuesComparison_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).QueryByKeysValuesComparison(ctx, req.(*QueryByKeysValuesComparisonRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ChainReader_Bind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BindRequest)
 	if err := dec(in); err != nil {
@@ -276,14 +210,6 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryKeys",
 			Handler:    _ChainReader_QueryKeys_Handler,
-		},
-		{
-			MethodName: "QueryByKeyValuesComparison",
-			Handler:    _ChainReader_QueryByKeyValuesComparison_Handler,
-		},
-		{
-			MethodName: "QueryByKeysValuesComparison",
-			Handler:    _ChainReader_QueryByKeysValuesComparison_Handler,
 		},
 		{
 			MethodName: "Bind",

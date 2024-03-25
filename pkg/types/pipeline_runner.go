@@ -4,6 +4,8 @@ import (
 	"context"
 	"sort"
 	"time"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/json_serializable"
 )
 
 type Vars struct {
@@ -16,7 +18,7 @@ type Options struct {
 
 type TaskValue struct {
 	Error      error
-	Value      interface{}
+	Value      json_serializable.JSONSerializable
 	IsTerminal bool
 }
 

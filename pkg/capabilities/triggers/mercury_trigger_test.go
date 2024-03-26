@@ -17,19 +17,27 @@ func TestMercuryTrigger(t *testing.T) {
 	ctx := tests.Context(t)
 	require.NotNil(t, ts)
 
-	m := map[string]interface{}{
-		"feedIds":   []int64{1},
+	feedID := "0x1111111111111111111100000000000000000000000000000000000000000000"
+	im := map[string]interface{}{
 		"triggerId": "test-id-1",
 	}
 
-	wrapped, err := values.NewMap(m)
+	iMap, err := values.NewMap(im)
+	require.NoError(t, err)
+
+	cm := map[string]interface{}{
+		"feedIds": []string{feedID},
+	}
+
+	cMap, err := values.NewMap(cm)
 	require.NoError(t, err)
 
 	cr := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
-		Inputs: wrapped,
+		Inputs: iMap,
+		Config: cMap,
 	}
 	callback := make(chan capabilities.CapabilityResponse, 10)
 	require.NoError(t, ts.RegisterTrigger(ctx, callback, cr))
@@ -37,7 +45,7 @@ func TestMercuryTrigger(t *testing.T) {
 	// Send events to trigger and check for them in the callback
 	fr := []mercury.FeedReport{
 		{
-			FeedID:               1,
+			FeedID:               feedID,
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       2,
 			ObservationTimestamp: 3,
@@ -56,7 +64,7 @@ func TestMercuryTrigger(t *testing.T) {
 	// Unregister the trigger and check that events no longer go on the callback
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr))
 	err = ts.ProcessReport(fr)
-	assert.NoError(t, err)
+	assert.ErrorContains(t, err, "no registered triggers for feed")
 	assert.Len(t, callback, 0)
 }
 
@@ -66,13 +74,26 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	require.NotNil(t, ts)
 
 	m1 := map[string]interface{}{
-		"feedIds":   []int64{1, 3, 4},
 		"triggerId": "test-id-1",
 	}
 
+	c1 := map[string]interface{}{
+		"feedIds": []string{
+			"0x1111111111111111111100000000000000000000000000000000000000000000",
+			"0x3333333333333333333300000000000000000000000000000000000000000000",
+			"0x4444444444444444444400000000000000000000000000000000000000000000"},
+	}
+
 	m2 := map[string]interface{}{
-		"feedIds":   []int64{2, 3, 5},
 		"triggerId": "test-id-2",
+	}
+
+	c2 := map[string]interface{}{
+		"feedIds": []string{
+			"0x2222222222222222222200000000000000000000000000000000000000000000",
+			"0x3333333333333333333300000000000000000000000000000000000000000000",
+			"0x5555555555555555555500000000000000000000000000000000000000000000",
+		},
 	}
 
 	wrapped1, err := values.NewMap(m1)
@@ -81,17 +102,25 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	wrapped2, err := values.NewMap(m2)
 	require.NoError(t, err)
 
+	config1, err := values.NewMap(c1)
+	require.NoError(t, err)
+
+	config2, err := values.NewMap(c2)
+	require.NoError(t, err)
+
 	cr1 := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
 		Inputs: wrapped1,
+		Config: config1,
 	}
 	cr2 := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
 		Inputs: wrapped2,
+		Config: config2,
 	}
 
 	callback1 := make(chan capabilities.CapabilityResponse, 10)
@@ -103,25 +132,25 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	// Send events to trigger and check for them in the callback
 	fr1 := []mercury.FeedReport{
 		{
-			FeedID:               1,
+			FeedID:               "0x1111111111111111111100000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       20,
 			ObservationTimestamp: 5,
 		},
 		{
-			FeedID:               3,
+			FeedID:               "0x3333333333333333333300000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       25,
 			ObservationTimestamp: 8,
 		},
 		{
-			FeedID:               2,
+			FeedID:               "0x2222222222222222222200000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       30,
 			ObservationTimestamp: 10,
 		},
 		{
-			FeedID:               4,
+			FeedID:               "0x4444444444444444444400000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       40,
 			ObservationTimestamp: 15,
@@ -157,7 +186,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr1))
 	fr2 := []mercury.FeedReport{
 		{
-			FeedID:               3,
+			FeedID:               "0x3333333333333333333300000000000000000000000000000000000000000000",
 			FullReport:           []byte("0x1234"),
 			BenchmarkPrice:       50,
 			ObservationTimestamp: 20,
@@ -179,7 +208,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr2))
 	err = ts.ProcessReport(fr1)
-	assert.NoError(t, err)
+	assert.ErrorContains(t, err, "no registered triggers for feed")
 	assert.Len(t, callback1, 0)
 	assert.Len(t, callback2, 0)
 }

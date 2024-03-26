@@ -29,7 +29,7 @@ func TestCodec(t *testing.T) {
 	// Test WrapMercuryTriggerEvent
 	const testID = "test-id-1"
 	const testTimestamp = "2021-01-01T00:00:00Z"
-	const testFeedID = int64(1)
+	const testFeedID = "0x1111111111111111111100000000000000000000000000000000000000000000"
 	const testFullReport = "0x1234"
 	const testBenchmarkPrice = int64(2)
 	const testObservationTimestamp = int64(3)

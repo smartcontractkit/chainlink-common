@@ -328,8 +328,8 @@ func (x *GetLatestValueRequest) GetParams() *VersionedBytes {
 	return nil
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
-type QueryKeyRequest struct {
+// QueryOneRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
+type QueryOneRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -338,8 +338,8 @@ type QueryKeyRequest struct {
 	LimitAndSort *LimitAndSort `protobuf:"bytes,2,opt,name=limit_and_sort,json=limitAndSort,proto3" json:"limit_and_sort,omitempty"`
 }
 
-func (x *QueryKeyRequest) Reset() {
-	*x = QueryKeyRequest{}
+func (x *QueryOneRequest) Reset() {
+	*x = QueryOneRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_chain_reader_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -347,13 +347,13 @@ func (x *QueryKeyRequest) Reset() {
 	}
 }
 
-func (x *QueryKeyRequest) String() string {
+func (x *QueryOneRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryKeyRequest) ProtoMessage() {}
+func (*QueryOneRequest) ProtoMessage() {}
 
-func (x *QueryKeyRequest) ProtoReflect() protoreflect.Message {
+func (x *QueryOneRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_chain_reader_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -365,27 +365,27 @@ func (x *QueryKeyRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QueryKeyRequest.ProtoReflect.Descriptor instead.
-func (*QueryKeyRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryOneRequest.ProtoReflect.Descriptor instead.
+func (*QueryOneRequest) Descriptor() ([]byte, []int) {
 	return file_chain_reader_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *QueryKeyRequest) GetKeyFilter() *KeyFilter {
+func (x *QueryOneRequest) GetKeyFilter() *KeyFilter {
 	if x != nil {
 		return x.KeyFilter
 	}
 	return nil
 }
 
-func (x *QueryKeyRequest) GetLimitAndSort() *LimitAndSort {
+func (x *QueryOneRequest) GetLimitAndSort() *LimitAndSort {
 	if x != nil {
 		return x.LimitAndSort
 	}
 	return nil
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
-type QueryKeysRequest struct {
+// QueryManyRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryMany].
+type QueryManyRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -394,8 +394,8 @@ type QueryKeysRequest struct {
 	LimitsAndSorts []*LimitAndSort `protobuf:"bytes,2,rep,name=limits_and_sorts,json=limitsAndSorts,proto3" json:"limits_and_sorts,omitempty"`
 }
 
-func (x *QueryKeysRequest) Reset() {
-	*x = QueryKeysRequest{}
+func (x *QueryManyRequest) Reset() {
+	*x = QueryManyRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_chain_reader_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -403,13 +403,13 @@ func (x *QueryKeysRequest) Reset() {
 	}
 }
 
-func (x *QueryKeysRequest) String() string {
+func (x *QueryManyRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryKeysRequest) ProtoMessage() {}
+func (*QueryManyRequest) ProtoMessage() {}
 
-func (x *QueryKeysRequest) ProtoReflect() protoreflect.Message {
+func (x *QueryManyRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_chain_reader_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -421,19 +421,19 @@ func (x *QueryKeysRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QueryKeysRequest.ProtoReflect.Descriptor instead.
-func (*QueryKeysRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryManyRequest.ProtoReflect.Descriptor instead.
+func (*QueryManyRequest) Descriptor() ([]byte, []int) {
 	return file_chain_reader_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *QueryKeysRequest) GetKeysFilters() []*KeyFilter {
+func (x *QueryManyRequest) GetKeysFilters() []*KeyFilter {
 	if x != nil {
 		return x.KeysFilters
 	}
 	return nil
 }
 
-func (x *QueryKeysRequest) GetLimitsAndSorts() []*LimitAndSort {
+func (x *QueryManyRequest) GetLimitsAndSorts() []*LimitAndSort {
 	if x != nil {
 		return x.LimitsAndSorts
 	}
@@ -536,8 +536,8 @@ func (x *GetLatestValueReply) GetRetVal() *VersionedBytes {
 	return nil
 }
 
-// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
-type QueryKeyReply struct {
+// QueryOneReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
+type QueryOneReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -545,8 +545,8 @@ type QueryKeyReply struct {
 	Sequences *Sequences `protobuf:"bytes,1,opt,name=sequences,proto3" json:"sequences,omitempty"`
 }
 
-func (x *QueryKeyReply) Reset() {
-	*x = QueryKeyReply{}
+func (x *QueryOneReply) Reset() {
+	*x = QueryOneReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_chain_reader_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -554,13 +554,13 @@ func (x *QueryKeyReply) Reset() {
 	}
 }
 
-func (x *QueryKeyReply) String() string {
+func (x *QueryOneReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryKeyReply) ProtoMessage() {}
+func (*QueryOneReply) ProtoMessage() {}
 
-func (x *QueryKeyReply) ProtoReflect() protoreflect.Message {
+func (x *QueryOneReply) ProtoReflect() protoreflect.Message {
 	mi := &file_chain_reader_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -572,20 +572,20 @@ func (x *QueryKeyReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QueryKeyReply.ProtoReflect.Descriptor instead.
-func (*QueryKeyReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryOneReply.ProtoReflect.Descriptor instead.
+func (*QueryOneReply) Descriptor() ([]byte, []int) {
 	return file_chain_reader_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *QueryKeyReply) GetSequences() *Sequences {
+func (x *QueryOneReply) GetSequences() *Sequences {
 	if x != nil {
 		return x.Sequences
 	}
 	return nil
 }
 
-// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
-type QueryKeysReply struct {
+// QueryManyReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryMany].
+type QueryManyReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -593,8 +593,8 @@ type QueryKeysReply struct {
 	Sequences []*Sequences `protobuf:"bytes,1,rep,name=sequences,proto3" json:"sequences,omitempty"`
 }
 
-func (x *QueryKeysReply) Reset() {
-	*x = QueryKeysReply{}
+func (x *QueryManyReply) Reset() {
+	*x = QueryManyReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_chain_reader_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -602,13 +602,13 @@ func (x *QueryKeysReply) Reset() {
 	}
 }
 
-func (x *QueryKeysReply) String() string {
+func (x *QueryManyReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryKeysReply) ProtoMessage() {}
+func (*QueryManyReply) ProtoMessage() {}
 
-func (x *QueryKeysReply) ProtoReflect() protoreflect.Message {
+func (x *QueryManyReply) ProtoReflect() protoreflect.Message {
 	mi := &file_chain_reader_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -620,12 +620,12 @@ func (x *QueryKeysReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QueryKeysReply.ProtoReflect.Descriptor instead.
-func (*QueryKeysReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryManyReply.ProtoReflect.Descriptor instead.
+func (*QueryManyReply) Descriptor() ([]byte, []int) {
 	return file_chain_reader_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *QueryKeysReply) GetSequences() []*Sequences {
+func (x *QueryManyReply) GetSequences() []*Sequences {
 	if x != nil {
 		return x.Sequences
 	}
@@ -2064,15 +2064,15 @@ var file_chain_reader_proto_rawDesc = []byte{
 	0x72, 0x61, 0x6d, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x6c, 0x6f, 0x6f,
 	0x70, 0x2e, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x65, 0x64, 0x42, 0x79, 0x74, 0x65, 0x73,
 	0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x7b, 0x0a, 0x0f, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x0a, 0x6b,
+	0x79, 0x4f, 0x6e, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x0a, 0x6b,
 	0x65, 0x79, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x0f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x4b, 0x65, 0x79, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72,
 	0x52, 0x09, 0x6b, 0x65, 0x79, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x38, 0x0a, 0x0e, 0x6c,
 	0x69, 0x6d, 0x69, 0x74, 0x5f, 0x61, 0x6e, 0x64, 0x5f, 0x73, 0x6f, 0x72, 0x74, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x4c, 0x69, 0x6d, 0x69, 0x74,
 	0x41, 0x6e, 0x64, 0x53, 0x6f, 0x72, 0x74, 0x52, 0x0c, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x41, 0x6e,
-	0x64, 0x53, 0x6f, 0x72, 0x74, 0x22, 0x84, 0x01, 0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b,
-	0x65, 0x79, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x32, 0x0a, 0x0c, 0x6b, 0x65,
+	0x64, 0x53, 0x6f, 0x72, 0x74, 0x22, 0x84, 0x01, 0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d,
+	0x61, 0x6e, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x32, 0x0a, 0x0c, 0x6b, 0x65,
 	0x79, 0x73, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
 	0x32, 0x0f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x4b, 0x65, 0x79, 0x46, 0x69, 0x6c, 0x74, 0x65,
 	0x72, 0x52, 0x0b, 0x6b, 0x65, 0x79, 0x73, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x73, 0x12, 0x3c,
@@ -2088,11 +2088,11 @@ var file_chain_reader_proto_rawDesc = []byte{
 	0x70, 0x6c, 0x79, 0x12, 0x2c, 0x0a, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x56, 0x65, 0x72, 0x73, 0x69,
 	0x6f, 0x6e, 0x65, 0x64, 0x42, 0x79, 0x74, 0x65, 0x73, 0x52, 0x06, 0x72, 0x65, 0x74, 0x56, 0x61,
-	0x6c, 0x22, 0x3e, 0x0a, 0x0d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x70,
+	0x6c, 0x22, 0x3e, 0x0a, 0x0d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4f, 0x6e, 0x65, 0x52, 0x65, 0x70,
 	0x6c, 0x79, 0x12, 0x2d, 0x0a, 0x09, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x73, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x53, 0x65, 0x71,
 	0x75, 0x65, 0x6e, 0x63, 0x65, 0x73, 0x52, 0x09, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65,
-	0x73, 0x22, 0x3f, 0x0a, 0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x73, 0x52, 0x65,
+	0x73, 0x22, 0x3f, 0x0a, 0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x79, 0x52, 0x65,
 	0x70, 0x6c, 0x79, 0x12, 0x2d, 0x0a, 0x09, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x73,
 	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x53, 0x65,
 	0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x73, 0x52, 0x09, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63,
@@ -2266,13 +2266,13 @@ var file_chain_reader_proto_rawDesc = []byte{
 	0x73, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19,
 	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56,
 	0x61, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x38, 0x0a, 0x08, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x12, 0x15, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13,
-	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x52, 0x65,
-	0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65,
-	0x79, 0x73, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b,
-	0x65, 0x79, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x6c, 0x6f, 0x6f,
-	0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79,
+	0x75, 0x65, 0x72, 0x79, 0x4f, 0x6e, 0x65, 0x12, 0x15, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x4f, 0x6e, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13,
+	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4f, 0x6e, 0x65, 0x52, 0x65,
+	0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x61,
+	0x6e, 0x79, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d,
+	0x61, 0x6e, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x6c, 0x6f, 0x6f,
+	0x70, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x79, 0x52, 0x65, 0x70, 0x6c, 0x79,
 	0x22, 0x00, 0x12, 0x33, 0x0a, 0x04, 0x42, 0x69, 0x6e, 0x64, 0x12, 0x11, 0x2e, 0x6c, 0x6f, 0x6f,
 	0x70, 0x2e, 0x42, 0x69, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e,
 	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
@@ -2305,12 +2305,12 @@ var file_chain_reader_proto_goTypes = []interface{}{
 	(CursorDirection)(0),          // 3: loop.CursorDirection
 	(SortDirection)(0),            // 4: loop.SortDirection
 	(*GetLatestValueRequest)(nil), // 5: loop.GetLatestValueRequest
-	(*QueryKeyRequest)(nil),       // 6: loop.QueryKeyRequest
-	(*QueryKeysRequest)(nil),      // 7: loop.QueryKeysRequest
+	(*QueryOneRequest)(nil),       // 6: loop.QueryOneRequest
+	(*QueryManyRequest)(nil),      // 7: loop.QueryManyRequest
 	(*BindRequest)(nil),           // 8: loop.BindRequest
 	(*GetLatestValueReply)(nil),   // 9: loop.GetLatestValueReply
-	(*QueryKeyReply)(nil),         // 10: loop.QueryKeyReply
-	(*QueryKeysReply)(nil),        // 11: loop.QueryKeysReply
+	(*QueryOneReply)(nil),         // 10: loop.QueryOneReply
+	(*QueryManyReply)(nil),        // 11: loop.QueryManyReply
 	(*Head)(nil),                  // 12: loop.Head
 	(*Sequence)(nil),              // 13: loop.Sequence
 	(*Sequences)(nil),             // 14: loop.Sequences
@@ -2340,14 +2340,14 @@ var file_chain_reader_proto_goTypes = []interface{}{
 }
 var file_chain_reader_proto_depIdxs = []int32{
 	36, // 0: loop.GetLatestValueRequest.params:type_name -> loop.VersionedBytes
-	19, // 1: loop.QueryKeyRequest.key_filter:type_name -> loop.KeyFilter
-	35, // 2: loop.QueryKeyRequest.limit_and_sort:type_name -> loop.LimitAndSort
-	19, // 3: loop.QueryKeysRequest.keys_filters:type_name -> loop.KeyFilter
-	35, // 4: loop.QueryKeysRequest.limits_and_sorts:type_name -> loop.LimitAndSort
+	19, // 1: loop.QueryOneRequest.key_filter:type_name -> loop.KeyFilter
+	35, // 2: loop.QueryOneRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	19, // 3: loop.QueryManyRequest.keys_filters:type_name -> loop.KeyFilter
+	35, // 4: loop.QueryManyRequest.limits_and_sorts:type_name -> loop.LimitAndSort
 	15, // 5: loop.BindRequest.bindings:type_name -> loop.BoundContract
 	36, // 6: loop.GetLatestValueReply.retVal:type_name -> loop.VersionedBytes
-	14, // 7: loop.QueryKeyReply.sequences:type_name -> loop.Sequences
-	14, // 8: loop.QueryKeysReply.sequences:type_name -> loop.Sequences
+	14, // 7: loop.QueryOneReply.sequences:type_name -> loop.Sequences
+	14, // 8: loop.QueryManyReply.sequences:type_name -> loop.Sequences
 	12, // 9: loop.Sequence.head:type_name -> loop.Head
 	36, // 10: loop.Sequence.data:type_name -> loop.VersionedBytes
 	13, // 11: loop.Sequences.sequences:type_name -> loop.Sequence
@@ -2379,12 +2379,12 @@ var file_chain_reader_proto_depIdxs = []int32{
 	34, // 37: loop.LimitAndSort.sortBy:type_name -> loop.SortBy
 	30, // 38: loop.LimitAndSort.limit:type_name -> loop.Limit
 	5,  // 39: loop.ChainReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
-	6,  // 40: loop.ChainReader.QueryKey:input_type -> loop.QueryKeyRequest
-	7,  // 41: loop.ChainReader.QueryKeys:input_type -> loop.QueryKeysRequest
+	6,  // 40: loop.ChainReader.QueryOne:input_type -> loop.QueryOneRequest
+	7,  // 41: loop.ChainReader.QueryMany:input_type -> loop.QueryManyRequest
 	8,  // 42: loop.ChainReader.Bind:input_type -> loop.BindRequest
 	9,  // 43: loop.ChainReader.GetLatestValue:output_type -> loop.GetLatestValueReply
-	10, // 44: loop.ChainReader.QueryKey:output_type -> loop.QueryKeyReply
-	11, // 45: loop.ChainReader.QueryKeys:output_type -> loop.QueryKeysReply
+	10, // 44: loop.ChainReader.QueryOne:output_type -> loop.QueryOneReply
+	11, // 45: loop.ChainReader.QueryMany:output_type -> loop.QueryManyReply
 	37, // 46: loop.ChainReader.Bind:output_type -> google.protobuf.Empty
 	43, // [43:47] is the sub-list for method output_type
 	39, // [39:43] is the sub-list for method input_type
@@ -2413,7 +2413,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryKeyRequest); i {
+			switch v := v.(*QueryOneRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2425,7 +2425,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryKeysRequest); i {
+			switch v := v.(*QueryManyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2461,7 +2461,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryKeyReply); i {
+			switch v := v.(*QueryOneReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2473,7 +2473,7 @@ func file_chain_reader_proto_init() {
 			}
 		}
 		file_chain_reader_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryKeysReply); i {
+			switch v := v.(*QueryManyReply); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -37,11 +37,11 @@ func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) QueryKey(_ context.Context, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (c staticChainReader) QueryOne(_ context.Context, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (c staticChainReader) QueryKeys(_ context.Context, _ []query.KeyFilter, _ []query.LimitAndSort, _ []any) ([][]types.Sequence, error) {
+func (c staticChainReader) QueryMany(_ context.Context, _ []query.KeyFilter, _ []query.LimitAndSort, _ []any) ([][]types.Sequence, error) {
 	return nil, nil
 }
 

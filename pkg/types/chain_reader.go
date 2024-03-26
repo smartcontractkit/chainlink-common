@@ -49,8 +49,8 @@ type ChainReader interface {
 	//TODO UnBindByKey, this is needed in some places where addresses change but the contract stays the same
 	// UnBindByKey() or UnBindByKey(ctx context.Context, key, address string)
 
-	QueryKey(ctx context.Context, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	QueryKeys(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
+	QueryOne(ctx context.Context, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryMany(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
 }
 
 type Head struct {

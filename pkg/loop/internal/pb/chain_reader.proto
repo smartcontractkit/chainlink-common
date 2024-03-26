@@ -9,8 +9,8 @@ import "google/protobuf/empty.proto";
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
-  rpc QueryKey (QueryKeyRequest) returns (QueryKeyReply) {}
-  rpc QueryKeys (QueryKeysRequest) returns (QueryKeysReply) {}
+  rpc QueryOne(QueryOneRequest) returns (QueryOneReply) {}
+  rpc QueryMany (QueryManyRequest) returns (QueryManyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
@@ -21,14 +21,14 @@ message GetLatestValueRequest {
   VersionedBytes params = 3;
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
-message QueryKeyRequest {
+// QueryOneRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
+message QueryOneRequest {
   KeyFilter key_filter = 1;
   LimitAndSort limit_and_sort = 2;
 }
 
-// QueryKeysByValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
-message QueryKeysRequest {
+// QueryManyRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryMany].
+message QueryManyRequest {
   repeated KeyFilter keys_filters = 1;
   repeated LimitAndSort limits_and_sorts = 2;
 }
@@ -43,13 +43,13 @@ message GetLatestValueReply {
   VersionedBytes retVal = 1;
 }
 
-// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
-message QueryKeyReply {
+// QueryOneReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
+message QueryOneReply {
   Sequences sequences = 1;
 }
 
-// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKeys].
-message QueryKeysReply {
+// QueryManyReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryMany].
+message QueryManyReply {
  repeated Sequences sequences = 1;
 }
 

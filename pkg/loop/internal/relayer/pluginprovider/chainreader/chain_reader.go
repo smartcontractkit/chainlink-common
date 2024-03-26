@@ -119,7 +119,7 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *Client) QueryKey(ctx context.Context, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+func (c *Client) QueryOne(ctx context.Context, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
 	pbQueryFilter, err := convertQueryFilterToProto(keyFilter.Filter)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (c *Client) QueryKey(ctx context.Context, keyFilter query.KeyFilter, limitA
 		return nil, err
 	}
 
-	pbSequences, err := c.grpc.QueryKey(ctx, &pb.QueryKeyRequest{KeyFilter: &pb.KeyFilter{Key: keyFilter.Key, QueryFilter: pbQueryFilter}, LimitAndSort: pbLimitAndSort})
+	pbSequences, err := c.grpc.QueryOne(ctx, &pb.QueryOneRequest{KeyFilter: &pb.KeyFilter{Key: keyFilter.Key, QueryFilter: pbQueryFilter}, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -138,7 +138,7 @@ func (c *Client) QueryKey(ctx context.Context, keyFilter query.KeyFilter, limitA
 	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
 }
 
-func (c *Client) QueryKeys(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
+func (c *Client) QueryMany(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
 	var pbKeysFilters []*pb.KeyFilter
 	for _, keyFilter := range keysFilters {
 		pbQueryFilter, err := convertQueryFilterToProto(keyFilter.Filter)
@@ -157,7 +157,7 @@ func (c *Client) QueryKeys(ctx context.Context, keysFilters []query.KeyFilter, l
 		pbLimitsAndSorts = append(pbLimitsAndSorts, pbLimitAndSort)
 	}
 
-	pbSequencesMatrix, err := c.grpc.QueryKeys(ctx, &pb.QueryKeysRequest{KeysFilters: pbKeysFilters, LimitsAndSorts: pbLimitsAndSorts})
+	pbSequencesMatrix, err := c.grpc.QueryMany(ctx, &pb.QueryManyRequest{KeysFilters: pbKeysFilters, LimitsAndSorts: pbLimitsAndSorts})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -213,7 +213,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }
 
-func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
+func (c *Server) QueryOne(ctx context.Context, request *pb.QueryOneRequest) (*pb.QueryOneReply, error) {
 	queryFilter, err := convertQueryFiltersFromProto(request.KeyFilter.QueryFilter)
 	if err != nil {
 		return nil, err
@@ -229,7 +229,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	sequences, err := c.impl.QueryKey(ctx, query.KeyFilter{Key: request.KeyFilter.Key, Filter: queryFilter}, limitAndSort, sequenceDataType)
+	sequences, err := c.impl.QueryOne(ctx, query.KeyFilter{Key: request.KeyFilter.Key, Filter: queryFilter}, limitAndSort, sequenceDataType)
 	if err != nil {
 		return nil, err
 	}
@@ -239,10 +239,10 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	return &pb.QueryKeyReply{Sequences: pbSequences}, nil
+	return &pb.QueryOneReply{Sequences: pbSequences}, nil
 }
 
-func (c *Server) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
+func (c *Server) QueryMany(ctx context.Context, request *pb.QueryManyRequest) (*pb.QueryManyReply, error) {
 	var keysFilters []query.KeyFilter
 	for _, pbKeyFilter := range request.KeysFilters {
 		queryFilter, err := convertQueryFiltersFromProto(pbKeyFilter.QueryFilter)
@@ -271,7 +271,7 @@ func (c *Server) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*
 		sequenceDataTypes = append(sequenceDataTypes, sequenceDataType)
 	}
 
-	sequencesMatrix, err := c.impl.QueryKeys(ctx, keysFilters, limitsAndSorts, sequenceDataTypes)
+	sequencesMatrix, err := c.impl.QueryMany(ctx, keysFilters, limitsAndSorts, sequenceDataTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func (c *Server) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*
 		pbSequencesMatrix = append(pbSequencesMatrix, pbSequences)
 	}
 
-	return &pb.QueryKeysReply{Sequences: pbSequencesMatrix}, nil
+	return &pb.QueryManyReply{Sequences: pbSequencesMatrix}, nil
 }
 
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {

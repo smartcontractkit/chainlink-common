@@ -219,7 +219,7 @@ func (f *TxHashPrimitive) Accept(visitor Visitor) {
 //									 )
 //							 )`
 //		if err != nil{return nil, err}
-//		QueryKey(key, queryFilter)...
+//		QueryOne(key, queryFilter)...
 func Where(expressions ...Expression) (Filter, error) {
 	for _, expr := range expressions {
 		if !expr.IsPrimitive() {

@@ -99,7 +99,6 @@ func TestOffRampGRPC(t *testing.T) {
 // do not add client.Close to this test, test that from the driver test
 // func roundTripOffRampTests(ctx context.Context, t *testing.T, client *ccip.OffRampReaderGRPCClient) {
 func roundTripOffRampTests(ctx context.Context, t *testing.T, client cciptypes.OffRampReader) {
-
 	t.Run("Address", func(t *testing.T) {
 		address, err := client.Address(ctx)
 		require.NoError(t, err)

@@ -126,6 +126,9 @@ func (s staticCommitProvider) Evaluate(ctx context.Context, other types.CCIPComm
 		return fmt.Errorf("failed to create other price getter: %w", err)
 	}
 	err = s.priceGetter.Evaluate(ctx, otherPriceGetter)
+	if err != nil {
+		return evaluationError{err: err, component: priceGetterComponent}
+	}
 
 	// PriceRegistryReader test case
 	otherPriceRegistry, err := other.NewPriceRegistryReader(ctx, "ignored")

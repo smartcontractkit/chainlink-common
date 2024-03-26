@@ -94,7 +94,6 @@ func TestCommitProviderGRPC(t *testing.T) {
 	require.NoError(t, cerr, "failed to close client %T, %v", cerr, status.Code(cerr))
 	testServer.Stop()
 	wg.Wait()
-
 }
 
 func roundTripCommitProviderTests(ctx context.Context, t *testing.T, client types.CCIPCommitProvider) {

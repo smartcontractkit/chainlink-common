@@ -12,7 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/json_serializable"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/jsonserializable"
 )
 
 type mockPipelineRunner struct {
@@ -41,7 +41,7 @@ func TestPipelineRunnerService(t *testing.T) {
 		{
 			ID: "1",
 			TaskValue: types.TaskValue{
-				Value: json_serializable.JSONSerializable{
+				Value: jsonserializable.JSONSerializable{
 					Val:   123.123,
 					Valid: true,
 				},
@@ -52,7 +52,7 @@ func TestPipelineRunnerService(t *testing.T) {
 			ID: "2",
 
 			TaskValue: types.TaskValue{
-				Value: json_serializable.JSONSerializable{},
+				Value: jsonserializable.JSONSerializable{},
 				Error: errors.New("Error task"),
 			},
 			Index: 1,

@@ -11,7 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/json_serializable"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/jsonserializable"
 )
 
 var _ types.PipelineRunnerService = (*pipelineRunnerServiceClient)(nil)
@@ -51,7 +51,7 @@ func (p pipelineRunnerServiceClient) ExecuteRun(ctx context.Context, spec string
 			err = errors.New(trr.Error)
 		}
 
-		js := json_serializable.JSONSerializable{}
+		js := jsonserializable.JSONSerializable{}
 		err2 := js.UnmarshalJSON(trr.Value)
 		if err2 != nil {
 			return nil, err2
@@ -98,7 +98,6 @@ func (p *RunnerServer) ExecuteRun(ctx context.Context, rr *pb.RunRequest) (*pb.R
 
 	taskResults := make([]*pb.TaskResult, len(trs))
 	for i, trr := range trs {
-
 		v, err := trr.Value.MarshalJSON()
 		if err != nil {
 			return nil, err

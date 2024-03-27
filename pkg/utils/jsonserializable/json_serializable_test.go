@@ -1,4 +1,4 @@
-package json_serializable_test
+package jsonserializable_test
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/json_serializable"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/jsonserializable"
 )
 
 func TestMarshalJSONSerializable_replaceBytesWithHex(t *testing.T) {
@@ -18,8 +18,8 @@ func TestMarshalJSONSerializable_replaceBytesWithHex(t *testing.T) {
 
 	type jsm = map[string]interface{}
 
-	toJSONSerializable := func(val jsm) *json_serializable.JSONSerializable {
-		return &json_serializable.JSONSerializable{
+	toJSONSerializable := func(val jsm) *jsonserializable.JSONSerializable {
+		return &jsonserializable.JSONSerializable{
 			Valid: true,
 			Val:   val,
 		}
@@ -34,11 +34,11 @@ func TestMarshalJSONSerializable_replaceBytesWithHex(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    *json_serializable.JSONSerializable
+		input    *jsonserializable.JSONSerializable
 		expected string
 		err      error
 	}{
-		{"invalid input", &json_serializable.JSONSerializable{Valid: false}, "null", nil},
+		{"invalid input", &jsonserializable.JSONSerializable{Valid: false}, "null", nil},
 		{"empty object", toJSONSerializable(jsm{}), "{}", nil},
 		{"byte slice", toJSONSerializable(jsm{"slice": []byte{0x10, 0x20, 0x30}}),
 			`{"slice":"0x102030"}`, nil},
@@ -93,7 +93,7 @@ func TestUnmarshalJSONSerializable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var i json_serializable.JSONSerializable
+			var i jsonserializable.JSONSerializable
 			err := json.Unmarshal([]byte(test.input), &i)
 			require.NoError(t, err)
 			if test.expected != nil {

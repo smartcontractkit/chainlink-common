@@ -1,4 +1,4 @@
-package json_serializable
+package jsonserializable
 
 import (
 	"bytes"
@@ -18,14 +18,14 @@ type JSONSerializable struct {
 	Valid bool
 }
 
-func ReinterpretJsonNumbers(val interface{}) (interface{}, error) {
+func ReinterpretJSONNumbers(val interface{}) (interface{}, error) {
 	switch v := val.(type) {
 	case json.Number:
-		return getJsonNumberValue(v)
+		return getJSONNumberValue(v)
 	case []interface{}:
 		s := make([]interface{}, len(v))
 		for i, vv := range v {
-			ival, ierr := ReinterpretJsonNumbers(vv)
+			ival, ierr := ReinterpretJSONNumbers(vv)
 			if ierr != nil {
 				return nil, ierr
 			}
@@ -35,7 +35,7 @@ func ReinterpretJsonNumbers(val interface{}) (interface{}, error) {
 	case map[string]interface{}:
 		m := make(map[string]interface{}, len(v))
 		for k, vv := range v {
-			ival, ierr := ReinterpretJsonNumbers(vv)
+			ival, ierr := ReinterpretJSONNumbers(vv)
 			if ierr != nil {
 				return nil, ierr
 			}
@@ -64,7 +64,7 @@ func (js *JSONSerializable) UnmarshalJSON(bs []byte) error {
 	}
 
 	if decoded != nil {
-		reinterpreted, err := ReinterpretJsonNumbers(decoded)
+		reinterpreted, err := ReinterpretJSONNumbers(decoded)
 		if err != nil {
 			return err
 		}
@@ -184,7 +184,7 @@ func uint8ArrayToSlice(arr interface{}) interface{} {
 	return s.Interface()
 }
 
-func getJsonNumberValue(value json.Number) (interface{}, error) {
+func getJSONNumberValue(value json.Number) (interface{}, error) {
 	var result interface{}
 
 	bn, ok := new(big.Int).SetString(value.String(), 10)

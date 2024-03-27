@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/json_serializable"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/jsonserializable"
 )
 
 type Vars struct {
@@ -18,7 +18,7 @@ type Options struct {
 
 type TaskValue struct {
 	Error      error
-	Value      json_serializable.JSONSerializable
+	Value      jsonserializable.JSONSerializable
 	IsTerminal bool
 }
 

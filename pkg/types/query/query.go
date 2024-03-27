@@ -4,8 +4,7 @@ import "fmt"
 
 // Visitor should have a per chain per db type implementation that converts primitives to db queries.
 type Visitor interface {
-	ValuesComparatorPrimitive(primitive ValuesComparatorPrimitive)
-	AddressPrimitive(primitive AddressPrimitive)
+	ComparerPrimitive(primitive ComparerPrimitive)
 	BlockPrimitive(primitive BlockPrimitive)
 	ConfirmationPrimitive(primitive ConfirmationsPrimitive)
 	TimestampPrimitive(primitive TimestampPrimitive)
@@ -25,6 +24,8 @@ type Filter struct {
 	Expressions []Expression
 }
 
+// KeyFilter key points to the underlying chain contract address and some data that belongs to that contract. KeyFilter filter allows us to do basic filtering over data that belongs to that key.
+// Depending on the underlying Chain Reader blockchain implementation key can map to different onchain concepts, but should be able to map differing onchain data to same offchain data if they belong to the same key.
 type KeyFilter struct {
 	Key    string
 	Filter Filter
@@ -88,24 +89,26 @@ const (
 	Lte
 )
 
-type Comparator struct {
+type ValueComparer struct {
 	Value    string
 	Operator ComparisonOperator
 }
 
-type ValuesComparatorPrimitive struct {
-	Name             string
-	ValueComparators []Comparator
+// ComparerPrimitive is used to filter over values that belong to key data.
+type ComparerPrimitive struct {
+	Name           string
+	ValueComparers []ValueComparer
 }
 
-// ValuesComparator is used for filtering through specific key values.
-// e.g. of filtering for key that belongs to a token transfer by values: ValuesComparator("transferValue", [{"150",LTE}, {"300",GTE}])
-func ValuesComparator(name string, valueComparators ...Comparator) ValuesComparatorPrimitive {
-	return ValuesComparatorPrimitive{Name: name, ValueComparators: valueComparators}
+// Comparer is used for filtering through specific key values.
+// e.g. of filtering for key that belongs to a token transfer by values: Comparer("transferValue", [{"150",LTE}, {"300",GTE}])
+func Comparer(name string, valueComparers ...ValueComparer) Expression {
+	return Expression{
+		Primitive: &ComparerPrimitive{Name: name, ValueComparers: valueComparers}}
 }
 
-func (f *ValuesComparatorPrimitive) Accept(visitor Visitor) {
-	visitor.ValuesComparatorPrimitive(*f)
+func (f *ComparerPrimitive) Accept(visitor Visitor) {
+	visitor.ComparerPrimitive(*f)
 }
 
 // BlockPrimitive is a primitive of Filter that filters search in comparison to block number.
@@ -122,22 +125,6 @@ func Block(block uint64, operator ComparisonOperator) Expression {
 
 func (f *BlockPrimitive) Accept(visitor Visitor) {
 	visitor.BlockPrimitive(*f)
-}
-
-// AddressPrimitive is a primitive of Filter that filters search to results that contain address in Addresses.
-type AddressPrimitive struct {
-	Addresses []string
-}
-
-// TODO Address is fetched through bindings, so this is most likely not necessary
-func Address(addresses ...string) Expression {
-	return Expression{
-		Primitive: &AddressPrimitive{Addresses: addresses},
-	}
-}
-
-func (f *AddressPrimitive) Accept(visitor Visitor) {
-	visitor.AddressPrimitive(*f)
 }
 
 type ConfirmationLevel int32

@@ -87,17 +87,6 @@ enum ComparisonOperator {
   Lte = 5;
 }
 
-message ValueComparator {
-  // TODO pass interface{} here
-  string value = 1;
-  ComparisonOperator operator = 2;
-}
-
-message KeyValuesComparator{
-  string key = 1;
-  repeated ValueComparator value_comparators = 2;
-}
-
 // QueryFilter represents a lightweight orm like DSL defined for filtering over common blockchain primitives.
 message QueryFilter {
   repeated Expression expression = 1;
@@ -128,15 +117,26 @@ message BooleanExpression {
 }
 
 message And {
-  repeated Expression a = 1;
+  repeated Expression expr = 1;
 }
 
 message Or {
-  repeated Expression a = 1;
+  repeated Expression expr = 1;
 }
 
-message Address {
-  repeated string addresses = 1;
+message ValueComparer  {
+  string  value = 1;
+  ComparisonOperator operator = 2;
+}
+
+message Comparer  {
+  string name = 1;
+  repeated ValueComparer value_comparers = 2;
+}
+
+message Block{
+  uint64 block_number = 1;
+  ComparisonOperator operator = 2;
 }
 
 enum ConfirmationLevel {
@@ -146,11 +146,6 @@ enum ConfirmationLevel {
 
 message Confirmations {
   ConfirmationLevel confirmations = 1;
-}
-
-message Block{
-  uint64 block_number = 1;
-  ComparisonOperator operator = 2;
 }
 
 message Timestamp{
@@ -164,12 +159,12 @@ message TxHash{
 
 // Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
 message Primitive {
-  oneof comparator {
-    Address address = 3;
-    Confirmations confirmations = 4;
-    Block block = 5;
-    Timestamp timestamp = 6;
-    TxHash tx_hash = 7;
+  oneof primitive {
+    Comparer comparer = 1;
+    Block block = 2;
+    Confirmations confirmations = 3;
+    Timestamp timestamp = 4;
+    TxHash tx_hash = 5;
   }
 }
 

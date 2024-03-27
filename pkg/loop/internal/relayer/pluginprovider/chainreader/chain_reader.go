@@ -331,32 +331,38 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 	if expression.IsPrimitive() {
 		pbExpression.Evaluator = &pb.Expression_Primitive{Primitive: &pb.Primitive{}}
 		switch primitive := expression.Primitive.(type) {
-		case *query.AddressPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Address{
-				Address: &pb.Address{
-					Addresses: primitive.Addresses,
+		case *query.ComparerPrimitive:
+			var pbValComparers []*pb.ValueComparer
+			for _, valComparer := range primitive.ValueComparers {
+				pbValComparers = append(pbValComparers, &pb.ValueComparer{Value: valComparer.Value, Operator: pb.ComparisonOperator(valComparer.Operator)})
+			}
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Comparer{
+				Comparer: &pb.Comparer{
+					Name:           primitive.Name,
+					ValueComparers: pbValComparers,
 				}}
-		case *query.ConfirmationsPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Confirmations{
-				Confirmations: &pb.Confirmations{
-					Confirmations: pb.ConfirmationLevel(primitive.ConfirmationLevel),
-				}}
+
 		case *query.BlockPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Block{
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Block{
 				Block: &pb.Block{
 					BlockNumber: primitive.Block,
 					Operator:    pb.ComparisonOperator(primitive.Operator),
 				}}
-		case *query.TxHashPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_TxHash{
-				TxHash: &pb.TxHash{
-					TxHash: primitive.TxHash,
+		case *query.ConfirmationsPrimitive:
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confirmations{
+				Confirmations: &pb.Confirmations{
+					Confirmations: pb.ConfirmationLevel(primitive.ConfirmationLevel),
 				}}
 		case *query.TimestampPrimitive:
-			pbExpression.GetPrimitive().Comparator = &pb.Primitive_Timestamp{
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
 				Timestamp: &pb.Timestamp{
 					Timestamp: primitive.Timestamp,
 					Operator:  pb.ComparisonOperator(primitive.Operator),
+				}}
+		case *query.TxHashPrimitive:
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_TxHash{
+				TxHash: &pb.TxHash{
+					TxHash: primitive.TxHash,
 				}}
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "Unknown expression type")
@@ -386,17 +392,16 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 	var sortByArr []*pb.SortBy
 	for _, sortBy := range limitAndSort.SortBy {
 		switch sort := sortBy.(type) {
-		case *query.SortByTimestamp:
-			sortByArr = append(sortByArr,
-				&pb.SortBy{SortBy: &pb.SortBy_SortByTimestamp{
-					SortByTimestamp: &pb.SortByTimestamp{
-						SortDirection: pb.SortDirection(sort.GetDirection()),
-					}}})
-
 		case *query.SortByBlock:
 			sortByArr = append(sortByArr,
 				&pb.SortBy{SortBy: &pb.SortBy_SortByBlock{
 					SortByBlock: &pb.SortByBlock{
+						SortDirection: pb.SortDirection(sort.GetDirection()),
+					}}})
+		case *query.SortByTimestamp:
+			sortByArr = append(sortByArr,
+				&pb.SortBy{SortBy: &pb.SortBy_SortByTimestamp{
+					SortByTimestamp: &pb.SortByTimestamp{
 						SortDirection: pb.SortDirection(sort.GetDirection()),
 					}}})
 		case *query.SortBySequence:
@@ -434,7 +439,6 @@ func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (
 		if err != nil {
 			return nil, err
 		}
-
 		pbSequence := &pb.Sequence{
 			SequenceCursor: sequence.Cursor,
 			Head: &pb.Head{
@@ -472,15 +476,18 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 			}
 			expressions = append(expressions, convertedExpression)
 		}
-
 		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == pb.BooleanOperator_AND {
 			return query.And(expressions...), nil
 		}
 		return query.Or(expressions...), nil
 	case *pb.Expression_Primitive:
-		switch primitive := pbEvaluatedExpr.Primitive.Comparator.(type) {
-		case *pb.Primitive_Address:
-			return query.Address(primitive.Address.Addresses...), nil
+		switch primitive := pbEvaluatedExpr.Primitive.GetPrimitive().(type) {
+		case *pb.Primitive_Comparer:
+			var valComparers []query.ValueComparer
+			for _, pbValComparer := range primitive.Comparer.ValueComparers {
+				valComparers = append(valComparers, query.ValueComparer{Value: pbValComparer.Value, Operator: query.ComparisonOperator(pbValComparer.Operator)})
+			}
+			return query.Comparer(primitive.Comparer.Name, valComparers...), nil
 		case *pb.Primitive_Confirmations:
 			return query.Confirmation(query.ConfirmationLevel(primitive.Confirmations.Confirmations)), nil
 		case *pb.Primitive_Block:

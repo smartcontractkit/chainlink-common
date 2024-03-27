@@ -18,14 +18,14 @@ type JSONSerializable struct {
 	Valid bool
 }
 
-func reinterpretJsonNumbers(val interface{}) (interface{}, error) {
+func ReinterpretJsonNumbers(val interface{}) (interface{}, error) {
 	switch v := val.(type) {
 	case json.Number:
 		return getJsonNumberValue(v)
 	case []interface{}:
 		s := make([]interface{}, len(v))
 		for i, vv := range v {
-			ival, ierr := reinterpretJsonNumbers(vv)
+			ival, ierr := ReinterpretJsonNumbers(vv)
 			if ierr != nil {
 				return nil, ierr
 			}
@@ -35,7 +35,7 @@ func reinterpretJsonNumbers(val interface{}) (interface{}, error) {
 	case map[string]interface{}:
 		m := make(map[string]interface{}, len(v))
 		for k, vv := range v {
-			ival, ierr := reinterpretJsonNumbers(vv)
+			ival, ierr := ReinterpretJsonNumbers(vv)
 			if ierr != nil {
 				return nil, ierr
 			}
@@ -64,7 +64,7 @@ func (js *JSONSerializable) UnmarshalJSON(bs []byte) error {
 	}
 
 	if decoded != nil {
-		reinterpreted, err := reinterpretJsonNumbers(decoded)
+		reinterpreted, err := ReinterpretJsonNumbers(decoded)
 		if err != nil {
 			return err
 		}

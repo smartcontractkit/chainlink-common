@@ -46,7 +46,7 @@ func PluginGenericTest(t *testing.T, p types.ReportingPluginClient) {
 		validationService, err := p.NewValidationService(ctx)
 		require.NoError(t, err)
 
-		testreportingplugin.RunValidation(t, validationService)
+		reportingplugintest.RunValidation(t, validationService)
 	})
 }
 

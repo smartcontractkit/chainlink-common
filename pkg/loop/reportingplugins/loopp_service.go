@@ -23,7 +23,7 @@ type LOOPPService struct {
 }
 
 type LOOPPServiceValidation struct {
-	internal.PluginService[*GRPCService[types.PluginProvider], types.ValidationService]
+	goplugin.PluginService[*GRPCService[types.PluginProvider], types.ValidationService]
 }
 
 // NewLOOPPService returns a new [*PluginService].

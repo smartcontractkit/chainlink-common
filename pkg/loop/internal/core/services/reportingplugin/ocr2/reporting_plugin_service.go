@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -99,7 +100,7 @@ func (m *ReportingPluginServiceClient) NewValidationService(ctx context.Context)
 		}
 		return reply.ID, nil, nil
 	})
-	return newValidationServiceClient(m.PluginClient.BrokerExt, cc), nil
+	return validation.NewValidationServiceClient(m.PluginClient.BrokerExt, cc), nil
 }
 
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)
@@ -183,8 +184,8 @@ func (m *reportingPluginServiceServer) NewValidationService(ctx context.Context,
 	}
 
 	id, _, err := m.ServeNew("ValidationService", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &ServiceServer{Srv: service})
-		pb.RegisterValidationServiceServer(s, NewValidationServiceServer(service, m.BrokerExt))
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: service})
+		pb.RegisterValidationServiceServer(s, validation.NewValidationServiceServer(service, m.BrokerExt))
 	})
 	if err != nil {
 		return nil, err

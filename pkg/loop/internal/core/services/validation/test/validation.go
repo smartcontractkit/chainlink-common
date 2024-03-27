@@ -1,4 +1,4 @@
-package test
+package validationtest
 
 import (
 	"context"

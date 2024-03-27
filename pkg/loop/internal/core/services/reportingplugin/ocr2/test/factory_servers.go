@@ -8,6 +8,7 @@ import (
 
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
+	validationtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
@@ -19,10 +20,10 @@ import (
 
 var MedianProviderServer = medianFactoryServer{
 	medianGeneratorConfig: medianGeneratorConfig{
-		medianProvider: mediantest.MedianProvider,
-		pipeline:       pipelinetest.PipelineRunner,
-		telemetry:      telemetrytest.Telemetry,
-		validationService: test.ValidationService,
+		medianProvider:    mediantest.MedianProvider,
+		pipeline:          pipelinetest.PipelineRunner,
+		telemetry:         telemetrytest.Telemetry,
+		validationService: validationtest.ValidationService,
 	},
 }
 
@@ -69,10 +70,10 @@ func (s medianFactoryServer) NewReportingPluginFactory(ctx context.Context, conf
 }
 
 var AgnosticProviderServer = agnosticPluginFactoryServer{
-	provider:       ocr2test.AgnosticPluginProvider,
-	pipelineRunner: pipelinetest.PipelineRunner,
-	telemetry:      telemetrytest.Telemetry,
-	validationService: test.ValidationService,
+	provider:          ocr2test.AgnosticPluginProvider,
+	pipelineRunner:    pipelinetest.PipelineRunner,
+	telemetry:         telemetrytest.Telemetry,
+	validationService: validationtest.ValidationService,
 }
 
 var _ reportingplugins.ProviderServer[types.PluginProvider] = agnosticPluginFactoryServer{}

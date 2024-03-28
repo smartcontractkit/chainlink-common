@@ -39,18 +39,15 @@ type ChainReader interface {
 	// Note that implementations should ignore extra fields in params that are not expected in the call to allow easier
 	// use across chains and contract versions.
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
-	GetLatestValue(ctx context.Context, contractName string, method string, params, returnVal any) error
+	GetLatestValue(ctx context.Context, contract BoundContract, method string, params, returnVal any) error
 
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
-	// TODO UnBind?, doesn't seem like its needed?
+	// UnBind undoes contract bindings, if the contract is not known by the ChainReader or if the Address is invalid an error will be returned.
+	UnBind(ctx context.Context, bindings []BoundContract) error
 
-	//TODO UnBindByKey, this is needed in some places where addresses change but the contract stays the same
-	// UnBindByKey() or UnBindByKey(ctx context.Context, key, address string)
-
-	QueryOne(ctx context.Context, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	QueryMany(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]Sequence, error)
+	QueryOne(ctx context.Context, contract BoundContract, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 
 type Head struct {
@@ -70,5 +67,8 @@ type Sequence struct {
 type BoundContract struct {
 	Address string
 	Name    string
-	Pending bool
+}
+
+func (bc BoundContract) Key() string {
+	return bc.Address + "-" + bc.Name
 }

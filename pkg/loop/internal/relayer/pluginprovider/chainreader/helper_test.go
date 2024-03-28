@@ -2,6 +2,8 @@ package chainreader_test
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
@@ -91,7 +93,12 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 }
 
 func (fakeTypeProvider) CreateContractTypeByKey(key string, isEncode bool) (any, error) {
-	switch key {
+	tokens := strings.Split(key, "-")
+	if len(tokens) < 3 {
+		return nil, fmt.Errorf("key should be in form of address-contractName-type, got %s instead", key)
+	}
+
+	switch tokens[2] {
 	case NilType:
 		return &struct{}{}, nil
 	case TestItemType:

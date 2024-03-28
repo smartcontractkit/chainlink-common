@@ -39,7 +39,6 @@ type TypeProvider interface {
 }
 
 type ContractTypeProvider interface {
-	CreateContractType(contractName, itemType string, forEncoding bool) (any, error)
 	CreateContractTypeByKey(key string, forEncoding bool) (any, error)
 }
 

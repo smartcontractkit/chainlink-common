@@ -105,13 +105,16 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
-func (c *Client) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
+func (c *Client) GetLatestValue(ctx context.Context, binding types.BoundContract, method string, params, retVal any) error {
 	versionedParams, err := EncodeVersionedBytes(params, CurrentEncodingVersion)
 	if err != nil {
 		return err
 	}
 
-	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams})
+	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{
+		Contract: convertBoundContractToProto(binding),
+		Method:   method,
+		Params:   versionedParams})
 	if err != nil {
 		return net.WrapRPCErr(err)
 	}
@@ -119,7 +122,7 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *Client) QueryOne(ctx context.Context, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+func (c *Client) QueryOne(ctx context.Context, contract types.BoundContract, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
 	pbQueryFilter, err := convertQueryFilterToProto(keyFilter.Filter)
 	if err != nil {
 		return nil, err
@@ -130,7 +133,7 @@ func (c *Client) QueryOne(ctx context.Context, keyFilter query.KeyFilter, limitA
 		return nil, err
 	}
 
-	pbSequences, err := c.grpc.QueryOne(ctx, &pb.QueryOneRequest{KeyFilter: &pb.KeyFilter{Key: keyFilter.Key, QueryFilter: pbQueryFilter}, LimitAndSort: pbLimitAndSort})
+	pbSequences, err := c.grpc.QueryOne(ctx, &pb.QueryOneRequest{Contract: convertBoundContractToProto(contract), KeyFilter: &pb.KeyFilter{Key: keyFilter.Key, QueryFilter: pbQueryFilter}, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -138,39 +141,21 @@ func (c *Client) QueryOne(ctx context.Context, keyFilter query.KeyFilter, limitA
 	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
 }
 
-func (c *Client) QueryMany(ctx context.Context, keysFilters []query.KeyFilter, limitsAndSorts []query.LimitAndSort, sequenceDataTypes []any) ([][]types.Sequence, error) {
-	var pbKeysFilters []*pb.KeyFilter
-	for _, keyFilter := range keysFilters {
-		pbQueryFilter, err := convertQueryFilterToProto(keyFilter.Filter)
-		if err != nil {
-			return nil, err
-		}
-		pbKeysFilters = append(pbKeysFilters, &pb.KeyFilter{Key: keyFilter.Key, QueryFilter: pbQueryFilter})
-	}
-
-	var pbLimitsAndSorts []*pb.LimitAndSort
-	for _, limitAndSort := range limitsAndSorts {
-		pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
-		if err != nil {
-			return nil, err
-		}
-		pbLimitsAndSorts = append(pbLimitsAndSorts, pbLimitAndSort)
-	}
-
-	pbSequencesMatrix, err := c.grpc.QueryMany(ctx, &pb.QueryManyRequest{KeysFilters: pbKeysFilters, LimitsAndSorts: pbLimitsAndSorts})
-	if err != nil {
-		return nil, net.WrapRPCErr(err)
-	}
-
-	return convertSequencesMatrixFromProto(pbSequencesMatrix.Sequences, sequenceDataTypes)
-}
-
 func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
-		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
 	}
 	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
+	return net.WrapRPCErr(err)
+}
+
+func (c *Client) UnBind(ctx context.Context, bindings []types.BoundContract) error {
+	pbBindings := make([]*pb.BoundContract, len(bindings))
+	for i, b := range bindings {
+		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
+	}
+	_, err := c.grpc.UnBind(ctx, &pb.UnBindRequest{Bindings: pbBindings})
 	return net.WrapRPCErr(err)
 }
 
@@ -186,8 +171,8 @@ type Server struct {
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	contractName := request.ContractName
-	params, err := getContractEncodedType(contractName, request.Method, c.impl, true)
+	encodedTypekey := getKeyFromBinding(request.Contract) + "-" + request.Method
+	params, err := getContractEncodedType(encodedTypekey, c.impl, true)
 	if err != nil {
 		return nil, err
 	}
@@ -196,11 +181,14 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	retVal, err := getContractEncodedType(contractName, request.Method, c.impl, false)
+	retVal, err := getContractEncodedType(encodedTypekey, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
-	err = c.impl.GetLatestValue(ctx, contractName, request.Method, params, retVal)
+	err = c.impl.GetLatestValue(ctx, types.BoundContract{
+		Address: request.Contract.Address,
+		Name:    request.Contract.Name,
+	}, request.Method, params, retVal)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +207,7 @@ func (c *Server) QueryOne(ctx context.Context, request *pb.QueryOneRequest) (*pb
 		return nil, err
 	}
 
-	sequenceDataType, err := getContractEncodedTypeByKey(request.KeyFilter.Key, c.impl, false)
+	sequenceDataType, err := getContractEncodedType(request.KeyFilter.Key, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +217,7 @@ func (c *Server) QueryOne(ctx context.Context, request *pb.QueryOneRequest) (*pb
 		return nil, err
 	}
 
-	sequences, err := c.impl.QueryOne(ctx, query.KeyFilter{Key: request.KeyFilter.Key, Filter: queryFilter}, limitAndSort, sequenceDataType)
+	sequences, err := c.impl.QueryOne(ctx, convertBoundContractFromProto(request.Contract), query.KeyFilter{Key: request.KeyFilter.Key, Filter: queryFilter}, limitAndSort, sequenceDataType)
 	if err != nil {
 		return nil, err
 	}
@@ -242,75 +230,32 @@ func (c *Server) QueryOne(ctx context.Context, request *pb.QueryOneRequest) (*pb
 	return &pb.QueryOneReply{Sequences: pbSequences}, nil
 }
 
-func (c *Server) QueryMany(ctx context.Context, request *pb.QueryManyRequest) (*pb.QueryManyReply, error) {
-	var keysFilters []query.KeyFilter
-	for _, pbKeyFilter := range request.KeysFilters {
-		queryFilter, err := convertQueryFiltersFromProto(pbKeyFilter.QueryFilter)
-		if err != nil {
-			return nil, err
-		}
-		keysFilters = append(keysFilters, query.KeyFilter{Key: pbKeyFilter.Key, Filter: queryFilter})
-	}
-
-	var limitsAndSorts []query.LimitAndSort
-	for _, pbLimitAndSort := range request.LimitsAndSorts {
-		limitAndSort, err := convertLimitAndSortFromProto(pbLimitAndSort)
-		if err != nil {
-			return nil, err
-		}
-		limitsAndSorts = append(limitsAndSorts, limitAndSort)
-	}
-
-	var sequenceDataTypes []any
-	for _, keyFilter := range request.KeysFilters {
-		sequenceDataType, err := getContractEncodedTypeByKey(keyFilter.Key, c.impl, false)
-		if err != nil {
-			return nil, err
-		}
-
-		sequenceDataTypes = append(sequenceDataTypes, sequenceDataType)
-	}
-
-	sequencesMatrix, err := c.impl.QueryMany(ctx, keysFilters, limitsAndSorts, sequenceDataTypes)
-	if err != nil {
-		return nil, err
-	}
-
-	var pbSequencesMatrix []*pb.Sequences
-	for i, sequences := range sequencesMatrix {
-		pbSequences, err := convertSequencesToProto(sequences, sequenceDataTypes[i])
-		if err != nil {
-			return nil, err
-		}
-		pbSequencesMatrix = append(pbSequencesMatrix, pbSequences)
-	}
-
-	return &pb.QueryManyReply{Sequences: pbSequencesMatrix}, nil
-}
-
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
 	tBindings := make([]types.BoundContract, len(bindings.Bindings))
 	for i, b := range bindings.Bindings {
-		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name}
 	}
 
 	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)
 }
 
-func getContractEncodedType(contractName, itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
-	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
-		return ctp.CreateContractType(contractName, itemType, forEncoding)
-	}
-
-	return &map[string]any{}, nil
+func getKeyFromBinding(binding *pb.BoundContract) string {
+	return binding.Name + "-" + binding.Address
 }
 
-func getContractEncodedTypeByKey(key string, possibleTypeProvider any, forEncoding bool) (any, error) {
+func getContractEncodedType(key string, possibleTypeProvider any, forEncoding bool) (any, error) {
 	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
 		return ctp.CreateContractTypeByKey(key, forEncoding)
 	}
 
 	return &map[string]any{}, nil
+}
+
+func convertBoundContractToProto(binding types.BoundContract) *pb.BoundContract {
+	return &pb.BoundContract{
+		Address: binding.Address,
+		Name:    binding.Name,
+	}
 }
 
 func convertQueryFilterToProto(queryFilter query.Filter) (*pb.QueryFilter, error) {
@@ -451,6 +396,13 @@ func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (
 		pbSequences = append(pbSequences, pbSequence)
 	}
 	return &pb.Sequences{Sequences: pbSequences}, nil
+}
+
+func convertBoundContractFromProto(binding *pb.BoundContract) types.BoundContract {
+	return types.BoundContract{
+		Address: binding.Address,
+		Name:    binding.Name,
+	}
 }
 
 func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryFilter) (query.Filter, error) {

@@ -10,31 +10,31 @@ import "google/protobuf/empty.proto";
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
   rpc QueryOne(QueryOneRequest) returns (QueryOneReply) {}
-  rpc QueryMany (QueryManyRequest) returns (QueryManyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
+  rpc UnBind(UnBindRequest) returns (google.protobuf.Empty) {}
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueRequest {
-  string contractName = 1;
+  BoundContract contract = 1;
   string method = 2;
   VersionedBytes params = 3;
 }
 
 // QueryOneRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
 message QueryOneRequest {
-  KeyFilter key_filter = 1;
-  LimitAndSort limit_and_sort = 2;
+  BoundContract contract = 1;
+  KeyFilter key_filter = 2;
+  LimitAndSort limit_and_sort = 3;
 }
 
-// QueryManyRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryMany].
-message QueryManyRequest {
-  repeated KeyFilter keys_filters = 1;
-  repeated LimitAndSort limits_and_sorts = 2;
-}
-
-// GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BindRequest].
+// BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind].
 message BindRequest {
+  repeated BoundContract bindings = 1;
+}
+
+// UnBindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.UnBind].
+message UnBindRequest {
   repeated BoundContract bindings = 1;
 }
 
@@ -46,11 +46,6 @@ message GetLatestValueReply {
 // QueryOneReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
 message QueryOneReply {
   Sequences sequences = 1;
-}
-
-// QueryManyReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryMany].
-message QueryManyReply {
- repeated Sequences sequences = 1;
 }
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].
@@ -75,7 +70,6 @@ message Sequences {
 message BoundContract {
   string address = 1;
   string name = 2;
-  bool pending = 3;
 }
 
 enum ComparisonOperator {

@@ -8,6 +8,7 @@ import (
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 )
 
 var (
@@ -36,9 +37,13 @@ func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string, params, returnVal any) error {
-	if !assert.ObjectsAreEqual(cn, c.contractName) {
-		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, cn)
+func (c staticChainReader) UnBind(_ context.Context, _ []types.BoundContract) error {
+	return nil
+}
+
+func (c staticChainReader) GetLatestValue(_ context.Context, contract types.BoundContract, method string, params, returnVal any) error {
+	if !assert.ObjectsAreEqual(contract.Name, c.contractName) {
+		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, contract.Name)
 	}
 	if method != c.contractMethod {
 		return fmt.Errorf("%w: expected generic contract method %v but got %v", types.ErrInvalidType, c.contractMethod, method)
@@ -63,9 +68,13 @@ func (c staticChainReader) GetLatestValue(ctx context.Context, cn, method string
 	return nil
 }
 
+func (c staticChainReader) QueryOne(ctx context.Context, binding types.BoundContract, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+	return nil, nil
+}
+
 func (c staticChainReader) Evaluate(ctx context.Context, cr types.ChainReader) error {
 	gotLatestValue := make(map[string]any)
-	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, &c.params, &gotLatestValue)
+	err := cr.GetLatestValue(ctx, types.BoundContract{Name: c.contractName}, c.contractMethod, &c.params, &gotLatestValue)
 	if err != nil {
 		return fmt.Errorf("failed to call GetLatestValue(): %w", err)
 	}

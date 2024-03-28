@@ -9,14 +9,33 @@ import "google/protobuf/empty.proto";
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc QueryOne(QueryOneRequest) returns (QueryOneReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
+  rpc UnBind(UnBindRequest) returns (google.protobuf.Empty) {}
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueRequest {
-  string contractName = 1;
+  BoundContract contract = 1;
   string method = 2;
   VersionedBytes params = 3;
+}
+
+// QueryOneRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
+message QueryOneRequest {
+  BoundContract contract = 1;
+  KeyFilter key_filter = 2;
+  LimitAndSort limit_and_sort = 3;
+}
+
+// BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind].
+message BindRequest {
+  repeated BoundContract bindings = 1;
+}
+
+// UnBindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.UnBind].
+message UnBindRequest {
+  repeated BoundContract bindings = 1;
 }
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
@@ -24,13 +43,165 @@ message GetLatestValueReply {
   VersionedBytes retVal = 1;
 }
 
-message BindRequest {
-  repeated BoundContract bindings = 1;
+// QueryOneReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
+message QueryOneReply {
+  Sequences sequences = 1;
+}
+
+// Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].
+message Head {
+  string identifier = 1;
+  bytes hash = 2;
+  uint64 timestamp = 3;
+}
+
+// Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Sequence].
+message Sequence {
+  string sequence_cursor = 1;
+  Head head = 2;
+  VersionedBytes data = 3;
+}
+
+message Sequences {
+  repeated Sequence sequences = 1;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].
 message BoundContract {
   string address = 1;
   string name = 2;
-  bool pending = 3;
+}
+
+enum ComparisonOperator {
+  Eq = 0;
+  Neq = 1;
+  Gt = 2;
+  Lt = 3;
+  Gte = 4;
+  Lte = 5;
+}
+
+// QueryFilter represents a lightweight orm like DSL defined for filtering over common blockchain primitives.
+message QueryFilter {
+  repeated Expression expression = 1;
+}
+
+message KeyFilter {
+  string key = 1;
+  QueryFilter query_filter = 2;
+}
+
+// Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
+// This allows for both simple and more complex nested expressions.
+message Expression {
+  oneof evaluator {
+    Primitive primitive = 1;
+    BooleanExpression boolean_expression = 2;
+  }
+}
+
+enum BooleanOperator {
+  AND = 0;
+  OR = 1;
+}
+
+message BooleanExpression {
+  BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
+}
+
+message And {
+  repeated Expression expr = 1;
+}
+
+message Or {
+  repeated Expression expr = 1;
+}
+
+message ValueComparer  {
+  string  value = 1;
+  ComparisonOperator operator = 2;
+}
+
+message Comparer  {
+  string name = 1;
+  repeated ValueComparer value_comparers = 2;
+}
+
+message Block{
+  uint64 block_number = 1;
+  ComparisonOperator operator = 2;
+}
+
+enum ConfirmationLevel {
+  Finalized   = 0;
+  Unconfirmed = 1;
+}
+
+message Confirmations {
+  ConfirmationLevel confirmations = 1;
+}
+
+message Timestamp{
+  uint64 timestamp = 1;
+  ComparisonOperator operator = 2;
+}
+
+message TxHash{
+  string tx_hash = 1;
+}
+
+// Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
+message Primitive {
+  oneof primitive {
+    Comparer comparer = 1;
+    Block block = 2;
+    Confirmations confirmations = 3;
+    Timestamp timestamp = 4;
+    TxHash tx_hash = 5;
+  }
+}
+
+// CursorDirection defines the direction for cursor-based data fetching.
+enum CursorDirection {
+  Preceding = 0;
+  Following = 1;
+}
+
+// Limit defines a structure for limiting the results of a query, including optional cursor-based pagination.
+message Limit {
+  optional string cursor = 1;
+  optional CursorDirection direction = 2;
+  uint64 count = 3;
+}
+
+enum SortDirection {
+  Asc = 0;
+  Desc = 1;
+}
+
+message SortByTimestamp {
+  SortDirection sort_direction = 1;
+}
+
+message SortByBlock {
+  SortDirection sort_direction = 1;
+}
+
+message SortBySequence {
+  SortDirection sort_direction = 1;
+}
+
+message SortBy {
+  oneof sort_by {
+    SortByTimestamp sort_by_timestamp = 1;
+    SortByBlock sort_by_block = 2;
+    SortBySequence sort_by_sequence = 3;
+  }
+}
+
+// LimitAndSort combines sorting criteria with pagination limits.
+message LimitAndSort {
+  repeated SortBy sortBy = 1; // A list of sorting criteria.
+  Limit limit = 2; // Pagination limit and direction.
 }

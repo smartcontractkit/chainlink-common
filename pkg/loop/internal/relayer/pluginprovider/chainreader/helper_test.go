@@ -2,6 +2,8 @@ package chainreader_test
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
@@ -54,6 +56,49 @@ func (f fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error
 
 func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
 	switch itemType {
+	case NilType:
+		return &struct{}{}, nil
+	case TestItemType:
+		return &TestStruct{}, nil
+	case TestItemSliceType:
+		return &[]TestStruct{}, nil
+	case TestItemArray2Type:
+		return &[2]TestStruct{}, nil
+	case TestItemArray1Type:
+		return &[1]TestStruct{}, nil
+	case MethodTakingLatestParamsReturningTestStruct:
+		if isEncode {
+			return &LatestParams{}, nil
+		}
+		return &TestStruct{}, nil
+	case MethodReturningUint64, DifferentMethodReturningUint64:
+		tmp := uint64(0)
+		return &tmp, nil
+	case MethodReturningUint64Slice:
+		var tmp []uint64
+		return &tmp, nil
+	case MethodReturningSeenStruct, TestItemWithConfigExtra:
+		if isEncode {
+			return &TestStruct{}, nil
+		}
+		return &TestStructWithExtraField{}, nil
+	case EventName, EventWithFilterName:
+		if isEncode {
+			return &FilterEventParams{}, nil
+		}
+		return &TestStruct{}, nil
+	}
+
+	return nil, types.ErrInvalidType
+}
+
+func (fakeTypeProvider) CreateContractTypeByKey(key string, isEncode bool) (any, error) {
+	tokens := strings.Split(key, "-")
+	if len(tokens) < 3 {
+		return nil, fmt.Errorf("key should be in form of address-contractName-type, got %s instead", key)
+	}
+
+	switch tokens[2] {
 	case NilType:
 		return &struct{}{}, nil
 	case TestItemType:

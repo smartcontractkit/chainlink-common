@@ -21,7 +21,9 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
+	ChainReader_QueryOne_FullMethodName       = "/loop.ChainReader/QueryOne"
 	ChainReader_Bind_FullMethodName           = "/loop.ChainReader/Bind"
+	ChainReader_UnBind_FullMethodName         = "/loop.ChainReader/UnBind"
 )
 
 // ChainReaderClient is the client API for ChainReader service.
@@ -29,7 +31,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
+	QueryOne(ctx context.Context, in *QueryOneRequest, opts ...grpc.CallOption) (*QueryOneReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnBind(ctx context.Context, in *UnBindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type chainReaderClient struct {
@@ -49,9 +53,27 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestVal
 	return out, nil
 }
 
+func (c *chainReaderClient) QueryOne(ctx context.Context, in *QueryOneRequest, opts ...grpc.CallOption) (*QueryOneReply, error) {
+	out := new(QueryOneReply)
+	err := c.cc.Invoke(ctx, ChainReader_QueryOne_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, ChainReader_Bind_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chainReaderClient) UnBind(ctx context.Context, in *UnBindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ChainReader_UnBind_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +85,9 @@ func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...g
 // for forward compatibility
 type ChainReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
+	QueryOne(context.Context, *QueryOneRequest) (*QueryOneReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
+	UnBind(context.Context, *UnBindRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChainReaderServer()
 }
 
@@ -74,8 +98,14 @@ type UnimplementedChainReaderServer struct {
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
 }
+func (UnimplementedChainReaderServer) QueryOne(context.Context, *QueryOneRequest) (*QueryOneReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryOne not implemented")
+}
 func (UnimplementedChainReaderServer) Bind(context.Context, *BindRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bind not implemented")
+}
+func (UnimplementedChainReaderServer) UnBind(context.Context, *UnBindRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnBind not implemented")
 }
 func (UnimplementedChainReaderServer) mustEmbedUnimplementedChainReaderServer() {}
 
@@ -108,6 +138,24 @@ func _ChainReader_GetLatestValue_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChainReader_QueryOne_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryOneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainReaderServer).QueryOne(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainReader_QueryOne_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainReaderServer).QueryOne(ctx, req.(*QueryOneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ChainReader_Bind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BindRequest)
 	if err := dec(in); err != nil {
@@ -126,6 +174,24 @@ func _ChainReader_Bind_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChainReader_UnBind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnBindRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainReaderServer).UnBind(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainReader_UnBind_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainReaderServer).UnBind(ctx, req.(*UnBindRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChainReader_ServiceDesc is the grpc.ServiceDesc for ChainReader service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -138,8 +204,16 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ChainReader_GetLatestValue_Handler,
 		},
 		{
+			MethodName: "QueryOne",
+			Handler:    _ChainReader_QueryOne_Handler,
+		},
+		{
 			MethodName: "Bind",
 			Handler:    _ChainReader_Bind_Handler,
+		},
+		{
+			MethodName: "UnBind",
+			Handler:    _ChainReader_UnBind_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

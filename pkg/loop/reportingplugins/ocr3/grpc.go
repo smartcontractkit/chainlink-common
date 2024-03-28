@@ -42,11 +42,15 @@ type serverAdapter struct {
 		types.CapabilitiesRegistry,
 	) (types.OCR3ReportingPluginFactory, error)
 
-	ValidateConfigFn func(ctx context.Context) (types.ValidationService, error)
+	ValidateConfigService
+}
+
+type ValidateConfigService interface {
+	NewValidationService(ctx context.Context) (types.ValidationService, error)
 }
 
 func (s serverAdapter) NewValidationService(ctx context.Context) (types.ValidationService, error) {
-	return s.ValidateConfigFn(ctx)
+	return s.ValidateConfigService.NewValidationService(ctx)
 }
 
 func (s serverAdapter) NewReportingPluginFactory(
@@ -76,12 +80,9 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el, capRegistry)
 	}
 
-	validateConfigFn := func(ctx context.Context) (types.ValidationService, error) {
-		return g.PluginServer.NewValidationService(ctx)
-	}
 	return ocr3.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter{
 		NewReportingPluginFactoryFn: newReportingPluginFactoryFn,
-		ValidateConfigFn:            validateConfigFn,
+		ValidateConfigService:       g.PluginServer,
 	})
 }
 

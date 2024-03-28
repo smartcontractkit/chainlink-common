@@ -61,7 +61,7 @@ Product specific development is the most nuanced kind of development. There are 
 
 1. Use the Core Node API, without a custom provider.
 
-    This is vision, but will not be viable until chain reading and writing abstractions are implemented.
+    This is our vision, but will not be viable until chain reading and writing abstractions are implemented.
 
 2. Use the Core Node API with a custom `Provider`.
 

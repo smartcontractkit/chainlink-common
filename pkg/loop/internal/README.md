@@ -44,7 +44,7 @@ The flow to add a new service is
 - create a pkg in `chainlink-common/pkg/loop/internal/core/services` and implement the gRPC server and client
 - create a `test` package (`chainlink-common/pkg/loop/internal/core/services/mynewservice/test`) that provides a static implementation of your interface. see existing code for examples of the pattern, and documentation in `pkg/loop/internal/test`
 
-Modifications follow a very similar pattern: update the interface (in needed), update the proto to reflect any interface changes, implement and test the changes. See Protobuf best practices[[Protobuf best practices]]
+Modifications follow a very similar pattern: update the interface (if needed), update the proto to reflect any interface changes, implement and test the changes. See Protobuf best practices[[Protobuf best practices]]
 for details ensuring backward compatibility of protobufs.
 
 ### Relayer abstraction Development

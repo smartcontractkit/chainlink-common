@@ -43,14 +43,26 @@ type GRPCService[T types.PluginProvider] struct {
 	pluginClient *ocr2.ReportingPluginServiceClient
 }
 
-type serverAdapter func(
-	context.Context,
-	types.ReportingPluginServiceConfig,
-	grpc.ClientConnInterface,
-	types.PipelineRunnerService,
-	types.TelemetryService,
-	types.ErrorLog,
-) (types.ReportingPluginFactory, error)
+type serverAdapter struct {
+	NewReportingPluginFactoryFn func(
+		ctx context.Context,
+		config types.ReportingPluginServiceConfig,
+		conn grpc.ClientConnInterface,
+		pr types.PipelineRunnerService,
+		ts types.TelemetryService,
+		errorLog types.ErrorLog,
+	) (types.ReportingPluginFactory, error)
+
+	ValidateConfigService
+}
+
+type ValidateConfigService interface {
+	NewValidationService(ctx context.Context) (types.ValidationService, error)
+}
+
+func (s serverAdapter) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	return s.ValidateConfigService.NewValidationService(ctx)
+}
 
 func (s serverAdapter) NewReportingPluginFactory(
 	ctx context.Context,
@@ -60,11 +72,11 @@ func (s serverAdapter) NewReportingPluginFactory(
 	ts types.TelemetryService,
 	errorLog types.ErrorLog,
 ) (types.ReportingPluginFactory, error) {
-	return s(ctx, config, conn, pr, ts, errorLog)
+	return s.NewReportingPluginFactoryFn(ctx, config, conn, pr, ts, errorLog)
 }
 
 func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
-	adapter := func(
+	newReportingPluginFactoryFn := func(
 		ctx context.Context,
 		cfg types.ReportingPluginServiceConfig,
 		conn grpc.ClientConnInterface,
@@ -76,7 +88,11 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 		tc := telemetry.NewTelemetryClient(ts)
 		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el)
 	}
-	return ocr2.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter(adapter))
+
+	return ocr2.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter{
+		NewReportingPluginFactoryFn: newReportingPluginFactoryFn,
+		ValidateConfigService:       g.PluginServer,
+	})
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginClient], updated with the new broker and conn.

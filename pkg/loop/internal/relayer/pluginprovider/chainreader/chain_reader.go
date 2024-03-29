@@ -171,7 +171,7 @@ type Server struct {
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	encodedTypekey := getKeyFromBinding(request.Contract) + "-" + request.Method
+	encodedTypekey := request.Contract.Name + "." + request.Method
 	params, err := getContractEncodedType(encodedTypekey, c.impl, true)
 	if err != nil {
 		return nil, err
@@ -239,10 +239,6 @@ func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.E
 	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)
 }
 
-func getKeyFromBinding(binding *pb.BoundContract) string {
-	return binding.Name + "-" + binding.Address
-}
-
 func getContractEncodedType(key string, possibleTypeProvider any, forEncoding bool) (any, error) {
 	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
 		return ctp.CreateContractTypeByKey(key, forEncoding)
@@ -255,6 +251,7 @@ func convertBoundContractToProto(binding types.BoundContract) *pb.BoundContract 
 	return &pb.BoundContract{
 		Address: binding.Address,
 		Name:    binding.Name,
+		Pending: binding.Pending,
 	}
 }
 
@@ -402,6 +399,7 @@ func convertBoundContractFromProto(binding *pb.BoundContract) types.BoundContrac
 	return types.BoundContract{
 		Address: binding.Address,
 		Name:    binding.Name,
+		Pending: binding.Pending,
 	}
 }
 

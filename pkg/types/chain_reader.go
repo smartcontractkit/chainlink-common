@@ -67,6 +67,7 @@ type Sequence struct {
 type BoundContract struct {
 	Address string
 	Name    string
+	Pending bool
 }
 
 func (bc BoundContract) Key() string {

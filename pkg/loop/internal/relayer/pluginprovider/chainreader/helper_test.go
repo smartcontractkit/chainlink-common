@@ -93,12 +93,12 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 }
 
 func (fakeTypeProvider) CreateContractTypeByKey(key string, isEncode bool) (any, error) {
-	tokens := strings.Split(key, "-")
-	if len(tokens) < 3 {
-		return nil, fmt.Errorf("key should be in form of address-contractName-type, got %s instead", key)
+	tokens := strings.Split(key, ".")
+	if len(tokens) < 2 {
+		return nil, fmt.Errorf("key should be in form of contractName.type, got %s instead", key)
 	}
 
-	switch tokens[2] {
+	switch tokens[1] {
 	case NilType:
 		return &struct{}{}, nil
 	case TestItemType:

@@ -70,6 +70,7 @@ message Sequences {
 message BoundContract {
   string address = 1;
   string name = 2;
+  bool pending = 3;
 }
 
 enum ComparisonOperator {

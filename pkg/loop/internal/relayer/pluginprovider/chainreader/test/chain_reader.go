@@ -68,7 +68,7 @@ func (c staticChainReader) GetLatestValue(_ context.Context, contract types.Boun
 	return nil
 }
 
-func (c staticChainReader) QueryOne(ctx context.Context, binding types.BoundContract, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+func (c staticChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 

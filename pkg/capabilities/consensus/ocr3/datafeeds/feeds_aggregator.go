@@ -90,7 +90,8 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 
 	reportsNeedingUpdate := []any{} // [][]byte
 	for feedID, previousReportInfo := range currentState.FeedInfo {
-		feedID, err := mercury.FromFeedIDString(feedID)
+		feedID := mercury.FeedID(feedID)
+		err := feedID.Validate()
 		if err != nil {
 			a.lggr.Errorf("could not convert %s to feedID", feedID)
 			continue
@@ -156,7 +157,8 @@ func ParseConfig(config values.Map) (aggregatorConfig, error) {
 		Feeds: make(map[mercury.FeedID]feedConfig),
 	}
 	for feedIDStr, feedCfg := range config.Underlying {
-		feedID, err := mercury.FromFeedIDString(feedIDStr)
+		feedID := mercury.FeedID(feedIDStr)
+		err := feedID.Validate()
 		if err != nil {
 			return aggregatorConfig{}, err
 		}

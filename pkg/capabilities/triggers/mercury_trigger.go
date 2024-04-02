@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -42,7 +43,14 @@ func NewMercuryTriggerService() *MercuryTriggerService {
 	}
 }
 
-func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) error {
+type FeedReport struct {
+	FeedID               [32]byte `json:"feedId"`
+	FullReport           []byte   `json:"fullReport"`
+	BenchmarkPrice       int64    `json:"benchmarkPrice"`
+	ObservationTimestamp int64    `json:"observationTimestamp"`
+}
+
+func (o *MercuryTriggerService) ProcessReport(reports []FeedReport) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -51,7 +59,7 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 	triggerIDsToReports := make(map[string][]int)
 
 	for reportIndex, report := range reports {
-		for triggerID := range o.triggerIDsForFeedID[report.FeedID] {
+		for triggerID := range o.triggerIDsForFeedID[mercury.FeedIDFromBytes(report.FeedID)] {
 			// if its not initialized, initialize it
 			if _, ok := triggerIDsToReports[triggerID]; !ok {
 				triggerIDsToReports[triggerID] = make([]int, 0)
@@ -63,16 +71,26 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 	// Then for each trigger id, find which reports correspond to that trigger and create an event bundling the reports
 	// and send it to the channel associated with the trigger id.
 	for triggerID, reportIDs := range triggerIDsToReports {
-		reportPayload := make([]mercury.FeedReport, 0)
+		reportList := make([]mercury.FeedReport, 0)
+		reportMap := make(map[string]any)
 		for _, reportID := range reportIDs {
-			reportPayload = append(reportPayload, reports[reportID])
+			rep := reports[reportID]
+			feedID := mercury.FeedIDFromBytes(rep.FeedID)
+			mercRep := mercury.FeedReport{
+				FeedID:               feedID.String(),
+				FullReport:           rep.FullReport,
+				BenchmarkPrice:       rep.BenchmarkPrice,
+				ObservationTimestamp: rep.ObservationTimestamp,
+			}
+			reportList = append(reportList, mercRep)
+			reportMap[feedID.String()] = reports[reportID]
 		}
 
-		triggerEvent := mercury.TriggerEvent{
-			TriggerType: "mercury",
-			ID:          GenerateTriggerEventID(reportPayload),
-			Timestamp:   strconv.FormatInt(unixTimestampMillis, 10),
-			Payload:     reportPayload,
+		triggerEvent := capabilities.TriggerEvent{
+			TriggerType:    "mercury",
+			ID:             GenerateTriggerEventID(reportList),
+			Timestamp:      strconv.FormatInt(unixTimestampMillis, 10),
+			BatchedPayload: reportMap,
 		}
 
 		val, err := mercury.Codec{}.WrapMercuryTriggerEvent(triggerEvent)
@@ -110,9 +128,13 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 		return fmt.Errorf("triggerId %s already registered", triggerID)
 	}
 
-	feedIDs, err := o.GetFeedIDs(req) // TODO: what if feedIds is empty? should we throw an error or allow it?
+	feedIDs, err := o.GetFeedIDs(req)
 	if err != nil {
 		return err
+	}
+
+	if len(feedIDs) == 0 {
+		return errors.New("no feedIDs to register")
 	}
 
 	o.chans[triggerID] = callback
@@ -167,11 +189,11 @@ func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) (
 			// Copy to feedIds
 			for _, feed := range feeds {
 				if id, ok := feed.(string); ok {
-					fid, err := mercury.FromFeedIDString(id)
-					if err != nil {
+					mfid := mercury.FeedID(id)
+					if err := mfid.Validate(); err != nil {
 						return nil, err
 					}
-					feedIDs = append(feedIDs, fid)
+					feedIDs = append(feedIDs, mfid)
 				}
 			}
 		}
@@ -201,11 +223,11 @@ func GenerateTriggerEventID(reports []mercury.FeedReport) string {
 		if reports[i].FeedID == reports[j].FeedID {
 			return reports[i].ObservationTimestamp < reports[j].ObservationTimestamp
 		}
-		return reports[i].FeedID.String() < reports[j].FeedID.String()
+		return reports[i].FeedID < reports[j].FeedID
 	})
 	s := ""
 	for _, report := range reports {
-		s += report.FeedID.String() + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
+		s += report.FeedID + strconv.FormatInt(report.ObservationTimestamp, 10) + ","
 	}
 	return sha256Hash(s)
 }
@@ -216,27 +238,28 @@ func ValidateInput(mercuryTriggerEvent values.Value) error {
 }
 
 func ExampleOutput() (values.Value, error) {
-	feedOne := mercury.Must(mercury.FromFeedIDString("0x111111111111111111110000000000000000000000000000000000000000"))
-	feedTwo := mercury.Must(mercury.FromFeedIDString("0x222222222222222222220000000000000000000000000000000000000000"))
+	feedOne := "0x111111111111111111110000000000000000000000000000000000000000"
+	feedTwo := "0x222222222222222222220000000000000000000000000000000000000000"
 
-	event := mercury.TriggerEvent{
-		TriggerType: "mercury",
-		ID:          "123",
-		Timestamp:   "2024-01-17T04:00:10Z",
-		Payload: []mercury.FeedReport{
-			{
-				FeedID:               feedOne,
-				FullReport:           []byte("hello"),
-				BenchmarkPrice:       100,
-				ObservationTimestamp: 123,
-			},
-			{
-				FeedID:               feedTwo,
-				FullReport:           []byte("world"),
-				BenchmarkPrice:       100,
-				ObservationTimestamp: 123,
-			},
+	feeds := map[string]any{
+		feedOne: mercury.FeedReport{
+			FeedID:               feedOne,
+			FullReport:           []byte("hello"),
+			BenchmarkPrice:       100,
+			ObservationTimestamp: 123,
 		},
+		feedTwo: mercury.FeedReport{
+			FeedID:               feedTwo,
+			FullReport:           []byte("world"),
+			BenchmarkPrice:       100,
+			ObservationTimestamp: 123,
+		},
+	}
+	event := capabilities.TriggerEvent{
+		TriggerType:    "mercury",
+		ID:             "123",
+		Timestamp:      "2024-01-17T04:00:10Z",
+		BatchedPayload: feeds,
 	}
 	return mercury.Codec{}.WrapMercuryTriggerEvent(event)
 }

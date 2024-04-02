@@ -10,18 +10,18 @@ import (
 	mercury_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 )
 
-var _ mercury_types.OnchainConfigCodec = (*OnchainConfigCodecClient)(nil)
+var _ mercury_types.OnchainConfigCodec = (*onchainConfigCodecClient)(nil)
 
-type OnchainConfigCodecClient struct {
+type onchainConfigCodecClient struct {
 	grpc mercury_pb.OnchainConfigCodecClient
 }
 
-func NewOnchainConfigCodecClient(cc grpc.ClientConnInterface) *OnchainConfigCodecClient {
-	return &OnchainConfigCodecClient{grpc: mercury_pb.NewOnchainConfigCodecClient(cc)}
+func newOnchainConfigCodecClient(cc grpc.ClientConnInterface) *onchainConfigCodecClient {
+	return &onchainConfigCodecClient{grpc: mercury_pb.NewOnchainConfigCodecClient(cc)}
 }
 
-func (o *OnchainConfigCodecClient) Encode(ctx context.Context, config mercury_types.OnchainConfig) ([]byte, error) {
-	reply, err := o.grpc.Encode(ctx, &mercury_pb.EncodeOnchainConfigRequest{
+func (o *onchainConfigCodecClient) Encode(config mercury_types.OnchainConfig) ([]byte, error) {
+	reply, err := o.grpc.Encode(context.TODO(), &mercury_pb.EncodeOnchainConfigRequest{
 		OnchainConfig: pbOnchainConfig(config),
 	})
 	if err != nil {
@@ -30,8 +30,8 @@ func (o *OnchainConfigCodecClient) Encode(ctx context.Context, config mercury_ty
 	return reply.OnchainConfig, nil
 }
 
-func (o *OnchainConfigCodecClient) Decode(ctx context.Context, data []byte) (mercury_types.OnchainConfig, error) {
-	reply, err := o.grpc.Decode(ctx, &mercury_pb.DecodeOnchainConfigRequest{
+func (o *onchainConfigCodecClient) Decode(data []byte) (mercury_types.OnchainConfig, error) {
+	reply, err := o.grpc.Decode(context.TODO(), &mercury_pb.DecodeOnchainConfigRequest{
 		OnchainConfig: data,
 	})
 	if err != nil {
@@ -54,28 +54,28 @@ func onchainConfig(config *mercury_pb.OnchainConfig) mercury_types.OnchainConfig
 	}
 }
 
-var _ mercury_pb.OnchainConfigCodecServer = (*OnchainConfigCodecServer)(nil)
+var _ mercury_pb.OnchainConfigCodecServer = (*onchainConfigCodecServer)(nil)
 
-type OnchainConfigCodecServer struct {
+type onchainConfigCodecServer struct {
 	mercury_pb.UnimplementedOnchainConfigCodecServer
 
 	impl mercury_types.OnchainConfigCodec
 }
 
-func NewOnchainConfigCodecServer(impl mercury_types.OnchainConfigCodec) *OnchainConfigCodecServer {
-	return &OnchainConfigCodecServer{impl: impl}
+func newOnchainConfigCodecServer(impl mercury_types.OnchainConfigCodec) *onchainConfigCodecServer {
+	return &onchainConfigCodecServer{impl: impl}
 }
 
-func (o *OnchainConfigCodecServer) Encode(ctx context.Context, request *mercury_pb.EncodeOnchainConfigRequest) (*mercury_pb.EncodeOnchainConfigReply, error) {
-	val, err := o.impl.Encode(ctx, onchainConfig(request.OnchainConfig))
+func (o *onchainConfigCodecServer) Encode(ctx context.Context, request *mercury_pb.EncodeOnchainConfigRequest) (*mercury_pb.EncodeOnchainConfigReply, error) {
+	val, err := o.impl.Encode(onchainConfig(request.OnchainConfig))
 	if err != nil {
 		return nil, err
 	}
 	return &mercury_pb.EncodeOnchainConfigReply{OnchainConfig: val}, nil
 }
 
-func (o *OnchainConfigCodecServer) Decode(ctx context.Context, request *mercury_pb.DecodeOnchainConfigRequest) (*mercury_pb.DecodeOnchainConfigReply, error) {
-	val, err := o.impl.Decode(ctx, request.OnchainConfig)
+func (o *onchainConfigCodecServer) Decode(ctx context.Context, request *mercury_pb.DecodeOnchainConfigRequest) (*mercury_pb.DecodeOnchainConfigReply, error) {
+	val, err := o.impl.Decode(request.OnchainConfig)
 	if err != nil {
 		return nil, err
 	}

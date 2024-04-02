@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	feedIDA            = mercury.Must(mercury.FromFeedIDString("0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292"))
+	feedIDA            = mercury.FeedID("0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292")
 	deviationA         = decimal.NewFromFloat(0.1)
 	heartbeatA         = 60
 	mercuryFullReportA = []byte("report")
@@ -103,7 +103,7 @@ func TestDataFeedsAggregator_ParseConfig(t *testing.T) {
 	})
 
 	t.Run("parsed workflow config", func(t *testing.T) {
-		fdID := mercury.Must(mercury.FromFeedIDString("0x1111111111111111111100000000000000000000000000000000000000000000"))
+		fdID := mercury.FeedID("0x1111111111111111111100000000000000000000000000000000000000000000")
 		cfg, err := values.NewMap(map[string]any{
 			fdID.String(): map[string]any{
 				"deviation": "0.1",

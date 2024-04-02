@@ -8,11 +8,16 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
+	keyvaluestoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue/test"
+	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
+	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr2/test"
+	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	testcore "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core"
-	testapi "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/core/api"
-	testreportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/ocr2/reporting_plugin"
+
+	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -39,7 +44,7 @@ func TestLOOPPService(t *testing.T) {
 		Plugin string
 	}{
 		// A generic plugin with a median provider
-		{Plugin: testapi.MedianID},
+		{Plugin: ocr2test.MedianID},
 		// A generic plugin with a plugin provider
 		{Plugin: reportingplugins.PluginServiceName},
 	}
@@ -48,15 +53,16 @@ func TestLOOPPService(t *testing.T) {
 			return NewHelperProcessCommand(ts.Plugin)
 		},
 			types.ReportingPluginServiceConfig{},
-			testcore.MockConn{},
-			testcore.PipelineRunner,
-			testcore.Telemetry,
-			&testcore.ErrorLog)
+			nettest.MockConn{},
+			pipelinetest.PipelineRunner,
+			telemetrytest.Telemetry,
+			errorlogtest.ErrorLog,
+			keyvaluestoretest.KeyValueStore{})
 		hook := looppSvc.XXXTestHook()
 		servicetest.Run(t, looppSvc)
 
 		t.Run("control", func(t *testing.T) {
-			testreportingplugin.RunFactory(t, looppSvc)
+			reportingplugintest.RunFactory(t, looppSvc)
 		})
 
 		t.Run("Kill", func(t *testing.T) {
@@ -65,7 +71,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-			testreportingplugin.RunFactory(t, looppSvc)
+			reportingplugintest.RunFactory(t, looppSvc)
 		})
 
 		t.Run("Reset", func(t *testing.T) {
@@ -74,7 +80,7 @@ func TestLOOPPService(t *testing.T) {
 			// wait for relaunch
 			time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-			testreportingplugin.RunFactory(t, looppSvc)
+			reportingplugintest.RunFactory(t, looppSvc)
 		})
 	}
 }
@@ -84,17 +90,18 @@ func TestLOOPPService_recovery(t *testing.T) {
 	var limit atomic.Int32
 	looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
-			Command: testapi.MedianID,
+			Command: ocr2test.MedianID,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
 	},
 		types.ReportingPluginServiceConfig{},
-		testcore.MockConn{},
-		testcore.PipelineRunner,
-		testcore.Telemetry,
-		&testcore.ErrorLog)
+		nettest.MockConn{},
+		pipelinetest.PipelineRunner,
+		telemetrytest.Telemetry,
+		errorlogtest.ErrorLog,
+		keyvaluestoretest.KeyValueStore{})
 	servicetest.Run(t, looppSvc)
 
-	testreportingplugin.RunFactory(t, looppSvc)
+	reportingplugintest.RunFactory(t, looppSvc)
 }

@@ -30,8 +30,8 @@ type reportCodecV3Server struct {
 
 var _ mercury_pb.ReportCodecV3Server = (*reportCodecV3Server)(nil)
 
-// NewReportCodecV3Server returns a new instance of [mercury_pb.ReportCodecV3Server] which wraps [mercury_v3_internal.ReportCodecServer]
-func NewReportCodecV3Server(s *grpc.Server, rc mercury_v3_types.ReportCodec) mercury_pb.ReportCodecV3Server {
+// newReportCodecV3Server returns a new instance of [mercury_pb.ReportCodecV3Server] which wraps [mercury_v3_internal.ReportCodecServer]
+func newReportCodecV3Server(s *grpc.Server, rc mercury_v3_types.ReportCodec) mercury_pb.ReportCodecV3Server {
 	internalServer := mercury_v3_internal.NewReportCodecServer(rc)
 	mercury_v3_pb.RegisterReportCodecServer(s, internalServer)
 	return &reportCodecV3Server{impl: internalServer}
@@ -57,20 +57,20 @@ type reportCodecV3Client struct {
 
 var _ mercury_v3_types.ReportCodec = (*reportCodecV3Client)(nil)
 
-func NewReportCodecV3Client(impl *mercury_v3_internal.ReportCodecClient) mercury_v3_types.ReportCodec {
+func newReportCodecV3Client(impl *mercury_v3_internal.ReportCodecClient) mercury_v3_types.ReportCodec {
 	return &reportCodecV3Client{impl: impl}
 }
 
-func (r *reportCodecV3Client) BuildReport(ctx context.Context, fields mercury_v3_types.ReportFields) (ocr2plus_types.Report, error) {
-	return r.impl.BuildReport(ctx, fields)
+func (r *reportCodecV3Client) BuildReport(fields mercury_v3_types.ReportFields) (ocr2plus_types.Report, error) {
+	return r.impl.BuildReport(fields)
 }
 
-func (r *reportCodecV3Client) MaxReportLength(ctx context.Context, n int) (int, error) {
-	return r.impl.MaxReportLength(ctx, n)
+func (r *reportCodecV3Client) MaxReportLength(n int) (int, error) {
+	return r.impl.MaxReportLength(n)
 }
 
-func (r *reportCodecV3Client) ObservationTimestampFromReport(ctx context.Context, report ocr2plus_types.Report) (uint32, error) {
-	return r.impl.ObservationTimestampFromReport(ctx, report)
+func (r *reportCodecV3Client) ObservationTimestampFromReport(report ocr2plus_types.Report) (uint32, error) {
+	return r.impl.ObservationTimestampFromReport(report)
 }
 
 // reportCodecV2Server implements mercury_pb.ReportCodecV2Server by wrapping [mercury_v2_internal.ReportCodecServer]
@@ -82,8 +82,8 @@ type reportCodecV2Server struct {
 
 var _ mercury_pb.ReportCodecV2Server = (*reportCodecV2Server)(nil)
 
-// NewReportCodecV2Server returns a new instance of [mercury_pb.ReportCodecV2Server] which wraps [mercury_v2_internal.ReportCodecServer]
-func NewReportCodecV2Server(s *grpc.Server, rc mercury_v2_types.ReportCodec) mercury_pb.ReportCodecV2Server {
+// newReportCodecV2Server returns a new instance of [mercury_pb.ReportCodecV2Server] which wraps [mercury_v2_internal.ReportCodecServer]
+func newReportCodecV2Server(s *grpc.Server, rc mercury_v2_types.ReportCodec) mercury_pb.ReportCodecV2Server {
 	internalServer := mercury_v2_internal.NewReportCodecServer(rc)
 	mercury_v2_pb.RegisterReportCodecServer(s, internalServer)
 	return &reportCodecV2Server{impl: internalServer}
@@ -107,20 +107,20 @@ type reportCodecV2Client struct {
 
 var _ mercury_v2_types.ReportCodec = (*reportCodecV2Client)(nil)
 
-func NewReportCodecV2Client(impl *mercury_v2_internal.ReportCodecClient) mercury_v2_types.ReportCodec {
+func newReportCodecV2Client(impl *mercury_v2_internal.ReportCodecClient) mercury_v2_types.ReportCodec {
 	return &reportCodecV2Client{impl: impl}
 }
 
-func (r *reportCodecV2Client) BuildReport(ctx context.Context, fields mercury_v2_types.ReportFields) (ocr2plus_types.Report, error) {
-	return r.impl.BuildReport(ctx, fields)
+func (r *reportCodecV2Client) BuildReport(fields mercury_v2_types.ReportFields) (ocr2plus_types.Report, error) {
+	return r.impl.BuildReport(fields)
 }
 
-func (r *reportCodecV2Client) MaxReportLength(ctx context.Context, n int) (int, error) {
-	return r.impl.MaxReportLength(ctx, n)
+func (r *reportCodecV2Client) MaxReportLength(n int) (int, error) {
+	return r.impl.MaxReportLength(n)
 }
 
-func (r *reportCodecV2Client) ObservationTimestampFromReport(ctx context.Context, report ocr2plus_types.Report) (uint32, error) {
-	return r.impl.ObservationTimestampFromReport(ctx, report)
+func (r *reportCodecV2Client) ObservationTimestampFromReport(report ocr2plus_types.Report) (uint32, error) {
+	return r.impl.ObservationTimestampFromReport(report)
 }
 
 // reportCodecV1Server implements mercury_pb.ReportCodecV1Server by wrapping [mercury_v1_internal.ReportCodecServer]
@@ -132,8 +132,8 @@ type reportCodecV1Server struct {
 
 var _ mercury_pb.ReportCodecV1Server = (*reportCodecV1Server)(nil)
 
-// NewReportCodecV1Server returns a new instance of [mercury_pb.ReportCodecV1Server] which wraps [mercury_v1_internal.ReportCodecServer]
-func NewReportCodecV1Server(s *grpc.Server, rc mercury_v1_types.ReportCodec) mercury_pb.ReportCodecV1Server {
+// newReportCodecV1Server returns a new instance of [mercury_pb.ReportCodecV1Server] which wraps [mercury_v1_internal.ReportCodecServer]
+func newReportCodecV1Server(s *grpc.Server, rc mercury_v1_types.ReportCodec) mercury_pb.ReportCodecV1Server {
 	internalServer := mercury_v1_internal.NewReportCodecServer(rc)
 	mercury_v1_pb.RegisterReportCodecServer(s, internalServer)
 	return &reportCodecV1Server{impl: internalServer}
@@ -157,18 +157,18 @@ type reportCodecV1Client struct {
 
 var _ mercury_v1_types.ReportCodec = (*reportCodecV1Client)(nil)
 
-func NewReportCodecV1Client(impl *mercury_v1_internal.ReportCodecClient) mercury_v1_types.ReportCodec {
+func newReportCodecV1Client(impl *mercury_v1_internal.ReportCodecClient) mercury_v1_types.ReportCodec {
 	return &reportCodecV1Client{impl: impl}
 }
 
-func (r *reportCodecV1Client) BuildReport(ctx context.Context, fields mercury_v1_types.ReportFields) (ocr2plus_types.Report, error) {
-	return r.impl.BuildReport(ctx, fields)
+func (r *reportCodecV1Client) BuildReport(fields mercury_v1_types.ReportFields) (ocr2plus_types.Report, error) {
+	return r.impl.BuildReport(fields)
 }
 
-func (r *reportCodecV1Client) MaxReportLength(ctx context.Context, n int) (int, error) {
-	return r.impl.MaxReportLength(ctx, n)
+func (r *reportCodecV1Client) MaxReportLength(n int) (int, error) {
+	return r.impl.MaxReportLength(n)
 }
 
-func (r *reportCodecV1Client) CurrentBlockNumFromReport(ctx context.Context, report ocr2plus_types.Report) (int64, error) {
-	return r.impl.CurrentBlockNumFromReport(ctx, report)
+func (r *reportCodecV1Client) CurrentBlockNumFromReport(report ocr2plus_types.Report) (int64, error) {
+	return r.impl.CurrentBlockNumFromReport(report)
 }

@@ -30,13 +30,14 @@ func NewLOOPPService(
 	telemetryService types.TelemetryService,
 	errorLog types.ErrorLog,
 	capRegistry types.CapabilitiesRegistry,
+	keyValueStore types.KeyValueStore,
 ) *LOOPPService {
 	newService := func(ctx context.Context, instance any) (types.OCR3ReportingPluginFactory, error) {
 		plug, ok := instance.(types.OCR3ReportingPluginClient)
 		if !ok {
 			return nil, fmt.Errorf("expected OCR3ReportingPluginClient but got %T", instance)
 		}
-		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog, capRegistry)
+		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog, capRegistry, keyValueStore)
 	}
 
 	stopCh := make(chan struct{})
@@ -47,9 +48,9 @@ func NewLOOPPService(
 	return &ps
 }
 
-func (g *LOOPPService) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+func (g *LOOPPService) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
 	if err := g.Wait(); err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
-	return g.Service.NewReportingPlugin(ctx, config)
+	return g.Service.NewReportingPlugin(config)
 }

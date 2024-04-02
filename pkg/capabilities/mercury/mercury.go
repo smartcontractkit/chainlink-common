@@ -9,45 +9,48 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 var (
-	feedOne   = Must(FromFeedIDString("0x1111111111111111111100000000000000000000000000000000000000000000"))
-	feedTwo   = Must(FromFeedIDString("0x2222222222222222222200000000000000000000000000000000000000000000"))
-	feedThree = Must(FromFeedIDString("0x3333333333333333333300000000000000000000000000000000000000000000"))
+	feedOne   = FeedID("0x1111111111111111111100000000000000000000000000000000000000000000")
+	feedTwo   = FeedID("0x2222222222222222222200000000000000000000000000000000000000000000")
+	feedThree = FeedID("0x3333333333333333333300000000000000000000000000000000000000000000")
 )
 
 // hex-encoded 32-byte value, prefixed with "0x", all lowercase
-type FeedID [32]byte
+type FeedID string
 
 const FeedIDBytesLen = 32
 
 var ErrInvalidFeedID = errors.New("invalid feed ID")
 
 func (id FeedID) String() string {
-	return "0x" + hex.EncodeToString(id[:])
+	return string(id)
 }
 
-func FromFeedIDString(s string) (FeedID, error) {
-	if !strings.HasPrefix(s, "0x") {
-		return FeedID{}, ErrInvalidFeedID
-	}
-
-	if len(s) != 2*FeedIDBytesLen+2 {
-		return FeedID{}, ErrInvalidFeedID
-	}
-
-	b, err := hex.DecodeString(s[2:])
-	return FeedID(b), err
+func (id FeedID) Bytes() [32]byte {
+	b, _ := hex.DecodeString(string(id)[2:])
+	return [32]byte(b)
 }
 
-func Must[O any](o O, err error) O {
-	if err != nil {
-		panic(err)
+func (id FeedID) Validate() error {
+	if len(id) != 2*FeedIDBytesLen+2 {
+		return ErrInvalidFeedID
 	}
+	if !strings.HasPrefix(string(id), "0x") {
+		return ErrInvalidFeedID
+	}
+	if strings.ToLower(string(id)) != string(id) {
+		return ErrInvalidFeedID
+	}
+	_, err := hex.DecodeString(string(id)[2:])
+	return err
+}
 
-	return o
+func FeedIDFromBytes(b [32]byte) FeedID {
+	return FeedID("0x" + hex.EncodeToString(b[:]))
 }
 
 type ReportSet struct {
@@ -65,26 +68,17 @@ type ReportInfo struct {
 	Price     float64
 }
 
-// TODO: fix this by adding support for uint64 in value.go
 type FeedReport struct {
-	FeedID               FeedID `json:"feedID"`
-	FullReport           []byte `json:"fullreport"`
+	FeedID               string `json:"feedId"`
+	FullReport           []byte `json:"fullReport"`
 	BenchmarkPrice       int64  `json:"benchmarkPrice"`
 	ObservationTimestamp int64  `json:"observationTimestamp"`
-}
-
-type TriggerEvent struct {
-	TriggerType string       `json:"triggerType"`
-	ID          string       `json:"id"`
-	Timestamp   string       `json:"timestamp"`
-	Payload     []FeedReport `json:"payload"`
 }
 
 // TODO implement an actual codec
 type Codec struct {
 }
 
-// What do with this?
 func (m Codec) Unwrap(raw values.Value) (ReportSet, error) {
 	now := uint32(time.Now().Unix())
 	return ReportSet{
@@ -122,46 +116,12 @@ func (m Codec) Wrap(reportSet ReportSet) (values.Value, error) {
 	)
 }
 
-type feedReport struct {
-	FeedID               string `json:"feedId"`
-	FullReport           []byte `json:"fullreport"`
-	BenchmarkPrice       int64  `json:"benchmarkPrice"`
-	ObservationTimestamp int64  `json:"observationTimestamp"`
+func (m Codec) WrapMercuryTriggerEvent(event capabilities.TriggerEvent) (values.Value, error) {
+	return values.Wrap(event)
 }
 
-// triggerEvent is a values-compatible representation of `TriggerEvent`
-// which stores the `feedID` as a string rather than a [32]byte.
-type triggerEvent struct {
-	TriggerType string       `json:"triggerType"`
-	ID          string       `json:"id"`
-	Timestamp   string       `json:"timestamp"`
-	Payload     []feedReport `json:"payload"`
-}
-
-func (m Codec) WrapMercuryTriggerEvent(event TriggerEvent) (values.Value, error) {
-	te := &triggerEvent{
-		TriggerType: event.TriggerType,
-		ID:          event.ID,
-		Timestamp:   event.Timestamp,
-		Payload:     []feedReport{},
-	}
-
-	for _, p := range event.Payload {
-		p := feedReport{
-			FeedID:               p.FeedID.String(),
-			FullReport:           p.FullReport,
-			BenchmarkPrice:       p.BenchmarkPrice,
-			ObservationTimestamp: p.ObservationTimestamp,
-		}
-
-		te.Payload = append(te.Payload, p)
-	}
-
-	return values.Wrap(te)
-}
-
-func (m Codec) UnwrapMercuryTriggerEvent(raw values.Value) (TriggerEvent, error) {
-	mercuryTriggerEvent := TriggerEvent{}
+func (m Codec) UnwrapMercuryTriggerEvent(raw values.Value) (capabilities.TriggerEvent, error) {
+	mercuryTriggerEvent := capabilities.TriggerEvent{}
 	val, err := raw.Unwrap()
 	if err != nil {
 		return mercuryTriggerEvent, err
@@ -170,28 +130,16 @@ func (m Codec) UnwrapMercuryTriggerEvent(raw values.Value) (TriggerEvent, error)
 	mercuryTriggerEvent.TriggerType = event["TriggerType"].(string)
 	mercuryTriggerEvent.ID = event["ID"].(string)
 	mercuryTriggerEvent.Timestamp = event["Timestamp"].(string)
-	mercuryTriggerEvent.Payload = make([]FeedReport, 0)
-	for _, report := range event["Payload"].([]any) {
+	mercuryTriggerEvent.BatchedPayload = make(map[string]any)
+	for id, report := range event["BatchedPayload"].(map[string]any) {
 		reportMap := report.(map[string]any)
-		var mercuryReport feedReport
+		var mercuryReport FeedReport
 		err = mapstructure.Decode(reportMap, &mercuryReport)
 		if err != nil {
 			return mercuryTriggerEvent, err
 		}
 
-		fid, err := FromFeedIDString(mercuryReport.FeedID)
-		if err != nil {
-			return mercuryTriggerEvent, err
-		}
-
-		mr := FeedReport{
-			FeedID:               fid,
-			FullReport:           mercuryReport.FullReport,
-			ObservationTimestamp: mercuryReport.ObservationTimestamp,
-			BenchmarkPrice:       mercuryReport.BenchmarkPrice,
-		}
-
-		mercuryTriggerEvent.Payload = append(mercuryTriggerEvent.Payload, mr)
+		mercuryTriggerEvent.BatchedPayload[id] = mercuryReport
 	}
 	return mercuryTriggerEvent, nil
 }

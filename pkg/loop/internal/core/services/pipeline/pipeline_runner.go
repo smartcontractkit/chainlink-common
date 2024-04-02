@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/jsonserializable"
 )
 
 var _ types.PipelineRunnerService = (*pipelineRunnerServiceClient)(nil)
@@ -49,11 +50,17 @@ func (p pipelineRunnerServiceClient) ExecuteRun(ctx context.Context, spec string
 		if trr.HasError {
 			err = errors.New(trr.Error)
 		}
+
+		js := jsonserializable.JSONSerializable{}
+		err2 := js.UnmarshalJSON(trr.Value)
+		if err2 != nil {
+			return nil, err2
+		}
 		trs[i] = types.TaskResult{
 			ID:   trr.Id,
 			Type: trr.Type,
 			TaskValue: types.TaskValue{
-				Value:      trr.Value.AsInterface(),
+				Value:      js,
 				Error:      err,
 				IsTerminal: trr.IsTerminal,
 			},
@@ -70,7 +77,11 @@ type RunnerServer struct {
 	pb.UnimplementedPipelineRunnerServiceServer
 	*net.BrokerExt
 
-	Impl types.PipelineRunnerService
+	impl types.PipelineRunnerService
+}
+
+func NewRunnerServer(impl types.PipelineRunnerService) *RunnerServer {
+	return &RunnerServer{impl: impl}
 }
 
 func (p *RunnerServer) ExecuteRun(ctx context.Context, rr *pb.RunRequest) (*pb.RunResponse, error) {
@@ -80,14 +91,14 @@ func (p *RunnerServer) ExecuteRun(ctx context.Context, rr *pb.RunRequest) (*pb.R
 	options := types.Options{
 		MaxTaskDuration: rr.Options.MaxTaskDuration.AsDuration(),
 	}
-	trs, err := p.Impl.ExecuteRun(ctx, rr.Spec, vars, options)
+	trs, err := p.impl.ExecuteRun(ctx, rr.Spec, vars, options)
 	if err != nil {
 		return nil, err
 	}
 
 	taskResults := make([]*pb.TaskResult, len(trs))
 	for i, trr := range trs {
-		v, err := structpb.NewValue(trr.Value)
+		v, err := trr.Value.MarshalJSON()
 		if err != nil {
 			return nil, err
 		}

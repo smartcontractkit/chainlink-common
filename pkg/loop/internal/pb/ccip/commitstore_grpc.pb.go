@@ -31,6 +31,7 @@ const (
 	CommitStoreReader_GetLatestPriceEpochAndRound_FullMethodName           = "/loop.internal.pb.ccip.CommitStoreReader/GetLatestPriceEpochAndRound"
 	CommitStoreReader_GetOffchainConfig_FullMethodName                     = "/loop.internal.pb.ccip.CommitStoreReader/GetOffchainConfig"
 	CommitStoreReader_IsBlessed_FullMethodName                             = "/loop.internal.pb.ccip.CommitStoreReader/IsBlessed"
+	CommitStoreReader_AreBlessed_FullMethodName                            = "/loop.internal.pb.ccip.CommitStoreReader/AreBlessed"
 	CommitStoreReader_IsDestChainHealthy_FullMethodName                    = "/loop.internal.pb.ccip.CommitStoreReader/IsDestChainHealthy"
 	CommitStoreReader_IsDown_FullMethodName                                = "/loop.internal.pb.ccip.CommitStoreReader/IsDown"
 	CommitStoreReader_VerifyExecutionReport_FullMethodName                 = "/loop.internal.pb.ccip.CommitStoreReader/VerifyExecutionReport"
@@ -52,6 +53,7 @@ type CommitStoreReaderClient interface {
 	GetLatestPriceEpochAndRound(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestPriceEpochAndRoundResponse, error)
 	GetOffchainConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetOffchainConfigResponse, error)
 	IsBlessed(ctx context.Context, in *IsBlessedRequest, opts ...grpc.CallOption) (*IsBlessedResponse, error)
+	AreBlessed(ctx context.Context, in *AreBlessedRequest, opts ...grpc.CallOption) (*AreBlessedResponse, error)
 	IsDestChainHealthy(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsDestChainHealthyResponse, error)
 	IsDown(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsDownResponse, error)
 	VerifyExecutionReport(ctx context.Context, in *VerifyExecutionReportRequest, opts ...grpc.CallOption) (*VerifyExecutionReportResponse, error)
@@ -165,6 +167,15 @@ func (c *commitStoreReaderClient) IsBlessed(ctx context.Context, in *IsBlessedRe
 	return out, nil
 }
 
+func (c *commitStoreReaderClient) AreBlessed(ctx context.Context, in *AreBlessedRequest, opts ...grpc.CallOption) (*AreBlessedResponse, error) {
+	out := new(AreBlessedResponse)
+	err := c.cc.Invoke(ctx, CommitStoreReader_AreBlessed_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *commitStoreReaderClient) IsDestChainHealthy(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsDestChainHealthyResponse, error) {
 	out := new(IsDestChainHealthyResponse)
 	err := c.cc.Invoke(ctx, CommitStoreReader_IsDestChainHealthy_FullMethodName, in, out, opts...)
@@ -216,6 +227,7 @@ type CommitStoreReaderServer interface {
 	GetLatestPriceEpochAndRound(context.Context, *emptypb.Empty) (*GetLatestPriceEpochAndRoundResponse, error)
 	GetOffchainConfig(context.Context, *emptypb.Empty) (*GetOffchainConfigResponse, error)
 	IsBlessed(context.Context, *IsBlessedRequest) (*IsBlessedResponse, error)
+	AreBlessed(context.Context, *AreBlessedRequest) (*AreBlessedResponse, error)
 	IsDestChainHealthy(context.Context, *emptypb.Empty) (*IsDestChainHealthyResponse, error)
 	IsDown(context.Context, *emptypb.Empty) (*IsDownResponse, error)
 	VerifyExecutionReport(context.Context, *VerifyExecutionReportRequest) (*VerifyExecutionReportResponse, error)
@@ -259,6 +271,9 @@ func (UnimplementedCommitStoreReaderServer) GetOffchainConfig(context.Context, *
 }
 func (UnimplementedCommitStoreReaderServer) IsBlessed(context.Context, *IsBlessedRequest) (*IsBlessedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsBlessed not implemented")
+}
+func (UnimplementedCommitStoreReaderServer) AreBlessed(context.Context, *AreBlessedRequest) (*AreBlessedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AreBlessed not implemented")
 }
 func (UnimplementedCommitStoreReaderServer) IsDestChainHealthy(context.Context, *emptypb.Empty) (*IsDestChainHealthyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsDestChainHealthy not implemented")
@@ -483,6 +498,24 @@ func _CommitStoreReader_IsBlessed_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommitStoreReader_AreBlessed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AreBlessedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommitStoreReaderServer).AreBlessed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommitStoreReader_AreBlessed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommitStoreReaderServer).AreBlessed(ctx, req.(*AreBlessedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CommitStoreReader_IsDestChainHealthy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -605,6 +638,10 @@ var CommitStoreReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsBlessed",
 			Handler:    _CommitStoreReader_IsBlessed_Handler,
+		},
+		{
+			MethodName: "AreBlessed",
+			Handler:    _CommitStoreReader_AreBlessed_Handler,
 		},
 		{
 			MethodName: "IsDestChainHealthy",

@@ -22,6 +22,7 @@ type CommitStoreReader interface {
 	GetExpectedNextSequenceNumber(ctx context.Context) (uint64, error)
 	GetLatestPriceEpochAndRound(ctx context.Context) (uint64, error)
 	IsBlessed(ctx context.Context, root [32]byte) (bool, error)
+	AreBlessed(ctx context.Context, roots [][32]byte) ([]bool, error)
 	// IsDestChainHealthy returns true if the destination chain is healthy.
 	IsDestChainHealthy(ctx context.Context) (bool, error)
 	IsDown(ctx context.Context) (bool, error)

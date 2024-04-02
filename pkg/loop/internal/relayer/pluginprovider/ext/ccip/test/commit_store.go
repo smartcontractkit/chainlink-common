@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"slices"
 	"time"
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
@@ -157,6 +158,10 @@ var CommitStoreReader = staticCommitStoreReader{
 		// is blessed test data
 		isBlessedRequest:  [32]byte{0: 1, 31: 7},
 		isBlessedResponse: true,
+
+		// are blessed test data
+		areBlessedRequest:  [][32]byte{{0: 1, 31: 7}, {0: 1, 31: 8}, {0: 1, 31: 9}},
+		areBlessedResponse: []bool{false, true, false},
 
 		// is dest chain healthy test data
 		isDestChainHealthyResponse: true,
@@ -380,6 +385,15 @@ func (s staticCommitStoreReader) Evaluate(ctx context.Context, other ccip.Commit
 		return fmt.Errorf("is blessed expected %v, got %v", s.isBlessedResponse, gotIsBlessed)
 	}
 
+	// are blessed
+	gotAreBlessed, err := other.AreBlessed(ctx, s.areBlessedRequest)
+	if err != nil {
+		return fmt.Errorf("failed to call other.AreBlessed: %w", err)
+	}
+	if !slices.Equal(gotAreBlessed, s.areBlessedResponse) {
+		return fmt.Errorf("are blessed expected %v, got %v", s.areBlessedResponse, gotAreBlessed)
+	}
+
 	// is down
 	gotIsDown, err := other.IsDown(ctx)
 	if err != nil {
@@ -461,6 +475,11 @@ func (s staticCommitStoreReader) IsBlessed(ctx context.Context, root [32]byte) (
 	return s.isBlessedResponse, nil
 }
 
+// AreBlessed implements CommitStoreReaderEvaluator.
+func (s staticCommitStoreReader) AreBlessed(ctx context.Context, roots [][32]byte) ([]bool, error) {
+	return make([]bool, len(roots)), nil
+}
+
 // IsDestChainHealthy implements CommitStoreReaderEvaluator.
 func (s staticCommitStoreReader) IsDestChainHealthy(ctx context.Context) (bool, error) {
 	return s.isDestChainHealthyResponse, nil
@@ -510,6 +529,9 @@ type staticCommitStoreReaderConfig struct {
 
 	isBlessedRequest  [32]byte
 	isBlessedResponse bool
+
+	areBlessedRequest  [][32]byte
+	areBlessedResponse []bool
 
 	isDestChainHealthyResponse bool
 

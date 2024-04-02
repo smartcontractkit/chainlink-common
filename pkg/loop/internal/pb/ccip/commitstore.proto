@@ -22,6 +22,7 @@ service CommitStoreReader {
     rpc GetLatestPriceEpochAndRound(google.protobuf.Empty) returns (GetLatestPriceEpochAndRoundResponse);
     rpc GetOffchainConfig(google.protobuf.Empty) returns (GetOffchainConfigResponse);
     rpc IsBlessed(IsBlessedRequest) returns (IsBlessedResponse);
+    rpc AreBlessed(AreBlessedRequest) returns (AreBlessedResponse);
     rpc IsDestChainHealthy(google.protobuf.Empty) returns (IsDestChainHealthyResponse);
     rpc IsDown(google.protobuf.Empty) returns (IsDownResponse);
     rpc VerifyExecutionReport(VerifyExecutionReportRequest) returns (VerifyExecutionReportResponse);
@@ -78,10 +79,22 @@ message IsBlessedRequest {
     bytes root = 1; // [32]byte
 }
 
+// AreBlessedRequest is a gRPC adapter to the input values of
+// [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/CommitStoreReader.AreBlessed]
+message AreBlessedRequest {
+    repeated bytes roots = 1; // [32]byte
+}
+
 // IsBlessedResponse returns whether the commit store is blessed. It is a gRPC adapter to the return values of
 // [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/CommitStoreReader.IsBlessed]
 message IsBlessedResponse {
     bool is_blessed = 1;
+}
+
+// AreBlessedResponse returns whether the commit store roots are blessed. It is a gRPC adapter to the return values of
+// [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/CommitStoreReader.AreBlessed]
+message AreBlessedResponse {
+    repeated bool are_blessed = 1;
 }
 
 // CommitStoreChangeConfigRequest is a gRPC adapter to the input values of

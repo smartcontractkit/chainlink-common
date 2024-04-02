@@ -200,6 +200,20 @@ func (c *CommitStoreGRPCClient) IsBlessed(ctx context.Context, root [32]byte) (b
 	return resp.IsBlessed, nil
 }
 
+// AreBlessed implements ccip.CommitStoreReader.
+func (c *CommitStoreGRPCClient) AreBlessed(ctx context.Context, roots [][32]byte) ([]bool, error) {
+	rootsFlattened := make([][]byte, 0, len(roots))
+	for _, root := range roots {
+		rootsFlattened = append(rootsFlattened, root[:])
+	}
+
+	resp, err := c.client.AreBlessed(ctx, &ccippb.AreBlessedRequest{Roots: rootsFlattened})
+	if err != nil {
+		return nil, err
+	}
+	return resp.AreBlessed, nil
+}
+
 // IsDestChainHealthy implements ccip.CommitStoreReader.
 func (c *CommitStoreGRPCClient) IsDestChainHealthy(ctx context.Context) (bool, error) {
 	resp, err := c.client.IsDestChainHealthy(ctx, &emptypb.Empty{})
@@ -374,6 +388,24 @@ func (c *CommitStoreGRPCServer) IsBlessed(ctx context.Context, req *ccippb.IsBle
 		return nil, err
 	}
 	return &ccippb.IsBlessedResponse{IsBlessed: blessed}, nil
+}
+
+// AreBlessed implements ccippb.CommitStoreReaderServer.
+func (c *CommitStoreGRPCServer) AreBlessed(ctx context.Context, req *ccippb.AreBlessedRequest) (*ccippb.AreBlessedResponse, error) {
+	roots := make([][32]byte, 0, len(req.Roots))
+	for _, root := range req.Roots {
+		root32bytes, err := merkleRoot(root)
+		if err != nil {
+			return nil, err
+		}
+		roots = append(roots, root32bytes)
+	}
+
+	blessed, err := c.impl.AreBlessed(ctx, roots)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.AreBlessedResponse{AreBlessed: blessed}, nil
 }
 
 // IsDestChainHealthy implements ccippb.CommitStoreReaderServer.

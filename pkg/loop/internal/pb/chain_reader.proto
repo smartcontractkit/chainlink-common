@@ -32,5 +32,5 @@ message BindRequest {
 message BoundContract {
   string address = 1;
   string name = 2;
-  bool pending = 3;
+  int32 confidence = 3;
 }

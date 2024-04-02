@@ -118,7 +118,7 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
-		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Confidence: b.Confidence}
 	}
 	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
 	return net.WrapRPCErr(err)
@@ -166,7 +166,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
 	tBindings := make([]types.BoundContract, len(bindings.Bindings))
 	for i, b := range bindings.Bindings {
-		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name, Confidence: b.Confidence}
 	}
 
 	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)

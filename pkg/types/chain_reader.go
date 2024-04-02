@@ -46,9 +46,9 @@ type ChainReader interface {
 }
 
 type BoundContract struct {
-	Address string
-	Name    string
-	Pending bool
+	Address    string
+	Name       string
+	Confidence int32
 }
 
 type Event struct {

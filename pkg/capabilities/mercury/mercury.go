@@ -4,10 +4,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -38,21 +36,6 @@ func (id FeedID) Validate() error {
 	return err
 }
 
-type ReportSet struct {
-	// feedID -> report
-	Reports map[FeedID]Report
-}
-
-type Report struct {
-	Info       ReportInfo // minimal data extracted from the report for convenience
-	FullReport []byte     // full report, acceptable by the verifier contract
-}
-
-type ReportInfo struct {
-	Timestamp uint32
-	Price     float64
-}
-
 // TODO: fix this by adding support for uint64 in value.go
 type FeedReport struct {
 	FeedID               int64  `json:"feedId"`
@@ -63,43 +46,6 @@ type FeedReport struct {
 
 // TODO implement an actual codec
 type Codec struct {
-}
-
-func (m Codec) Unwrap(raw values.Value) (ReportSet, error) {
-	now := uint32(time.Now().Unix())
-	return ReportSet{
-		Reports: map[FeedID]Report{
-			FeedID("0x1111111111111111111100000000000000000000000000000000000000000000"): {
-				Info: ReportInfo{
-					Timestamp: now,
-					Price:     100.00,
-				},
-			},
-			FeedID("0x2222222222222222222200000000000000000000000000000000000000000000"): {
-				Info: ReportInfo{
-					Timestamp: now,
-					Price:     100.00,
-				},
-			},
-			FeedID("0x3333333333333333333300000000000000000000000000000000000000000000"): {
-				Info: ReportInfo{
-					Timestamp: now,
-					Price:     100.00,
-				},
-			},
-		},
-	}, nil
-}
-
-func (m Codec) Wrap(reportSet ReportSet) (values.Value, error) {
-	return values.NewMap(
-		map[string]any{
-			"0x1111111111111111111100000000000000000000000000000000000000000000": map[string]any{
-				"timestamp": 42,
-				"price":     decimal.NewFromFloat(100.00),
-			},
-		},
-	)
 }
 
 func (m Codec) WrapMercuryTriggerEvent(event capabilities.TriggerEvent) (values.Value, error) {

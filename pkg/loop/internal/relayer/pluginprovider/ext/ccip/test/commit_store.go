@@ -477,7 +477,7 @@ func (s staticCommitStoreReader) IsBlessed(ctx context.Context, root [32]byte) (
 
 // AreBlessed implements CommitStoreReaderEvaluator.
 func (s staticCommitStoreReader) AreBlessed(ctx context.Context, roots [][32]byte) ([]bool, error) {
-	return make([]bool, len(roots)), nil
+	return s.areBlessedResponse, nil
 }
 
 // IsDestChainHealthy implements CommitStoreReaderEvaluator.

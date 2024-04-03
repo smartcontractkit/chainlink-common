@@ -80,7 +80,7 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 	) (types.OCR3ReportingPluginFactory, error) {
 		provider := g.PluginServer.ConnToProvider(conn, broker, g.BrokerConfig)
 		tc := telemetry.NewTelemetryClient(ts)
-		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el, capRegistry,kv)
+		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el, capRegistry, kv)
 	}
 
 	return ocr3.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter{

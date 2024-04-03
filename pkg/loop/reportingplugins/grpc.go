@@ -54,6 +54,16 @@ type serverAdapter struct {
 		kv types.KeyValueStore,
 	) (types.ReportingPluginFactory, error)
 
+	ValidateConfigService
+}
+
+type ValidateConfigService interface {
+	NewValidationService(ctx context.Context) (types.ValidationService, error)
+}
+
+func (s serverAdapter) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	return s.ValidateConfigService.NewValidationService(ctx)
+}
 func (s serverAdapter) NewReportingPluginFactory(
 	ctx context.Context,
 	config types.ReportingPluginServiceConfig,
@@ -63,7 +73,7 @@ func (s serverAdapter) NewReportingPluginFactory(
 	errorLog types.ErrorLog,
 	kv types.KeyValueStore,
 ) (types.ReportingPluginFactory, error) {
-	return s.NewReportingPluginFactoryFn(ctx, config, conn, pr, ts, errorLog,kv)
+	return s.NewReportingPluginFactoryFn(ctx, config, conn, pr, ts, errorLog, kv)
 }
 
 func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
@@ -78,7 +88,7 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 	) (types.ReportingPluginFactory, error) {
 		provider := g.PluginServer.ConnToProvider(conn, broker, g.BrokerConfig)
 		tc := telemetry.NewTelemetryClient(ts)
-		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el,kv)
+		return g.PluginServer.NewReportingPluginFactory(ctx, cfg, provider, pr, tc, el, kv)
 	}
 
 	return ocr2.RegisterReportingPluginServiceServer(server, broker, g.BrokerConfig, serverAdapter{

@@ -83,7 +83,7 @@ func (o *MercuryTriggerService) ProcessReport(reports []FeedReport) error {
 				ObservationTimestamp: rep.ObservationTimestamp,
 			}
 			reportList = append(reportList, mercRep)
-			reportMap[feedID.String()] = reports[reportID]
+			reportMap[feedID.String()] = mercRep
 		}
 
 		triggerEvent := capabilities.TriggerEvent{

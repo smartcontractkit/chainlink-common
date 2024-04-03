@@ -76,7 +76,7 @@ func TestMercuryTrigger(t *testing.T) {
 	assert.Equal(t, "mercury", unwrapped.TriggerType)
 	assert.Equal(t, GenerateTriggerEventID(mfr), unwrapped.ID)
 	assert.Len(t, unwrapped.BatchedPayload, 1)
-	assert.Equal(t, fr[0], unwrapped.BatchedPayload[feedOne])
+	assert.Equal(t, mfr[0], unwrapped.BatchedPayload[feedOne])
 
 	// Unregister the trigger and check that events no longer go on the callback
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr))
@@ -215,9 +215,9 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	payload = append(payload, mfr1[0], mfr1[1], mfr1[3])
 	assert.Equal(t, GenerateTriggerEventID(payload), unwrapped.ID)
 	assert.Len(t, unwrapped.BatchedPayload, 3)
-	assert.Equal(t, fr1[0], unwrapped.BatchedPayload[feedOne])
-	assert.Equal(t, fr1[1], unwrapped.BatchedPayload[feedThree])
-	assert.Equal(t, fr1[3], unwrapped.BatchedPayload[feedFour])
+	assert.Equal(t, mfr1[0], unwrapped.BatchedPayload[feedOne])
+	assert.Equal(t, mfr1[1], unwrapped.BatchedPayload[feedThree])
+	assert.Equal(t, mfr1[3], unwrapped.BatchedPayload[feedFour])
 
 	msg = <-callback2
 	unwrapped, _ = mercury.Codec{}.UnwrapMercuryTriggerEvent(msg.Value)
@@ -226,8 +226,8 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	payload = append(payload, mfr1[1], mfr1[2]) // Because GenerateTriggerEventID sorts the reports by feedID, this works
 	assert.Equal(t, GenerateTriggerEventID(payload), unwrapped.ID)
 	assert.Len(t, unwrapped.BatchedPayload, 2)
-	assert.Equal(t, fr1[2], unwrapped.BatchedPayload[feedTwo])
-	assert.Equal(t, fr1[1], unwrapped.BatchedPayload[feedThree])
+	assert.Equal(t, mfr1[2], unwrapped.BatchedPayload[feedTwo])
+	assert.Equal(t, mfr1[1], unwrapped.BatchedPayload[feedThree])
 
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr1))
 	fr2 := []FeedReport{
@@ -259,7 +259,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	payload = append(payload, mfr2[0])
 	assert.Equal(t, GenerateTriggerEventID(payload), unwrapped.ID)
 	assert.Len(t, unwrapped.BatchedPayload, 1)
-	assert.Equal(t, fr2[0], unwrapped.BatchedPayload[feedThree])
+	assert.Equal(t, mfr2[0], unwrapped.BatchedPayload[feedThree])
 
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr2))
 	err = ts.ProcessReport(fr1)

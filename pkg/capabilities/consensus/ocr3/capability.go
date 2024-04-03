@@ -50,6 +50,7 @@ type capability struct {
 }
 
 var _ capabilityIface = (*capability)(nil)
+var _ capabilities.ConsensusCapability = (*capability)(nil)
 
 func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
 	o := &capability{
@@ -92,10 +93,10 @@ func (o *capability) HealthReport() map[string]error {
 }
 
 type workflowConfig struct {
-	AggregationMethod string      `mapstructure:"aggregation_method"`
-	AggregationConfig *values.Map `mapstructure:"aggregation_config"`
-	Encoder           string      `mapstructure:"encoder"`
-	EncoderConfig     *values.Map `mapstructure:"encoder_config"`
+	AggregationMethod string      `mapstructure:"aggregation_method" json:"aggregation_method,omitempty"`
+	AggregationConfig *values.Map `mapstructure:"aggregation_config" json:"aggregation_config,omitempty"`
+	Encoder           string      `mapstructure:"encoder" json:"encoder,omitempty"`
+	EncoderConfig     *values.Map `mapstructure:"encoder_config" json:"encoder_config,omitempty"`
 }
 
 func newWorkflowConfig() *workflowConfig {

@@ -32,6 +32,7 @@ func (f *mockBaseCapability) Info(ctx context.Context) (capabilities.CapabilityI
 var _ capabilities.TriggerExecutable = (*mockTriggerExecutable)(nil)
 
 type mockTriggerExecutable struct {
+	*capabilities.Validator
 	callback chan<- capabilities.CapabilityResponse
 }
 

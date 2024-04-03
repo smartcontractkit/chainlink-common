@@ -105,6 +105,28 @@ type CallbackExecutable interface {
 	Execute(ctx context.Context, callback chan<- CapabilityResponse, request CapabilityRequest) error
 }
 
+type Validatable interface {
+	// GetConfigJsonSchema will create a values-wrapped JSON schema for the "config" field of the capability.
+	//
+	// This allows for more comprehensive validation of a workflow yaml file since
+	// after dynamically resolving the capability, the workflow engine can validate
+	// the config field against the schema.
+	//
+	// NOTE: What to do with method calls like:
+	//
+	//  - `RegisterToWorkflow` and `UnregisterFromWorkflow` 
+	//  - `RegisterTrigger` and `UnregisterTrigger`
+	//
+	// They take in a request object that has a `Config` field that may conflate
+	// with the `Config` field within `Execute`.
+	GetRequestConfigJsonSchema() (*CapabilityResponse)
+	// ValidateRequestConfig(config *values.Map) error
+	// ValidateRequestInput(inputs *values.Map) error
+	// NOTE: Should we need this? Or should we just document this within
+	// the capability itself?
+	// ExampleOutput() *values.Map
+}	
+
 // BaseCapability interface needs to be implemented by all capability types.
 // Capability interfaces are intentionally duplicated to allow for an easy change
 // or extension in the future.
@@ -113,6 +135,7 @@ type BaseCapability interface {
 }
 
 type TriggerExecutable interface {
+	Validatable
 	RegisterTrigger(ctx context.Context, callback chan<- CapabilityResponse, request CapabilityRequest) error
 	UnregisterTrigger(ctx context.Context, request CapabilityRequest) error
 }

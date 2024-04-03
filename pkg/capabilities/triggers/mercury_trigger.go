@@ -14,7 +14,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
+	"fmt"
+
 )
+
 
 var mercuryInfo = capabilities.MustNewCapabilityInfo(
 	"mercury-trigger",
@@ -26,6 +30,7 @@ var mercuryInfo = capabilities.MustNewCapabilityInfo(
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
+	*capabilities.Validator
 	chans               map[string]chan<- capabilities.CapabilityResponse
 	feedIDsForTriggerID map[string][]mercury.FeedID
 	triggerIDsForFeedID map[mercury.FeedID]map[string]bool
@@ -36,6 +41,7 @@ var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 
 func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
+		Validator:           capabilities.NewValidator([]mercury.FeedReport{}),
 		CapabilityInfo:      mercuryInfo,
 		chans:               map[string]chan<- capabilities.CapabilityResponse{},
 		feedIDsForTriggerID: make(map[string][]mercury.FeedID),
@@ -183,7 +189,7 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 // Get array of feedIds from CapabilityRequest req
 func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) ([]mercury.FeedID, error) {
 	feedIDs := make([]mercury.FeedID, 0)
-	// Unwrap the inputs which should return pair (map, nil) and then get the feedIds from the map
+	// Unwrap the config which should return pair (map, nil) and then get the feedIds from the map
 	if config, err := req.Config.Unwrap(); err == nil {
 		if feeds, ok := config.(map[string]interface{})["feedIds"].([]any); ok {
 			// Copy to feedIds
@@ -205,6 +211,7 @@ func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) (
 // Get the triggerId from the CapabilityRequest req map
 func (o *MercuryTriggerService) GetTriggerID(req capabilities.CapabilityRequest, workflowID string) (string, error) {
 	// Unwrap the inputs which should return pair (map, nil) and then get the triggerId from the map
+	// NOTE: shouldn't this be req.Config?
 	inputs, err := req.Inputs.Unwrap()
 	if err != nil {
 		return "", err

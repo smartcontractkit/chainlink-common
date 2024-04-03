@@ -1,7 +1,11 @@
 package triggers
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,6 +23,15 @@ var (
 	feedFour  = "0x4444444444444444444400000000000000000000000000000000000000000000"
 	feedFive  = "0x5555555555555555555500000000000000000000000000000000000000000000"
 )
+
+var transformJSON = cmp.FilterValues(func(x, y []byte) bool {
+	return json.Valid(x) && json.Valid(y)
+}, cmp.Transformer("ParseJSON", func(in []byte) (out interface{}) {
+	if err := json.Unmarshal(in, &out); err != nil {
+		panic(err) // should never occur given previous filter to ensure valid JSON
+	}
+	return out
+}))
 
 func TestMercuryTrigger(t *testing.T) {
 	ts := NewMercuryTriggerService()
@@ -266,4 +279,26 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, callback1, 0)
 	assert.Len(t, callback2, 0)
+}
+
+func TestMercuryTrigger_GenerateConfigSchema(t *testing.T) {
+	ts := NewMercuryTriggerService()
+	resp := ts.GetRequestConfigJsonSchema()
+	require.NoError(t, resp.Err)
+	schemaStr, ok := resp.Value.(*values.String)
+	require.True(t, ok)
+
+	var shouldUpdate = false
+	if shouldUpdate {
+		err := os.WriteFile("./testdata/fixtures/mercury/config_schema.json", []byte(schemaStr.Underlying), 0600)
+		require.NoError(t, err)
+	}
+
+	fixture, err := os.ReadFile("./testdata/fixtures/mercury/config_schema.json")
+	require.NoError(t, err)
+	
+	if diff := cmp.Diff(fixture, []byte(schemaStr.Underlying), transformJSON); diff != "" {
+		t.Errorf("TestMercuryTrigger_GenerateConfigSchema() mismatch (-want +got):\n%s", diff)
+		t.FailNow()
+	}
 }

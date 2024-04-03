@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/capability-response",
+  "$ref": "#/$defs/CapabilityResponse",
+  "$defs": {
+    "CapabilityResponse": {
+      "properties": {
+        "Value": true,
+        "Err": true
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "Value",
+        "Err"
+      ]
+    }
+  }
+}

@@ -18,6 +18,7 @@ var info = capabilities.MustNewCapabilityInfo(
 type workflowID string
 
 type OnDemand struct {
+	*capabilities.Validator
 	capabilities.CapabilityInfo
 	chans map[workflowID]chan<- capabilities.CapabilityResponse
 	mu    sync.Mutex
@@ -27,6 +28,7 @@ var _ capabilities.TriggerCapability = (*OnDemand)(nil)
 
 func NewOnDemand() *OnDemand {
 	return &OnDemand{
+		Validator:      capabilities.NewValidator(capabilities.CapabilityResponse{}),
 		CapabilityInfo: info,
 		chans:          map[workflowID]chan<- capabilities.CapabilityResponse{},
 	}

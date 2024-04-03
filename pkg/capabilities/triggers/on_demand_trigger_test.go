@@ -1,8 +1,10 @@
 package triggers
 
 import (
+	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -71,4 +73,26 @@ func TestOnDemand_(t *testing.T) {
 
 	assert.Len(t, callback, 1)
 	assert.Equal(t, er, <-callback)
+}
+
+func TestOnDemandTrigger_GenerateConfigSchema(t *testing.T) {
+	ts := NewOnDemand()
+	schema := ts.GetRequestConfigJsonSchema()
+	require.NotNil(t, schema)
+	require.NoError(t, schema.Err)
+	schemaStr := schema.Value.(*values.String)
+
+	var shouldUpdate = false
+	if shouldUpdate {
+		err := os.WriteFile("./testdata/fixtures/ondemand/config_schema.json", []byte(schemaStr.Underlying), 0600)
+		require.NoError(t, err)
+	}
+
+	fixture, err := os.ReadFile("./testdata/fixtures/ondemand/config_schema.json")
+	require.NoError(t, err)
+	
+	if diff := cmp.Diff(fixture, []byte(schemaStr.Underlying), transformJSON); diff != "" {
+		t.Errorf("TestOnDemandTrigger_GenerateConfigSchema() mismatch (-want +got):\n%s", diff)
+		t.FailNow()
+	}
 }

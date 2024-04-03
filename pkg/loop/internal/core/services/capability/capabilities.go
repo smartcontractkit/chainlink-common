@@ -198,6 +198,16 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
+func (t *triggerExecutableServer) GetRequestConfigJsonSchema(ctx context.Context, _ *emptypb.Empty) (*capabilitiespb.CapabilityResponse, error) {
+	resp := t.impl.GetRequestConfigJsonSchema()
+
+	// NOTE: Am i doing this right?
+	return &capabilitiespb.CapabilityResponse{
+		Value: values.Proto(resp.Value),
+		Error: resp.Err.Error(),
+	}, nil
+}
+
 func (t *triggerExecutableServer) RegisterTrigger(ctx context.Context, request *capabilitiespb.RegisterTriggerRequest) (*emptypb.Empty, error) {
 	ch := make(chan capabilities.CapabilityResponse)
 
@@ -241,6 +251,20 @@ type triggerExecutableClient struct {
 }
 
 var _ capabilities.TriggerExecutable = (*triggerExecutableClient)(nil)
+
+func (t *triggerExecutableClient) GetRequestConfigJsonSchema() (*capabilities.CapabilityResponse) {
+	resp, err := t.grpc.GetRequestConfigJsonSchema(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return &capabilities.CapabilityResponse{
+			Err: err,
+		}
+	}
+
+	return &capabilities.CapabilityResponse{
+		Value: values.FromProto(resp.Value),
+		Err: errors.New(resp.Error),
+	}
+}
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
 	cid, res, err := t.ServeNew("Callback", func(s *grpc.Server) {

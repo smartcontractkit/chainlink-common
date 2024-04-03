@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "FeedReport": {
+      "properties": {
+        "feedId": {
+          "type": "integer"
+        },
+        "fullreport": {
+          "type": "string",
+          "contentEncoding": "base64"
+        },
+        "benchmarkPrice": {
+          "type": "integer"
+        },
+        "observationTimestamp": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "feedId",
+        "fullreport",
+        "benchmarkPrice",
+        "observationTimestamp"
+      ]
+    }
+  },
+  "items": {
+    "$ref": "#/$defs/FeedReport"
+  },
+  "type": "array"
+}

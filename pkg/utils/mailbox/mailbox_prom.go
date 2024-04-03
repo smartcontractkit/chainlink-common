@@ -35,13 +35,13 @@ type Monitor struct {
 }
 
 func NewMonitor(appID string, lggr logger.Logger) *Monitor {
-	return &Monitor{appID: appID, lggr: logger.Named(lggr, "Monitor")}
+	return &Monitor{appID: appID, lggr: logger.Named(lggr, "MailboxMonitor")}
 }
 
 func (m *Monitor) Name() string { return m.lggr.Name() }
 
 func (m *Monitor) Start(context.Context) error {
-	return m.StartOnce("Monitor", func() error {
+	return m.StartOnce("MailboxMonitor", func() error {
 		t := time.NewTicker(utils.WithJitter(mailboxPromInterval))
 		ctx, cancel := context.WithCancel(context.Background())
 		m.stop = func() {
@@ -55,7 +55,7 @@ func (m *Monitor) Start(context.Context) error {
 }
 
 func (m *Monitor) Close() error {
-	return m.StopOnce("Monitor", func() error {
+	return m.StopOnce("MailboxMonitor", func() error {
 		m.stop()
 		<-m.done
 		return nil

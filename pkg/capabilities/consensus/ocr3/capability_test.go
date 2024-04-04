@@ -38,10 +38,9 @@ func TestOCR3Capability(t *testing.T) {
 	s := newStore()
 	s.evictedCh = make(chan *request)
 
-	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
+	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
-	callback := make(chan capabilities.CapabilityResponse, 10)
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
 	require.NoError(t, err)
 
@@ -61,7 +60,7 @@ func TestOCR3Capability(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	err = cp.Execute(ctx, callback, executeReq)
+	callback, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	obsv, err := values.NewList(obs)
@@ -94,7 +93,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	ctx := tests.Context(t)
 	rea := time.Second
 	s := newStore()
-	cp := newCapability(s, fc, rea, mockEncoderFactory, lggr)
+	cp := newCapability(s, fc, rea, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
@@ -114,8 +113,8 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	callback := make(chan capabilities.CapabilityResponse, 10)
-	err = cp.Execute(ctx, callback, executeReq)
+
+	callback, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	fc.Advance(1 * time.Hour)
@@ -133,7 +132,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 
 	ctx := tests.Context(t)
 	s := newStore()
-	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
+	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})

@@ -1,6 +1,7 @@
 package triggers
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ var (
 )
 
 func TestMercuryTrigger(t *testing.T) {
-	ts := NewMercuryTriggerService(logger.Nop())
+	ts := NewMercuryTriggerService(logger.Test(t), 10)
 	ctx := tests.Context(t)
 	require.NotNil(t, ts)
 
@@ -47,8 +48,9 @@ func TestMercuryTrigger(t *testing.T) {
 		Config: configWrapped,
 		Inputs: inputsWrapped,
 	}
-	callback := make(chan capabilities.CapabilityResponse, 10)
-	require.NoError(t, ts.RegisterTrigger(ctx, callback, cr))
+
+	callback, err := ts.RegisterTrigger(ctx, cr)
+	require.NoError(t, err)
 
 	// Send events to trigger and check for them in the callback
 	fr := []FeedReport{
@@ -68,7 +70,7 @@ func TestMercuryTrigger(t *testing.T) {
 			ObservationTimestamp: 3,
 		},
 	}
-	err = ts.ProcessReport(fr)
+	err = ts.ProcessReport(ctx, fr)
 	assert.NoError(t, err)
 	assert.Len(t, callback, 1)
 	msg := <-callback
@@ -80,13 +82,13 @@ func TestMercuryTrigger(t *testing.T) {
 
 	// Unregister the trigger and check that events no longer go on the callback
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr))
-	err = ts.ProcessReport(fr)
+	err = ts.ProcessReport(ctx, fr)
 	assert.NoError(t, err)
 	assert.Len(t, callback, 0)
 }
 
 func TestMultipleMercuryTriggers(t *testing.T) {
-	ts := NewMercuryTriggerService(logger.Nop())
+	ts := NewMercuryTriggerService(logger.Test(t), 10)
 	ctx := tests.Context(t)
 	require.NotNil(t, ts)
 
@@ -142,11 +144,11 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 		Config: cwrapped2,
 	}
 
-	callback1 := make(chan capabilities.CapabilityResponse, 10)
-	callback2 := make(chan capabilities.CapabilityResponse, 10)
+	callback1, err := ts.RegisterTrigger(ctx, cr1)
+	require.NoError(t, err)
 
-	require.NoError(t, ts.RegisterTrigger(ctx, callback1, cr1))
-	require.NoError(t, ts.RegisterTrigger(ctx, callback2, cr2))
+	callback2, err := ts.RegisterTrigger(ctx, cr2)
+	require.NoError(t, err)
 
 	// Send events to trigger and check for them in the callback
 	fr1 := []FeedReport{
@@ -203,7 +205,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 		},
 	}
 
-	err = ts.ProcessReport(fr1)
+	err = ts.ProcessReport(ctx, fr1)
 	assert.NoError(t, err)
 	assert.Len(t, callback1, 1)
 	assert.Len(t, callback2, 1)
@@ -246,7 +248,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 			ObservationTimestamp: 20,
 		},
 	}
-	err = ts.ProcessReport(fr2)
+	err = ts.ProcessReport(ctx, fr2)
 	assert.NoError(t, err)
 	assert.Len(t, callback1, 0)
 	assert.Len(t, callback2, 1)
@@ -262,10 +264,144 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.Equal(t, mfr2[0], reports[0])
 
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr2))
-	err = ts.ProcessReport(fr1)
+	err = ts.ProcessReport(ctx, fr1)
 	assert.NoError(t, err)
 	assert.Len(t, callback1, 0)
 	assert.Len(t, callback2, 0)
+}
+
+func TestSlowConsumer(t *testing.T) {
+
+	ts := NewMercuryTriggerService(logger.Test(t), 1)
+	ctx := tests.Context(t)
+	require.NotNil(t, ts)
+
+	im1 := map[string]interface{}{
+		"triggerId": "test-id-1",
+	}
+
+	iwrapped1, err := values.NewMap(im1)
+	require.NoError(t, err)
+
+	cm1 := map[string]interface{}{
+		"feedIds": []string{
+			feedOne,
+			feedTwo,
+		},
+	}
+
+	cwrapped1, err := values.NewMap(cm1)
+	require.NoError(t, err)
+
+	cr1 := capabilities.CapabilityRequest{
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID: "workflow-id-1",
+		},
+		Inputs: iwrapped1,
+		Config: cwrapped1,
+	}
+
+	im2 := map[string]interface{}{
+		"triggerId": "test-id-2",
+	}
+
+	iwrapped2, err := values.NewMap(im2)
+	require.NoError(t, err)
+
+	cm2 := map[string]interface{}{
+		"feedIds": []string{
+			feedThree,
+			feedFour,
+		},
+	}
+
+	cwrapped2, err := values.NewMap(cm2)
+	require.NoError(t, err)
+
+	cr2 := capabilities.CapabilityRequest{
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID: "workflow-id-1",
+		},
+		Inputs: iwrapped2,
+		Config: cwrapped2,
+	}
+
+	callback1, err := ts.RegisterTrigger(ctx, cr1)
+	require.NoError(t, err)
+
+	callback2, err := ts.RegisterTrigger(ctx, cr2)
+	require.NoError(t, err)
+
+	// Send events to trigger and check for them in the callback
+	fr1 := []FeedReport{
+		{
+			FeedID:               mercury.FeedID(feedOne).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       20,
+			ObservationTimestamp: 5,
+		},
+		{
+			FeedID:               mercury.FeedID(feedTwo).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       25,
+			ObservationTimestamp: 8,
+		},
+		{
+			FeedID:               mercury.FeedID(feedThree).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       30,
+			ObservationTimestamp: 10,
+		},
+		{
+			FeedID:               mercury.FeedID(feedFour).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       40,
+			ObservationTimestamp: 15,
+		},
+	}
+
+	err = ts.ProcessReport(ctx, fr1)
+	assert.NoError(t, err)
+	assert.Len(t, callback1, 1)
+	assert.Len(t, callback2, 1)
+
+	// Consume from callback 1 but not from callback 2 to simulate a slow consumer
+	<-callback1
+
+	fr2 := []FeedReport{
+		{
+			FeedID:               mercury.FeedID(feedOne).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       30,
+			ObservationTimestamp: 15,
+		},
+		{
+			FeedID:               mercury.FeedID(feedTwo).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       35,
+			ObservationTimestamp: 18,
+		},
+		{
+			FeedID:               mercury.FeedID(feedThree).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       40,
+			ObservationTimestamp: 20,
+		},
+		{
+			FeedID:               mercury.FeedID(feedFour).Bytes(),
+			FullReport:           []byte("0x1234"),
+			BenchmarkPrice:       50,
+			ObservationTimestamp: 25,
+		},
+	}
+
+	err = ts.ProcessReport(ctx, fr2)
+	assert.NotNil(t, err)
+	var processReportError *ProcessReportError
+	errors.As(err, &processReportError)
+	assert.Equal(t, processReportError.FailedTriggerIDsToReportIDs["workflow-id-1|test-id-2"], []int{2, 3})
+	assert.Len(t, callback1, 1)
+	assert.Len(t, callback2, 1)
 }
 
 func upwrapTriggerEvent(t *testing.T, wrappedEvent values.Value) (capabilities.TriggerEvent, []mercury.FeedReport) {

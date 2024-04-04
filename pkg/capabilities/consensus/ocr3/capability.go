@@ -47,11 +47,16 @@ type capability struct {
 
 	transmitCh chan *response
 	newTimerCh chan *request
+
+	callbackChannelBufferSize int
 }
 
 var _ capabilityIface = (*capability)(nil)
 
-func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
+var _ capabilities.ActionCapability = (*capability)(nil)
+
+func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger,
+	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo: info,
 		store:          s,
@@ -65,6 +70,8 @@ func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration
 
 		transmitCh: make(chan *response),
 		newTimerCh: make(chan *request),
+
+		callbackChannelBufferSize: callbackChannelBufferSize,
 	}
 	return o
 }
@@ -158,23 +165,23 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 	return nil
 }
 
-func (o *capability) Execute(ctx context.Context, callback chan<- capabilities.CapabilityResponse, request capabilities.CapabilityRequest) error {
+func (o *capability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
 	// Receives and stores an observation to do consensus on
 	// Receives an aggregation method; at this point the method has been validated
 	// Returns the consensus result over a channel
-	r, err := o.unmarshalRequest(ctx, request, callback)
+	r, err := o.unmarshalRequest(ctx, request)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
 
 	err = o.store.add(ctx, r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	o.newTimerCh <- r
-	return nil
+	return r.CallbackCh, nil
 }
 
 func (o *capability) worker() {
@@ -238,7 +245,7 @@ func (o *capability) transmitResponse(ctx context.Context, resp *response) error
 	return nil
 }
 
-func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.CapabilityRequest, callback chan<- capabilities.CapabilityResponse) (*request, error) {
+func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.CapabilityRequest) (*request, error) {
 	valuesMap, err := r.Inputs.Unwrap()
 	if err != nil {
 		return nil, err
@@ -250,9 +257,10 @@ func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.Capabi
 	}
 
 	expiresAt := o.clock.Now().Add(o.requestTimeout)
+	callbackCh := make(chan capabilities.CapabilityResponse, o.callbackChannelBufferSize)
 	req := &request{
 		RequestCtx:          context.Background(), // TODO: set correct context
-		CallbackCh:          callback,
+		CallbackCh:          callbackCh,
 		WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 		WorkflowID:          r.Metadata.WorkflowID,
 		Observations:        obsList,

@@ -12,7 +12,7 @@ type request struct {
 	Observations *values.List `mapstructure:"-"`
 	ExpiresAt    time.Time
 
-	CallbackCh chan<- capabilities.CapabilityResponse
+	CallbackCh chan capabilities.CapabilityResponse
 	RequestCtx context.Context
 
 	WorkflowExecutionID string

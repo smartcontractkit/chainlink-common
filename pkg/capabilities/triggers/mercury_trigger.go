@@ -31,18 +31,21 @@ type MercuryTriggerService struct {
 	feedIDsForTriggerID map[string][]mercury.FeedID
 	triggerIDsForFeedID map[mercury.FeedID]map[string]bool
 	mu                  sync.Mutex
-	lggr                logger.Logger
+
+	sendChannelBufferSize int
+	lggr                  logger.Logger
 }
 
 var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 
-func NewMercuryTriggerService(lggr logger.Logger) *MercuryTriggerService {
+func NewMercuryTriggerService(lggr logger.Logger, sendChannelBufferSize int) *MercuryTriggerService {
 	return &MercuryTriggerService{
-		CapabilityInfo:      mercuryInfo,
-		chans:               map[string]chan<- capabilities.CapabilityResponse{},
-		feedIDsForTriggerID: make(map[string][]mercury.FeedID),
-		triggerIDsForFeedID: make(map[mercury.FeedID]map[string]bool),
-		lggr:                logger.Named(lggr, "MercuryTriggerService"),
+		CapabilityInfo:        mercuryInfo,
+		chans:                 map[string]chan<- capabilities.CapabilityResponse{},
+		feedIDsForTriggerID:   make(map[string][]mercury.FeedID),
+		triggerIDsForFeedID:   make(map[mercury.FeedID]map[string]bool),
+		lggr:                  logger.Named(lggr, "MercuryTriggerService"),
+		sendChannelBufferSize: sendChannelBufferSize,
 	}
 }
 
@@ -53,7 +56,19 @@ type FeedReport struct {
 	ObservationTimestamp int64                        `json:"observationTimestamp"`
 }
 
-func (o *MercuryTriggerService) ProcessReport(reports []FeedReport) error {
+type ProcessReportError struct {
+	FailedTriggerIDsToReportIDs map[string][]int
+	ErrorMsg                    string
+}
+
+func (m *ProcessReportError) Error() string {
+	return fmt.Sprintf("failed to process reports for triggerIDs: %v, error: %s", m.FailedTriggerIDsToReportIDs, m.ErrorMsg)
+}
+
+// ProcessReport takes a list of FeedReports and sends them to the appropriate trigger channels.  In the event of failure
+// to send a report to a trigger, a ProcessReportError will be returned that will contain the failed triggerIDs and the
+// error message.
+func (o *MercuryTriggerService) ProcessReport(ctx context.Context, reports []FeedReport) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -74,6 +89,7 @@ func (o *MercuryTriggerService) ProcessReport(reports []FeedReport) error {
 
 	// Then for each trigger id, find which reports correspond to that trigger and create an event bundling the reports
 	// and send it to the channel associated with the trigger id.
+	var processReportError *ProcessReportError
 	for triggerID, reportIDs := range triggerIDsToReports {
 		reportList := make([]mercury.FeedReport, 0)
 		for _, reportID := range reportIDs {
@@ -114,13 +130,29 @@ func (o *MercuryTriggerService) ProcessReport(reports []FeedReport) error {
 		if !ok {
 			return fmt.Errorf("no registration for %s", triggerID)
 		}
+
 		o.lggr.Debugw("ProcessReport pushing event", "triggerID", triggerID, "nReports", len(reportList), "eventID", triggerEvent.ID)
-		ch <- capabilityResponse
+		select {
+		case ch <- capabilityResponse:
+		default:
+			if processReportError == nil {
+				processReportError = &ProcessReportError{
+					FailedTriggerIDsToReportIDs: make(map[string][]int),
+					ErrorMsg:                    "report not sent as send buffer is full",
+				}
+			}
+			processReportError.FailedTriggerIDsToReportIDs[triggerID] = reportIDs
+		}
 	}
+
+	if processReportError != nil {
+		return processReportError
+	}
+
 	return nil
 }
 
-func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
+func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
 	wid := req.Metadata.WorkflowID
 
 	o.mu.Lock()
@@ -128,24 +160,25 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 
 	triggerID, err := o.GetTriggerID(req, wid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// If triggerId is already registered, return an error
 	if _, ok := o.chans[triggerID]; ok {
-		return fmt.Errorf("triggerId %s already registered", triggerID)
+		return nil, fmt.Errorf("triggerId %s already registered", triggerID)
 	}
 
 	feedIDs, err := o.GetFeedIDs(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(feedIDs) == 0 {
-		return errors.New("no feedIDs to register")
+		return nil, errors.New("no feedIDs to register")
 	}
 
-	o.chans[triggerID] = callback
+	ch := make(chan capabilities.CapabilityResponse, o.sendChannelBufferSize)
+	o.chans[triggerID] = ch
 	o.feedIDsForTriggerID[triggerID] = feedIDs
 	for _, feedID := range feedIDs {
 		// check if we need to initialize the map first
@@ -155,7 +188,7 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback ch
 		o.triggerIDsForFeedID[feedID][triggerID] = true
 	}
 
-	return nil
+	return ch, nil
 }
 
 func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) error {

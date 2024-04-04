@@ -57,10 +57,10 @@ func (f *fakeTxResultsSourceFactory) GetType() string {
 	return "fake-txresults"
 }
 
-func (f *fakeEnvelopeSourceFactory) NewSource(_ ChainConfig, _ FeedConfig) (Source, error) {
+func (f *fakeEnvelopeSourceFactory) NewSource(_ SourceParams) (Source, error) {
 	return &fakeEnvelopeSource{}, nil
 }
-func (f *fakeTxResultsSourceFactory) NewSource(_ ChainConfig, _ FeedConfig) (Source, error) {
+func (f *fakeTxResultsSourceFactory) NewSource(_ SourceParams) (Source, error) {
 	return &fakeTxResultsSource{}, nil
 }
 
@@ -80,7 +80,7 @@ type fakeRandomDataSourceFactory struct {
 
 var _ SourceFactory = (*fakeRandomDataSourceFactory)(nil)
 
-func (f *fakeRandomDataSourceFactory) NewSource(_ ChainConfig, _ FeedConfig) (Source, error) {
+func (f *fakeRandomDataSourceFactory) NewSource(_ SourceParams) (Source, error) {
 	return &fakeSource{f}, nil
 }
 
@@ -114,13 +114,15 @@ func (f *fakeSourceWithWait) Fetch(ctx context.Context) (interface{}, error) {
 	}
 }
 
+var _ SourceFactory = (*fakeSourceFactoryWithError)(nil)
+
 type fakeSourceFactoryWithError struct {
 	updates     chan interface{}
 	errors      chan error
 	returnError bool
 }
 
-func (f *fakeSourceFactoryWithError) NewSource(_ ChainConfig, _ FeedConfig) (Source, error) {
+func (f *fakeSourceFactoryWithError) NewSource(_ SourceParams) (Source, error) {
 	if f.returnError {
 		return nil, fmt.Errorf("fake source factory error")
 	}

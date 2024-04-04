@@ -15,15 +15,15 @@ type instrumentedSourceFactory struct {
 	chainMetrics  ChainMetrics
 }
 
-func (i *instrumentedSourceFactory) NewSource(chainConfig ChainConfig, feedConfig FeedConfig) (Source, error) {
-	source, err := i.sourceFactory.NewSource(chainConfig, feedConfig)
+func (i *instrumentedSourceFactory) NewSource(cfg SourceParams) (Source, error) {
+	source, err := i.sourceFactory.NewSource(cfg)
 	if err != nil {
 		return nil, err
 	}
 	return &instrumentedSource{
 		i.sourceFactory.GetType(),
 		source,
-		NewFeedMetrics(chainConfig, feedConfig),
+		NewFeedMetrics(cfg.ChainConfig, cfg.FeedConfig),
 	}, nil
 }
 

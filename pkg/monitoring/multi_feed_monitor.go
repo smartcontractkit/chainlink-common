@@ -59,7 +59,11 @@ FEED_LOOP:
 		// Create data sources
 		pollers := []Poller{}
 		for _, sourceFactory := range m.sourceFactories {
-			source, err := sourceFactory.NewSource(m.chainConfig, feedConfig)
+			source, err := sourceFactory.NewSource(SourceParams{
+				ChainConfig: m.chainConfig,
+				FeedConfig:  feedConfig,
+				Nodes:       data.Nodes,
+			})
 			if err != nil {
 				feedLogger.Errorw("failed to create source", "error", err, "source-type", fmt.Sprintf("%T", sourceFactory))
 				continue

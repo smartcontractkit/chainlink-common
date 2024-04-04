@@ -214,10 +214,10 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 			10, // bufferCapacity for source pollers
 		)
 
-		sourceFactory1.On("NewSource", chainConfig, feeds[0]).Return(nil, fmt.Errorf("source_factory1/feed1 failed"))
-		sourceFactory2.On("NewSource", chainConfig, feeds[0]).Return(nil, fmt.Errorf("source_factory2/feed1 failed"))
-		sourceFactory1.On("NewSource", chainConfig, feeds[1]).Return(source1, nil)
-		sourceFactory2.On("NewSource", chainConfig, feeds[1]).Return(source2, nil)
+		sourceFactory1.On("NewSource", SourceParams{chainConfig, feeds[0], nodes}).Return(nil, fmt.Errorf("source_factory1/feed1 failed"))
+		sourceFactory2.On("NewSource", SourceParams{chainConfig, feeds[0], nodes}).Return(nil, fmt.Errorf("source_factory2/feed1 failed"))
+		sourceFactory1.On("NewSource", SourceParams{chainConfig, feeds[1], nodes}).Return(source1, nil)
+		sourceFactory2.On("NewSource", SourceParams{chainConfig, feeds[1], nodes}).Return(source2, nil)
 
 		sourceFactory1.On("GetType").Return("fake")
 		sourceFactory2.On("GetType").Return("fake")

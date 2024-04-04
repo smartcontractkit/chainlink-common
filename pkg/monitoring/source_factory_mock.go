@@ -27,9 +27,9 @@ func (_m *SourceFactoryMock) GetType() string {
 	return r0
 }
 
-// NewSource provides a mock function with given fields: chainConfig, feedConfig
-func (_m *SourceFactoryMock) NewSource(chainConfig ChainConfig, feedConfig FeedConfig) (Source, error) {
-	ret := _m.Called(chainConfig, feedConfig)
+// NewSource provides a mock function with given fields: _a0
+func (_m *SourceFactoryMock) NewSource(_a0 SourceParams) (Source, error) {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewSource")
@@ -37,19 +37,19 @@ func (_m *SourceFactoryMock) NewSource(chainConfig ChainConfig, feedConfig FeedC
 
 	var r0 Source
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ChainConfig, FeedConfig) (Source, error)); ok {
-		return rf(chainConfig, feedConfig)
+	if rf, ok := ret.Get(0).(func(SourceParams) (Source, error)); ok {
+		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(ChainConfig, FeedConfig) Source); ok {
-		r0 = rf(chainConfig, feedConfig)
+	if rf, ok := ret.Get(0).(func(SourceParams) Source); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(Source)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(ChainConfig, FeedConfig) error); ok {
-		r1 = rf(chainConfig, feedConfig)
+	if rf, ok := ret.Get(1).(func(SourceParams) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}

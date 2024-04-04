@@ -25,12 +25,23 @@ func TestFeedMonitor(t *testing.T) {
 		feedConfig := generateFeedConfig()
 		nodes := []NodeConfig{generateNodeConfig()}
 
+		sourceCfg := SourceParams{
+			chainConfig,
+			feedConfig,
+			nodes,
+		}
+		expCfg := ExporterParams{
+			chainConfig,
+			feedConfig,
+			nodes,
+		}
+
 		sourceFactory1 := &fakeRandomDataSourceFactory{make(chan interface{})}
-		source1, err := sourceFactory1.NewSource(chainConfig, feedConfig)
+		source1, err := sourceFactory1.NewSource(sourceCfg)
 		require.NoError(t, err)
 
 		sourceFactory2 := &fakeRandomDataSourceFactory{make(chan interface{})}
-		source2, err := sourceFactory2.NewSource(chainConfig, feedConfig)
+		source2, err := sourceFactory2.NewSource(sourceCfg)
 		require.NoError(t, err)
 
 		var bufferCapacity uint32 // no buffering
@@ -78,17 +89,9 @@ func TestFeedMonitor(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
-		prometheusExporter, err := prometheusExporterFactory.NewExporter(ExporterParams{
-			chainConfig,
-			feedConfig,
-			nodes,
-		})
+		prometheusExporter, err := prometheusExporterFactory.NewExporter(expCfg)
 		require.NoError(t, err)
-		kafkaExporter, err := kafkaExporterFactory.NewExporter(ExporterParams{
-			chainConfig,
-			feedConfig,
-			nodes,
-		})
+		kafkaExporter, err := kafkaExporterFactory.NewExporter(expCfg)
 		require.NoError(t, err)
 
 		exporters := []Exporter{prometheusExporter, kafkaExporter}

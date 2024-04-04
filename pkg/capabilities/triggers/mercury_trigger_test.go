@@ -283,7 +283,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 
 func TestMercuryTrigger_GenerateConfigSchema(t *testing.T) {
 	ts := NewMercuryTriggerService()
-	resp := ts.GetRequestConfigJsonSchema()
+	resp := ts.GetRequestConfigJSONSchema()
 	require.NoError(t, resp.Err)
 	schemaStr, ok := resp.Value.(*values.String)
 	require.True(t, ok)

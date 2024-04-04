@@ -198,8 +198,8 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
-func (t *triggerExecutableServer) GetRequestConfigJsonSchema(ctx context.Context, _ *emptypb.Empty) (*capabilitiespb.CapabilityResponse, error) {
-	resp := t.impl.GetRequestConfigJsonSchema()
+func (t *triggerExecutableServer) GetRequestConfigJSONSchema(ctx context.Context, _ *emptypb.Empty) (*capabilitiespb.CapabilityResponse, error) {
+	resp := t.impl.GetRequestConfigJSONSchema()
 
 	// NOTE: Am i doing this right?
 	return &capabilitiespb.CapabilityResponse{
@@ -252,8 +252,8 @@ type triggerExecutableClient struct {
 
 var _ capabilities.TriggerExecutable = (*triggerExecutableClient)(nil)
 
-func (t *triggerExecutableClient) GetRequestConfigJsonSchema() (*capabilities.CapabilityResponse) {
-	resp, err := t.grpc.GetRequestConfigJsonSchema(context.Background(), &emptypb.Empty{})
+func (t *triggerExecutableClient) GetRequestConfigJSONSchema() (*capabilities.CapabilityResponse) {
+	resp, err := t.grpc.GetRequestConfigJSONSchema(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return &capabilities.CapabilityResponse{
 			Err: err,

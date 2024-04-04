@@ -21,7 +21,7 @@ func NewValidator(requestConfig any) *Validator {
 	}
 }
 
-func (v *Validator) GetRequestConfigJsonSchema()  (*CapabilityResponse) {
+func (v *Validator) GetRequestConfigJSONSchema()  (*CapabilityResponse) {
 	if v.requestConfigSchema != nil {
 		return &CapabilityResponse{
 			Value: v.requestConfigSchema,

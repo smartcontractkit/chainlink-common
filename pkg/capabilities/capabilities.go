@@ -119,7 +119,7 @@ type Validatable interface {
 	//
 	// They take in a request object that has a `Config` field that may conflate
 	// with the `Config` field within `Execute`.
-	GetRequestConfigJsonSchema() (*CapabilityResponse)
+	GetRequestConfigJSONSchema() (*CapabilityResponse)
 	// ValidateRequestConfig(config *values.Map) error
 	// ValidateRequestInput(inputs *values.Map) error
 	// NOTE: Should we need this? Or should we just document this within

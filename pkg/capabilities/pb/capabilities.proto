@@ -49,7 +49,7 @@ message UnregisterTriggerRequest {
 service TriggerExecutable {
   rpc RegisterTrigger (RegisterTriggerRequest) returns (google.protobuf.Empty) {}
   rpc UnregisterTrigger (UnregisterTriggerRequest) returns (google.protobuf.Empty) {}
-  rpc GetRequestConfigJsonSchema(google.protobuf.Empty) returns (CapabilityResponse) {}
+  rpc GetRequestConfigJSONSchema(google.protobuf.Empty) returns (CapabilityResponse) {}
 }
 
 message CapabilityResponse {

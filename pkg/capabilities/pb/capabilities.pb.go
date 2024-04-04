@@ -825,7 +825,7 @@ var file_capabilities_pb_capabilities_proto_depIdxs = []int32{
 	12, // 12: loop.BaseCapability.Info:input_type -> google.protobuf.Empty
 	4,  // 13: loop.TriggerExecutable.RegisterTrigger:input_type -> loop.RegisterTriggerRequest
 	5,  // 14: loop.TriggerExecutable.UnregisterTrigger:input_type -> loop.UnregisterTriggerRequest
-	12, // 15: loop.TriggerExecutable.GetRequestConfigJsonSchema:input_type -> google.protobuf.Empty
+	12, // 15: loop.TriggerExecutable.GetRequestConfigJSONSchema:input_type -> google.protobuf.Empty
 	6,  // 16: loop.Callback.SendResponse:input_type -> loop.CapabilityResponse
 	12, // 17: loop.Callback.CloseCallback:input_type -> google.protobuf.Empty
 	8,  // 18: loop.CallbackExecutable.RegisterToWorkflow:input_type -> loop.RegisterToWorkflowRequest
@@ -834,7 +834,7 @@ var file_capabilities_pb_capabilities_proto_depIdxs = []int32{
 	1,  // 21: loop.BaseCapability.Info:output_type -> loop.CapabilityInfoReply
 	12, // 22: loop.TriggerExecutable.RegisterTrigger:output_type -> google.protobuf.Empty
 	12, // 23: loop.TriggerExecutable.UnregisterTrigger:output_type -> google.protobuf.Empty
-	6,  // 24: loop.TriggerExecutable.GetRequestConfigJsonSchema:output_type -> loop.CapabilityResponse
+	6,  // 24: loop.TriggerExecutable.GetRequestConfigJSONSchema:output_type -> loop.CapabilityResponse
 	12, // 25: loop.Callback.SendResponse:output_type -> google.protobuf.Empty
 	12, // 26: loop.Callback.CloseCallback:output_type -> google.protobuf.Empty
 	12, // 27: loop.CallbackExecutable.RegisterToWorkflow:output_type -> google.protobuf.Empty

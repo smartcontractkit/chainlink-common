@@ -77,7 +77,7 @@ func TestOnDemand_(t *testing.T) {
 
 func TestOnDemandTrigger_GenerateConfigSchema(t *testing.T) {
 	ts := NewOnDemand()
-	schema := ts.GetRequestConfigJsonSchema()
+	schema := ts.GetRequestConfigJSONSchema()
 	require.NotNil(t, schema)
 	require.NoError(t, schema.Err)
 	schemaStr := schema.Value.(*values.String)

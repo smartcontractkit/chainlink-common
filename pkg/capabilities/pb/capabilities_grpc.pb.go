@@ -112,7 +112,7 @@ var BaseCapability_ServiceDesc = grpc.ServiceDesc{
 const (
 	TriggerExecutable_RegisterTrigger_FullMethodName            = "/loop.TriggerExecutable/RegisterTrigger"
 	TriggerExecutable_UnregisterTrigger_FullMethodName          = "/loop.TriggerExecutable/UnregisterTrigger"
-	TriggerExecutable_GetRequestConfigJsonSchema_FullMethodName = "/loop.TriggerExecutable/GetRequestConfigJsonSchema"
+	TriggerExecutable_GetRequestConfigJSONSchema_FullMethodName = "/loop.TriggerExecutable/GetRequestConfigJSONSchema"
 )
 
 // TriggerExecutableClient is the client API for TriggerExecutable service.
@@ -121,7 +121,7 @@ const (
 type TriggerExecutableClient interface {
 	RegisterTrigger(ctx context.Context, in *RegisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterTrigger(ctx context.Context, in *UnregisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetRequestConfigJsonSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error)
+	GetRequestConfigJSONSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error)
 }
 
 type triggerExecutableClient struct {
@@ -150,9 +150,9 @@ func (c *triggerExecutableClient) UnregisterTrigger(ctx context.Context, in *Unr
 	return out, nil
 }
 
-func (c *triggerExecutableClient) GetRequestConfigJsonSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error) {
+func (c *triggerExecutableClient) GetRequestConfigJSONSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error) {
 	out := new(CapabilityResponse)
-	err := c.cc.Invoke(ctx, TriggerExecutable_GetRequestConfigJsonSchema_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, TriggerExecutable_GetRequestConfigJSONSchema_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (c *triggerExecutableClient) GetRequestConfigJsonSchema(ctx context.Context
 type TriggerExecutableServer interface {
 	RegisterTrigger(context.Context, *RegisterTriggerRequest) (*emptypb.Empty, error)
 	UnregisterTrigger(context.Context, *UnregisterTriggerRequest) (*emptypb.Empty, error)
-	GetRequestConfigJsonSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error)
+	GetRequestConfigJSONSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error)
 	mustEmbedUnimplementedTriggerExecutableServer()
 }
 
@@ -179,8 +179,8 @@ func (UnimplementedTriggerExecutableServer) RegisterTrigger(context.Context, *Re
 func (UnimplementedTriggerExecutableServer) UnregisterTrigger(context.Context, *UnregisterTriggerRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterTrigger not implemented")
 }
-func (UnimplementedTriggerExecutableServer) GetRequestConfigJsonSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRequestConfigJsonSchema not implemented")
+func (UnimplementedTriggerExecutableServer) GetRequestConfigJSONSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRequestConfigJSONSchema not implemented")
 }
 func (UnimplementedTriggerExecutableServer) mustEmbedUnimplementedTriggerExecutableServer() {}
 
@@ -231,20 +231,20 @@ func _TriggerExecutable_UnregisterTrigger_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TriggerExecutable_GetRequestConfigJsonSchema_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TriggerExecutable_GetRequestConfigJSONSchema_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TriggerExecutableServer).GetRequestConfigJsonSchema(ctx, in)
+		return srv.(TriggerExecutableServer).GetRequestConfigJSONSchema(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TriggerExecutable_GetRequestConfigJsonSchema_FullMethodName,
+		FullMethod: TriggerExecutable_GetRequestConfigJSONSchema_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TriggerExecutableServer).GetRequestConfigJsonSchema(ctx, req.(*emptypb.Empty))
+		return srv.(TriggerExecutableServer).GetRequestConfigJSONSchema(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -265,8 +265,8 @@ var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TriggerExecutable_UnregisterTrigger_Handler,
 		},
 		{
-			MethodName: "GetRequestConfigJsonSchema",
-			Handler:    _TriggerExecutable_GetRequestConfigJsonSchema_Handler,
+			MethodName: "GetRequestConfigJSONSchema",
+			Handler:    _TriggerExecutable_GetRequestConfigJSONSchema_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type ActionCapabilityClient struct {
@@ -200,11 +201,22 @@ var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
 func (t *triggerExecutableServer) GetRequestConfigJSONSchema(ctx context.Context, _ *emptypb.Empty) (*capabilitiespb.CapabilityResponse, error) {
 	resp := t.impl.GetRequestConfigJSONSchema()
+	if resp.Value == nil && resp.Err == nil {
+		return nil, errors.New("GetRequestConfigJSONSchema: must return either a value or an error")
+	}
 
-	// NOTE: Am i doing this right?
+	var err string
+	if resp.Err != nil {
+		err = resp.Err.Error()
+	}
+	var val *pb.Value
+	if resp.Value != nil {
+		val = values.Proto(resp.Value)
+	}
+	
 	return &capabilitiespb.CapabilityResponse{
-		Value: values.Proto(resp.Value),
-		Error: resp.Err.Error(),
+		Error: err,
+		Value: val,
 	}, nil
 }
 
@@ -257,6 +269,12 @@ func (t *triggerExecutableClient) GetRequestConfigJSONSchema() (*capabilities.Ca
 	if err != nil {
 		return &capabilities.CapabilityResponse{
 			Err: err,
+		}
+	}
+
+	if resp.Error == "" {
+		return &capabilities.CapabilityResponse{
+			Value: values.FromProto(resp.Value),
 		}
 	}
 

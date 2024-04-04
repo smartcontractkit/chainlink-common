@@ -23,6 +23,15 @@ type mockTrigger struct {
 	callback chan<- capabilities.CapabilityResponse
 }
 
+var _ capabilities.TriggerCapability = (*mockTrigger)(nil)
+
+func (m *mockTrigger) GetRequestConfigJSONSchema() *capabilities.CapabilityResponse {
+	return &capabilities.CapabilityResponse{
+		Err: nil,
+		Value: values.NewString(`{}`),
+	} 
+}
+
 func (m *mockTrigger) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, request capabilities.CapabilityRequest) error {
 	m.callback = callback
 	return nil
@@ -204,6 +213,20 @@ func Test_Capabilities(t *testing.T) {
 		expectedInfo, err := mtr.Info(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, expectedInfo, gotInfo)
+	})
+
+	t.Run("fetching a trigger capability and calling GetRequestJSONSchema", func(t *testing.T) {
+		tr, err := newCapabilityPlugin(t, mtr)
+		require.NoError(t, err)
+
+		ctr := tr.(capabilities.TriggerCapability)
+		schema := ctr.GetRequestConfigJSONSchema()
+
+		assert.NotNil(t, schema)
+		assert.Nil(t, schema.Err)
+
+		expectedSchema := values.NewString(`{}`)
+		assert.Equal(t, expectedSchema, schema.Value)
 	})
 
 	t.Run("fetching an action capability, and (un)registering it", func(t *testing.T) {

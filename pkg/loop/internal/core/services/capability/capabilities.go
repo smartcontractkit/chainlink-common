@@ -10,12 +10,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type ActionCapabilityClient struct {
@@ -251,7 +251,7 @@ func (t *triggerExecutableServer) RegisterTrigger(ctx context.Context, request *
 	connCtx, connCancel := context.WithCancel(context.Background())
 	go callbackIssuer(connCtx, capabilitiespb.NewCallbackClient(conn), ch, t.Logger)
 
-	req := pb.CapabilityRequestFromProto(request.CapabilityRequest)
+	req := capabilitiespb.CapabilityRequestFromProto(request.CapabilityRequest)
 	err = t.impl.RegisterTrigger(ctx, ch, req)
 	if err != nil {
 		connCancel()
@@ -263,7 +263,7 @@ func (t *triggerExecutableServer) RegisterTrigger(ctx context.Context, request *
 }
 
 func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *capabilitiespb.UnregisterTriggerRequest) (*emptypb.Empty, error) {
-	req := pb.CapabilityRequestFromProto(request.CapabilityRequest)
+	req := capabilitiespb.CapabilityRequestFromProto(request.CapabilityRequest)
 	err := t.impl.UnregisterTrigger(ctx, req)
 	if err != nil {
 		return nil, err
@@ -294,7 +294,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback 
 
 	r := &capabilitiespb.RegisterTriggerRequest{
 		CallbackId:        cid,
-		CapabilityRequest: pb.CapabilityRequestToProto(req),
+		CapabilityRequest: capabilitiespb.CapabilityRequestToProto(req),
 	}
 	_, err = t.grpc.RegisterTrigger(ctx, r)
 	if err != nil {
@@ -305,7 +305,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback 
 
 func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) error {
 	r := &capabilitiespb.UnregisterTriggerRequest{
-		CapabilityRequest: pb.CapabilityRequestToProto(req),
+		CapabilityRequest: capabilitiespb.CapabilityRequestToProto(req),
 	}
 	_, err := t.grpc.UnregisterTrigger(ctx, r)
 	return err
@@ -369,7 +369,7 @@ func (c *callbackExecutableServer) Execute(ctx context.Context, req *capabilitie
 	connCtx, connCancel := context.WithCancel(context.Background())
 	go callbackIssuer(connCtx, capabilitiespb.NewCallbackClient(conn), ch, c.Logger)
 
-	r := pb.CapabilityRequestFromProto(req.CapabilityRequest)
+	r := capabilitiespb.CapabilityRequestFromProto(req.CapabilityRequest)
 	err = c.impl.Execute(ctx, ch, r)
 	if err != nil {
 		connCancel()
@@ -404,7 +404,7 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, callback chan<- 
 
 	r := &capabilitiespb.ExecuteRequest{
 		CallbackId:        cid,
-		CapabilityRequest: pb.CapabilityRequestToProto(req),
+		CapabilityRequest: capabilitiespb.CapabilityRequestToProto(req),
 	}
 
 	_, err = c.grpc.Execute(ctx, r)
@@ -466,7 +466,7 @@ func (c *callbackServer) SendResponse(ctx context.Context, resp *capabilitiespb.
 	if c.isClosed {
 		return nil, errors.New("cannot send response: the underlying channel has been closed")
 	}
-	c.ch <- pb.CapabilityResponseFromProto(resp)
+	c.ch <- capabilitiespb.CapabilityResponseFromProto(resp)
 	return &emptypb.Empty{}, nil
 }
 
@@ -492,7 +492,7 @@ func callbackIssuer(ctx context.Context, client capabilitiespb.CallbackClient, c
 				return
 			}
 
-			cr := pb.CapabilityResponseToProto(resp)
+			cr := capabilitiespb.CapabilityResponseToProto(resp)
 			_, err := client.SendResponse(ctx, cr)
 			if err != nil {
 				logger.Error("error sending callback response", err)

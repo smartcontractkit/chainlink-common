@@ -67,6 +67,10 @@ func (p *prometheusExporterFactory) NewExporter(
 	return exporter, nil
 }
 
+func (p *prometheusExporterFactory) GetType() string {
+	return "prometheus"
+}
+
 type prometheusExporter struct {
 	chainConfig ChainConfig
 	feedConfig  FeedConfig

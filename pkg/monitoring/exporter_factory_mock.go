@@ -9,6 +9,20 @@ type ExporterFactoryMock struct {
 	mock.Mock
 }
 
+// GetType provides a mock function with given fields:
+func (_m *ExporterFactoryMock) GetType() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // NewExporter provides a mock function with given fields: _a0
 func (_m *ExporterFactoryMock) NewExporter(_a0 ExporterParams) (Exporter, error) {
 	ret := _m.Called(_a0)

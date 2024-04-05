@@ -21,4 +21,6 @@ type ExporterParams struct {
 // ExporterFactory is used to create a new exporter for each feed that needs to be monitored.
 type ExporterFactory interface {
 	NewExporter(ExporterParams) (Exporter, error)
+	// GetType should return a namespace for exporters
+	GetType() string
 }

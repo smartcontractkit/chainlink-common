@@ -170,6 +170,8 @@ func (f *fakeSourceWithPanic) Fetch(ctx context.Context) (interface{}, error) {
 
 // Exporters
 
+var _ ExporterFactory = (*fakeExporterFactory)(nil)
+
 type fakeExporterFactory struct {
 	data        chan interface{}
 	returnError bool
@@ -182,6 +184,10 @@ func (f *fakeExporterFactory) NewExporter(_ ExporterParams) (Exporter, error) {
 	return &fakeExporter{
 		f.data,
 	}, nil
+}
+
+func (f *fakeExporterFactory) GetType() string {
+	return "fake"
 }
 
 type fakeExporter struct {

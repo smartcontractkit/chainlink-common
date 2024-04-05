@@ -55,6 +55,10 @@ func (k *kafkaExporterFactory) NewExporter(
 	}, nil
 }
 
+func (k *kafkaExporterFactory) GetType() string {
+	return "kafka"
+}
+
 type kafkaExporter struct {
 	chainConfig ChainConfig
 	feedConfig  FeedConfig

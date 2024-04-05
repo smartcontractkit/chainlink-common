@@ -11,7 +11,7 @@ import "google/protobuf/empty.proto";
 // PriceGetter is a service that returns the price of a token in USD. It is a gRPC service adapter for the interface
 // [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/PriceGetter]
 service PriceGetter {
-	rpc IsTokenConfigured(TokenConfiguredRequest) returns (TokenConfiguredResponse) {}
+    rpc IsTokenConfigured(TokenConfiguredRequest) returns (TokenConfiguredResponse) {}
     rpc TokenPricesUSD(TokenPricesRequest) returns (TokenPricesResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }

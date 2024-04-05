@@ -42,14 +42,6 @@ func (s staticPriceGetter) Close() error {
 	return nil
 }
 
-// TokenPricesUSD implements ccip.PriceGetter.
-func (s staticPriceGetter) TokenPricesUSD(ctx context.Context, tokens []cciptypes.Address) (map[cciptypes.Address]*big.Int, error) {
-	if ok := assert.ObjectsAreEqual(s.config.Addresses, tokens); !ok {
-		return nil, fmt.Errorf("unexpected tokens: expected %v, got %v", s.config.Addresses, tokens)
-	}
-	return s.config.Prices, nil
-}
-
 // IsTokenConfigured implements ccip.PriceGetter.
 func (s staticPriceGetter) IsTokenConfigured(ctx context.Context, token cciptypes.Address) (bool, error) {
 	for _, addr := range s.config.Addresses {
@@ -58,6 +50,14 @@ func (s staticPriceGetter) IsTokenConfigured(ctx context.Context, token cciptype
 		}
 	}
 	return false, nil
+}
+
+// TokenPricesUSD implements ccip.PriceGetter.
+func (s staticPriceGetter) TokenPricesUSD(ctx context.Context, tokens []cciptypes.Address) (map[cciptypes.Address]*big.Int, error) {
+	if ok := assert.ObjectsAreEqual(s.config.Addresses, tokens); !ok {
+		return nil, fmt.Errorf("unexpected tokens: expected %v, got %v", s.config.Addresses, tokens)
+	}
+	return s.config.Prices, nil
 }
 
 // Evaluate implements types_test.Evaluator.

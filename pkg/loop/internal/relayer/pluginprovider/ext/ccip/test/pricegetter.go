@@ -50,6 +50,16 @@ func (s staticPriceGetter) TokenPricesUSD(ctx context.Context, tokens []cciptype
 	return s.config.Prices, nil
 }
 
+// IsTokenConfigured implements ccip.PriceGetter.
+func (s staticPriceGetter) IsTokenConfigured(ctx context.Context, token cciptypes.Address) (bool, error) {
+	for _, addr := range s.config.Addresses {
+		if addr == token {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // Evaluate implements types_test.Evaluator.
 func (s staticPriceGetter) Evaluate(ctx context.Context, other cciptypes.PriceGetter) error {
 	got, err := other.TokenPricesUSD(ctx, s.config.Addresses)

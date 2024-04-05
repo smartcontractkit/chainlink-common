@@ -88,4 +88,15 @@ func roundTripPriceGetterTests(ctx context.Context, t *testing.T, client cciptyp
 		require.NoError(t, err)
 		assert.Equal(t, PriceGetter.config.Prices, prices)
 	})
+	t.Run("IsTokenConfigured", func(t *testing.T) {
+		// test token configured
+		isConfigured, err := client.IsTokenConfigured(ctx, PriceGetter.config.Addresses[0])
+		require.NoError(t, err)
+		assert.Equal(t, true, isConfigured)
+
+		var unconfiguredToken cciptypes.Address = "JK"
+		isConfigured2, err := client.IsTokenConfigured(ctx, unconfiguredToken)
+		require.NoError(t, err)
+		assert.Equal(t, false, isConfigured2)
+	})
 }

@@ -65,6 +65,18 @@ func (p *PriceGetterGRPCClient) TokenPricesUSD(ctx context.Context, tokens []cci
 	return prices, nil
 }
 
+// IsTokenConfigured implements ccip.PriceGetter.
+func (p *PriceGetterGRPCClient) IsTokenConfigured(ctx context.Context, token cciptypes.Address) (bool, error) {
+	// convert the format
+	tk := string(token)
+
+	resp, err := p.grpc.IsTokenConfigured(ctx, &ccippb.TokenConfiguredRequest{Token: tk})
+	if err != nil {
+		return false, err
+	}
+	return resp.IsConfigured, nil
+}
+
 func (p *PriceGetterGRPCClient) Close() error {
 	return shutdownGRPCServer(context.Background(), p.grpc)
 }
@@ -86,6 +98,18 @@ func (p *PriceGetterGRPCServer) TokenPricesUSD(ctx context.Context, req *ccippb.
 		convertedPrices[string(addr)] = pb.NewBigIntFromInt(p)
 	}
 	return &ccippb.TokenPricesResponse{Prices: convertedPrices}, nil
+}
+
+// IsTokenConfigured implements ccippb.PriceGetterServer.
+func (p *PriceGetterGRPCServer) IsTokenConfigured(ctx context.Context, req *ccippb.TokenConfiguredRequest) (*ccippb.TokenConfiguredResponse, error) {
+	tk := cciptypes.Address(req.Token)
+
+	isConfigured, err := p.impl.IsTokenConfigured(ctx, tk)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ccippb.TokenConfiguredResponse{IsConfigured: isConfigured}, nil
 }
 
 func (p *PriceGetterGRPCServer) AddDep(closer io.Closer) *PriceGetterGRPCServer {

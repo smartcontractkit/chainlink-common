@@ -32,7 +32,7 @@ type feedMonitor struct {
 // Run should be executed as a goroutine.
 // Signal termination by cancelling ctx; then wait for Run() to exit.
 func (f *feedMonitor) Run(ctx context.Context) {
-	f.log.Infow("starting feed monitor")
+	f.log.Infow("starting monitor", "pollers", len(f.pollers), "exporters", len(f.exporters))
 	var subs utils.Subprocesses
 
 	// Listen for updates

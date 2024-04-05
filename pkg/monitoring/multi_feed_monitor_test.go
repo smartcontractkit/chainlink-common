@@ -3,15 +3,21 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
+	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/monitoring/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 const numFeeds = 10
@@ -227,6 +233,9 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 		exporterFactory1.On("NewExporter", ExporterParams{chainConfig, feeds[1], nodes}).Return(nil, fmt.Errorf("exporter_factory1/feed2 failed"))
 		exporterFactory2.On("NewExporter", ExporterParams{chainConfig, feeds[1], nodes}).Return(nil, fmt.Errorf("exporter_factory2/feed2 failed"))
 
+		exporterFactory1.On("GetType").Return("fake")
+		exporterFactory2.On("GetType").Return("fake")
+
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 		monitor.Run(ctx, RDDData{feeds, nodes})
@@ -311,4 +320,83 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 		// Two sources produce 10 messages each (the third source is broken) and two exporters ingest each message.
 		require.GreaterOrEqual(t, countMessages, int64(10*2*2))
 	})
+}
+
+func TestMultiFeedMonitorNodeOnly(t *testing.T) {
+	lgr, logs := logger.TestObserved(t, zapcore.InfoLevel)
+
+	sf := []SourceFactory{}
+	ef := []ExporterFactory{}
+
+	// generate sources + exporters
+	s := NewSourceMock(t)
+	s.On("Fetch", mock.Anything).Return(0, nil)
+	e := NewExporterMock(t)
+	e.On("Export", mock.Anything, mock.Anything)
+	e.On("Cleanup", mock.Anything)
+
+	n := 20
+	nodeOnlySourceCount := rand.Intn(n-1) + 1 // [1, n) guarantee one of each type
+	nodeOnlyExporterCount := rand.Intn(n-1) + 1
+
+	// enforce random bounds
+	require.NotEqual(t, 0, nodeOnlySourceCount)
+	require.NotEqual(t, 0, nodeOnlyExporterCount)
+	require.NotEqual(t, n, nodeOnlySourceCount)
+	require.NotEqual(t, n, nodeOnlyExporterCount)
+
+	// generate 10 factories
+	for i := 0; i < n; i++ {
+		sfi := NewSourceFactoryMock(t)
+		sfi.On("NewSource", mock.Anything).Return(s, nil)
+		str := "mock-source"
+		if i < nodeOnlySourceCount {
+			str = NodesOnlyType(str)
+		}
+		sfi.On("GetType").Return(str)
+		sf = append(sf, sfi)
+
+		efi := NewExporterFactoryMock(t)
+		efi.On("NewExporter", mock.Anything).Return(e, nil)
+		str = "mock-exporter"
+		if i < nodeOnlyExporterCount {
+			str = NodesOnlyType(str)
+		}
+		efi.On("GetType").Return(str)
+		ef = append(ef, efi)
+	}
+
+	chainConfig := generateChainConfig()
+	feeds := []FeedConfig{
+		generateFeedConfig(),
+		generateFeedConfig(),
+	}
+	nodes := []NodeConfig{
+		generateNodeConfig(),
+	}
+
+	monitor := NewMultiFeedMonitor(chainConfig, lgr, sf, ef, 10)
+
+	ctx, cancel := context.WithTimeout(tests.Context(t), 100*time.Millisecond)
+	defer cancel()
+	monitor.Run(ctx, RDDData{
+		Feeds: feeds,
+		Nodes: nodes,
+	})
+
+	tests.AssertLogCountEventually(t, logs, "starting monitor", len(feeds)+1) // 1 monitor per feed + 1 monitor for nodes
+	for _, m := range logs.FilterMessage("starting monitor").FilterFieldKey("pollers").All() {
+		kv := m.ContextMap()
+
+		switch kv["component"] {
+		case "feed-monitor":
+			assert.Equal(t, int64(n-nodeOnlyExporterCount), kv["exporters"].(int64))
+			assert.Equal(t, int64(n-nodeOnlySourceCount), kv["pollers"].(int64))
+		case "node-monitor":
+			assert.Equal(t, int64(nodeOnlyExporterCount), kv["exporters"].(int64))
+			assert.Equal(t, int64(nodeOnlySourceCount), kv["pollers"].(int64))
+		default:
+			assert.NoError(t, fmt.Errorf("%s did not match expected component", kv["component"]))
+		}
+	}
 }

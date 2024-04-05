@@ -35,7 +35,7 @@ func (m *mockTrigger) UnregisterTrigger(ctx context.Context, request capabilitie
 	return nil
 }
 
-func mustMockTrigger(t *testing.T) *mockTrigger {
+func mustMockTrigger(_ *testing.T) *mockTrigger {
 	return &mockTrigger{
 		BaseCapability: &mockBaseCapability{
 			info: capabilities.MustNewCapabilityInfo("trigger", capabilities.CapabilityTypeTrigger, "a mock trigger", "v0.0.1"),
@@ -65,10 +65,9 @@ func (m *mockCallback) Execute(ctx context.Context, callback chan<- capabilities
 	return nil
 }
 
-func mustMockCallback(t *testing.T, _type capabilities.CapabilityType) *mockCallback {
+func mustMockCallback(_ *testing.T, _type capabilities.CapabilityType) *mockCallback {
 	return &mockCallback{
-		BaseCapability: &mockBaseCapability{info: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback %s", _type), _type, fmt.Sprintf("a mock %s", _type), "v0.0.1"),
-	},
+		BaseCapability: &mockBaseCapability{info: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback %s", _type), _type, fmt.Sprintf("a mock %s", _type), "v0.0.1")},
 	}
 }
 

@@ -16,9 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
 	"fmt"
-
 )
-
 
 var mercuryInfo = capabilities.MustNewCapabilityInfo(
 	"mercury-trigger",

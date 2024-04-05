@@ -114,18 +114,18 @@ type Validatable interface {
 	//
 	// NOTE: What to do with method calls like:
 	//
-	//  - `RegisterToWorkflow` and `UnregisterFromWorkflow` 
+	//  - `RegisterToWorkflow` and `UnregisterFromWorkflow`
 	//  - `RegisterTrigger` and `UnregisterTrigger`
 	//
 	// They take in a request object that has a `Config` field that may conflate
 	// with the `Config` field within `Execute`.
-	GetRequestConfigJSONSchema() (*CapabilityResponse)
+	GetRequestConfigJSONSchema() *CapabilityResponse
 	// ValidateRequestConfig(config *values.Map) error
 	// ValidateRequestInput(inputs *values.Map) error
 	// NOTE: Should we need this? Or should we just document this within
 	// the capability itself?
 	// ExampleOutput() *values.Map
-}	
+}
 
 // BaseCapability interface needs to be implemented by all capability types.
 // Capability interfaces are intentionally duplicated to allow for an easy change

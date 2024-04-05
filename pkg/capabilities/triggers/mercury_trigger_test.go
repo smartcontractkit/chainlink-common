@@ -296,7 +296,7 @@ func TestMercuryTrigger_GenerateConfigSchema(t *testing.T) {
 
 	fixture, err := os.ReadFile("./testdata/fixtures/mercury/config_schema.json")
 	require.NoError(t, err)
-	
+
 	if diff := cmp.Diff(fixture, []byte(schemaStr.Underlying), transformJSON); diff != "" {
 		t.Errorf("TestMercuryTrigger_GenerateConfigSchema() mismatch (-want +got):\n%s", diff)
 		t.FailNow()

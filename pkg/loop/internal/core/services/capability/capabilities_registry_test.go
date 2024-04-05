@@ -29,11 +29,11 @@ func (f *mockBaseCapability) Info(ctx context.Context) (capabilities.CapabilityI
 	return f.info, nil
 }
 
-func (m *mockBaseCapability) GetRequestConfigJSONSchema() *capabilities.CapabilityResponse {
+func (f *mockBaseCapability) GetRequestConfigJSONSchema() *capabilities.CapabilityResponse {
 	return &capabilities.CapabilityResponse{
-		Err: nil,
+		Err:   nil,
 		Value: values.NewString(`{}`),
-	} 
+	}
 }
 
 var _ capabilities.TriggerExecutable = (*mockTriggerExecutable)(nil)

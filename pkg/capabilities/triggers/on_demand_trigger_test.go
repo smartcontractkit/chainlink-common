@@ -90,7 +90,7 @@ func TestOnDemandTrigger_GenerateConfigSchema(t *testing.T) {
 
 	fixture, err := os.ReadFile("./testdata/fixtures/ondemand/config_schema.json")
 	require.NoError(t, err)
-	
+
 	if diff := cmp.Diff(fixture, []byte(schemaStr.Underlying), transformJSON); diff != "" {
 		t.Errorf("TestOnDemandTrigger_GenerateConfigSchema() mismatch (-want +got):\n%s", diff)
 		t.FailNow()

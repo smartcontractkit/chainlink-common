@@ -129,7 +129,7 @@ func (c *baseCapabilityServer) GetRequestConfigJSONSchema(ctx context.Context, _
 	if resp.Value != nil {
 		val = values.Proto(resp.Value)
 	}
-	
+
 	return &capabilitiespb.CapabilityResponse{
 		Error: err,
 		Value: val,
@@ -173,7 +173,7 @@ func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *b
 	return &baseCapabilityClient{grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
 }
 
-func (c *baseCapabilityClient) GetRequestConfigJSONSchema() (*capabilities.CapabilityResponse) {
+func (c *baseCapabilityClient) GetRequestConfigJSONSchema() *capabilities.CapabilityResponse {
 	resp, err := c.grpc.GetRequestConfigJSONSchema(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return &capabilities.CapabilityResponse{
@@ -189,10 +189,9 @@ func (c *baseCapabilityClient) GetRequestConfigJSONSchema() (*capabilities.Capab
 
 	return &capabilities.CapabilityResponse{
 		Value: values.FromProto(resp.Value),
-		Err: errors.New(resp.Error),
+		Err:   errors.New(resp.Error),
 	}
 }
-
 
 func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	resp, err := c.grpc.Info(ctx, &emptypb.Empty{})

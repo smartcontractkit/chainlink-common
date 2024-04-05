@@ -41,7 +41,7 @@ func mockEncoderFactory(_ *values.Map) (types.Encoder, error) {
 }
 
 func TestOCR3Capability_GenerateConfigSchema(t *testing.T) {
-		n := time.Now()
+	n := time.Now()
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
@@ -54,7 +54,7 @@ func TestOCR3Capability_GenerateConfigSchema(t *testing.T) {
 	schemaStr, ok := resp.Value.(*values.String)
 	require.True(t, ok)
 
-	var shouldUpdate = false 
+	var shouldUpdate = false
 	if shouldUpdate {
 		err := os.WriteFile("./testdata/fixtures/capability/config_schema.json", []byte(schemaStr.Underlying), 0600)
 		require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestOCR3Capability_GenerateConfigSchema(t *testing.T) {
 
 	fixture, err := os.ReadFile("./testdata/fixtures/capability/config_schema.json")
 	require.NoError(t, err)
-	
+
 	if diff := cmp.Diff(fixture, []byte(schemaStr.Underlying), transformJSON); diff != "" {
 		t.Errorf("TestMercuryTrigger_GenerateConfigSchema() mismatch (-want +got):\n%s", diff)
 		t.FailNow()

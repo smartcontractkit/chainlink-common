@@ -41,7 +41,7 @@ var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 
 func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
-		Validator:           capabilities.NewValidator([]mercury.FeedReport{}),
+		Validator:           capabilities.NewValidator([]mercury.FeedReport{}, nil),
 		CapabilityInfo:      mercuryInfo,
 		chans:               map[string]chan<- capabilities.CapabilityResponse{},
 		feedIDsForTriggerID: make(map[string][]mercury.FeedID),

@@ -115,6 +115,27 @@ func newBaseCapabilityServer(impl capabilities.BaseCapability) *baseCapabilitySe
 
 var _ capabilitiespb.BaseCapabilityServer = (*baseCapabilityServer)(nil)
 
+func (c *baseCapabilityServer) GetRequestConfigJSONSchema(ctx context.Context, _ *emptypb.Empty) (*capabilitiespb.CapabilityResponse, error) {
+	resp := c.impl.GetRequestConfigJSONSchema()
+	if resp.Value == nil && resp.Err == nil {
+		return nil, errors.New("GetRequestConfigJSONSchema: must return either a value or an error")
+	}
+
+	var err string
+	if resp.Err != nil {
+		err = resp.Err.Error()
+	}
+	var val *pb.Value
+	if resp.Value != nil {
+		val = values.Proto(resp.Value)
+	}
+	
+	return &capabilitiespb.CapabilityResponse{
+		Error: err,
+		Value: val,
+	}, nil
+}
+
 func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty) (*capabilitiespb.CapabilityInfoReply, error) {
 	info, err := c.impl.Info(ctx)
 	if err != nil {
@@ -151,6 +172,27 @@ var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
 	return &baseCapabilityClient{grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
 }
+
+func (c *baseCapabilityClient) GetRequestConfigJSONSchema() (*capabilities.CapabilityResponse) {
+	resp, err := c.grpc.GetRequestConfigJSONSchema(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return &capabilities.CapabilityResponse{
+			Err: err,
+		}
+	}
+
+	if resp.Error == "" {
+		return &capabilities.CapabilityResponse{
+			Value: values.FromProto(resp.Value),
+		}
+	}
+
+	return &capabilities.CapabilityResponse{
+		Value: values.FromProto(resp.Value),
+		Err: errors.New(resp.Error),
+	}
+}
+
 
 func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	resp, err := c.grpc.Info(ctx, &emptypb.Empty{})
@@ -199,27 +241,6 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
-func (t *triggerExecutableServer) GetRequestConfigJSONSchema(ctx context.Context, _ *emptypb.Empty) (*capabilitiespb.CapabilityResponse, error) {
-	resp := t.impl.GetRequestConfigJSONSchema()
-	if resp.Value == nil && resp.Err == nil {
-		return nil, errors.New("GetRequestConfigJSONSchema: must return either a value or an error")
-	}
-
-	var err string
-	if resp.Err != nil {
-		err = resp.Err.Error()
-	}
-	var val *pb.Value
-	if resp.Value != nil {
-		val = values.Proto(resp.Value)
-	}
-	
-	return &capabilitiespb.CapabilityResponse{
-		Error: err,
-		Value: val,
-	}, nil
-}
-
 func (t *triggerExecutableServer) RegisterTrigger(ctx context.Context, request *capabilitiespb.RegisterTriggerRequest) (*emptypb.Empty, error) {
 	ch := make(chan capabilities.CapabilityResponse)
 
@@ -263,26 +284,6 @@ type triggerExecutableClient struct {
 }
 
 var _ capabilities.TriggerExecutable = (*triggerExecutableClient)(nil)
-
-func (t *triggerExecutableClient) GetRequestConfigJSONSchema() (*capabilities.CapabilityResponse) {
-	resp, err := t.grpc.GetRequestConfigJSONSchema(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		return &capabilities.CapabilityResponse{
-			Err: err,
-		}
-	}
-
-	if resp.Error == "" {
-		return &capabilities.CapabilityResponse{
-			Value: values.FromProto(resp.Value),
-		}
-	}
-
-	return &capabilities.CapabilityResponse{
-		Value: values.FromProto(resp.Value),
-		Err: errors.New(resp.Error),
-	}
-}
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
 	cid, res, err := t.ServeNew("Callback", func(s *grpc.Server) {

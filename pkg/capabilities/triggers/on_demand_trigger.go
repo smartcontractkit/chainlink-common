@@ -28,7 +28,7 @@ var _ capabilities.TriggerCapability = (*OnDemand)(nil)
 
 func NewOnDemand() *OnDemand {
 	return &OnDemand{
-		Validator:      capabilities.NewValidator(capabilities.CapabilityResponse{}),
+		Validator:      capabilities.NewValidator(capabilities.CapabilityResponse{}, nil),
 		CapabilityInfo: info,
 		chans:          map[workflowID]chan<- capabilities.CapabilityResponse{},
 	}

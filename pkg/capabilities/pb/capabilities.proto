@@ -9,6 +9,7 @@ import "google/protobuf/empty.proto";
 
 service BaseCapability {
   rpc Info (google.protobuf.Empty) returns (CapabilityInfoReply) {}
+  rpc GetRequestConfigJSONSchema(google.protobuf.Empty) returns (CapabilityResponse) {}
 }
 
 enum CapabilityType {
@@ -49,7 +50,6 @@ message UnregisterTriggerRequest {
 service TriggerExecutable {
   rpc RegisterTrigger (RegisterTriggerRequest) returns (google.protobuf.Empty) {}
   rpc UnregisterTrigger (UnregisterTriggerRequest) returns (google.protobuf.Empty) {}
-  rpc GetRequestConfigJSONSchema(google.protobuf.Empty) returns (CapabilityResponse) {}
 }
 
 message CapabilityResponse {

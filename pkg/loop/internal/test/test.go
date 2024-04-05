@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 const ConfigTOML = `[Foo]
@@ -33,4 +34,11 @@ type baseCapability struct {
 
 func (e baseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	return CapabilityInfo, nil
+}
+
+func (e baseCapability) GetRequestConfigJSONSchema() *capabilities.CapabilityResponse {
+	return &capabilities.CapabilityResponse{
+		Err:   nil,
+		Value: values.NewString(`{}`),
+	}
 }

@@ -25,13 +25,6 @@ type mockTrigger struct {
 
 var _ capabilities.TriggerCapability = (*mockTrigger)(nil)
 
-func (m *mockTrigger) GetRequestConfigJSONSchema() *capabilities.CapabilityResponse {
-	return &capabilities.CapabilityResponse{
-		Err: nil,
-		Value: values.NewString(`{}`),
-	} 
-}
-
 func (m *mockTrigger) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, request capabilities.CapabilityRequest) error {
 	m.callback = callback
 	return nil
@@ -44,7 +37,9 @@ func (m *mockTrigger) UnregisterTrigger(ctx context.Context, request capabilitie
 
 func mustMockTrigger(t *testing.T) *mockTrigger {
 	return &mockTrigger{
-		BaseCapability: capabilities.MustNewCapabilityInfo("trigger", capabilities.CapabilityTypeTrigger, "a mock trigger", "v0.0.1"),
+		BaseCapability: &mockBaseCapability{
+			info: capabilities.MustNewCapabilityInfo("trigger", capabilities.CapabilityTypeTrigger, "a mock trigger", "v0.0.1"),
+		},
 	}
 }
 
@@ -72,7 +67,8 @@ func (m *mockCallback) Execute(ctx context.Context, callback chan<- capabilities
 
 func mustMockCallback(t *testing.T, _type capabilities.CapabilityType) *mockCallback {
 	return &mockCallback{
-		BaseCapability: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback %s", _type), _type, fmt.Sprintf("a mock %s", _type), "v0.0.1"),
+		BaseCapability: &mockBaseCapability{info: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback %s", _type), _type, fmt.Sprintf("a mock %s", _type), "v0.0.1"),
+	},
 	}
 }
 

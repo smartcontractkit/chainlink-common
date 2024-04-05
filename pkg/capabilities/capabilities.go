@@ -131,11 +131,11 @@ type Validatable interface {
 // Capability interfaces are intentionally duplicated to allow for an easy change
 // or extension in the future.
 type BaseCapability interface {
+	Validatable
 	Info(ctx context.Context) (CapabilityInfo, error)
 }
 
 type TriggerExecutable interface {
-	Validatable
 	RegisterTrigger(ctx context.Context, callback chan<- CapabilityResponse, request CapabilityRequest) error
 	UnregisterTrigger(ctx context.Context, request CapabilityRequest) error
 }

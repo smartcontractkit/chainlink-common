@@ -1,0 +1,7 @@
+aggregation_method: data_feeds_2_0
+aggregation_config: 
+  config: test 
+encoder: asdf
+encoder_config: {}
+  
+# yaml-language-server: $schema=./config_schema.json

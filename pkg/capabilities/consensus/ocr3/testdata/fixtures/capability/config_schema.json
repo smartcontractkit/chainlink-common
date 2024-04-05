@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/workflow-config",
+  "properties": {
+    "aggregation_method": {
+      "type": "string",
+      "enum": [
+        "data_feeds_2_0"
+      ]
+    },
+    "aggregation_config": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object"
+    },
+    "encoder": {
+      "type": "string"
+    },
+    "encoder_config": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "aggregation_method",
+    "aggregation_config",
+    "encoder",
+    "encoder_config"
+  ]
+}

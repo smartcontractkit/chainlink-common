@@ -20,7 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	BaseCapability_Info_FullMethodName = "/loop.BaseCapability/Info"
+	BaseCapability_Info_FullMethodName                       = "/loop.BaseCapability/Info"
+	BaseCapability_GetRequestConfigJSONSchema_FullMethodName = "/loop.BaseCapability/GetRequestConfigJSONSchema"
 )
 
 // BaseCapabilityClient is the client API for BaseCapability service.
@@ -28,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BaseCapabilityClient interface {
 	Info(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityInfoReply, error)
+	GetRequestConfigJSONSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error)
 }
 
 type baseCapabilityClient struct {
@@ -47,11 +49,21 @@ func (c *baseCapabilityClient) Info(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
+func (c *baseCapabilityClient) GetRequestConfigJSONSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error) {
+	out := new(CapabilityResponse)
+	err := c.cc.Invoke(ctx, BaseCapability_GetRequestConfigJSONSchema_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BaseCapabilityServer is the server API for BaseCapability service.
 // All implementations must embed UnimplementedBaseCapabilityServer
 // for forward compatibility
 type BaseCapabilityServer interface {
 	Info(context.Context, *emptypb.Empty) (*CapabilityInfoReply, error)
+	GetRequestConfigJSONSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error)
 	mustEmbedUnimplementedBaseCapabilityServer()
 }
 
@@ -61,6 +73,9 @@ type UnimplementedBaseCapabilityServer struct {
 
 func (UnimplementedBaseCapabilityServer) Info(context.Context, *emptypb.Empty) (*CapabilityInfoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
+}
+func (UnimplementedBaseCapabilityServer) GetRequestConfigJSONSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRequestConfigJSONSchema not implemented")
 }
 func (UnimplementedBaseCapabilityServer) mustEmbedUnimplementedBaseCapabilityServer() {}
 
@@ -93,6 +108,24 @@ func _BaseCapability_Info_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BaseCapability_GetRequestConfigJSONSchema_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BaseCapabilityServer).GetRequestConfigJSONSchema(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BaseCapability_GetRequestConfigJSONSchema_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BaseCapabilityServer).GetRequestConfigJSONSchema(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BaseCapability_ServiceDesc is the grpc.ServiceDesc for BaseCapability service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -104,15 +137,18 @@ var BaseCapability_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Info",
 			Handler:    _BaseCapability_Info_Handler,
 		},
+		{
+			MethodName: "GetRequestConfigJSONSchema",
+			Handler:    _BaseCapability_GetRequestConfigJSONSchema_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "capabilities/pb/capabilities.proto",
 }
 
 const (
-	TriggerExecutable_RegisterTrigger_FullMethodName            = "/loop.TriggerExecutable/RegisterTrigger"
-	TriggerExecutable_UnregisterTrigger_FullMethodName          = "/loop.TriggerExecutable/UnregisterTrigger"
-	TriggerExecutable_GetRequestConfigJSONSchema_FullMethodName = "/loop.TriggerExecutable/GetRequestConfigJSONSchema"
+	TriggerExecutable_RegisterTrigger_FullMethodName   = "/loop.TriggerExecutable/RegisterTrigger"
+	TriggerExecutable_UnregisterTrigger_FullMethodName = "/loop.TriggerExecutable/UnregisterTrigger"
 )
 
 // TriggerExecutableClient is the client API for TriggerExecutable service.
@@ -121,7 +157,6 @@ const (
 type TriggerExecutableClient interface {
 	RegisterTrigger(ctx context.Context, in *RegisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterTrigger(ctx context.Context, in *UnregisterTriggerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetRequestConfigJSONSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error)
 }
 
 type triggerExecutableClient struct {
@@ -150,22 +185,12 @@ func (c *triggerExecutableClient) UnregisterTrigger(ctx context.Context, in *Unr
 	return out, nil
 }
 
-func (c *triggerExecutableClient) GetRequestConfigJSONSchema(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityResponse, error) {
-	out := new(CapabilityResponse)
-	err := c.cc.Invoke(ctx, TriggerExecutable_GetRequestConfigJSONSchema_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // TriggerExecutableServer is the server API for TriggerExecutable service.
 // All implementations must embed UnimplementedTriggerExecutableServer
 // for forward compatibility
 type TriggerExecutableServer interface {
 	RegisterTrigger(context.Context, *RegisterTriggerRequest) (*emptypb.Empty, error)
 	UnregisterTrigger(context.Context, *UnregisterTriggerRequest) (*emptypb.Empty, error)
-	GetRequestConfigJSONSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error)
 	mustEmbedUnimplementedTriggerExecutableServer()
 }
 
@@ -178,9 +203,6 @@ func (UnimplementedTriggerExecutableServer) RegisterTrigger(context.Context, *Re
 }
 func (UnimplementedTriggerExecutableServer) UnregisterTrigger(context.Context, *UnregisterTriggerRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterTrigger not implemented")
-}
-func (UnimplementedTriggerExecutableServer) GetRequestConfigJSONSchema(context.Context, *emptypb.Empty) (*CapabilityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRequestConfigJSONSchema not implemented")
 }
 func (UnimplementedTriggerExecutableServer) mustEmbedUnimplementedTriggerExecutableServer() {}
 
@@ -231,24 +253,6 @@ func _TriggerExecutable_UnregisterTrigger_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TriggerExecutable_GetRequestConfigJSONSchema_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TriggerExecutableServer).GetRequestConfigJSONSchema(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TriggerExecutable_GetRequestConfigJSONSchema_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TriggerExecutableServer).GetRequestConfigJSONSchema(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // TriggerExecutable_ServiceDesc is the grpc.ServiceDesc for TriggerExecutable service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -263,10 +267,6 @@ var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnregisterTrigger",
 			Handler:    _TriggerExecutable_UnregisterTrigger_Handler,
-		},
-		{
-			MethodName: "GetRequestConfigJSONSchema",
-			Handler:    _TriggerExecutable_GetRequestConfigJSONSchema_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

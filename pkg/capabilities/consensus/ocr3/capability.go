@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/invopop/jsonschema"
 	"github.com/jonboulle/clockwork"
 	"github.com/mitchellh/mapstructure"
 
@@ -32,6 +33,8 @@ var info = capabilities.MustNewCapabilityInfo(
 type capability struct {
 	services.StateMachine
 	capabilities.CapabilityInfo
+	*capabilities.Validator
+
 	store  *store
 	stopCh services.StopChan
 	wg     sync.WaitGroup
@@ -55,6 +58,7 @@ var _ capabilities.ConsensusCapability = (*capability)(nil)
 func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger) *capability {
 	o := &capability{
 		CapabilityInfo: info,
+		Validator:      capabilities.NewValidator(workflowConfig{}, &jsonschema.Reflector{DoNotReference: true}),
 		store:          s,
 		clock:          clock,
 		requestTimeout: requestTimeout,
@@ -93,7 +97,7 @@ func (o *capability) HealthReport() map[string]error {
 }
 
 type workflowConfig struct {
-	AggregationMethod string      `mapstructure:"aggregation_method" json:"aggregation_method"`
+	AggregationMethod string      `mapstructure:"aggregation_method" json:"aggregation_method" jsonschema:"enum=data_feeds_2_0"`
 	AggregationConfig *values.Map `mapstructure:"aggregation_config" json:"aggregation_config"`
 	Encoder           string      `mapstructure:"encoder" json:"encoder"`
 	EncoderConfig     *values.Map `mapstructure:"encoder_config" json:"encoder_config"`

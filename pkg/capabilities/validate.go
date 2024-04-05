@@ -9,15 +9,17 @@ import (
 )
 
 type Validator struct {
+	reflector *jsonschema.Reflector
 	requestConfig any
 	requestConfigSchema *values.String
 }
 
 var _ Validatable = (*Validator)(nil)
 
-func NewValidator(requestConfig any) *Validator {
+func NewValidator(requestConfig any, reflector *jsonschema.Reflector) *Validator {
 	return &Validator{
 		requestConfig: requestConfig,
+		reflector: reflector,
 	}
 }
 
@@ -27,8 +29,11 @@ func (v *Validator) GetRequestConfigJSONSchema()  (*CapabilityResponse) {
 			Value: v.requestConfigSchema,
 		} 
 	}
-
 	schema := jsonschema.Reflect(v.requestConfig)
+	if v.reflector != nil {
+		schema = v.reflector.Reflect(v.requestConfig)
+	}
+
 	schemaBytes, err := json.MarshalIndent(schema, "", "  ")
 	if err != nil {
 		return &CapabilityResponse{

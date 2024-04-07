@@ -4,9 +4,9 @@
     "FeedReport": {
       "properties": {
         "feedId": {
-          "type": "integer"
+          "type": "string"
         },
-        "fullreport": {
+        "fullReport": {
           "type": "string",
           "contentEncoding": "base64"
         },
@@ -21,7 +21,7 @@
       "type": "object",
       "required": [
         "feedId",
-        "fullreport",
+        "fullReport",
         "benchmarkPrice",
         "observationTimestamp"
       ]

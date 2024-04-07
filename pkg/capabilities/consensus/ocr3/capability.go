@@ -111,8 +111,14 @@ func newWorkflowConfig() *workflowConfig {
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+	err := o.ValidateConfig(request.Config)
+	if err != nil {
+		return err
+	}
+
 	c := newWorkflowConfig()
-	err := request.Config.UnwrapTo(c)
+
+	err = request.Config.UnwrapTo(c)
 	if err != nil {
 		return err
 	}

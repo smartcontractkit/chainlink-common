@@ -177,7 +177,12 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
 	require.NoError(t, cp.Start(ctx))
 
-	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
+	config, err := values.NewMap(map[string]any{
+		"aggregation_method": "data_feeds_2_0",
+		"aggregation_config": map[string]any{},
+		"encoder":            "",
+		"encoder_config":     map[string]any{},
+	})
 	require.NoError(t, err)
 
 	registerReq := capabilities.RegisterToWorkflowRequest{
@@ -205,4 +210,37 @@ func TestOCR3Capability_Registration(t *testing.T) {
 
 	_, err = cp.getAggregator(workflowTestID)
 	assert.ErrorContains(t, err, "no aggregator found for")
+}
+func TestOCR3Capability_ValidateConfig(t *testing.T) {
+	n := time.Now()
+	fc := clockwork.NewFakeClockAt(n)
+	lggr := logger.Test(t)
+
+	s := newStore()
+	s.evictedCh = make(chan *request)
+
+	o := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
+
+	t.Run("ValidConfig", func(t *testing.T) {
+		config, err := values.NewMap(map[string]any{
+			"aggregation_method": "data_feeds_2_0",
+			"aggregation_config": map[string]any{},
+			"encoder":            "",
+			"encoder_config":     map[string]any{},
+		})
+		require.NoError(t, err)
+
+		err = o.ValidateConfig(config)
+		require.NoError(t, err)
+	})
+
+	t.Run("InvalidConfig", func(t *testing.T) {
+		config, err := values.NewMap(map[string]any{
+			"aggregation_method": "data_feeds_2_0",
+		})
+		require.NoError(t, err)
+
+		err = o.ValidateConfig(config)
+		require.Error(t, err)
+	})
 }

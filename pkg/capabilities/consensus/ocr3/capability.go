@@ -268,15 +268,5 @@ func (o *capability) unmarshalRequest(ctx context.Context, r capabilities.Capabi
 		return nil, err
 	}
 
-	configMap, err := r.Config.Unwrap()
-	if err != nil {
-		return nil, err
-	}
-
-	err = mapstructure.Decode(configMap, req)
-	if err != nil {
-		return nil, err
-	}
-
 	return req, err
 }

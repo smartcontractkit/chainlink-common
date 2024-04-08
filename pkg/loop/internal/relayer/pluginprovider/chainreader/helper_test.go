@@ -4,9 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 )
 
 var errorTypes = []error{
@@ -133,4 +137,59 @@ func (fakeTypeProvider) CreateContractTypeByKey(key string, isEncode bool) (any,
 	}
 
 	return nil, types.ErrInvalidType
+}
+
+func generateQueryFilterTestCases(t *testing.T) []query.Filter {
+	var queryFilters []query.Filter
+	confirmationsValues := []query.ConfirmationLevel{query.Finalized, query.Unconfirmed}
+	operatorValues := []query.ComparisonOperator{query.Eq, query.Neq, query.Gt, query.Lt, query.Gte, query.Lte}
+	comparableValues := []string{"", " ", "number", "123"}
+
+	primitives := []query.Expression{query.TxHash("txHash")}
+	for _, op := range operatorValues {
+		primitives = append(primitives, query.Block(123, op))
+		primitives = append(primitives, query.Timestamp(123, op))
+
+		var valueComparers []query.ValueComparer
+		for _, comparableValue := range comparableValues {
+			valueComparers = append(valueComparers, query.ValueComparer{
+				Value:    comparableValue,
+				Operator: op,
+			})
+		}
+		primitives = append(primitives, query.Comparer("someName", valueComparers...))
+	}
+
+	for _, conf := range confirmationsValues {
+		primitives = append(primitives, query.Confirmation(conf))
+	}
+
+	qf, err := query.Where("primitives", primitives...)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
+
+	andOverPrimitivesBoolExpr := query.And(primitives...)
+	orOverPrimitivesBoolExpr := query.Or(primitives...)
+
+	nestedBoolExpr := query.And(
+		query.TxHash("txHash"),
+		andOverPrimitivesBoolExpr,
+		orOverPrimitivesBoolExpr,
+		query.TxHash("txHash"),
+	)
+	require.NoError(t, err)
+
+	qf, err = query.Where("andOverPrimitivesBoolExpr", andOverPrimitivesBoolExpr)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
+
+	qf, err = query.Where("orOverPrimitivesBoolExpr", orOverPrimitivesBoolExpr)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
+
+	qf, err = query.Where("nestedBoolExpr", nestedBoolExpr)
+	require.NoError(t, err)
+	queryFilters = append(queryFilters, qf)
+
+	return queryFilters
 }

@@ -98,8 +98,7 @@ type ComparerPrimitive struct {
 // Comparer is used for filtering through specific key values.
 // e.g. of filtering for key that belongs to a token transfer by values: Comparer("transferValue", [{"150",LTE}, {"300",GTE}])
 func Comparer(name string, valueComparers ...ValueComparer) Expression {
-	return Expression{
-		Primitive: &ComparerPrimitive{Name: name, ValueComparers: valueComparers}}
+	return Expression{Primitive: &ComparerPrimitive{Name: name, ValueComparers: valueComparers}}
 }
 
 func (f *ComparerPrimitive) Accept(visitor Visitor) {

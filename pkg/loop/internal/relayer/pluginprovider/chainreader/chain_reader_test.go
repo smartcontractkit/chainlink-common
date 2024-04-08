@@ -116,19 +116,43 @@ func TestGetLatestValue(t *testing.T) {
 	})
 }
 
-func TestQueryOneProtoConversions(t *testing.T) {
+func TestQueryOne(t *testing.T) {
 	impl := &protoConversionTestChainReader{}
 	crTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl})
 	crTester.Setup(t)
 	cr := crTester.GetChainReader(t)
 
-	queryFilterTestCases := generateQueryFilterTestCases(t)
+	es := &errChainReader{}
+	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	errTester.Setup(t)
+	chainReader := errTester.GetChainReader(t)
+
+	t.Run("nil reader should return unimplemented", func(t *testing.T) {
+		ctx := tests.Context(t)
+
+		nilTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+		nilTester.Setup(t)
+		nilCr := nilTester.GetChainReader(t)
+
+		_, err := nilCr.QueryOne(ctx, types.BoundContract{}, query.Filter{}, query.LimitAndSort{}, []interface{}{nil})
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+	})
+
+	for _, errorType := range errorTypes {
+		es.err = errorType
+		t.Run("QueryOne unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			ctx := tests.Context(t)
+			_, err := chainReader.QueryOne(ctx, types.BoundContract{}, query.Filter{}, query.LimitAndSort{}, []interface{}{nil})
+			assert.True(t, errors.Is(err, errorType))
+		})
+	}
+
 	t.Run("test QueryOne proto conversion", func(t *testing.T) {
-		for _, tc := range queryFilterTestCases {
+		for _, tc := range generateQueryFilterTestCases(t) {
 			impl.expectedQueryFilter = tc
 			filter, err := query.Where(tc.Key, tc.Expressions...)
 			require.NoError(t, err)
-			_, err = cr.QueryOne(context.Background(), types.BoundContract{}, filter, query.LimitAndSort{}, []interface{}{nil})
+			_, err = cr.QueryOne(tests.Context(t), types.BoundContract{}, filter, query.LimitAndSort{}, []interface{}{nil})
 			require.NoError(t, err)
 		}
 	})
@@ -141,51 +165,6 @@ func makeEncoder() cbor.EncMode {
 	opts.Sort = cbor.SortCanonical
 	e, _ := opts.EncMode()
 	return e
-}
-
-func generateQueryFilterTestCases(t *testing.T) []query.Filter {
-	var queryFilters []query.Filter
-	confirmationsValues := []query.ConfirmationLevel{query.Finalized, query.Unconfirmed}
-	operatorValues := []query.ComparisonOperator{query.Eq, query.Neq, query.Gt, query.Lt, query.Gte, query.Lte}
-
-	primitives := []query.Expression{query.TxHash("txHash")}
-	for _, op := range operatorValues {
-		primitives = append(primitives, query.Block(123, op))
-		primitives = append(primitives, query.Timestamp(123, op))
-	}
-
-	for _, conf := range confirmationsValues {
-		primitives = append(primitives, query.Confirmation(conf))
-	}
-
-	qf, err := query.Where("primitives", primitives...)
-	require.NoError(t, err)
-	queryFilters = append(queryFilters, qf)
-
-	andOverPrimitivesBoolExpr := query.And(primitives...)
-	orOverPrimitivesBoolExpr := query.Or(primitives...)
-
-	nestedBoolExpr := query.And(
-		query.TxHash("txHash"),
-		andOverPrimitivesBoolExpr,
-		orOverPrimitivesBoolExpr,
-		query.TxHash("txHash"),
-	)
-	require.NoError(t, err)
-
-	qf, err = query.Where("andOverPrimitivesBoolExpr", andOverPrimitivesBoolExpr)
-	require.NoError(t, err)
-	queryFilters = append(queryFilters, qf)
-
-	qf, err = query.Where("orOverPrimitivesBoolExpr", orOverPrimitivesBoolExpr)
-	require.NoError(t, err)
-	queryFilters = append(queryFilters, qf)
-
-	qf, err = query.Where("nestedBoolExpr", nestedBoolExpr)
-	require.NoError(t, err)
-	queryFilters = append(queryFilters, qf)
-
-	return queryFilters
 }
 
 type fakeChainReaderInterfaceTester struct {
@@ -325,7 +304,7 @@ func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error 
 }
 
 func (e *errChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
-	return nil, nil
+	return nil, e.err
 }
 
 type protoConversionTestChainReader struct {
@@ -347,12 +326,6 @@ func (pc *protoConversionTestChainReader) Bind(_ context.Context, bc []types.Bou
 
 func (pc *protoConversionTestChainReader) QueryOne(_ context.Context, _ types.BoundContract, filter query.Filter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if !reflect.DeepEqual(pc.expectedQueryFilter, filter) {
-		fmt.Println()
-		fmt.Println("expected ", pc.expectedQueryFilter)
-		fmt.Println()
-		fmt.Println("got ", filter)
-		fmt.Println()
-
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 

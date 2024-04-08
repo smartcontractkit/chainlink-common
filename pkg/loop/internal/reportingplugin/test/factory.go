@@ -8,6 +8,7 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	validationtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -46,7 +47,7 @@ func (s staticFactory) Ready() error { panic("implement me") }
 
 func (s staticFactory) HealthReport() map[string]error { panic("implement me") }
 
-func (s staticFactory) NewReportingPlugin(ctx context.Context, config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
+func (s staticFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
 	err := s.equalConfig(config)
 	if err != nil {
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("config mismatch: %w", err)
@@ -98,12 +99,22 @@ func RunFactory(t *testing.T, factory libocr.ReportingPluginFactory) {
 	expectedFactory := Factory
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
 		ctx := tests.Context(t)
-		rp, gotRPI, err := factory.NewReportingPlugin(ctx, expectedFactory.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(expectedFactory.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, expectedFactory.rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
 			expectedFactory.reportingPlugin.AssertEqual(ctx, t, rp)
 		})
+	})
+}
+
+func RunValidation(t *testing.T, validationService types.ValidationService) {
+	ctx := tests.Context(t)
+	t.Run("ValidationService", func(t *testing.T) {
+		err := validationService.ValidateConfig(ctx, validationtest.GoodPluginConfig)
+		require.NoError(t, err)
+		err = validationService.ValidateConfig(ctx, nil)
+		require.Error(t, err)
 	})
 }

@@ -75,6 +75,13 @@ type CapabilityRequest struct {
 	Inputs   *values.Map
 }
 
+type TriggerEvent struct {
+	TriggerType    string
+	ID             string
+	Timestamp      string
+	BatchedPayload map[string]any
+}
+
 type RegisterToWorkflowRequest struct {
 	Metadata RegistrationMetadata
 	Config   *values.Map
@@ -205,7 +212,7 @@ func MustNewCapabilityInfo(
 // TODO: this timeout was largely picked arbitrarily.
 // Consider what a realistic/desirable value should be.
 // See: https://smartcontract-it.atlassian.net/jira/software/c/projects/KS/boards/182
-var defaultExecuteTimeout = 10 * time.Second
+var defaultExecuteTimeout = 60 * time.Second
 
 // ExecuteSync executes a capability synchronously.
 // We are not handling a case where a capability panics and crashes.

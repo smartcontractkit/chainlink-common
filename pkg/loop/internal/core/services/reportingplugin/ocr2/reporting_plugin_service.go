@@ -2,6 +2,9 @@ package ocr2
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 
 	"github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
@@ -10,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -38,6 +42,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 	pipelineRunner types.PipelineRunnerService,
 	telemetryService types.TelemetryService,
 	errorLog types.ErrorLog,
+	keyValueStore types.KeyValueStore,
 ) (types.ReportingPluginFactory, error) {
 	cc := m.NewClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		providerID, providerRes, err := m.Serve("PluginProvider", proxy.NewProxy(grpcProvider))
@@ -70,6 +75,16 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		deps.Add(errorLogRes)
 
+		keyValueStoreID, keyValueStoreRes, err := m.ServeNew("KeyValueStore", func(s *grpc.Server) {
+			pb.RegisterKeyValueStoreServer(s, keyvalue.NewServer(keyValueStore))
+		})
+
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to serve new key value store: %w", err)
+		}
+
+		deps.Add(keyValueStoreRes)
+
 		reply, err := m.reportingPluginService.NewReportingPluginFactory(ctx, &pb.NewReportingPluginFactoryRequest{
 			ReportingPluginServiceConfig: &pb.ReportingPluginServiceConfig{
 				ProviderType:  config.ProviderType,
@@ -82,6 +97,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			ErrorLogID:       errorLogID,
 			PipelineRunnerID: pipelineRunnerID,
 			TelemetryID:      telemetryID,
+			KeyValueStoreID:  keyValueStoreID,
 		})
 		if err != nil {
 			return 0, nil, err
@@ -89,6 +105,17 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		return reply.ID, nil, nil
 	})
 	return NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
+}
+
+func (m *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+	cc := m.NewClientConn("validationService", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+		reply, err := m.reportingPluginService.NewValidationService(ctx, &pb.ValidationServiceRequest{})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.ID, nil, nil
+	})
+	return validation.NewValidationServiceClient(m.PluginClient.BrokerExt, cc), nil
 }
 
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)
@@ -140,6 +167,14 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	telemetryRes := net.Resource{Closer: telemetryConn, Name: "Telemetry"}
 	telemetry := telemetry.NewTelemetryServiceClient(telemetryConn)
 
+	keyValueStoreConn, err := m.Dial(request.KeyValueStoreID)
+	if err != nil {
+		m.CloseAll(errorLogRes, providerRes, pipelineRunnerRes, telemetryRes)
+		return nil, net.ErrConnDial{Name: "KeyValueStore", ID: request.KeyValueStoreID, Err: err}
+	}
+	keyValueStoreRes := net.Resource{Closer: keyValueStoreConn, Name: "KeyValueStore"}
+	keyValueStore := keyvalue.NewClient(keyValueStoreConn)
+
 	config := types.ReportingPluginServiceConfig{
 		ProviderType:  request.ReportingPluginServiceConfig.ProviderType,
 		PluginConfig:  request.ReportingPluginServiceConfig.PluginConfig,
@@ -148,9 +183,9 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 		TelemetryType: request.ReportingPluginServiceConfig.TelemetryType,
 	}
 
-	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog)
+	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog, keyValueStore)
 	if err != nil {
-		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes)
+		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, keyValueStoreRes)
 		return nil, err
 	}
 
@@ -163,4 +198,21 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 	}
 
 	return &pb.NewReportingPluginFactoryReply{ID: id}, nil
+}
+
+func (m *reportingPluginServiceServer) NewValidationService(ctx context.Context, request *pb.ValidationServiceRequest) (*pb.ValidationServiceResponse, error) {
+	service, err := m.impl.NewValidationService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	id, _, err := m.ServeNew("ValidationService", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: service})
+		pb.RegisterValidationServiceServer(s, validation.NewValidationServiceServer(service, m.BrokerExt))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.ValidationServiceResponse{ID: id}, nil
 }

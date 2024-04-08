@@ -23,6 +23,10 @@ var PriceGetter = staticPriceGetter{
 	},
 }
 
+type PriceGetterEvaluator interface {
+	cciptypes.PriceGetter
+	testtypes.Evaluator[cciptypes.PriceGetter]
+}
 type staticPriceGetterConfig struct {
 	Prices    map[cciptypes.Address]*big.Int
 	Addresses []cciptypes.Address
@@ -31,12 +35,21 @@ type staticPriceGetter struct {
 	config staticPriceGetterConfig
 }
 
-var _ cciptypes.PriceGetter = (*staticPriceGetter)(nil)
-var _ testtypes.Evaluator[cciptypes.PriceGetter] = (*staticPriceGetter)(nil)
+var _ PriceGetterEvaluator = staticPriceGetter{}
 
 // Close implements ccip.PriceGetter.
 func (s staticPriceGetter) Close() error {
 	return nil
+}
+
+// IsTokenConfigured implements ccip.PriceGetter.
+func (s staticPriceGetter) IsTokenConfigured(ctx context.Context, token cciptypes.Address) (bool, error) {
+	for _, addr := range s.config.Addresses {
+		if addr == token {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // TokenPricesUSD implements ccip.PriceGetter.

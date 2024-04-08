@@ -9,10 +9,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
+	keyvaluestoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue/test"
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
 	ocr3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr3/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
+	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -35,10 +37,18 @@ func PluginGenericTest(t *testing.T, p types.OCR3ReportingPluginClient) {
 			pipelinetest.PipelineRunner,
 			telemetrytest.Telemetry,
 			errorlogtest.ErrorLog,
-			types.CapabilitiesRegistry(nil))
+			types.CapabilitiesRegistry(nil),
+			keyvaluestoretest.KeyValueStore{})
 		require.NoError(t, err)
 
 		ocr3test.OCR3ReportingPluginFactory(t, factory)
+	})
+	t.Run("ValidationService", func(t *testing.T) {
+		ctx := tests.Context(t)
+		validationService, err := p.NewValidationService(ctx)
+		require.NoError(t, err)
+
+		reportingplugintest.RunValidation(t, validationService)
 	})
 }
 

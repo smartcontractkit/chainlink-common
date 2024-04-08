@@ -72,7 +72,7 @@ func TestPriceGetterGRPC(t *testing.T) {
 	client := ccip.NewPriceGetterGRPCClient(conn)
 
 	// test the client
-	roundPriceGetterTests(ctx, t, client)
+	roundTripPriceGetterTests(ctx, t, client)
 	// closing the client executes the shutdown callback
 	// which stops the server.  the wg.Wait() below ensures
 	// that the server has stopped, which is what we care about.
@@ -81,7 +81,18 @@ func TestPriceGetterGRPC(t *testing.T) {
 	wg.Wait()
 }
 
-func roundPriceGetterTests(ctx context.Context, t *testing.T, client cciptypes.PriceGetter) {
+func roundTripPriceGetterTests(ctx context.Context, t *testing.T, client cciptypes.PriceGetter) {
+	t.Run("IsTokenConfigured", func(t *testing.T) {
+		// test token configured
+		isConfigured, err := client.IsTokenConfigured(ctx, PriceGetter.config.Addresses[0])
+		require.NoError(t, err)
+		assert.Equal(t, true, isConfigured)
+
+		var unconfiguredToken cciptypes.Address = "JK"
+		isConfigured2, err := client.IsTokenConfigured(ctx, unconfiguredToken)
+		require.NoError(t, err)
+		assert.Equal(t, false, isConfigured2)
+	})
 	t.Run("TokenPricesUSD", func(t *testing.T) {
 		// test token prices
 		prices, err := client.TokenPricesUSD(ctx, PriceGetter.config.Addresses)

@@ -226,7 +226,7 @@ func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.E
 
 func getContractEncodedType(key string, possibleTypeProvider any, forEncoding bool) (any, error) {
 	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
-		return ctp.CreateContractTypeByKey(key, forEncoding)
+		return ctp.CreateContractType(key, forEncoding)
 	}
 
 	return &map[string]any{}, nil

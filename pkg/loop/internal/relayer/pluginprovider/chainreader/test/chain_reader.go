@@ -37,9 +37,9 @@ func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) GetLatestValue(_ context.Context, contract types.BoundContract, method string, params, returnVal any) error {
-	if !assert.ObjectsAreEqual(contract.Name, c.contractName) {
-		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, contract.Name)
+func (c staticChainReader) GetLatestValue(_ context.Context, contractName, method string, params, returnVal any) error {
+	if !assert.ObjectsAreEqual(contractName, c.contractName) {
+		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, contractName)
 	}
 	if method != c.contractMethod {
 		return fmt.Errorf("%w: expected generic contract method %v but got %v", types.ErrInvalidType, c.contractMethod, method)
@@ -64,13 +64,13 @@ func (c staticChainReader) GetLatestValue(_ context.Context, contract types.Boun
 	return nil
 }
 
-func (c staticChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (c staticChainReader) QueryOne(_ context.Context, _ string, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
 func (c staticChainReader) Evaluate(ctx context.Context, cr types.ChainReader) error {
 	gotLatestValue := make(map[string]any)
-	err := cr.GetLatestValue(ctx, types.BoundContract{Name: c.contractName}, c.contractMethod, &c.params, &gotLatestValue)
+	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, &c.params, &gotLatestValue)
 	if err != nil {
 		return fmt.Errorf("failed to call GetLatestValue(): %w", err)
 	}

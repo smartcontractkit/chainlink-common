@@ -105,16 +105,13 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
-func (c *Client) GetLatestValue(ctx context.Context, binding types.BoundContract, method string, params, retVal any) error {
+func (c *Client) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
 	versionedParams, err := EncodeVersionedBytes(params, CurrentEncodingVersion)
 	if err != nil {
 		return err
 	}
 
-	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{
-		Contract: convertBoundContractToProto(binding),
-		Method:   method,
-		Params:   versionedParams})
+	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams})
 	if err != nil {
 		return net.WrapRPCErr(err)
 	}
@@ -122,7 +119,7 @@ func (c *Client) GetLatestValue(ctx context.Context, binding types.BoundContract
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *Client) QueryOne(ctx context.Context, contract types.BoundContract, filter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+func (c *Client) QueryOne(ctx context.Context, contractName string, filter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
 	pbQueryFilter, err := convertQueryFilterToProto(filter)
 	if err != nil {
 		return nil, err
@@ -133,7 +130,7 @@ func (c *Client) QueryOne(ctx context.Context, contract types.BoundContract, fil
 		return nil, err
 	}
 
-	pbSequences, err := c.grpc.QueryOne(ctx, &pb.QueryOneRequest{Contract: convertBoundContractToProto(contract), Filter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
+	pbSequences, err := c.grpc.QueryOne(ctx, &pb.QueryOneRequest{ContractName: contractName, Filter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -162,7 +159,7 @@ type Server struct {
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	encodedTypekey := request.Contract.Name + "." + request.Method
+	encodedTypekey := request.ContractName + "." + request.Method
 	params, err := getContractEncodedType(encodedTypekey, c.impl, true)
 	if err != nil {
 		return nil, err
@@ -176,10 +173,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	if err != nil {
 		return nil, err
 	}
-	err = c.impl.GetLatestValue(ctx, types.BoundContract{
-		Address: request.Contract.Address,
-		Name:    request.Contract.Name,
-	}, request.Method, params, retVal)
+	err = c.impl.GetLatestValue(ctx, request.ContractName, request.Method, params, retVal)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +202,7 @@ func (c *Server) QueryOne(ctx context.Context, request *pb.QueryOneRequest) (*pb
 		return nil, err
 	}
 
-	sequences, err := c.impl.QueryOne(ctx, convertBoundContractFromProto(request.Contract), queryFilter, limitAndSort, sequenceDataType)
+	sequences, err := c.impl.QueryOne(ctx, request.ContractName, queryFilter, limitAndSort, sequenceDataType)
 	if err != nil {
 		return nil, err
 	}
@@ -236,14 +230,6 @@ func getContractEncodedType(key string, possibleTypeProvider any, forEncoding bo
 	}
 
 	return &map[string]any{}, nil
-}
-
-func convertBoundContractToProto(binding types.BoundContract) *pb.BoundContract {
-	return &pb.BoundContract{
-		Address: binding.Address,
-		Name:    binding.Name,
-		Pending: binding.Pending,
-	}
 }
 
 func convertQueryFilterToProto(queryFilter query.Filter) (*pb.QueryFilter, error) {
@@ -384,14 +370,6 @@ func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (
 		pbSequences = append(pbSequences, pbSequence)
 	}
 	return pbSequences, nil
-}
-
-func convertBoundContractFromProto(binding *pb.BoundContract) types.BoundContract {
-	return types.BoundContract{
-		Address: binding.Address,
-		Name:    binding.Name,
-		Pending: binding.Pending,
-	}
 }
 
 func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryFilter) (query.Filter, error) {

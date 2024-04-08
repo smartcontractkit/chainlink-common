@@ -15,14 +15,14 @@ service ChainReader {
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueRequest {
-  BoundContract contract = 1;
+  string contract_name = 1;
   string method = 2;
   VersionedBytes params = 3;
 }
 
 // QueryOneRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
 message QueryOneRequest {
-  BoundContract contract = 1;
+  string contract_name = 1;
   QueryFilter filter = 2;
   LimitAndSort limit_and_sort = 3;
 }

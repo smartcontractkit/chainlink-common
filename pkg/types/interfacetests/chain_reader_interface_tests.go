@@ -44,7 +44,7 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 
 const AnyExtraValue = 3
 
-func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
+func RunChainReaderGetLatestValueInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
 	tests := []testcase{
 		{
 			name: "Gets the latest value",

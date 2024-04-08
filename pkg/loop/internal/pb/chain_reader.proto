@@ -24,7 +24,7 @@ message GetLatestValueRequest {
 // QueryOneRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
 message QueryOneRequest {
   BoundContract contract = 1;
-  KeyFilter key_filter = 2;
+  QueryFilter filter = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
@@ -82,14 +82,10 @@ enum ComparisonOperator {
   Lte = 5;
 }
 
-// QueryFilter represents a lightweight orm like DSL defined for filtering over common blockchain primitives.
 message QueryFilter {
-  repeated Expression expression = 1;
-}
-
-message KeyFilter {
   string key = 1;
-  QueryFilter query_filter = 2;
+  // Expressions are lightweight orm like DSL defined for filtering over common blockchain primitives.
+  repeated Expression expression = 2;
 }
 
 // Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 

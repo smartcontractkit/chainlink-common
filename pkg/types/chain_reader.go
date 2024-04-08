@@ -47,7 +47,7 @@ type ChainReader interface {
 	// UnBind undoes contract bindings, if the contract is not known by the ChainReader or if the Address is invalid an error will be returned.
 	UnBind(ctx context.Context, bindings []BoundContract) error
 
-	QueryOne(ctx context.Context, contract BoundContract, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryOne(ctx context.Context, contract BoundContract, filter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 
 type Head struct {

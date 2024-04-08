@@ -63,22 +63,10 @@ func TestVersionedBytesFunctions(t *testing.T) {
 }
 
 func TestChainReaderClient(t *testing.T) {
-	fake := &fakeChainReader{}
-	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
-
 	es := &errChainReader{}
 	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
 	errTester.Setup(t)
 	chainReader := errTester.GetChainReader(t)
-
-	for _, errorType := range errorTypes {
-		es.err = errorType
-		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			ctx := tests.Context(t)
-			err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", nil, "anything")
-			assert.True(t, errors.Is(err, errorType))
-		})
-	}
 
 	for _, errorType := range errorTypes {
 		es.err = errorType
@@ -88,14 +76,16 @@ func TestChainReaderClient(t *testing.T) {
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
+}
 
-	// make sure that errors come from client directly
-	es.err = nil
-	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		ctx := tests.Context(t)
-		err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
-	})
+func TestGetLatestValue(t *testing.T) {
+	fake := &fakeChainReader{}
+	RunChainReaderGetLatestValueInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+
+	es := &errChainReader{}
+	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	errTester.Setup(t)
+	chainReader := errTester.GetChainReader(t)
 
 	t.Run("nil reader should return unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
@@ -107,6 +97,50 @@ func TestChainReaderClient(t *testing.T) {
 		err := nilCr.GetLatestValue(ctx, types.BoundContract{}, "method", "anything", "anything")
 		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 	})
+
+	for _, errorType := range errorTypes {
+		es.err = errorType
+		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			ctx := tests.Context(t)
+			err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", nil, "anything")
+			assert.True(t, errors.Is(err, errorType))
+		})
+	}
+
+	// make sure that errors come from client directly
+	es.err = nil
+	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+		ctx := tests.Context(t)
+		err := chainReader.GetLatestValue(ctx, types.BoundContract{}, "method", &cannotEncode{}, &TestStruct{})
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
+	})
+}
+
+func TestQueryOneProtoConversions(t *testing.T) {
+	impl := &protoConversionTestChainReader{}
+	crTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl})
+	crTester.Setup(t)
+	cr := crTester.GetChainReader(t)
+
+	queryFilterTestCases := generateQueryFilterTestCases(t)
+	t.Run("test QueryOne proto conversion", func(t *testing.T) {
+		for _, tc := range queryFilterTestCases {
+			impl.expectedQueryFilter = tc
+			filter, err := query.Where(tc.Key, tc.Expressions...)
+			require.NoError(t, err)
+			_, err = cr.QueryOne(context.Background(), types.BoundContract{}, filter, query.LimitAndSort{}, []interface{}{nil})
+			require.NoError(t, err)
+		}
+	})
+}
+
+var encoder = makeEncoder()
+
+func makeEncoder() cbor.EncMode {
+	opts := cbor.CoreDetEncOptions()
+	opts.Sort = cbor.SortCanonical
+	e, _ := opts.EncMode()
+	return e
 }
 
 func generateQueryFilterTestCases(t *testing.T) []query.Filter {
@@ -124,7 +158,7 @@ func generateQueryFilterTestCases(t *testing.T) []query.Filter {
 		primitives = append(primitives, query.Confirmation(conf))
 	}
 
-	qf, err := query.Where(primitives...)
+	qf, err := query.Where("primitives", primitives...)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
@@ -139,44 +173,19 @@ func generateQueryFilterTestCases(t *testing.T) []query.Filter {
 	)
 	require.NoError(t, err)
 
-	qf, err = query.Where(andOverPrimitivesBoolExpr)
+	qf, err = query.Where("andOverPrimitivesBoolExpr", andOverPrimitivesBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	qf, err = query.Where(orOverPrimitivesBoolExpr)
+	qf, err = query.Where("orOverPrimitivesBoolExpr", orOverPrimitivesBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	qf, err = query.Where(nestedBoolExpr)
+	qf, err = query.Where("nestedBoolExpr", nestedBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
 	return queryFilters
-}
-
-func TestChainReaderProtoRequestsConversions(t *testing.T) {
-	impl := &protoConversionTestChainReader{}
-	crTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl})
-	crTester.Setup(t)
-	cr := crTester.GetChainReader(t)
-
-	queryFilterTestCases := generateQueryFilterTestCases(t)
-	t.Run("test QueryOne proto conversion", func(t *testing.T) {
-		for _, tc := range queryFilterTestCases {
-			impl.expectedQueryFilter = tc
-			_, err := cr.QueryOne(context.Background(), types.BoundContract{}, query.KeyFilter{Key: "testKey", Filter: tc}, query.LimitAndSort{}, []interface{}{nil})
-			require.NoError(t, err)
-		}
-	})
-}
-
-var encoder = makeEncoder()
-
-func makeEncoder() cbor.EncMode {
-	opts := cbor.CoreDetEncOptions()
-	opts.Sort = cbor.SortCanonical
-	e, _ := opts.EncMode()
-	return e
 }
 
 type fakeChainReaderInterfaceTester struct {
@@ -297,7 +306,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contract types.Bound
 	return nil
 }
 
-func (f *fakeChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
@@ -323,7 +332,7 @@ func (e *errChainReader) UnBind(_ context.Context, _ []types.BoundContract) erro
 	return nil
 }
 
-func (e *errChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (e *errChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
@@ -348,8 +357,14 @@ func (pc *protoConversionTestChainReader) UnBind(_ context.Context, _ []types.Bo
 	return nil
 }
 
-func (pc *protoConversionTestChainReader) QueryOne(_ context.Context, _ types.BoundContract, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
-	if !reflect.DeepEqual(pc.expectedQueryFilter, keyFilter.Filter) {
+func (pc *protoConversionTestChainReader) QueryOne(_ context.Context, _ types.BoundContract, filter query.Filter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+	if !reflect.DeepEqual(pc.expectedQueryFilter, filter) {
+		fmt.Println()
+		fmt.Println("expected ", pc.expectedQueryFilter)
+		fmt.Println()
+		fmt.Println("got ", filter)
+		fmt.Println()
+
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 

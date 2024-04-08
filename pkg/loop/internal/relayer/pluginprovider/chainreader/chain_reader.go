@@ -122,8 +122,8 @@ func (c *Client) GetLatestValue(ctx context.Context, binding types.BoundContract
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *Client) QueryOne(ctx context.Context, contract types.BoundContract, keyFilter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
-	pbQueryFilter, err := convertQueryFilterToProto(keyFilter.Filter)
+func (c *Client) QueryOne(ctx context.Context, contract types.BoundContract, filter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+	pbQueryFilter, err := convertQueryFilterToProto(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (c *Client) QueryOne(ctx context.Context, contract types.BoundContract, key
 		return nil, err
 	}
 
-	pbSequences, err := c.grpc.QueryOne(ctx, &pb.QueryOneRequest{Contract: convertBoundContractToProto(contract), KeyFilter: &pb.KeyFilter{Key: keyFilter.Key, QueryFilter: pbQueryFilter}, LimitAndSort: pbLimitAndSort})
+	pbSequences, err := c.grpc.QueryOne(ctx, &pb.QueryOneRequest{Contract: convertBoundContractToProto(contract), Filter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -202,12 +202,12 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 }
 
 func (c *Server) QueryOne(ctx context.Context, request *pb.QueryOneRequest) (*pb.QueryOneReply, error) {
-	queryFilter, err := convertQueryFiltersFromProto(request.KeyFilter.QueryFilter)
+	queryFilter, err := convertQueryFiltersFromProto(request.Filter)
 	if err != nil {
 		return nil, err
 	}
 
-	sequenceDataType, err := getContractEncodedType(request.KeyFilter.Key, c.impl, false)
+	sequenceDataType, err := getContractEncodedType(queryFilter.Key, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (c *Server) QueryOne(ctx context.Context, request *pb.QueryOneRequest) (*pb
 		return nil, err
 	}
 
-	sequences, err := c.impl.QueryOne(ctx, convertBoundContractFromProto(request.Contract), query.KeyFilter{Key: request.KeyFilter.Key, Filter: queryFilter}, limitAndSort, sequenceDataType)
+	sequences, err := c.impl.QueryOne(ctx, convertBoundContractFromProto(request.Contract), queryFilter, limitAndSort, sequenceDataType)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func convertBoundContractToProto(binding types.BoundContract) *pb.BoundContract 
 }
 
 func convertQueryFilterToProto(queryFilter query.Filter) (*pb.QueryFilter, error) {
-	pbQueryFilter := &pb.QueryFilter{}
+	pbQueryFilter := &pb.QueryFilter{Key: queryFilter.Key}
 	for _, expression := range queryFilter.Expressions {
 		pbExpression, err := convertExpressionToProto(expression)
 		if err != nil {
@@ -404,7 +404,7 @@ func convertBoundContractFromProto(binding *pb.BoundContract) types.BoundContrac
 }
 
 func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryFilter) (query.Filter, error) {
-	var queryFilter query.Filter
+	queryFilter := query.Filter{Key: pbQueryFilters.Key}
 	for _, pbQueryFilter := range pbQueryFilters.Expression {
 		expression, err := convertExpressionFromProto(pbQueryFilter)
 		if err != nil {

@@ -16,19 +16,14 @@ type Primitive interface {
 	Accept(visitor Visitor)
 }
 
-// Filter can translate to any combination of nested OR and AND boolean expressions.
-// The base Expressions slice indicates AND logical operation over expressions, which can be primitives or nested boolean expressions.
-// eg. []Expression{primitive, primitive, BoolExpression{AND, primitive, BoolExpression{OR, primitive, primitive}} is
-// primitive AND primitive AND (primitive AND (primitive OR primitive)).
+// Filter is used to filter down chain specific data related to a key.
 type Filter struct {
+	// Key points to the underlying chain contract address and some data that belongs to that contract.
+	// Depending on the underlying Chain Reader blockchain implementation key can map to different onchain concepts, but should be able to map differing onchain data to same offchain data if they belong to the same key.
+	Key string
+	// The base Expressions slice indicates AND logical operation over expressions, which can be primitives or nested boolean expressions.
+	// For eg. []Expression{primitive, primitive, BoolExpression{AND, primitive, BoolExpression{OR, primitive, primitive}} is primitive AND primitive AND (primitive AND (primitive OR primitive)).
 	Expressions []Expression
-}
-
-// KeyFilter key points to the underlying chain contract address and some data that belongs to that contract. KeyFilter filter allows us to do basic filtering over data that belongs to that key.
-// Depending on the underlying Chain Reader blockchain implementation key can map to different onchain concepts, but should be able to map differing onchain data to same offchain data if they belong to the same key.
-type KeyFilter struct {
-	Key    string
-	Filter Filter
 }
 
 // Expression contains either a Primitive or a BoolExpression.
@@ -207,7 +202,7 @@ func (f *TxHashPrimitive) Accept(visitor Visitor) {
 //							 )`
 //		if err != nil{return nil, err}
 //		QueryOne(key, queryFilter)...
-func Where(expressions ...Expression) (Filter, error) {
+func Where(key string, expressions ...Expression) (Filter, error) {
 	for _, expr := range expressions {
 		if !expr.IsPrimitive() {
 			if len(expr.BoolExpression.Expressions) < 2 {
@@ -215,7 +210,7 @@ func Where(expressions ...Expression) (Filter, error) {
 			}
 		}
 	}
-	return Filter{expressions}, nil
+	return Filter{Key: key, Expressions: expressions}, nil
 }
 
 type SortDirection int

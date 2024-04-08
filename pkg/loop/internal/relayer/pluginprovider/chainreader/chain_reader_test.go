@@ -239,10 +239,6 @@ func (f *fakeChainReader) Bind(_ context.Context, _ []types.BoundContract) error
 	return nil
 }
 
-func (f *fakeChainReader) UnBind(_ context.Context, _ []types.BoundContract) error {
-	return nil
-}
-
 func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -328,10 +324,6 @@ func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error 
 	return e.err
 }
 
-func (e *errChainReader) UnBind(_ context.Context, _ []types.BoundContract) error {
-	return nil
-}
-
 func (e *errChainReader) QueryOne(_ context.Context, _ types.BoundContract, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
@@ -350,10 +342,6 @@ func (pc *protoConversionTestChainReader) Bind(_ context.Context, bc []types.Bou
 	if !reflect.DeepEqual(pc.expectedBindings, bc) {
 		return fmt.Errorf("bound contract wasn't parsed properly")
 	}
-	return nil
-}
-
-func (pc *protoConversionTestChainReader) UnBind(_ context.Context, _ []types.BoundContract) error {
 	return nil
 }
 

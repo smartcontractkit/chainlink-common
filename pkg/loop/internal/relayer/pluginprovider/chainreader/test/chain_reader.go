@@ -37,10 +37,6 @@ func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) UnBind(_ context.Context, _ []types.BoundContract) error {
-	return nil
-}
-
 func (c staticChainReader) GetLatestValue(_ context.Context, contract types.BoundContract, method string, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(contract.Name, c.contractName) {
 		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, contract.Name)

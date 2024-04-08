@@ -44,9 +44,6 @@ type ChainReader interface {
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
-	// UnBind undoes contract bindings, if the contract is not known by the ChainReader or if the Address is invalid an error will be returned.
-	UnBind(ctx context.Context, bindings []BoundContract) error
-
 	QueryOne(ctx context.Context, contract BoundContract, filter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 

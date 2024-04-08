@@ -150,15 +150,6 @@ func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error
 	return net.WrapRPCErr(err)
 }
 
-func (c *Client) UnBind(ctx context.Context, bindings []types.BoundContract) error {
-	pbBindings := make([]*pb.BoundContract, len(bindings))
-	for i, b := range bindings {
-		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
-	}
-	_, err := c.grpc.UnBind(ctx, &pb.UnBindRequest{Bindings: pbBindings})
-	return net.WrapRPCErr(err)
-}
-
 var _ pb.ChainReaderServer = (*Server)(nil)
 
 func NewServer(impl types.ChainReader) pb.ChainReaderServer {
@@ -374,7 +365,7 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 	return pbLimitAndSort, nil
 }
 
-func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (*pb.Sequences, error) {
+func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) ([]*pb.Sequence, error) {
 	var pbSequences []*pb.Sequence
 	for _, sequence := range sequences {
 		versionedSequenceDataType, err := EncodeVersionedBytes(sequenceDataType, CurrentEncodingVersion)
@@ -392,7 +383,7 @@ func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) (
 		}
 		pbSequences = append(pbSequences, pbSequence)
 	}
-	return &pb.Sequences{Sequences: pbSequences}, nil
+	return pbSequences, nil
 }
 
 func convertBoundContractFromProto(binding *pb.BoundContract) types.BoundContract {
@@ -481,22 +472,9 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 	return query.NewLimitAndSort(query.CountLimit(limit.Count), sortByArr...), nil
 }
 
-func convertSequencesMatrixFromProto(pbSequencesMatrix []*pb.Sequences, sequenceDataTypes []any) ([][]types.Sequence, error) {
-	var sequencesMatrix [][]types.Sequence
-	for i, sequences := range pbSequencesMatrix {
-		convertedSequences, err := convertSequencesFromProto(sequences, sequenceDataTypes[i])
-		if err != nil {
-			return nil, err
-		}
-
-		sequencesMatrix = append(sequencesMatrix, convertedSequences)
-	}
-	return sequencesMatrix, nil
-}
-
-func convertSequencesFromProto(pbSequences *pb.Sequences, sequenceDataType any) ([]types.Sequence, error) {
+func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
 	var sequences []types.Sequence
-	for _, pbSequence := range pbSequences.Sequences {
+	for _, pbSequence := range pbSequences {
 		data := reflect.New(reflect.TypeOf(sequenceDataType).Elem())
 		if err := DecodeVersionedBytes(data, pbSequence.Data); err != nil {
 			return nil, err

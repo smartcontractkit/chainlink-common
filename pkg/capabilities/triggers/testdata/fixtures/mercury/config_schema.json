@@ -1,34 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/feed-ids",
+  "$ref": "#/$defs/FeedIds",
   "$defs": {
-    "FeedReport": {
+    "FeedIds": {
       "properties": {
-        "feedId": {
-          "type": "string"
-        },
-        "fullReport": {
-          "type": "string",
-          "contentEncoding": "base64"
-        },
-        "benchmarkPrice": {
-          "type": "integer"
-        },
-        "observationTimestamp": {
-          "type": "integer"
+        "feedIds": {
+          "items": {
+            "type": "string",
+            "pattern": "^0x[0-9a-f]{64}$"
+          },
+          "type": "array"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "feedId",
-        "fullReport",
-        "benchmarkPrice",
-        "observationTimestamp"
+        "feedIds"
       ]
     }
-  },
-  "items": {
-    "$ref": "#/$defs/FeedReport"
-  },
-  "type": "array"
+  }
 }

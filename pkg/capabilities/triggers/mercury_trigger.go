@@ -37,7 +37,7 @@ var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 
 func NewMercuryTriggerService() *MercuryTriggerService {
 	return &MercuryTriggerService{
-		Validator:           capabilities.NewValidator([]mercury.FeedReport{}, nil),
+		Validator:           capabilities.NewValidator(FeedIDs{}, nil),
 		CapabilityInfo:      mercuryInfo,
 		chans:               map[string]chan<- capabilities.CapabilityResponse{},
 		feedIDsForTriggerID: make(map[string][]mercury.FeedID),
@@ -182,9 +182,19 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 	return nil
 }
 
+type FeedIDs struct {
+	// strings should be hex-encoded 32-byte values, prefixed with "0x", all lowercase
+	FeedIDs []string `json:"feedIds" jsonschema:"pattern=^0x[0-9a-f]{64}$"`
+}
+
 // Get array of feedIds from CapabilityRequest req
 func (o *MercuryTriggerService) GetFeedIDs(req capabilities.CapabilityRequest) ([]mercury.FeedID, error) {
 	feedIDs := make([]mercury.FeedID, 0)
+	err := o.ValidateConfig(req.Config)
+	if err != nil {
+		return nil, err
+	}
+
 	// Unwrap the config which should return pair (map, nil) and then get the feedIds from the map
 	if config, err := req.Config.Unwrap(); err == nil {
 		if feeds, ok := config.(map[string]interface{})["feedIds"].([]any); ok {
@@ -235,11 +245,6 @@ func GenerateTriggerEventID(reports []mercury.FeedReport) string {
 	return sha256Hash(s)
 }
 
-func ValidateInput(mercuryTriggerEvent values.Value) error {
-	// TODO: Fill this in
-	return nil
-}
-
 func ExampleOutput() (values.Value, error) {
 	feedOne := "0x111111111111111111110000000000000000000000000000000000000000"
 	feedTwo := "0x222222222222222222220000000000000000000000000000000000000000"
@@ -265,11 +270,6 @@ func ExampleOutput() (values.Value, error) {
 		BatchedPayload: feeds,
 	}
 	return mercury.Codec{}.WrapMercuryTriggerEvent(event)
-}
-
-func ValidateConfig(config values.Value) error {
-	// TODO: Fill this in
-	return nil
 }
 
 func sha256Hash(s string) string {

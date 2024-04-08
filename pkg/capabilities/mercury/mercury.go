@@ -41,6 +41,12 @@ func (id FeedID) Bytes() [FeedIDBytesLen]byte {
 	return [FeedIDBytesLen]byte(b)
 }
 
+// NOTE: Torn about this since we already have JSON Schema validation
+// but its nice to have a type-safe way to represent an already
+// validated FeedID
+//
+// And feeds_aggregator uses this too, but on previous outcome
+// which should have already clean data?
 func (id FeedID) validate() error {
 	if len(id) != 2*FeedIDBytesLen+2 {
 		return ErrInvalidFeedID

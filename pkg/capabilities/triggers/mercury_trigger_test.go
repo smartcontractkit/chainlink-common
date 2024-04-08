@@ -281,6 +281,39 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.Len(t, callback2, 0)
 }
 
+func TestMercuryTrigger_ConfigValidation(t *testing.T) {
+	var newConfigSingleFeed = func(t *testing.T, feedID string) *values.Map {
+		cm := map[string]interface{}{
+			"feedIds": []string{feedID},
+		}
+		configWrapped, err := values.NewMap(cm)
+		require.NoError(t, err)
+
+		return configWrapped
+	}
+
+	ts := NewMercuryTriggerService()
+	config := newConfigSingleFeed(t, "012345678901234567890123456789012345678901234567890123456789000000")
+	err := ts.ValidateConfig(config)
+	require.Error(t, err)
+
+	config = newConfigSingleFeed(t, "0x1234")
+	err = ts.ValidateConfig(config)
+	require.Error(t, err)
+
+	config = newConfigSingleFeed(t, "0x123zzz")
+	err = ts.ValidateConfig(config)
+	require.Error(t, err)
+
+	config = newConfigSingleFeed(t, "0x0001013ebd4ed3f5889FB5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292")
+	err = ts.ValidateConfig(config)
+	require.Error(t, err)
+
+	config = newConfigSingleFeed(t, "0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292")
+	err = ts.ValidateConfig(config)
+	require.NoError(t, err)
+}
+
 func TestMercuryTrigger_GenerateConfigSchema(t *testing.T) {
 	ts := NewMercuryTriggerService()
 	resp := ts.GetRequestConfigJSONSchema()

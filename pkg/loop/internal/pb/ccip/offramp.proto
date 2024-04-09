@@ -19,6 +19,7 @@ service OffRampReader {
     rpc OnchainConfig(google.protobuf.Empty) returns (OnchainConfigResponse) {}
     rpc GasPriceEstimator(google.protobuf.Empty) returns (GasPriceEstimatorResponse) {}
     rpc GetSenderNonce(GetSenderNonceRequest) returns (GetSenderNonceResponse) {}
+    rpc GetSendersNonce(GetSendersNonceRequest) returns (GetSendersNonceResponse) {}
     rpc CurrentRateLimiterState(google.protobuf.Empty) returns (CurrentRateLimiterStateResponse) {}
     rpc GetExecutionState(GetExecutionStateRequest) returns (GetExecutionStateResponse) {}
     rpc GetStaticConfig(google.protobuf.Empty) returns (GetStaticConfigResponse) {}
@@ -115,6 +116,18 @@ message GetSenderNonceRequest {
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.GetSenderNonce]
 message GetSenderNonceResponse {
     uint64 nonce = 1;
+}
+
+// GetSendersNonceRequest is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.GetSendersNonce]
+message GetSendersNonceRequest {
+    repeated string senders = 1; // []Address
+}
+
+// GetSendersNonceResponse returns the sender nonce. It is a gRPC adapter for the return values of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.GetSendersNonce]
+message GetSendersNonceResponse {
+    map<string,uint64> nonce_mapping = 1; // map[Address]nonce
 }
 
 // CurrentRateLimiterStateResponse returns the current rate limiter state. It is a gRPC adapter for the return values of

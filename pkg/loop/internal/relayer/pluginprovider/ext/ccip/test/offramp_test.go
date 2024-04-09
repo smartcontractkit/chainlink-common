@@ -189,6 +189,12 @@ func roundTripOffRampTests(ctx context.Context, t *testing.T, client cciptypes.O
 		assert.Equal(t, OffRampReader.getSenderNonceResponse, nonce)
 	})
 
+	t.Run("GetSendersNonce", func(t *testing.T) {
+		nonce, err := client.GetSendersNonce(ctx, OffRampReader.getSendersNonceRequest)
+		require.NoError(t, err)
+		assert.Equal(t, OffRampReader.getSendersNonceResponse, nonce)
+	})
+
 	t.Run("GetSourceToDestTokensMapping", func(t *testing.T) {
 		mapping, err := client.GetSourceToDestTokensMapping(ctx)
 		require.NoError(t, err)

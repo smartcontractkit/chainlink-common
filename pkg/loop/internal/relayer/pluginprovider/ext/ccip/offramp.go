@@ -199,6 +199,22 @@ func (o *OffRampReaderGRPCClient) GetSenderNonce(ctx context.Context, sender cci
 	return resp.Nonce, nil
 }
 
+// GetSendersNonce i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
+func (o *OffRampReaderGRPCClient) GetSendersNonce(ctx context.Context, senders []cciptypes.Address) (map[cciptypes.Address]uint64, error) {
+	stringSenders := make([]string, len(senders))
+	for i, s := range senders {
+		stringSenders[i] = string(s)
+	}
+
+	resp, err := o.client.GetSendersNonce(ctx, &ccippb.GetSendersNonceRequest{
+		Senders: stringSenders,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return senderToNonceMapping(resp.GetNonceMapping()), nil
+}
+
 // GetSourceToDestTokensMapping i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
 func (o *OffRampReaderGRPCClient) GetSourceToDestTokensMapping(ctx context.Context) (map[cciptypes.Address]cciptypes.Address, error) {
 	resp, err := o.client.GetSourceToDestTokensMapping(ctx, &emptypb.Empty{})
@@ -354,6 +370,20 @@ func (o *OffRampReaderGRPCServer) GetSenderNonce(ctx context.Context, req *ccipp
 		return nil, err
 	}
 	return &ccippb.GetSenderNonceResponse{Nonce: nonce}, nil
+}
+
+// GetSendersNonce implements ccippb.OffRampReaderServer.
+func (o *OffRampReaderGRPCServer) GetSendersNonce(ctx context.Context, req *ccippb.GetSendersNonceRequest) (*ccippb.GetSendersNonceResponse, error) {
+	senders := make([]cciptypes.Address, len(req.Senders))
+	for i, s := range req.Senders {
+		senders[i] = cciptypes.Address(s)
+	}
+
+	resp, err := o.impl.GetSendersNonce(ctx, senders)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetSendersNonceResponse{NonceMapping: senderToNonceMappingToPB(resp)}, nil
 }
 
 // GetSourceToDestTokensMapping implements ccippb.OffRampReaderServer.
@@ -690,6 +720,22 @@ func sourceDestTokenMappingToPB(in map[cciptypes.Address]cciptypes.Address) map[
 	out := make(map[string]string)
 	for k, v := range in {
 		out[string(k)] = string(v)
+	}
+	return out
+}
+
+func senderToNonceMapping(in map[string]uint64) map[cciptypes.Address]uint64 {
+	out := make(map[cciptypes.Address]uint64, len(in))
+	for k, v := range in {
+		out[cciptypes.Address(k)] = v
+	}
+	return out
+}
+
+func senderToNonceMappingToPB(in map[cciptypes.Address]uint64) map[string]uint64 {
+	out := make(map[string]uint64, len(in))
+	for k, v := range in {
+		out[string(k)] = v
 	}
 	return out
 }

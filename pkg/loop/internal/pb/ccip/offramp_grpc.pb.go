@@ -29,6 +29,7 @@ const (
 	OffRampReader_OnchainConfig_FullMethodName                = "/loop.internal.pb.ccip.OffRampReader/OnchainConfig"
 	OffRampReader_GasPriceEstimator_FullMethodName            = "/loop.internal.pb.ccip.OffRampReader/GasPriceEstimator"
 	OffRampReader_GetSenderNonce_FullMethodName               = "/loop.internal.pb.ccip.OffRampReader/GetSenderNonce"
+	OffRampReader_GetSendersNonce_FullMethodName              = "/loop.internal.pb.ccip.OffRampReader/GetSendersNonce"
 	OffRampReader_CurrentRateLimiterState_FullMethodName      = "/loop.internal.pb.ccip.OffRampReader/CurrentRateLimiterState"
 	OffRampReader_GetExecutionState_FullMethodName            = "/loop.internal.pb.ccip.OffRampReader/GetExecutionState"
 	OffRampReader_GetStaticConfig_FullMethodName              = "/loop.internal.pb.ccip.OffRampReader/GetStaticConfig"
@@ -51,6 +52,7 @@ type OffRampReaderClient interface {
 	OnchainConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OnchainConfigResponse, error)
 	GasPriceEstimator(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GasPriceEstimatorResponse, error)
 	GetSenderNonce(ctx context.Context, in *GetSenderNonceRequest, opts ...grpc.CallOption) (*GetSenderNonceResponse, error)
+	GetSendersNonce(ctx context.Context, in *GetSendersNonceRequest, opts ...grpc.CallOption) (*GetSendersNonceResponse, error)
 	CurrentRateLimiterState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CurrentRateLimiterStateResponse, error)
 	GetExecutionState(ctx context.Context, in *GetExecutionStateRequest, opts ...grpc.CallOption) (*GetExecutionStateResponse, error)
 	GetStaticConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetStaticConfigResponse, error)
@@ -149,6 +151,15 @@ func (c *offRampReaderClient) GetSenderNonce(ctx context.Context, in *GetSenderN
 	return out, nil
 }
 
+func (c *offRampReaderClient) GetSendersNonce(ctx context.Context, in *GetSendersNonceRequest, opts ...grpc.CallOption) (*GetSendersNonceResponse, error) {
+	out := new(GetSendersNonceResponse)
+	err := c.cc.Invoke(ctx, OffRampReader_GetSendersNonce_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *offRampReaderClient) CurrentRateLimiterState(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CurrentRateLimiterStateResponse, error) {
 	out := new(CurrentRateLimiterStateResponse)
 	err := c.cc.Invoke(ctx, OffRampReader_CurrentRateLimiterState_FullMethodName, in, out, opts...)
@@ -225,6 +236,7 @@ type OffRampReaderServer interface {
 	OnchainConfig(context.Context, *emptypb.Empty) (*OnchainConfigResponse, error)
 	GasPriceEstimator(context.Context, *emptypb.Empty) (*GasPriceEstimatorResponse, error)
 	GetSenderNonce(context.Context, *GetSenderNonceRequest) (*GetSenderNonceResponse, error)
+	GetSendersNonce(context.Context, *GetSendersNonceRequest) (*GetSendersNonceResponse, error)
 	CurrentRateLimiterState(context.Context, *emptypb.Empty) (*CurrentRateLimiterStateResponse, error)
 	GetExecutionState(context.Context, *GetExecutionStateRequest) (*GetExecutionStateResponse, error)
 	GetStaticConfig(context.Context, *emptypb.Empty) (*GetStaticConfigResponse, error)
@@ -265,6 +277,9 @@ func (UnimplementedOffRampReaderServer) GasPriceEstimator(context.Context, *empt
 }
 func (UnimplementedOffRampReaderServer) GetSenderNonce(context.Context, *GetSenderNonceRequest) (*GetSenderNonceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSenderNonce not implemented")
+}
+func (UnimplementedOffRampReaderServer) GetSendersNonce(context.Context, *GetSendersNonceRequest) (*GetSendersNonceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSendersNonce not implemented")
 }
 func (UnimplementedOffRampReaderServer) CurrentRateLimiterState(context.Context, *emptypb.Empty) (*CurrentRateLimiterStateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CurrentRateLimiterState not implemented")
@@ -462,6 +477,24 @@ func _OffRampReader_GetSenderNonce_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OffRampReader_GetSendersNonce_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSendersNonceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OffRampReaderServer).GetSendersNonce(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OffRampReader_GetSendersNonce_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OffRampReaderServer).GetSendersNonce(ctx, req.(*GetSendersNonceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _OffRampReader_CurrentRateLimiterState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -630,6 +663,10 @@ var OffRampReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSenderNonce",
 			Handler:    _OffRampReader_GetSenderNonce_Handler,
+		},
+		{
+			MethodName: "GetSendersNonce",
+			Handler:    _OffRampReader_GetSendersNonce_Handler,
 		},
 		{
 			MethodName: "CurrentRateLimiterState",

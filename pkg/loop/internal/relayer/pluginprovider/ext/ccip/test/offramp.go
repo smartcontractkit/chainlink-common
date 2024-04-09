@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"slices"
 
 	"github.com/stretchr/testify/assert"
 
@@ -118,6 +119,10 @@ var OffRampReader = staticOffRamp{
 		getSenderNonceRequest:  ccip.Address("getSenderNonceRequest"),
 		getSenderNonceResponse: 10,
 
+		// GetSendersNonce test data
+		getSendersNonceRequest:  []ccip.Address{ccip.Address("getSenderNonceRequest")},
+		getSendersNonceResponse: map[ccip.Address]uint64{ccip.Address("getSenderNonceRequest"): 10},
+
 		// GetSourceToDestTokensMapping test data
 		getSourceToDestTokensMappingResponse: map[ccip.Address]ccip.Address{
 			ccip.Address("source"): ccip.Address("dest"),
@@ -183,6 +188,9 @@ type staticOffRampConfig struct {
 
 	getSenderNonceRequest  ccip.Address
 	getSenderNonceResponse uint64
+
+	getSendersNonceRequest  []ccip.Address
+	getSendersNonceResponse map[ccip.Address]uint64
 
 	getSourceToDestTokensMappingResponse map[ccip.Address]ccip.Address
 
@@ -282,6 +290,14 @@ func (s staticOffRamp) GetSenderNonce(ctx context.Context, sender ccip.Address) 
 		return 0, fmt.Errorf("expected sender %s but got %s", s.getSenderNonceRequest, sender)
 	}
 	return s.getSenderNonceResponse, nil
+}
+
+// GetSenderNonce implements OffRampEvaluator.
+func (s staticOffRamp) GetSendersNonce(ctx context.Context, senders []ccip.Address) (map[ccip.Address]uint64, error) {
+	if len(senders) == 0 || !slices.Equal(senders, s.getSendersNonceRequest) {
+		return nil, fmt.Errorf("expected sender %s but got %s", s.getSendersNonceRequest, senders)
+	}
+	return s.getSendersNonceResponse, nil
 }
 
 // GetSourceToDestTokensMapping implements OffRampEvaluator.

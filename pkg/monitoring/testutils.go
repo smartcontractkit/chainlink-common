@@ -57,10 +57,10 @@ func (f *fakeTxResultsSourceFactory) GetType() string {
 	return "fake-txresults"
 }
 
-func (f *fakeEnvelopeSourceFactory) NewSource(_ SourceParams) (Source, error) {
+func (f *fakeEnvelopeSourceFactory) NewSource(_ Params) (Source, error) {
 	return &fakeEnvelopeSource{}, nil
 }
-func (f *fakeTxResultsSourceFactory) NewSource(_ SourceParams) (Source, error) {
+func (f *fakeTxResultsSourceFactory) NewSource(_ Params) (Source, error) {
 	return &fakeTxResultsSource{}, nil
 }
 
@@ -80,7 +80,7 @@ type fakeRandomDataSourceFactory struct {
 
 var _ SourceFactory = (*fakeRandomDataSourceFactory)(nil)
 
-func (f *fakeRandomDataSourceFactory) NewSource(_ SourceParams) (Source, error) {
+func (f *fakeRandomDataSourceFactory) NewSource(_ Params) (Source, error) {
 	return &fakeSource{f}, nil
 }
 
@@ -122,7 +122,7 @@ type fakeSourceFactoryWithError struct {
 	returnError bool
 }
 
-func (f *fakeSourceFactoryWithError) NewSource(_ SourceParams) (Source, error) {
+func (f *fakeSourceFactoryWithError) NewSource(_ Params) (Source, error) {
 	if f.returnError {
 		return nil, fmt.Errorf("fake source factory error")
 	}
@@ -177,7 +177,7 @@ type fakeExporterFactory struct {
 	returnError bool
 }
 
-func (f *fakeExporterFactory) NewExporter(_ ExporterParams) (Exporter, error) {
+func (f *fakeExporterFactory) NewExporter(_ Params) (Exporter, error) {
 	if f.returnError {
 		return nil, fmt.Errorf("fake exporter factory error")
 	}

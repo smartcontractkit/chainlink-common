@@ -19,14 +19,8 @@ type Source interface {
 	Fetch(context.Context) (interface{}, error)
 }
 
-type SourceParams struct {
-	ChainConfig ChainConfig
-	FeedConfig  FeedConfig
-	Nodes       []NodeConfig
-}
-
 type SourceFactory interface {
-	NewSource(SourceParams) (Source, error)
+	NewSource(Params) (Source, error)
 	// GetType should return a namespace for all the source instances produced by this factory.
 	GetType() string
 }

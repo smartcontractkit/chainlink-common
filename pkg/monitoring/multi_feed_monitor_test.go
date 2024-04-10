@@ -220,18 +220,18 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 			10, // bufferCapacity for source pollers
 		)
 
-		sourceFactory1.On("NewSource", SourceParams{chainConfig, feeds[0], nodes}).Return(nil, fmt.Errorf("source_factory1/feed1 failed"))
-		sourceFactory2.On("NewSource", SourceParams{chainConfig, feeds[0], nodes}).Return(nil, fmt.Errorf("source_factory2/feed1 failed"))
-		sourceFactory1.On("NewSource", SourceParams{chainConfig, feeds[1], nodes}).Return(source1, nil)
-		sourceFactory2.On("NewSource", SourceParams{chainConfig, feeds[1], nodes}).Return(source2, nil)
+		sourceFactory1.On("NewSource", Params{chainConfig, feeds[0], nodes}).Return(nil, fmt.Errorf("source_factory1/feed1 failed"))
+		sourceFactory2.On("NewSource", Params{chainConfig, feeds[0], nodes}).Return(nil, fmt.Errorf("source_factory2/feed1 failed"))
+		sourceFactory1.On("NewSource", Params{chainConfig, feeds[1], nodes}).Return(source1, nil)
+		sourceFactory2.On("NewSource", Params{chainConfig, feeds[1], nodes}).Return(source2, nil)
 
 		sourceFactory1.On("GetType").Return("fake")
 		sourceFactory2.On("GetType").Return("fake")
 
-		exporterFactory1.On("NewExporter", ExporterParams{chainConfig, feeds[0], nodes}).Return(exporter1, nil)
-		exporterFactory2.On("NewExporter", ExporterParams{chainConfig, feeds[0], nodes}).Return(exporter2, nil)
-		exporterFactory1.On("NewExporter", ExporterParams{chainConfig, feeds[1], nodes}).Return(nil, fmt.Errorf("exporter_factory1/feed2 failed"))
-		exporterFactory2.On("NewExporter", ExporterParams{chainConfig, feeds[1], nodes}).Return(nil, fmt.Errorf("exporter_factory2/feed2 failed"))
+		exporterFactory1.On("NewExporter", Params{chainConfig, feeds[0], nodes}).Return(exporter1, nil)
+		exporterFactory2.On("NewExporter", Params{chainConfig, feeds[0], nodes}).Return(exporter2, nil)
+		exporterFactory1.On("NewExporter", Params{chainConfig, feeds[1], nodes}).Return(nil, fmt.Errorf("exporter_factory1/feed2 failed"))
+		exporterFactory2.On("NewExporter", Params{chainConfig, feeds[1], nodes}).Return(nil, fmt.Errorf("exporter_factory2/feed2 failed"))
 
 		exporterFactory1.On("GetType").Return("fake")
 		exporterFactory2.On("GetType").Return("fake")
@@ -345,7 +345,7 @@ func TestMultiFeedMonitorNodeOnly(t *testing.T) {
 	require.NotEqual(t, n, nodeOnlySourceCount)
 	require.NotEqual(t, n, nodeOnlyExporterCount)
 
-	// generate 10 factories
+	// generate 10 source + exporter factories (mixed with node only version)
 	for i := 0; i < n; i++ {
 		sfi := NewSourceFactoryMock(t)
 		sfi.On("NewSource", mock.Anything).Return(s, nil)
@@ -388,6 +388,7 @@ func TestMultiFeedMonitorNodeOnly(t *testing.T) {
 	for _, m := range logs.FilterMessage("starting monitor").FilterFieldKey("pollers").All() {
 		kv := m.ContextMap()
 
+		// validate logged counts match the expected counts
 		switch kv["component"] {
 		case "feed-monitor":
 			assert.Equal(t, int64(n-nodeOnlyExporterCount), kv["exporters"].(int64))

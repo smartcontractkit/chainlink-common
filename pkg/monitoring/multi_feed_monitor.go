@@ -70,29 +70,29 @@ func (m *multiFeedMonitor) Run(ctx context.Context, data RDDData) {
 	}
 }
 
-// createDataSource reusable internal method to create data sources
+// createMonitor reusable internal method to create data sources + pollers + exporters
 func (m *multiFeedMonitor) createMonitor(ctx context.Context, lgr Logger, subs *utils.Subprocesses, feedConfig FeedConfig, nodes []NodeConfig, nodeOnly bool) {
 	pollers := []Poller{}
-	for _, sourceFactory := range m.sourceFactories {
-		if IsNodesOnly(sourceFactory.GetType()) != nodeOnly {
+	for _, sFactory := range m.sourceFactories {
+		if IsNodesOnly(sFactory.GetType()) != nodeOnly {
 			// if factory is node only + running nodeOnly = keep going (true + true)
 			// if factory is node only + NOT running nodeOnly = skip factory (true + false)
 			// if factory is NOT node only + running nodeOnly = skip factory (false + true)
 			// if factory is NOT node only + NOT running nodeOnly = keep going (false + false)
 			continue // skip factory
 		}
-		source, err := sourceFactory.NewSource(SourceParams{
+		s, err := sFactory.NewSource(Params{
 			ChainConfig: m.chainConfig,
 			FeedConfig:  feedConfig,
 			Nodes:       nodes,
 		})
 		if err != nil {
-			lgr.Errorw("failed to create source", "error", err, "source-type", fmt.Sprintf("%T", sourceFactory))
+			lgr.Errorw("failed to create source", "error", err, "source-type", fmt.Sprintf("%T", sFactory))
 			continue
 		}
 		poller := NewSourcePoller(
-			source,
-			logger.With(m.log, "component", "chain-poller", "source", sourceFactory.GetType()),
+			s,
+			logger.With(m.log, "component", "chain-poller", "source", sFactory.GetType()),
 			m.chainConfig.GetPollInterval(),
 			m.chainConfig.GetReadTimeout(),
 			m.bufferCapacity,
@@ -105,21 +105,21 @@ func (m *multiFeedMonitor) createMonitor(ctx context.Context, lgr Logger, subs *
 	}
 	// Create exporters
 	exporters := []Exporter{}
-	for _, exporterFactory := range m.exporterFactories {
-		if IsNodesOnly(exporterFactory.GetType()) != nodeOnly {
+	for _, eFactory := range m.exporterFactories {
+		if IsNodesOnly(eFactory.GetType()) != nodeOnly {
 			continue // see above for notes
 		}
 
-		exporter, err := exporterFactory.NewExporter(ExporterParams{
+		e, err := eFactory.NewExporter(Params{
 			m.chainConfig,
 			feedConfig,
 			nodes,
 		})
 		if err != nil {
-			lgr.Errorw("failed to create new exporter", "error", err, "exporter-type", fmt.Sprintf("%T", exporterFactory))
+			lgr.Errorw("failed to create new exporter", "error", err, "exporter-type", fmt.Sprintf("%T", eFactory))
 			continue
 		}
-		exporters = append(exporters, exporter)
+		exporters = append(exporters, e)
 	}
 	if len(exporters) == 0 {
 		lgr.Errorw("not tracking feed because all exporters failed to initialize")

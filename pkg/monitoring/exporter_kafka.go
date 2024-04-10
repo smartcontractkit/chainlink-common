@@ -42,7 +42,7 @@ type kafkaExporterFactory struct {
 }
 
 func (k *kafkaExporterFactory) NewExporter(
-	params ExporterParams,
+	params Params,
 ) (Exporter, error) {
 	return &kafkaExporter{
 		params.ChainConfig,

@@ -20,28 +20,20 @@ func TestFeedMonitor(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
-		cfg := config.Config{}
-		chainConfig := generateChainConfig()
-		feedConfig := generateFeedConfig()
-		nodes := []NodeConfig{generateNodeConfig()}
-
-		sourceCfg := SourceParams{
-			chainConfig,
-			feedConfig,
-			nodes,
-		}
-		expCfg := ExporterParams{
-			chainConfig,
-			feedConfig,
-			nodes,
+		monitorCfg := config.Config{}
+		// shared config between exporter and source
+		cfg := Params{
+			generateChainConfig(),
+			generateFeedConfig(),
+			[]NodeConfig{generateNodeConfig()},
 		}
 
 		sourceFactory1 := &fakeRandomDataSourceFactory{make(chan interface{})}
-		source1, err := sourceFactory1.NewSource(sourceCfg)
+		source1, err := sourceFactory1.NewSource(Params(cfg))
 		require.NoError(t, err)
 
 		sourceFactory2 := &fakeRandomDataSourceFactory{make(chan interface{})}
-		source2, err := sourceFactory2.NewSource(sourceCfg)
+		source2, err := sourceFactory2.NewSource(Params(cfg))
 		require.NoError(t, err)
 
 		var bufferCapacity uint32 // no buffering
@@ -73,8 +65,8 @@ func TestFeedMonitor(t *testing.T) {
 
 		producer := fakeProducer{make(chan producerMessage), ctx}
 
-		transmissionSchema := fakeSchema{transmissionCodec, SubjectFromTopic(cfg.Kafka.TransmissionTopic)}
-		configSetSimplifiedSchema := fakeSchema{configSetSimplifiedCodec, SubjectFromTopic(cfg.Kafka.ConfigSetSimplifiedTopic)}
+		transmissionSchema := fakeSchema{transmissionCodec, SubjectFromTopic(monitorCfg.Kafka.TransmissionTopic)}
+		configSetSimplifiedSchema := fakeSchema{configSetSimplifiedCodec, SubjectFromTopic(monitorCfg.Kafka.ConfigSetSimplifiedTopic)}
 
 		prometheusExporterFactory := NewPrometheusExporterFactory(
 			newNullLogger(),
@@ -84,14 +76,14 @@ func TestFeedMonitor(t *testing.T) {
 			newNullLogger(),
 			producer,
 			[]Pipeline{
-				{cfg.Kafka.TransmissionTopic, MakeTransmissionMapping, transmissionSchema},
-				{cfg.Kafka.ConfigSetSimplifiedTopic, MakeConfigSetSimplifiedMapping, configSetSimplifiedSchema},
+				{monitorCfg.Kafka.TransmissionTopic, MakeTransmissionMapping, transmissionSchema},
+				{monitorCfg.Kafka.ConfigSetSimplifiedTopic, MakeConfigSetSimplifiedMapping, configSetSimplifiedSchema},
 			},
 		)
 		require.NoError(t, err)
-		prometheusExporter, err := prometheusExporterFactory.NewExporter(expCfg)
+		prometheusExporter, err := prometheusExporterFactory.NewExporter(cfg)
 		require.NoError(t, err)
-		kafkaExporter, err := kafkaExporterFactory.NewExporter(expCfg)
+		kafkaExporter, err := kafkaExporterFactory.NewExporter(cfg)
 		require.NoError(t, err)
 
 		exporters := []Exporter{prometheusExporter, kafkaExporter}

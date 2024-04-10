@@ -25,7 +25,7 @@ type prometheusExporterFactory struct {
 }
 
 func (p *prometheusExporterFactory) NewExporter(
-	params ExporterParams,
+	params Params,
 ) (Exporter, error) {
 	chainConfig, feedConfig, nodes := params.ChainConfig, params.FeedConfig, params.Nodes
 	p.metrics.SetFeedContractMetadata(

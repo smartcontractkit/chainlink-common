@@ -15,7 +15,7 @@ type instrumentedSourceFactory struct {
 	chainMetrics  ChainMetrics
 }
 
-func (i *instrumentedSourceFactory) NewSource(cfg SourceParams) (Source, error) {
+func (i *instrumentedSourceFactory) NewSource(cfg Params) (Source, error) {
 	source, err := i.sourceFactory.NewSource(cfg)
 	if err != nil {
 		return nil, err

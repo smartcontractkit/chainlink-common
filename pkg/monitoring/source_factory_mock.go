@@ -28,7 +28,7 @@ func (_m *SourceFactoryMock) GetType() string {
 }
 
 // NewSource provides a mock function with given fields: _a0
-func (_m *SourceFactoryMock) NewSource(_a0 SourceParams) (Source, error) {
+func (_m *SourceFactoryMock) NewSource(_a0 Params) (Source, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -37,10 +37,10 @@ func (_m *SourceFactoryMock) NewSource(_a0 SourceParams) (Source, error) {
 
 	var r0 Source
 	var r1 error
-	if rf, ok := ret.Get(0).(func(SourceParams) (Source, error)); ok {
+	if rf, ok := ret.Get(0).(func(Params) (Source, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(SourceParams) Source); ok {
+	if rf, ok := ret.Get(0).(func(Params) Source); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -48,7 +48,7 @@ func (_m *SourceFactoryMock) NewSource(_a0 SourceParams) (Source, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(SourceParams) error); ok {
+	if rf, ok := ret.Get(1).(func(Params) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

@@ -28,7 +28,7 @@ func (_m *ExporterFactoryMock) GetType() string {
 }
 
 // NewExporter provides a mock function with given fields: _a0
-func (_m *ExporterFactoryMock) NewExporter(_a0 ExporterParams) (Exporter, error) {
+func (_m *ExporterFactoryMock) NewExporter(_a0 Params) (Exporter, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -37,10 +37,10 @@ func (_m *ExporterFactoryMock) NewExporter(_a0 ExporterParams) (Exporter, error)
 
 	var r0 Exporter
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ExporterParams) (Exporter, error)); ok {
+	if rf, ok := ret.Get(0).(func(Params) (Exporter, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(ExporterParams) Exporter); ok {
+	if rf, ok := ret.Get(0).(func(Params) Exporter); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -48,7 +48,7 @@ func (_m *ExporterFactoryMock) NewExporter(_a0 ExporterParams) (Exporter, error)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(ExporterParams) error); ok {
+	if rf, ok := ret.Get(1).(func(Params) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

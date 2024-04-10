@@ -32,7 +32,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkName(),   // networkName
 			feedConfig.GetSymbol(),         // symbol
 		).Once()
-		exporter, err := factory.NewExporter(ExporterParams{chainConfig, feedConfig, nodes})
+		exporter, err := factory.NewExporter(Params{chainConfig, feedConfig, nodes})
 		require.NoError(t, err)
 
 		envelope1, err := generateEnvelope(ctx)
@@ -393,7 +393,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkName(),   // networkName
 			feedConfig.GetSymbol(),         // symbol
 		).Once()
-		exporter, err := factory.NewExporter(ExporterParams{chainConfig, feedConfig, nodes})
+		exporter, err := factory.NewExporter(Params{chainConfig, feedConfig, nodes})
 		require.NoError(t, err)
 
 		envelope1, err := generateEnvelope(ctx)
@@ -649,7 +649,7 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkName(),   // networkName
 			feedConfig.GetSymbol(),         // symbol
 		).Once()
-		exporter, err := factory.NewExporter(ExporterParams{chainConfig, feedConfig, nodes})
+		exporter, err := factory.NewExporter(Params{chainConfig, feedConfig, nodes})
 		require.NoError(t, err)
 
 		txResults := generateTxResults()

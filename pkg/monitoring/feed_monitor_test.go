@@ -29,11 +29,11 @@ func TestFeedMonitor(t *testing.T) {
 		}
 
 		sourceFactory1 := &fakeRandomDataSourceFactory{make(chan interface{})}
-		source1, err := sourceFactory1.NewSource(Params(cfg))
+		source1, err := sourceFactory1.NewSource(cfg)
 		require.NoError(t, err)
 
 		sourceFactory2 := &fakeRandomDataSourceFactory{make(chan interface{})}
-		source2, err := sourceFactory2.NewSource(Params(cfg))
+		source2, err := sourceFactory2.NewSource(cfg)
 		require.NoError(t, err)
 
 		var bufferCapacity uint32 // no buffering

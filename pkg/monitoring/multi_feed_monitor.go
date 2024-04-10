@@ -54,8 +54,10 @@ func (m *multiFeedMonitor) Run(ctx context.Context, data RDDData) {
 		ctx,
 		logger.With(m.log, "network", m.chainConfig.GetNetworkName()),
 		&subs,
-		nil,
-		data.Nodes,
+		Params{
+			ChainConfig: m.chainConfig,
+			Nodes:       data.Nodes,
+		},
 		true,
 	)
 
@@ -66,12 +68,16 @@ func (m *multiFeedMonitor) Run(ctx context.Context, data RDDData) {
 			"feed_id", feedConfig.GetID(),
 			"network", m.chainConfig.GetNetworkName(),
 		)
-		m.createMonitor(ctx, feedLogger, &subs, feedConfig, data.Nodes, false)
+		m.createMonitor(ctx, feedLogger, &subs, Params{
+			ChainConfig: m.chainConfig,
+			FeedConfig:  feedConfig,
+			Nodes:       data.Nodes,
+		}, false)
 	}
 }
 
 // createMonitor reusable internal method to create data sources + pollers + exporters
-func (m *multiFeedMonitor) createMonitor(ctx context.Context, lgr Logger, subs *utils.Subprocesses, feedConfig FeedConfig, nodes []NodeConfig, nodeOnly bool) {
+func (m *multiFeedMonitor) createMonitor(ctx context.Context, lgr Logger, subs *utils.Subprocesses, params Params, nodeOnly bool) {
 	pollers := []Poller{}
 	for _, sFactory := range m.sourceFactories {
 		if IsNodesOnly(sFactory.GetType()) != nodeOnly {
@@ -81,11 +87,7 @@ func (m *multiFeedMonitor) createMonitor(ctx context.Context, lgr Logger, subs *
 			// if factory is NOT node only + NOT running nodeOnly = keep going (false + false)
 			continue // skip factory
 		}
-		s, err := sFactory.NewSource(Params{
-			ChainConfig: m.chainConfig,
-			FeedConfig:  feedConfig,
-			Nodes:       nodes,
-		})
+		s, err := sFactory.NewSource(params)
 		if err != nil {
 			lgr.Errorw("failed to create source", "error", err, "source-type", fmt.Sprintf("%T", sFactory))
 			continue
@@ -110,11 +112,7 @@ func (m *multiFeedMonitor) createMonitor(ctx context.Context, lgr Logger, subs *
 			continue // see above for notes
 		}
 
-		e, err := eFactory.NewExporter(Params{
-			m.chainConfig,
-			feedConfig,
-			nodes,
-		})
+		e, err := eFactory.NewExporter(params)
 		if err != nil {
 			lgr.Errorw("failed to create new exporter", "error", err, "exporter-type", fmt.Sprintf("%T", eFactory))
 			continue

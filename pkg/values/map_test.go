@@ -27,6 +27,8 @@ type testStruct struct {
 	Decimal      decimal.Decimal
 	DecimalValue *Decimal
 
+	List []string
+
 	Map      map[string]any
 	MapValue *Map
 }
@@ -56,6 +58,8 @@ func TestMap_UnwrapTo(t *testing.T) {
 		Decimal:      decimal.NewFromFloat(1.00),
 		DecimalValue: NewDecimal(decimal.NewFromFloat(1.00)),
 
+		List: []string{"a", "b", "c"},
+
 		Map:      im,
 		MapValue: mv,
 	}
@@ -77,6 +81,8 @@ func TestMap_UnwrapTo(t *testing.T) {
 
 		"decimal":      decimal.NewFromFloat32(1.00),
 		"decimalValue": NewDecimal(decimal.NewFromFloat(1.00)),
+
+		"list": []string{"a", "b", "c"},
 
 		"map":      im,
 		"mapValue": mv,

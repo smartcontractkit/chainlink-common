@@ -9,7 +9,7 @@ import "google/protobuf/empty.proto";
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
-  rpc QueryOne(QueryOneRequest) returns (QueryOneReply) {}
+  rpc QueryKey(QueryKeyRequest) returns (QueryKeyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
 
@@ -20,10 +20,10 @@ message GetLatestValueRequest {
   VersionedBytes params = 3;
 }
 
-// QueryOneRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
-message QueryOneRequest {
+// QueryKeyRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
+message QueryKeyRequest {
   string contract_name = 1;
-  QueryFilter filter = 2;
+  QueryKeyFilter filter = 2;
   LimitAndSort limit_and_sort = 3;
 }
 
@@ -37,8 +37,8 @@ message GetLatestValueReply {
   VersionedBytes retVal = 1;
 }
 
-// QueryOneReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryOne].
-message QueryOneReply {
+// QueryKeyReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
+message QueryKeyReply {
   repeated Sequence sequences = 1;
 }
 
@@ -72,7 +72,7 @@ enum ComparisonOperator {
   Lte = 5;
 }
 
-message QueryFilter {
+message QueryKeyFilter {
   string key = 1;
   // Expressions are lightweight orm like DSL defined for filtering over common blockchain primitives.
   repeated Expression expression = 2;

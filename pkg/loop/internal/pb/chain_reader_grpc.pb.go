@@ -21,7 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
-	ChainReader_QueryOne_FullMethodName       = "/loop.ChainReader/QueryOne"
+	ChainReader_QueryKey_FullMethodName       = "/loop.ChainReader/QueryKey"
 	ChainReader_Bind_FullMethodName           = "/loop.ChainReader/Bind"
 )
 
@@ -30,7 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
-	QueryOne(ctx context.Context, in *QueryOneRequest, opts ...grpc.CallOption) (*QueryOneReply, error)
+	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -51,9 +51,9 @@ func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestVal
 	return out, nil
 }
 
-func (c *chainReaderClient) QueryOne(ctx context.Context, in *QueryOneRequest, opts ...grpc.CallOption) (*QueryOneReply, error) {
-	out := new(QueryOneReply)
-	err := c.cc.Invoke(ctx, ChainReader_QueryOne_FullMethodName, in, out, opts...)
+func (c *chainReaderClient) QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error) {
+	out := new(QueryKeyReply)
+	err := c.cc.Invoke(ctx, ChainReader_QueryKey_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...g
 // for forward compatibility
 type ChainReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
-	QueryOne(context.Context, *QueryOneRequest) (*QueryOneReply, error)
+	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChainReaderServer()
 }
@@ -86,8 +86,8 @@ type UnimplementedChainReaderServer struct {
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
 }
-func (UnimplementedChainReaderServer) QueryOne(context.Context, *QueryOneRequest) (*QueryOneReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryOne not implemented")
+func (UnimplementedChainReaderServer) QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryKey not implemented")
 }
 func (UnimplementedChainReaderServer) Bind(context.Context, *BindRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bind not implemented")
@@ -123,20 +123,20 @@ func _ChainReader_GetLatestValue_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ChainReader_QueryOne_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryOneRequest)
+func _ChainReader_QueryKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryKeyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ChainReaderServer).QueryOne(ctx, in)
+		return srv.(ChainReaderServer).QueryKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ChainReader_QueryOne_FullMethodName,
+		FullMethod: ChainReader_QueryKey_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainReaderServer).QueryOne(ctx, req.(*QueryOneRequest))
+		return srv.(ChainReaderServer).QueryKey(ctx, req.(*QueryKeyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -171,8 +171,8 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ChainReader_GetLatestValue_Handler,
 		},
 		{
-			MethodName: "QueryOne",
-			Handler:    _ChainReader_QueryOne_Handler,
+			MethodName: "QueryKey",
+			Handler:    _ChainReader_QueryKey_Handler,
 		},
 		{
 			MethodName: "Bind",

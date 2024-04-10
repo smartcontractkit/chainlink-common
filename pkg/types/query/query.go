@@ -11,13 +11,13 @@ type Visitor interface {
 	TxHashPrimitives(primitive TxHashPrimitive)
 }
 
-// Primitive is the basic building block for Filter.
+// Primitive is the basic building block for KeyFilter.
 type Primitive interface {
 	Accept(visitor Visitor)
 }
 
-// Filter is used to filter down chain specific data related to a key.
-type Filter struct {
+// KeyFilter is used to filter down chain specific data related to a key.
+type KeyFilter struct {
 	// Key points to the underlying chain contract address and some data that belongs to that contract.
 	// Depending on the underlying Chain Reader blockchain implementation key can map to different onchain concepts, but should be able to map differing onchain data to same offchain data if they belong to the same key.
 	Key string
@@ -105,7 +105,7 @@ func (f *ComparerPrimitive) Accept(visitor Visitor) {
 	visitor.ComparerPrimitive(*f)
 }
 
-// BlockPrimitive is a primitive of Filter that filters search in comparison to block number.
+// BlockPrimitive is a primitive of KeyFilter that filters search in comparison to block number.
 type BlockPrimitive struct {
 	Block    uint64
 	Operator ComparisonOperator
@@ -128,7 +128,7 @@ const (
 	Unconfirmed = ConfirmationLevel(1)
 )
 
-// ConfirmationsPrimitive is a primitive of Filter that filters search to results that have a certain level of confirmation.
+// ConfirmationsPrimitive is a primitive of KeyFilter that filters search to results that have a certain level of confirmation.
 // Confirmation map to different concepts on different blockchains.
 type ConfirmationsPrimitive struct {
 	ConfirmationLevel
@@ -144,7 +144,7 @@ func (f *ConfirmationsPrimitive) Accept(visitor Visitor) {
 	visitor.ConfirmationPrimitive(*f)
 }
 
-// TimestampPrimitive is a primitive of Filter that filters search in comparison to timestamp.
+// TimestampPrimitive is a primitive of KeyFilter that filters search in comparison to timestamp.
 type TimestampPrimitive struct {
 	Timestamp uint64
 	Operator  ComparisonOperator
@@ -160,7 +160,7 @@ func (f *TimestampPrimitive) Accept(visitor Visitor) {
 	visitor.TimestampPrimitive(*f)
 }
 
-// TxHashPrimitive is a primitive of Filter that filters search to results that contain txHash.
+// TxHashPrimitive is a primitive of KeyFilter that filters search to results that contain txHash.
 type TxHashPrimitive struct {
 	TxHash string
 }
@@ -175,7 +175,7 @@ func (f *TxHashPrimitive) Accept(visitor Visitor) {
 	visitor.TxHashPrimitives(*f)
 }
 
-// Where is a helper function for building Filter, eg. usage:
+// Where is a helper function for building KeyFilter, eg. usage:
 //
 //	 queryFilter, err := Where(
 //
@@ -200,16 +200,16 @@ func (f *TxHashPrimitive) Accept(visitor Visitor) {
 //									 )
 //							 )`
 //		if err != nil{return nil, err}
-//		QueryOne(key, queryFilter)...
-func Where(key string, expressions ...Expression) (Filter, error) {
+//		QueryKey(key, queryFilter)...
+func Where(key string, expressions ...Expression) (KeyFilter, error) {
 	for _, expr := range expressions {
 		if !expr.IsPrimitive() {
 			if len(expr.BoolExpression.Expressions) < 2 {
-				return Filter{}, fmt.Errorf("all boolean expressions should have at least 2 expressions")
+				return KeyFilter{}, fmt.Errorf("all boolean expressions should have at least 2 expressions")
 			}
 		}
 	}
-	return Filter{Key: key, Expressions: expressions}, nil
+	return KeyFilter{Key: key, Expressions: expressions}, nil
 }
 
 type SortDirection int

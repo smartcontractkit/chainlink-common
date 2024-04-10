@@ -139,8 +139,8 @@ func (fakeTypeProvider) CreateContractTypeByKey(key string, isEncode bool) (any,
 	return nil, types.ErrInvalidType
 }
 
-func generateQueryFilterTestCases(t *testing.T) []query.Filter {
-	var queryFilters []query.Filter
+func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
+	var queryFilters []query.KeyFilter
 	confirmationsValues := []query.ConfirmationLevel{query.Finalized, query.Unconfirmed}
 	operatorValues := []query.ComparisonOperator{query.Eq, query.Neq, query.Gt, query.Lt, query.Gte, query.Lte}
 	comparableValues := []string{"", " ", "number", "123"}

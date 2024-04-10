@@ -33,7 +33,7 @@ type staticChainReader struct {
 var _ testtypes.Evaluator[types.ChainReader] = staticChainReader{}
 var _ types.ChainReader = staticChainReader{}
 
-func (c staticChainReader) Bind(context.Context, []types.BoundContract) error {
+func (c staticChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (c staticChainReader) GetLatestValue(_ context.Context, contractName, metho
 	return nil
 }
 
-func (c staticChainReader) QueryOne(_ context.Context, _ string, _ query.Filter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (c staticChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 

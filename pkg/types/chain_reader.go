@@ -43,7 +43,7 @@ type ChainReader interface {
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
-	QueryOne(ctx context.Context, contractName string, filter query.Filter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 
 type Head struct {

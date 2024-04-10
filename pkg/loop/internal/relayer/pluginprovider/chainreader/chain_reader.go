@@ -192,7 +192,8 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	sequenceDataType, err := getContractEncodedType(queryFilter.Key, c.impl, false)
+	encodedTypeKey := request.ContractName + "." + queryFilter.Key
+	sequenceDataType, err := getContractEncodedType(encodedTypeKey, c.impl, false)
 	if err != nil {
 		return nil, err
 	}

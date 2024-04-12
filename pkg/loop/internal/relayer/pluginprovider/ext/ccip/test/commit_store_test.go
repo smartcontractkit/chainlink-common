@@ -2,22 +2,14 @@ package test
 
 import (
 	"context"
-	"fmt"
-	"net"
 	"reflect"
-	"sync"
 	"testing"
 
-	"github.com/hashicorp/consul/sdk/freeport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	loopnettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
@@ -42,56 +34,10 @@ func TestStaticCommitStore(t *testing.T) {
 func TestCommitStoreGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
-	// create a price registry server
-	port := freeport.GetOne(t)
-	addr := fmt.Sprintf("localhost:%d", port)
-	lis, err := net.Listen("tcp", addr)
-	require.NoError(t, err, "failed to listen on port %d", port)
-	t.Cleanup(func() { lis.Close() })
-	// we explicitly stop the server later, do not add a cleanup function here
-	testServer := grpc.NewServer()
-	// handle client close and server stop
-	shutdown := make(chan struct{})
-	closer := &serviceCloser{closeFn: func() error { close(shutdown); return nil }}
-	lggr := logger.Test(t)
-	broker := &loopnettest.Broker{T: t}
-	brokerExt := &loopnet.BrokerExt{
-		Broker:       broker,
-		BrokerConfig: loopnet.BrokerConfig{Logger: lggr, StopCh: make(chan struct{})},
-	}
-	offRamp, err := ccip.NewCommitStoreReaderGRPCServer(CommitStoreReader, brokerExt)
-	require.NoError(t, err)
-	offRamp = offRamp.AddDep(closer)
+	scaffold := newGRPCScaffold(t, setupCommitStoreServer, ccip.NewCommitStoreReaderGRPCClient)
+	t.Cleanup(func() { dependencyShutdown(t, scaffold) })
+	roundTripCommitStoreTests(ctx, t, scaffold.Client())
 
-	ccippb.RegisterCommitStoreReaderServer(testServer, offRamp)
-	// start the server and shutdown handler
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		require.NoError(t, testServer.Serve(lis))
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-shutdown
-		t.Log("shutting down server")
-		testServer.Stop()
-	}()
-	// create a price registry client
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(t, err, "failed to dial %s", addr)
-	t.Cleanup(func() { conn.Close() })
-	client := ccip.NewCommitStoreReaderGRPCClient(conn, brokerExt)
-
-	// test the client
-	roundTripCommitStoreTests(ctx, t, client)
-	// closing the client executes the shutdown callback
-	// which stops the server.  the wg.Wait() below ensures
-	// that the server has stopped, which is what we care about.
-	cerr := client.Close()
-	require.NoError(t, cerr, "failed to close client %T, %v", cerr, status.Code(cerr))
-	wg.Wait()
 }
 
 // roundTripCommitStoreTests tests the round trip of the client<->server.
@@ -223,4 +169,20 @@ func roundTripCommitStoreTests(ctx context.Context, t *testing.T, client cciptyp
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.verifyExecutionReportResponse, got)
 	})
+}
+
+func setupCommitStoreServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.CommitStoreGRPCServer {
+	commitProvider, err := ccip.NewCommitStoreReaderGRPCServer(CommitStoreReader, b)
+	require.NoError(t, err)
+	ccippb.RegisterCommitStoreReaderServer(s, commitProvider)
+	return commitProvider
+}
+
+func dependencyShutdown(t *testing.T, scaffold *grpcScaffold[*ccip.CommitStoreGRPCClient, *ccip.CommitStoreGRPCServer]) {
+	// commit store implements dependency management, test that it closes properly
+	shutdown := make(chan struct{})
+	closer := &serviceCloser{closeFn: func() error { close(shutdown); return nil }}
+	scaffold.Server().AddDep(closer)
+	scaffold.Close()
+	<-shutdown
 }

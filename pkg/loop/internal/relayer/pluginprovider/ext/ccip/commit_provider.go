@@ -59,7 +59,7 @@ func (e *CommitProviderClient) NewCommitStoreReader(ctx context.Context, addr cc
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.CommitStoreReaderServiceId, err)
 	}
 	// need to wrap grpc commitStore into the desired interface
-	return NewCommitStoreReaderGRPCClient(commitStoreConn, e.BrokerExt), nil
+	return NewCommitStoreReaderGRPCClient(e.BrokerExt, commitStoreConn), nil
 }
 
 // NewOffRampReader implements types.CCIPCommitProvider.

@@ -188,25 +188,14 @@ func (o *OffRampReaderGRPCClient) GetExecutionStateChangesBetweenSeqNums(ctx con
 	return executionStateChangedWithTxMetaSlice(resp.ExecutionStateChanges), nil
 }
 
-// GetSenderNonce i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
-func (o *OffRampReaderGRPCClient) GetSenderNonce(ctx context.Context, sender cciptypes.Address) (uint64, error) {
-	resp, err := o.client.GetSenderNonce(ctx, &ccippb.GetSenderNonceRequest{
-		Sender: string(sender),
-	})
-	if err != nil {
-		return 0, err
-	}
-	return resp.Nonce, nil
-}
-
 // GetSendersNonce i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
-func (o *OffRampReaderGRPCClient) GetSendersNonce(ctx context.Context, senders []cciptypes.Address) (map[cciptypes.Address]uint64, error) {
+func (o *OffRampReaderGRPCClient) ListSenderNonces(ctx context.Context, senders []cciptypes.Address) (map[cciptypes.Address]uint64, error) {
 	stringSenders := make([]string, len(senders))
 	for i, s := range senders {
 		stringSenders[i] = string(s)
 	}
 
-	resp, err := o.client.GetSendersNonce(ctx, &ccippb.GetSendersNonceRequest{
+	resp, err := o.client.ListSenderNonces(ctx, &ccippb.ListSenderNoncesRequest{
 		Senders: stringSenders,
 	})
 	if err != nil {
@@ -363,27 +352,18 @@ func (o *OffRampReaderGRPCServer) GetExecutionStateChanges(ctx context.Context, 
 	return &ccippb.GetExecutionStateChangesResponse{ExecutionStateChanges: executionStateChangedWithTxMetaSliceToPB(changes)}, nil
 }
 
-// GetSenderNonce implements ccippb.OffRampReaderServer.
-func (o *OffRampReaderGRPCServer) GetSenderNonce(ctx context.Context, req *ccippb.GetSenderNonceRequest) (*ccippb.GetSenderNonceResponse, error) {
-	nonce, err := o.impl.GetSenderNonce(ctx, cciptypes.Address(req.Sender))
-	if err != nil {
-		return nil, err
-	}
-	return &ccippb.GetSenderNonceResponse{Nonce: nonce}, nil
-}
-
 // GetSendersNonce implements ccippb.OffRampReaderServer.
-func (o *OffRampReaderGRPCServer) GetSendersNonce(ctx context.Context, req *ccippb.GetSendersNonceRequest) (*ccippb.GetSendersNonceResponse, error) {
+func (o *OffRampReaderGRPCServer) ListSenderNonces(ctx context.Context, req *ccippb.ListSenderNoncesRequest) (*ccippb.ListSenderNoncesResponse, error) {
 	senders := make([]cciptypes.Address, len(req.Senders))
 	for i, s := range req.Senders {
 		senders[i] = cciptypes.Address(s)
 	}
 
-	resp, err := o.impl.GetSendersNonce(ctx, senders)
+	resp, err := o.impl.ListSenderNonces(ctx, senders)
 	if err != nil {
 		return nil, err
 	}
-	return &ccippb.GetSendersNonceResponse{NonceMapping: senderToNonceMappingToPB(resp)}, nil
+	return &ccippb.ListSenderNoncesResponse{NonceMapping: senderToNonceMappingToPB(resp)}, nil
 }
 
 // GetSourceToDestTokensMapping implements ccippb.OffRampReaderServer.

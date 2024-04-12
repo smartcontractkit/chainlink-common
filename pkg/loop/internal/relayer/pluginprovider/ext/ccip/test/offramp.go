@@ -119,9 +119,9 @@ var OffRampReader = staticOffRamp{
 		getSenderNonceRequest:  ccip.Address("getSenderNonceRequest"),
 		getSenderNonceResponse: 10,
 
-		// GetSendersNonce test data
-		getSendersNonceRequest:  []ccip.Address{ccip.Address("getSenderNonceRequest")},
-		getSendersNonceResponse: map[ccip.Address]uint64{ccip.Address("getSenderNonceRequest"): 10},
+		// ListSenderNonces test data
+		listSenderNoncesRequest:  []ccip.Address{ccip.Address("listSenderNoncesRequest")},
+		listSenderNoncesResponse: map[ccip.Address]uint64{ccip.Address("listSenderNoncesRequest"): 10},
 
 		// GetSourceToDestTokensMapping test data
 		getSourceToDestTokensMappingResponse: map[ccip.Address]ccip.Address{
@@ -189,8 +189,8 @@ type staticOffRampConfig struct {
 	getSenderNonceRequest  ccip.Address
 	getSenderNonceResponse uint64
 
-	getSendersNonceRequest  []ccip.Address
-	getSendersNonceResponse map[ccip.Address]uint64
+	listSenderNoncesRequest  []ccip.Address
+	listSenderNoncesResponse map[ccip.Address]uint64
 
 	getSourceToDestTokensMappingResponse map[ccip.Address]ccip.Address
 
@@ -284,20 +284,12 @@ func (s staticOffRamp) GetExecutionStateChangesBetweenSeqNums(ctx context.Contex
 	return s.getExecutionStateChangesBetweenSeqNumsResponse.executionStateChangedWithTxMeta, nil
 }
 
-// GetSenderNonce implements OffRampEvaluator.
-func (s staticOffRamp) GetSenderNonce(ctx context.Context, sender ccip.Address) (uint64, error) {
-	if sender != s.getSenderNonceRequest {
-		return 0, fmt.Errorf("expected sender %s but got %s", s.getSenderNonceRequest, sender)
+// ListSenderNonces implements OffRampEvaluator.
+func (s staticOffRamp) ListSenderNonces(ctx context.Context, senders []ccip.Address) (map[ccip.Address]uint64, error) {
+	if len(senders) == 0 || !slices.Equal(senders, s.listSenderNoncesRequest) {
+		return nil, fmt.Errorf("expected sender %s but got %s", s.listSenderNoncesRequest, senders)
 	}
-	return s.getSenderNonceResponse, nil
-}
-
-// GetSenderNonce implements OffRampEvaluator.
-func (s staticOffRamp) GetSendersNonce(ctx context.Context, senders []ccip.Address) (map[ccip.Address]uint64, error) {
-	if len(senders) == 0 || !slices.Equal(senders, s.getSendersNonceRequest) {
-		return nil, fmt.Errorf("expected sender %s but got %s", s.getSendersNonceRequest, senders)
-	}
-	return s.getSendersNonceResponse, nil
+	return s.listSenderNoncesResponse, nil
 }
 
 // GetSourceToDestTokensMapping implements OffRampEvaluator.
@@ -431,14 +423,6 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 	}
 	if !reflect.DeepEqual(getExecutionStateChangesBetweenSeqNums, s.getExecutionStateChangesBetweenSeqNumsResponse.executionStateChangedWithTxMeta) {
 		return fmt.Errorf("expected getExecutionStateChangesBetweenSeqNums %v but got %v", s.getExecutionStateChangesBetweenSeqNumsResponse.executionStateChangedWithTxMeta, getExecutionStateChangesBetweenSeqNums)
-	}
-
-	getSenderNonce, err := other.GetSenderNonce(ctx, s.getSenderNonceRequest)
-	if err != nil {
-		return fmt.Errorf("failed to get getSenderNonce: %w", err)
-	}
-	if getSenderNonce != s.getSenderNonceResponse {
-		return fmt.Errorf("expected getSenderNonce %d but got %d", s.getSenderNonceResponse, getSenderNonce)
 	}
 
 	getSourceToDestTokensMapping, err := other.GetSourceToDestTokensMapping(ctx)

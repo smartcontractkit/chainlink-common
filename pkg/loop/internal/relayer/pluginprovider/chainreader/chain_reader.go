@@ -130,18 +130,18 @@ func (c *Client) QueryKey(ctx context.Context, contractName string, filter query
 		return nil, err
 	}
 
-	pbSequences, err := c.grpc.QueryKey(ctx, &pb.QueryKeyRequest{ContractName: contractName, Filter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
+	reply, err := c.grpc.QueryKey(ctx, &pb.QueryKeyRequest{ContractName: contractName, Filter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	return convertSequencesFromProto(pbSequences.Sequences, sequenceDataType)
+	return convertSequencesFromProto(reply.Sequences, sequenceDataType)
 }
 
 func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
-		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
+		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
 	}
 	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
 	return net.WrapRPCErr(err)
@@ -208,7 +208,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	pbSequences, err := convertSequencesToProto(sequences, sequenceDataType)
+	pbSequences, err := convertSequencesToProto(sequences)
 	if err != nil {
 		return nil, err
 	}
@@ -352,10 +352,10 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 	return pbLimitAndSort, nil
 }
 
-func convertSequencesToProto(sequences []types.Sequence, sequenceDataType any) ([]*pb.Sequence, error) {
+func convertSequencesToProto(sequences []types.Sequence) ([]*pb.Sequence, error) {
 	var pbSequences []*pb.Sequence
 	for _, sequence := range sequences {
-		versionedSequenceDataType, err := EncodeVersionedBytes(sequenceDataType, CurrentEncodingVersion)
+		versionedSequenceDataType, err := EncodeVersionedBytes(sequence.Data, CurrentEncodingVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -454,11 +454,11 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
 	var sequences []types.Sequence
 	for _, pbSequence := range pbSequences {
-		data := reflect.New(reflect.TypeOf(sequenceDataType).Elem())
-		if err := DecodeVersionedBytes(data, pbSequence.Data); err != nil {
+		// TODO this can most likely be optimized
+		cpy := reflect.New(reflect.TypeOf(sequenceDataType).Elem()).Interface()
+		if err := DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
 			return nil, err
 		}
-
 		sequence := types.Sequence{
 			Cursor: pbSequence.SequenceCursor,
 			Head: types.Head{
@@ -466,7 +466,7 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 				Hash:       pbSequence.Head.Hash,
 				Timestamp:  pbSequence.Head.Timestamp,
 			},
-			Data: data,
+			Data: cpy,
 		}
 		sequences = append(sequences, sequence)
 	}

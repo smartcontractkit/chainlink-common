@@ -117,6 +117,9 @@ func TestGetLatestValue(t *testing.T) {
 }
 
 func TestQueryKey(t *testing.T) {
+	fake := &fakeChainReader{}
+	RunQueryKeyInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+
 	impl := &protoConversionTestChainReader{}
 	crTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl})
 	crTester.Setup(t)
@@ -281,7 +284,16 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 	return nil
 }
 
-func (f *fakeChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+	if filter.Key == EventName {
+		f.lock.Lock()
+		defer f.lock.Unlock()
+		if len(f.triggers) == 0 {
+			return nil, types.ErrNotFound
+		}
+
+		return []types.Sequence{{Data: f.triggers[len(f.triggers)-1]}}, nil
+	}
 	return nil, nil
 }
 

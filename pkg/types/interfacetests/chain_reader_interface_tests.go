@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -205,5 +206,42 @@ func RunChainReaderGetLatestValueInterfaceTests(t *testing.T, tester ChainReader
 			},
 		},
 	}
+	runTests(t, tester, tests)
+}
+
+func RunQueryKeyInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
+	tests := []testcase{
+		{
+			name: "QueryKey returns not found if sequence never happened",
+			test: func(t *testing.T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				sequenceDataType := &TestStruct{}
+				_, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &sequenceDataType)
+				assert.True(t, errors.Is(err, types.ErrNotFound))
+			},
+		},
+		{
+			name: "QueryKey returns sequence data properly",
+			test: func(t *testing.T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				ts := CreateTestStruct(0, tester)
+				tester.TriggerEvent(t, &ts)
+				ts = CreateTestStruct(1, tester)
+				tester.TriggerEvent(t, &ts)
+
+				aha := &TestStruct{}
+				assert.Eventually(t, func() bool {
+					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, aha)
+					return err == nil && len(sequences) == 1 && reflect.DeepEqual(&ts, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+	}
+
 	runTests(t, tester, tests)
 }

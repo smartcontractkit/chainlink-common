@@ -54,49 +54,13 @@ func (it *interfaceTesterBase) Name() string {
 
 type fakeTypeProvider struct{}
 
-func (f fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
-	return f.CreateContractType("", itemType, isEncode)
+func (f fakeTypeProvider) CreateType(key string, isEncode bool) (any, error) {
+	return f.CreateContractType(key, isEncode)
 }
 
-func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
-	switch itemType {
-	case NilType:
-		return &struct{}{}, nil
-	case TestItemType:
-		return &TestStruct{}, nil
-	case TestItemSliceType:
-		return &[]TestStruct{}, nil
-	case TestItemArray2Type:
-		return &[2]TestStruct{}, nil
-	case TestItemArray1Type:
-		return &[1]TestStruct{}, nil
-	case MethodTakingLatestParamsReturningTestStruct:
-		if isEncode {
-			return &LatestParams{}, nil
-		}
-		return &TestStruct{}, nil
-	case MethodReturningUint64, DifferentMethodReturningUint64:
-		tmp := uint64(0)
-		return &tmp, nil
-	case MethodReturningUint64Slice:
-		var tmp []uint64
-		return &tmp, nil
-	case MethodReturningSeenStruct, TestItemWithConfigExtra:
-		if isEncode {
-			return &TestStruct{}, nil
-		}
-		return &TestStructWithExtraField{}, nil
-	case EventName, EventWithFilterName:
-		if isEncode {
-			return &FilterEventParams{}, nil
-		}
-		return &TestStruct{}, nil
-	}
+var _ types.ContractTypeProvider = (*fakeTypeProvider)(nil)
 
-	return nil, types.ErrInvalidType
-}
-
-func (fakeTypeProvider) CreateContractTypeByKey(key string, isEncode bool) (any, error) {
+func (fakeTypeProvider) CreateContractType(key string, isEncode bool) (any, error) {
 	tokens := strings.Split(key, ".")
 	if len(tokens) < 2 {
 		return nil, fmt.Errorf("key should be in form of contractName.type, got %s instead", key)

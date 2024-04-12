@@ -2,6 +2,9 @@ package ocr3
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"sort"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -150,7 +153,11 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		return nil, err
 	}
 	if o.Outcomes == nil {
-		o.Outcomes = map[string]*pbtypes.AggregationOutcome{}
+		o.Outcomes = []*pbtypes.AggregationOutcome{}
+	}
+	outcomeMap := map[string]*pbtypes.AggregationOutcome{}
+	for _, outcome := range o.Outcomes {
+		outcomeMap[outcome.WorkflowId] = outcome
 	}
 
 	// Wipe out the CurrentReports. This gets regenerated
@@ -165,7 +172,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 
-		workflowOutcome, ok := o.Outcomes[weid.WorkflowId]
+		workflowOutcome, ok := outcomeMap[weid.WorkflowId]
 		if !ok {
 			r.lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one", "workflowID", weid.WorkflowId)
 		}
@@ -175,14 +182,14 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 
-		agg, err := r.r.getAggregator(weid.WorkflowId)
-		if err != nil {
+		agg, err2 := r.r.getAggregator(weid.WorkflowId)
+		if err2 != nil {
 			r.lggr.Errorw("could not retrieve aggregator for workflow", "error", err, "workflowID", weid.WorkflowId)
 			continue
 		}
 
-		outcome, err := agg.Aggregate(workflowOutcome, obs)
-		if err != nil {
+		outcome, err2 := agg.Aggregate(workflowOutcome, obs)
+		if err2 != nil {
 			r.lggr.Errorw("error aggregating outcome", "error", err, "workflowID", weid.WorkflowId)
 			return nil, err
 		}
@@ -193,11 +200,25 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		}
 		o.CurrentReports = append(o.CurrentReports, report)
 
-		o.Outcomes[weid.WorkflowId] = outcome
+		outcomeMap[weid.WorkflowId] = outcome
 	}
 
-	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nCurrentReports", len(o.CurrentReports))
-	return proto.Marshal(o)
+	o.Outcomes = toProto(outcomeMap)
+	raw, err := proto.Marshal(o)
+	h := sha256.New()
+	h.Write(raw)
+	outcomeHash := h.Sum(nil)
+	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nCurrentReports", len(o.CurrentReports), "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
+	return raw, err
+}
+
+func toProto(outcomeMap map[string]*pbtypes.AggregationOutcome) []*pbtypes.AggregationOutcome {
+	feedInfos := make([]*pbtypes.AggregationOutcome, 0, len(outcomeMap))
+	for _, v := range outcomeMap {
+		feedInfos = append(feedInfos, v)
+	}
+	sort.Slice(feedInfos, func(x, y int) bool { return feedInfos[x].WorkflowId < feedInfos[y].WorkflowId })
+	return feedInfos
 }
 
 func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[[]byte], error) {

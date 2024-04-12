@@ -8,9 +8,10 @@ import "values/pb/values.proto";
 
 // per-workflow aggregation outcome
 message AggregationOutcome {
-  values.Map encodableOutcome = 1; // passed to encoders
-  bytes metadata = 2; // internal to the aggregator
-  bool shouldReport = 3;
+  string workflowId = 1;
+  values.Map encodableOutcome = 2; // passed to encoders
+  bytes metadata = 3; // internal to the aggregator
+  bool shouldReport = 4;
 }
 
 message Query {
@@ -45,6 +46,9 @@ message ReportInfo {
 }
 
 message Outcome {
-  map<string, AggregationOutcome> outcomes = 1;
+  reserved 1;
+  // NOTE: list needs to be sorted by the order that IDs appeared in the query to ensure deterministic encoding
   repeated Report current_reports = 2;
+  // NOTE: list needs to be sorted by workflowId to ensure deterministic encoding
+  repeated AggregationOutcome outcomes = 3;
 }

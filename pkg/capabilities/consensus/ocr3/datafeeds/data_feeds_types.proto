@@ -5,11 +5,12 @@ option go_package = "pkg/capabilities/consensus/datafeeds";
 package datafeeds_types;
 
 message DataFeedsOutcomeMetadata {
-  map<string, DataFeedsMercuryReportInfo> feedInfo = 1;
+  // NOTE: list needs to be sorted by feed_id to ensure deterministic encoding
+  repeated DataFeedsMercuryReportInfo feedInfos = 1;
 }
 
 message DataFeedsMercuryReportInfo {
-  reserved 1, 2;
-  int64 observation_timestamp = 3;
-  int64 benchmark_price = 4;
+  string feed_id = 1;
+  int64 observation_timestamp = 2;
+  int64 benchmark_price = 3;
 }

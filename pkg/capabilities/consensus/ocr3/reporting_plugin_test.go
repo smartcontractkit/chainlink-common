@@ -226,7 +226,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 	cr := opb.CurrentReports[0]
 	assert.EqualExportedValues(t, cr.Id, id)
 	assert.EqualExportedValues(t, cr.Outcome, cap.aggregator.outcome)
-	assert.EqualExportedValues(t, opb.Outcomes[workflowTestID], cap.aggregator.outcome)
+	assert.EqualExportedValues(t, opb.Outcomes[0], cap.aggregator.outcome)
 }
 
 func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {

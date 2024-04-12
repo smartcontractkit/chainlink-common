@@ -44,10 +44,8 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	newState := &datafeeds.DataFeedsOutcomeMetadata{}
 	err = proto.Unmarshal(outcome.Metadata, newState)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(newState.FeedInfo))
-	_, ok := newState.FeedInfo[feedIDA.String()]
-	require.True(t, ok)
-	require.Equal(t, int64(0), newState.FeedInfo[feedIDA.String()].BenchmarkPrice)
+	require.Equal(t, 1, len(newState.FeedInfos))
+	require.Equal(t, int64(0), newState.FeedInfos[0].BenchmarkPrice)
 
 	// second round, non-empty previous Outcome, one observation
 	latestMercuryReports := []mercury.FeedReport{
@@ -66,10 +64,9 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	// validate metadata
 	err = proto.Unmarshal(outcome.Metadata, newState)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(newState.FeedInfo))
-	_, ok = newState.FeedInfo[feedIDA.String()]
-	require.True(t, ok)
-	require.Equal(t, int64(100), newState.FeedInfo[feedIDA.String()].BenchmarkPrice)
+	require.Equal(t, 1, len(newState.FeedInfos))
+	require.Equal(t, int64(100), newState.FeedInfos[0].BenchmarkPrice)
+	require.Equal(t, feedIDA.String(), newState.FeedInfos[0].FeedId)
 
 	// validate encodable outcome
 	val := values.FromMapValueProto(outcome.EncodableOutcome)

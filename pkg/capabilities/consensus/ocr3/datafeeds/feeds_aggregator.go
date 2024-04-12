@@ -3,6 +3,7 @@ package datafeeds
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/shopspring/decimal"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
@@ -77,11 +78,29 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		a.lggr.Debug("empty previous outcome - initializing empty onchain state")
-		currentState.FeedInfo = make(map[string]*DataFeedsMercuryReportInfo)
-		for feedID := range a.config.Feeds {
-			currentState.FeedInfo[feedID.String()] = &DataFeedsMercuryReportInfo{
+	}
+
+	currentFeedInfosMap := make(map[mercury.FeedID]*DataFeedsMercuryReportInfo)
+	// remove ones that are no longer in the config
+	for _, reportInfo := range currentState.FeedInfos {
+		feedID, err := mercury.NewFeedID(reportInfo.FeedId)
+		if err != nil {
+			a.lggr.Errorw("could not parse feedID - potentially corrupted previous outcome", "feedID", reportInfo.FeedId)
+			continue
+		}
+		_, ok := a.config.Feeds[feedID]
+		if !ok {
+			a.lggr.Infow("found feedID in previous outcome that is no longer in the config - removing", "feedID", reportInfo.FeedId)
+			continue
+		}
+		currentFeedInfosMap[feedID] = reportInfo
+	}
+	// add ones that are in the config but not in previous outcome
+	for feedID := range a.config.Feeds {
+		_, ok := currentFeedInfosMap[feedID]
+		if !ok {
+			currentFeedInfosMap[feedID] = &DataFeedsMercuryReportInfo{
+				FeedId:               feedID.String(),
 				ObservationTimestamp: 0, // will always trigger an update
 				BenchmarkPrice:       0,
 			}
@@ -89,12 +108,13 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 	}
 
 	reportsNeedingUpdate := []any{} // [][]byte
-	for feedID, previousReportInfo := range currentState.FeedInfo {
-		feedID, err := mercury.NewFeedID(feedID)
-		if err != nil {
-			a.lggr.Errorf("could not convert %s to feedID", feedID)
-			continue
-		}
+	allIds := []mercury.FeedID{}
+	for feedID := range currentFeedInfosMap {
+		allIds = append(allIds, feedID)
+	}
+	sort.Slice(allIds, func(i, j int) bool { return allIds[i] < allIds[j] })
+	for _, feedID := range allIds {
+		previousReportInfo := currentFeedInfosMap[feedID]
 		latestReport, ok := latestReportPerFeed[feedID]
 		if !ok {
 			a.lggr.Errorf("no new Mercury report for feed: %v", feedID)
@@ -109,6 +129,7 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 		}
 	}
 
+	currentState = toProto(currentFeedInfosMap)
 	marshalledState, err := proto.Marshal(currentState)
 	if err != nil {
 		return nil, err
@@ -138,6 +159,17 @@ func deviation(old, new int64) float64 {
 		return math.MaxFloat64
 	}
 	return diff / oldF
+}
+
+func toProto(feedInfosMap map[mercury.FeedID]*DataFeedsMercuryReportInfo) *DataFeedsOutcomeMetadata {
+	feedInfos := make([]*DataFeedsMercuryReportInfo, 0, len(feedInfosMap))
+	for _, v := range feedInfosMap {
+		feedInfos = append(feedInfos, v)
+	}
+	sort.Slice(feedInfos, func(x, y int) bool { return feedInfos[x].FeedId < feedInfos[y].FeedId })
+	return &DataFeedsOutcomeMetadata{
+		FeedInfos: feedInfos,
+	}
 }
 
 func NewDataFeedsAggregator(config values.Map, mercuryCodec MercuryCodec, lggr logger.Logger) (types.Aggregator, error) {

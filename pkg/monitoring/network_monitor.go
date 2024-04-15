@@ -65,7 +65,7 @@ func (m *networkMonitor) Run(ctx context.Context, data RDDData) {
 		sourceTypes = append(sourceTypes, sourceFactory.GetType())
 	}
 
-	createMonitor(
+	runMonitor(
 		ctx,
 		&subs,
 		lgr,

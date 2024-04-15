@@ -167,7 +167,7 @@ func (m Monitor) Run() {
 			NewInstrumentedSourceFactory(factory, m.ChainMetrics))
 	}
 
-	// setup per-feed monitor
+	// setup per-feed & network monitor
 	monitor := NewMultiFeedMonitor(
 		m.ChainConfig,
 		m.Log,
@@ -175,28 +175,24 @@ func (m Monitor) Run() {
 		m.ExporterFactories,
 		100, // bufferCapacity for source pollers
 	)
+	networkMonitor := NewNetworkMonitor(
+		m.ChainConfig,
+		m.Log,
+		m.NetworkSourceFactories,
+		m.NetworkExporterFactories,
+		100, // bufferCapacity for source pollers
+	)
 	subs.Go(func() {
 		m.Manager.Run(rootCtx, func(localCtx context.Context, data RDDData) {
 			m.ChainMetrics.SetNewFeedConfigsDetected(float64(len(data.Feeds)))
 			monitor.Run(localCtx, data)
+
+			// run network monitor if factories present
+			if len(m.NetworkExporterFactories) != 0 || len(m.NetworkSourceFactories) != 0 {
+				networkMonitor.Run(localCtx, data)
+			}
 		})
 	})
-
-	// setup network monitor if factories present
-	if len(m.NetworkExporterFactories) != 0 || len(m.NetworkSourceFactories) != 0 {
-		networkMonitor := NewNetworkMonitor(
-			m.ChainConfig,
-			m.Log,
-			m.NetworkSourceFactories,
-			m.NetworkExporterFactories,
-			100, // bufferCapacity for source pollers
-		)
-		subs.Go(func() {
-			m.Manager.Run(rootCtx, func(localCtx context.Context, data RDDData) {
-				networkMonitor.Run(localCtx, data)
-			})
-		})
-	}
 
 	subs.Go(func() {
 		m.HTTPServer.Run(rootCtx)

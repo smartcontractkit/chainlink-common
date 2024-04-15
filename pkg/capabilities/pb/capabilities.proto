@@ -38,8 +38,22 @@ message CapabilityRequest {
 }
 
 service TriggerExecutable {
-  rpc RegisterTrigger (CapabilityRequest) returns (stream CapabilityResponse) {}
-  rpc UnregisterTrigger (CapabilityRequest) returns (google.protobuf.Empty) {}
+  rpc RegisterTrigger (TriggerRequest) returns (stream TriggerEvent) {}
+  rpc UnregisterTrigger (TriggerRequest) returns (google.protobuf.Empty) {}
+}
+
+message TriggerRequest {
+  string id = 1;
+  string type = 2;
+  RequestMetadata metadata = 3;
+  values.Value config = 4;
+  values.Value inputs = 5;
+}
+
+message TriggerEvent {
+  string id = 1;
+  int64 timestamp = 2;
+  values.Value payload = 3;
 }
 
 message CapabilityResponse {

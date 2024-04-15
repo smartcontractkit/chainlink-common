@@ -75,10 +75,17 @@ type CapabilityRequest struct {
 	Inputs   *values.Map
 }
 
+type TriggerRequest struct {
+	ID       string
+	Type     string
+	Metadata RequestMetadata
+	Config   *values.Map
+	Inputs   *values.Map
+}
+
 type TriggerEvent struct {
-	TriggerType string
-	ID          string
-	Timestamp   string
+	ID        string
+	Timestamp int64
 	// Trigger-specific payload
 	Payload values.Value
 }
@@ -114,8 +121,8 @@ type BaseCapability interface {
 }
 
 type TriggerExecutable interface {
-	RegisterTrigger(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
-	UnregisterTrigger(ctx context.Context, request CapabilityRequest) error
+	RegisterTrigger(ctx context.Context, request TriggerRequest) (<-chan TriggerEvent, error)
+	UnregisterTrigger(ctx context.Context, request TriggerRequest) error
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.

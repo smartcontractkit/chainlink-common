@@ -41,7 +41,9 @@ func TestMercuryTrigger(t *testing.T) {
 	inputsWrapped, err := values.NewMap(im)
 	require.NoError(t, err)
 
-	cr := capabilities.CapabilityRequest{
+	cr := capabilities.TriggerRequest{
+		ID:   "test-trigger-id-1",
+		Type: "mercury",
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
@@ -74,8 +76,8 @@ func TestMercuryTrigger(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, callback, 1)
 	msg := <-callback
-	triggerEvent, reports := upwrapTriggerEvent(t, msg.Value)
-	assert.Equal(t, "mercury", triggerEvent.TriggerType)
+	triggerEvent, reports := upwrapTriggerEvent(t, msg)
+	//	assert.Equal(t, "mercury", triggerEvent.TriggerType)
 	assert.Equal(t, GenerateTriggerEventID(mfr), triggerEvent.ID)
 	assert.Len(t, reports, 1)
 	assert.Equal(t, mfr[0], reports[0])
@@ -110,7 +112,9 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	cwrapped1, err := values.NewMap(cm1)
 	require.NoError(t, err)
 
-	cr1 := capabilities.CapabilityRequest{
+	cr1 := capabilities.TriggerRequest{
+		ID:   "cr1",
+		Type: "mercury",
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
@@ -136,7 +140,9 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	cwrapped2, err := values.NewMap(cm2)
 	require.NoError(t, err)
 
-	cr2 := capabilities.CapabilityRequest{
+	cr2 := capabilities.TriggerRequest{
+		ID:   "cr2",
+		Type: "mercury",
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
@@ -211,8 +217,8 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.Len(t, callback2, 1)
 
 	msg := <-callback1
-	triggerEvent, reports := upwrapTriggerEvent(t, msg.Value)
-	assert.Equal(t, "mercury", triggerEvent.TriggerType)
+	triggerEvent, reports := upwrapTriggerEvent(t, msg)
+	//assert.Equal(t, "mercury", triggerEvent.TriggerType)
 	payload := make([]mercury.FeedReport, 0)
 	payload = append(payload, mfr1[0], mfr1[1], mfr1[3])
 	assert.Equal(t, GenerateTriggerEventID(payload), triggerEvent.ID)
@@ -222,8 +228,8 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.Equal(t, mfr1[3], reports[2])
 
 	msg = <-callback2
-	triggerEvent, reports = upwrapTriggerEvent(t, msg.Value)
-	assert.Equal(t, "mercury", triggerEvent.TriggerType)
+	triggerEvent, reports = upwrapTriggerEvent(t, msg)
+	//assert.Equal(t, "mercury", triggerEvent.TriggerType)
 	payload = make([]mercury.FeedReport, 0)
 	payload = append(payload, mfr1[1], mfr1[2]) // Because GenerateTriggerEventID sorts the reports by feedID, this works
 	assert.Equal(t, GenerateTriggerEventID(payload), triggerEvent.ID)
@@ -254,9 +260,9 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.Len(t, callback2, 1)
 
 	msg = <-callback2
-	triggerEvent, reports = upwrapTriggerEvent(t, msg.Value)
+	triggerEvent, reports = upwrapTriggerEvent(t, msg)
 	require.NoError(t, err)
-	assert.Equal(t, "mercury", triggerEvent.TriggerType)
+	//assert.Equal(t, "mercury", triggerEvent.TriggerType)
 	payload = make([]mercury.FeedReport, 0)
 	payload = append(payload, mfr2[0])
 	assert.Equal(t, GenerateTriggerEventID(payload), triggerEvent.ID)
@@ -293,7 +299,9 @@ func TestSlowConsumer(t *testing.T) {
 	cwrapped1, err := values.NewMap(cm1)
 	require.NoError(t, err)
 
-	cr1 := capabilities.CapabilityRequest{
+	cr1 := capabilities.TriggerRequest{
+		ID:   "cr1",
+		Type: "mercury",
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
@@ -318,7 +326,9 @@ func TestSlowConsumer(t *testing.T) {
 	cwrapped2, err := values.NewMap(cm2)
 	require.NoError(t, err)
 
-	cr2 := capabilities.CapabilityRequest{
+	cr2 := capabilities.TriggerRequest{
+		ID:   "cr2",
+		Type: "mercury",
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
@@ -399,15 +409,12 @@ func TestSlowConsumer(t *testing.T) {
 	assert.NotNil(t, err)
 	var processReportError *ProcessReportError
 	errors.As(err, &processReportError)
-	assert.Equal(t, processReportError.FailedTriggerIDsToReportIDs["workflow-id-1|test-id-2"], []int{2, 3})
+	assert.Equal(t, processReportError.FailedTriggerIDsToReportIDs["workflow-id-1|cr2"], []int{2, 3})
 	assert.Len(t, callback1, 1)
 	assert.Len(t, callback2, 1)
 }
 
-func upwrapTriggerEvent(t *testing.T, wrappedEvent values.Value) (capabilities.TriggerEvent, []mercury.FeedReport) {
-	event := capabilities.TriggerEvent{}
-	err := wrappedEvent.UnwrapTo(&event)
-	require.NoError(t, err)
+func upwrapTriggerEvent(t *testing.T, event capabilities.TriggerEvent) (capabilities.TriggerEvent, []mercury.FeedReport) {
 	require.NotNil(t, event.Payload)
 	mercuryReports, err := mercury.Codec{}.Unwrap(event.Payload)
 	require.NoError(t, err)

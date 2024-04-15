@@ -21,7 +21,7 @@ type workflowID string
 type OnDemand struct {
 	log logger.Logger
 	capabilities.CapabilityInfo
-	chans map[workflowID]chan<- capabilities.CapabilityResponse
+	chans map[workflowID]chan<- capabilities.TriggerEvent
 	mu    sync.Mutex
 
 	sendChannelBufferSize int
@@ -35,12 +35,12 @@ func NewOnDemand(log logger.Logger, sendChannelBufferSize int) *OnDemand {
 	return &OnDemand{
 		log:                   log,
 		CapabilityInfo:        info,
-		chans:                 map[workflowID]chan<- capabilities.CapabilityResponse{},
+		chans:                 map[workflowID]chan<- capabilities.TriggerEvent{},
 		sendChannelBufferSize: sendChannelBufferSize,
 	}
 }
 
-func (o *OnDemand) FanOutEvent(ctx context.Context, response capabilities.CapabilityResponse) error {
+func (o *OnDemand) FanOutEvent(ctx context.Context, response capabilities.TriggerEvent) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	for workFlowID, ch := range o.chans {
@@ -54,7 +54,7 @@ func (o *OnDemand) FanOutEvent(ctx context.Context, response capabilities.Capabi
 }
 
 // SendEvent sends an event to a specific workflowId. If the workflowId is not registered an error is returned.
-func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities.CapabilityResponse) error {
+func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities.TriggerEvent) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -72,17 +72,17 @@ func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities
 	return nil
 }
 
-func (o *OnDemand) RegisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (o *OnDemand) RegisterTrigger(ctx context.Context, req capabilities.TriggerRequest) (<-chan capabilities.TriggerEvent, error) {
 	wid := req.Metadata.WorkflowID
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	ch := make(chan capabilities.CapabilityResponse, o.sendChannelBufferSize)
+	ch := make(chan capabilities.TriggerEvent, o.sendChannelBufferSize)
 	o.chans[workflowID(wid)] = ch
 	return ch, nil
 }
 
-func (o *OnDemand) UnregisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) error {
+func (o *OnDemand) UnregisterTrigger(ctx context.Context, req capabilities.TriggerRequest) error {
 	wid := req.Metadata.WorkflowID
 
 	o.mu.Lock()

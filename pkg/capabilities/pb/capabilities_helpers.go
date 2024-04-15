@@ -60,6 +60,38 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	}
 }
 
+func TriggerRequestToProto(tr capabilities.TriggerRequest) *TriggerRequest {
+	inputs := &values.Map{Underlying: map[string]values.Value{}}
+	if req.Inputs != nil {
+		inputs = req.Inputs
+	}
+	config := &values.Map{Underlying: map[string]values.Value{}}
+	if req.Config != nil {
+		config = req.Config
+	}
+	
+	return &TriggerRequest{
+		Id: tr.ID,
+		Metadata: &RequestMetadata{
+			WorkflowId:          tr.Metadata.WorkflowID,
+			WorkflowExecutionId: tr.Metadata.WorkflowExecutionID,
+		},
+		Type:   tr.Type,
+		Config: values.Proto(tr.Config),
+		Inputs: values.Proto(tr.Inputs),
+	}
+
+}
+
+func TriggerEventToProto(te capabilities.TriggerEvent) *TriggerEvent {
+	return &TriggerEvent{
+		Id:        te.ID,
+		Timestamp: te.Timestamp,
+		Payload:   values.Proto(te.Payload),
+	}
+
+}
+
 func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *CapabilityResponse {
 	errStr := ""
 	if resp.Err != nil {
@@ -84,6 +116,19 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) capabilities.CapabilityRe
 		},
 		Config: config.(*values.Map),
 		Inputs: inputs.(*values.Map),
+	}
+}
+
+func TriggerRequestFromProto(tr *TriggerRequest) capabilities.TriggerRequest {
+	return capabilities.TriggerRequest{
+		ID:   tr.Id,
+		Type: tr.Type,
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID:          tr.Metadata.WorkflowId,
+			WorkflowExecutionID: tr.Metadata.WorkflowExecutionId,
+		},
+		Config: values.FromProto(tr.Config).(*values.Map),
+		Inputs: values.FromProto(tr.Inputs).(*values.Map),
 	}
 }
 

@@ -193,9 +193,9 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
-func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.CapabilityRequest,
+func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.TriggerRequest,
 	server capabilitiespb.TriggerExecutable_RegisterTriggerServer) error {
-	req := pb.CapabilityRequestFromProto(request)
+	req := pb.TriggerRequestFromProto(request)
 	responseCh, err := t.impl.RegisterTrigger(server.Context(), req)
 	if err != nil {
 		return fmt.Errorf("error registering trigger: %w", err)
@@ -218,15 +218,15 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Capabi
 				return nil
 			}
 
-			if err = server.Send(pb.CapabilityResponseToProto(resp)); err != nil {
+			if err = server.Send(pb.TriggerEventToProto(resp)); err != nil {
 				return fmt.Errorf("error sending response for trigger %s: %w", request, err)
 			}
 		}
 	}
 }
 
-func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *capabilitiespb.CapabilityRequest) (*emptypb.Empty, error) {
-	if err := t.impl.UnregisterTrigger(ctx, pb.CapabilityRequestFromProto(request)); err != nil {
+func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *capabilitiespb.TriggerRequest) (*emptypb.Empty, error) {
+	if err := t.impl.UnregisterTrigger(ctx, pb.TriggerRequestFromProto(request)); err != nil {
 		return nil, fmt.Errorf("error unregistering trigger: %w", err)
 	}
 
@@ -238,7 +238,7 @@ type triggerExecutableClient struct {
 	*net.BrokerExt
 }
 
-func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRequest) (<-chan capabilities.CapabilityResponse, error) {
 	responseStream, err := t.grpc.RegisterTrigger(ctx, pb.CapabilityRequestToProto(req))
 	if err != nil {
 		return nil, fmt.Errorf("error registering trigger: %w", err)

@@ -79,5 +79,4 @@ func (m *networkMonitor) Run(ctx context.Context, data RDDData) {
 			Nodes:       data.Nodes,
 		},
 	)
-
 }

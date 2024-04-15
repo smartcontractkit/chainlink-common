@@ -27,8 +27,13 @@ type Monitor struct {
 	ChainMetrics   ChainMetrics
 	SchemaRegistry SchemaRegistry
 
+	// per-feed
 	SourceFactories   []SourceFactory
 	ExporterFactories []ExporterFactory
+
+	// single (network level, default empty)
+	NetworkSourceFactories   []NetworkSourceFactory
+	NetworkExporterFactories []ExporterFactory
 
 	RDDSource Source
 	RDDPoller Poller
@@ -127,26 +132,20 @@ func NewMonitor(
 	}))
 
 	return &Monitor{
-		rootCtx,
-
-		chainConfig,
-		cfg,
-
-		log,
-		producer,
-		metrics,
-		chainMetrics,
-		schemaRegistry,
-
-		sourceFactories,
-		exporterFactories,
-
-		rddSource,
-		rddPoller,
-
-		manager,
-
-		httpServer,
+		RootContext:       rootCtx,
+		ChainConfig:       chainConfig,
+		Config:            cfg,
+		Log:               log,
+		Producer:          producer,
+		Metrics:           metrics,
+		ChainMetrics:      chainMetrics,
+		SchemaRegistry:    schemaRegistry,
+		SourceFactories:   sourceFactories,
+		ExporterFactories: exporterFactories,
+		RDDSource:         rddSource,
+		RDDPoller:         rddPoller,
+		Manager:           manager,
+		HTTPServer:        httpServer,
 	}, nil
 }
 
@@ -168,6 +167,7 @@ func (m Monitor) Run() {
 			NewInstrumentedSourceFactory(factory, m.ChainMetrics))
 	}
 
+	// setup per-feed monitor
 	monitor := NewMultiFeedMonitor(
 		m.ChainConfig,
 		m.Log,
@@ -175,13 +175,28 @@ func (m Monitor) Run() {
 		m.ExporterFactories,
 		100, // bufferCapacity for source pollers
 	)
-
 	subs.Go(func() {
 		m.Manager.Run(rootCtx, func(localCtx context.Context, data RDDData) {
 			m.ChainMetrics.SetNewFeedConfigsDetected(float64(len(data.Feeds)))
 			monitor.Run(localCtx, data)
 		})
 	})
+
+	// setup network monitor if factories present
+	if len(m.NetworkExporterFactories) != 0 || len(m.NetworkSourceFactories) != 0 {
+		networkMonitor := NewNetworkMonitor(
+			m.ChainConfig,
+			m.Log,
+			m.NetworkSourceFactories,
+			m.NetworkExporterFactories,
+			100, // bufferCapacity for source pollers
+		)
+		subs.Go(func() {
+			m.Manager.Run(rootCtx, func(localCtx context.Context, data RDDData) {
+				networkMonitor.Run(localCtx, data)
+			})
+		})
+	}
 
 	subs.Go(func() {
 		m.HTTPServer.Run(rootCtx)

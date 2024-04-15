@@ -219,7 +219,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
 	tBindings := make([]types.BoundContract, len(bindings.Bindings))
 	for i, b := range bindings.Bindings {
-		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name}
+		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
 	}
 
 	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)

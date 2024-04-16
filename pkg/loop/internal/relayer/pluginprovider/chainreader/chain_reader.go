@@ -163,8 +163,7 @@ type Server struct {
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	encodedTypekey := request.ContractName + "." + request.Method
-	params, err := getContractEncodedType(encodedTypekey, c.impl, true)
+	params, err := getContractEncodedType(request.ContractName, request.Method, c.impl, true)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +172,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	retVal, err := getContractEncodedType(encodedTypekey, c.impl, false)
+	retVal, err := getContractEncodedType(request.ContractName, request.Method, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
@@ -196,8 +195,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	encodedTypeKey := request.ContractName + "." + queryFilter.Key
-	sequenceDataType, err := getContractEncodedType(encodedTypeKey, c.impl, false)
+	sequenceDataType, err := getContractEncodedType(request.ContractName, queryFilter.Key, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
@@ -229,9 +227,9 @@ func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.E
 	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)
 }
 
-func getContractEncodedType(key string, possibleTypeProvider any, forEncoding bool) (any, error) {
+func getContractEncodedType(contractName, itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
 	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
-		return ctp.CreateContractType(key, forEncoding)
+		return ctp.CreateContractType(contractName, itemType, forEncoding)
 	}
 
 	return &map[string]any{}, nil

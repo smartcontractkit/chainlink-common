@@ -229,15 +229,15 @@ func RunQueryKeyInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) 
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				ts := CreateTestStruct(0, tester)
-				tester.TriggerEvent(t, &ts)
-				ts = CreateTestStruct(1, tester)
-				tester.TriggerEvent(t, &ts)
+				ts1 := CreateTestStruct(0, tester)
+				tester.TriggerEvent(t, &ts1)
+				ts2 := CreateTestStruct(1, tester)
+				tester.TriggerEvent(t, &ts2)
 
-				aha := &TestStruct{}
+				ts := &TestStruct{}
 				assert.Eventually(t, func() bool {
-					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, aha)
-					return err == nil && len(sequences) == 1 && reflect.DeepEqual(&ts, sequences[0].Data)
+					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[0].Data) && reflect.DeepEqual(&ts2, sequences[1].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},

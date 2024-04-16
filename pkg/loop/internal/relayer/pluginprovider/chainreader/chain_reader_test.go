@@ -292,7 +292,11 @@ func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.Key
 			return nil, types.ErrNotFound
 		}
 
-		return []types.Sequence{{Data: f.triggers[len(f.triggers)-1]}}, nil
+		var sequences []types.Sequence
+		for _, trigger := range f.triggers {
+			sequences = append(sequences, types.Sequence{Data: trigger})
+		}
+		return sequences, nil
 	}
 	return nil, nil
 }

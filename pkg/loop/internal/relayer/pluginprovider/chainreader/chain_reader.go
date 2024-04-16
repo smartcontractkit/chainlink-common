@@ -120,6 +120,10 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 }
 
 func (c *Client) QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+	if sequenceDataType == nil || reflect.TypeOf(sequenceDataType).Kind() != reflect.Ptr {
+		return nil, fmt.Errorf("%w: sequenceDataType must be non nil and a pointer", types.ErrInvalidType)
+	}
+
 	pbQueryFilter, err := convertQueryFilterToProto(filter)
 	if err != nil {
 		return nil, err
@@ -454,7 +458,6 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
 	var sequences []types.Sequence
 	for _, pbSequence := range pbSequences {
-		// TODO this can most likely be optimized
 		cpy := reflect.New(reflect.TypeOf(sequenceDataType).Elem()).Interface()
 		if err := DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
 			return nil, err

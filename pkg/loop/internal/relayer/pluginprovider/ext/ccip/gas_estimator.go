@@ -48,6 +48,10 @@ func (c *CommitGasEstimatorGRPCClient) ClientConn() grpc.ClientConnInterface {
 	return c.conn
 }
 
+func (c *CommitGasEstimatorGRPCClient) Close() error {
+	return nil
+}
+
 // DenoteInUSD implements ccip.GasPriceEstimatorCommit.
 func (c *CommitGasEstimatorGRPCClient) DenoteInUSD(p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
 	resp, err := c.client.DenoteInUSD(context.Background(), &ccippb.DenoteInUSDRequest{

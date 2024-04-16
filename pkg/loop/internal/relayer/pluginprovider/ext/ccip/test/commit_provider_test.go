@@ -12,6 +12,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -42,7 +43,7 @@ func TestCommitProviderGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 
-	grpcScaffold := newGRPCScaffold(t, setupCommitProviderServer, ccip.NewCommitProviderClient)
+	grpcScaffold := looptest.NewGRPCScaffold(t, setupCommitProviderServer, ccip.NewCommitProviderClient)
 	t.Cleanup(grpcScaffold.Close)
 	roundTripCommitProviderTests(ctx, t, grpcScaffold.Client())
 }
@@ -90,5 +91,5 @@ func setupCommitProviderServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerEx
 	return commitProvider
 }
 
-var _ setupGRPCServer[*ccip.CommitProviderServer] = setupCommitProviderServer
-var _ setupGRPCClient[*ccip.CommitProviderClient] = ccip.NewCommitProviderClient
+var _ looptest.SetupGRPCServer[*ccip.CommitProviderServer] = setupCommitProviderServer
+var _ looptest.SetupGRPCClient[*ccip.CommitProviderClient] = ccip.NewCommitProviderClient

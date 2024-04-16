@@ -12,6 +12,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -32,7 +33,7 @@ func TestGasPriceEstimatorExecGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 
-	scaffold := newGRPCScaffold(t, setupExecGasEstimatorServer, setupExecGasEstimatorClient)
+	scaffold := looptest.NewGRPCScaffold(t, setupExecGasEstimatorServer, setupExecGasEstimatorClient)
 	t.Cleanup(scaffold.Close)
 	roundTripGasPriceEstimatorExecTests(ctx, t, scaffold.Client())
 }
@@ -84,5 +85,5 @@ func setupExecGasEstimatorClient(b *loopnet.BrokerExt, conn grpc.ClientConnInter
 	return ccip.NewExecGasEstimatorGRPCClient(conn)
 }
 
-var _ setupGRPCServer[*ccip.ExecGasEstimatorGRPCServer] = setupExecGasEstimatorServer
-var _ setupGRPCClient[*ccip.ExecGasEstimatorGRPCClient] = setupExecGasEstimatorClient
+var _ looptest.SetupGRPCServer[*ccip.ExecGasEstimatorGRPCServer] = setupExecGasEstimatorServer
+var _ looptest.SetupGRPCClient[*ccip.ExecGasEstimatorGRPCClient] = setupExecGasEstimatorClient

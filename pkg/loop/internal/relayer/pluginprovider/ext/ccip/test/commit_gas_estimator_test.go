@@ -2,19 +2,16 @@ package test
 
 import (
 	"context"
-	"fmt"
-	"net"
-	"sync"
 	"testing"
 
-	"github.com/hashicorp/consul/sdk/freeport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
+	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -34,36 +31,11 @@ func TestStaticCommitGasEstimator(t *testing.T) {
 func TestGasPriceEstimatorCommitGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
-	// create a price registry server
-	port := freeport.GetOne(t)
-	addr := fmt.Sprintf("localhost:%d", port)
-	lis, err := net.Listen("tcp", addr)
-	require.NoError(t, err, "failed to listen on port %d", port)
-	t.Cleanup(func() { lis.Close() })
-	// we explicitly stop the server later, do not add a cleanup function here
-	testServer := grpc.NewServer()
-	defer testServer.Stop()
-	// handle client close and server stop
 
-	gasPriceEstimatorCommit := ccip.NewCommitGasEstimatorGRPCServer(GasPriceEstimatorCommit)
-
-	ccippb.RegisterGasPriceEstimatorCommitServer(testServer, gasPriceEstimatorCommit)
-	// start the server and shutdown handler
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		require.NoError(t, testServer.Serve(lis))
-	}()
-
-	// create a price registry client
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(t, err, "failed to dial %s", addr)
-	t.Cleanup(func() { conn.Close() })
-	client := ccip.NewCommitGasEstimatorGRPCClient(conn)
-
+	scaffold := looptest.NewGRPCScaffold(t, setupCommitGasEstimatorServer, setupCommitGasEstimatorClient)
+	t.Cleanup(scaffold.Close)
 	// test the client
-	roundTripGasPriceEstimatorCommitTests(ctx, t, client)
+	roundTripGasPriceEstimatorCommitTests(ctx, t, scaffold.Client())
 }
 
 // roundTripGasPriceEstimatorCommitTests tests the round trip of the client<->server.
@@ -99,4 +71,15 @@ func roundTripGasPriceEstimatorCommitTests(ctx context.Context, t *testing.T, cl
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.medianResponse, median)
 	})
+}
+
+func setupCommitGasEstimatorServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.CommitGasEstimatorGRPCServer {
+	gasProvider := ccip.NewCommitGasEstimatorGRPCServer(GasPriceEstimatorCommit)
+	ccippb.RegisterGasPriceEstimatorCommitServer(s, gasProvider)
+	return gasProvider
+}
+
+// adapt the client constructor so we can use it with the grpc scaffold
+func setupCommitGasEstimatorClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.CommitGasEstimatorGRPCClient {
+	return ccip.NewCommitGasEstimatorGRPCClient(conn)
 }

@@ -11,6 +11,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -30,17 +31,15 @@ func TestPriceGetterGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 
-	scaffold := newGRPCScaffold(t, setupPriceGetterServer, setupPriceGetterClient)
-
-	// test the client
+	scaffold := looptest.NewGRPCScaffold(t, setupPriceGetterServer, setupPriceGetterClient)
 	roundTripPriceGetterTests(ctx, t, scaffold.Client())
-
 	// price getter implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
-		d := &mockDep{}
+		d := &looptest.MockDep{}
 		scaffold.Server().AddDep(d)
+		assert.False(t, d.IsClosed())
 		scaffold.Client().Close()
-		assert.True(t, d.closeCalled)
+		assert.True(t, d.IsClosed())
 	})
 }
 
@@ -77,5 +76,5 @@ func setupPriceGetterClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface)
 	return ccip.NewPriceGetterGRPCClient(conn)
 }
 
-var _ setupGRPCServer[*ccip.PriceGetterGRPCServer] = setupPriceGetterServer
-var _ setupGRPCClient[*ccip.PriceGetterGRPCClient] = setupPriceGetterClient
+var _ looptest.SetupGRPCServer[*ccip.PriceGetterGRPCServer] = setupPriceGetterServer
+var _ looptest.SetupGRPCClient[*ccip.PriceGetterGRPCClient] = setupPriceGetterClient

@@ -12,6 +12,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -34,14 +35,15 @@ func TestStaticCommitStore(t *testing.T) {
 func TestCommitStoreGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
-	scaffold := newGRPCScaffold(t, setupCommitStoreServer, ccip.NewCommitStoreReaderGRPCClient)
+	scaffold := looptest.NewGRPCScaffold(t, setupCommitStoreServer, ccip.NewCommitStoreReaderGRPCClient)
 	roundTripCommitStoreTests(ctx, t, scaffold.Client())
 	// commit store implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
-		d := &mockDep{}
+		d := &looptest.MockDep{}
 		scaffold.Server().AddDep(d)
+		assert.False(t, d.IsClosed())
 		scaffold.Client().Close()
-		assert.True(t, d.closeCalled)
+		assert.True(t, d.IsClosed())
 	})
 }
 
@@ -183,5 +185,5 @@ func setupCommitStoreServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) 
 	return commitProvider
 }
 
-var _ setupGRPCServer[*ccip.CommitStoreGRPCServer] = setupCommitStoreServer
-var _ setupGRPCClient[*ccip.CommitStoreGRPCClient] = ccip.NewCommitStoreReaderGRPCClient
+var _ looptest.SetupGRPCServer[*ccip.CommitStoreGRPCServer] = setupCommitStoreServer
+var _ looptest.SetupGRPCClient[*ccip.CommitStoreGRPCClient] = ccip.NewCommitStoreReaderGRPCClient

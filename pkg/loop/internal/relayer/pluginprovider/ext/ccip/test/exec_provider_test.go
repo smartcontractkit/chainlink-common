@@ -12,6 +12,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -42,7 +43,7 @@ func TestExecProviderGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 
-	grpcScaffold := newGRPCScaffold(t, setupExecProviderServer, ccip.NewExecProviderClient)
+	grpcScaffold := looptest.NewGRPCScaffold(t, setupExecProviderServer, ccip.NewExecProviderClient)
 	t.Cleanup(grpcScaffold.Close)
 	roundTripExecProviderTests(ctx, t, grpcScaffold.Client())
 }

@@ -11,6 +11,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -34,16 +35,15 @@ func TestTokenPoolGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 
-	scaffold := newGRPCScaffold(t, setupTokenPoolServer, setupTokenPoolClient)
-	// test the client
+	scaffold := looptest.NewGRPCScaffold(t, setupTokenPoolServer, setupTokenPoolClient)
 	roundTripTokenPoolTests(ctx, t, scaffold.Client())
-
 	// token pool implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
-		d := &mockDep{}
+		d := &looptest.MockDep{}
 		scaffold.Server().AddDep(d)
+		assert.False(t, d.IsClosed())
 		scaffold.Client().Close()
-		assert.True(t, d.closeCalled)
+		assert.True(t, d.IsClosed())
 	})
 }
 
@@ -65,5 +65,5 @@ func setupTokenPoolClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *
 	return ccip.NewTokenPoolBatchedReaderGRPCClient(conn)
 }
 
-var _ setupGRPCServer[*ccip.TokenPoolBatchedReaderGRPCServer] = setupTokenPoolServer
-var _ setupGRPCClient[*ccip.TokenPoolBatchedReaderGRPCClient] = setupTokenPoolClient
+var _ looptest.SetupGRPCServer[*ccip.TokenPoolBatchedReaderGRPCServer] = setupTokenPoolServer
+var _ looptest.SetupGRPCClient[*ccip.TokenPoolBatchedReaderGRPCClient] = setupTokenPoolClient

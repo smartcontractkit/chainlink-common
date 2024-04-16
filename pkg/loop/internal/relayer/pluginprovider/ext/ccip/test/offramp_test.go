@@ -12,6 +12,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -34,15 +35,16 @@ func TestStaticOffRamp(t *testing.T) {
 func TestOffRampGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
-	scaffold := newGRPCScaffold(t, setupOffRampServer, ccip.NewOffRampReaderGRPCClient)
+	scaffold := looptest.NewGRPCScaffold(t, setupOffRampServer, ccip.NewOffRampReaderGRPCClient)
 	roundTripOffRampTests(ctx, t, scaffold.Client())
 
 	// offramp implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
-		d := &mockDep{}
+		d := &looptest.MockDep{}
 		scaffold.Server().AddDep(d)
+		assert.False(t, d.IsClosed())
 		scaffold.Client().Close()
-		assert.True(t, d.closeCalled)
+		assert.True(t, d.IsClosed())
 	})
 }
 
@@ -149,12 +151,6 @@ func roundTripOffRampTests(ctx context.Context, t *testing.T, client cciptypes.O
 		assert.Equal(t, OffRampReader.onchainConfigResponse, config)
 	})
 }
-
-type serviceCloser struct {
-	closeFn func() error
-}
-
-func (s *serviceCloser) Close() error { return s.closeFn() }
 
 func setupOffRampServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.OffRampReaderGRPCServer {
 	offRampProvider, err := ccip.NewOffRampReaderGRPCServer(OffRampReader, b)

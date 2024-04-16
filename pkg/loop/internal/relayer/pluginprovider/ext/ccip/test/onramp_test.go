@@ -48,22 +48,20 @@ func TestOnRampGRPC(t *testing.T) {
 }
 
 func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
-	ctx := tests.Context(t)
-
 	t.Run("Address", func(t *testing.T) {
-		got, err := client.Address(ctx)
+		got, err := client.Address(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.addressResponse, got)
 	})
 
 	t.Run("GetDynamicConfig", func(t *testing.T) {
-		got, err := client.GetDynamicConfig(ctx)
+		got, err := client.GetDynamicConfig(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.dynamicConfigResponse, got)
 	})
 
 	t.Run("GetSendRequestsBetweenSeqNums", func(t *testing.T) {
-		got, err := client.GetSendRequestsBetweenSeqNums(ctx, OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMin, OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMax, OnRampReader.getSendRequestsBetweenSeqNums.Finalized)
+		got, err := client.GetSendRequestsBetweenSeqNums(tests.Context(t), OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMin, OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMax, OnRampReader.getSendRequestsBetweenSeqNums.Finalized)
 		require.NoError(t, err)
 		if !reflect.DeepEqual(OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got) {
 			t.Errorf("expected %v, got %v", OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got)
@@ -71,25 +69,25 @@ func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
 	})
 
 	t.Run("IsSourceChainHealthy", func(t *testing.T) {
-		got, err := client.IsSourceChainHealthy(ctx)
+		got, err := client.IsSourceChainHealthy(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.isSourceChainHealthyResponse, got)
 	})
 
 	t.Run("IsSourceCursed", func(t *testing.T) {
-		got, err := client.IsSourceCursed(ctx)
+		got, err := client.IsSourceCursed(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.isSourceCursedResponse, got)
 	})
 
 	t.Run("RouterAddress", func(t *testing.T) {
-		got, err := client.RouterAddress(ctx)
+		got, err := client.RouterAddress(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.routerResponse, got)
 	})
 
 	t.Run("SourcePriceRegistryAddress", func(t *testing.T) {
-		got, err := client.SourcePriceRegistryAddress(ctx)
+		got, err := client.SourcePriceRegistryAddress(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.sourcePriceRegistryResponse, got)
 	})

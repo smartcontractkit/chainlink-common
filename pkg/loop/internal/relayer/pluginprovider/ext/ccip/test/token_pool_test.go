@@ -46,11 +46,9 @@ func TestTokenPoolGRPC(t *testing.T) {
 }
 
 func roundTripTokenPoolTests(t *testing.T, client cciptypes.TokenPoolBatchedReader) {
-	ctx := tests.Context(t)
-
 	t.Helper()
 	// test read token data
-	limits, err := client.GetInboundTokenPoolRateLimits(ctx, TokenPoolBatchedReader.getInboundTokenPoolRateLimitsRequest)
+	limits, err := client.GetInboundTokenPoolRateLimits(tests.Context(t), TokenPoolBatchedReader.getInboundTokenPoolRateLimitsRequest)
 	require.NoError(t, err)
 	assert.Equal(t, TokenPoolBatchedReader.getInboundTokenPoolRateLimitsResponse, limits)
 }

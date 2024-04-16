@@ -40,10 +40,8 @@ func TestGasPriceEstimatorCommitGRPC(t *testing.T) {
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
 func roundTripGasPriceEstimatorCommitTests(t *testing.T, client *ccip.CommitGasEstimatorGRPCClient) {
-	ctx := tests.Context(t)
-
 	t.Run("GetGasPrice", func(t *testing.T) {
-		price, err := client.GetGasPrice(ctx)
+		price, err := client.GetGasPrice(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.getGasPriceResponse, price)
 	})

@@ -53,29 +53,27 @@ func TestOffRampGRPC(t *testing.T) {
 // do not add client.Close to this test, test that from the driver test
 // func roundTripOffRampTests(ctx context.Context, t *testing.T, client *ccip.OffRampReaderGRPCClient) {
 func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
-	ctx := tests.Context(t)
-
 	t.Run("Address", func(t *testing.T) {
-		address, err := client.Address(ctx)
+		address, err := client.Address(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.addressResponse, address)
 	})
 
 	t.Run("ChangeConfig", func(t *testing.T) {
-		gotAddr1, gotAddr2, err := client.ChangeConfig(ctx, OffRampReader.changeConfigRequest.onchainConfig, OffRampReader.changeConfigRequest.offchainConfig)
+		gotAddr1, gotAddr2, err := client.ChangeConfig(tests.Context(t), OffRampReader.changeConfigRequest.onchainConfig, OffRampReader.changeConfigRequest.offchainConfig)
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.changeConfigResponse.onchainConfigDigest, gotAddr1)
 		assert.Equal(t, OffRampReader.changeConfigResponse.offchainConfigDigest, gotAddr2)
 	})
 
 	t.Run("CurrentRateLimiterState", func(t *testing.T) {
-		state, err := client.CurrentRateLimiterState(ctx)
+		state, err := client.CurrentRateLimiterState(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.currentRateLimiterStateResponse, state)
 	})
 
 	t.Run("DecodeExecutionReport", func(t *testing.T) {
-		report, err := client.DecodeExecutionReport(ctx, OffRampReader.decodeExecutionReportRequest)
+		report, err := client.DecodeExecutionReport(tests.Context(t), OffRampReader.decodeExecutionReportRequest)
 		require.NoError(t, err)
 		if !reflect.DeepEqual(OffRampReader.decodeExecutionReportResponse, report) {
 			t.Errorf("expected messages %v, got %v", OffRampReader.decodeExecutionReportResponse, report)
@@ -83,14 +81,14 @@ func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
 	})
 
 	t.Run("EncodeExecutionReport", func(t *testing.T) {
-		report, err := client.EncodeExecutionReport(ctx, OffRampReader.encodeExecutionReportRequest)
+		report, err := client.EncodeExecutionReport(tests.Context(t), OffRampReader.encodeExecutionReportRequest)
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.encodeExecutionReportResponse, report)
 	})
 
 	// exercise all the gas price estimator methods
 	t.Run("GasPriceEstimator", func(t *testing.T) {
-		estimator, err := client.GasPriceEstimator(ctx)
+		estimator, err := client.GasPriceEstimator(tests.Context(t))
 		require.NoError(t, err)
 		gasClient, ok := estimator.(*ccip.ExecGasEstimatorGRPCClient)
 		require.True(t, ok, "expected GasPriceEstimatorGRPCClient")
@@ -98,13 +96,13 @@ func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
 	})
 
 	t.Run("GetExecutionState", func(t *testing.T) {
-		state, err := client.GetExecutionState(ctx, OffRampReader.getExecutionStateRequest)
+		state, err := client.GetExecutionState(tests.Context(t), OffRampReader.getExecutionStateRequest)
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.getExecutionStateResponse, state)
 	})
 
 	t.Run("GetExecutionStateChangesBetweenSeqNums", func(t *testing.T) {
-		state, err := client.GetExecutionStateChangesBetweenSeqNums(ctx, OffRampReader.getExecutionStateChangesBetweenSeqNumsRequest.seqNumMin, OffRampReader.getExecutionStateChangesBetweenSeqNumsRequest.seqNumMax, OffRampReader.getExecutionStateChangesBetweenSeqNumsRequest.confirmations)
+		state, err := client.GetExecutionStateChangesBetweenSeqNums(tests.Context(t), OffRampReader.getExecutionStateChangesBetweenSeqNumsRequest.seqNumMin, OffRampReader.getExecutionStateChangesBetweenSeqNumsRequest.seqNumMax, OffRampReader.getExecutionStateChangesBetweenSeqNumsRequest.confirmations)
 		require.NoError(t, err)
 		if !reflect.DeepEqual(OffRampReader.getExecutionStateChangesBetweenSeqNumsResponse.executionStateChangedWithTxMeta, state) {
 			t.Errorf("expected %v, got %v", OffRampReader.getExecutionStateChangesBetweenSeqNumsResponse, state)
@@ -112,43 +110,43 @@ func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
 	})
 
 	t.Run("GetSenderNonce", func(t *testing.T) {
-		nonce, err := client.GetSenderNonce(ctx, OffRampReader.getSenderNonceRequest)
+		nonce, err := client.GetSenderNonce(tests.Context(t), OffRampReader.getSenderNonceRequest)
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.getSenderNonceResponse, nonce)
 	})
 
 	t.Run("GetSourceToDestTokensMapping", func(t *testing.T) {
-		mapping, err := client.GetSourceToDestTokensMapping(ctx)
+		mapping, err := client.GetSourceToDestTokensMapping(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.getSourceToDestTokensMappingResponse, mapping)
 	})
 
 	t.Run("GetStaticConfig", func(t *testing.T) {
-		config, err := client.GetStaticConfig(ctx)
+		config, err := client.GetStaticConfig(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.getStaticConfigResponse, config)
 	})
 
 	t.Run("GetTokens", func(t *testing.T) {
-		tokens, err := client.GetTokens(ctx)
+		tokens, err := client.GetTokens(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.getTokensResponse, tokens)
 	})
 
 	t.Run("GetRouter", func(t *testing.T) {
-		router, err := client.GetRouter(ctx)
+		router, err := client.GetRouter(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.getRouterResponse, router)
 	})
 
 	t.Run("OffchainConfig", func(t *testing.T) {
-		config, err := client.OffchainConfig(ctx)
+		config, err := client.OffchainConfig(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.offchainConfigResponse, config)
 	})
 
 	t.Run("OnchainConfig", func(t *testing.T) {
-		config, err := client.OnchainConfig(ctx)
+		config, err := client.OnchainConfig(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, OffRampReader.onchainConfigResponse, config)
 	})

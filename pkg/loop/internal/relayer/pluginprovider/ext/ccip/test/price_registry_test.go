@@ -48,22 +48,20 @@ func TestPriceRegistryGRPC(t *testing.T) {
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
 func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryReader) {
-	ctx := tests.Context(t)
-
 	t.Run("Address", func(t *testing.T) {
-		address, err := client.Address(ctx)
+		address, err := client.Address(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.addressResponse, address)
 	})
 
 	t.Run("GetFeeTokens", func(t *testing.T) {
-		price, err := client.GetFeeTokens(ctx)
+		price, err := client.GetFeeTokens(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.getFeeTokensResponse, price)
 	})
 
 	t.Run("GetGasPriceUpdatesCreatedAfter", func(t *testing.T) {
-		price, err := client.GetGasPriceUpdatesCreatedAfter(ctx,
+		price, err := client.GetGasPriceUpdatesCreatedAfter(tests.Context(t),
 			PriceRegistryReader.getGasPriceUpdatesCreatedAfterRequest.chainSelector,
 			PriceRegistryReader.getGasPriceUpdatesCreatedAfterRequest.ts,
 			PriceRegistryReader.getGasPriceUpdatesCreatedAfterRequest.confirmations,
@@ -73,7 +71,7 @@ func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryRea
 	})
 
 	t.Run("GetTokenPriceUpdatesCreatedAfter", func(t *testing.T) {
-		price, err := client.GetTokenPriceUpdatesCreatedAfter(ctx,
+		price, err := client.GetTokenPriceUpdatesCreatedAfter(tests.Context(t),
 			PriceRegistryReader.getTokenPriceUpdatesCreatedAfterRequest.ts,
 			PriceRegistryReader.getTokenPriceUpdatesCreatedAfterRequest.confirmations,
 		)
@@ -82,13 +80,13 @@ func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryRea
 	})
 
 	t.Run("GetTokenPrices", func(t *testing.T) {
-		price, err := client.GetTokenPrices(ctx, PriceRegistryReader.getTokenPricesRequest)
+		price, err := client.GetTokenPrices(tests.Context(t), PriceRegistryReader.getTokenPricesRequest)
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.getTokenPricesResponse, price)
 	})
 
 	t.Run("GetTokensDecimals", func(t *testing.T) {
-		price, err := client.GetTokensDecimals(ctx, PriceRegistryReader.getTokensDecimalsRequest)
+		price, err := client.GetTokensDecimals(tests.Context(t), PriceRegistryReader.getTokensDecimalsRequest)
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.getTokensDecimalsResponse, price)
 	})

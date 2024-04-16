@@ -46,11 +46,9 @@ func TestTokenDataGRPC(t *testing.T) {
 }
 
 func roundTripTokenDataTests(t *testing.T, client cciptypes.TokenDataReader) {
-	ctx := tests.Context(t)
-
 	t.Helper()
 	// test read token data
-	tokenData, err := client.ReadTokenData(ctx, TokenDataReader.readTokenDataRequest.msg, TokenDataReader.readTokenDataRequest.tokenIndex)
+	tokenData, err := client.ReadTokenData(tests.Context(t), TokenDataReader.readTokenDataRequest.msg, TokenDataReader.readTokenDataRequest.tokenIndex)
 	require.NoError(t, err)
 	assert.Equal(t, TokenDataReader.readTokenDataResponse, tokenData)
 }

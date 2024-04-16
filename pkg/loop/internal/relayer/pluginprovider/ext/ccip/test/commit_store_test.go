@@ -51,16 +51,14 @@ func TestCommitStoreGRPC(t *testing.T) {
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
 func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader) {
-	ctx := tests.Context(t)
-
 	t.Run("ChangeConfig", func(t *testing.T) {
-		gotAddr, err := client.ChangeConfig(ctx, CommitStoreReader.changeConfigRequest.onchainConfig, CommitStoreReader.changeConfigRequest.offchainConfig)
+		gotAddr, err := client.ChangeConfig(tests.Context(t), CommitStoreReader.changeConfigRequest.onchainConfig, CommitStoreReader.changeConfigRequest.offchainConfig)
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.changeConfigResponse, gotAddr)
 	})
 
 	t.Run("DecodeCommitReport", func(t *testing.T) {
-		report, err := client.DecodeCommitReport(ctx, CommitStoreReader.decodeCommitReportRequest)
+		report, err := client.DecodeCommitReport(tests.Context(t), CommitStoreReader.decodeCommitReportRequest)
 		require.NoError(t, err)
 		if !reflect.DeepEqual(CommitStoreReader.decodeCommitReportResponse, report) {
 			t.Errorf("expected %v, got %v", CommitStoreReader.decodeCommitReportResponse, report)
@@ -69,18 +67,18 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 
 	// reuse the test data for the encode method
 	t.Run("EncodeCommtReport", func(t *testing.T) {
-		report, err := client.EncodeCommitReport(ctx, CommitStoreReader.decodeCommitReportResponse)
+		report, err := client.EncodeCommitReport(tests.Context(t), CommitStoreReader.decodeCommitReportResponse)
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.decodeCommitReportRequest, report)
 	})
 
 	// exercise all the gas price estimator methods
 	t.Run("GasPriceEstimator", func(t *testing.T) {
-		estimator, err := client.GasPriceEstimator(ctx)
+		estimator, err := client.GasPriceEstimator(tests.Context(t))
 		require.NoError(t, err)
 
 		t.Run("GetGasPrice", func(t *testing.T) {
-			price, err := estimator.GetGasPrice(ctx)
+			price, err := estimator.GetGasPrice(tests.Context(t))
 			require.NoError(t, err)
 			assert.Equal(t, GasPriceEstimatorCommit.getGasPriceResponse, price)
 		})
@@ -111,7 +109,7 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 	})
 
 	t.Run("GetAcceptedCommitReportGteTimestamp", func(t *testing.T) {
-		report, err := client.GetAcceptedCommitReportsGteTimestamp(ctx,
+		report, err := client.GetAcceptedCommitReportsGteTimestamp(tests.Context(t),
 			CommitStoreReader.getAcceptedCommitReportsGteTimestampRequest.timestamp,
 			CommitStoreReader.getAcceptedCommitReportsGteTimestampRequest.confirmations)
 		require.NoError(t, err)
@@ -121,7 +119,7 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 	})
 
 	t.Run("GetCommitReportMatchingSeqNum", func(t *testing.T) {
-		report, err := client.GetCommitReportMatchingSeqNum(ctx,
+		report, err := client.GetCommitReportMatchingSeqNum(tests.Context(t),
 			CommitStoreReader.getCommitReportMatchingSeqNumRequest.seqNum,
 			CommitStoreReader.getCommitReportMatchingSeqNumRequest.confirmations)
 		require.NoError(t, err)
@@ -132,49 +130,49 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 	})
 
 	t.Run("GetCommitStoreStaticConfig", func(t *testing.T) {
-		config, err := client.GetCommitStoreStaticConfig(ctx)
+		config, err := client.GetCommitStoreStaticConfig(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.getCommitStoreStaticConfigResponse, config)
 	})
 
 	t.Run("GetExpectedNextSequenceNumber", func(t *testing.T) {
-		seq, err := client.GetExpectedNextSequenceNumber(ctx)
+		seq, err := client.GetExpectedNextSequenceNumber(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.getExpectedNextSequenceNumberResponse, seq)
 	})
 
 	t.Run("GetLatestPriceEpochAndRound", func(t *testing.T) {
-		got, err := client.GetLatestPriceEpochAndRound(ctx)
+		got, err := client.GetLatestPriceEpochAndRound(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.getLatestPriceEpochAndRoundResponse, got)
 	})
 
 	t.Run("IsBlessed", func(t *testing.T) {
-		got, err := client.IsBlessed(ctx, CommitStoreReader.isBlessedRequest)
+		got, err := client.IsBlessed(tests.Context(t), CommitStoreReader.isBlessedRequest)
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.isBlessedResponse, got)
 	})
 
 	t.Run("IsDestChainHealthy", func(t *testing.T) {
-		got, err := client.IsDestChainHealthy(ctx)
+		got, err := client.IsDestChainHealthy(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.isDestChainHealthyResponse, got)
 	})
 
 	t.Run("IsDown", func(t *testing.T) {
-		got, err := client.IsDown(ctx)
+		got, err := client.IsDown(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.isDownResponse, got)
 	})
 
 	t.Run("OffchainConfig", func(t *testing.T) {
-		config, err := client.OffchainConfig(ctx)
+		config, err := client.OffchainConfig(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.offchainConfigResponse, config)
 	})
 
 	t.Run("VerifyExecutionReport", func(t *testing.T) {
-		got, err := client.VerifyExecutionReport(ctx, CommitStoreReader.verifyExecutionReportRequest)
+		got, err := client.VerifyExecutionReport(tests.Context(t), CommitStoreReader.verifyExecutionReportRequest)
 		require.NoError(t, err)
 		assert.Equal(t, CommitStoreReader.verifyExecutionReportResponse, got)
 	})

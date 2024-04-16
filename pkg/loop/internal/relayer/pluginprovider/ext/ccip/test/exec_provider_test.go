@@ -47,52 +47,50 @@ func TestExecProviderGRPC(t *testing.T) {
 }
 
 func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
-	ctx := tests.Context(t)
-
 	t.Run("CommitStore", func(t *testing.T) {
-		commitClient, err := client.NewCommitStoreReader(ctx, "ignored")
+		commitClient, err := client.NewCommitStoreReader(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		roundTripCommitStoreTests(t, commitClient)
 		require.NoError(t, commitClient.Close())
 	})
 
 	t.Run("OffRamp", func(t *testing.T) {
-		offRampClient, err := client.NewOffRampReader(ctx, "ignored")
+		offRampClient, err := client.NewOffRampReader(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		roundTripOffRampTests(t, offRampClient)
 		require.NoError(t, offRampClient.Close())
 	})
 
 	t.Run("OnRamp", func(t *testing.T) {
-		onRampClient, err := client.NewOnRampReader(ctx, "ignored")
+		onRampClient, err := client.NewOnRampReader(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		roundTripOnRampTests(t, onRampClient)
 		require.NoError(t, onRampClient.Close())
 	})
 
 	t.Run("PriceRegistry", func(t *testing.T) {
-		priceRegistryClient, err := client.NewPriceRegistryReader(ctx, "ignored")
+		priceRegistryClient, err := client.NewPriceRegistryReader(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		roundTripPriceRegistryTests(t, priceRegistryClient)
 		require.NoError(t, priceRegistryClient.Close())
 	})
 
 	t.Run("TokenData", func(t *testing.T) {
-		tokenDataClient, err := client.NewTokenDataReader(ctx, "ignored")
+		tokenDataClient, err := client.NewTokenDataReader(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		roundTripTokenDataTests(t, tokenDataClient)
 		require.NoError(t, tokenDataClient.Close())
 	})
 
 	t.Run("TokenPool", func(t *testing.T) {
-		tokenReaderClient, err := client.NewTokenPoolBatchedReader(ctx)
+		tokenReaderClient, err := client.NewTokenPoolBatchedReader(tests.Context(t))
 		require.NoError(t, err)
 		roundTripTokenPoolTests(t, tokenReaderClient)
 		require.NoError(t, tokenReaderClient.Close())
 	})
 
 	t.Run("SourceNativeToken", func(t *testing.T) {
-		token, err := client.SourceNativeToken(ctx)
+		token, err := client.SourceNativeToken(tests.Context(t))
 		require.NoError(t, err)
 		assert.Equal(t, ExecutionProvider.sourceNativeTokenResponse, token)
 	})

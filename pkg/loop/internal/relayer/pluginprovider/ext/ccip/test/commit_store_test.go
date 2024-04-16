@@ -34,9 +34,9 @@ func TestStaticCommitStore(t *testing.T) {
 
 func TestCommitStoreGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+
 	scaffold := looptest.NewGRPCScaffold(t, setupCommitStoreServer, ccip.NewCommitStoreReaderGRPCClient)
-	roundTripCommitStoreTests(ctx, t, scaffold.Client())
+	roundTripCommitStoreTests(t, scaffold.Client())
 	// commit store implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
 		d := &looptest.MockDep{}
@@ -50,7 +50,9 @@ func TestCommitStoreGRPC(t *testing.T) {
 // roundTripCommitStoreTests tests the round trip of the client<->server.
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
-func roundTripCommitStoreTests(ctx context.Context, t *testing.T, client cciptypes.CommitStoreReader) {
+func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader) {
+	ctx := tests.Context(t)
+
 	t.Run("ChangeConfig", func(t *testing.T) {
 		gotAddr, err := client.ChangeConfig(ctx, CommitStoreReader.changeConfigRequest.onchainConfig, CommitStoreReader.changeConfigRequest.offchainConfig)
 		require.NoError(t, err)

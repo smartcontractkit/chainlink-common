@@ -33,10 +33,8 @@ func TestStaticTokenPool(t *testing.T) {
 
 func TestTokenPoolGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
-
 	scaffold := looptest.NewGRPCScaffold(t, setupTokenPoolServer, setupTokenPoolClient)
-	roundTripTokenPoolTests(ctx, t, scaffold.Client())
+	roundTripTokenPoolTests(t, scaffold.Client())
 	// token pool implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
 		d := &looptest.MockDep{}
@@ -47,7 +45,9 @@ func TestTokenPoolGRPC(t *testing.T) {
 	})
 }
 
-func roundTripTokenPoolTests(ctx context.Context, t *testing.T, client cciptypes.TokenPoolBatchedReader) {
+func roundTripTokenPoolTests(t *testing.T, client cciptypes.TokenPoolBatchedReader) {
+	ctx := tests.Context(t)
+
 	t.Helper()
 	// test read token data
 	limits, err := client.GetInboundTokenPoolRateLimits(ctx, TokenPoolBatchedReader.getInboundTokenPoolRateLimitsRequest)

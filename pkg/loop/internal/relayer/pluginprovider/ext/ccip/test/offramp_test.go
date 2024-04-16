@@ -34,9 +34,9 @@ func TestStaticOffRamp(t *testing.T) {
 
 func TestOffRampGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+
 	scaffold := looptest.NewGRPCScaffold(t, setupOffRampServer, ccip.NewOffRampReaderGRPCClient)
-	roundTripOffRampTests(ctx, t, scaffold.Client())
+	roundTripOffRampTests(t, scaffold.Client())
 
 	// offramp implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
@@ -52,7 +52,9 @@ func TestOffRampGRPC(t *testing.T) {
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
 // func roundTripOffRampTests(ctx context.Context, t *testing.T, client *ccip.OffRampReaderGRPCClient) {
-func roundTripOffRampTests(ctx context.Context, t *testing.T, client cciptypes.OffRampReader) {
+func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
+	ctx := tests.Context(t)
+
 	t.Run("Address", func(t *testing.T) {
 		address, err := client.Address(ctx)
 		require.NoError(t, err)
@@ -92,7 +94,7 @@ func roundTripOffRampTests(ctx context.Context, t *testing.T, client cciptypes.O
 		require.NoError(t, err)
 		gasClient, ok := estimator.(*ccip.ExecGasEstimatorGRPCClient)
 		require.True(t, ok, "expected GasPriceEstimatorGRPCClient")
-		roundTripGasPriceEstimatorExecTests(ctx, t, gasClient)
+		roundTripGasPriceEstimatorExecTests(t, gasClient)
 	})
 
 	t.Run("GetExecutionState", func(t *testing.T) {

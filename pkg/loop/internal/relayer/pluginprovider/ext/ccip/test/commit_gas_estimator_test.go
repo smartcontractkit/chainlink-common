@@ -1,7 +1,6 @@
 package test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,18 +29,19 @@ func TestStaticCommitGasEstimator(t *testing.T) {
 
 func TestGasPriceEstimatorCommitGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
 
 	scaffold := looptest.NewGRPCScaffold(t, setupCommitGasEstimatorServer, setupCommitGasEstimatorClient)
 	t.Cleanup(scaffold.Close)
 	// test the client
-	roundTripGasPriceEstimatorCommitTests(ctx, t, scaffold.Client())
+	roundTripGasPriceEstimatorCommitTests(t, scaffold.Client())
 }
 
 // roundTripGasPriceEstimatorCommitTests tests the round trip of the client<->server.
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
-func roundTripGasPriceEstimatorCommitTests(ctx context.Context, t *testing.T, client *ccip.CommitGasEstimatorGRPCClient) {
+func roundTripGasPriceEstimatorCommitTests(t *testing.T, client *ccip.CommitGasEstimatorGRPCClient) {
+	ctx := tests.Context(t)
+
 	t.Run("GetGasPrice", func(t *testing.T) {
 		price, err := client.GetGasPrice(ctx)
 		require.NoError(t, err)

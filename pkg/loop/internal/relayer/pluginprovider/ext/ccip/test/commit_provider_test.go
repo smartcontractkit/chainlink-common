@@ -52,35 +52,35 @@ func roundTripCommitProviderTests(ctx context.Context, t *testing.T, client type
 	t.Run("CommitStore", func(t *testing.T) {
 		commitClient, err := client.NewCommitStoreReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripCommitStoreTests(ctx, t, commitClient)
+		roundTripCommitStoreTests(t, commitClient)
 		require.NoError(t, commitClient.Close())
 	})
 
 	t.Run("OffRamp", func(t *testing.T) {
 		offRampClient, err := client.NewOffRampReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripOffRampTests(ctx, t, offRampClient)
+		roundTripOffRampTests(t, offRampClient)
 		require.NoError(t, offRampClient.Close())
 	})
 
 	t.Run("OnRamp", func(t *testing.T) {
 		onRampClient, err := client.NewOnRampReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripOnRampTests(ctx, t, onRampClient)
+		roundTripOnRampTests(t, onRampClient)
 		require.NoError(t, onRampClient.Close())
 	})
 
 	t.Run("PriceGetter", func(t *testing.T) {
 		priceGetterClient, err := client.NewPriceGetter(ctx)
 		require.NoError(t, err)
-		roundTripPriceGetterTests(ctx, t, priceGetterClient)
+		roundTripPriceGetterTests(t, priceGetterClient)
 		require.NoError(t, priceGetterClient.Close())
 	})
 
 	t.Run("PriceRegistry", func(t *testing.T) {
 		priceRegistryClient, err := client.NewPriceRegistryReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripPriceRegistryTests(ctx, t, priceRegistryClient)
+		roundTripPriceRegistryTests(t, priceRegistryClient)
 		require.NoError(t, priceRegistryClient.Close())
 	})
 }

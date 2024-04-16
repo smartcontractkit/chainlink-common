@@ -29,10 +29,9 @@ func Test_staticPriceGetter_Evaluate(t *testing.T) {
 
 func TestPriceGetterGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
 
 	scaffold := looptest.NewGRPCScaffold(t, setupPriceGetterServer, setupPriceGetterClient)
-	roundTripPriceGetterTests(ctx, t, scaffold.Client())
+	roundTripPriceGetterTests(t, scaffold.Client())
 	// price getter implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
 		d := &looptest.MockDep{}
@@ -43,7 +42,9 @@ func TestPriceGetterGRPC(t *testing.T) {
 	})
 }
 
-func roundTripPriceGetterTests(ctx context.Context, t *testing.T, client cciptypes.PriceGetter) {
+func roundTripPriceGetterTests(t *testing.T, client cciptypes.PriceGetter) {
+	ctx := tests.Context(t)
+
 	t.Run("FilterConfiguredTokens", func(t *testing.T) {
 		// test token is configured
 		configuredTokens, unconfiguredTokens, err := client.FilterConfiguredTokens(ctx, PriceGetter.config.Addresses)

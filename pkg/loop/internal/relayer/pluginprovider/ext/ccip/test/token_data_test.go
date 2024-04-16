@@ -32,10 +32,9 @@ func TestStaticTokenData(t *testing.T) {
 
 func TestTokenDataGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
 
 	scaffold := looptest.NewGRPCScaffold(t, setupTokenDataServer, setupTokenDataClient)
-	roundTripTokenDataTests(ctx, t, scaffold.Client())
+	roundTripTokenDataTests(t, scaffold.Client())
 	// token data reader implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
 		d := &looptest.MockDep{}
@@ -46,7 +45,9 @@ func TestTokenDataGRPC(t *testing.T) {
 	})
 }
 
-func roundTripTokenDataTests(ctx context.Context, t *testing.T, client cciptypes.TokenDataReader) {
+func roundTripTokenDataTests(t *testing.T, client cciptypes.TokenDataReader) {
+	ctx := tests.Context(t)
+
 	t.Helper()
 	// test read token data
 	tokenData, err := client.ReadTokenData(ctx, TokenDataReader.readTokenDataRequest.msg, TokenDataReader.readTokenDataRequest.tokenIndex)

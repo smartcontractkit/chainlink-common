@@ -34,12 +34,9 @@ func TestStaticOnRamp(t *testing.T) {
 
 func TestOnRampGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
 
 	scaffold := looptest.NewGRPCScaffold(t, setupOnRampServer, setupOnRampClient)
-
-	// test the client
-	roundTripOnRampTests(ctx, t, scaffold.Client())
+	roundTripOnRampTests(t, scaffold.Client())
 	// offramp implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
 		d := &looptest.MockDep{}
@@ -50,7 +47,9 @@ func TestOnRampGRPC(t *testing.T) {
 	})
 }
 
-func roundTripOnRampTests(ctx context.Context, t *testing.T, client cciptypes.OnRampReader) {
+func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
+	ctx := tests.Context(t)
+
 	t.Run("Address", func(t *testing.T) {
 		got, err := client.Address(ctx)
 		require.NoError(t, err)

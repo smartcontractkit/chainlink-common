@@ -1,7 +1,6 @@
 package test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -41,53 +40,54 @@ func TestStaticExecProvider(t *testing.T) {
 
 func TestExecProviderGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
 
 	grpcScaffold := looptest.NewGRPCScaffold(t, setupExecProviderServer, ccip.NewExecProviderClient)
 	t.Cleanup(grpcScaffold.Close)
-	roundTripExecProviderTests(ctx, t, grpcScaffold.Client())
+	roundTripExecProviderTests(t, grpcScaffold.Client())
 }
 
-func roundTripExecProviderTests(ctx context.Context, t *testing.T, client types.CCIPExecProvider) {
+func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
+	ctx := tests.Context(t)
+
 	t.Run("CommitStore", func(t *testing.T) {
 		commitClient, err := client.NewCommitStoreReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripCommitStoreTests(ctx, t, commitClient)
+		roundTripCommitStoreTests(t, commitClient)
 		require.NoError(t, commitClient.Close())
 	})
 
 	t.Run("OffRamp", func(t *testing.T) {
 		offRampClient, err := client.NewOffRampReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripOffRampTests(ctx, t, offRampClient)
+		roundTripOffRampTests(t, offRampClient)
 		require.NoError(t, offRampClient.Close())
 	})
 
 	t.Run("OnRamp", func(t *testing.T) {
 		onRampClient, err := client.NewOnRampReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripOnRampTests(ctx, t, onRampClient)
+		roundTripOnRampTests(t, onRampClient)
 		require.NoError(t, onRampClient.Close())
 	})
 
 	t.Run("PriceRegistry", func(t *testing.T) {
 		priceRegistryClient, err := client.NewPriceRegistryReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripPriceRegistryTests(ctx, t, priceRegistryClient)
+		roundTripPriceRegistryTests(t, priceRegistryClient)
 		require.NoError(t, priceRegistryClient.Close())
 	})
 
 	t.Run("TokenData", func(t *testing.T) {
 		tokenDataClient, err := client.NewTokenDataReader(ctx, "ignored")
 		require.NoError(t, err)
-		roundTripTokenDataTests(ctx, t, tokenDataClient)
+		roundTripTokenDataTests(t, tokenDataClient)
 		require.NoError(t, tokenDataClient.Close())
 	})
 
 	t.Run("TokenPool", func(t *testing.T) {
 		tokenReaderClient, err := client.NewTokenPoolBatchedReader(ctx)
 		require.NoError(t, err)
-		roundTripTokenPoolTests(ctx, t, tokenReaderClient)
+		roundTripTokenPoolTests(t, tokenReaderClient)
 		require.NoError(t, tokenReaderClient.Close())
 	})
 

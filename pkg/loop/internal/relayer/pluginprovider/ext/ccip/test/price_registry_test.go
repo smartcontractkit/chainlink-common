@@ -1,7 +1,6 @@
 package test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,10 +31,9 @@ func TestStaticPriceRegistry(t *testing.T) {
 
 func TestPriceRegistryGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
 
 	scaffold := looptest.NewGRPCScaffold(t, setupPriceRegistryServer, setupPriceRegistryClient)
-	roundTripPriceRegistryTests(ctx, t, scaffold.Client())
+	roundTripPriceRegistryTests(t, scaffold.Client())
 	// price registry implements dependency management, test that it closes properly
 	t.Run("Dependency management", func(t *testing.T) {
 		d := &looptest.MockDep{}
@@ -49,7 +47,9 @@ func TestPriceRegistryGRPC(t *testing.T) {
 // roundTripPriceRegistryTests tests the round trip of the client<->server.
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
-func roundTripPriceRegistryTests(ctx context.Context, t *testing.T, client cciptypes.PriceRegistryReader) {
+func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryReader) {
+	ctx := tests.Context(t)
+
 	t.Run("Address", func(t *testing.T) {
 		address, err := client.Address(ctx)
 		require.NoError(t, err)

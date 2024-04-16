@@ -1,7 +1,6 @@
 package test
 
 import (
-	"context"
 	"math/big"
 	"testing"
 
@@ -31,17 +30,18 @@ func TestStaticExecGasEstimator(t *testing.T) {
 
 func TestGasPriceEstimatorExecGRPC(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
 
 	scaffold := looptest.NewGRPCScaffold(t, setupExecGasEstimatorServer, setupExecGasEstimatorClient)
 	t.Cleanup(scaffold.Close)
-	roundTripGasPriceEstimatorExecTests(ctx, t, scaffold.Client())
+	roundTripGasPriceEstimatorExecTests(t, scaffold.Client())
 }
 
 // roundTripGasPriceEstimatorExecTests tests the round trip of the client<->server.
 // it should exercise all the methods of the client.
 // do not add client.Close to this test, test that from the driver test
-func roundTripGasPriceEstimatorExecTests(ctx context.Context, t *testing.T, client *ccip.ExecGasEstimatorGRPCClient) {
+func roundTripGasPriceEstimatorExecTests(t *testing.T, client *ccip.ExecGasEstimatorGRPCClient) {
+	ctx := tests.Context(t)
+
 	t.Run("GetGasPrice", func(t *testing.T) {
 		price, err := client.GetGasPrice(ctx)
 		require.NoError(t, err)

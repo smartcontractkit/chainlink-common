@@ -76,10 +76,11 @@ type CapabilityRequest struct {
 }
 
 type TriggerEvent struct {
-	TriggerType    string
-	ID             string
-	Timestamp      string
-	BatchedPayload map[string]any
+	TriggerType string
+	ID          string
+	Timestamp   string
+	// Trigger-specific payload
+	Payload values.Value
 }
 
 type RegisterToWorkflowRequest struct {
@@ -123,22 +124,26 @@ type TriggerCapability interface {
 	TriggerExecutable
 }
 
-// ActionCapability interface needs to be implemented by all action capabilities.
-type ActionCapability interface {
+// CallbackCapability is the interface implemented by action, consensus and target
+// capabilities. This interface is useful when trying to capture capabilities of varying types.
+type CallbackCapability interface {
 	BaseCapability
 	CallbackExecutable
+}
+
+// ActionCapability interface needs to be implemented by all action capabilities.
+type ActionCapability interface {
+	CallbackCapability
 }
 
 // ConsensusCapability interface needs to be implemented by all consensus capabilities.
 type ConsensusCapability interface {
-	BaseCapability
-	CallbackExecutable
+	CallbackCapability
 }
 
 // TargetsCapability interface needs to be implemented by all target capabilities.
 type TargetCapability interface {
-	BaseCapability
-	CallbackExecutable
+	CallbackCapability
 }
 
 // CapabilityInfo is a struct for the info of a capability.

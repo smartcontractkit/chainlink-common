@@ -169,6 +169,11 @@ func (e *ExecProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.A
 	return cciptypes.Address(resp.NativeTokenAddress), nil
 }
 
+// Close implements types.CCIPExecProvider.
+func (e *ExecProviderClient) Close() error {
+	return shutdownGRPCServer(context.Background(), e.grpcClient)
+}
+
 // ExecProviderServer is a server that wraps the custom methods of the [types.CCIPExecProvider]
 // this is necessary because those method create new resources that need to be served by the broker
 // when we are running in legacy mode.

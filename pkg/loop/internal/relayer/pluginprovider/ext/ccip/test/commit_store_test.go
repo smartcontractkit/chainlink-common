@@ -35,9 +35,14 @@ func TestCommitStoreGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
 	scaffold := newGRPCScaffold(t, setupCommitStoreServer, ccip.NewCommitStoreReaderGRPCClient)
-	t.Cleanup(func() { dependencyShutdown(t, scaffold) })
 	roundTripCommitStoreTests(ctx, t, scaffold.Client())
-
+	// commit store implements dependency management, test that it closes properly
+	t.Run("Dependency management", func(t *testing.T) {
+		d := &mockDep{}
+		scaffold.Server().AddDep(d)
+		scaffold.Client().Close()
+		assert.True(t, d.closeCalled)
+	})
 }
 
 // roundTripCommitStoreTests tests the round trip of the client<->server.
@@ -178,11 +183,5 @@ func setupCommitStoreServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) 
 	return commitProvider
 }
 
-func dependencyShutdown(t *testing.T, scaffold *grpcScaffold[*ccip.CommitStoreGRPCClient, *ccip.CommitStoreGRPCServer]) {
-	// commit store implements dependency management, test that it closes properly
-	shutdown := make(chan struct{})
-	closer := &serviceCloser{closeFn: func() error { close(shutdown); return nil }}
-	scaffold.Server().AddDep(closer)
-	scaffold.Close()
-	<-shutdown
-}
+var _ setupGRPCServer[*ccip.CommitStoreGRPCServer] = setupCommitStoreServer
+var _ setupGRPCClient[*ccip.CommitStoreGRPCClient] = ccip.NewCommitStoreReaderGRPCClient

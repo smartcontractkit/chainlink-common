@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
@@ -76,8 +77,10 @@ func TestOnRampGRPC(t *testing.T) {
 	t.Cleanup(func() { conn.Close() })
 	client := ccip.NewOnRampReaderGRPCClient(conn)
 
+	scaffold := newGRPCScaffold(t, setupOnRampServer, setupOnRampClient)
+
 	// test the client
-	roundTripOnRampTests(ctx, t, client)
+	roundTripOnRampTests(ctx, t, scaffold.Client())
 	// closing the client executes the shutdown callback
 	// which stops the server.  the wg.Wait() below ensures
 	// that the server has stopped, which is what we care about.
@@ -132,4 +135,14 @@ func roundTripOnRampTests(ctx context.Context, t *testing.T, client cciptypes.On
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.sourcePriceRegistryResponse, got)
 	})
+}
+
+func setupOnRampServer(t *testing.T, server *grpc.Server, b *loopnet.BrokerExt) *ccip.OnRampReaderGRPCServer {
+	onRamp := ccip.NewOnRampReaderGRPCServer(OnRampReader)
+	ccippb.RegisterOnRampReaderServer(server, onRamp)
+	return onRamp
+}
+
+func setupOnRampClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.OnRampReaderGRPCClient {
+	return ccip.NewOnRampReaderGRPCClient(conn)
 }

@@ -76,7 +76,7 @@ func (e *CommitProviderClient) NewOffRampReader(ctx context.Context, addr ccipty
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.OfframpReaderServiceId, err)
 	}
 	// need to wrap grpc offRamp into the desired interface
-	return NewOffRampReaderGRPCClient(offRampConn, e.BrokerExt), nil
+	return NewOffRampReaderGRPCClient(e.BrokerExt, offRampConn), nil
 }
 
 // NewOnRampReader implements types.CCIPCommitProvider.

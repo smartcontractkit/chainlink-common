@@ -24,6 +24,7 @@ import (
 // is hosted by the relayer
 type PriceRegistryGRPCClient struct {
 	grpc ccippb.PriceRegistryReaderClient
+	conn grpc.ClientConnInterface
 }
 
 func NewPriceRegistryGRPCClient(cc grpc.ClientConnInterface) *PriceRegistryGRPCClient {
@@ -58,6 +59,10 @@ func (p *PriceRegistryGRPCClient) Address(ctx context.Context) (cciptypes.Addres
 		return "", err
 	}
 	return cciptypes.Address(resp.Address), nil
+}
+
+func (p *PriceRegistryGRPCClient) ClientConn() grpc.ClientConnInterface {
+	return p.conn
 }
 
 // Close implements ccip.PriceRegistryReader.

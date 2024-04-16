@@ -2,18 +2,13 @@ package test
 
 import (
 	"context"
-	"fmt"
-	"net"
-	"sync"
 	"testing"
 
-	"github.com/hashicorp/consul/sdk/freeport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 
+	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
@@ -38,51 +33,18 @@ func TestStaticTokenPool(t *testing.T) {
 func TestTokenPoolGRPC(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
-	// create a price registry server
-	port := freeport.GetOne(t)
-	addr := fmt.Sprintf("localhost:%d", port)
-	lis, err := net.Listen("tcp", addr)
-	require.NoError(t, err, "failed to listen on port %d", port)
-	t.Cleanup(func() { lis.Close() })
-	// we explicitly stop the server later, do not add a cleanup function here
-	testServer := grpc.NewServer()
-	// handle client close and server stop
-	shutdown := make(chan struct{})
-	closer := &serviceCloser{closeFn: func() error { close(shutdown); return nil }}
 
-	tokenPool := ccip.NewTokenPoolBatchedReaderGRPCServer(TokenPoolBatchedReader)
-	require.NoError(t, err)
-	tokenPool = tokenPool.AddDep(closer)
-
-	ccippb.RegisterTokenPoolBatcherReaderServer(testServer, tokenPool)
-	// start the server and shutdown handler
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		require.NoError(t, testServer.Serve(lis))
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-shutdown
-		t.Log("shutting down server")
-		testServer.Stop()
-	}()
-	// create a token data client
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(t, err, "failed to dial %s", addr)
-	t.Cleanup(func() { conn.Close() })
-	client := ccip.NewTokenPoolBatchedReaderGRPCClient(conn)
-
+	scaffold := newGRPCScaffold(t, setupTokenPoolServer, setupTokenPoolClient)
 	// test the client
-	roundTripTokenPoolTests(ctx, t, client)
-	// closing the client executes the shutdown callback
-	// which stops the server.  the wg.Wait() below ensures
-	// that the server has stopped, which is what we care about.
-	cerr := client.Close()
-	require.NoError(t, cerr, "failed to close client %T, %v", cerr, status.Code(cerr))
-	wg.Wait()
+	roundTripTokenPoolTests(ctx, t, scaffold.Client())
+
+	// token pool implements dependency management, test that it closes properly
+	t.Run("Dependency management", func(t *testing.T) {
+		d := &mockDep{}
+		scaffold.Server().AddDep(d)
+		scaffold.Client().Close()
+		assert.True(t, d.closeCalled)
+	})
 }
 
 func roundTripTokenPoolTests(ctx context.Context, t *testing.T, client cciptypes.TokenPoolBatchedReader) {
@@ -92,3 +54,16 @@ func roundTripTokenPoolTests(ctx context.Context, t *testing.T, client cciptypes
 	require.NoError(t, err)
 	assert.Equal(t, TokenPoolBatchedReader.getInboundTokenPoolRateLimitsResponse, limits)
 }
+
+func setupTokenPoolServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.TokenPoolBatchedReaderGRPCServer {
+	tokenPool := ccip.NewTokenPoolBatchedReaderGRPCServer(TokenPoolBatchedReader)
+	ccippb.RegisterTokenPoolBatcherReaderServer(s, tokenPool)
+	return tokenPool
+}
+
+func setupTokenPoolClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.TokenPoolBatchedReaderGRPCClient {
+	return ccip.NewTokenPoolBatchedReaderGRPCClient(conn)
+}
+
+var _ setupGRPCServer[*ccip.TokenPoolBatchedReaderGRPCServer] = setupTokenPoolServer
+var _ setupGRPCClient[*ccip.TokenPoolBatchedReaderGRPCClient] = setupTokenPoolClient

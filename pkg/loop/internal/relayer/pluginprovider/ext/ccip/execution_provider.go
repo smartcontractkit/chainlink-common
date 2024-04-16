@@ -78,7 +78,7 @@ func (e *ExecProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.OfframpReaderServiceId, err)
 	}
 	// need to wrap grpc offRamp into the desired interface
-	offRamp := NewOffRampReaderGRPCClient(offRampConn, e.BrokerExt)
+	offRamp := NewOffRampReaderGRPCClient(e.BrokerExt, offRampConn)
 
 	return offRamp, nil
 }

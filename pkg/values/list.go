@@ -4,22 +4,12 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/invopop/jsonschema"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type List struct {
 	Underlying []Value
-}
-
-// JSONSchema overwrites the default JSONSchema method for List
-// so that the generated schema is an array of any
-// rather than the literal struct definition of List
-func (l List) JSONSchema() *jsonschema.Schema {
-	schema := jsonschema.Reflect([]any{})
-
-	return schema
 }
 
 func NewList(l []any) (*List, error) {

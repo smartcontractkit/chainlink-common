@@ -5,16 +5,32 @@
     "config": {
       "properties": {
         "foo": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "items": true,
-          "type": "array"
+          "properties": {
+            "Underlying": {
+              "items": true,
+              "type": "array"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "Underlying"
+          ]
         },
         "bar": {
           "type": "integer"
         },
         "bonk": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object"
+          "properties": {
+            "Underlying": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "Underlying"
+          ]
         }
       },
       "additionalProperties": false,

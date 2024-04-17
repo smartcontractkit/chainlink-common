@@ -3,7 +3,6 @@ package values
 import (
 	"reflect"
 
-	"github.com/invopop/jsonschema"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -13,14 +12,6 @@ type Map struct {
 	Underlying map[string]Value
 }
 
-// JSONSchema overwrites the default JSONSchema method for Map
-// so that the generated schema is an object of any
-// rather than the literal struct definition of Map
-func (m Map) JSONSchema() *jsonschema.Schema {
-	schema := jsonschema.Reflect(map[string]any{})
-
-	return schema
-}
 
 func EmptyMap() *Map {
 	return &Map{

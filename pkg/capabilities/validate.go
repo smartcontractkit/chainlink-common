@@ -147,24 +147,29 @@ func validateAgainstSchema[DecodedValue any](value *values.Map, schema string) (
 	if value == nil {
 		return nil, fmt.Errorf("cannot validate nil value against schema: %s", jsonSchema.Location)
 	}
-
 	// parse
-	var decodedValue = new(DecodedValue)
+	decodedValue := new(DecodedValue)
 	err = value.UnwrapTo(decodedValue)
 	if err != nil {
 		return nil, err
 	}
 
 	// validate
-	raw, err := value.Unwrap()
+	jsonValue, err := json.Marshal(decodedValue)
+	if err != nil {
+		return nil, err
+	}
+	var jsonRaw any
+	err = json.Unmarshal(jsonValue, &jsonRaw)
 	if err != nil {
 		return nil, err
 	}
 
-	err = jsonSchema.Validate(raw)
+	err = jsonSchema.Validate(jsonRaw)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(fmt.Errorf("error validating value %v", jsonRaw), err)
 	}
+
 	return decodedValue, err
 }
 

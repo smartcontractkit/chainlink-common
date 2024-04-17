@@ -3,6 +3,7 @@ package values
 import (
 	"reflect"
 
+	"github.com/invopop/jsonschema"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -10,6 +11,12 @@ import (
 
 type Map struct {
 	Underlying map[string]Value
+}
+
+func (m Map) JSONSchema() *jsonschema.Schema {
+	schema := jsonschema.Reflect(map[string]any{})
+
+	return schema
 }
 
 func EmptyMap() *Map {

@@ -13,6 +13,9 @@ type List struct {
 	Underlying []Value
 }
 
+// JSONSchema overwrites the default JSONSchema method for List
+// so that the generated schema is an array of any
+// rather than the literal struct definition of List
 func (l List) JSONSchema() *jsonschema.Schema {
 	schema := jsonschema.Reflect([]any{})
 

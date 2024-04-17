@@ -13,6 +13,9 @@ type Map struct {
 	Underlying map[string]Value
 }
 
+// JSONSchema overwrites the default JSONSchema method for Map
+// so that the generated schema is an object of any
+// rather than the literal struct definition of Map
 func (m Map) JSONSchema() *jsonschema.Schema {
 	schema := jsonschema.Reflect(map[string]any{})
 

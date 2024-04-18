@@ -23,8 +23,8 @@ generate: mockery install-protoc
 # maybe there is a cleaner way to do this
 	 PATH=$$HOME/.local/bin:$$PATH go generate -x ./...
 
-.PHONY: golangci-lint
-golangci-lint: ## Run golangci-lint for all issues.
+.PHONY: lint-workspace 
+lint-workspace: ## Run golangci-lint across the entire workspace 
 	[ -d "./golangci-lint" ] || mkdir ./golangci-lint && \
 	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v1.55.2 golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 > ./golangci-lint/$(shell date +%Y-%m-%d_%H:%M:%S).txt
 

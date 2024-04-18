@@ -171,6 +171,22 @@ func NewLimitAndSort(limit Limit, sortBy ...SortBy) LimitAndSort {
 	return LimitAndSort{SortBy: sortBy, Limit: limit}
 }
 
+func (p LimitAndSort) HasCursorLimit() bool {
+	return p.Limit.Cursor != "" && p.Limit.CursorDirection != 0
+}
+
+func (p LimitAndSort) HasSequenceSort() bool {
+	for _, order := range p.SortBy {
+		switch order.(type) {
+		case SortBySequence:
+			return true
+		default:
+			continue
+		}
+	}
+	return false
+}
+
 type SortByTimestamp struct {
 	dir SortDirection
 }

@@ -345,7 +345,7 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 
 	cursorDefined := limitAndSort.Limit.Cursor != ""
 	cursorDirectionDefined := limitAndSort.Limit.CursorDirection != 0
-	if cursorDefined && cursorDirectionDefined {
+	if limitAndSort.HasCursorLimit() {
 		pbLimitAndSort.Limit.Cursor = &limitAndSort.Limit.Cursor
 		pbLimitAndSort.Limit.Direction = (*pb.CursorDirection)(&limitAndSort.Limit.CursorDirection)
 	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {

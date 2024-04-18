@@ -3,9 +3,15 @@ package loop
 import (
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/jmoiron/sqlx"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config/static"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
+	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 )
 
 // NewStartedServer returns a started Server.
@@ -41,10 +47,13 @@ func MustNewStartedServer(loggerName string) *Server {
 
 // Server holds common plugin server fields.
 type Server struct {
-	GRPCOpts   GRPCOpts
-	Logger     logger.SugaredLogger
-	promServer *PromServer
-	checker    *services.HealthChecker
+	GRPCOpts        GRPCOpts
+	Logger          logger.SugaredLogger
+	db              *sqlx.DB
+	dbStatsReporter *pg.StatsReporter
+	DataSource      sqlutil.DataSource
+	promServer      *PromServer
+	checker         *services.HealthChecker
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -90,6 +99,27 @@ func (s *Server) start() error {
 		return fmt.Errorf("error starting health checker: %w", err)
 	}
 
+	if envCfg.DatabaseURL != nil {
+		pg.SetApplicationName(envCfg.DatabaseURL, static.Program)
+		dbURL := envCfg.DatabaseURL.String()
+		var err error
+		s.db, err = pg.ConnectionConfig{
+			DefaultIdleInTxSessionTimeout: envCfg.DatabaseIdleInTxSessionTimeout,
+			DefaultLockTimeout:            envCfg.DatabaseLockTimeout,
+			MaxOpenConns:                  envCfg.DatabaseMaxOpenConns,
+			MaxIdleConns:                  envCfg.DatabaseMaxIdleConns,
+		}.NewDB(dbURL, pg.DialectPostgres)
+		if err != nil {
+			return fmt.Errorf("error connecting to DataBase at %s: %w", dbURL, err)
+		}
+		s.DataSource = sqlutil.WrapDataSource(s.db, s.Logger,
+			sqlutil.TimeoutHook(func() time.Duration { return envCfg.DatabaseQueryTimeout }),
+			sqlutil.MonitorHook(func() bool { return envCfg.DatabaseLogSQL }))
+
+		s.dbStatsReporter = pg.NewStatsReporter(s.db.Stats, s.Logger)
+		s.dbStatsReporter.Start()
+	}
+
 	return nil
 }
 
@@ -104,6 +134,12 @@ func (s *Server) Register(c services.HealthReporter) error { return s.checker.Re
 
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {
+	if s.dbStatsReporter != nil {
+		s.dbStatsReporter.Stop()
+	}
+	if s.db != nil {
+		s.Logger.ErrorIfFn(s.db.Close, "Failed to close database connection")
+	}
 	s.Logger.ErrorIfFn(s.checker.Close, "Failed to close health checker")
 	s.Logger.ErrorIfFn(s.promServer.Close, "Failed to close prometheus server")
 	if err := s.Logger.Sync(); err != nil {

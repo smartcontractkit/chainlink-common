@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"os"
-	"runtime/debug"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,6 +20,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config/static"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
 
@@ -93,21 +93,10 @@ func SetupTracing(config TracingConfig) (err error) {
 		return err
 	}
 
-	var version string
-	var service string
-	buildInfo, ok := debug.ReadBuildInfo()
-	if !ok {
-		version = "unknown"
-		service = "cl-node"
-	} else {
-		version = buildInfo.Main.Version
-		service = buildInfo.Main.Path
-	}
-
 	attributes := []attribute.KeyValue{
-		semconv.ServiceNameKey.String(service),
+		semconv.ServiceNameKey.String(static.Program),
 		semconv.ProcessPIDKey.Int(os.Getpid()),
-		semconv.ServiceVersionKey.String(version),
+		semconv.ServiceVersionKey.String(static.Version),
 	}
 
 	for k, v := range config.NodeAttributes {

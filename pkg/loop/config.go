@@ -6,10 +6,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
-	envDatabaseURL            = "CL_DATABASE_URL"
+	envDatabaseURL                    = "CL_DATABASE_URL"
+	envDatabaseIdleInTxSessionTimeout = "CL_DATABASE_IDLE_IN_TX_SESSION_TIMEOUT"
+	envDatabaseLockTimeout            = "CL_DATABASE_LOCK_TIMEOUT"
+	envDatabaseQueryTimeout           = "CL_DATABASE_QUERY_TIMEOUT"
+	envDatabaseLogSQL                 = "CL_DATABASE_LOG_SQL"
+	envDatabaseMaxOpenConns           = "CL_DATABASE_MAX_OPEN_CONNS"
+	envDatabaseMaxIdleConns           = "CL_DATABASE_MAX_IDLE_CONNS"
+
 	envPromPort               = "CL_PROMETHEUS_PORT"
 	envTracingEnabled         = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
@@ -21,7 +29,13 @@ const (
 // EnvConfig is the configuration between the application and the LOOP executable. The values
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
-	DatabaseURL *url.URL
+	DatabaseURL                    *url.URL
+	DatabaseIdleInTxSessionTimeout time.Duration
+	DatabaseLockTimeout            time.Duration
+	DatabaseQueryTimeout           time.Duration
+	DatabaseLogSQL                 bool
+	DatabaseMaxOpenConns           int
+	DatabaseMaxIdleConns           int
 
 	PrometheusPort int
 
@@ -45,6 +59,12 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	// DatabaseURL is optional
 	if e.DatabaseURL != nil {
 		injectEnv[envDatabaseURL] = e.DatabaseURL.String()
+		injectEnv[envDatabaseIdleInTxSessionTimeout] = e.DatabaseIdleInTxSessionTimeout.String()
+		injectEnv[envDatabaseLockTimeout] = e.DatabaseLockTimeout.String()
+		injectEnv[envDatabaseQueryTimeout] = e.DatabaseQueryTimeout.String()
+		injectEnv[envDatabaseLogSQL] = strconv.FormatBool(e.DatabaseLogSQL)
+		injectEnv[envDatabaseMaxOpenConns] = strconv.Itoa(e.DatabaseMaxOpenConns)
+		injectEnv[envDatabaseMaxIdleConns] = strconv.Itoa(e.DatabaseMaxIdleConns)
 	}
 
 	for k, v := range e.TracingAttributes {
@@ -59,13 +79,39 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 // parse deserializes environment variables
 func (e *EnvConfig) parse() error {
-	promPortStr := os.Getenv(envPromPort)
 	var err error
 	e.DatabaseURL, err = getDatabaseURL()
 	if err != nil {
-		return fmt.Errorf("failed to parse %s: %q", envDatabaseURL, err)
+		return err
+	}
+	if e.DatabaseURL != nil {
+		e.DatabaseIdleInTxSessionTimeout, err = getDatabaseIdleInTxSessionTimeout()
+		if err != nil {
+			return err
+		}
+		e.DatabaseLockTimeout, err = getDatabaseLockTimeout()
+		if err != nil {
+			return err
+		}
+		e.DatabaseQueryTimeout, err = getDatabaseQueryTimeout()
+		if err != nil {
+			return err
+		}
+		e.DatabaseLogSQL, err = getDatabaseLogSQL()
+		if err != nil {
+			return err
+		}
+		e.DatabaseMaxOpenConns, err = getDatabaseMaxOpenConns()
+		if err != nil {
+			return err
+		}
+		e.DatabaseMaxIdleConns, err = getDatabaseMaxIdleConns()
+		if err != nil {
+			return err
+		}
 	}
 
+	promPortStr := os.Getenv(envPromPort)
 	e.PrometheusPort, err = strconv.Atoi(promPortStr)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
@@ -149,4 +195,28 @@ func getDatabaseURL() (*url.URL, error) {
 		return nil, fmt.Errorf("invalid %s: %w", envDatabaseURL, err)
 	}
 	return u, nil
+}
+
+func getDatabaseIdleInTxSessionTimeout() (time.Duration, error) {
+	return time.ParseDuration(os.Getenv(envDatabaseIdleInTxSessionTimeout))
+}
+
+func getDatabaseLockTimeout() (time.Duration, error) {
+	return time.ParseDuration(os.Getenv(envDatabaseLockTimeout))
+}
+
+func getDatabaseQueryTimeout() (time.Duration, error) {
+	return time.ParseDuration(os.Getenv(envDatabaseQueryTimeout))
+}
+
+func getDatabaseLogSQL() (bool, error) {
+	return strconv.ParseBool(os.Getenv(envDatabaseLogSQL))
+}
+
+func getDatabaseMaxOpenConns() (int, error) {
+	return strconv.Atoi(os.Getenv(envDatabaseMaxOpenConns))
+}
+
+func getDatabaseMaxIdleConns() (int, error) {
+	return strconv.Atoi(os.Getenv(envDatabaseMaxIdleConns))
 }

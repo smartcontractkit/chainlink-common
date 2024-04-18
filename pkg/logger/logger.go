@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -8,6 +9,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config/static"
 )
 
 // Logger is a minimal subset of smartcontractkit/chainlink/core/logger.Logger implemented by go.uber.org/zap.SugaredLogger
@@ -51,7 +54,15 @@ func New() (Logger, error) { return defaultConfig.New() }
 func (c *Config) New() (Logger, error) {
 	return NewWith(func(cfg *zap.Config) {
 		cfg.Level.SetLevel(c.Level)
+		cfg.InitialFields = map[string]interface{}{
+			"version": staticShortVerSha(),
+		}
 	})
+}
+
+func staticShortVerSha() string {
+	sha, ver := static.Short() //TODO rename?
+	return fmt.Sprintf("%s@%s", ver, sha)
 }
 
 // NewWith returns a new Logger from a modified [zap.Config].
@@ -67,7 +78,7 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 
 // Test returns a new test Logger for tb.
 func Test(tb testing.TB) Logger {
-	return &logger{zaptest.NewLogger(tb).Sugar()}
+	return &logger{zaptest.NewLogger(tb).With(zap.String("version", staticShortVerSha())).Sugar()}
 }
 
 // TestSugared returns a new test SugaredLogger.

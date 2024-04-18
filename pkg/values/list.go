@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 
-
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 

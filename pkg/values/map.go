@@ -12,7 +12,6 @@ type Map struct {
 	Underlying map[string]Value
 }
 
-
 func EmptyMap() *Map {
 	return &Map{
 		Underlying: map[string]Value{},

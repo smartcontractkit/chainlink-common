@@ -27,3 +27,8 @@ generate: mockery install-protoc
 golangci-lint: ## Run golangci-lint for all issues.
 	[ -d "./golangci-lint" ] || mkdir ./golangci-lint && \
 	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v1.55.2 golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 > ./golangci-lint/$(shell date +%Y-%m-%d_%H:%M:%S).txt
+
+.PHONY: lint
+lint: # Run golangci-lint against diff from main.
+	[ -d "./golangci-lint" ] || mkdir ./golangci-lint && \
+	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v1.55.2 golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 --new-from-rev=origin/main 

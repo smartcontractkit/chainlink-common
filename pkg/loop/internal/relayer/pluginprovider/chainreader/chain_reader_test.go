@@ -137,7 +137,7 @@ func TestQueryKey(t *testing.T) {
 		nilTester.Setup(t)
 		nilCr := nilTester.GetChainReader(t)
 
-		_, err := nilCr.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, []interface{}{nil})
+		_, err := nilCr.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
 		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 	})
 
@@ -145,7 +145,7 @@ func TestQueryKey(t *testing.T) {
 		es.err = errorType
 		t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			ctx := tests.Context(t)
-			_, err := chainReader.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, []interface{}{nil})
+			_, err := chainReader.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
 			assert.True(t, errors.Is(err, errorType))
 		})
 	}
@@ -155,7 +155,7 @@ func TestQueryKey(t *testing.T) {
 			impl.expectedQueryFilter = tc
 			filter, err := query.Where(tc.Key, tc.Expressions...)
 			require.NoError(t, err)
-			_, err = cr.QueryKey(tests.Context(t), "", filter, query.LimitAndSort{}, []interface{}{nil})
+			_, err = cr.QueryKey(tests.Context(t), "", filter, query.LimitAndSort{}, &[]interface{}{nil})
 			require.NoError(t, err)
 		}
 	})

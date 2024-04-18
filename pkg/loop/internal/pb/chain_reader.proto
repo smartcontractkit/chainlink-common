@@ -105,14 +105,14 @@ message Or {
   repeated Expression expr = 1;
 }
 
-message ValueComparer  {
+message ValueComparator  {
   string  value = 1;
   ComparisonOperator operator = 2;
 }
 
-message Comparer  {
+message Comparator  {
   string name = 1;
-  repeated ValueComparer value_comparers = 2;
+  repeated ValueComparator value_comparators = 2;
 }
 
 message Block{
@@ -141,7 +141,7 @@ message TxHash{
 // Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
 message Primitive {
   oneof primitive {
-    Comparer comparer = 1;
+    Comparator comparator = 1;
     Block block = 2;
     Confirmations confirmations = 3;
     Timestamp timestamp = 4;

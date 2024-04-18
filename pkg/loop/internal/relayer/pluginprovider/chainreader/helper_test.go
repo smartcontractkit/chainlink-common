@@ -2,8 +2,6 @@ package chainreader_test
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,6 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 var errorTypes = []error{
@@ -54,19 +53,14 @@ func (it *interfaceTesterBase) Name() string {
 
 type fakeTypeProvider struct{}
 
-func (f fakeTypeProvider) CreateType(key string, isEncode bool) (any, error) {
-	return f.CreateContractType(key, isEncode)
+func (f fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
+	return f.CreateContractType("", itemType, isEncode)
 }
 
 var _ types.ContractTypeProvider = (*fakeTypeProvider)(nil)
 
-func (fakeTypeProvider) CreateContractType(key string, isEncode bool) (any, error) {
-	tokens := strings.Split(key, ".")
-	if len(tokens) < 2 {
-		return nil, fmt.Errorf("key should be in form of contractName.type, got %s instead", key)
-	}
-
-	switch tokens[1] {
+func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
+	switch itemType {
 	case NilType:
 		return &struct{}{}, nil
 	case TestItemType:
@@ -105,35 +99,35 @@ func (fakeTypeProvider) CreateContractType(key string, isEncode bool) (any, erro
 
 func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	var queryFilters []query.KeyFilter
-	confirmationsValues := []query.ConfirmationLevel{query.Finalized, query.Unconfirmed}
-	operatorValues := []query.ComparisonOperator{query.Eq, query.Neq, query.Gt, query.Lt, query.Gte, query.Lte}
+	confirmationsValues := []primitives.ConfirmationLevel{primitives.Finalized, primitives.Unconfirmed}
+	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
 	comparableValues := []string{"", " ", "number", "123"}
 
-	primitives := []query.Expression{query.TxHash("txHash")}
+	primitiveExpressions := []query.Expression{query.TxHash("txHash")}
 	for _, op := range operatorValues {
-		primitives = append(primitives, query.Block(123, op))
-		primitives = append(primitives, query.Timestamp(123, op))
+		primitiveExpressions = append(primitiveExpressions, query.Block(123, op))
+		primitiveExpressions = append(primitiveExpressions, query.Timestamp(123, op))
 
-		var valueComparers []query.ValueComparer
+		var valueComparators []primitives.ValueComparator
 		for _, comparableValue := range comparableValues {
-			valueComparers = append(valueComparers, query.ValueComparer{
+			valueComparators = append(valueComparators, primitives.ValueComparator{
 				Value:    comparableValue,
 				Operator: op,
 			})
 		}
-		primitives = append(primitives, query.Comparer("someName", valueComparers...))
+		primitiveExpressions = append(primitiveExpressions, query.Comparator("someName", valueComparators...))
 	}
 
 	for _, conf := range confirmationsValues {
-		primitives = append(primitives, query.Confirmation(conf))
+		primitiveExpressions = append(primitiveExpressions, query.Confirmation(conf))
 	}
 
-	qf, err := query.Where("primitives", primitives...)
+	qf, err := query.Where("primitives", primitiveExpressions...)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	andOverPrimitivesBoolExpr := query.And(primitives...)
-	orOverPrimitivesBoolExpr := query.Or(primitives...)
+	andOverPrimitivesBoolExpr := query.And(primitiveExpressions...)
+	orOverPrimitivesBoolExpr := query.Or(primitiveExpressions...)
 
 	nestedBoolExpr := query.And(
 		query.TxHash("txHash"),

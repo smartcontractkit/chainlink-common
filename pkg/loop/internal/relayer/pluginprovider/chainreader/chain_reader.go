@@ -17,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 var _ types.ChainReader = (*Client)(nil)
@@ -253,41 +254,41 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 	if expression.IsPrimitive() {
 		pbExpression.Evaluator = &pb.Expression_Primitive{Primitive: &pb.Primitive{}}
 		switch primitive := expression.Primitive.(type) {
-		case *query.ComparerPrimitive:
-			var pbValComparers []*pb.ValueComparer
-			for _, valComparer := range primitive.ValueComparers {
-				pbValComparers = append(pbValComparers, &pb.ValueComparer{Value: valComparer.Value, Operator: pb.ComparisonOperator(valComparer.Operator)})
+		case *primitives.Comparator:
+			var pbValueComparators []*pb.ValueComparator
+			for _, valueComparator := range primitive.ValueComparators {
+				pbValueComparators = append(pbValueComparators, &pb.ValueComparator{Value: valueComparator.Value, Operator: pb.ComparisonOperator(valueComparator.Operator)})
 			}
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Comparer{
-				Comparer: &pb.Comparer{
-					Name:           primitive.Name,
-					ValueComparers: pbValComparers,
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Comparator{
+				Comparator: &pb.Comparator{
+					Name:             primitive.Name,
+					ValueComparators: pbValueComparators,
 				}}
 
-		case *query.BlockPrimitive:
+		case *primitives.Block:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Block{
 				Block: &pb.Block{
 					BlockNumber: primitive.Block,
 					Operator:    pb.ComparisonOperator(primitive.Operator),
 				}}
-		case *query.ConfirmationsPrimitive:
+		case *primitives.Confirmations:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confirmations{
 				Confirmations: &pb.Confirmations{
 					Confirmations: pb.ConfirmationLevel(primitive.ConfirmationLevel),
 				}}
-		case *query.TimestampPrimitive:
+		case *primitives.Timestamp:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
 				Timestamp: &pb.Timestamp{
 					Timestamp: primitive.Timestamp,
 					Operator:  pb.ComparisonOperator(primitive.Operator),
 				}}
-		case *query.TxHashPrimitive:
+		case *primitives.TxHash:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_TxHash{
 				TxHash: &pb.TxHash{
 					TxHash: primitive.TxHash,
 				}}
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, "Unknown expression type")
+			return nil, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
 		}
 		return pbExpression, nil
 	}
@@ -333,7 +334,7 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 						SortDirection: pb.SortDirection(sort.GetDirection()),
 					}}})
 		default:
-			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown order by type")
+			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sort)
 		}
 	}
 
@@ -342,11 +343,11 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 		Limit:  &pb.Limit{Count: limitAndSort.Limit.Count},
 	}
 
-	cursorDefined := limitAndSort.Limit.Cursor != nil
-	cursorDirectionDefined := limitAndSort.Limit.CursorDirection != nil
+	cursorDefined := limitAndSort.Limit.Cursor != ""
+	cursorDirectionDefined := limitAndSort.Limit.CursorDirection != 0
 	if cursorDefined && cursorDirectionDefined {
-		pbLimitAndSort.Limit.Cursor = limitAndSort.Limit.Cursor
-		pbLimitAndSort.Limit.Direction = (*pb.CursorDirection)(limitAndSort.Limit.CursorDirection)
+		pbLimitAndSort.Limit.Cursor = &limitAndSort.Limit.Cursor
+		pbLimitAndSort.Limit.Direction = (*pb.CursorDirection)(&limitAndSort.Limit.CursorDirection)
 	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {
 		return nil, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
 	}
@@ -404,25 +405,25 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 		return query.Or(expressions...), nil
 	case *pb.Expression_Primitive:
 		switch primitive := pbEvaluatedExpr.Primitive.GetPrimitive().(type) {
-		case *pb.Primitive_Comparer:
-			var valComparers []query.ValueComparer
-			for _, pbValComparer := range primitive.Comparer.ValueComparers {
-				valComparers = append(valComparers, query.ValueComparer{Value: pbValComparer.Value, Operator: query.ComparisonOperator(pbValComparer.Operator)})
+		case *pb.Primitive_Comparator:
+			var valueComparators []primitives.ValueComparator
+			for _, pbValueComparator := range primitive.Comparator.ValueComparators {
+				valueComparators = append(valueComparators, primitives.ValueComparator{Value: pbValueComparator.Value, Operator: primitives.ComparisonOperator(pbValueComparator.Operator)})
 			}
-			return query.Comparer(primitive.Comparer.Name, valComparers...), nil
+			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 		case *pb.Primitive_Confirmations:
-			return query.Confirmation(query.ConfirmationLevel(primitive.Confirmations.Confirmations)), nil
+			return query.Confirmation(primitives.ConfirmationLevel(primitive.Confirmations.Confirmations)), nil
 		case *pb.Primitive_Block:
-			return query.Block(primitive.Block.BlockNumber, query.ComparisonOperator(primitive.Block.Operator)), nil
+			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
 		case *pb.Primitive_TxHash:
 			return query.TxHash(primitive.TxHash.TxHash), nil
 		case *pb.Primitive_Timestamp:
-			return query.Timestamp(primitive.Timestamp.Timestamp, query.ComparisonOperator(primitive.Timestamp.Operator)), nil
+			return query.Timestamp(primitive.Timestamp.Timestamp, primitives.ComparisonOperator(primitive.Timestamp.Operator)), nil
 		default:
-			return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type")
+			return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
 		}
 	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type")
+		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
 	}
 }
 
@@ -437,7 +438,7 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 		case *pb.SortBy_SortBySequence:
 			sortByArr = append(sortByArr, query.NewSortBySequence(query.SortDirection(sort.SortBySequence.GetSortDirection())))
 		default:
-			return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown order by type")
+			return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sortBy)
 		}
 	}
 

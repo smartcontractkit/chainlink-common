@@ -1,20 +1,10 @@
 package query
 
-import "fmt"
+import (
+	"fmt"
 
-// Visitor should have a per chain per db type implementation that converts primitives to db queries.
-type Visitor interface {
-	ComparerPrimitive(primitive ComparerPrimitive)
-	BlockPrimitive(primitive BlockPrimitive)
-	ConfirmationPrimitive(primitive ConfirmationsPrimitive)
-	TimestampPrimitive(primitive TimestampPrimitive)
-	TxHashPrimitives(primitive TxHashPrimitive)
-}
-
-// Primitive is the basic building block for KeyFilter.
-type Primitive interface {
-	Accept(visitor Visitor)
-}
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+)
 
 // KeyFilter is used to filter down chain specific data related to a key.
 type KeyFilter struct {
@@ -28,7 +18,7 @@ type KeyFilter struct {
 
 // Expression contains either a Primitive or a BoolExpression.
 type Expression struct {
-	Primitive      Primitive
+	Primitive      primitives.Primitive
 	BoolExpression BoolExpression
 }
 
@@ -61,6 +51,36 @@ type BoolExpression struct {
 	BoolOperator
 }
 
+// Comparator is used for filtering through specific key values.
+// e.g. of filtering for key that belongs to a token transfer by values: Comparator("transferValue", [{"150",LTE}, {"300",GTE}])
+func Comparator(name string, valueComparators ...primitives.ValueComparator) Expression {
+	return Expression{Primitive: &primitives.Comparator{Name: name, ValueComparators: valueComparators}}
+}
+
+func Block(block uint64, operator primitives.ComparisonOperator) Expression {
+	return Expression{
+		Primitive: &primitives.Block{Block: block, Operator: operator},
+	}
+}
+
+func Confirmation(confLevel primitives.ConfirmationLevel) Expression {
+	return Expression{
+		Primitive: &primitives.Confirmations{ConfirmationLevel: confLevel},
+	}
+}
+
+func Timestamp(timestamp uint64, operator primitives.ComparisonOperator) Expression {
+	return Expression{
+		Primitive: &primitives.Timestamp{Timestamp: timestamp, Operator: operator},
+	}
+}
+
+func TxHash(txHash string) Expression {
+	return Expression{
+		Primitive: &primitives.TxHash{TxHash: txHash},
+	}
+}
+
 func And(expressions ...Expression) Expression {
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: AND},
@@ -73,134 +93,28 @@ func Or(expressions ...Expression) Expression {
 	}
 }
 
-type ComparisonOperator int
-
-const (
-	Eq ComparisonOperator = iota
-	Neq
-	Gt
-	Lt
-	Gte
-	Lte
-)
-
-type ValueComparer struct {
-	Value    string
-	Operator ComparisonOperator
-}
-
-// ComparerPrimitive is used to filter over values that belong to key data.
-type ComparerPrimitive struct {
-	Name           string
-	ValueComparers []ValueComparer
-}
-
-// Comparer is used for filtering through specific key values.
-// e.g. of filtering for key that belongs to a token transfer by values: Comparer("transferValue", [{"150",LTE}, {"300",GTE}])
-func Comparer(name string, valueComparers ...ValueComparer) Expression {
-	return Expression{Primitive: &ComparerPrimitive{Name: name, ValueComparers: valueComparers}}
-}
-
-func (f *ComparerPrimitive) Accept(visitor Visitor) {
-	visitor.ComparerPrimitive(*f)
-}
-
-// BlockPrimitive is a primitive of KeyFilter that filters search in comparison to block number.
-type BlockPrimitive struct {
-	Block    uint64
-	Operator ComparisonOperator
-}
-
-func Block(block uint64, operator ComparisonOperator) Expression {
-	return Expression{
-		Primitive: &BlockPrimitive{Block: block, Operator: operator},
-	}
-}
-
-func (f *BlockPrimitive) Accept(visitor Visitor) {
-	visitor.BlockPrimitive(*f)
-}
-
-type ConfirmationLevel int32
-
-const (
-	Finalized   = ConfirmationLevel(0)
-	Unconfirmed = ConfirmationLevel(1)
-)
-
-// ConfirmationsPrimitive is a primitive of KeyFilter that filters search to results that have a certain level of confirmation.
-// Confirmation map to different concepts on different blockchains.
-type ConfirmationsPrimitive struct {
-	ConfirmationLevel
-}
-
-func Confirmation(confLevel ConfirmationLevel) Expression {
-	return Expression{
-		Primitive: &ConfirmationsPrimitive{ConfirmationLevel: confLevel},
-	}
-}
-
-func (f *ConfirmationsPrimitive) Accept(visitor Visitor) {
-	visitor.ConfirmationPrimitive(*f)
-}
-
-// TimestampPrimitive is a primitive of KeyFilter that filters search in comparison to timestamp.
-type TimestampPrimitive struct {
-	Timestamp uint64
-	Operator  ComparisonOperator
-}
-
-func Timestamp(timestamp uint64, operator ComparisonOperator) Expression {
-	return Expression{
-		Primitive: &TimestampPrimitive{timestamp, operator},
-	}
-}
-
-func (f *TimestampPrimitive) Accept(visitor Visitor) {
-	visitor.TimestampPrimitive(*f)
-}
-
-// TxHashPrimitive is a primitive of KeyFilter that filters search to results that contain txHash.
-type TxHashPrimitive struct {
-	TxHash string
-}
-
-func TxHash(txHash string) Expression {
-	return Expression{
-		Primitive: &TxHashPrimitive{txHash},
-	}
-}
-
-func (f *TxHashPrimitive) Accept(visitor Visitor) {
-	visitor.TxHashPrimitives(*f)
-}
-
 // Where is a helper function for building KeyFilter, eg. usage:
 //
-//	 queryFilter, err := Where(
-//
-//				TxHash("0xHash"),
-//				And(Block(startBlock, Gte),
-//					Block(endBlock, Lte)),
-//					Or(
-//						And(
-//							Timestamp(someTs1, Gte),
-//							Timestamp(otherTs1, Lte)),
-//						And(
-//							Timestamp(someTs2, Gte),
-//							Timestamp(otherTs2, Lte))
-//					)
-//			  	 )
-//		 ==> `txHash = txHash AND (
-//									 block > startBlock AND block < endBlock
-//									 AND (
-//										 (timestamp > someTs1 And timestamp < otherTs1)
-//										 OR
-//										 (timestamp > someTs2 And timestamp < otherTs2)
-//									 )
-//							 )`
-//		if err != nil{return nil, err}
-//		QueryKey(key, queryFilter)...
+//	queryFilter, err := Where(
+//			"key",
+//			TxHash("0xHash"),
+//			Block(startBlock, Gte),
+//			Block(endBlock, Lte),
+//			Or(
+//				And(
+//					Timestamp(someTs1, Gte),
+//					Timestamp(otherTs1, Lte)),
+//				And(
+//					Timestamp(someTs2, Gte),
+//					Timestamp(otherTs2, Lte)),
+//			),
+//		)
+//	Equals:`txHash = '0xHash' AND
+//			block > startBlock AND
+//			block < endBlock   AND
+//			((timestamp > someTs1 And timestamp < otherTs1)
+//				OR
+//			(timestamp > someTs2 And timestamp < otherTs2))`
 func Where(key string, expressions ...Expression) (KeyFilter, error) {
 	for _, expr := range expressions {
 		if !expr.IsPrimitive() {
@@ -226,20 +140,20 @@ type SortBy interface {
 type CursorDirection int32
 
 const (
-	Previous CursorDirection = iota
-	Following
+	CursorPrevious CursorDirection = iota + 1
+	CursorFollowing
 )
 
 type Limit struct {
-	Cursor          *string
-	CursorDirection *CursorDirection
+	Cursor          string
+	CursorDirection CursorDirection
 	Count           uint64
 }
 
 func CursorLimit(cursor string, cursorDirection CursorDirection, count uint64) Limit {
 	return Limit{
-		Cursor:          &cursor,
-		CursorDirection: &cursorDirection,
+		Cursor:          cursor,
+		CursorDirection: cursorDirection,
 		Count:           count,
 	}
 }

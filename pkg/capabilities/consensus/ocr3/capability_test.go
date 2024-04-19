@@ -1,9 +1,12 @@
 package ocr3
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jonboulle/clockwork"
 	"github.com/shopspring/decimal"
@@ -20,12 +23,48 @@ import (
 const workflowTestID = "consensus-workflow-test-id-1"
 const workflowExecutionTestID = "consensus-workflow-execution-test-id-1"
 
+var transformJSON = cmp.FilterValues(func(x, y []byte) bool {
+	return json.Valid(x) && json.Valid(y)
+}, cmp.Transformer("ParseJSON", func(in []byte) (out interface{}) {
+	if err := json.Unmarshal(in, &out); err != nil {
+		panic(err) // should never occur given previous filter to ensure valid JSON
+	}
+	return out
+}))
+
 type encoder struct {
 	types.Encoder
 }
 
 func mockEncoderFactory(_ *values.Map) (types.Encoder, error) {
 	return &encoder{}, nil
+}
+
+func TestOCR3Capability_Schema(t *testing.T) {
+	n := time.Now()
+	fc := clockwork.NewFakeClockAt(n)
+	lggr := logger.Nop()
+
+	s := newStore()
+	s.evictedCh = make(chan *request)
+
+	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr, 10)
+	schema, err := cp.Schema()
+	require.NoError(t, err)
+
+	var shouldUpdate = false
+	if shouldUpdate {
+		err = os.WriteFile("./testdata/fixtures/capability/schema.json", []byte(schema), 0600)
+		require.NoError(t, err)
+	}
+
+	fixture, err := os.ReadFile("./testdata/fixtures/capability/schema.json")
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(fixture, []byte(schema), transformJSON); diff != "" {
+		t.Errorf("TestMercuryTrigger_Schema() mismatch (-want +got):\n%s", diff)
+		t.FailNow()
+	}
 }
 
 func TestOCR3Capability(t *testing.T) {
@@ -38,18 +77,17 @@ func TestOCR3Capability(t *testing.T) {
 	s := newStore()
 	s.evictedCh = make(chan *request)
 
-	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
+	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
-	callback := make(chan capabilities.CapabilityResponse, 10)
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
 	require.NoError(t, err)
 
-	ethUsdValue, err := decimal.NewFromString("1.123456")
-
+	ethUsdValStr := "1.123456"
+	ethUsdValue, err := decimal.NewFromString(ethUsdValStr)
 	require.NoError(t, err)
-
-	obs := []any{map[string]any{"ETH_USD": ethUsdValue}}
+	observationKey := "ETH_USD"
+	obs := []any{map[string]any{observationKey: ethUsdValue}}
 	inputs, err := values.NewMap(map[string]any{"observations": obs})
 	require.NoError(t, err)
 
@@ -61,14 +99,14 @@ func TestOCR3Capability(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	err = cp.Execute(ctx, callback, executeReq)
+	callback, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	obsv, err := values.NewList(obs)
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response
-	err = cp.transmitResponse(ctx, &response{
+	err = cp.transmitResponse(ctx, &outputs{
 		CapabilityResponse: capabilities.CapabilityResponse{
 			Value: obsv,
 		},
@@ -83,6 +121,15 @@ func TestOCR3Capability(t *testing.T) {
 	gotR := <-s.evictedCh
 	assert.Equal(t, workflowExecutionTestID, gotR.WorkflowExecutionID)
 
+	// Test that our unwrapping works
+	var actualUnwrappedObs []map[string]decimal.Decimal
+	err = gotR.Observations.UnwrapTo(&actualUnwrappedObs)
+	assert.NoError(t, err)
+	assert.Len(t, actualUnwrappedObs, 1)
+	actualObs, ok := actualUnwrappedObs[0][observationKey]
+	assert.True(t, ok)
+	assert.Equal(t, ethUsdValStr, actualObs.String())
+
 	assert.Equal(t, expectedCapabilityResponse, <-callback)
 }
 
@@ -94,7 +141,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	ctx := tests.Context(t)
 	rea := time.Second
 	s := newStore()
-	cp := newCapability(s, fc, rea, mockEncoderFactory, lggr)
+	cp := newCapability(s, fc, rea, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
@@ -114,8 +161,8 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	callback := make(chan capabilities.CapabilityResponse, 10)
-	err = cp.Execute(ctx, callback, executeReq)
+
+	callback, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	fc.Advance(1 * time.Hour)
@@ -133,10 +180,15 @@ func TestOCR3Capability_Registration(t *testing.T) {
 
 	ctx := tests.Context(t)
 	s := newStore()
-	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr)
+	cp := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
-	config, err := values.NewMap(map[string]any{"aggregation_method": "data_feeds_2_0"})
+	config, err := values.NewMap(map[string]any{
+		"aggregation_method": "data_feeds_2_0",
+		"aggregation_config": map[string]any{},
+		"encoder":            "",
+		"encoder_config":     map[string]any{},
+	})
 	require.NoError(t, err)
 
 	registerReq := capabilities.RegisterToWorkflowRequest{
@@ -164,4 +216,40 @@ func TestOCR3Capability_Registration(t *testing.T) {
 
 	_, err = cp.getAggregator(workflowTestID)
 	assert.ErrorContains(t, err, "no aggregator found for")
+}
+
+func TestOCR3Capability_ValidateConfig(t *testing.T) {
+	n := time.Now()
+	fc := clockwork.NewFakeClockAt(n)
+	lggr := logger.Test(t)
+
+	s := newStore()
+	s.evictedCh = make(chan *request)
+
+	o := newCapability(s, fc, 1*time.Second, mockEncoderFactory, lggr, 10)
+
+	t.Run("ValidConfig", func(t *testing.T) {
+		config, err := values.NewMap(map[string]any{
+			"aggregation_method": "data_feeds_2_0",
+			"aggregation_config": map[string]any{},
+			"encoder":            "",
+			"encoder_config":     map[string]any{},
+		})
+		require.NoError(t, err)
+
+		c, err := o.ValidateConfig(config)
+		require.NoError(t, err)
+		require.NotNil(t, c)
+	})
+
+	t.Run("InvalidConfig", func(t *testing.T) {
+		config, err := values.NewMap(map[string]any{
+			"aggregation_method": "data_feeds_2_0",
+		})
+		require.NoError(t, err)
+
+		c, err := o.ValidateConfig(config)
+		require.Error(t, err)
+		require.Nil(t, c)
+	})
 }

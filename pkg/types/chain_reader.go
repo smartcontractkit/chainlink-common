@@ -20,7 +20,7 @@ type ChainReader interface {
 	// It must encode as an object via [json.Marshal] and [github.com/fxamacker/cbor/v2.Marshal].
 	// Typically, would be either a struct with field names mapping to arguments, or anonymous map such as `map[string]any{"baz": 42, "test": true}}`
 	//
-	// returnVal must [json.Unmarshal] and and [github.com/fxamacker/cbor/v2.Marshal] as an object.
+	// returnVal must [json.Unmarshal] and [github.com/fxamacker/cbor/v2.Marshal] as an object.
 	//
 	// Example use:
 	//  type ProductParams struct {

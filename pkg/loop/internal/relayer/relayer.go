@@ -228,7 +228,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 	case string(types.CCIPExecution):
 		// TODO BCF-3061
 		// what do i do here? for the local embedded relayer, we are using the broker
-		// to share state so the the reporting plugin, as a client to the (embedded) relayer,
+		// to share state so the reporting plugin, as a client to the (embedded) relayer,
 		// calls the provider to get network.resources and then the provider calls the broker to serve them
 		// maybe the same mechanism can be used here, but we need very careful reference passing to
 		// ensure that this relayer client has the same broker as the server. that doesn't really

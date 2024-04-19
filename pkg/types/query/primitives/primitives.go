@@ -52,9 +52,10 @@ func (f *Block) Accept(visitor Visitor) {
 
 type ConfirmationLevel int32
 
+// TODO come up with a proper chain agnostic solution BCF-3156
 const (
-	Finalized   = ConfirmationLevel(0)
-	Unconfirmed = ConfirmationLevel(1)
+	Finalized   = ConfirmationLevel(-1)
+	Unconfirmed = ConfirmationLevel(-2)
 )
 
 // Confirmations is a primitive of KeyFilter that filters search to results that have a certain level of confirmation.

@@ -3,6 +3,7 @@ package automation
 import (
 	"context"
 	"io"
+	"math/big"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -49,6 +50,12 @@ type Encoder interface {
 type LogEventProvider interface {
 	GetLatestPayloads(context.Context) ([]UpkeepPayload, error)
 	SetConfig(LogEventProviderConfig)
+	Start(context.Context) error
+	Close() error
+}
+
+type MaliciousUpkeepProvider interface {
+	GetMaliciousUpkeepIds(context.Context) ([]*big.Int, error)
 	Start(context.Context) error
 	Close() error
 }

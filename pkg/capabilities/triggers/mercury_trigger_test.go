@@ -360,5 +360,5 @@ func TestMercuryTrigger_GenerateSchema(t *testing.T) {
 	fixture, err := os.ReadFile("./testdata/fixtures/mercury/schema.json")
 	require.NoError(t, err)
 
-	utils.AssertCmpJSON(t, fixture, []byte(schema))
+	utils.AssertJSONEqual(t, fixture, []byte(schema))
 }

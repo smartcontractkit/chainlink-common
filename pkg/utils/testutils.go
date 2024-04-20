@@ -15,11 +15,11 @@ func Context(t *testing.T) context.Context {
 	return tests.Context(t)
 }
 
-// AssertCmpJson is a helper function to assert that two JSON objects
+// AssertJSONEqual is a helper function to assert that two JSON objects
 // are equal.
 //
 // When they are not equal, it fails the test and provides a helpful diff.
-func AssertCmpJSON(t tests.TestingT, x []byte, y []byte) {
+func AssertJSONEqual(t tests.TestingT, x []byte, y []byte) {
 	var TransformJSON = cmp.FilterValues(func(x, y []byte) bool {
 		return json.Valid(x) && json.Valid(y)
 	}, cmp.Transformer("ParseJSON", func(in []byte) (out interface{}) {

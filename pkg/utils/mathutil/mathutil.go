@@ -2,6 +2,7 @@ package mathutil
 
 import (
 	"fmt"
+	"math"
 
 	"golang.org/x/exp/constraints"
 )
@@ -26,15 +27,16 @@ func Min[V constraints.Ordered](first V, vals ...V) V {
 	return min
 }
 
-func Avg[V constraints.Unsigned](arr []V) (V, error) {
+func Avg[V constraints.Integer](arr ...V) (V, error) {
 	total := V(0)
 
 	for _, v := range arr {
 		prev := total
 		total += v
 
-		// check addition overflow
-		if total < prev {
+		// check addition overflow (positive + negative)
+		if (total < prev && !math.Signbit(float64(v))) ||
+			(total > prev && math.Signbit(float64(v))) {
 			return 0, fmt.Errorf("overflow: addition %T", V(0))
 		}
 	}

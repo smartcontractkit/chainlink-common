@@ -2,6 +2,7 @@ package mathutil
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,21 +36,23 @@ func TestMin(t *testing.T) {
 
 func TestAvg(t *testing.T) {
 	// happy path
-	r, err := Avg([]uint8{1, 2, 3})
+	r, err := Avg(int8(1), -2, 4)
 	assert.NoError(t, err)
-	assert.Equal(t, uint8(2), r)
+	assert.Equal(t, int8(1), r)
 
 	// single element
-	r, err = Avg([]uint8{0})
+	r, err = Avg(int8(0))
 	assert.NoError(t, err)
-	assert.Equal(t, uint8(0), r)
+	assert.Equal(t, int8(0), r)
 
 	// overflow addition
-	r, err = Avg([]uint8{255, 1})
+	r, err = Avg(int8(math.MaxInt8), 1)
+	assert.ErrorContains(t, err, fmt.Sprintf("overflow: addition"))
+	r, err = Avg(int8(math.MinInt8), -1)
 	assert.ErrorContains(t, err, fmt.Sprintf("overflow: addition"))
 
 	// overflow length
-	a := make([]uint8, 256)
-	r, err = Avg(a)
+	a := make([]int8, 256)
+	r, err = Avg(a...)
 	assert.ErrorContains(t, err, "overflow: array len")
 }

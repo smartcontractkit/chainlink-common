@@ -262,10 +262,10 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 					BlockNumber: primitive.Block,
 					Operator:    pb.ComparisonOperator(primitive.Operator),
 				}}
-		case *primitives.Confirmations:
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confirmations{
-				Confirmations: &pb.Confirmations{
-					Confirmations: pb.ConfirmationLevel(primitive.ConfirmationLevel),
+		case *primitives.Confidence:
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confidence{
+				Confidence: &pb.Confidence{
+					Confidence: float64(primitive.ConfidenceLevel),
 				}}
 		case *primitives.Timestamp:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
@@ -399,8 +399,8 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 				valueComparators = append(valueComparators, primitives.ValueComparator{Value: pbValueComparator.Value, Operator: primitives.ComparisonOperator(pbValueComparator.Operator)})
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
-		case *pb.Primitive_Confirmations:
-			return query.Confirmation(primitives.ConfirmationLevel(primitive.Confirmations.Confirmations)), nil
+		case *pb.Primitive_Confidence:
+			return query.Confidence(primitives.ConfidenceLevel(primitive.Confidence.Confidence))
 		case *pb.Primitive_Block:
 			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
 		case *pb.Primitive_TxHash:

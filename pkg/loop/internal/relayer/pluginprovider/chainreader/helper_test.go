@@ -100,7 +100,7 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 
 func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	var queryFilters []query.KeyFilter
-	confirmationsValues := []primitives.ConfirmationLevel{primitives.Finalized, primitives.Unconfirmed}
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Highest, primitives.Lowest}
 	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
 	comparableValues := []string{"", " ", "number", "123"}
 
@@ -120,7 +120,11 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	}
 
 	for _, conf := range confirmationsValues {
-		primitiveExpressions = append(primitiveExpressions, query.Confirmation(conf))
+		qConf, err := query.Confidence(conf)
+
+		require.NoError(t, err)
+
+		primitiveExpressions = append(primitiveExpressions, qConf)
 	}
 
 	qf, err := query.Where("primitives", primitiveExpressions...)

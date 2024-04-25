@@ -42,7 +42,7 @@ type managerImpl struct {
 	currentDataMu sync.Mutex
 }
 
-func (m *managerImpl) Run(backgroundCtx context.Context, managedFuncs ...ManagedFunc) {
+func (m *managerImpl) Run(backgroundCtx context.Context, managed ...ManagedFunc) {
 	var localCtx context.Context
 	var localCtxCancel context.CancelFunc
 	var localSubs *utils.Subprocesses
@@ -75,10 +75,11 @@ func (m *managerImpl) Run(backgroundCtx context.Context, managedFuncs ...Managed
 			// Start new managed function
 			localCtx, localCtxCancel = context.WithCancel(backgroundCtx)
 			localSubs = &utils.Subprocesses{}
-			m.log.Infow("starting managed funcs", "count", len(managedFuncs))
-			for _, managed := range managedFuncs {
+			m.log.Infow("starting managed funcs", "count", len(managed))
+			for i := range managed {
+				i := i // copy i to prevent race
 				localSubs.Go(func() {
-					managed(localCtx, updatedData)
+					managed[i](localCtx, updatedData)
 				})
 			}
 		case <-backgroundCtx.Done():

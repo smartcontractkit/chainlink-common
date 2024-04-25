@@ -144,22 +144,25 @@ func TestManager(t *testing.T) {
 			<-ctx.Done()
 			closeWG.Done()
 		}
+		managedNonBlocking := func(_ context.Context, _ RDDData) {
+			createWG.Done()
+			closeWG.Done()
+		}
 		subs.Go(func() {
-			manager.Run(ctx, managed, managed)
+			manager.Run(ctx, managed, managed, managedNonBlocking)
 		})
 
 		// send RDD update to create multiple managed funcs
-		createWG.Add(2) // expect to see two created
+		createWG.Add(3) // expect to see 3 created
+		closeWG.Add(3)  // expect to see 3 closed on restart
 		poller.ch <- RDDData{Feeds: []FeedConfig{generateFeedConfig()}}
 		createWG.Wait() // wait for created
-		closeWG.Add(2)  // expect to see two closed on restart
 
 		// ensure stop + restarting works
-		createWG.Add(2)                                                 // expect two new created
+		createWG.Add(3)                                                 // expect 3 new created
+		closeWG.Add(3)                                                  // expect 3 closed on shutdown
 		poller.ch <- RDDData{Feeds: []FeedConfig{generateFeedConfig()}} // trigger restart
-		closeWG.Wait()                                                  // expect original two closed
-		createWG.Wait()                                                 // waited for restart
-		closeWG.Add(2)                                                  // expect two closed on shutdown
+		createWG.Wait()
 
 		cancel()       // shutdown
 		closeWG.Wait() // wait for managed funcs

@@ -87,9 +87,7 @@ type reportCodecClient struct {
 	grpc pb.ReportCodecClient
 }
 
-func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedObservation) (report libocr.Report, err error) {
-	ctx, cancel := r.StopCtx()
-	defer cancel()
+func (r *reportCodecClient) BuildReport(ctx context.Context, observations []median.ParsedAttributedObservation) (report libocr.Report, err error) {
 	var req pb.BuildReportRequest
 	for _, o := range observations {
 		req.Observations = append(req.Observations, &pb.ParsedAttributedObservation{
@@ -108,9 +106,7 @@ func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedOb
 	return
 }
 
-func (r *reportCodecClient) MedianFromReport(report libocr.Report) (*big.Int, error) {
-	ctx, cancel := r.StopCtx()
-	defer cancel()
+func (r *reportCodecClient) MedianFromReport(ctx context.Context, report libocr.Report) (*big.Int, error) {
 	reply, err := r.grpc.MedianFromReport(ctx, &pb.MedianFromReportRequest{Report: report})
 	if err != nil {
 		return nil, err
@@ -118,9 +114,7 @@ func (r *reportCodecClient) MedianFromReport(report libocr.Report) (*big.Int, er
 	return reply.Median.Int(), nil
 }
 
-func (r *reportCodecClient) MaxReportLength(n int) (int, error) {
-	ctx, cancel := r.StopCtx()
-	defer cancel()
+func (r *reportCodecClient) MaxReportLength(ctx context.Context, n int) (int, error) {
 	reply, err := r.grpc.MaxReportLength(ctx, &pb.MaxReportLengthRequest{N: int64(n)})
 	if err != nil {
 		return -1, err
@@ -149,7 +143,7 @@ func (r *reportCodecServer) BuildReport(ctx context.Context, request *pb.BuildRe
 			Observer:        commontypes.OracleID(o.Observer),
 		})
 	}
-	report, err := r.impl.BuildReport(obs)
+	report, err := r.impl.BuildReport(ctx, obs)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +151,7 @@ func (r *reportCodecServer) BuildReport(ctx context.Context, request *pb.BuildRe
 }
 
 func (r *reportCodecServer) MedianFromReport(ctx context.Context, request *pb.MedianFromReportRequest) (*pb.MedianFromReportReply, error) {
-	m, err := r.impl.MedianFromReport(request.Report)
+	m, err := r.impl.MedianFromReport(ctx, request.Report)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +159,7 @@ func (r *reportCodecServer) MedianFromReport(ctx context.Context, request *pb.Me
 }
 
 func (r *reportCodecServer) MaxReportLength(ctx context.Context, request *pb.MaxReportLengthRequest) (*pb.MaxReportLengthReply, error) {
-	l, err := r.impl.MaxReportLength(int(request.N))
+	l, err := r.impl.MaxReportLength(ctx, int(request.N))
 	if err != nil {
 		return nil, err
 	}
@@ -261,9 +255,7 @@ type onchainConfigCodecClient struct {
 	grpc pb.OnchainConfigCodecClient
 }
 
-func (o *onchainConfigCodecClient) Encode(config median.OnchainConfig) ([]byte, error) {
-	ctx, cancel := o.StopCtx()
-	defer cancel()
+func (o *onchainConfigCodecClient) Encode(ctx context.Context, config median.OnchainConfig) ([]byte, error) {
 	req := &pb.EncodeRequest{OnchainConfig: &pb.OnchainConfig{
 		Min: pb.NewBigIntFromInt(config.Min),
 		Max: pb.NewBigIntFromInt(config.Max),
@@ -275,9 +267,7 @@ func (o *onchainConfigCodecClient) Encode(config median.OnchainConfig) ([]byte, 
 	return reply.Encoded, nil
 }
 
-func (o *onchainConfigCodecClient) Decode(bytes []byte) (oc median.OnchainConfig, err error) {
-	ctx, cancel := o.StopCtx()
-	defer cancel()
+func (o *onchainConfigCodecClient) Decode(ctx context.Context, bytes []byte) (oc median.OnchainConfig, err error) {
 	var reply *pb.DecodeReply
 	reply, err = o.grpc.Decode(ctx, &pb.DecodeRequest{Encoded: bytes})
 	if err != nil {
@@ -296,7 +286,7 @@ type onchainConfigCodecServer struct {
 
 func (o *onchainConfigCodecServer) Encode(ctx context.Context, request *pb.EncodeRequest) (*pb.EncodeReply, error) {
 	min, max := request.OnchainConfig.Min.Int(), request.OnchainConfig.Max.Int()
-	b, err := o.impl.Encode(median.OnchainConfig{Max: max, Min: min})
+	b, err := o.impl.Encode(ctx, median.OnchainConfig{Max: max, Min: min})
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +294,7 @@ func (o *onchainConfigCodecServer) Encode(ctx context.Context, request *pb.Encod
 }
 
 func (o *onchainConfigCodecServer) Decode(ctx context.Context, request *pb.DecodeRequest) (*pb.DecodeReply, error) {
-	oc, err := o.impl.Decode(request.Encoded)
+	oc, err := o.impl.Decode(ctx, request.Encoded)
 	if err != nil {
 		return nil, err
 	}

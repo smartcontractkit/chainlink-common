@@ -2,6 +2,8 @@ module github.com/smartcontractkit/chainlink-common
 
 go 1.21
 
+replace github.com/smartcontractkit/libocr => github.com/jmank88/libocr v0.0.0-20240425103000-0eed0c09969e
+
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/ethereum/go-ethereum v1.13.8

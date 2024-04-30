@@ -40,7 +40,7 @@ jobs:
           this-job-name: Build Chainlink Image
         continue-on-error: true
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Build the image
@@ -85,7 +85,7 @@ jobs:
           this-job-name: Solana Build Relay
         continue-on-error: true
       - name: Checkout the solana repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           repository: smartcontractkit/chainlink-solana
           ref: ${{ env.CUSTOM_SOLANA_REF }}
@@ -131,7 +131,7 @@ jobs:
           this-job-name: Starknet Build Relay
         continue-on-error: true
       - name: Checkout the starknet repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           repository: smartcontractkit/chainlink-starknet
           ref: ${{ env.CUSTOM_STARKNET_REF }}
@@ -170,7 +170,7 @@ jobs:
   #         this-job-name: Terra Build Relay
   #       continue-on-error: true
   #     - name: Checkout the terra repo
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
   #       with:
   #         repository: smartcontractkit/chainlink-terra
   #     - name: Setup Go

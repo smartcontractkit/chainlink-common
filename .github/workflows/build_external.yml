@@ -90,7 +90,7 @@ jobs:
           repository: smartcontractkit/chainlink-solana
           ref: ${{ env.CUSTOM_SOLANA_REF }}
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: "go.mod"
       - name: Replace chainlink-common deps
@@ -136,7 +136,7 @@ jobs:
           repository: smartcontractkit/chainlink-starknet
           ref: ${{ env.CUSTOM_STARKNET_REF }}
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: ./relayer/go.mod
       - name: Replace chainlink-common deps
@@ -174,7 +174,7 @@ jobs:
   #       with:
   #         repository: smartcontractkit/chainlink-terra
   #     - name: Setup Go
-  #       uses: actions/setup-go@v3
+  #       uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
   #       with:
   #         go-version-file: "go.mod"
   #     - name: Replace chainlink-common deps

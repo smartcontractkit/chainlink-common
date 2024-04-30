@@ -32,8 +32,9 @@ jobs:
           fi
       - name: Collect Metrics
         id: collect-gha-metrics
-        uses: smartcontractkit/push-gha-metrics-action@v2.2.0
+        uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
         with:
+          id: build-chainlink
           basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
           hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
           org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
@@ -77,8 +78,9 @@ jobs:
           fi
       - name: Collect Metrics
         id: collect-gha-metrics
-        uses: smartcontractkit/push-gha-metrics-action@v2.2.0
+        uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
         with:
+          id: solana-build-relay
           basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
           hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
           org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
@@ -123,8 +125,9 @@ jobs:
           fi
       - name: Collect Metrics
         id: collect-gha-metrics
-        uses: smartcontractkit/push-gha-metrics-action@v2.2.0
+        uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
         with:
+          id: starknet-build-relay
           basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
           hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
           org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
@@ -162,8 +165,9 @@ jobs:
   #   steps:
   #     - name: Collect Metrics
   #       id: collect-gha-metrics
-  #       uses: smartcontractkit/push-gha-metrics-action@v2.2.0
+  #       uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
   #       with:
+  #         id: terra-build-relay
   #         basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
   #         hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
   #         org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}

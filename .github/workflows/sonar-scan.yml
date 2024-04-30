@@ -14,7 +14,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
       - name: Wait for workflows
-        uses: smartcontractkit/chainlink-github-actions/utils/wait-for-workflows@main
+        uses: smartcontractkit/chainlink-github-actions/utils/wait-for-workflows@e29366cdecfe6befff9ab8c3cfe4825218505d58 # v2.3.16
         with:
           max-timeout: "900"
           polling-interval: "30"

@@ -345,8 +345,24 @@ func (pc *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, 
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 
-	if !reflect.DeepEqual(pc.expectedLimitAndSort, limitAndSort) {
+	// using deep equal on a slice returns false when one slice is nil and another is empty
+	// normalize to nil slices if empty or nil for comparison
+	var (
+		aSlice []query.SortBy
+		bSlice []query.SortBy
+	)
+
+	if pc.expectedLimitAndSort.SortBy != nil && len(pc.expectedLimitAndSort.SortBy) > 0 {
+		aSlice = pc.expectedLimitAndSort.SortBy
+	}
+
+	if limitAndSort.SortBy != nil && len(limitAndSort.SortBy) > 0 {
+		bSlice = limitAndSort.SortBy
+	}
+
+	if !reflect.DeepEqual(pc.expectedLimitAndSort.Limit, limitAndSort.Limit) || !reflect.DeepEqual(aSlice, bSlice) {
 		return nil, fmt.Errorf("limitAndSort wasn't parsed properly")
 	}
+
 	return nil, nil
 }

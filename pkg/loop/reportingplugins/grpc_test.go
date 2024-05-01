@@ -11,6 +11,7 @@ import (
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	keyvaluestoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue/test"
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
+	relayersettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/relayerset/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr2/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
@@ -18,6 +19,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -29,16 +31,17 @@ func newStopCh(t *testing.T) <-chan struct{} {
 	return stopCh
 }
 
-func PluginGenericTest(t *testing.T, p types.ReportingPluginClient) {
+func PluginGenericTest(t *testing.T, p core.ReportingPluginClient) {
 	t.Run("PluginServer", func(t *testing.T) {
 		ctx := tests.Context(t)
 		factory, err := p.NewReportingPluginFactory(ctx,
-			types.ReportingPluginServiceConfig{},
+			core.ReportingPluginServiceConfig{},
 			nettest.MockConn{},
 			pipelinetest.PipelineRunner,
 			telemetrytest.Telemetry,
 			errorlogtest.ErrorLog,
 			keyvaluestoretest.KeyValueStore{},
+			relayersettest.RelayerSet{},
 		)
 
 		require.NoError(t, err)

@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 type PluginRelayer interface {
-	NewRelayer(ctx context.Context, config string, keystore types.Keystore) (Relayer, error)
+	NewRelayer(ctx context.Context, config string, keystore core.Keystore) (Relayer, error)
 }
 
 type MedianProvider interface {
@@ -28,6 +29,10 @@ type AutomationProvider interface {
 
 type CCIPExecProvider interface {
 	NewExecutionProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.CCIPExecProvider, error)
+}
+
+type CCIPCommitProvider interface {
+	NewCommitProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.CCIPCommitProvider, error)
 }
 
 // Relayer is like types.Relayer, but with a dynamic NewPluginProvider method.

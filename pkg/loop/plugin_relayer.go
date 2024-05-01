@@ -9,7 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 // PluginRelayerName is the name for [types.PluginRelayer]/[NewGRPCPluginRelayer].
@@ -25,7 +25,7 @@ func PluginRelayerHandshakeConfig() plugin.HandshakeConfig {
 }
 
 // Deprecated
-type Keystore = types.Keystore
+type Keystore = core.Keystore
 
 type Relayer = looptypes.Relayer
 
@@ -60,11 +60,9 @@ func (p *GRPCPluginRelayer) GRPCClient(_ context.Context, broker *plugin.GRPCBro
 }
 
 func (p *GRPCPluginRelayer) ClientConfig() *plugin.ClientConfig {
-	return &plugin.ClientConfig{
-		HandshakeConfig:  PluginRelayerHandshakeConfig(),
-		Plugins:          map[string]plugin.Plugin{PluginRelayerName: p},
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		GRPCDialOptions:  p.DialOpts,
-		Logger:           HCLogLogger(p.Logger),
+	c := &plugin.ClientConfig{
+		HandshakeConfig: PluginRelayerHandshakeConfig(),
+		Plugins:         map[string]plugin.Plugin{PluginRelayerName: p},
 	}
+	return ManagedGRPCClientConfig(c, p.BrokerConfig)
 }

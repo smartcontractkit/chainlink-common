@@ -58,7 +58,7 @@ func WrapDataSource(db DataSource, l logger.Logger, hs ...QueryHook) DataSource 
 		// extra wrapper to make BeginTxx available
 		return &wrappedTransactionalDataSource{
 			wrappedDataSource: iq,
-			txdb:              txdb,
+			transactional:     txdb,
 		}
 	}
 
@@ -82,6 +82,8 @@ func (w *wrappedDataSource) BindNamed(s string, i interface{}) (string, []any, e
 }
 
 func (w *wrappedDataSource) QueryContext(ctx context.Context, query string, args ...any) (rows *sql.Rows, err error) {
+	// no default timeout since it applies to the lifetime of the returned Rows
+	ctx = WithoutDefaultTimeout(ctx)
 	err = w.hook(ctx, w.lggr, func(ctx context.Context) (err error) {
 		rows, err = w.db.QueryContext(ctx, query, args...) //nolint
 		return
@@ -90,14 +92,18 @@ func (w *wrappedDataSource) QueryContext(ctx context.Context, query string, args
 }
 
 func (w *wrappedDataSource) QueryxContext(ctx context.Context, query string, args ...any) (rows *sqlx.Rows, err error) {
+	// no default timeout since it applies to the lifetime of the returned Rows
+	ctx = WithoutDefaultTimeout(ctx)
 	err = w.hook(ctx, w.lggr, func(ctx context.Context) (err error) {
-		rows, err = w.db.QueryxContext(ctx, query, args...) //nolint:sqlclosecheck
+		rows, err = w.db.QueryxContext(ctx, query, args...) //nolint
 		return
 	}, query, args...)
 	return
 }
 
 func (w *wrappedDataSource) QueryRowxContext(ctx context.Context, query string, args ...any) (row *sqlx.Row) {
+	// no default timeout since it applies to the lifetime of the returned Rows
+	ctx = WithoutDefaultTimeout(ctx)
 	_ = w.hook(ctx, w.lggr, func(ctx context.Context) error {
 		row = w.db.QueryRowxContext(ctx, query, args...)
 		return nil
@@ -149,18 +155,15 @@ func (w *wrappedDataSource) SelectContext(ctx context.Context, dest interface{},
 	}, query, args...)
 }
 
+var (
+	_ DataSource    = (*wrappedTransactionalDataSource)(nil)
+	_ transactional = (*wrappedTransactionalDataSource)(nil)
+)
+
 // wrappedTransactionalDataSource extends [wrappedDataSource] with BeginTxx and BeginWrappedTxx for initiating transactions.
 type wrappedTransactionalDataSource struct {
 	wrappedDataSource
-	txdb transactional
-}
-
-func (w *wrappedTransactionalDataSource) BeginTxx(ctx context.Context, opts *sql.TxOptions) (tx *sqlx.Tx, err error) {
-	err = w.hook(ctx, w.lggr, func(ctx context.Context) (err error) {
-		tx, err = w.txdb.BeginTxx(ctx, opts)
-		return
-	}, "START TRANSACTION", nil)
-	return
+	transactional
 }
 
 // BeginWrappedTxx is like BeginTxx, but wraps the returned tx with the same hook.
@@ -178,6 +181,11 @@ func (w *wrappedTransactionalDataSource) BeginWrappedTxx(ctx context.Context, op
 		tx: tx,
 	}, nil
 }
+
+var (
+	_ DataSource  = (*wrappedTx)(nil)
+	_ transaction = (*wrappedTx)(nil)
+)
 
 // wrappedTx extends [wrappedDataSource] with Commit and Rollback for completing a transaction.
 type wrappedTx struct {

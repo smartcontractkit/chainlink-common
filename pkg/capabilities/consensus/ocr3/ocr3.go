@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	commontypes "github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -25,6 +26,7 @@ type Config struct {
 	BatchSize      int
 	Logger         logger.Logger
 	EncoderFactory EncoderFactory
+	SendBufferSize int
 
 	store      *store
 	capability *capability
@@ -32,8 +34,9 @@ type Config struct {
 }
 
 const (
-	defaultRequestExpiry time.Duration = 1 * time.Hour
-	defaultBatchSize                   = 1000
+	defaultRequestExpiry  time.Duration = 1 * time.Hour
+	defaultBatchSize                    = 1000
+	defaultSendBufferSize               = 10
 )
 
 type EncoderFactory func(config *values.Map) (types.Encoder, error)
@@ -48,6 +51,10 @@ func NewOCR3(config Config) *Capability {
 		config.BatchSize = defaultBatchSize
 	}
 
+	if config.SendBufferSize == 0 {
+		config.SendBufferSize = defaultSendBufferSize
+	}
+
 	if config.clock == nil {
 		config.clock = clockwork.NewRealClock()
 	}
@@ -57,7 +64,8 @@ func NewOCR3(config Config) *Capability {
 	}
 
 	if config.capability == nil {
-		ci := newCapability(config.store, config.clock, *config.RequestTimeout, config.EncoderFactory, config.Logger)
+		ci := newCapability(config.store, config.clock, *config.RequestTimeout, config.EncoderFactory, config.Logger,
+			config.SendBufferSize)
 		config.capability = ci
 	}
 
@@ -71,7 +79,10 @@ func NewOCR3(config Config) *Capability {
 	return cp
 }
 
-func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg commontypes.ReportingPluginServiceConfig, provider commontypes.PluginProvider, pipelineRunner commontypes.PipelineRunnerService, telemetry commontypes.TelemetryClient, errorLog commontypes.ErrorLog, capabilityRegistry commontypes.CapabilitiesRegistry, keyValueStore commontypes.KeyValueStore) (commontypes.OCR3ReportingPluginFactory, error) {
+func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.ReportingPluginServiceConfig,
+	provider commontypes.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
+	errorLog core.ErrorLog, capabilityRegistry core.CapabilitiesRegistry, keyValueStore core.KeyValueStore,
+	relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
 	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.Logger)
 	if err != nil {
 		return nil, err
@@ -85,7 +96,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg commonty
 	return factory, err
 }
 
-func (o *Capability) NewValidationService(ctx context.Context) (commontypes.ValidationService, error) {
+func (o *Capability) NewValidationService(ctx context.Context) (core.ValidationService, error) {
 	s := &validationService{lggr: o.Logger}
 	o.SubService(s)
 	return s, nil

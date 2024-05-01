@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"time"
 
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"golang.org/x/mod/semver"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -31,7 +32,7 @@ func (c CapabilityType) String() string {
 	case CapabilityTypeAction:
 		return "action"
 	case CapabilityTypeConsensus:
-		return "report"
+		return "consensus"
 	case CapabilityTypeTarget:
 		return "target"
 	}
@@ -103,7 +104,14 @@ type CallbackExecutable interface {
 	// Request specific configuration is passed in via the request parameter.
 	// A successful response must always return a value. An error is assumed otherwise.
 	// The intent is to make the API explicit.
-	Execute(ctx context.Context, callback chan<- CapabilityResponse, request CapabilityRequest) error
+	Execute(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
+}
+
+type Validatable interface {
+	// ValidateSchema returns the JSON schema for the capability.
+	//
+	// This schema includes the configuration, input and output schemas.
+	Schema() (string, error)
 }
 
 // BaseCapability interface needs to be implemented by all capability types.
@@ -114,7 +122,7 @@ type BaseCapability interface {
 }
 
 type TriggerExecutable interface {
-	RegisterTrigger(ctx context.Context, callback chan<- CapabilityResponse, request CapabilityRequest) error
+	RegisterTrigger(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
 	UnregisterTrigger(ctx context.Context, request CapabilityRequest) error
 }
 
@@ -146,12 +154,25 @@ type TargetCapability interface {
 	CallbackCapability
 }
 
+type DONConfig struct {
+	SharedSecret [16]byte
+}
+
+type DON struct {
+	ID      string
+	Members []p2ptypes.PeerID
+	F       uint8
+
+	Config DONConfig
+}
+
 // CapabilityInfo is a struct for the info of a capability.
 type CapabilityInfo struct {
 	ID             string
 	CapabilityType CapabilityType
 	Description    string
 	Version        string
+	DON            *DON
 }
 
 // Info returns the info of the capability.
@@ -174,6 +195,7 @@ func NewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	version string,
+	don *DON,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
@@ -195,6 +217,7 @@ func NewCapabilityInfo(
 		CapabilityType: capabilityType,
 		Description:    description,
 		Version:        version,
+		DON:            don,
 	}, nil
 }
 
@@ -205,8 +228,9 @@ func MustNewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	version string,
+	don *DON,
 ) CapabilityInfo {
-	c, err := NewCapabilityInfo(id, capabilityType, description, version)
+	c, err := NewCapabilityInfo(id, capabilityType, description, version, don)
 	if err != nil {
 		panic(err)
 	}
@@ -217,22 +241,20 @@ func MustNewCapabilityInfo(
 // TODO: this timeout was largely picked arbitrarily.
 // Consider what a realistic/desirable value should be.
 // See: https://smartcontract-it.atlassian.net/jira/software/c/projects/KS/boards/182
-var defaultExecuteTimeout = 60 * time.Second
+var maximumExecuteTimeout = 60 * time.Second
 
 // ExecuteSync executes a capability synchronously.
 // We are not handling a case where a capability panics and crashes.
 // There is default timeout of 10 seconds. If a capability takes longer than
 // that then it should be executed asynchronously.
 func ExecuteSync(ctx context.Context, c CallbackExecutable, request CapabilityRequest) (*values.List, error) {
-	ctxWithT, cancel := context.WithTimeout(ctx, defaultExecuteTimeout)
+	ctxWithT, cancel := context.WithTimeout(ctx, maximumExecuteTimeout)
 	defer cancel()
 
-	responseCh := make(chan CapabilityResponse)
-	setupCh := make(chan error)
-
-	go func(innerCtx context.Context, innerC CallbackExecutable, innerReq CapabilityRequest, innerCallback chan CapabilityResponse, errCh chan error) {
-		setupCh <- innerC.Execute(innerCtx, innerCallback, innerReq)
-	}(ctxWithT, c, request, responseCh, setupCh)
+	responseCh, err := c.Execute(ctxWithT, request)
+	if err != nil {
+		return nil, fmt.Errorf("error executing capability: %w", err)
+	}
 
 	vs := make([]values.Value, 0)
 outerLoop:
@@ -250,15 +272,9 @@ outerLoop:
 			}
 
 			vs = append(vs, response.Value)
-
-		// Timeout when a capability panics, crashes, and does not close the channel.
+		// Timeout when a capability exceeds maximum permitted execution time or the caller cancels the context and does not close the channel.
 		case <-ctxWithT.Done():
-			return nil, fmt.Errorf("context timed out after %f seconds", defaultExecuteTimeout.Seconds())
-		case setupErr := <-setupCh:
-			// Something went wrong when setting up the capability, return that error here.
-			if setupErr != nil {
-				return nil, setupErr
-			}
+			return nil, fmt.Errorf("context timed out after %f seconds", maximumExecuteTimeout.Seconds())
 		}
 	}
 

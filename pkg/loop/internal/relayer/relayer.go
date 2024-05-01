@@ -22,6 +22,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 var _ looptypes.PluginRelayer = (*PluginRelayerClient)(nil)
@@ -38,7 +39,7 @@ func NewPluginRelayerClient(broker net.Broker, brokerCfg net.BrokerConfig, conn 
 	return &PluginRelayerClient{PluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
 }
 
-func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore types.Keystore) (looptypes.Relayer, error) {
+func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore core.Keystore) (looptypes.Relayer, error) {
 	cc := p.NewClientConn("Relayer", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
 		id, ksRes, err = p.ServeNew("Keystore", func(s *grpc.Server) {
@@ -109,7 +110,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	return &pb.NewRelayerReply{RelayerID: id}, nil
 }
 
-var _ types.Keystore = (*keystoreClient)(nil)
+var _ core.Keystore = (*keystoreClient)(nil)
 
 type keystoreClient struct {
 	grpc pb.KeystoreClient
@@ -140,7 +141,7 @@ var _ pb.KeystoreServer = (*keystoreServer)(nil)
 type keystoreServer struct {
 	pb.UnimplementedKeystoreServer
 
-	impl types.Keystore
+	impl core.Keystore
 }
 
 func (k *keystoreServer) Accounts(ctx context.Context, _ *emptypb.Empty) (*pb.AccountsReply, error) {
@@ -215,16 +216,27 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 		return reply.PluginProviderID, nil, nil
 	})
 
+	broker := r.BrokerExt
+
+	return WrapProviderClientConnection(rargs.ProviderType, cc, broker)
+}
+
+type PluginProviderClient interface {
+	types.PluginProvider
+	goplugin.GRPCClientConn
+}
+
+func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterface, broker *net.BrokerExt) (PluginProviderClient, error) {
 	// TODO: Remove this when we have fully transitioned all relayers to running in LOOPPs.
 	// This allows callers to type assert a PluginProvider into a product provider type (eg. MedianProvider)
 	// for interoperability with legacy code.
-	switch rargs.ProviderType {
+	switch providerType {
 	case string(types.Median):
-		return median.NewProviderClient(r.BrokerExt, cc), nil
+		return median.NewProviderClient(broker, cc), nil
 	case string(types.GenericPlugin):
-		return ocr2.NewPluginProviderClient(r.BrokerExt, cc), nil
+		return ocr2.NewPluginProviderClient(broker, cc), nil
 	case string(types.Mercury):
-		return mercury.NewProviderClient(r.BrokerExt, cc), nil
+		return mercury.NewProviderClient(broker, cc), nil
 	case string(types.CCIPExecution):
 		// TODO BCF-3061
 		// what do i do here? for the local embedded relayer, we are using the broker
@@ -235,9 +247,9 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 		// even make sense to me because the relayer client will in the reporting plugin loop
 		// for now we return an error and test for the this error case
 		// return nil, fmt.Errorf("need to fix BCF-3061")
-		return ccip.NewExecProviderClient(r.BrokerExt, cc), fmt.Errorf("need to fix BCF-3061")
+		return ccip.NewExecProviderClient(broker, cc), fmt.Errorf("need to fix BCF-3061")
 	default:
-		return nil, fmt.Errorf("provider type not supported: %s", rargs.ProviderType)
+		return nil, fmt.Errorf("provider type not supported: %s", providerType)
 	}
 }
 
@@ -335,21 +347,24 @@ func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewCo
 }
 
 func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPluginProviderRequest) (*pb.NewPluginProviderReply, error) {
-	exJobID, err := uuid.FromBytes(request.RelayArgs.ExternalJobID)
+	rargs := request.RelayArgs
+	pargs := request.PluginArgs
+
+	exJobID, err := uuid.FromBytes(rargs.ExternalJobID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid uuid bytes for ExternalJobID: %w", err)
 	}
 	relayArgs := types.RelayArgs{
 		ExternalJobID: exJobID,
-		JobID:         request.RelayArgs.JobID,
-		ContractID:    request.RelayArgs.ContractID,
-		New:           request.RelayArgs.New,
-		RelayConfig:   request.RelayArgs.RelayConfig,
-		ProviderType:  request.RelayArgs.ProviderType,
+		JobID:         rargs.JobID,
+		ContractID:    rargs.ContractID,
+		New:           rargs.New,
+		RelayConfig:   rargs.RelayConfig,
+		ProviderType:  rargs.ProviderType,
 	}
 	pluginArgs := types.PluginArgs{
-		TransmitterID: request.PluginArgs.TransmitterID,
-		PluginConfig:  request.PluginArgs.PluginConfig,
+		TransmitterID: pargs.TransmitterID,
+		PluginConfig:  pargs.PluginConfig,
 	}
 
 	switch request.RelayArgs.ProviderType {
@@ -367,6 +382,12 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
 	case string(types.Mercury):
 		id, err := r.newMercuryProvider(ctx, relayArgs, pluginArgs)
+		if err != nil {
+			return nil, err
+		}
+		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
+	case string(types.CCIPCommit):
+		id, err := r.newCommitProvider(ctx, relayArgs, pluginArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -478,6 +499,34 @@ func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.Rel
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
 		ccip.RegisterExecutionProviderServices(s, provider, r.BrokerExt)
+	}, providerRes)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, err
+}
+
+func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
+	i, ok := r.impl.(looptypes.CCIPCommitProvider)
+	if !ok {
+		return 0, status.Error(codes.Unimplemented, fmt.Sprintf("ccip execution not supported by %T", r.impl))
+	}
+
+	provider, err := i.NewCommitProvider(ctx, relayArgs, pluginArgs)
+	if err != nil {
+		return 0, err
+	}
+	err = provider.Start(ctx)
+	if err != nil {
+		return 0, err
+	}
+	const name = "CCIPCommitProvider"
+	providerRes := net.Resource{Name: name, Closer: provider}
+
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		ocr2.RegisterPluginProviderServices(s, provider)
+		ccip.RegisterCommitProviderServices(s, provider, r.BrokerExt)
 	}, providerRes)
 	if err != nil {
 		return 0, err

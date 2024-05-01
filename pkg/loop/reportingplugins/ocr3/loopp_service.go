@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
@@ -14,30 +15,32 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 type LOOPPService struct {
-	goplugin.PluginService[*GRPCService[types.PluginProvider], types.OCR3ReportingPluginFactory]
+	goplugin.PluginService[*GRPCService[types.PluginProvider], core.OCR3ReportingPluginFactory]
 }
 
 func NewLOOPPService(
 	lggr logger.Logger,
 	grpcOpts loop.GRPCOpts,
 	cmd func() *exec.Cmd,
-	config types.ReportingPluginServiceConfig,
+	config core.ReportingPluginServiceConfig,
 	providerConn grpc.ClientConnInterface,
-	pipelineRunner types.PipelineRunnerService,
-	telemetryService types.TelemetryService,
-	errorLog types.ErrorLog,
-	capRegistry types.CapabilitiesRegistry,
-	keyValueStore types.KeyValueStore,
+	pipelineRunner core.PipelineRunnerService,
+	telemetryService core.TelemetryService,
+	errorLog core.ErrorLog,
+	capRegistry core.CapabilitiesRegistry,
+	keyValueStore core.KeyValueStore,
+	relayerSet core.RelayerSet,
 ) *LOOPPService {
-	newService := func(ctx context.Context, instance any) (types.OCR3ReportingPluginFactory, error) {
-		plug, ok := instance.(types.OCR3ReportingPluginClient)
+	newService := func(ctx context.Context, instance any) (core.OCR3ReportingPluginFactory, error) {
+		plug, ok := instance.(core.OCR3ReportingPluginClient)
 		if !ok {
 			return nil, fmt.Errorf("expected OCR3ReportingPluginClient but got %T", instance)
 		}
-		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog, capRegistry, keyValueStore)
+		return plug.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetryService, errorLog, capRegistry, keyValueStore, relayerSet)
 	}
 
 	stopCh := make(chan struct{})
@@ -60,8 +63,8 @@ func NewLOOPPServiceValidation(
 	grpcOpts loop.GRPCOpts,
 	cmd func() *exec.Cmd,
 ) *reportingplugins.LOOPPServiceValidation {
-	newService := func(ctx context.Context, instance any) (types.ValidationService, error) {
-		plug, ok := instance.(types.OCR3ReportingPluginClient)
+	newService := func(ctx context.Context, instance any) (core.ValidationService, error) {
+		plug, ok := instance.(core.OCR3ReportingPluginClient)
 		if !ok {
 			return nil, fmt.Errorf("expected ValidationServiceClient but got %T", instance)
 		}

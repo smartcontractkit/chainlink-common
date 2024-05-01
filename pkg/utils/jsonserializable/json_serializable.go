@@ -5,12 +5,10 @@ import (
 	"database/sql/driver"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"reflect"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
-	pkgerrors "github.com/pkg/errors"
 )
 
 type JSONSerializable struct {
@@ -94,7 +92,7 @@ func (js *JSONSerializable) Scan(value interface{}) error {
 	}
 	bytes, ok := value.([]byte)
 	if !ok {
-		return pkgerrors.Errorf("JSONSerializable#Scan received a value of type %T", value)
+		return fmt.Errorf("JSONSerializable#Scan received a value of type %T", value)
 	}
 	if js == nil {
 		*js = JSONSerializable{}
@@ -115,31 +113,19 @@ func (js *JSONSerializable) Empty() bool {
 
 // replaceBytesWithHex replaces all []byte with hex-encoded strings
 func replaceBytesWithHex(val interface{}) interface{} {
+	if v, ok := val.(interface{ Hex() string }); ok {
+		return v.Hex()
+	}
+
 	switch value := val.(type) {
 	case nil:
 		return value
 	case []byte:
 		return stringToHex(string(value))
-	case common.Address:
-		return value.Hex()
-	case common.Hash:
-		return value.Hex()
 	case [][]byte:
 		var list []string
 		for _, bytes := range value {
 			list = append(list, stringToHex(string(bytes)))
-		}
-		return list
-	case []common.Address:
-		var list []string
-		for _, addr := range value {
-			list = append(list, addr.Hex())
-		}
-		return list
-	case []common.Hash:
-		var list []string
-		for _, hash := range value {
-			list = append(list, hash.Hex())
 		}
 		return list
 	case []interface{}:
@@ -167,6 +153,19 @@ func replaceBytesWithHex(val interface{}) interface{} {
 		// can parse hex strings, same as BytesParam does.
 		if s := uint8ArrayToSlice(value); s != nil {
 			return replaceBytesWithHex(s)
+		}
+
+		// Handle []common.Hex and []common.Address without relying on go-ethereum.
+		// To do this, we first coerce a slice of either of those to []any,
+		// then call replaceBytesWithHex again, thus ensuring that we'll fall through
+		// to the []interface case above.
+		if reflect.TypeOf(val).Kind() == reflect.Slice {
+			v := reflect.ValueOf(val)
+			anySlice := make([]any, v.Len())
+			for i := range anySlice {
+				anySlice[i] = v.Index(i).Interface()
+			}
+			return replaceBytesWithHex(anySlice)
 		}
 		return value
 	}
@@ -199,7 +198,7 @@ func getJSONNumberValue(value json.Number) (interface{}, error) {
 	} else {
 		f, err := value.Float64()
 		if err != nil {
-			return nil, pkgerrors.Errorf("failed to parse json.Value: %v", err)
+			return nil, fmt.Errorf("failed to parse json.Value: %w", err)
 		}
 		result = f
 	}

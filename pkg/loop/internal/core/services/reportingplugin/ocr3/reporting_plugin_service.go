@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
-
 	"github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
+	relayersetpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
@@ -19,7 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
-	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 type ReportingPluginServiceClient struct {
@@ -37,14 +39,15 @@ func NewReportingPluginServiceClient(broker net.Broker, brokerCfg net.BrokerConf
 
 func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 	ctx context.Context,
-	config types.ReportingPluginServiceConfig,
+	config core.ReportingPluginServiceConfig,
 	grpcProvider grpc.ClientConnInterface,
-	pipelineRunner types.PipelineRunnerService,
-	telemetryService types.TelemetryService,
-	errorLog types.ErrorLog,
-	capRegistry types.CapabilitiesRegistry,
-	keyValueStore types.KeyValueStore,
-) (types.OCR3ReportingPluginFactory, error) {
+	pipelineRunner core.PipelineRunnerService,
+	telemetryService core.TelemetryService,
+	errorLog core.ErrorLog,
+	capRegistry core.CapabilitiesRegistry,
+	keyValueStore core.KeyValueStore,
+	relayerSet core.RelayerSet,
+) (core.OCR3ReportingPluginFactory, error) {
 	cc := o.NewClientConn("ReportingPluginServiceFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		providerID, providerRes, err := o.Serve("PluginProvider", proxy.NewProxy(grpcProvider))
 		if err != nil {
@@ -92,6 +95,22 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		deps.Add(keyValueStoreRes)
 
+		relayerSetServer, relayerSetServerRes := relayerset.NewRelayerSetServer(o.Logger, relayerSet, o.BrokerExt)
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to create new relayer set: %w", err)
+		}
+
+		relayerSetID, relayerSetRes, err := o.ServeNew("RelayerSet", func(s *grpc.Server) {
+			relayersetpb.RegisterRelayerSetServer(s, relayerSetServer)
+		})
+
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to serve new relayer set: %w", err)
+		}
+
+		deps.Add(relayerSetRes)
+		deps.Add(relayerSetServerRes)
+
 		reply, err := o.reportingPluginService.NewReportingPluginFactory(ctx, &pb.NewReportingPluginFactoryRequest{
 			ReportingPluginServiceConfig: &pb.ReportingPluginServiceConfig{
 				ProviderType:  config.ProviderType,
@@ -106,6 +125,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 			TelemetryID:      telemetryID,
 			CapRegistryID:    capRegistryID,
 			KeyValueStoreID:  keyValueStoreID,
+			RelayerSetID:     relayerSetID,
 		})
 		if err != nil {
 			return 0, nil, err
@@ -115,7 +135,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 	return newReportingPluginFactoryClient(o.PluginClient.BrokerExt, cc), nil
 }
 
-func (o *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (types.ValidationService, error) {
+func (o *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (core.ValidationService, error) {
 	cc := o.NewClientConn("ValidationService", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		reply, err := o.reportingPluginService.NewValidationService(ctx, &pb.ValidationServiceRequest{})
 		if err != nil {
@@ -132,7 +152,7 @@ type reportingPluginServiceServer struct {
 	pb.UnimplementedReportingPluginServiceServer
 
 	*net.BrokerExt
-	impl types.OCR3ReportingPluginClient
+	impl core.OCR3ReportingPluginClient
 }
 
 func (m reportingPluginServiceServer) NewValidationService(ctx context.Context, request *pb.ValidationServiceRequest) (*pb.ValidationServiceResponse, error) {
@@ -199,7 +219,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 	keyValueStoreRes := net.Resource{Closer: keyValueStoreConn, Name: "KeyValueStore"}
 	keyValueStore := keyvalue.NewClient(keyValueStoreConn)
 
-	config := types.ReportingPluginServiceConfig{
+	config := core.ReportingPluginServiceConfig{
 		ProviderType:  request.ReportingPluginServiceConfig.ProviderType,
 		PluginConfig:  request.ReportingPluginServiceConfig.PluginConfig,
 		PluginName:    request.ReportingPluginServiceConfig.PluginName,
@@ -207,16 +227,25 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		TelemetryType: request.ReportingPluginServiceConfig.TelemetryType,
 	}
 
-	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog, capRegistry, keyValueStore)
+	relayersetConn, err := m.Dial(request.RelayerSetID)
 	if err != nil {
-		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes)
+		m.CloseAll(errorLogRes, providerRes, pipelineRunnerRes, telemetryRes, keyValueStoreRes)
+		return nil, net.ErrConnDial{Name: "RelayerSet", ID: request.RelayerSetID, Err: err}
+	}
+	relayerSetRes := net.Resource{Closer: relayersetConn, Name: "RelayerSet"}
+	relayerSet := relayerset.NewRelayerSetClient(m.Logger, m.BrokerExt, relayersetConn)
+
+	factory, err := m.impl.NewReportingPluginFactory(ctx, config, providerConn, pipelineRunner, telemetry, errorLog, capRegistry, keyValueStore,
+		relayerSet)
+	if err != nil {
+		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes, relayerSetRes)
 		return nil, err
 	}
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		ocr3pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.BrokerExt))
-	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes, keyValueStoreRes)
+	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes, keyValueStoreRes, relayerSetRes)
 	if err != nil {
 		return nil, err
 	}
@@ -224,11 +253,11 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 	return &pb.NewReportingPluginFactoryReply{ID: id}, nil
 }
 
-func RegisterReportingPluginServiceServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl types.OCR3ReportingPluginClient) error {
+func RegisterReportingPluginServiceServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.OCR3ReportingPluginClient) error {
 	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
 
-func newReportingPluginServiceServer(b *net.BrokerExt, gp types.OCR3ReportingPluginClient) *reportingPluginServiceServer {
+func newReportingPluginServiceServer(b *net.BrokerExt, gp core.OCR3ReportingPluginClient) *reportingPluginServiceServer {
 	return &reportingPluginServiceServer{BrokerExt: b.WithName("OCR3ReportingPluginService"), impl: gp}
 }

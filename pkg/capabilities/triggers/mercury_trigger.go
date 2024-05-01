@@ -2,7 +2,6 @@ package triggers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -20,12 +19,30 @@ var mercuryInfo = capabilities.MustNewCapabilityInfo(
 	capabilities.CapabilityTypeTrigger,
 	"An example mercury trigger.",
 	"v1.0.0",
+	nil,
 )
 
 const defaultTickerResolutionMs = 1000
 
+// TODO pending capabilities configuration implementation - this should be configurable with a sensible default
+const defaultSendChannelBufferSize = 1000
+
+type config struct {
+	// strings should be hex-encoded 32-byte values, prefixed with "0x", all lowercase, minimum 1 item
+	FeedIDs []string `json:"feedIds" jsonschema:"pattern=^0x[0-9a-f]{64}$,minItems=1"`
+	// must be greater than 0
+	MaxFrequencyMs int `json:"maxFrequencyMs" jsonschema:"minimum=1"`
+}
+
+type inputs struct {
+	TriggerID string `json:"triggerId"`
+}
+
+var mercuryTriggerValidator = capabilities.NewValidator[config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: mercuryInfo})
+
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
+	capabilities.Validator[config, inputs, capabilities.TriggerEvent]
 	capabilities.CapabilityInfo
 	tickerResolutionMs int64
 	subscribers        map[string]*subscriber
@@ -36,20 +53,14 @@ type MercuryTriggerService struct {
 	lggr               logger.Logger
 }
 
+var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 var _ services.Service = &MercuryTriggerService{}
-
-type subscriberConfig struct {
-	FeedIds        []string
-	MaxFrequencyMs int
-}
 
 type subscriber struct {
 	ch         chan<- capabilities.CapabilityResponse
 	workflowID string
-	config     subscriberConfig
+	config     config
 }
-
-var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 
 // Mercury Trigger will send events to each subscriber every MaxFrequencyMs (configurable per subscriber).
 // Event generation happens whenever local unix time is a multiple of tickerResolutionMs. Therefore,
@@ -59,13 +70,13 @@ func NewMercuryTriggerService(tickerResolutionMs int64, lggr logger.Logger) *Mer
 		tickerResolutionMs = defaultTickerResolutionMs
 	}
 	return &MercuryTriggerService{
+		Validator:          mercuryTriggerValidator,
 		CapabilityInfo:     mercuryInfo,
 		tickerResolutionMs: tickerResolutionMs,
 		subscribers:        make(map[string]*subscriber),
 		latestReports:      make(map[mercury.FeedID]mercury.FeedReport),
 		stopCh:             make(services.StopChan),
-		lggr:               logger.Named(lggr, "MercuryTriggerService"),
-	}
+		lggr:               logger.Named(lggr, "MercuryTriggerService")}
 }
 
 func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) error {
@@ -79,52 +90,40 @@ func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) erro
 	return nil
 }
 
-func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, callback chan<- capabilities.CapabilityResponse, req capabilities.CapabilityRequest) error {
+func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
 	wid := req.Metadata.WorkflowID
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	triggerID, err := o.GetTriggerID(req, wid)
+	config, err := o.ValidateConfig(req.Config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	inputs, err := o.ValidateInputs(req.Inputs)
+	if err != nil {
+		return nil, err
+	}
+
+	triggerID := o.getTriggerID(inputs.TriggerID, wid)
 	// If triggerId is already registered, return an error
 	if _, ok := o.subscribers[triggerID]; ok {
-		return fmt.Errorf("triggerId %s already registered", triggerID)
+		return nil, fmt.Errorf("triggerId %s already registered", triggerID)
 	}
 
-	cfg := subscriberConfig{}
-	err = req.Config.UnwrapTo(&cfg)
-	if err != nil {
-		return err
+	if int64(config.MaxFrequencyMs)%o.tickerResolutionMs != 0 {
+		return nil, fmt.Errorf("MaxFrequencyMs must be a multiple of %d", o.tickerResolutionMs)
 	}
 
-	feedIDs := []mercury.FeedID{}
-	for _, feedID := range cfg.FeedIds {
-		mfid, err := mercury.NewFeedID(feedID)
-		if err != nil {
-			return err
-		}
-		feedIDs = append(feedIDs, mfid)
-	}
-
-	if len(feedIDs) == 0 {
-		return errors.New("no feedIDs to register")
-	}
-
-	if int64(cfg.MaxFrequencyMs)%o.tickerResolutionMs != 0 {
-		return fmt.Errorf("MaxFrequencyMs must be a multiple of %d", o.tickerResolutionMs)
-	}
-
+	ch := make(chan capabilities.CapabilityResponse, defaultSendChannelBufferSize)
 	o.subscribers[triggerID] =
 		&subscriber{
-			ch:         callback,
+			ch:         ch,
 			workflowID: wid,
-			config:     cfg,
+			config:     *config,
 		}
-	return nil
+	return ch, nil
 }
 
 func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) error {
@@ -133,10 +132,11 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	triggerID, err := o.GetTriggerID(req, wid)
+	inputs, err := o.ValidateInputs(req.Inputs)
 	if err != nil {
 		return err
 	}
+	triggerID := o.getTriggerID(inputs.TriggerID, wid)
 
 	subscriber, ok := o.subscribers[triggerID]
 	if !ok {
@@ -147,19 +147,9 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 	return nil
 }
 
-// Get the triggerId from the CapabilityRequest req map
-func (o *MercuryTriggerService) GetTriggerID(req capabilities.CapabilityRequest, workflowID string) (string, error) {
-	// Unwrap the inputs which should return pair (map, nil) and then get the triggerId from the map
-	inputs, err := req.Inputs.Unwrap()
-	if err != nil {
-		return "", err
-	}
-	if id, ok := inputs.(map[string]interface{})["triggerId"].(string); ok {
-		// TriggerIDs should be namespaced to the workflowID
-		return workflowID + "|" + id, nil
-	}
-
-	return "", fmt.Errorf("triggerId not found in inputs")
+func (o *MercuryTriggerService) getTriggerID(triggerID string, wid string) string {
+	tid := wid + "|" + triggerID
+	return tid
 }
 
 func (o *MercuryTriggerService) loop() {
@@ -200,86 +190,52 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 	for _, sub := range o.subscribers {
 		if timestamp%int64(sub.config.MaxFrequencyMs) == 0 {
 			reportList := make([]mercury.FeedReport, 0)
-			for _, feedID := range sub.config.FeedIds {
+			for _, feedID := range sub.config.FeedIDs {
 				if latest, ok := o.latestReports[mercury.FeedID(feedID)]; ok {
 					reportList = append(reportList, latest)
 				}
 			}
 
-			val, err := mercury.Codec{}.Wrap(reportList)
-			if err != nil {
-				o.lggr.Errorw("Error encoding reportList", "err", err)
-				continue
-			}
-
-			timestampStr := strconv.FormatInt(timestamp, 10)
 			// use 32-byte-padded timestamp as EventID (human-readable)
-			paddedTs := fmt.Sprintf("mercury_%024s", timestampStr)
-			triggerEvent := capabilities.TriggerEvent{
-				TriggerType: "mercury",
-				ID:          paddedTs,
-				Timestamp:   timestampStr,
-				Payload:     val,
-			}
-
-			eventVal, err := values.Wrap(triggerEvent)
+			eventID := fmt.Sprintf("mercury_%024s", strconv.FormatInt(timestamp, 10))
+			capabilityResponse, err := wrapReports(reportList, eventID, timestamp)
 			if err != nil {
-				o.lggr.Errorw("Error wrapping triggerEvent", "err", err)
+				o.lggr.Errorw("error wrapping reports", "err", err)
 				continue
 			}
 
-			// Create a new CapabilityResponse with the MercuryTriggerEvent
-			capabilityResponse := capabilities.CapabilityResponse{
-				Value: eventVal,
-			}
-
-			o.lggr.Debugw("ProcessReport pushing event", "nReports", len(reportList), "eventID", triggerEvent.ID)
+			o.lggr.Debugw("ProcessReport pushing event", "nReports", len(reportList), "eventID", eventID)
 			select {
 			case sub.ch <- capabilityResponse:
 			default:
-				o.lggr.Errorw("subscriber channel full, dropping event", "eventID", triggerEvent.ID, "workflowID", sub.workflowID)
+				o.lggr.Errorw("subscriber channel full, dropping event", "eventID", eventID, "workflowID", sub.workflowID)
 			}
 		}
 	}
 }
 
-func ValidateInput(mercuryTriggerEvent values.Value) error {
-	// TODO: Fill this in
-	return nil
-}
-
-func ExampleOutput() (values.Value, error) {
-	feedOne := "0x111111111111111111110000000000000000000000000000000000000000"
-	feedTwo := "0x222222222222222222220000000000000000000000000000000000000000"
-
-	reportSet := []mercury.FeedReport{
-		{
-			FeedID:               feedOne,
-			FullReport:           []byte("hello"),
-			BenchmarkPrice:       100,
-			ObservationTimestamp: 123,
-		},
-		{
-			FeedID:               feedTwo,
-			FullReport:           []byte("world"),
-			BenchmarkPrice:       100,
-			ObservationTimestamp: 123,
-		},
-	}
-
-	val, err := mercury.Codec{}.Wrap(reportSet)
+func wrapReports(reportList []mercury.FeedReport, eventID string, timestamp int64) (capabilities.CapabilityResponse, error) {
+	val, err := mercury.Codec{}.Wrap(reportList)
 	if err != nil {
-		return val, err
+		return capabilities.CapabilityResponse{}, err
 	}
 
-	event := capabilities.TriggerEvent{
+	triggerEvent := capabilities.TriggerEvent{
 		TriggerType: "mercury",
-		ID:          "1712963290",
-		Timestamp:   "1712963290",
+		ID:          eventID,
+		Timestamp:   strconv.FormatInt(timestamp, 10),
 		Payload:     val,
 	}
 
-	return values.Wrap(event)
+	eventVal, err := values.Wrap(triggerEvent)
+	if err != nil {
+		return capabilities.CapabilityResponse{}, err
+	}
+
+	// Create a new CapabilityResponse with the MercuryTriggerEvent
+	return capabilities.CapabilityResponse{
+		Value: eventVal,
+	}, nil
 }
 
 func (o *MercuryTriggerService) Start(ctx context.Context) error {
@@ -306,9 +262,4 @@ func (o *MercuryTriggerService) HealthReport() map[string]error {
 
 func (o *MercuryTriggerService) Name() string {
 	return "MercuryTriggerService"
-}
-
-func ValidateConfig(config values.Value) error {
-	// TODO: Fill this in
-	return nil
 }

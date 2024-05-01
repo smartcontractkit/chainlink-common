@@ -6,8 +6,9 @@ import (
 	"sort"
 
 	"github.com/shopspring/decimal"
-	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"google.golang.org/protobuf/proto"
+
+	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
@@ -78,25 +79,36 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		a.lggr.Debug("empty previous outcome - initializing empty onchain state")
+	}
+	// initialize empty state for missing feeds
+	if currentState.FeedInfo == nil {
 		currentState.FeedInfo = make(map[string]*DataFeedsMercuryReportInfo)
-		for feedID := range a.config.Feeds {
+	}
+	for feedID := range a.config.Feeds {
+		if _, ok := currentState.FeedInfo[feedID.String()]; !ok {
 			currentState.FeedInfo[feedID.String()] = &DataFeedsMercuryReportInfo{
 				ObservationTimestamp: 0, // will always trigger an update
 				BenchmarkPrice:       0,
 			}
+			a.lggr.Debugw("initializing empty onchain state for feed", "feedID", feedID.String())
 		}
+	}
+	// remove obsolete feeds from state
+	for feedID := range currentState.FeedInfo {
+		if _, ok := a.config.Feeds[mercury.FeedID(feedID)]; !ok {
+			delete(currentState.FeedInfo, feedID)
+		}
+		a.lggr.Debugw("removed obsolete feedID from state", "feedID", feedID)
 	}
 
 	reportsNeedingUpdate := []any{} // [][]byte
-	allIds := []string{}
+	allIDs := []string{}
 	for feedID := range currentState.FeedInfo {
-		allIds = append(allIds, feedID)
+		allIDs = append(allIDs, feedID)
 	}
 	// ensure deterministic order of reportsNeedingUpdate
-	sort.Slice(allIds, func(i, j int) bool { return allIds[i] < allIds[j] })
-	for _, feedID := range allIds {
+	sort.Slice(allIDs, func(i, j int) bool { return allIDs[i] < allIDs[j] })
+	for _, feedID := range allIDs {
 		previousReportInfo := currentState.FeedInfo[feedID]
 		feedID, err := mercury.NewFeedID(feedID)
 		if err != nil {

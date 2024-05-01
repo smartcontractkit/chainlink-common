@@ -34,7 +34,7 @@ message BindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
 message GetLatestValueReply {
-  VersionedBytes retVal = 1;
+  VersionedBytes ret_val = 1;
 }
 
 // QueryKeyReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
@@ -167,28 +167,19 @@ enum SortDirection {
   Desc = 1;
 }
 
-message SortByTimestamp {
-  SortDirection sort_direction = 1;
-}
-
-message SortByBlock {
-  SortDirection sort_direction = 1;
-}
-
-message SortBySequence {
-  SortDirection sort_direction = 1;
+enum SortType {
+  SortTimestamp = 0;
+  SortBlock = 1;
+  SortSequence = 2;
 }
 
 message SortBy {
-  oneof sort_by {
-    SortByTimestamp sort_by_timestamp = 1;
-    SortByBlock sort_by_block = 2;
-    SortBySequence sort_by_sequence = 3;
-  }
+  SortType sort_type = 1;
+  SortDirection direction = 2;
 }
 
 // LimitAndSort combines sorting criteria with pagination limits.
 message LimitAndSort {
-  repeated SortBy sortBy = 1; // A list of sorting criteria.
+  repeated SortBy sort_by = 1; // A list of sorting criteria.
   Limit limit = 2; // Pagination limit and direction.
 }

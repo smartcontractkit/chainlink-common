@@ -121,10 +121,6 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 }
 
 func (c *Client) QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
-	if sequenceDataType == nil || reflect.TypeOf(sequenceDataType).Kind() != reflect.Ptr {
-		return nil, fmt.Errorf("%w: sequenceDataType must be non nil and a pointer", types.ErrInvalidType)
-	}
-
 	pbQueryFilter, err := convertQueryFilterToProto(filter)
 	if err != nil {
 		return nil, err
@@ -312,29 +308,25 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 }
 
 func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSort, error) {
-	var sortByArr []*pb.SortBy
-	for _, sortBy := range limitAndSort.SortBy {
+	sortByArr := make([]*pb.SortBy, len(limitAndSort.SortBy))
+
+	for idx, sortBy := range limitAndSort.SortBy {
+		var tp pb.SortType
+
 		switch sort := sortBy.(type) {
 		case *query.SortByBlock:
-			sortByArr = append(sortByArr,
-				&pb.SortBy{SortBy: &pb.SortBy_SortByBlock{
-					SortByBlock: &pb.SortByBlock{
-						SortDirection: pb.SortDirection(sort.GetDirection()),
-					}}})
+			tp = pb.SortType_SortBlock
 		case *query.SortByTimestamp:
-			sortByArr = append(sortByArr,
-				&pb.SortBy{SortBy: &pb.SortBy_SortByTimestamp{
-					SortByTimestamp: &pb.SortByTimestamp{
-						SortDirection: pb.SortDirection(sort.GetDirection()),
-					}}})
+			tp = pb.SortType_SortTimestamp
 		case *query.SortBySequence:
-			sortByArr = append(sortByArr,
-				&pb.SortBy{SortBy: &pb.SortBy_SortBySequence{
-					SortBySequence: &pb.SortBySequence{
-						SortDirection: pb.SortDirection(sort.GetDirection()),
-					}}})
+			tp = pb.SortType_SortSequence
 		default:
 			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sort)
+		}
+
+		sortByArr[idx] = &pb.SortBy{
+			SortType:  tp,
+			Direction: pb.SortDirection(sortBy.GetDirection()),
 		}
 	}
 
@@ -345,6 +337,7 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 
 	cursorDefined := limitAndSort.Limit.Cursor != ""
 	cursorDirectionDefined := limitAndSort.Limit.CursorDirection != 0
+
 	if limitAndSort.HasCursorLimit() {
 		pbLimitAndSort.Limit.Cursor = &limitAndSort.Limit.Cursor
 		pbLimitAndSort.Limit.Direction = (*pb.CursorDirection)(&limitAndSort.Limit.CursorDirection)
@@ -428,15 +421,16 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 }
 
 func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAndSort, error) {
-	var sortByArr []query.SortBy
-	for _, sortBy := range limitAndSort.SortBy {
-		switch sort := sortBy.SortBy.(type) {
-		case *pb.SortBy_SortByTimestamp:
-			sortByArr = append(sortByArr, query.NewSortByTimestamp(query.SortDirection(sort.SortByTimestamp.GetSortDirection())))
-		case *pb.SortBy_SortByBlock:
-			sortByArr = append(sortByArr, query.NewSortByBlock(query.SortDirection(sort.SortByBlock.GetSortDirection())))
-		case *pb.SortBy_SortBySequence:
-			sortByArr = append(sortByArr, query.NewSortBySequence(query.SortDirection(sort.SortBySequence.GetSortDirection())))
+	sortByArr := make([]query.SortBy, len(limitAndSort.SortBy))
+
+	for idx, sortBy := range limitAndSort.SortBy {
+		switch sortBy.SortType {
+		case pb.SortType_SortTimestamp:
+			sortByArr[idx] = query.NewSortByTimestamp(query.SortDirection(sortBy.GetDirection()))
+		case pb.SortType_SortBlock:
+			sortByArr[idx] = query.NewSortByBlock(query.SortDirection(sortBy.GetDirection()))
+		case pb.SortType_SortSequence:
+			sortByArr[idx] = query.NewSortBySequence(query.SortDirection(sortBy.GetDirection()))
 		default:
 			return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sortBy)
 		}
@@ -445,6 +439,7 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 	limit := limitAndSort.Limit
 	cursorDefined := limit.Cursor != nil
 	cursorDirectionDefined := limit.Direction != nil
+
 	if cursorDefined && cursorDirectionDefined {
 		return query.NewLimitAndSort(query.CursorLimit(*limit.Cursor, (query.CursorDirection)(*limit.Direction), limit.Count)), nil
 	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {
@@ -455,22 +450,41 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 }
 
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
-	var sequences []types.Sequence
-	for _, pbSequence := range pbSequences {
-		cpy := reflect.New(reflect.TypeOf(sequenceDataType).Elem()).Interface()
+	seqTypeOf := reflect.TypeOf(sequenceDataType)
+
+	// get the non-pointer data type for the sequence data
+	nonPointerType := seqTypeOf
+	if seqTypeOf.Kind() == reflect.Pointer {
+		nonPointerType = seqTypeOf.Elem()
+	}
+
+	if nonPointerType.Kind() == reflect.Pointer {
+		return nil, fmt.Errorf("%w: sequenceDataType does not support pointers to pointers", types.ErrInvalidType)
+	}
+
+	sequences := make([]types.Sequence, len(pbSequences))
+
+	for idx, pbSequence := range pbSequences {
+		cpy := reflect.New(nonPointerType).Interface()
 		if err := DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
 			return nil, err
 		}
-		sequence := types.Sequence{
-			Cursor: pbSequence.SequenceCursor,
+
+		// match provided data type either as pointer or non-pointer
+		if seqTypeOf.Kind() != reflect.Pointer {
+			cpy = reflect.Indirect(reflect.ValueOf(cpy)).Interface()
+		}
+
+		sequences[idx] = types.Sequence{
+			Cursor: pbSequences[idx].SequenceCursor,
 			Head: types.Head{
-				Identifier: pbSequence.Head.Identifier,
-				Hash:       pbSequence.Head.Hash,
-				Timestamp:  pbSequence.Head.Timestamp,
+				Identifier: pbSequences[idx].Head.Identifier,
+				Hash:       pbSequences[idx].Head.Hash,
+				Timestamp:  pbSequences[idx].Head.Timestamp,
 			},
 			Data: cpy,
 		}
-		sequences = append(sequences, sequence)
 	}
+
 	return sequences, nil
 }

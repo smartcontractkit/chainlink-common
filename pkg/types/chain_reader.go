@@ -41,12 +41,13 @@ type ChainReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	GetLatestValue(ctx context.Context, contractName, method string, params, returnVal any) error
 
-	// Bind TODO BCF-3139 can't handle log poller filters,explore handling this through chain reader config.
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
+	// TODO: (BCF-3139) can't handle log poller filters,explore handling this through chain reader config.
 	Bind(ctx context.Context, bindings []BoundContract) error
 
-	// QueryKey TODO BCF-3174 find a way to abstract EVM Log Poller IndexedLogsWithSigsExcluding, should be possible by adding a new filter.
+	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
+	// TODO: (BCF-3174) find a way to abstract EVM Log Poller IndexedLogsWithSigsExcluding, should be possible by adding a new filter.
 	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 
@@ -57,7 +58,6 @@ type Head struct {
 }
 
 type Sequence struct {
-	// TODO Cursor, this should be a unique sequence identifier that chain reader impl. understands.
 	// This way we can retrieve past/future sequences (EVM log events) very granularly, but still hide the chain detail.
 	Cursor string
 	Head

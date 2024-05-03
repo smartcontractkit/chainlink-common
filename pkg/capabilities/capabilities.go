@@ -63,6 +63,7 @@ type CapabilityResponse struct {
 type RequestMetadata struct {
 	WorkflowID          string
 	WorkflowExecutionID string
+	StepRef             string
 }
 
 type RegistrationMetadata struct {

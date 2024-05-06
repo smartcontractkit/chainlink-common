@@ -18,6 +18,9 @@ import (
 
 const (
 	ocrCapabilityID = "offchain_reporting"
+
+	methodStartRequest = "start_request"
+	methodSendResponse = "send_response"
 )
 
 var info = capabilities.MustNewCapabilityInfo(
@@ -152,16 +155,46 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 	return nil
 }
 
+// `Execute` enqueues a new consensus request, passing it to the reporting plugin as needed.
+// IMPORTANT: OCR3 only exposes signatures via the contractTransmitter, which is located
+// in a separate process to the reporting plugin LOOPP. However, only the reporting plugin
+// LOOPP is able to transmit responses back to the workflow engine. As a workaround to this, we've implemented a custom contract transmitter which fetches this capability from the
+// registry and calls Execute with the response, setting "method = `methodSendResponse`".
 func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
-	// Receives and stores an observation to do consensus on
-	// Receives an aggregation method; at this point the method has been validated
-	// Returns the consensus result over a channel
-	inputs, err := o.ValidateInputs(r.Inputs)
+	m := struct {
+		Method string
+	}{
+		Method: methodStartRequest,
+	}
+	err := r.Inputs.UnwrapTo(&m)
 	if err != nil {
-		return nil, err
+		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %w", err)
 	}
 
-	return o.queueRequestForProcessing(ctx, r.Metadata, inputs)
+	switch m.Method {
+	case methodSendResponse:
+		out := &outputs{
+			WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
+			CapabilityResponse: capabilities.CapabilityResponse{
+				Value: r.Inputs,
+				Err:   nil,
+			},
+		}
+		err = o.transmitResponse(ctx, out)
+		return nil, err
+	case methodStartRequest:
+		// Receives and stores an observation to do consensus on
+		// Receives an aggregation method; at this point the method has been validated
+		// Returns the consensus result over a channel
+		inputs, err := o.ValidateInputs(r.Inputs)
+		if err != nil {
+			return nil, err
+		}
+
+		return o.queueRequestForProcessing(ctx, r.Metadata, inputs)
+	}
+
+	return nil, fmt.Errorf("unknown method: %s", m.Method)
 }
 
 // queueRequestForProcessing queues a request for processing by the worker

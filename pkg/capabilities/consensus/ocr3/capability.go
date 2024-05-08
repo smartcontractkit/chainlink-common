@@ -14,6 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 const (
@@ -21,6 +22,7 @@ const (
 
 	methodStartRequest = "start_request"
 	methodSendResponse = "send_response"
+	methodHeader       = "method"
 )
 
 var info = capabilities.MustNewCapabilityInfo(
@@ -155,7 +157,7 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 	return nil
 }
 
-// `Execute` enqueues a new consensus request, passing it to the reporting plugin as needed.
+// Execute enqueues a new consensus request, passing it to the reporting plugin as needed.
 // IMPORTANT: OCR3 only exposes signatures via the contractTransmitter, which is located
 // in a separate process to the reporting plugin LOOPP. However, only the reporting plugin
 // LOOPP is able to transmit responses back to the workflow engine. As a workaround to this, we've implemented a custom contract transmitter which fetches this capability from the
@@ -173,10 +175,25 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 
 	switch m.Method {
 	case methodSendResponse:
+		unwrapped, err := r.Inputs.Unwrap()
+		if err != nil {
+			return nil, fmt.Errorf("failed to unwrap response inputs: %w", err)
+		}
+
+		withoutHeader := map[string]any{}
+		for k, v := range unwrapped.(map[string]any) {
+			if k != methodHeader {
+				withoutHeader[k] = v
+			}
+		}
+		inputs, err := values.NewMap(withoutHeader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create map for response inputs: %w", err)
+		}
 		out := &outputs{
 			WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 			CapabilityResponse: capabilities.CapabilityResponse{
-				Value: r.Inputs,
+				Value: inputs,
 				Err:   nil,
 			},
 		}

@@ -13,7 +13,7 @@ message Signature {
 }
 
 message TransmitRequest {
-  bytes configDigest = 1;
+  bytes configDigest = 1; // NOTE: this is actually [32]byte
   uint64 seqNr = 2;
   ReportWithInfo reportWithInfo = 3;
   repeated Signature signatures = 4;

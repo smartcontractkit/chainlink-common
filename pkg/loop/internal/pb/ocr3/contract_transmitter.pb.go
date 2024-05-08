@@ -81,7 +81,7 @@ type TransmitRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ConfigDigest   []byte          `protobuf:"bytes,1,opt,name=configDigest,proto3" json:"configDigest,omitempty"`
+	ConfigDigest   []byte          `protobuf:"bytes,1,opt,name=configDigest,proto3" json:"configDigest,omitempty"` // NOTE: this is actually [32]byte
 	SeqNr          uint64          `protobuf:"varint,2,opt,name=seqNr,proto3" json:"seqNr,omitempty"`
 	ReportWithInfo *ReportWithInfo `protobuf:"bytes,3,opt,name=reportWithInfo,proto3" json:"reportWithInfo,omitempty"`
 	Signatures     []*Signature    `protobuf:"bytes,4,rep,name=signatures,proto3" json:"signatures,omitempty"`

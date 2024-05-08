@@ -22,6 +22,7 @@ import (
 )
 
 func TestTransmitter(t *testing.T) {
+	wid := "consensus-workflow-test-id-1"
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := newStore()
@@ -44,7 +45,7 @@ func TestTransmitter(t *testing.T) {
 	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
-			WorkflowID:          workflowTestID,
+			WorkflowID:          wid,
 		},
 		Inputs: payload,
 	})
@@ -56,7 +57,7 @@ func TestTransmitter(t *testing.T) {
 	info := &pbtypes.ReportInfo{
 		Id: &pbtypes.Id{
 			WorkflowExecutionId: weid,
-			WorkflowId:          workflowTestID,
+			WorkflowId:          wid,
 		},
 		ShouldReport: true,
 	}
@@ -88,9 +89,12 @@ func TestTransmitter(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, um["report"].([]byte), spb)
 	assert.Len(t, um["signatures"], 1)
+	_, ok := um[methodHeader]
+	assert.False(t, ok)
 }
 
 func TestTransmitter_ShouldReportFalse(t *testing.T) {
+	wid := "consensus-workflow-test-id-1"
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := newStore()
@@ -113,7 +117,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
-			WorkflowID:          workflowTestID,
+			WorkflowID:          wid,
 		},
 		Inputs: payload,
 	})
@@ -125,7 +129,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	info := &pbtypes.ReportInfo{
 		Id: &pbtypes.Id{
 			WorkflowExecutionId: weid,
-			WorkflowId:          workflowTestID,
+			WorkflowId:          wid,
 		},
 		ShouldReport: false,
 	}
@@ -157,4 +161,6 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, um["report"])
 	assert.Len(t, um["signatures"], 0)
+	_, ok := um[methodHeader]
+	assert.False(t, ok)
 }

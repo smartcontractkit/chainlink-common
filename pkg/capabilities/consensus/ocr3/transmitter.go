@@ -2,6 +2,7 @@ package ocr3
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
@@ -14,6 +15,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+var _ (ocr3types.ContractTransmitter[[]byte]) = (*ContractTransmitter)(nil)
+
+// ContractTransmitter is a custom transmitter for the OCR3 capability.
+// When called it will forward the report + its signatures back to the
+// OCR3 capability by making a call to Execute with a special "method"
+// parameter.
 type ContractTransmitter struct {
 	lggr        logger.Logger
 	registry    core.CapabilitiesRegistry
@@ -30,7 +37,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 	}
 
 	resp := map[string]any{
-		"method": methodSendResponse,
+		methodHeader: methodSendResponse,
 	}
 	if info.ShouldReport {
 		resp["report"] = []byte(rwi.Report)
@@ -55,7 +62,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 	if c.capability == nil {
 		cp, innerErr := c.registry.Get(ctx, ocrCapabilityID)
 		if innerErr != nil {
-			return innerErr
+			return fmt.Errorf("failed to fetch ocr3 capability from registry: %w", innerErr)
 		}
 
 		c.capability = cp.(capabilities.CallbackCapability)

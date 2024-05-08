@@ -267,10 +267,12 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 }
 
 func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+	// True because we always want to transmit a report, even if shouldReport = false.
 	return true, nil
 }
 
 func (r *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+	// True because we always want to transmit a report, even if shouldReport = false.
 	return true, nil
 }
 

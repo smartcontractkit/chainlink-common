@@ -134,7 +134,6 @@ func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty)
 		Id:             info.ID,
 		CapabilityType: ct,
 		Description:    info.Description,
-		Version:        info.Version,
 	}, nil
 }
 
@@ -173,7 +172,6 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 		ID:             resp.Id,
 		CapabilityType: ct,
 		Description:    resp.Description,
-		Version:        resp.Version,
 	}, nil
 }
 

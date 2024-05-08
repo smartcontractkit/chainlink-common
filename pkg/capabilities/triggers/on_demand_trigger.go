@@ -10,10 +10,9 @@ import (
 )
 
 var info = capabilities.MustNewCapabilityInfo(
-	"on-demand-trigger",
+	"on-demand-trigger@1",
 	capabilities.CapabilityTypeTrigger,
 	"An example on-demand trigger.",
-	"v1.0.0",
 	nil,
 )
 

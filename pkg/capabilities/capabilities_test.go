@@ -15,25 +15,52 @@ import (
 
 func Test_CapabilityInfo(t *testing.T) {
 	ci, err := NewCapabilityInfo(
-		"capability-id",
+		"capability-id@1",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
-		"v1.0.0",
 		nil,
 	)
 	require.NoError(t, err)
 
 	gotCi, err := ci.Info(tests.Context(t))
 	require.NoError(t, err)
+	require.Equal(t, ci.Version(), "1")
+	assert.Equal(t, ci, gotCi)
+
+	ci, err = NewCapabilityInfo(
+		// add build metadata and sha
+		"capability-id@1+build.1234.sha-5678",
+		CapabilityTypeAction,
+		"This is a mock capability that doesn't do anything.",
+		nil,
+	)
+	require.NoError(t, err)
+
+	gotCi, err = ci.Info(tests.Context(t))
+	require.NoError(t, err)
+	require.Equal(t, ci.Version(), "1+build.1234.sha-5678")
+	assert.Equal(t, ci, gotCi)
+
+	// prerelease
+	ci, err = NewCapabilityInfo(
+		"capability-id@1-beta",
+		CapabilityTypeAction,
+		"This is a mock capability that doesn't do anything.",
+		nil,
+	)
+	require.NoError(t, err)
+
+	gotCi, err = ci.Info(tests.Context(t))
+	require.NoError(t, err)
+	require.Equal(t, ci.Version(), "1-beta")
 	assert.Equal(t, ci, gotCi)
 }
 
 func Test_CapabilityInfo_Invalid(t *testing.T) {
 	_, err := NewCapabilityInfo(
-		"capability-id",
+		"capability-id@2",
 		CapabilityType(5),
 		"This is a mock capability that doesn't do anything.",
-		"v1.0.0",
 		nil,
 	)
 	assert.ErrorContains(t, err, "invalid capability type")
@@ -42,25 +69,38 @@ func Test_CapabilityInfo_Invalid(t *testing.T) {
 		"&!!!",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
-		"v1.0.0",
 		nil,
 	)
 	assert.ErrorContains(t, err, "invalid id")
 
 	_, err = NewCapabilityInfo(
-		"mock-capability",
+		"mock-capability@v1",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
-		"hello",
 		nil,
 	)
-	assert.ErrorContains(t, err, "invalid version")
+	assert.ErrorContains(t, err, "invalid id")
 
+	_, err = NewCapabilityInfo(
+		"mock-capability@1.0",
+		CapabilityTypeAction,
+		"This is a mock capability that doesn't do anything.",
+		nil,
+	)
+	assert.ErrorContains(t, err, "invalid id")
+
+	_, err = NewCapabilityInfo(
+		"mock-capability@1.0.1",
+		CapabilityTypeAction,
+		"This is a mock capability that doesn't do anything.",
+		nil,
+	)
+
+	assert.ErrorContains(t, err, "invalid id")
 	_, err = NewCapabilityInfo(
 		strings.Repeat("n", 256),
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
-		"hello",
 		nil,
 	)
 	assert.ErrorContains(t, err, "exceeds max length 128")
@@ -192,7 +232,6 @@ func Test_MustNewCapabilityInfo(t *testing.T) {
 			"capability-id",
 			CapabilityTypeAction,
 			"This is a mock capability that doesn't do anything.",
-			"should-panic",
 			nil,
 		)
 	})

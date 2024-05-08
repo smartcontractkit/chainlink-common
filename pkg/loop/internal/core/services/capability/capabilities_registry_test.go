@@ -176,10 +176,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Add capability Trigger
 	triggerInfo := capabilities.CapabilityInfo{
-		ID:             "trigger-1",
+		ID:             "trigger-1@1",
 		CapabilityType: capabilities.CapabilityTypeTrigger,
 		Description:    "trigger-1-description",
-		Version:        "trigger-1-version",
 	}
 	testTrigger := mockTriggerCapability{
 		mockBaseCapability:    &mockBaseCapability{info: triggerInfo},
@@ -217,10 +216,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Add capability Trigger
 	actionInfo := capabilities.CapabilityInfo{
-		ID:             "action-1",
+		ID:             "action-1@2",
 		CapabilityType: capabilities.CapabilityTypeAction,
 		Description:    "action-1-description",
-		Version:        "action-1-version",
 	}
 
 	actionCallbackChan := make(chan capabilities.CapabilityResponse, 10)
@@ -254,10 +252,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Add capability Consensus
 	consensusInfo := capabilities.CapabilityInfo{
-		ID:             "consensus-1",
+		ID:             "consensus-1@3",
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 		Description:    "consensus-1-description",
-		Version:        "consensus-1-version",
 	}
 	testConsensus := mockConsensusCapability{
 		mockBaseCapability:     &mockBaseCapability{info: consensusInfo},
@@ -271,10 +268,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Add capability Target
 	targetInfo := capabilities.CapabilityInfo{
-		ID:             "target-1",
+		ID:             "target-1@1",
 		CapabilityType: capabilities.CapabilityTypeTarget,
 		Description:    "target-1-description",
-		Version:        "target-1-version",
 	}
 	testTarget := mockTargetCapability{
 		mockBaseCapability:     &mockBaseCapability{info: targetInfo},
@@ -293,5 +289,5 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 	require.Equal(t, expectedInfo.ID, gotInfo.ID)
 	require.Equal(t, expectedInfo.CapabilityType, gotInfo.CapabilityType)
 	require.Equal(t, expectedInfo.Description, gotInfo.Description)
-	require.Equal(t, expectedInfo.Version, gotInfo.Version)
+	require.Equal(t, expectedInfo.Version(), gotInfo.Version())
 }

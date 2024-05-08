@@ -332,7 +332,7 @@ func (s *stepDefinitionID) MarshalJSON() ([]byte, error) {
 // The schema is a oneOf schema that allows either a string or a table.
 func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
-	tableSchema := reflector.Reflect(&StepDefinitionTableID{})
+	tableSchema := reflector.Reflect(&stepDefinitionTableID{})
 	stringSchema := &jsonschema.Schema{
 		ID: "string",
 		// Allow for a-z, 0-9, _, -, and : characters as the capability type, follwed by a semver regex allowing only major versions.

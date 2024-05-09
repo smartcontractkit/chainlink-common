@@ -20,7 +20,7 @@ type factory struct {
 
 const (
 	defaultMaxPhaseOutputBytes = 100000
-	defaultMaxReportCount      = 20
+	defaultMaxReportCount      = 100
 )
 
 func newFactory(s *store, c *capability, batchSize int, lggr logger.Logger) (*factory, error) {

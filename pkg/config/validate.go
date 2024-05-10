@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 
 	"go.uber.org/multierr"
 )
@@ -108,16 +107,4 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 	}
 
 	return fmt.Errorf("should be unreachable: switch missing case for kind: %s", t.Kind())
-}
-
-func NamedMultiErrorList(err error, name string) error {
-	l, merr := MultiErrorList(err)
-	if l == 0 {
-		return nil
-	}
-	msg := strings.ReplaceAll(merr.Error(), "\n", "\n\t")
-	if l == 1 {
-		return fmt.Errorf("%s.%s", name, msg)
-	}
-	return fmt.Errorf("%s: %s", name, msg)
 }

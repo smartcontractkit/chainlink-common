@@ -114,3 +114,15 @@ func (m multiErrorList) Error() string {
 func (m multiErrorList) Unwrap() []error {
 	return m
 }
+
+func NamedMultiErrorList(err error, name string) error {
+	l, merr := MultiErrorList(err)
+	if l == 0 {
+		return nil
+	}
+	msg := strings.ReplaceAll(merr.Error(), "\n", "\n\t")
+	if l == 1 {
+		return fmt.Errorf("%s.%s", name, msg)
+	}
+	return fmt.Errorf("%s: %s", name, msg)
+}

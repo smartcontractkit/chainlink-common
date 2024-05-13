@@ -56,7 +56,7 @@ func TestMedianService_recovery(t *testing.T) {
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, mediantest.MedianProvider, mediantest.DataSource, mediantest.JuelsPerFeeCoinDataSource, mediantest.JuelsPerFeeCoinDataSource, errorlogtest.ErrorLog)
+	}, mediantest.MedianProvider, mediantest.DataSource, mediantest.JuelsPerFeeCoinDataSource, mediantest.GasPriceSubunitsDataSource, errorlogtest.ErrorLog)
 	servicetest.Run(t, median)
 
 	reportingplugintest.RunFactory(t, median)

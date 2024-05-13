@@ -166,7 +166,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, m.BrokerExt))
-	}, dsRes, juelsRes, providerRes, errorLogRes)
+	}, dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
 	if err != nil {
 		return nil, err
 	}

@@ -37,6 +37,13 @@ var (
 			Value:         juelsPerFeeCoin,
 		},
 	}
+
+	GasPriceSubunitsDataSource = staticDataSource{
+		staticDataSourceConfig{
+			ReportContext: reportContext,
+			Value:         gasPriceSubunits,
+		},
+	}
 )
 
 func (s staticDataSource) Observe(ctx context.Context, timestamp types.ReportTimestamp) (*big.Int, error) {
@@ -55,4 +62,11 @@ func (s staticDataSource) Evaluate(ctx context.Context, ds median.DataSource) er
 		return fmt.Errorf("expected Value %s but got %s", value, gotVal)
 	}
 	return nil
+}
+
+type ZeroDataSource struct {
+}
+
+func (s *ZeroDataSource) Observe(ctx context.Context, _ types.ReportTimestamp) (*big.Int, error) {
+	return big.NewInt(0), nil
 }

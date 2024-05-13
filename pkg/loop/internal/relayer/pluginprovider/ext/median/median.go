@@ -93,10 +93,11 @@ func (r *reportCodecClient) BuildReport(observations []median.ParsedAttributedOb
 	var req pb.BuildReportRequest
 	for _, o := range observations {
 		req.Observations = append(req.Observations, &pb.ParsedAttributedObservation{
-			Timestamp:       o.Timestamp,
-			Value:           pb.NewBigIntFromInt(o.Value),
-			JulesPerFeeCoin: pb.NewBigIntFromInt(o.JuelsPerFeeCoin),
-			Observer:        uint32(o.Observer),
+			Timestamp:        o.Timestamp,
+			Value:            pb.NewBigIntFromInt(o.Value),
+			JulesPerFeeCoin:  pb.NewBigIntFromInt(o.JuelsPerFeeCoin),
+			GasPriceSubunits: pb.NewBigIntFromInt(o.GasPriceSubunits),
+			Observer:         uint32(o.Observer),
 		})
 	}
 	var reply *pb.BuildReportReply

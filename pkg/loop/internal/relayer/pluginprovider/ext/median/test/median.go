@@ -34,7 +34,16 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &errorlogtest.ErrorLog)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog)
+		require.NoError(t, err)
+
+		ReportingPluginFactory(t, factory)
+	})
+
+	// when gasPriceSubunitsDataSource is meant to trigger a no-op
+	t.Run("PluginMedian (Zero GasPriceSubunitsDataSource)", func(t *testing.T) {
+		ctx := tests.Context(t)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -61,10 +70,11 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 }
 
 type staticPluginMedianConfig struct {
-	provider                  staticMedianProvider
-	dataSource                staticDataSource
-	juelsPerFeeCoinDataSource staticDataSource
-	errorLog                  testtypes.ErrorLogEvaluator
+	provider                   staticMedianProvider
+	dataSource                 staticDataSource
+	juelsPerFeeCoinDataSource  staticDataSource
+	gasPriceSubunitsDataSource staticDataSource
+	errorLog                   testtypes.ErrorLogEvaluator
 }
 
 type staticMedianFactoryServer struct {
@@ -73,7 +83,7 @@ type staticMedianFactoryServer struct {
 
 var _ core.PluginMedian = staticMedianFactoryServer{}
 
-func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
 	// the provider may be a grpc client, so we can't compare it directly
 	// but in all of these static tests, the implementation of the provider is expected
 	// to be the same static implementation, so we can compare the expected values
@@ -91,6 +101,11 @@ func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provide
 	err = s.juelsPerFeeCoinDataSource.Evaluate(ctx, juelsPerFeeCoinDataSource)
 	if err != nil {
 		return nil, fmt.Errorf("NewMedianFactory: juelsPerFeeCoinDataSource does not equal a static test juels per fee coin data source implementation: %w", err)
+	}
+
+	err = s.gasPriceSubunitsDataSource.Evaluate(ctx, gasPriceSubunitsDataSource)
+	if err != nil {
+		return nil, fmt.Errorf("NewMedianFactory: gasPriceSubunitsDataSource does not equal a static gas price subunits data source implementation: %w", err)
 	}
 
 	if err := errorLog.SaveError(ctx, "an error"); err != nil {

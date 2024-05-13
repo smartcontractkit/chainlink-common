@@ -58,6 +58,7 @@ var (
 var (
 	encodedOnchainConfig = []byte{5: 11}
 	juelsPerFeeCoin      = big.NewInt(1234)
+	gasPriceSubunits     = big.NewInt(777)
 	onchainConfig        = median.OnchainConfig{Min: big.NewInt(-12), Max: big.NewInt(1234567890987654321)}
 	medianValue          = big.NewInt(-1042)
 

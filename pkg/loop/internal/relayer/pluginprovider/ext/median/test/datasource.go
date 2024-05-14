@@ -59,7 +59,7 @@ func (s staticDataSource) Evaluate(ctx context.Context, ds median.DataSource) er
 		return fmt.Errorf("failed to observe dataSource: %w", err)
 	}
 	if gotVal.Cmp(s.Value) != 0 {
-		return fmt.Errorf("expected Value %s but got %s", value, gotVal)
+		return fmt.Errorf("expected Value %s but got %s", s.Value, gotVal)
 	}
 	return nil
 }

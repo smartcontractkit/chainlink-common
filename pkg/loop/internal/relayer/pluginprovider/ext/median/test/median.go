@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -104,7 +105,8 @@ func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provide
 	}
 
 	err = s.gasPriceSubunitsDataSource.Evaluate(ctx, gasPriceSubunitsDataSource)
-	if err != nil {
+	// allow for testing 0 value with the same staticMedianFactoryServer (only defined once)
+	if err != nil && !strings.HasSuffix(err.Error(), "got 0") {
 		return nil, fmt.Errorf("NewMedianFactory: gasPriceSubunitsDataSource does not equal a static gas price subunits data source implementation: %w", err)
 	}
 

@@ -40,21 +40,21 @@ func (w *workflowSpec) steps() []stepDefinition {
 	return s
 }
 
-// workflow is a directed graph of nodes, where each node is a step.
+// Workflow is a directed graph of nodes, where each node is a step.
 //
 // triggers are special steps that are stored separately, they're
 // treated differently due to their nature of being the starting
-// point of a workflow.
-type workflow struct {
-	id string
-	graph.Graph[string, *step]
+// point of a Workflow.
+type Workflow struct {
+	ID string
+	graph.Graph[string, *Step]
 
-	triggers []*triggerCapability
+	Triggers []*triggerCapability
 
-	spec *workflowSpec
+	Spec *workflowSpec
 }
 
-func (w *workflow) walkDo(start string, do func(s *step) error) error {
+func (w *Workflow) WalkDo(start string, do func(s *Step) error) error {
 	var outerErr error
 	err := graph.BFS(w.Graph, start, func(ref string) bool {
 		n, err := w.Graph.Vertex(ref)
@@ -78,8 +78,8 @@ func (w *workflow) walkDo(start string, do func(s *step) error) error {
 	return outerErr
 }
 
-func (w *workflow) dependents(start string) ([]*step, error) {
-	steps := []*step{}
+func (w *Workflow) Dependents(start string) ([]*Step, error) {
+	steps := []*Step{}
 	m, err := w.Graph.AdjacencyMap()
 	if err != nil {
 		return nil, err
@@ -102,26 +102,26 @@ func (w *workflow) dependents(start string) ([]*step, error) {
 	return steps, nil
 }
 
-// step wraps a stepDefinition with additional context for dependencies and execution
-type step struct {
+// Step wraps a stepDefinition with additional context for dependencies and execution
+type Step struct {
 	stepDefinition
-	dependencies      []string
-	capability        capabilities.CallbackCapability
-	config            *values.Map
-	executionStrategy ExecutionStrategy
+	Dependencies      []string
+	Capability        capabilities.CallbackCapability
+	CachedConfig      *values.Map
+	ExecutionStrategy ExecutionStrategy
 }
 
 type triggerCapability struct {
 	stepDefinition
-	trigger capabilities.TriggerCapability
-	config  *values.Map
+	Trigger      capabilities.TriggerCapability
+	CachedConfig *values.Map
 }
 
 const (
 	keywordTrigger = "trigger"
 )
 
-func Parse(yamlWorkflow string) (*workflow, error) {
+func Parse(yamlWorkflow string) (*Workflow, error) {
 	spec, err := ParseWorkflowSpecYaml(yamlWorkflow)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func Parse(yamlWorkflow string) (*workflow, error) {
 	// Note: all triggers are represented by a single step called
 	// `trigger`. This is because for workflows with multiple triggers
 	// only one trigger will have started the workflow.
-	stepHash := func(s *step) string {
+	stepHash := func(s *Step) string {
 		return s.Ref
 	}
 	g := graph.New(
@@ -142,7 +142,7 @@ func Parse(yamlWorkflow string) (*workflow, error) {
 		graph.PreventCycles(),
 		graph.Directed(),
 	)
-	err = g.AddVertex(&step{
+	err = g.AddVertex(&Step{
 		stepDefinition: stepDefinition{Ref: keywordTrigger},
 	})
 	if err != nil {
@@ -159,7 +159,7 @@ func Parse(yamlWorkflow string) (*workflow, error) {
 			s.Ref = s.ID
 		}
 
-		innerErr := g.AddVertex(&step{stepDefinition: s})
+		innerErr := g.AddVertex(&Step{stepDefinition: s})
 		if innerErr != nil {
 			return nil, fmt.Errorf("cannot add vertex %s: %w", s.Ref, innerErr)
 		}
@@ -182,7 +182,7 @@ func Parse(yamlWorkflow string) (*workflow, error) {
 		if innerErr != nil {
 			return nil, innerErr
 		}
-		step.dependencies = refs
+		step.Dependencies = refs
 
 		if stepRef != keywordTrigger && len(refs) == 0 {
 			return nil, errors.New("all non-trigger steps must have a dependent ref")
@@ -202,10 +202,10 @@ func Parse(yamlWorkflow string) (*workflow, error) {
 			stepDefinition: t,
 		})
 	}
-	wf := &workflow{
-		spec:     &spec,
+	wf := &Workflow{
+		Spec:     &spec,
 		Graph:    g,
-		triggers: triggerSteps,
+		Triggers: triggerSteps,
 	}
 	return wf, err
 }
@@ -218,7 +218,7 @@ var (
 // contained within it.
 func findRefs(inputs map[string]any) ([]string, error) {
 	refs := []string{}
-	_, err := deepMap(
+	_, err := DeepMap(
 		inputs,
 		// This function is called for each string in the map
 		// for each string, we iterate over each match of the interpolation token
@@ -244,13 +244,13 @@ func findRefs(inputs map[string]any) ([]string, error) {
 	return refs, err
 }
 
-// deepMap recursively applies a transformation function
+// DeepMap recursively applies a transformation function
 // over each string within:
 //
 //   - a map[string]any
 //   - a []any
 //   - a string
-func deepMap(input any, transform func(el string) (any, error)) (any, error) {
+func DeepMap(input any, transform func(el string) (any, error)) (any, error) {
 	// in the case of a string, simply apply the transformation
 	// in the case of a map, recurse and apply the transformation to each value
 	// in the case of a list, recurse and apply the transformation to each element
@@ -268,7 +268,7 @@ func deepMap(input any, transform func(el string) (any, error)) (any, error) {
 
 		nm := map[string]any{}
 		for k, v := range mp {
-			nv, err := deepMap(v, transform)
+			nv, err := DeepMap(v, transform)
 			if err != nil {
 				return nil, err
 			}
@@ -279,7 +279,7 @@ func deepMap(input any, transform func(el string) (any, error)) (any, error) {
 	case map[string]any:
 		nm := map[string]any{}
 		for k, v := range tv {
-			nv, err := deepMap(v, transform)
+			nv, err := DeepMap(v, transform)
 			if err != nil {
 				return nil, err
 			}
@@ -290,7 +290,7 @@ func deepMap(input any, transform func(el string) (any, error)) (any, error) {
 	case []any:
 		a := []any{}
 		for _, el := range tv {
-			ne, err := deepMap(el, transform)
+			ne, err := DeepMap(el, transform)
 			if err != nil {
 				return nil, err
 			}

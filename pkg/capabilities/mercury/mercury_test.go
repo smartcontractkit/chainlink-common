@@ -8,12 +8,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 )
 
-const (
-	testFeedID               = mercury.FeedID("0x1111111111111111111100000000000000000000000000000000000000000000")
-	testFullReport           = "0x1234"
-	testObservationTimestamp = int64(3)
-)
-
 func TestFeedID_Validate(t *testing.T) {
 	_, err := mercury.NewFeedID("012345678901234567890123456789012345678901234567890123456789000000")
 	require.Error(t, err)

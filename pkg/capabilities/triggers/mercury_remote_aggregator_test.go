@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	eventId    = "ev_id_1"
+	eventID    = "ev_id_1"
 	timestamp  = 1000
 	rawReport1 = "abcd"
 	rawReport2 = "efgh"
@@ -76,17 +76,17 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 		Vs:                   vs,
 	}
 
-	node1Resp, err := wrapReports([]mercury.FeedReport{feed1Old, feed2New}, eventId, 400)
+	node1Resp, err := wrapReports([]mercury.FeedReport{feed1Old, feed2New}, eventID, 400)
 	require.NoError(t, err)
 	rawNode1Resp, err := pb.MarshalCapabilityResponse(node1Resp)
 	require.NoError(t, err)
-	node2Resp, err := wrapReports([]mercury.FeedReport{feed1New, feed2Old}, eventId, 300)
+	node2Resp, err := wrapReports([]mercury.FeedReport{feed1New, feed2Old}, eventID, 300)
 	require.NoError(t, err)
 	rawNode2Resp, err := pb.MarshalCapabilityResponse(node2Resp)
 	require.NoError(t, err)
 
 	// aggregator should return latest value for each feedID
-	aggResponse, err := agg.Aggregate(eventId, [][]byte{rawNode1Resp, rawNode2Resp})
+	aggResponse, err := agg.Aggregate(eventID, [][]byte{rawNode1Resp, rawNode2Resp})
 	require.NoError(t, err)
 	aggEvent := capabilities.TriggerEvent{}
 	require.NoError(t, aggResponse.Value.UnwrapTo(&aggEvent))

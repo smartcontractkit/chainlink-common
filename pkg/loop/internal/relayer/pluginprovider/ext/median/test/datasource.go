@@ -64,6 +64,7 @@ func (s staticDataSource) Evaluate(ctx context.Context, ds median.DataSource) er
 	return nil
 }
 
+// Only to be used for testing
 type ZeroDataSource struct {
 }
 

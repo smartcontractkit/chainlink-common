@@ -44,7 +44,7 @@ func (w *WorkflowSpec) Steps() []StepDefinition {
 
 type Vertex struct {
 	StepDefinition
-	dependencies []string
+	Dependencies []string
 }
 
 // DependencyGraph is an intermediate representation of a workflow wherein all the graph
@@ -126,7 +126,7 @@ func ParseDependencyGraph(yamlWorkflow string) (*DependencyGraph, error) {
 		if innerErr != nil {
 			return nil, innerErr
 		}
-		step.dependencies = refs
+		step.Dependencies = refs
 
 		if stepRef != KeywordTrigger && len(refs) == 0 {
 			return nil, errors.New("all non-trigger steps must have a dependent ref")
@@ -154,7 +154,7 @@ func ParseDependencyGraph(yamlWorkflow string) (*DependencyGraph, error) {
 }
 
 var (
-	interpolationTokenRe = regexp.MustCompile(`^\$\((\S+)\)$`)
+	InterpolationTokenRe = regexp.MustCompile(`^\$\((\S+)\)$`)
 )
 
 // findRefs takes an `inputs` map and returns a list of all the step references
@@ -169,7 +169,7 @@ func findRefs(inputs map[string]any) ([]string, error) {
 		// - if there is one match, return the reference
 		// - if there are multiple matches (in the case of a multi-part state reference), return just the step ref
 		func(el string) (any, error) {
-			matches := interpolationTokenRe.FindStringSubmatch(el)
+			matches := InterpolationTokenRe.FindStringSubmatch(el)
 			if len(matches) < 2 {
 				return el, nil
 			}

@@ -37,6 +37,8 @@ require (
 	google.golang.org/protobuf v1.31.0
 )
 
+require github.com/dominikbraun/graph v0.23.0
+
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
@@ -83,6 +85,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	sigs.k8s.io/yaml v1.4.0
 )
 
 replace (

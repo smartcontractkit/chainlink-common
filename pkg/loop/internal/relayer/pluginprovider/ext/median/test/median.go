@@ -3,6 +3,7 @@ package median_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -106,7 +107,8 @@ func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provide
 	err = s.gasPriceSubunitsDataSource.Evaluate(ctx, gasPriceSubunitsDataSource)
 
 	if err != nil {
-		compareError, isCompareError := err.(*CompareError)
+		var compareError *CompareError
+		isCompareError := errors.As(err, &compareError)
 		// allow 0 as valid data source value with the same staticMedianFactoryServer (because it is only defined once as a global var for all tests)
 		if !(isCompareError && compareError.GotZero()) {
 			return nil, fmt.Errorf("NewMedianFactory: gasPriceSubunitsDataSource does not equal a static gas price subunits data source implementation: %w", err)

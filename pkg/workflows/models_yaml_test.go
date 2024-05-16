@@ -17,54 +17,6 @@ import (
 
 var fixtureDir = "./testdata/fixtures/workflows/"
 
-const testWorkflowYAML = `
-triggers:
-  - id: "mercury-trigger"
-    config:
-      feedIds:
-        - "0x1111111111111111111100000000000000000000000000000000000000000000"
-        - "0x2222222222222222222200000000000000000000000000000000000000000000"
-        - "0x3333333333333333333300000000000000000000000000000000000000000000"
-
-consensus:
-  - id: "offchain_reporting"
-    ref: "evm_median"
-    inputs:
-      observations:
-        - "$(trigger.outputs)"
-    config:
-      aggregation_method: "data_feeds_2_0"
-      aggregation_config:
-        "0x1111111111111111111100000000000000000000000000000000000000000000":
-          deviation: "0.001"
-          heartbeat: 3600
-        "0x2222222222222222222200000000000000000000000000000000000000000000":
-          deviation: "0.001"
-          heartbeat: 3600
-        "0x3333333333333333333300000000000000000000000000000000000000000000":
-          deviation: "0.001"
-          heartbeat: 3600
-      encoder: "EVM"
-      encoder_config:
-        abi: "mercury_reports bytes[]"
-
-targets:
-  - id: "write_polygon-testnet-mumbai"
-    inputs:
-      report: "$(evm_median.outputs.report)"
-    config:
-      address: "0x3F3554832c636721F1fD1822Ccca0354576741Ef"
-      params: ["$(report)"]
-      abi: "receive(report bytes)"
-  - id: "write_ethereum-testnet-sepolia"
-    inputs:
-      report: "$(evm_median.outputs.report)"
-    config:
-      address: "0x54e220867af6683aE6DcBF535B4f952cB5116510"
-      params: ["$(report)"]
-      abi: "receive(report bytes)"
-`
-
 // yamlFixtureReaderObj reads a yaml fixture file and returns the parsed object
 func yamlFixtureReaderObj(t *testing.T, testCase string) func(name string) any {
 	testFixtureReader := yamlFixtureReaderBytes(t, testCase)
@@ -115,12 +67,12 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		err = yaml.Unmarshal(workflowBytes, &rawSpec)
 		require.NoError(t, err)
 
-		workflowspecJson, err := json.MarshalIndent(spec, "", "  ")
+		workflowspecJSON, err := json.MarshalIndent(spec, "", "  ")
 		require.NoError(t, err)
-		rawWorkflowSpecJson, err := json.MarshalIndent(rawSpec, "", "  ")
+		rawworkflowspecJSON, err := json.MarshalIndent(rawSpec, "", "  ")
 		require.NoError(t, err)
 
-		if diff := cmp.Diff(rawWorkflowSpecJson, workflowspecJson, transformJSON); diff != "" {
+		if diff := cmp.Diff(rawworkflowspecJSON, workflowspecJSON, transformJSON); diff != "" {
 			t.Errorf("ParseWorkflowWorkflowSpecFromString() mismatch (-want +got):\n%s", diff)
 			t.FailNow()
 		}
@@ -176,12 +128,12 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		err = yaml.Unmarshal(workflowBytes, &rawSpec)
 		require.NoError(t, err)
 
-		workflowspecJson, err := json.MarshalIndent(spec, "", "  ")
+		workflowspecJSON, err := json.MarshalIndent(spec, "", "  ")
 		require.NoError(t, err)
-		rawWorkflowSpecJson, err := json.MarshalIndent(rawSpec, "", "  ")
+		rawworkflowspecJSON, err := json.MarshalIndent(rawSpec, "", "  ")
 		require.NoError(t, err)
 
-		if diff := cmp.Diff(rawWorkflowSpecJson, workflowspecJson, transformJSON); diff != "" {
+		if diff := cmp.Diff(rawworkflowspecJSON, workflowspecJSON, transformJSON); diff != "" {
 			t.Errorf("ParseWorkflowWorkflowSpecFromString() mismatch (-want +got):\n%s", diff)
 			t.FailNow()
 		}
@@ -220,7 +172,7 @@ func TestJsonSchema(t *testing.T) {
 	t.Parallel()
 	t.Run("GenerateJsonSchema", func(t *testing.T) {
 		expectedSchemaPath := fixtureDir + "workflow_schema.json"
-		generatedSchema, err := GenerateJsonSchema()
+		generatedSchema, err := GenerateJSONSchema()
 		require.NoError(t, err)
 
 		// change this to update golden file
@@ -240,7 +192,7 @@ func TestJsonSchema(t *testing.T) {
 	})
 
 	t.Run("ValidateJsonSchema", func(t *testing.T) {
-		generatedSchema, err := GenerateJsonSchema()
+		generatedSchema, err := GenerateJSONSchema()
 		require.NoError(t, err)
 
 		// test version regex

@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
-func GenerateJsonSchema() ([]byte, error) {
+func GenerateJSONSchema() ([]byte, error) {
 	schema := jsonschema.Reflect(&workflowSpecYaml{})
 
 	return json.MarshalIndent(schema, "", "  ")

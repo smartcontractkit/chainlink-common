@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dominikbraun/graph"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 

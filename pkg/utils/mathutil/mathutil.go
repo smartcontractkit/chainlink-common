@@ -51,8 +51,8 @@ func Avg[V constraints.Integer](arr ...V) (V, error) {
 	return total / V(len(arr)), nil
 }
 
-// Med mirrors implementation with generics: https://github.com/montanaflynn/stats/blob/249b5aaa10484bb7e8f3b866b0925aaebdac8170/median.go#L6
-func Med[V constraints.Integer](arr ...V) (V, error) {
+// Median mirrors implementation with generics: https://github.com/montanaflynn/stats/blob/249b5aaa10484bb7e8f3b866b0925aaebdac8170/median.go#L6
+func Median[V constraints.Integer](arr ...V) (V, error) {
 	slices.Sort(arr)
 
 	l := len(arr)

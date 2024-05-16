@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/smartcontractkit/chainlink/v2/core/services/workflows/workflow-spec-yaml",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/workflows/workflow-spec-yaml",
   "$ref": "#/$defs/workflowSpecYaml",
   "$defs": {
     "mapping": {
@@ -14,7 +14,7 @@
         },
         {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "$id": "https://github.com/smartcontractkit/chainlink/v2/core/services/workflows/step-definition-table-id",
+          "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/workflows/step-definition-table-id",
           "properties": {
             "name": {
               "type": "string"

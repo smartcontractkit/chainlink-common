@@ -63,6 +63,11 @@ func TestVersionedBytesFunctions(t *testing.T) {
 	})
 }
 
+func TestChainReaderInterfaceTests(t *testing.T) {
+	fake := &fakeChainReader{}
+	RunChainReaderInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+}
+
 func TestBind(t *testing.T) {
 	es := &errChainReader{}
 	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
@@ -80,9 +85,6 @@ func TestBind(t *testing.T) {
 }
 
 func TestGetLatestValue(t *testing.T) {
-	fake := &fakeChainReader{}
-	RunChainReaderGetLatestValueInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
-
 	es := &errChainReader{}
 	errTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
 	errTester.Setup(t)
@@ -118,9 +120,6 @@ func TestGetLatestValue(t *testing.T) {
 }
 
 func TestQueryKey(t *testing.T) {
-	fake := &fakeChainReader{}
-	RunQueryKeyInterfaceTests(t, test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
-
 	impl := &protoConversionTestChainReader{}
 	crTester := test.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl})
 	crTester.Setup(t)

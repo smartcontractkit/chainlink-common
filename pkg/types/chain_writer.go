@@ -30,7 +30,8 @@ type TxMeta map[string]string
 type TransactionStatus int
 
 const (
-	Unconfirmed TransactionStatus = iota
+	Unknown TransactionStatus = iota
+	Unconfirmed
 	Finalized
 	Failed
 	Fatal

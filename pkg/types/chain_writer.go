@@ -10,7 +10,6 @@ import (
 type ChainWriter interface {
 	// SubmiTransaction packs and broadcasts a transaction to the underlying chain.
 	//
-	// The `payload` array must contain the encoded transaction payload, and the related signatures.
 	// The `transactionID` will be used by the underlying TXM as an idempotency key, and unique reference to track transaction attempts.
 	SubmitTransaction(ctx context.Context, payload []byte, signatures map[string]any, transactionID uuid.UUID, toAddress string, meta *TxMeta, value big.Int) (int64, error)
 

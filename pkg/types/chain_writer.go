@@ -45,7 +45,7 @@ type ChainFeeComponents struct {
 	AssetType ChainFeeType
 }
 
-// ChainFeeType decribes the asset type the underlying chain uses to estimate transaction costs.
+// ChainFeeType describes the asset type the underlying chain uses to estimate transaction costs.
 type ChainFeeType int
 
 const (

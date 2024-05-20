@@ -8,10 +8,10 @@ import (
 )
 
 type ChainWriter interface {
-	// SubmiTransaction packs and broadcasts a transaction to the underlying chain.
+	// SubmiSignedTransaction packs and broadcasts a transaction to the underlying chain.
 	//
 	// The `transactionID` will be used by the underlying TXM as an idempotency key, and unique reference to track transaction attempts.
-	SubmitTransaction(ctx context.Context, payload []byte, signatures map[string]any, transactionID uuid.UUID, toAddress string, meta *TxMeta, value big.Int) (int64, error)
+	SubmitSignedTransaction(ctx context.Context, payload []byte, signature map[string]any, transactionID uuid.UUID, toAddress string, meta *TxMeta, value big.Int) (int64, error)
 
 	// StatusForUUID returns the current status of a transaction in the underlying chain's TXM.
 	StatusForUUID(ctx context.Context, transactionID uuid.UUID) (TransactionStatus, error)
@@ -44,15 +44,4 @@ type ChainFeeComponents struct {
 
 	// The cost associated with an L2 posting a transaction's data to the L1.
 	DataAvailabilityPrice big.Int
-
-	AssetType ChainFeeType
 }
-
-// ChainFeeType describes the asset type the underlying chain uses to estimate transaction costs.
-type ChainFeeType int
-
-const (
-	Wei ChainFeeType = iota
-	Sun
-	Octa
-)

@@ -12,7 +12,7 @@ type ChainWriter interface {
 	//
 	// The `payload` array must contain the encoded transaction payload, and the related signatures.
 	// The `transactionID` will be used by the underlying TXM as an idempotency key, and unique reference to track transaction attempts.
-	SubmitTransaction(ctx context.Context, payload []any, transactionID uuid.UUID, toAddress string, meta *TxMeta, value big.Int) (int64, error)
+	SubmitTransaction(ctx context.Context, payload []byte, signatures map[string]any, transactionID uuid.UUID, toAddress string, meta *TxMeta, value big.Int) (int64, error)
 
 	// StatusForUUID returns the current status of a transaction in the underlying chain's TXM.
 	StatusForUUID(ctx context.Context, transactionID uuid.UUID) (TransactionStatus, error)

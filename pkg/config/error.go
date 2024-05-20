@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-
-	"go.uber.org/multierr"
 )
 
 // lightweight error types copied from core
@@ -94,7 +92,7 @@ func MultiErrorList(err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}
-	errs := multierr.Errors(err)
+	errs := Flatten(err)
 	return len(errs), multiErrorList(errs)
 }
 
@@ -113,6 +111,20 @@ func (m multiErrorList) Error() string {
 
 func (m multiErrorList) Unwrap() []error {
 	return m
+}
+
+// Flatten calls `Unwrap() []error` on each error and subsequent returned error that implement the method, returning a fully flattend sequence.
+//
+//nolint:errorlint // error type checks will fail on wrapped errors. Disabled since we are not doing checks on error types.
+func Flatten(errs ...error) (flat []error) {
+	for _, err := range errs {
+		if me, ok := err.(interface{ Unwrap() []error }); ok {
+			flat = append(flat, Flatten(me.Unwrap()...)...)
+			continue
+		}
+		flat = append(flat, err)
+	}
+	return
 }
 
 func NamedMultiErrorList(err error, name string) error {

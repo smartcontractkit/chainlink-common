@@ -1,4 +1,4 @@
-package test
+package chainreadertest
 
 import (
 	"context"
@@ -32,6 +32,16 @@ type staticChainReader struct {
 
 var _ testtypes.Evaluator[types.ChainReader] = staticChainReader{}
 var _ types.ChainReader = staticChainReader{}
+
+func (c staticChainReader) Start(_ context.Context) error { return nil }
+
+func (c staticChainReader) Close() error { return nil }
+
+func (c staticChainReader) Ready() error { panic("unimplemented") }
+
+func (c staticChainReader) Name() string { panic("unimplemented") }
+
+func (c staticChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
 func (c staticChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
 	return nil

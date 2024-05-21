@@ -16,6 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
@@ -176,6 +177,18 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
+func (r *relayerClient) NewChainReader(_ context.Context, chainReaderConfig []byte) (types.ChainReader, error) {
+	cc := r.NewClientConn("ChainReader", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewChainReader(ctx, &pb.NewChainReaderRequest{ChainReaderConfig: chainReaderConfig})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.ChainReaderID, nil, nil
+	})
+
+	return chainreader.NewClient(r.WithName("ChainReaderClient"), cc), nil
+}
+
 func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {
 	cc := r.NewClientConn("ConfigProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewConfigProvider(ctx, &pb.NewConfigProviderRequest{
@@ -316,6 +329,27 @@ type relayerServer struct {
 
 func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerServer {
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
+}
+
+func (r *relayerServer) NewChainReader(ctx context.Context, request *pb.NewChainReaderRequest) (*pb.NewChainReaderReply, error) {
+	cr, err := r.impl.NewChainReader(ctx, request.GetChainReaderConfig())
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cr.Start(ctx); err != nil {
+		return nil, err
+	}
+
+	const name = "ChainReader"
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		chainreader.RegisterChainReaderService(s, cr)
+	}, net.Resource{Closer: cr, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.NewChainReaderReply{ChainReaderID: id}, nil
 }
 
 func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewConfigProviderRequest) (*pb.NewConfigProviderReply, error) {

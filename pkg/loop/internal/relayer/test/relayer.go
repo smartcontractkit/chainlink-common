@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
+	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
@@ -52,6 +53,7 @@ type nodeResponse struct {
 }
 type staticPluginRelayerConfig struct {
 	StaticChecks           bool
+	chainReaderConfig      []byte
 	relayArgs              types.RelayArgs
 	pluginArgs             types.PluginArgs
 	medianProvider         testtypes.MedianProviderTester
@@ -59,6 +61,7 @@ type staticPluginRelayerConfig struct {
 	mercuryProvider        mercurytest.MercuryProviderTester
 	executionProvider      cciptest.ExecProviderTester
 	commitProvider         cciptest.CommitProviderTester
+	chainReader            testtypes.ChainReaderEvaluator
 	configProvider         ocr2test.ConfigProviderTester
 	ocr3CapabilityProvider testtypes.OCR3CapabilityProviderTester
 	// Note: add other Provider testers here when we implement them
@@ -79,6 +82,8 @@ func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
 			mercuryProvider:        mercurytest.MercuryProvider,
 			executionProvider:      cciptest.ExecutionProvider,
 			agnosticProvider:       ocr2test.AgnosticProvider,
+			chainReaderConfig:      []byte("test"),
+			chainReader:            chainreadertest.ChainReader,
 			configProvider:         ocr2test.ConfigProvider,
 			ocr3CapabilityProvider: ocr3capabilitytest.OCR3CapabilityProvider,
 			nodeRequest: nodeRequest{
@@ -129,6 +134,13 @@ func (s staticPluginRelayer) Ready() error { panic("unimplemented") }
 func (s staticPluginRelayer) Name() string { panic("unimplemented") }
 
 func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
+
+func (s staticPluginRelayer) NewChainReader(_ context.Context, chainReaderConfig []byte) (types.ChainReader, error) {
+	if s.StaticChecks && !(bytes.Equal(s.chainReaderConfig, chainReaderConfig)) {
+		return nil, fmt.Errorf("expected chainReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.chainReaderConfig), string(chainReaderConfig))
+	}
+	return s.chainReader, nil
+}
 
 func (s staticPluginRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
 	if s.StaticChecks && !equalRelayArgs(r, s.relayArgs) {
@@ -250,7 +262,17 @@ func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.I
 	return nil
 }
 
-func (s staticPluginRelayer) AssertEqual(ctx context.Context, t *testing.T, relayer looptypes.Relayer) {
+func (s staticPluginRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
+	t.Run("ChainReader", func(t *testing.T) {
+		t.Parallel()
+		ctx := tests.Context(t)
+		chainReader, err := relayer.NewChainReader(ctx, []byte("test"))
+		require.NoError(t, err)
+		require.NoError(t, chainReader.Start(ctx))
+
+		t.Cleanup(func() { assert.NoError(t, chainReader.Close()) })
+	})
+
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
 		ctx := tests.Context(t)

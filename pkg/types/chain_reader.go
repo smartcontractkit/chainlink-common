@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 )
 
@@ -16,6 +17,7 @@ const (
 )
 
 type ChainReader interface {
+	services.Service
 	// GetLatestValue gets the latest value....
 	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig.
 	// It must encode as an object via [json.Marshal] and [github.com/fxamacker/cbor/v2.Marshal].

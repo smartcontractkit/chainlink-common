@@ -70,38 +70,38 @@ var PriceRegistryReader = staticPriceRegistryReader{
 
 		// GetAllGasPriceUpdatesCreatedAfter test data
 		getAllGasPriceUpdatesCreatedAfterRequest: getAllGasPriceUpdatesCreatedAfterRequest{
-			ts:            time.Unix(179, 13).UTC(),
-			confirmations: 2,
+			ts:            time.Unix(189, 15).UTC(),
+			confirmations: 3,
 		},
 		getAllGasPriceUpdatesCreatedAfterResponse: []ccip.GasPriceUpdateWithTxMeta{
 			{
 				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 1,
-					BlockNumber:             1,
-					TxHash:                  "gas update tx 1",
-					LogIndex:                1,
+					BlockTimestampUnixMilli: 10,
+					BlockNumber:             10,
+					TxHash:                  "gas update tx 10",
+					LogIndex:                10,
 				},
 				GasPriceUpdate: ccip.GasPriceUpdate{
 					GasPrice: ccip.GasPrice{
-						DestChainSelector: 1,
-						Value:             big.NewInt(1),
+						DestChainSelector: 10,
+						Value:             big.NewInt(10),
 					},
-					TimestampUnixSec: big.NewInt(1),
+					TimestampUnixSec: big.NewInt(10),
 				},
 			},
 			{
 				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 2,
-					BlockNumber:             2,
-					TxHash:                  "gas update 2",
-					LogIndex:                2,
+					BlockTimestampUnixMilli: 20,
+					BlockNumber:             20,
+					TxHash:                  "gas update 20",
+					LogIndex:                20,
 				},
 				GasPriceUpdate: ccip.GasPriceUpdate{
 					GasPrice: ccip.GasPrice{
-						DestChainSelector: 2,
-						Value:             big.NewInt(2),
+						DestChainSelector: 20,
+						Value:             big.NewInt(20),
 					},
-					TimestampUnixSec: big.NewInt(2),
+					TimestampUnixSec: big.NewInt(20),
 				},
 			},
 		},

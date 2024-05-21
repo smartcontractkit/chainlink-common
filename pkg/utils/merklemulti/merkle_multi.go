@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/hashlib"
 )
@@ -149,24 +149,24 @@ func VerifyComputeRoot[H hashlib.Hash](ctx hashlib.Ctx[H], leafHashes []H, proof
 	leavesLength := len(leafHashes)
 	proofsLength := len(proof.Hashes)
 	if leavesLength == 0 && proofsLength == 0 {
-		return ctx.ZeroHash(), errors.Errorf("leaves and proofs are empty")
+		return ctx.ZeroHash(), fmt.Errorf("leaves and proofs are empty")
 	}
 	if leavesLength > MaxNumberTreeLeaves+1 || proofsLength > MaxNumberTreeLeaves+1 {
-		return ctx.ZeroHash(), errors.Errorf("leaves or proofs length is beyond the limit %d", MaxNumberTreeLeaves)
+		return ctx.ZeroHash(), fmt.Errorf("leaves or proofs length is beyond the limit %d", MaxNumberTreeLeaves)
 	}
 	totalHashes := leavesLength + proofsLength - 1
 	if totalHashes > MaxNumberTreeLeaves {
-		return ctx.ZeroHash(), errors.Errorf("total hashes length cannot me larger than %d", MaxNumberTreeLeaves)
+		return ctx.ZeroHash(), fmt.Errorf("total hashes length cannot me larger than %d", MaxNumberTreeLeaves)
 	}
 	if totalHashes != len(proof.SourceFlags) {
-		return ctx.ZeroHash(), errors.Errorf("hashes %d != sourceFlags %d", totalHashes, len(proof.SourceFlags))
+		return ctx.ZeroHash(), fmt.Errorf("hashes %d != sourceFlags %d", totalHashes, len(proof.SourceFlags))
 	}
 	if totalHashes == 0 {
 		return leafHashes[0], nil
 	}
 	sourceProofCount := proof.countSourceFlags(SourceFromProof)
 	if sourceProofCount != proofsLength {
-		return ctx.ZeroHash(), errors.Errorf("proof source flags %d != proof hashes %d", sourceProofCount, proofsLength)
+		return ctx.ZeroHash(), fmt.Errorf("proof source flags %d != proof hashes %d", sourceProofCount, proofsLength)
 	}
 	hashes := make([]H, totalHashes)
 	for i := 0; i < totalHashes; i++ {
@@ -205,7 +205,7 @@ func VerifyComputeRoot[H hashlib.Hash](ctx hashlib.Ctx[H], leafHashes []H, proof
 	if hashPos != totalHashes-1 ||
 		leafPos != leavesLength ||
 		proofPos != proofsLength {
-		return ctx.ZeroHash(), errors.Errorf("not all proofs used during processing")
+		return ctx.ZeroHash(), fmt.Errorf("not all proofs used during processing")
 	}
 	return hashes[totalHashes-1], nil
 }

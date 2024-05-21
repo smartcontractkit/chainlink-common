@@ -16,7 +16,6 @@ type CCIPCommitProvider interface {
 	NewPriceRegistryReader(ctx context.Context, addr ccip.Address) (ccip.PriceRegistryReader, error)
 	SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error)
 	NewOffRampReaders(ctx context.Context, addr ccip.Address) ([]ccip.OffRampReader, error)
-	GetStaticConfig(ctx context.Context, addr ccip.Address) (ccip.CommitStoreStaticConfig, error)
 }
 
 type CCIPExecProvider interface {

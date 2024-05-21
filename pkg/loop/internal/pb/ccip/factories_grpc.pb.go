@@ -131,7 +131,7 @@ type ExecutionCustomHandlersClient interface {
 	NewPriceRegistryReader(ctx context.Context, in *NewPriceRegistryReaderRequest, opts ...grpc.CallOption) (*NewPriceRegistryReaderResponse, error)
 	NewTokenDataReader(ctx context.Context, in *NewTokenDataRequest, opts ...grpc.CallOption) (*NewTokenDataResponse, error)
 	NewTokenPoolBatchedReader(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error)
-	SourceNativeToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
+	SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -197,7 +197,7 @@ func (c *executionCustomHandlersClient) NewTokenPoolBatchedReader(ctx context.Co
 	return out, nil
 }
 
-func (c *executionCustomHandlersClient) SourceNativeToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error) {
+func (c *executionCustomHandlersClient) SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error) {
 	out := new(SourceNativeTokenResponse)
 	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_SourceNativeToken_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -225,7 +225,7 @@ type ExecutionCustomHandlersServer interface {
 	NewPriceRegistryReader(context.Context, *NewPriceRegistryReaderRequest) (*NewPriceRegistryReaderResponse, error)
 	NewTokenDataReader(context.Context, *NewTokenDataRequest) (*NewTokenDataResponse, error)
 	NewTokenPoolBatchedReader(context.Context, *emptypb.Empty) (*NewTokenPoolBatchedReaderResponse, error)
-	SourceNativeToken(context.Context, *emptypb.Empty) (*SourceNativeTokenResponse, error)
+	SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error)
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedExecutionCustomHandlersServer()
 }
@@ -252,7 +252,7 @@ func (UnimplementedExecutionCustomHandlersServer) NewTokenDataReader(context.Con
 func (UnimplementedExecutionCustomHandlersServer) NewTokenPoolBatchedReader(context.Context, *emptypb.Empty) (*NewTokenPoolBatchedReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewTokenPoolBatchedReader not implemented")
 }
-func (UnimplementedExecutionCustomHandlersServer) SourceNativeToken(context.Context, *emptypb.Empty) (*SourceNativeTokenResponse, error) {
+func (UnimplementedExecutionCustomHandlersServer) SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SourceNativeToken not implemented")
 }
 func (UnimplementedExecutionCustomHandlersServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -381,7 +381,7 @@ func _ExecutionCustomHandlers_NewTokenPoolBatchedReader_Handler(srv interface{},
 }
 
 func _ExecutionCustomHandlers_SourceNativeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(SourceNativeTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -393,7 +393,7 @@ func _ExecutionCustomHandlers_SourceNativeToken_Handler(srv interface{}, ctx con
 		FullMethod: ExecutionCustomHandlers_SourceNativeToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecutionCustomHandlersServer).SourceNativeToken(ctx, req.(*emptypb.Empty))
+		return srv.(ExecutionCustomHandlersServer).SourceNativeToken(ctx, req.(*SourceNativeTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -554,6 +554,7 @@ var CommitFactoryGenerator_ServiceDesc = grpc.ServiceDesc{
 const (
 	CommitCustomHandlers_NewCommitStoreReader_FullMethodName   = "/loop.internal.pb.ccip.CommitCustomHandlers/NewCommitStoreReader"
 	CommitCustomHandlers_NewOffRampReader_FullMethodName       = "/loop.internal.pb.ccip.CommitCustomHandlers/NewOffRampReader"
+	CommitCustomHandlers_NewOffRampReaders_FullMethodName      = "/loop.internal.pb.ccip.CommitCustomHandlers/NewOffRampReaders"
 	CommitCustomHandlers_NewOnRampReader_FullMethodName        = "/loop.internal.pb.ccip.CommitCustomHandlers/NewOnRampReader"
 	CommitCustomHandlers_NewPriceGetter_FullMethodName         = "/loop.internal.pb.ccip.CommitCustomHandlers/NewPriceGetter"
 	CommitCustomHandlers_NewPriceRegistryReader_FullMethodName = "/loop.internal.pb.ccip.CommitCustomHandlers/NewPriceRegistryReader"
@@ -567,10 +568,12 @@ const (
 type CommitCustomHandlersClient interface {
 	NewCommitStoreReader(ctx context.Context, in *NewCommitStoreReaderRequest, opts ...grpc.CallOption) (*NewCommitStoreReaderResponse, error)
 	NewOffRampReader(ctx context.Context, in *NewOffRampReaderRequest, opts ...grpc.CallOption) (*NewOffRampReaderResponse, error)
+	NewOffRampReaders(ctx context.Context, in *NewOffRampReadersRequest, opts ...grpc.CallOption) (*NewOffRampReadersResponse, error)
 	NewOnRampReader(ctx context.Context, in *NewOnRampReaderRequest, opts ...grpc.CallOption) (*NewOnRampReaderResponse, error)
 	NewPriceGetter(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewPriceGetterResponse, error)
 	NewPriceRegistryReader(ctx context.Context, in *NewPriceRegistryReaderRequest, opts ...grpc.CallOption) (*NewPriceRegistryReaderResponse, error)
-	SourceNativeToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
+	SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
+	// rpc GetStaticConfig(GetStaticConfigRequest) returns (GetStaticConfigResponse) {}
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -594,6 +597,15 @@ func (c *commitCustomHandlersClient) NewCommitStoreReader(ctx context.Context, i
 func (c *commitCustomHandlersClient) NewOffRampReader(ctx context.Context, in *NewOffRampReaderRequest, opts ...grpc.CallOption) (*NewOffRampReaderResponse, error) {
 	out := new(NewOffRampReaderResponse)
 	err := c.cc.Invoke(ctx, CommitCustomHandlers_NewOffRampReader_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *commitCustomHandlersClient) NewOffRampReaders(ctx context.Context, in *NewOffRampReadersRequest, opts ...grpc.CallOption) (*NewOffRampReadersResponse, error) {
+	out := new(NewOffRampReadersResponse)
+	err := c.cc.Invoke(ctx, CommitCustomHandlers_NewOffRampReaders_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -627,7 +639,7 @@ func (c *commitCustomHandlersClient) NewPriceRegistryReader(ctx context.Context,
 	return out, nil
 }
 
-func (c *commitCustomHandlersClient) SourceNativeToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error) {
+func (c *commitCustomHandlersClient) SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error) {
 	out := new(SourceNativeTokenResponse)
 	err := c.cc.Invoke(ctx, CommitCustomHandlers_SourceNativeToken_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -651,10 +663,12 @@ func (c *commitCustomHandlersClient) Close(ctx context.Context, in *emptypb.Empt
 type CommitCustomHandlersServer interface {
 	NewCommitStoreReader(context.Context, *NewCommitStoreReaderRequest) (*NewCommitStoreReaderResponse, error)
 	NewOffRampReader(context.Context, *NewOffRampReaderRequest) (*NewOffRampReaderResponse, error)
+	NewOffRampReaders(context.Context, *NewOffRampReadersRequest) (*NewOffRampReadersResponse, error)
 	NewOnRampReader(context.Context, *NewOnRampReaderRequest) (*NewOnRampReaderResponse, error)
 	NewPriceGetter(context.Context, *emptypb.Empty) (*NewPriceGetterResponse, error)
 	NewPriceRegistryReader(context.Context, *NewPriceRegistryReaderRequest) (*NewPriceRegistryReaderResponse, error)
-	SourceNativeToken(context.Context, *emptypb.Empty) (*SourceNativeTokenResponse, error)
+	SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error)
+	// rpc GetStaticConfig(GetStaticConfigRequest) returns (GetStaticConfigResponse) {}
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCommitCustomHandlersServer()
 }
@@ -669,6 +683,9 @@ func (UnimplementedCommitCustomHandlersServer) NewCommitStoreReader(context.Cont
 func (UnimplementedCommitCustomHandlersServer) NewOffRampReader(context.Context, *NewOffRampReaderRequest) (*NewOffRampReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewOffRampReader not implemented")
 }
+func (UnimplementedCommitCustomHandlersServer) NewOffRampReaders(context.Context, *NewOffRampReadersRequest) (*NewOffRampReadersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewOffRampReaders not implemented")
+}
 func (UnimplementedCommitCustomHandlersServer) NewOnRampReader(context.Context, *NewOnRampReaderRequest) (*NewOnRampReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewOnRampReader not implemented")
 }
@@ -678,7 +695,7 @@ func (UnimplementedCommitCustomHandlersServer) NewPriceGetter(context.Context, *
 func (UnimplementedCommitCustomHandlersServer) NewPriceRegistryReader(context.Context, *NewPriceRegistryReaderRequest) (*NewPriceRegistryReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPriceRegistryReader not implemented")
 }
-func (UnimplementedCommitCustomHandlersServer) SourceNativeToken(context.Context, *emptypb.Empty) (*SourceNativeTokenResponse, error) {
+func (UnimplementedCommitCustomHandlersServer) SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SourceNativeToken not implemented")
 }
 func (UnimplementedCommitCustomHandlersServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -729,6 +746,24 @@ func _CommitCustomHandlers_NewOffRampReader_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CommitCustomHandlersServer).NewOffRampReader(ctx, req.(*NewOffRampReaderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CommitCustomHandlers_NewOffRampReaders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewOffRampReadersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommitCustomHandlersServer).NewOffRampReaders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommitCustomHandlers_NewOffRampReaders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommitCustomHandlersServer).NewOffRampReaders(ctx, req.(*NewOffRampReadersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -788,7 +823,7 @@ func _CommitCustomHandlers_NewPriceRegistryReader_Handler(srv interface{}, ctx c
 }
 
 func _CommitCustomHandlers_SourceNativeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(SourceNativeTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -800,7 +835,7 @@ func _CommitCustomHandlers_SourceNativeToken_Handler(srv interface{}, ctx contex
 		FullMethod: CommitCustomHandlers_SourceNativeToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommitCustomHandlersServer).SourceNativeToken(ctx, req.(*emptypb.Empty))
+		return srv.(CommitCustomHandlersServer).SourceNativeToken(ctx, req.(*SourceNativeTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -837,6 +872,10 @@ var CommitCustomHandlers_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewOffRampReader",
 			Handler:    _CommitCustomHandlers_NewOffRampReader_Handler,
+		},
+		{
+			MethodName: "NewOffRampReaders",
+			Handler:    _CommitCustomHandlers_NewOffRampReaders_Handler,
 		},
 		{
 			MethodName: "NewOnRampReader",

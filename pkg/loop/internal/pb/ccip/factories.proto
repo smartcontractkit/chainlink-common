@@ -20,7 +20,7 @@ service ExecutionCustomHandlers {
     rpc NewPriceRegistryReader(NewPriceRegistryReaderRequest) returns (NewPriceRegistryReaderResponse) {}
     rpc NewTokenDataReader(NewTokenDataRequest) returns (NewTokenDataResponse) {}
     rpc NewTokenPoolBatchedReader(google.protobuf.Empty) returns (NewTokenPoolBatchedReaderResponse) {}
-    rpc SourceNativeToken(google.protobuf.Empty) returns (SourceNativeTokenResponse) {}
+    rpc SourceNativeToken(SourceNativeTokenRequest) returns (SourceNativeTokenResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
@@ -55,10 +55,12 @@ message NewCommitFactoryResponse {
 service CommitCustomHandlers {
     rpc NewCommitStoreReader(NewCommitStoreReaderRequest) returns (NewCommitStoreReaderResponse) {}
     rpc NewOffRampReader(NewOffRampReaderRequest) returns (NewOffRampReaderResponse) {}
+    rpc NewOffRampReaders(NewOffRampReadersRequest) returns (NewOffRampReadersResponse) {}
     rpc NewOnRampReader(NewOnRampReaderRequest) returns (NewOnRampReaderResponse) {}
     rpc NewPriceGetter(google.protobuf.Empty) returns (NewPriceGetterResponse) {}
     rpc NewPriceRegistryReader(NewPriceRegistryReaderRequest) returns (NewPriceRegistryReaderResponse) {}
-    rpc SourceNativeToken(google.protobuf.Empty) returns (SourceNativeTokenResponse) {}
+    rpc SourceNativeToken(SourceNativeTokenRequest) returns (SourceNativeTokenResponse) {}
+    //rpc GetStaticConfig(GetStaticConfigRequest) returns (GetStaticConfigResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
@@ -92,6 +94,8 @@ message NewOffRampReaderResponse {
 // [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewOnRampReader]
 message NewOnRampReaderRequest {
     string address = 1;
+    uint64 sourceChainSelector = 2;
+    uint64 destChainSelector = 3;
 }
 
 // NewOnRampReaderResponse is a gRPC wrapper for the return value of
@@ -149,9 +153,38 @@ message NewTokenPoolBatchedReaderResponse {
     int32 token_pool_batched_reader_service_id = 1;
 }
 
+// SourceNativeTokenResponse is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.SourceNativeToken]
+message SourceNativeTokenRequest {
+    string source_router_address = 1;
+}
 
 // SourceNativeTokenResponse is a gRPC adapter for the output arguments of
 // [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.SourceNativeToken]
 message SourceNativeTokenResponse {
     string native_token_address = 1;
 }
+
+// NewOffRampReadersRequest is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.NewOffRampReaders]
+message NewOffRampReadersRequest {
+    string dest_router_address = 1;
+}
+
+// NewOffRampReadersRequest is a gRPC adapter for the output arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.NewOffRampReaders]
+message NewOffRampReadersResponse {
+    repeated int32 offramp_readers_service_ids = 1;
+}
+
+//// GetStaticConfigRequest is a gRPC adapter for the input arguments of
+//// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.GetStaticConfig]
+//message GetStaticConfigRequest {
+//    string commit_store_address = 1;
+//}
+//
+//// GetStaticConfigRequest is a gRPC adapter for the output arguments of
+//// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.GetStaticConfig]
+//message GetStaticConfigResponse {
+//    int32 static_config_service_id = 1;
+//}

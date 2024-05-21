@@ -159,10 +159,10 @@ func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context) (cci
 }
 
 // SourceNativeToken implements types.CCIPExecProvider.
-func (e *ExecProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.Address, error) {
+func (e *ExecProviderClient) SourceNativeToken(ctx context.Context, addr cciptypes.Address) (cciptypes.Address, error) {
 	// unlike the other methods, this one does not create a new resource, so we do not
 	// need the broker to serve it. we can just call the grpc method directly.
-	resp, err := e.grpcClient.SourceNativeToken(ctx, &emptypb.Empty{})
+	resp, err := e.grpcClient.SourceNativeToken(ctx, &ccippb.SourceNativeTokenRequest{SourceRouterAddress: string(addr)})
 	if err != nil {
 		return "", err
 	}
@@ -319,8 +319,8 @@ func (e *ExecProviderServer) NewTokenPoolBatchedReader(ctx context.Context, _ *e
 	return &ccippb.NewTokenPoolBatchedReaderResponse{TokenPoolBatchedReaderServiceId: int32(tokenPoolID)}, nil
 }
 
-func (e *ExecProviderServer) SourceNativeToken(ctx context.Context, _ *emptypb.Empty) (*ccippb.SourceNativeTokenResponse, error) {
-	addr, err := e.impl.SourceNativeToken(ctx)
+func (e *ExecProviderServer) SourceNativeToken(ctx context.Context, req *ccippb.SourceNativeTokenRequest) (*ccippb.SourceNativeTokenResponse, error) {
+	addr, err := e.impl.SourceNativeToken(ctx, cciptypes.Address(req.SourceRouterAddress))
 	if err != nil {
 		return nil, err
 	}

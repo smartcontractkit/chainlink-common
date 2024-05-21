@@ -35,13 +35,38 @@ type CommitProviderClient struct {
 	grpcClient ccippb.CommitCustomHandlersClient
 }
 
+func (e *CommitProviderClient) NewOffRampReaders(ctx context.Context, addr cciptypes.Address) ([]cciptypes.OffRampReader, error) {
+	req := ccippb.NewOffRampReadersRequest{DestRouterAddress: string(addr)}
+
+	resp, err := e.grpcClient.NewOffRampReaders(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	// TODO BCF-3061: this works because the broker is shared and the id refers to a resource served by the broker
+	var readers []cciptypes.OffRampReader
+	for _, id := range resp.OfframpReadersServiceIds {
+		offRampReadersConn, err := e.BrokerExt.Dial(uint32(id))
+		if err != nil {
+			return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", id, err)
+		}
+		client := NewOffRampReaderGRPCClient(e.BrokerExt, offRampReadersConn)
+		readers = append(readers, client)
+	}
+	// need to wrap grpc commitStore into the desired interface
+	return readers, nil
+}
+
+func (e *CommitProviderClient) GetStaticConfig(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreStaticConfig, error) {
+	panic("TODO: cleanup if I get for free from OffRampReader")
+}
+
 func NewCommitProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *CommitProviderClient {
 	pluginProviderClient := ocr2.NewPluginProviderClient(b, conn)
-	grpc := ccippb.NewCommitCustomHandlersClient(conn)
+	client := ccippb.NewCommitCustomHandlersClient(conn)
 	return &CommitProviderClient{
 		PluginProviderClient: pluginProviderClient,
 		BrokerExt:            b,
-		grpcClient:           grpc,
+		grpcClient:           client,
 	}
 }
 
@@ -80,8 +105,8 @@ func (e *CommitProviderClient) NewOffRampReader(ctx context.Context, addr ccipty
 }
 
 // NewOnRampReader implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
-	req := ccippb.NewOnRampReaderRequest{Address: string(addr)}
+func (e *CommitProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address, sourceChainSelector uint64, destChainSelector uint64) (cciptypes.OnRampReader, error) {
+	req := ccippb.NewOnRampReaderRequest{Address: string(addr), SourceChainSelector: sourceChainSelector, DestChainSelector: destChainSelector}
 
 	resp, err := e.grpcClient.NewOnRampReader(ctx, &req)
 	if err != nil {
@@ -131,10 +156,12 @@ func (e *CommitProviderClient) NewPriceRegistryReader(ctx context.Context, addr 
 }
 
 // SourceNativeToken implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.Address, error) {
+func (e *CommitProviderClient) SourceNativeToken(ctx context.Context, addr cciptypes.Address) (cciptypes.Address, error) {
 	// unlike the other methods, this one does not create a new resource, so we do not
 	// need the broker to serve it. we can just call the grpc method directly.
-	resp, err := e.grpcClient.SourceNativeToken(ctx, &emptypb.Empty{})
+	resp, err := e.grpcClient.SourceNativeToken(ctx, &ccippb.SourceNativeTokenRequest{
+		SourceRouterAddress: string(addr),
+	})
 	if err != nil {
 		return "", err
 	}
@@ -163,6 +190,7 @@ func (e *CommitProviderServer) Close(context.Context, *emptypb.Empty) (*emptypb.
 
 // NewCommitStoreReader implements ccippb.CommitCustomHandlersServer.
 func (e *CommitProviderServer) NewCommitStoreReader(ctx context.Context, req *ccippb.NewCommitStoreReaderRequest) (*ccippb.NewCommitStoreReaderResponse, error) {
+	// TODO: why is this context background?
 	reader, err := e.impl.NewCommitStoreReader(context.Background(), ccip.Address(req.Address))
 	if err != nil {
 		return nil, err
@@ -213,7 +241,7 @@ func (e *CommitProviderServer) NewOffRampReader(ctx context.Context, req *ccippb
 }
 
 func (e *CommitProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
-	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address))
+	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address), req.SourceChainSelector, req.DestChainSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -275,8 +303,8 @@ func (e *CommitProviderServer) NewPriceRegistryReader(ctx context.Context, req *
 	return &ccippb.NewPriceRegistryReaderResponse{PriceRegistryReaderServiceId: int32(priceReaderID)}, nil
 }
 
-func (e *CommitProviderServer) SourceNativeToken(ctx context.Context, _ *emptypb.Empty) (*ccippb.SourceNativeTokenResponse, error) {
-	addr, err := e.impl.SourceNativeToken(ctx)
+func (e *CommitProviderServer) SourceNativeToken(ctx context.Context, req *ccippb.SourceNativeTokenRequest) (*ccippb.SourceNativeTokenResponse, error) {
+	addr, err := e.impl.SourceNativeToken(ctx, cciptypes.Address(req.SourceRouterAddress))
 	if err != nil {
 		return nil, err
 	}

@@ -22,7 +22,7 @@ var (
 	}
 )
 
-// staticChainReader is a static implementation of ChainReaderEvaluator
+// staticChainReader is a static implementation of ChainReaderTester
 type staticChainReader struct {
 	contractName   string
 	contractMethod string

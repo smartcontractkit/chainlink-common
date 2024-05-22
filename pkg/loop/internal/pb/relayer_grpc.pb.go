@@ -237,7 +237,7 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Relayer_NewChainReader_FullMethodName    = "/loop.Relayer/NewChainReader"
+	Relayer_NewContractReader_FullMethodName = "/loop.Relayer/NewContractReader"
 	Relayer_NewConfigProvider_FullMethodName = "/loop.Relayer/NewConfigProvider"
 	Relayer_NewPluginProvider_FullMethodName = "/loop.Relayer/NewPluginProvider"
 	Relayer_GetChainStatus_FullMethodName    = "/loop.Relayer/GetChainStatus"
@@ -249,7 +249,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RelayerClient interface {
-	NewChainReader(ctx context.Context, in *NewChainReaderRequest, opts ...grpc.CallOption) (*NewChainReaderReply, error)
+	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error)
 	NewConfigProvider(ctx context.Context, in *NewConfigProviderRequest, opts ...grpc.CallOption) (*NewConfigProviderReply, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderReply, error)
 	GetChainStatus(ctx context.Context, in *GetChainStatusRequest, opts ...grpc.CallOption) (*GetChainStatusReply, error)
@@ -265,9 +265,9 @@ func NewRelayerClient(cc grpc.ClientConnInterface) RelayerClient {
 	return &relayerClient{cc}
 }
 
-func (c *relayerClient) NewChainReader(ctx context.Context, in *NewChainReaderRequest, opts ...grpc.CallOption) (*NewChainReaderReply, error) {
-	out := new(NewChainReaderReply)
-	err := c.cc.Invoke(ctx, Relayer_NewChainReader_FullMethodName, in, out, opts...)
+func (c *relayerClient) NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error) {
+	out := new(NewContractReaderReply)
+	err := c.cc.Invoke(ctx, Relayer_NewContractReader_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (c *relayerClient) Transact(ctx context.Context, in *TransactionRequest, op
 // All implementations must embed UnimplementedRelayerServer
 // for forward compatibility
 type RelayerServer interface {
-	NewChainReader(context.Context, *NewChainReaderRequest) (*NewChainReaderReply, error)
+	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error)
 	NewConfigProvider(context.Context, *NewConfigProviderRequest) (*NewConfigProviderReply, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderReply, error)
 	GetChainStatus(context.Context, *GetChainStatusRequest) (*GetChainStatusReply, error)
@@ -336,8 +336,8 @@ type RelayerServer interface {
 type UnimplementedRelayerServer struct {
 }
 
-func (UnimplementedRelayerServer) NewChainReader(context.Context, *NewChainReaderRequest) (*NewChainReaderReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewChainReader not implemented")
+func (UnimplementedRelayerServer) NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
 }
 func (UnimplementedRelayerServer) NewConfigProvider(context.Context, *NewConfigProviderRequest) (*NewConfigProviderReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewConfigProvider not implemented")
@@ -367,20 +367,20 @@ func RegisterRelayerServer(s grpc.ServiceRegistrar, srv RelayerServer) {
 	s.RegisterService(&Relayer_ServiceDesc, srv)
 }
 
-func _Relayer_NewChainReader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewChainReaderRequest)
+func _Relayer_NewContractReader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewContractReaderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RelayerServer).NewChainReader(ctx, in)
+		return srv.(RelayerServer).NewContractReader(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Relayer_NewChainReader_FullMethodName,
+		FullMethod: Relayer_NewContractReader_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelayerServer).NewChainReader(ctx, req.(*NewChainReaderRequest))
+		return srv.(RelayerServer).NewContractReader(ctx, req.(*NewContractReaderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -483,8 +483,8 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RelayerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "NewChainReader",
-			Handler:    _Relayer_NewChainReader_Handler,
+			MethodName: "NewContractReader",
+			Handler:    _Relayer_NewContractReader_Handler,
 		},
 		{
 			MethodName: "NewConfigProvider",

@@ -484,6 +484,6 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 	return sequences, nil
 }
 
-func RegisterChainReaderService(s *grpc.Server, chainReader types.ChainReader) {
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: chainReader})
+func RegisterContractReaderService(s *grpc.Server, contractReader types.ChainReader) {
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader})
 }

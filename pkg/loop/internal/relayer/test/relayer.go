@@ -53,17 +53,17 @@ type nodeResponse struct {
 }
 type staticPluginRelayerConfig struct {
 	StaticChecks           bool
-	chainReaderConfig      []byte
 	relayArgs              types.RelayArgs
 	pluginArgs             types.PluginArgs
+	contractReaderConfig   []byte
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester
 	executionProvider      cciptest.ExecProviderTester
 	commitProvider         cciptest.CommitProviderTester
-	chainReader            testtypes.ChainReaderEvaluator
 	configProvider         ocr2test.ConfigProviderTester
 	ocr3CapabilityProvider testtypes.OCR3CapabilityProviderTester
+	contractReaderProvider testtypes.ChainReaderTester
 	// Note: add other Provider testers here when we implement them
 	// eg Functions, Automation, etc
 	nodeRequest        nodeRequest
@@ -78,14 +78,14 @@ func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
 			StaticChecks:           staticChecks,
 			relayArgs:              RelayArgs,
 			pluginArgs:             PluginArgs,
+			contractReaderConfig:   []byte("test"),
 			medianProvider:         mediantest.MedianProvider,
 			mercuryProvider:        mercurytest.MercuryProvider,
 			executionProvider:      cciptest.ExecutionProvider,
 			agnosticProvider:       ocr2test.AgnosticProvider,
-			chainReaderConfig:      []byte("test"),
-			chainReader:            chainreadertest.ChainReader,
 			configProvider:         ocr2test.ConfigProvider,
 			ocr3CapabilityProvider: ocr3capabilitytest.OCR3CapabilityProvider,
+			contractReaderProvider: chainreadertest.ChainReader,
 			nodeRequest: nodeRequest{
 				pageSize:  137,
 				pageToken: "",
@@ -135,11 +135,11 @@ func (s staticPluginRelayer) Name() string { panic("unimplemented") }
 
 func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
 
-func (s staticPluginRelayer) NewChainReader(_ context.Context, chainReaderConfig []byte) (types.ChainReader, error) {
-	if s.StaticChecks && !(bytes.Equal(s.chainReaderConfig, chainReaderConfig)) {
-		return nil, fmt.Errorf("expected chainReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.chainReaderConfig), string(chainReaderConfig))
+func (s staticPluginRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ChainReader, error) {
+	if s.StaticChecks && !(bytes.Equal(s.contractReaderConfig, contractReaderConfig)) {
+		return nil, fmt.Errorf("expected contractReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.contractReaderConfig), string(contractReaderConfig))
 	}
-	return s.chainReader, nil
+	return s.contractReaderProvider, nil
 }
 
 func (s staticPluginRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
@@ -263,14 +263,14 @@ func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.I
 }
 
 func (s staticPluginRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
-	t.Run("ChainReader", func(t *testing.T) {
+	t.Run("ContractReader", func(t *testing.T) {
 		t.Parallel()
 		ctx := tests.Context(t)
-		chainReader, err := relayer.NewChainReader(ctx, []byte("test"))
+		contractReader, err := relayer.NewContractReader(ctx, []byte("test"))
 		require.NoError(t, err)
-		require.NoError(t, chainReader.Start(ctx))
+		require.NoError(t, contractReader.Start(ctx))
 
-		t.Cleanup(func() { assert.NoError(t, chainReader.Close()) })
+		t.Cleanup(func() { assert.NoError(t, contractReader.Close()) })
 	})
 
 	t.Run("ConfigProvider", func(t *testing.T) {

@@ -41,11 +41,11 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 	return &rs
 }
 
-func (r *RelayerService) NewChainReader(ctx context.Context, chainReaderConfig []byte) (types.ChainReader, error) {
+func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ChainReader, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewChainReader(ctx, chainReaderConfig)
+	return r.Service.NewContractReader(ctx, contractReaderConfig)
 }
 
 func (r *RelayerService) NewConfigProvider(ctx context.Context, args types.RelayArgs) (types.ConfigProvider, error) {

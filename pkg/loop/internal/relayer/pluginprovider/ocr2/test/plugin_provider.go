@@ -27,7 +27,7 @@ type staticPluginProvider struct {
 	offchainConfigDigester staticOffchainConfigDigester
 	contractConfigTracker  staticContractConfigTracker
 	contractTransmitter    testtypes.ContractTransmitterEvaluator
-	chainReader            testtypes.ChainReaderEvaluator
+	chainReader            testtypes.ChainReaderTester
 	codec                  testtypes.CodecEvaluator
 }
 

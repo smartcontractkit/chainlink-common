@@ -115,7 +115,7 @@ type ChainService interface {
 // Deprecated: use loop.Relayer, which includes context.Context.
 type Relayer interface {
 	Service
-	NewChainReader(chainReaderCfg []byte) (ChainReader, error)
+	NewContractReader(contractReaderConfig []byte) (ChainReader, error)
 	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)

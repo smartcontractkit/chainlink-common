@@ -188,7 +188,7 @@ type staticMedianProviderConfig struct {
 	reportCodec         staticReportCodec
 	medianContract      staticMedianContract
 	onchainConfigCodec  staticOnchainConfigCodec
-	chainReader         testtypes.ChainReaderEvaluator
+	chainReader         testtypes.ChainReaderTester
 	codec               testtypes.CodecEvaluator
 }
 

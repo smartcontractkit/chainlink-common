@@ -177,13 +177,13 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
-func (r *relayerClient) NewChainReader(_ context.Context, chainReaderConfig []byte) (types.ChainReader, error) {
+func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ChainReader, error) {
 	cc := r.NewClientConn("ChainReader", func(ctx context.Context) (uint32, net.Resources, error) {
-		reply, err := r.relayer.NewChainReader(ctx, &pb.NewChainReaderRequest{ChainReaderConfig: chainReaderConfig})
+		reply, err := r.relayer.NewContractReader(ctx, &pb.NewContractReaderRequest{ContractReaderConfig: contractReaderConfig})
 		if err != nil {
 			return 0, nil, err
 		}
-		return reply.ChainReaderID, nil, nil
+		return reply.ContractReaderID, nil, nil
 	})
 
 	return chainreader.NewClient(r.WithName("ChainReaderClient"), cc), nil
@@ -331,8 +331,8 @@ func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerSer
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
-func (r *relayerServer) NewChainReader(ctx context.Context, request *pb.NewChainReaderRequest) (*pb.NewChainReaderReply, error) {
-	cr, err := r.impl.NewChainReader(ctx, request.GetChainReaderConfig())
+func (r *relayerServer) NewContractReader(ctx context.Context, request *pb.NewContractReaderRequest) (*pb.NewContractReaderReply, error) {
+	cr, err := r.impl.NewContractReader(ctx, request.GetContractReaderConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -341,15 +341,15 @@ func (r *relayerServer) NewChainReader(ctx context.Context, request *pb.NewChain
 		return nil, err
 	}
 
-	const name = "ChainReader"
+	const name = "ContractReader"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		chainreader.RegisterChainReaderService(s, cr)
+		chainreader.RegisterContractReaderService(s, cr)
 	}, net.Resource{Closer: cr, Name: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.NewChainReaderReply{ChainReaderID: id}, nil
+	return &pb.NewContractReaderReply{ContractReaderID: id}, nil
 }
 
 func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewConfigProviderRequest) (*pb.NewConfigProviderReply, error) {

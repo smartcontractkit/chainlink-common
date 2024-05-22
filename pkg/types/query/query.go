@@ -1,7 +1,6 @@
 package query
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -65,10 +64,6 @@ func Block(block uint64, operator primitives.ComparisonOperator) Expression {
 }
 
 func Confidence(confLevel primitives.ConfidenceLevel) (Expression, error) {
-	if confLevel > 1 || confLevel < 0 {
-		return Expression{}, errors.New("invalid confidence level; acceptable values are between 0 and 1, inclusive")
-	}
-
 	return Expression{
 		Primitive: &primitives.Confidence{ConfidenceLevel: confLevel},
 	}, nil

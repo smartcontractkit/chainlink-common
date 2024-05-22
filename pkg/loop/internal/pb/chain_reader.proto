@@ -120,8 +120,9 @@ message Block{
   ComparisonOperator operator = 2;
 }
 
-message Confidence {
-  double confidence = 1;
+enum Confidence {
+  Unconfirmed = 0;
+  Finalized = 1;
 }
 
 message Timestamp{

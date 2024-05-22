@@ -264,9 +264,8 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 				}}
 		case *primitives.Confidence:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confidence{
-				Confidence: &pb.Confidence{
-					Confidence: float64(primitive.ConfidenceLevel),
-				}}
+				Confidence: confidenceToProto(primitive.ConfidenceLevel),
+			}
 		case *primitives.Timestamp:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
 				Timestamp: &pb.Timestamp{
@@ -300,6 +299,17 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 		}}
 
 	return pbExpression, nil
+}
+
+func confidenceToProto(level primitives.ConfidenceLevel) pb.Confidence {
+	switch level {
+	case primitives.Finalized:
+		return pb.Confidence_Finalized
+	case primitives.Unconfirmed:
+		return pb.Confidence_Unconfirmed
+	default:
+		panic("invalid confidence level")
+	}
 }
 
 func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSort, error) {
@@ -400,7 +410,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 		case *pb.Primitive_Confidence:
-			return query.Confidence(primitives.ConfidenceLevel(primitive.Confidence.Confidence))
+			return query.Confidence(confidenceFromProto(primitive.Confidence))
 		case *pb.Primitive_Block:
 			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
 		case *pb.Primitive_TxHash:
@@ -412,6 +422,17 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 		}
 	default:
 		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
+	}
+}
+
+func confidenceFromProto(conf pb.Confidence) primitives.ConfidenceLevel {
+	switch conf {
+	case pb.Confidence_Finalized:
+		return primitives.Finalized
+	case pb.Confidence_Unconfirmed:
+		return primitives.Unconfirmed
+	default:
+		panic("invalid confidence level")
 	}
 }
 

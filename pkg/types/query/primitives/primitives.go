@@ -50,11 +50,11 @@ func (f *Block) Accept(visitor Visitor) {
 	visitor.Block(*f)
 }
 
-type ConfidenceLevel float64
+type ConfidenceLevel string
 
 const (
-	Highest = ConfidenceLevel(1)
-	Lowest  = ConfidenceLevel(0)
+	Finalized   ConfidenceLevel = "finalized"
+	Unconfirmed ConfidenceLevel = "unconfirmed"
 )
 
 // Confidence is a primitive of KeyFilter that filters search to results that have a certain level of finalization.

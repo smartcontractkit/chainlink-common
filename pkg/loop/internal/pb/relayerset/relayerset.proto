@@ -58,6 +58,15 @@ message NewPluginProviderResponse {
   uint32 plugin_provider_id = 1;
 }
 
+message NewCrossRelayerPluginProviderRequest {
+  RelayArgs relayArgs = 1;
+  PluginArgs pluginArgs = 2;
+}
+
+message NewCrossRelayerPluginProviderResponse {
+  uint32 plugin_provider_id = 1;
+}
+
 message RelayerHealthReportResponse {
   map<string, string> report = 1;
 }
@@ -70,6 +79,7 @@ service RelayerSet {
   rpc Get(GetRelayerRequest) returns (GetRelayerResponse) {}
   rpc List(ListAllRelayersRequest) returns (ListAllRelayersResponse) {}
   rpc NewPluginProvider(NewPluginProviderRequest) returns (NewPluginProviderResponse) {}
+  rpc NewCrossRelayerPluginProvider(NewCrossRelayerPluginProviderRequest) returns (NewCrossRelayerPluginProviderResponse) {}
 
   rpc StartRelayer(RelayerId) returns (google.protobuf.Empty) {}
   rpc CloseRelayer(RelayerId) returns (google.protobuf.Empty) {}

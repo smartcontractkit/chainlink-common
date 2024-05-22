@@ -20,14 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	RelayerSet_Get_FullMethodName                 = "/loop.relayerset.RelayerSet/Get"
-	RelayerSet_List_FullMethodName                = "/loop.relayerset.RelayerSet/List"
-	RelayerSet_NewPluginProvider_FullMethodName   = "/loop.relayerset.RelayerSet/NewPluginProvider"
-	RelayerSet_StartRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/StartRelayer"
-	RelayerSet_CloseRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/CloseRelayer"
-	RelayerSet_RelayerReady_FullMethodName        = "/loop.relayerset.RelayerSet/RelayerReady"
-	RelayerSet_RelayerHealthReport_FullMethodName = "/loop.relayerset.RelayerSet/RelayerHealthReport"
-	RelayerSet_RelayerName_FullMethodName         = "/loop.relayerset.RelayerSet/RelayerName"
+	RelayerSet_Get_FullMethodName                           = "/loop.relayerset.RelayerSet/Get"
+	RelayerSet_List_FullMethodName                          = "/loop.relayerset.RelayerSet/List"
+	RelayerSet_NewPluginProvider_FullMethodName             = "/loop.relayerset.RelayerSet/NewPluginProvider"
+	RelayerSet_NewCrossRelayerPluginProvider_FullMethodName = "/loop.relayerset.RelayerSet/NewCrossRelayerPluginProvider"
+	RelayerSet_StartRelayer_FullMethodName                  = "/loop.relayerset.RelayerSet/StartRelayer"
+	RelayerSet_CloseRelayer_FullMethodName                  = "/loop.relayerset.RelayerSet/CloseRelayer"
+	RelayerSet_RelayerReady_FullMethodName                  = "/loop.relayerset.RelayerSet/RelayerReady"
+	RelayerSet_RelayerHealthReport_FullMethodName           = "/loop.relayerset.RelayerSet/RelayerHealthReport"
+	RelayerSet_RelayerName_FullMethodName                   = "/loop.relayerset.RelayerSet/RelayerName"
 )
 
 // RelayerSetClient is the client API for RelayerSet service.
@@ -37,6 +38,7 @@ type RelayerSetClient interface {
 	Get(ctx context.Context, in *GetRelayerRequest, opts ...grpc.CallOption) (*GetRelayerResponse, error)
 	List(ctx context.Context, in *ListAllRelayersRequest, opts ...grpc.CallOption) (*ListAllRelayersResponse, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderResponse, error)
+	NewCrossRelayerPluginProvider(ctx context.Context, in *NewCrossRelayerPluginProviderRequest, opts ...grpc.CallOption) (*NewCrossRelayerPluginProviderResponse, error)
 	StartRelayer(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CloseRelayer(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RelayerReady(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -73,6 +75,15 @@ func (c *relayerSetClient) List(ctx context.Context, in *ListAllRelayersRequest,
 func (c *relayerSetClient) NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderResponse, error) {
 	out := new(NewPluginProviderResponse)
 	err := c.cc.Invoke(ctx, RelayerSet_NewPluginProvider_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) NewCrossRelayerPluginProvider(ctx context.Context, in *NewCrossRelayerPluginProviderRequest, opts ...grpc.CallOption) (*NewCrossRelayerPluginProviderResponse, error) {
+	out := new(NewCrossRelayerPluginProviderResponse)
+	err := c.cc.Invoke(ctx, RelayerSet_NewCrossRelayerPluginProvider_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +142,7 @@ type RelayerSetServer interface {
 	Get(context.Context, *GetRelayerRequest) (*GetRelayerResponse, error)
 	List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error)
+	NewCrossRelayerPluginProvider(context.Context, *NewCrossRelayerPluginProviderRequest) (*NewCrossRelayerPluginProviderResponse, error)
 	StartRelayer(context.Context, *RelayerId) (*emptypb.Empty, error)
 	CloseRelayer(context.Context, *RelayerId) (*emptypb.Empty, error)
 	RelayerReady(context.Context, *RelayerId) (*emptypb.Empty, error)
@@ -151,6 +163,9 @@ func (UnimplementedRelayerSetServer) List(context.Context, *ListAllRelayersReque
 }
 func (UnimplementedRelayerSetServer) NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
+}
+func (UnimplementedRelayerSetServer) NewCrossRelayerPluginProvider(context.Context, *NewCrossRelayerPluginProviderRequest) (*NewCrossRelayerPluginProviderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCrossRelayerPluginProvider not implemented")
 }
 func (UnimplementedRelayerSetServer) StartRelayer(context.Context, *RelayerId) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartRelayer not implemented")
@@ -230,6 +245,24 @@ func _RelayerSet_NewPluginProvider_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RelayerSetServer).NewPluginProvider(ctx, req.(*NewPluginProviderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_NewCrossRelayerPluginProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewCrossRelayerPluginProviderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).NewCrossRelayerPluginProvider(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_NewCrossRelayerPluginProvider_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).NewCrossRelayerPluginProvider(ctx, req.(*NewCrossRelayerPluginProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -342,6 +375,10 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewPluginProvider",
 			Handler:    _RelayerSet_NewPluginProvider_Handler,
+		},
+		{
+			MethodName: "NewCrossRelayerPluginProvider",
+			Handler:    _RelayerSet_NewCrossRelayerPluginProvider_Handler,
 		},
 		{
 			MethodName: "StartRelayer",

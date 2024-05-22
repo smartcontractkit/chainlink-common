@@ -34,6 +34,19 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	return relayer.WrapProviderClientConnection(rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
 }
 
+func (r *relayerClient) NewCrossRelayerPluginProvider(ctx context.Context, rargs core.RelayArgs, pargs core.PluginArgs) (types.PluginProvider, error) {
+	cc := r.relayerSetClient.NewClientConn("CrossRelayerPluginProvider", func(ctx context.Context) (uint32, net.Resources, error) {
+		providerID, err := r.relayerSetClient.NewCrossRelayerPluginProvider(ctx, rargs, pargs)
+		if err != nil {
+			return 0, nil, fmt.Errorf("error getting plugin provider: %w", err)
+		}
+
+		return providerID, nil, nil
+	})
+
+	return relayer.WrapProviderClientConnection(rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
+}
+
 func (r *relayerClient) Start(context.Context) error {
 	return r.relayerSetClient.StartRelayer(context.Background(), r.relayerID)
 }

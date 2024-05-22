@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -23,64 +23,58 @@ const (
 type testMercuryCodec struct {
 }
 
-func (c testMercuryCodec) Unwrap(raw values.Value) ([]mercury.FeedReport, error) {
-	dest := []mercury.FeedReport{}
-	err := raw.UnwrapTo(&dest)
+func (c testMercuryCodec) UnwrapValid(wrapped values.Value, _ [][]byte, _ int) ([]datastreams.FeedReport, error) {
+	dest := []datastreams.FeedReport{}
+	err := wrapped.UnwrapTo(&dest)
 	return dest, err
 }
 
-func (c testMercuryCodec) Wrap(reports []mercury.FeedReport) (values.Value, error) {
+func (c testMercuryCodec) Wrap(reports []datastreams.FeedReport) (values.Value, error) {
 	return values.Wrap(reports)
 }
 
 func TestMercuryRemoteAggregator(t *testing.T) {
-	agg := NewMercuryRemoteAggregator(testMercuryCodec{}, logger.Nop())
-	rs := [][]byte{{1, 2, 3}}
-	ss := [][]byte{{4, 5, 6}}
-	vs := []byte{7, 8, 9}
+	agg := NewMercuryRemoteAggregator(testMercuryCodec{}, nil, 0, logger.Nop())
+	signatures := [][]byte{{1, 2, 3}}
 
-	feed1Old := mercury.FeedReport{
+	feed1Old := datastreams.FeedReport{
 		FeedID:               feedOne,
 		BenchmarkPrice:       big.NewInt(100).Bytes(),
 		ObservationTimestamp: 100,
 		FullReport:           []byte(rawReport1),
-		Rs:                   rs,
-		Ss:                   ss,
-		Vs:                   vs,
+		ReportContext:        []byte{},
+		Signatures:           signatures,
 	}
-	feed1New := mercury.FeedReport{
+	feed1New := datastreams.FeedReport{
 		FeedID:               feedOne,
 		BenchmarkPrice:       big.NewInt(200).Bytes(),
 		ObservationTimestamp: 200,
 		FullReport:           []byte(rawReport1),
-		Rs:                   rs,
-		Ss:                   ss,
-		Vs:                   vs,
+		ReportContext:        []byte{},
+		Signatures:           signatures,
 	}
-	feed2Old := mercury.FeedReport{
+	feed2Old := datastreams.FeedReport{
 		FeedID:               feedTwo,
 		BenchmarkPrice:       big.NewInt(300).Bytes(),
 		ObservationTimestamp: 300,
 		FullReport:           []byte(rawReport2),
-		Rs:                   rs,
-		Ss:                   ss,
-		Vs:                   vs,
+		ReportContext:        []byte{},
+		Signatures:           signatures,
 	}
-	feed2New := mercury.FeedReport{
+	feed2New := datastreams.FeedReport{
 		FeedID:               feedTwo,
 		BenchmarkPrice:       big.NewInt(400).Bytes(),
 		ObservationTimestamp: 400,
 		FullReport:           []byte(rawReport2),
-		Rs:                   rs,
-		Ss:                   ss,
-		Vs:                   vs,
+		ReportContext:        []byte{},
+		Signatures:           signatures,
 	}
 
-	node1Resp, err := wrapReports([]mercury.FeedReport{feed1Old, feed2New}, eventId, 400)
+	node1Resp, err := wrapReports([]datastreams.FeedReport{feed1Old, feed2New}, eventId, 400, datastreams.SignersMetadata{})
 	require.NoError(t, err)
 	rawNode1Resp, err := pb.MarshalCapabilityResponse(node1Resp)
 	require.NoError(t, err)
-	node2Resp, err := wrapReports([]mercury.FeedReport{feed1New, feed2Old}, eventId, 300)
+	node2Resp, err := wrapReports([]datastreams.FeedReport{feed1New, feed2Old}, eventId, 300, datastreams.SignersMetadata{})
 	require.NoError(t, err)
 	rawNode2Resp, err := pb.MarshalCapabilityResponse(node2Resp)
 	require.NoError(t, err)
@@ -90,7 +84,7 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 	require.NoError(t, err)
 	aggEvent := capabilities.TriggerEvent{}
 	require.NoError(t, aggResponse.Value.UnwrapTo(&aggEvent))
-	decodedReports, err := testMercuryCodec{}.Unwrap(aggEvent.Payload)
+	decodedReports, err := testMercuryCodec{}.UnwrapValid(aggEvent.Payload, nil, 0)
 	require.NoError(t, err)
 
 	require.Len(t, decodedReports, 2)

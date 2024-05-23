@@ -1,4 +1,4 @@
-package hashlib
+package hashutil
 
 // Hash contains all supported hash formats.
 // Add additional hash types e.g. [20]byte as needed here.

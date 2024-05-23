@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/hashlib"
+	"github.com/smartcontractkit/chainlink-common/pkg/hashutil"
 )
 
-type singleLayerProof[H hashlib.Hash] struct {
+type singleLayerProof[H hashutil.Hash] struct {
 	nextIndices []int
 	subProof    []H
 	sourceFlags []bool
 }
 
-type Proof[H hashlib.Hash] struct {
+type Proof[H hashutil.Hash] struct {
 	Hashes      []H    `json:"hashes"`
 	SourceFlags []bool `json:"source_flags"`
 }
@@ -43,7 +43,7 @@ func siblingIndex(idx int) int {
 	return idx ^ 1
 }
 
-func proveSingleLayer[H hashlib.Hash](layer []H, indices []int) (singleLayerProof[H], error) {
+func proveSingleLayer[H hashutil.Hash](layer []H, indices []int) (singleLayerProof[H], error) {
 	var (
 		authIndices []int
 		nextIndices []int
@@ -76,11 +76,11 @@ func proveSingleLayer[H hashlib.Hash](layer []H, indices []int) (singleLayerProo
 	}, nil
 }
 
-type Tree[H hashlib.Hash] struct {
+type Tree[H hashutil.Hash] struct {
 	layers [][]H
 }
 
-func NewTree[H hashlib.Hash](hasher hashlib.Hasher[H], leafHashes []H) (*Tree[H], error) {
+func NewTree[H hashutil.Hash](hasher hashutil.Hasher[H], leafHashes []H) (*Tree[H], error) {
 	if len(leafHashes) == 0 {
 		return nil, errors.New("Cannot construct a tree without leaves")
 	}
@@ -130,7 +130,7 @@ func (t *Tree[H]) Prove(indices []int) (Proof[H], error) {
 	return proof, nil
 }
 
-func computeNextLayer[H hashlib.Hash](hasher hashlib.Hasher[H], layer []H) ([]H, []H) {
+func computeNextLayer[H hashutil.Hash](hasher hashutil.Hasher[H], layer []H) ([]H, []H) {
 	if len(layer) == 1 {
 		return layer, layer
 	}
@@ -144,7 +144,7 @@ func computeNextLayer[H hashlib.Hash](hasher hashlib.Hasher[H], layer []H) ([]H,
 	return layer, nextLayer
 }
 
-func VerifyComputeRoot[H hashlib.Hash](hasher hashlib.Hasher[H], leafHashes []H, proof Proof[H]) (H, error) {
+func VerifyComputeRoot[H hashutil.Hash](hasher hashutil.Hasher[H], leafHashes []H, proof Proof[H]) (H, error) {
 	leavesLength := len(leafHashes)
 	proofsLength := len(proof.Hashes)
 	if leavesLength == 0 && proofsLength == 0 {

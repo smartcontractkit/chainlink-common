@@ -11,7 +11,7 @@ func BytesOfBytesKeccak(b [][]byte) ([32]byte, error) {
 		return [32]byte{}, nil
 	}
 
-	encodedArr, err := encodeBytesOfBytes(b)
+	encodedArr, err := EncodeBytesOfBytes(b)
 	if err != nil {
 		return [32]byte{}, err
 	}
@@ -19,12 +19,12 @@ func BytesOfBytesKeccak(b [][]byte) ([32]byte, error) {
 	return keccak256Fixed(encodedArr), nil
 }
 
-// encodeBytesOfBytes encodes the nested byte arrays into a single byte array as follows
+// EncodeBytesOfBytes encodes the nested byte arrays into a single byte array as follows
 //  1. total number of nested arrays is encoded into fix-size 8 bytes at the front of the result
 //  2. for each nested array
 //     encode the array length into fixed-size 8 bytes, append to result
 //     append the array contents to result
-func encodeBytesOfBytes(b [][]byte) ([]byte, error) {
+func EncodeBytesOfBytes(b [][]byte) ([]byte, error) {
 	var buffer bytes.Buffer
 	if err := binary.Write(&buffer, binary.BigEndian, uint64(len(b))); err != nil {
 		return nil, err

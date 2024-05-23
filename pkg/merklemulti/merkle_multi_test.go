@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ctx              = hashlib.NewKeccakCtx()
-	a, b, c, d, e, f = ctx.Hash([]byte{0xa}), ctx.Hash([]byte{0xb}), ctx.Hash([]byte{0xc}), ctx.Hash([]byte{0xd}), ctx.Hash([]byte{0xe}), ctx.Hash([]byte{0xf})
+	hasher           = hashlib.NewKeccak()
+	a, b, c, d, e, f = hasher.Hash([]byte{0xa}), hasher.Hash([]byte{0xb}), hasher.Hash([]byte{0xc}), hasher.Hash([]byte{0xd}), hasher.Hash([]byte{0xe}), hasher.Hash([]byte{0xf})
 )
 
 func mustDecode(input string) []byte {
@@ -62,7 +62,7 @@ func TestReturnErrorForTooLargeInput(t *testing.T) {
 				flags = make([]bool, flagsLength)
 			}
 
-			_, err := VerifyComputeRoot(ctx, leaves, Proof[[32]byte]{Hashes: proofs, SourceFlags: flags})
+			_, err := VerifyComputeRoot(hasher, leaves, Proof[[32]byte]{Hashes: proofs, SourceFlags: flags})
 			require.Error(t, err)
 			require.Equal(t, err.Error(), test.errorMessage)
 		})
@@ -74,7 +74,7 @@ func TestErrorWhenNotAllProofsCanBeUsed(t *testing.T) {
 	proofs := [][32]byte{c, d}
 	sourceFlags := []bool{false, true, true}
 
-	_, err := VerifyComputeRoot(ctx, leaves, Proof[[32]byte]{Hashes: proofs, SourceFlags: sourceFlags})
+	_, err := VerifyComputeRoot(hasher, leaves, Proof[[32]byte]{Hashes: proofs, SourceFlags: sourceFlags})
 	require.Error(t, err)
 	require.Equal(t, err.Error(), "proof source flags 1 != proof hashes 2")
 }
@@ -83,7 +83,7 @@ func TestSpecFixtureVerifyProof(t *testing.T) {
 	for _, testVector := range fixtures.TestVectors {
 		var leafHashes = hashesFromHexStrings(testVector.ProofLeaves)
 		var proofHashes = hashesFromHexStrings(testVector.ProofHashes)
-		computedRoot, err := VerifyComputeRoot(ctx, leafHashes, Proof[[32]byte]{
+		computedRoot, err := VerifyComputeRoot(hasher, leafHashes, Proof[[32]byte]{
 			Hashes: proofHashes, SourceFlags: testVector.ProofFlags,
 		})
 		require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestSpecFixtureVerifyProof(t *testing.T) {
 func TestSpecFixtureNewTree(t *testing.T) {
 	for _, testVector := range fixtures.TestVectors {
 		var leafHashes = hashesFromHexStrings(testVector.AllLeafs)
-		mctx := hashlib.NewKeccakCtx()
+		mctx := hashlib.NewKeccak()
 		tree, err := NewTree(mctx, leafHashes)
 		assert.NoError(t, err)
 		actualRoot := tree.Root()
@@ -103,31 +103,31 @@ func TestSpecFixtureNewTree(t *testing.T) {
 }
 
 func TestPadding(t *testing.T) {
-	tr4, err := NewTree(ctx, [][32]byte{a, b, c})
+	tr4, err := NewTree(hasher, [][32]byte{a, b, c})
 	require.NoError(t, err)
 	assert.Equal(t, 4, len(tr4.layers[0]))
-	tr8, err := NewTree(ctx, [][32]byte{a, b, c, d, e})
+	tr8, err := NewTree(hasher, [][32]byte{a, b, c, d, e})
 	require.NoError(t, err)
 	assert.Equal(t, 6, len(tr8.layers[0]))
 	assert.Equal(t, 4, len(tr8.layers[1]))
 	p, err := tr8.Prove([]int{0})
 	assert.NoError(t, err)
-	h, err := VerifyComputeRoot(ctx, [][32]byte{a}, p)
+	h, err := VerifyComputeRoot(hasher, [][32]byte{a}, p)
 	require.NoError(t, err)
 	assert.Equal(t, tr8.Root(), h)
-	expected := ctx.HashInternal(ctx.HashInternal(ctx.HashInternal(a, b), ctx.HashInternal(c, d)), ctx.HashInternal(ctx.HashInternal(e, ctx.ZeroHash()), ctx.ZeroHash()))
+	expected := hasher.HashInternal(hasher.HashInternal(hasher.HashInternal(a, b), hasher.HashInternal(c, d)), hasher.HashInternal(hasher.HashInternal(e, hasher.ZeroHash()), hasher.ZeroHash()))
 	assert.Equal(t, expected, tr8.Root())
 }
 
 func TestMerkleMultiProofSecondPreimage(t *testing.T) {
-	tr, err := NewTree(ctx, [][32]byte{a, b})
+	tr, err := NewTree(hasher, [][32]byte{a, b})
 	require.NoError(t, err)
 	pr, err := tr.Prove([]int{0})
 	require.NoError(t, err)
-	root, err := VerifyComputeRoot(ctx, [][32]byte{a}, pr)
+	root, err := VerifyComputeRoot(hasher, [][32]byte{a}, pr)
 	require.NoError(t, err)
 	assert.Equal(t, root, tr.Root())
-	tr2, err := NewTree(ctx, [][32]byte{ctx.Hash(append(a[:], b[:]...))})
+	tr2, err := NewTree(hasher, [][32]byte{hasher.Hash(append(a[:], b[:]...))})
 	require.NoError(t, err)
 	assert.NotEqual(t, tr2.Root(), tr.Root())
 }
@@ -136,15 +136,15 @@ func TestMerkleMultiProof(t *testing.T) {
 	leafHashes := [][32]byte{a, b, c, d, e, f}
 	expectedRoots := [][32]byte{
 		a,
-		ctx.HashInternal(a, b),
-		ctx.HashInternal(ctx.HashInternal(a, b), ctx.HashInternal(c, ctx.ZeroHash())),
-		ctx.HashInternal(ctx.HashInternal(a, b), ctx.HashInternal(c, d)),
-		ctx.HashInternal(ctx.HashInternal(ctx.HashInternal(a, b), ctx.HashInternal(c, d)), ctx.HashInternal(ctx.HashInternal(e, ctx.ZeroHash()), ctx.ZeroHash())),
-		ctx.HashInternal(ctx.HashInternal(ctx.HashInternal(a, b), ctx.HashInternal(c, d)), ctx.HashInternal(ctx.HashInternal(e, f), ctx.ZeroHash())),
+		hasher.HashInternal(a, b),
+		hasher.HashInternal(hasher.HashInternal(a, b), hasher.HashInternal(c, hasher.ZeroHash())),
+		hasher.HashInternal(hasher.HashInternal(a, b), hasher.HashInternal(c, d)),
+		hasher.HashInternal(hasher.HashInternal(hasher.HashInternal(a, b), hasher.HashInternal(c, d)), hasher.HashInternal(hasher.HashInternal(e, hasher.ZeroHash()), hasher.ZeroHash())),
+		hasher.HashInternal(hasher.HashInternal(hasher.HashInternal(a, b), hasher.HashInternal(c, d)), hasher.HashInternal(hasher.HashInternal(e, f), hasher.ZeroHash())),
 	}
 	// For every size tree from 0..len(leaves)
 	for length := 1; length <= len(leafHashes); length++ {
-		tr, err := NewTree(ctx, leafHashes[:length])
+		tr, err := NewTree(hasher, leafHashes[:length])
 		require.NoError(t, err)
 		expectedRoot := expectedRoots[length-1]
 		require.Equal(t, tr.Root(), expectedRoot)
@@ -159,7 +159,7 @@ func TestMerkleMultiProof(t *testing.T) {
 				for _, idx := range leaveIndices {
 					leavesToProve = append(leavesToProve, leafHashes[idx])
 				}
-				root, err := VerifyComputeRoot(ctx, leavesToProve, proof)
+				root, err := VerifyComputeRoot(hasher, leavesToProve, proof)
 				require.NoError(t, err)
 				assert.Equal(t, expectedRoot, root)
 			}
@@ -167,7 +167,7 @@ func TestMerkleMultiProof(t *testing.T) {
 	}
 
 	t.Run("invalid indices should not lead to panic", func(t *testing.T) {
-		tr, err := NewTree(ctx, leafHashes[:])
+		tr, err := NewTree(hasher, leafHashes[:])
 		require.NoError(t, err)
 		_, err = tr.Prove([]int{1, 2, 3, 9999})
 		require.Error(t, err)

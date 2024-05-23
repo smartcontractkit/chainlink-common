@@ -85,7 +85,7 @@ func TestBytesOfBytesEncoding(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			encoded, err := encodeBytesOfBytes(tt.input)
+			encoded, err := EncodeBytesOfBytes(tt.input)
 			assert.NoError(t, err)
 
 			assert.Equal(t, tt.expected, encoded)

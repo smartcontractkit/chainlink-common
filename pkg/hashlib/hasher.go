@@ -6,7 +6,7 @@ type Hash interface {
 	[32]byte
 }
 
-type Ctx[H Hash] interface {
+type Hasher[H Hash] interface {
 	Hash(l []byte) H
 	HashInternal(a, b H) H
 	ZeroHash() H

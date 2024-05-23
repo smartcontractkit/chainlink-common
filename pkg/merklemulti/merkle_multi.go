@@ -80,7 +80,7 @@ type Tree[H hashlib.Hash] struct {
 	layers [][]H
 }
 
-func NewTree[H hashlib.Hash](ctx hashlib.Ctx[H], leafHashes []H) (*Tree[H], error) {
+func NewTree[H hashlib.Hash](hasher hashlib.Hasher[H], leafHashes []H) (*Tree[H], error) {
 	if len(leafHashes) == 0 {
 		return nil, errors.New("Cannot construct a tree without leaves")
 	}
@@ -89,7 +89,7 @@ func NewTree[H hashlib.Hash](ctx hashlib.Ctx[H], leafHashes []H) (*Tree[H], erro
 	var layers = [][]H{layer}
 	var curr int
 	for len(layer) > 1 {
-		paddedLayer, nextLayer := computeNextLayer(ctx, layer)
+		paddedLayer, nextLayer := computeNextLayer(hasher, layer)
 		layers[curr] = paddedLayer
 		curr++
 		layers = append(layers, nextLayer)
@@ -130,42 +130,42 @@ func (t *Tree[H]) Prove(indices []int) (Proof[H], error) {
 	return proof, nil
 }
 
-func computeNextLayer[H hashlib.Hash](ctx hashlib.Ctx[H], layer []H) ([]H, []H) {
+func computeNextLayer[H hashlib.Hash](hasher hashlib.Hasher[H], layer []H) ([]H, []H) {
 	if len(layer) == 1 {
 		return layer, layer
 	}
 	if len(layer)%2 != 0 {
-		layer = append(layer, ctx.ZeroHash())
+		layer = append(layer, hasher.ZeroHash())
 	}
 	var nextLayer []H
 	for i := 0; i < len(layer); i += 2 {
-		nextLayer = append(nextLayer, ctx.HashInternal(layer[i], layer[i+1]))
+		nextLayer = append(nextLayer, hasher.HashInternal(layer[i], layer[i+1]))
 	}
 	return layer, nextLayer
 }
 
-func VerifyComputeRoot[H hashlib.Hash](ctx hashlib.Ctx[H], leafHashes []H, proof Proof[H]) (H, error) {
+func VerifyComputeRoot[H hashlib.Hash](hasher hashlib.Hasher[H], leafHashes []H, proof Proof[H]) (H, error) {
 	leavesLength := len(leafHashes)
 	proofsLength := len(proof.Hashes)
 	if leavesLength == 0 && proofsLength == 0 {
-		return ctx.ZeroHash(), fmt.Errorf("leaves and proofs are empty")
+		return hasher.ZeroHash(), fmt.Errorf("leaves and proofs are empty")
 	}
 	if leavesLength > MaxNumberTreeLeaves+1 || proofsLength > MaxNumberTreeLeaves+1 {
-		return ctx.ZeroHash(), fmt.Errorf("leaves or proofs length is beyond the limit %d", MaxNumberTreeLeaves)
+		return hasher.ZeroHash(), fmt.Errorf("leaves or proofs length is beyond the limit %d", MaxNumberTreeLeaves)
 	}
 	totalHashes := leavesLength + proofsLength - 1
 	if totalHashes > MaxNumberTreeLeaves {
-		return ctx.ZeroHash(), fmt.Errorf("total hashes length cannot me larger than %d", MaxNumberTreeLeaves)
+		return hasher.ZeroHash(), fmt.Errorf("total hashes length cannot me larger than %d", MaxNumberTreeLeaves)
 	}
 	if totalHashes != len(proof.SourceFlags) {
-		return ctx.ZeroHash(), fmt.Errorf("hashes %d != sourceFlags %d", totalHashes, len(proof.SourceFlags))
+		return hasher.ZeroHash(), fmt.Errorf("hashes %d != sourceFlags %d", totalHashes, len(proof.SourceFlags))
 	}
 	if totalHashes == 0 {
 		return leafHashes[0], nil
 	}
 	sourceProofCount := proof.countSourceFlags(SourceFromProof)
 	if sourceProofCount != proofsLength {
-		return ctx.ZeroHash(), fmt.Errorf("proof source flags %d != proof hashes %d", sourceProofCount, proofsLength)
+		return hasher.ZeroHash(), fmt.Errorf("proof source flags %d != proof hashes %d", sourceProofCount, proofsLength)
 	}
 	hashes := make([]H, totalHashes)
 	for i := 0; i < totalHashes; i++ {
@@ -199,12 +199,12 @@ func VerifyComputeRoot[H hashlib.Hash](ctx hashlib.Ctx[H], leafHashes []H, proof
 			b = hashes[hashPos]
 			hashPos++
 		}
-		hashes[i] = ctx.HashInternal(a, b)
+		hashes[i] = hasher.HashInternal(a, b)
 	}
 	if hashPos != totalHashes-1 ||
 		leafPos != leavesLength ||
 		proofPos != proofsLength {
-		return ctx.ZeroHash(), fmt.Errorf("not all proofs used during processing")
+		return hasher.ZeroHash(), fmt.Errorf("not all proofs used during processing")
 	}
 	return hashes[totalHashes-1], nil
 }

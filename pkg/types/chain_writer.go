@@ -17,7 +17,7 @@ type ChainWriter interface {
 	GetTransactionStatus(ctx context.Context, transactionID uuid.UUID) (TransactionStatus, error)
 
 	// GetFeeComponents retrieves the associated gas costs for executing a transaction.
-	GetFeeComponents() (ChainFeeComponents, error)
+	GetFeeComponents(ctx context.Context) (ChainFeeComponents, error)
 }
 
 // TxMeta contains metadata fields for a transaction.

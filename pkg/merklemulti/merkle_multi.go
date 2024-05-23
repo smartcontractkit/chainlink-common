@@ -1,12 +1,11 @@
 package merklemulti
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"errors"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/hashlib"
+	"github.com/smartcontractkit/chainlink-common/pkg/hashlib"
 )
 
 type singleLayerProof[H hashlib.Hash] struct {

@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/stat/combin"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/hashlib"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/merklemulti/fixtures"
+	"github.com/smartcontractkit/chainlink-common/pkg/hashlib"
+	"github.com/smartcontractkit/chainlink-common/pkg/merklemulti/fixtures"
 )
 
 var (

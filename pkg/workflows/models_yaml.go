@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
+	validate "github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/shopspring/decimal"
 	"sigs.k8s.io/yaml"
 
@@ -21,16 +22,40 @@ func GenerateJSONSchema() ([]byte, error) {
 }
 
 func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
+	var url = "https://github.com/smartcontractkit/chainlink/"
 	w := workflowSpecYaml{}
 	err := yaml.Unmarshal([]byte(data), &w)
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+	schemaStr, err := GenerateJSONSchema()
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
 
-	return w.toWorkflowSpec(), err
+	schema, err := validate.CompileString(url, string(schemaStr))
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+
+	var jsonToValidate any
+	err = yaml.Unmarshal([]byte(data), &jsonToValidate)
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+
+	err = schema.Validate(jsonToValidate)
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+
+	return w.toWorkflowSpec(), nil
 }
 
 // workflowSpecYaml is the YAML representation of a workflow spec.
 //
 // It allows for multiple ways of defining a workflow spec, which we later
-// convert to a single representation, `workflowSpec`.
+// convert to a single representation, `WorkflowSpec`.
 type workflowSpecYaml struct {
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.
 	Triggers []stepDefinitionYaml `json:"triggers" jsonschema:"required"`
@@ -42,7 +67,7 @@ type workflowSpecYaml struct {
 	Targets []stepDefinitionYaml `json:"targets" jsonschema:"required"`
 }
 
-// toWorkflowSpec converts a workflowSpecYaml to a workflowSpec.
+// toWorkflowSpec converts a workflowSpecYaml to a WorkflowSpec.
 //
 // We support multiple ways of defining a workflow spec yaml,
 // but internally we want to work with a single representation.
@@ -105,6 +130,11 @@ func (m *mapping) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// convertNumber detects if a json.Number is an integer or a decimal and converts it to the appropriate type.
+//
+// Supported type conversions:
+// - json.Number -> int64
+// - json.Number -> float64 -> decimal.Decimal
 func convertNumber(el any) (any, error) {
 	switch elv := el.(type) {
 	case json.Number:
@@ -164,7 +194,7 @@ func (m mapping) MarshalJSON() ([]byte, error) {
 // stepDefinitionYaml is the YAML representation of a step in a workflow.
 //
 // It allows for multiple ways of defining a step, which we later
-// convert to a single representation, `stepDefinition`.
+// convert to a single representation, `StepDefinition`.
 type stepDefinitionYaml struct {
 	// A universally unique name for a capability will be defined under the “id” property. The uniqueness will, eventually, be enforced in the Capability Registry.
 	//
@@ -244,9 +274,9 @@ type stepDefinitionYaml struct {
 	Config mapping `json:"config" jsonschema:"required"`
 }
 
-// toStepDefinition converts a stepDefinitionYaml to a stepDefinition.
+// toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
 //
-// `stepDefinition` is the converged representation of a step in a workflow.
+// `StepDefinition` is the converged representation of a step in a workflow.
 func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 	return StepDefinition{
 		Ref:    s.Ref,
@@ -256,10 +286,10 @@ func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 	}
 }
 
-// stepDefinitionID represents both the string and table representations of the "id" field in a stepDefinition.
+// stepDefinitionID represents both the string and table representations of the "id" field in a StepDefinition.
 type stepDefinitionID struct {
 	idStr   string
-	idTable *stepDefinitionTableID
+	idTable *StepDefinitionTableID
 }
 
 func (s stepDefinitionID) String() string {
@@ -279,8 +309,8 @@ func (s *stepDefinitionID) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	// If the JSON data is a table, unmarshal it into a stepDefinitionTableID
-	var table stepDefinitionTableID
+	// If the JSON data is a table, unmarshal it into a StepDefinitionTableID
+	var table StepDefinitionTableID
 	err = json.Unmarshal(data, &table)
 	if err != nil {
 		return err
@@ -302,9 +332,15 @@ func (s *stepDefinitionID) MarshalJSON() ([]byte, error) {
 // The schema is a oneOf schema that allows either a string or a table.
 func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
-	tableSchema := reflector.Reflect(&stepDefinitionTableID{})
+	tableSchema := reflector.Reflect(&StepDefinitionTableID{})
 	stringSchema := &jsonschema.Schema{
-		ID:      "string",
+		ID: "string",
+		// Allow for a-z, 0-9, _, -, and : characters as the capability type, follwed by a semver regex allowing only major versions.
+		//
+		// Prereleases and build metadata are also allowed
+		//
+		// Ex. read_chain:chain_ethereum:network_mainnet@1
+		// Ex. read_chain:chain_ethereum:network_mainnet@1-rc1.1+build1
 		Pattern: "^[a-z0-9_\\-:]+@(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
 	}
 
@@ -317,21 +353,24 @@ func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	}
 }
 
-// stepDefinitionTableID is the structured representation of a stepDefinitionID.
-type stepDefinitionTableID struct {
-	Name    string            `json:"name"`
+// StepDefinitionTableID is the structured representation of a stepDefinitionID.
+type StepDefinitionTableID struct {
+	Name string `json:"name"`
+	// Version is a semver supporting only major versions.
+	//
+	// Prereleases and build metadata are also allowed
 	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
 	Labels  map[string]string `json:"labels"`
 }
 
-// String returns the string representation of a stepDefinitionTableID.
+// String returns the string representation of a StepDefinitionTableID.
 //
 // It follows the format:
 //
 //	{name}:{label1_key}_{label1_value}:{label2_key}_{label2_value}@{version}
 //
 // where labels are ordered alphanumerically.
-func (s stepDefinitionTableID) String() string {
+func (s StepDefinitionTableID) String() string {
 	labels := make([]string, 0, len(s.Labels))
 	for k, v := range s.Labels {
 		labels = append(labels, fmt.Sprintf("%s_%s", k, v))

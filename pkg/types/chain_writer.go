@@ -13,8 +13,8 @@ type ChainWriter interface {
 	// The `transactionID` will be used by the underlying TXM as an idempotency key, and unique reference to track transaction attempts.
 	SubmitSignedTransaction(ctx context.Context, payload []byte, signature map[string]any, transactionID uuid.UUID, toAddress string, meta *TxMeta, value big.Int) (int64, error)
 
-	// StatusForUUID returns the current status of a transaction in the underlying chain's TXM.
-	StatusForUUID(ctx context.Context, transactionID uuid.UUID) (TransactionStatus, error)
+	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
+	GetTransactionStatus(ctx context.Context, transactionID uuid.UUID) (TransactionStatus, error)
 
 	// GetFeeComponents retrieves the associated gas costs for executing a transaction.
 	GetFeeComponents() (ChainFeeComponents, error)

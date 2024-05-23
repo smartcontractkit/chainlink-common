@@ -22,7 +22,7 @@ type RelayerAdapter struct {
 	RelayerExt
 }
 
-func (r *RelayerAdapter) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ChainReader, error) {
+func (r *RelayerAdapter) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	return r.Relayer.NewContractReader(contractReaderConfig)
 }
 

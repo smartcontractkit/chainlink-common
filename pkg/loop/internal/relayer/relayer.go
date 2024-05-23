@@ -177,7 +177,7 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
-func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ChainReader, error) {
+func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	cc := r.NewClientConn("ChainReader", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewContractReader(ctx, &pb.NewContractReaderRequest{ContractReaderConfig: contractReaderConfig})
 		if err != nil {

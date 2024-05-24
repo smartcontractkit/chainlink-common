@@ -200,10 +200,6 @@ type stepDefinitionYaml struct {
 	//
 	// Semver must be used to specify the version of the Capability at the end of the id field. Capability versions must be immutable.
 	//
-	// Initially, we will require major versions. This will ease upgrades early on while we develop the infrastructure.
-	//
-	// Eventually, we might support minor version and specific version pins. This will allow workflow authors to have flexibility when selecting the version, and node operators will be able to determine when they should update their capabilities.
-	//
 	// There are two ways to specify an id - using a string as a fully qualified ID or a structured table. When using a table, labels are ordered alphanumerically and joined into a string following a
 	//  {name}:{label1_key}_{label1_value}:{label2_key}_{label2_value}@{version}
 	// pattern.
@@ -213,16 +209,15 @@ type stepDefinitionYaml struct {
 	// Validation must throw an error if:
 	//
 	// Unsupported characters are used.
-	// (For Keystone only.) More specific than a major version is specified.
 	//
 	// Example (string)
-	//  id: read_chain:chain_ethereum:network_mainnet@1
+	//  id: read_chain:chain_ethereum:network_mainnet@1.0.0
 	//
 	// Example (table)
 	//
 	//  id:
 	//    name: read_chain
-	//    version: 1
+	//    version: 1.0.0
 	//    labels:
 	//      chain: ethereum
 	//      network: mainnet
@@ -263,7 +258,7 @@ type stepDefinitionYaml struct {
 	//
 	// Example
 	//  targets:
-	//    - id: write_polygon_mainnet@1
+	//    - id: write_polygon_mainnet@1.0.0
 	//      inputs:
 	//        report:
 	//          - consensus.evm_median.outputs.report
@@ -333,15 +328,19 @@ func (s *stepDefinitionID) MarshalJSON() ([]byte, error) {
 func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
 	tableSchema := reflector.Reflect(&stepDefinitionTableID{})
+	tableSchema.ID = ""
+	tableSchema.Version = ""
+	// Allow for a-z, 0-9, _, -, and : characters as the capability type, follwed by a semver regex enforcing a full version.
+	//
+	// Prereleases and build metadata are also allowed
+	//
+	// Ex. read_chain:chain_ethereum:network_mainnet@1.0.0
+	// Ex. read_chain:chain_ethereum:network_mainnet@1.0.0-rc1.1+build1
 	stringSchema := &jsonschema.Schema{
-		ID: "string",
-		// Allow for a-z, 0-9, _, -, and : characters as the capability type, follwed by a semver regex allowing only major versions.
-		//
-		// Prereleases and build metadata are also allowed
-		//
-		// Ex. read_chain:chain_ethereum:network_mainnet@1
-		// Ex. read_chain:chain_ethereum:network_mainnet@1-rc1.1+build1
-		Pattern: "^[a-z0-9_\\-:]+@(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+		Pattern: "^[a-z0-9_\\-:]+@(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+		Type:    "string",
+		ID:      "",
+		Version: "",
 	}
 
 	return &jsonschema.Schema{
@@ -356,14 +355,12 @@ func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 // stepDefinitionTableID is the structured representation of a stepDefinitionID.
 type stepDefinitionTableID struct {
 	Name string `json:"name"`
-	// Version is a semver supporting only major versions.
-	//
-	// Prereleases and build metadata are also allowed
-	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
+	// This pattern is the same as the one used in stepDefinitionID.JSONSchema()
+	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
 	Labels  map[string]string `json:"labels"`
 }
 
-// String returns the string representation of a StepDefinitionTableID.
+// String returns the string representation of a stepDefinitionTableID.
 //
 // It follows the format:
 //

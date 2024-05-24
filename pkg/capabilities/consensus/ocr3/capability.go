@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	ocrCapabilityID = "offchain_reporting@1"
+	ocrCapabilityID = "offchain_reporting@1.0.0"
 
 	methodStartRequest = "start_request"
 	methodSendResponse = "send_response"

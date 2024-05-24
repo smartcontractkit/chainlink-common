@@ -15,7 +15,7 @@ import (
 
 func Test_CapabilityInfo(t *testing.T) {
 	ci, err := NewCapabilityInfo(
-		"capability-id@1",
+		"capability-id@1.0.0",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
 	)
@@ -23,12 +23,12 @@ func Test_CapabilityInfo(t *testing.T) {
 
 	gotCi, err := ci.Info(tests.Context(t))
 	require.NoError(t, err)
-	require.Equal(t, ci.Version(), "1")
+	require.Equal(t, ci.Version(), "1.0.0")
 	assert.Equal(t, ci, gotCi)
 
 	ci, err = NewCapabilityInfo(
 		// add build metadata and sha
-		"capability-id@1+build.1234.sha-5678",
+		"capability-id@1.0.0+build.1234.sha-5678",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
 	)
@@ -36,12 +36,12 @@ func Test_CapabilityInfo(t *testing.T) {
 
 	gotCi, err = ci.Info(tests.Context(t))
 	require.NoError(t, err)
-	require.Equal(t, ci.Version(), "1+build.1234.sha-5678")
+	require.Equal(t, ci.Version(), "1.0.0+build.1234.sha-5678")
 	assert.Equal(t, ci, gotCi)
 
 	// prerelease
 	ci, err = NewCapabilityInfo(
-		"capability-id@1-beta",
+		"capability-id@1.0.0-beta",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
 	)
@@ -49,13 +49,13 @@ func Test_CapabilityInfo(t *testing.T) {
 
 	gotCi, err = ci.Info(tests.Context(t))
 	require.NoError(t, err)
-	require.Equal(t, ci.Version(), "1-beta")
+	require.Equal(t, ci.Version(), "1.0.0-beta")
 	assert.Equal(t, ci, gotCi)
 }
 
 func Test_CapabilityInfo_Invalid(t *testing.T) {
 	_, err := NewCapabilityInfo(
-		"capability-id@2",
+		"capability-id@2.0.0",
 		CapabilityType(5),
 		"This is a mock capability that doesn't do anything.",
 	)
@@ -69,7 +69,7 @@ func Test_CapabilityInfo_Invalid(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid id")
 
 	_, err = NewCapabilityInfo(
-		"mock-capability@v1",
+		"mock-capability@v1.0.0",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
 	)
@@ -83,7 +83,7 @@ func Test_CapabilityInfo_Invalid(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid id")
 
 	_, err = NewCapabilityInfo(
-		"mock-capability@1.0.1",
+		"mock-capability@1",
 		CapabilityTypeAction,
 		"This is a mock capability that doesn't do anything.",
 	)

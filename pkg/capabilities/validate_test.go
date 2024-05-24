@@ -200,7 +200,7 @@ func TestValidator_ValidateOutputs(t *testing.T) {
 
 func TestValidator_GenerateSchema(t *testing.T) {
 	capInfo := CapabilityInfo{
-		ID:             "test@1",
+		ID:             "test@1.0.0",
 		CapabilityType: CapabilityTypeTrigger,
 		Description:    "test description",
 	}

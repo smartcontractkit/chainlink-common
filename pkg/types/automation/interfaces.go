@@ -3,6 +3,7 @@ package automation
 import (
 	"context"
 	"io"
+	"math/big"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -42,7 +43,7 @@ type UpkeepStateReader interface {
 }
 
 type Encoder interface {
-	Encode(...CheckResult) ([]byte, error)
+	Encode(...CheckResult) ([]byte, []*big.Int, error)
 	Extract([]byte) ([]ReportedUpkeep, error)
 }
 

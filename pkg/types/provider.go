@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"slices"
 	"strings"
 
@@ -18,6 +19,11 @@ type ConfigProvider interface {
 	ContractConfigTracker() ocrtypes.ContractConfigTracker
 }
 
+type EnhancedContractTransmitter interface {
+	ocrtypes.ContractTransmitter
+	TransmitWithIdempotentKey(context.Context, ocrtypes.ReportContext, ocrtypes.Report, []ocrtypes.AttributedOnchainSignature, *string) error
+}
+
 // Plugin is an alias for PluginProvider, for compatibility.
 // Deprecated
 type Plugin = PluginProvider
@@ -27,6 +33,7 @@ type Plugin = PluginProvider
 type PluginProvider interface {
 	ConfigProvider
 	ContractTransmitter() ocrtypes.ContractTransmitter
+	EnhancedContractTransmitter() EnhancedContractTransmitter
 	ChainReader() ChainReader
 	Codec() Codec
 }

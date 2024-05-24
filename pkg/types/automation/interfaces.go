@@ -88,5 +88,8 @@ type UpkeepStateUpdater interface {
 }
 
 type TxStatusStore interface {
-	SaveTxInfo(uuid uuid.UUID, upkeepID *big.Int)
+	SaveTxInfo(uuid uuid.UUID, upkeepID *big.Int) error
+	IsStuck(upkeepID *big.Int) bool
+	Start(context.Context) error
+	Close() error
 }

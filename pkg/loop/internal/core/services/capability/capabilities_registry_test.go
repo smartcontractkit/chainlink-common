@@ -176,7 +176,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Add capability Trigger
 	triggerInfo := capabilities.CapabilityInfo{
-		ID:             "trigger-1@1",
+		ID:             "trigger-1@1.0.0",
 		CapabilityType: capabilities.CapabilityTypeTrigger,
 		Description:    "trigger-1-description",
 	}
@@ -190,8 +190,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	err = rc.Add(tests.Context(t), testTrigger)
 	require.NoError(t, err)
 
-	reg.On("GetTrigger", mock.Anything, "trigger-1").Return(testTrigger, nil)
-	triggerCap, err := rc.GetTrigger(tests.Context(t), "trigger-1")
+	reg.On("GetTrigger", mock.Anything, "trigger-1@1.0.0").Return(testTrigger, nil)
+	triggerCap, err := rc.GetTrigger(tests.Context(t), "trigger-1@1.0.0")
 	require.NoError(t, err)
 
 	// Test trigger Info()
@@ -216,7 +216,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Add capability Trigger
 	actionInfo := capabilities.CapabilityInfo{
-		ID:             "action-1@2",
+		ID:             "action-1@2.0.0",
 		CapabilityType: capabilities.CapabilityTypeAction,
 		Description:    "action-1-description",
 	}
@@ -226,8 +226,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		mockBaseCapability:     &mockBaseCapability{info: actionInfo},
 		mockCallbackExecutable: &mockCallbackExecutable{callback: actionCallbackChan},
 	}
-	reg.On("GetAction", mock.Anything, "action-1").Return(testAction, nil)
-	actionCap, err := rc.GetAction(tests.Context(t), "action-1")
+	reg.On("GetAction", mock.Anything, "action-1@2.0.0").Return(testAction, nil)
+	actionCap, err := rc.GetAction(tests.Context(t), "action-1@2.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, actionInfo, actionCap)
@@ -252,7 +252,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Add capability Consensus
 	consensusInfo := capabilities.CapabilityInfo{
-		ID:             "consensus-1@3",
+		ID:             "consensus-1@3.0.0",
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 		Description:    "consensus-1-description",
 	}
@@ -260,15 +260,15 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		mockBaseCapability:     &mockBaseCapability{info: consensusInfo},
 		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	reg.On("GetConsensus", mock.Anything, "consensus-1").Return(testConsensus, nil)
-	consensusCap, err := rc.GetConsensus(tests.Context(t), "consensus-1")
+	reg.On("GetConsensus", mock.Anything, "consensus-1@3.0.0").Return(testConsensus, nil)
+	consensusCap, err := rc.GetConsensus(tests.Context(t), "consensus-1@3.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, consensusInfo, consensusCap)
 
 	// Add capability Target
 	targetInfo := capabilities.CapabilityInfo{
-		ID:             "target-1@1",
+		ID:             "target-1@1.0.0",
 		CapabilityType: capabilities.CapabilityTypeTarget,
 		Description:    "target-1-description",
 	}
@@ -276,8 +276,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		mockBaseCapability:     &mockBaseCapability{info: targetInfo},
 		mockCallbackExecutable: &mockCallbackExecutable{},
 	}
-	reg.On("GetTarget", mock.Anything, "target-1").Return(testTarget, nil)
-	targetCap, err := rc.GetTarget(tests.Context(t), "target-1")
+	reg.On("GetTarget", mock.Anything, "target-1@1.0.0").Return(testTarget, nil)
+	targetCap, err := rc.GetTarget(tests.Context(t), "target-1@1.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, targetInfo, targetCap)

@@ -410,7 +410,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 		case *pb.Primitive_Confidence:
-			return query.Confidence(confidenceFromProto(primitive.Confidence))
+			return query.Confidence(confidenceFromProto(primitive.Confidence)), nil
 		case *pb.Primitive_Block:
 			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
 		case *pb.Primitive_TxHash:

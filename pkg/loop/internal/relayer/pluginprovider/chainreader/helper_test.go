@@ -120,11 +120,7 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	}
 
 	for _, conf := range confirmationsValues {
-		qConf, err := query.Confidence(conf)
-
-		require.NoError(t, err)
-
-		primitiveExpressions = append(primitiveExpressions, qConf)
+		primitiveExpressions = append(primitiveExpressions, query.Confidence(conf))
 	}
 
 	qf, err := query.Where("primitives", primitiveExpressions...)

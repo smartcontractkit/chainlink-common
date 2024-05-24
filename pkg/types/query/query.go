@@ -63,10 +63,10 @@ func Block(block uint64, operator primitives.ComparisonOperator) Expression {
 	}
 }
 
-func Confidence(confLevel primitives.ConfidenceLevel) (Expression, error) {
+func Confidence(confLevel primitives.ConfidenceLevel) Expression {
 	return Expression{
 		Primitive: &primitives.Confidence{ConfidenceLevel: confLevel},
-	}, nil
+	}
 }
 
 func Timestamp(timestamp uint64, operator primitives.ComparisonOperator) Expression {

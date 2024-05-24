@@ -152,7 +152,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		require.NoError(t, err)
 
 		// change this to update golden file
-		shouldUpdateWorkflowSpec := false
+		shouldUpdateWorkflowSpec := true 
 		if shouldUpdateWorkflowSpec {
 			err = os.WriteFile(expectedSpecPath, workflowSpecBytes, 0600)
 			require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestJsonSchema(t *testing.T) {
 		require.NoError(t, err)
 
 		// change this to update golden file
-		shouldUpdateSchema := false
+		shouldUpdateSchema := true
 		if shouldUpdateSchema {
 			err = os.WriteFile(expectedSchemaPath, generatedSchema, 0600)
 			require.NoError(t, err)

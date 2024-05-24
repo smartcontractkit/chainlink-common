@@ -186,7 +186,7 @@ type stepDefinitionYaml struct {
 	// (For Keystone only.) More specific than a major version is specified.
 	//
 	// Example (string)
-	//  id: read_chain:chain_ethereum:network_mainnet@1
+	//  id: read_chain:chain_ethereum:network_mainnet@1.0.0
 	//
 	// Example (table)
 	//
@@ -233,7 +233,7 @@ type stepDefinitionYaml struct {
 	//
 	// Example
 	//  targets:
-	//    - id: write_polygon_mainnet@1
+	//    - id: write_polygon_mainnet@1.0.0
 	//      inputs:
 	//        report:
 	//          - consensus.evm_median.outputs.report
@@ -305,7 +305,7 @@ func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	tableSchema := reflector.Reflect(&stepDefinitionTableID{})
 	stringSchema := &jsonschema.Schema{
 		ID:      "string",
-		Pattern: "^[a-z0-9_\\-:]+@(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+		Pattern: "^[a-z0-9_\\-:]+@(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
 	}
 
 	return &jsonschema.Schema{
@@ -320,7 +320,7 @@ func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 // stepDefinitionTableID is the structured representation of a stepDefinitionID.
 type stepDefinitionTableID struct {
 	Name    string            `json:"name"`
-	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
+	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
 	Labels  map[string]string `json:"labels"`
 }
 

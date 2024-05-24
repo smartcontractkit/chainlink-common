@@ -41,8 +41,9 @@ func MustNewStartedServer(loggerName string) *Server {
 
 // Server holds common plugin server fields.
 type Server struct {
-	GRPCOpts   GRPCOpts
-	Logger     logger.SugaredLogger
+	GRPCOpts GRPCOpts
+	Logger   logger.SugaredLogger
+	//TODO beholder client for direct access?
 	promServer *PromServer
 	checker    *services.HealthChecker
 }
@@ -53,6 +54,7 @@ func newServer(loggerName string) (*Server, error) {
 		GRPCOpts: NewGRPCOpts(nil),
 	}
 
+	//TODO configure to export to beholder client or otel via https://github.com/agoda-com/opentelemetry-logs-go
 	lggr, err := NewLogger()
 	if err != nil {
 		return nil, fmt.Errorf("error creating logger: %s", err)
@@ -80,6 +82,7 @@ func (s *Server) start() error {
 		s.Logger.Errorf("Failed to setup tracing: %s", err)
 	}
 
+	//TODO prometheus.DefaultGatherer to beholder client or otel adapter?
 	s.promServer = NewPromServer(envCfg.PrometheusPort, s.Logger)
 	if err := s.promServer.Start(); err != nil {
 		return fmt.Errorf("error starting prometheus server: %w", err)

@@ -21,12 +21,10 @@ type ChainWriter interface {
 }
 
 // TxMeta contains metadata fields for a transaction.
-//
-// Eventually this will replace, or be replaced by (via a move), the `TxMeta` in core:
-// https://github.com/smartcontractkit/chainlink/blob/dfc399da715f16af1fcf6441ea5fc47b71800fa1/common/txmgr/types/tx.go#L121
-//
-// TODO(nickcorin): Move the TxMeta from `chainlink` to `chainlink-common`.
-type TxMeta = map[string]any
+type TxMeta struct {
+	// Used for Keystone Workflows
+	WorkflowExecutionID *string
+}
 
 // TransactionStatus are the status we expect every TXM to support and that can be returned by StatusForUUID.
 type TransactionStatus int

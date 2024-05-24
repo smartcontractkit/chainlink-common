@@ -231,7 +231,7 @@ func (s staticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
 	return s.onchainConfigCodec
 }
 
-func (s staticMedianProvider) ChainReader() types.ChainReader {
+func (s staticMedianProvider) ChainReader() types.ContractReader {
 	return s.chainReader
 }
 

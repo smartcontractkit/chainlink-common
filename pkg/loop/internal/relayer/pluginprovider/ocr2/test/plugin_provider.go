@@ -55,7 +55,7 @@ func (s staticPluginProvider) ContractTransmitter() libocr.ContractTransmitter {
 	return s.contractTransmitter
 }
 
-func (s staticPluginProvider) ChainReader() types.ChainReader {
+func (s staticPluginProvider) ChainReader() types.ContractReader {
 	return s.chainReader
 }
 

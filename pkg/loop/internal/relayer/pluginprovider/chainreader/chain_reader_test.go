@@ -172,7 +172,7 @@ func makeEncoder() cbor.EncMode {
 
 type fakeChainReaderInterfaceTester struct {
 	interfaceTesterBase
-	impl types.ChainReader
+	impl types.ContractReader
 }
 
 func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
@@ -183,7 +183,7 @@ func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
 	}
 }
 
-func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.ChainReader {
+func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.ContractReader {
 	return it.impl
 }
 

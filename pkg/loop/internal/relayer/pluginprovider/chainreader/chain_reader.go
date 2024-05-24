@@ -21,7 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
-var _ types.ChainReader = (*Client)(nil)
+var _ types.ContractReader = (*Client)(nil)
 
 type Client struct {
 	*goplugin.ServiceClient
@@ -145,13 +145,13 @@ func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error
 
 var _ pb.ChainReaderServer = (*Server)(nil)
 
-func NewServer(impl types.ChainReader) pb.ChainReaderServer {
+func NewServer(impl types.ContractReader) pb.ChainReaderServer {
 	return &Server{impl: impl}
 }
 
 type Server struct {
 	pb.UnimplementedChainReaderServer
-	impl types.ChainReader
+	impl types.ContractReader
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
@@ -484,6 +484,6 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 	return sequences, nil
 }
 
-func RegisterContractReaderService(s *grpc.Server, contractReader types.ChainReader) {
+func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader) {
 	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader})
 }

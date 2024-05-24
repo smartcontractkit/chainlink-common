@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	// ChainReader is a static implementation of [types.ChainReader], [testtypes.Evaluator] and [types.PluginProvider
+	// ChainReader is a static implementation of [types.ContractReader], [testtypes.Evaluator] and [types.PluginProvider
 	// it is used for testing the [types.PluginProvider] interface
 	ChainReader = staticChainReader{
 		contractName:   "anyContract",
@@ -30,8 +30,8 @@ type staticChainReader struct {
 	params         map[string]any
 }
 
-var _ testtypes.Evaluator[types.ChainReader] = staticChainReader{}
-var _ types.ChainReader = staticChainReader{}
+var _ testtypes.Evaluator[types.ContractReader] = staticChainReader{}
+var _ types.ContractReader = staticChainReader{}
 
 func (c staticChainReader) Start(_ context.Context) error { return nil }
 
@@ -78,7 +78,7 @@ func (c staticChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilt
 	return nil, nil
 }
 
-func (c staticChainReader) Evaluate(ctx context.Context, cr types.ChainReader) error {
+func (c staticChainReader) Evaluate(ctx context.Context, cr types.ContractReader) error {
 	gotLatestValue := make(map[string]any)
 	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, &c.params, &gotLatestValue)
 	if err != nil {

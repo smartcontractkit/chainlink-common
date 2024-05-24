@@ -108,7 +108,7 @@ func TestMap_UnwrapTo_WorksOnMaps(t *testing.T) {
 	im := map[string]any{
 		"foo": "bar",
 	}
-	mv, err := NewMap(im)
+	_, err := NewMap(im)
 	require.NoError(t, err)
 
 	expected := map[string]any{
@@ -119,7 +119,7 @@ func TestMap_UnwrapTo_WorksOnMaps(t *testing.T) {
 		"decimal": decimal.NewFromFloat32(1.00),
 		"map":     im,
 	}
-	mv, err = NewMap(expected)
+	mv, err := NewMap(expected)
 	require.NoError(t, err)
 
 	got := map[string]any{}
@@ -169,11 +169,11 @@ func TestMap_UnwrapTo_OtherMapTypes(t *testing.T) {
 		},
 		{
 			name: "map[string]big.Int",
-			expected: map[string]big.Int{
-				"string":        *big.NewInt(1),
-				"anotherString": *big.NewInt(2),
+			expected: map[string]*big.Int{
+				"string":        big.NewInt(1),
+				"anotherString": big.NewInt(2),
 			},
-			got: map[string]big.Int{},
+			got: map[string]*big.Int{},
 		},
 		{
 			name: "map[string][]byte",

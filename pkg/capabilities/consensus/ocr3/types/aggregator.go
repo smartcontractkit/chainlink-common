@@ -3,6 +3,7 @@ package types
 import (
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -14,7 +15,7 @@ const (
 type Aggregator interface {
 	// Called by the Outcome() phase of OCR reporting.
 	// The inner array of observations corresponds to elements listed in "inputs.observations" section.
-	Aggregate(previousOutcome *AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value) (*AggregationOutcome, error)
+	Aggregate(previousOutcome *AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*AggregationOutcome, error)
 }
 
 func AppendWorkflowIDs(outcome *AggregationOutcome, workflowID string, workflowExecutionID string) (*AggregationOutcome, error) {
@@ -30,3 +31,5 @@ func AppendWorkflowIDs(outcome *AggregationOutcome, workflowID string, workflowE
 	outcome.EncodableOutcome.Fields[ExecutionIDFieldName] = values.Proto(valueWEID)
 	return outcome, nil
 }
+
+type AggregatorFactory func(name string, config values.Map, lggr logger.Logger) (Aggregator, error)

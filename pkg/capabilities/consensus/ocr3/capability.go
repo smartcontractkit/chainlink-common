@@ -9,15 +9,18 @@ import (
 	"github.com/jonboulle/clockwork"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 const (
 	ocrCapabilityID = "offchain_reporting"
+
+	methodStartRequest = "start_request"
+	methodSendResponse = "send_response"
+	methodHeader       = "method"
 )
 
 var info = capabilities.MustNewCapabilityInfo(
@@ -41,9 +44,10 @@ type capability struct {
 	requestTimeout time.Duration
 	clock          clockwork.Clock
 
-	aggregators map[string]types.Aggregator
+	aggregatorFactory types.AggregatorFactory
+	aggregators       map[string]types.Aggregator
 
-	encoderFactory EncoderFactory
+	encoderFactory types.EncoderFactory
 	encoders       map[string]types.Encoder
 
 	transmitCh chan *outputs
@@ -56,19 +60,20 @@ var _ capabilityIface = (*capability)(nil)
 var _ capabilities.ConsensusCapability = (*capability)(nil)
 var ocr3CapabilityValidator = capabilities.NewValidator[config, inputs, outputs](capabilities.ValidatorArgs{Info: info})
 
-func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, encoderFactory EncoderFactory, lggr logger.Logger,
+func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
-		CapabilityInfo: info,
-		Validator:      ocr3CapabilityValidator,
-		store:          s,
-		clock:          clock,
-		requestTimeout: requestTimeout,
-		stopCh:         make(chan struct{}),
-		lggr:           logger.Named(lggr, "OCR3CapabilityClient"),
-		encoderFactory: encoderFactory,
-		aggregators:    map[string]types.Aggregator{},
-		encoders:       map[string]types.Encoder{},
+		CapabilityInfo:    info,
+		Validator:         ocr3CapabilityValidator,
+		store:             s,
+		clock:             clock,
+		requestTimeout:    requestTimeout,
+		stopCh:            make(chan struct{}),
+		lggr:              logger.Named(lggr, "OCR3CapabilityClient"),
+		aggregatorFactory: aggregatorFactory,
+		aggregators:       map[string]types.Aggregator{},
+		encoderFactory:    encoderFactory,
+		encoders:          map[string]types.Encoder{},
 
 		transmitCh: make(chan *outputs),
 		newTimerCh: make(chan *request),
@@ -106,25 +111,17 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 
-	switch c.AggregationMethod {
-	case "data_feeds_2_0":
-		mc := mercury.NewCodec()
-		agg, err := datafeeds.NewDataFeedsAggregator(*c.AggregationConfig, mc, o.lggr)
-		if err != nil {
-			return err
-		}
-
-		o.aggregators[request.Metadata.WorkflowID] = agg
-
-		encoder, err := o.encoderFactory(c.EncoderConfig)
-		if err != nil {
-			return err
-		}
-		o.encoders[request.Metadata.WorkflowID] = encoder
-	default:
-		return fmt.Errorf("aggregator %s not supported", c.AggregationMethod)
+	agg, err := o.aggregatorFactory(c.AggregationMethod, *c.AggregationConfig, o.lggr)
+	if err != nil {
+		return err
 	}
+	o.aggregators[request.Metadata.WorkflowID] = agg
 
+	encoder, err := o.encoderFactory(c.EncoderConfig)
+	if err != nil {
+		return err
+	}
+	o.encoders[request.Metadata.WorkflowID] = encoder
 	return nil
 }
 
@@ -152,16 +149,61 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 	return nil
 }
 
+// Execute enqueues a new consensus request, passing it to the reporting plugin as needed.
+// IMPORTANT: OCR3 only exposes signatures via the contractTransmitter, which is located
+// in a separate process to the reporting plugin LOOPP. However, only the reporting plugin
+// LOOPP is able to transmit responses back to the workflow engine. As a workaround to this, we've implemented a custom contract transmitter which fetches this capability from the
+// registry and calls Execute with the response, setting "method = `methodSendResponse`".
 func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
-	// Receives and stores an observation to do consensus on
-	// Receives an aggregation method; at this point the method has been validated
-	// Returns the consensus result over a channel
-	inputs, err := o.ValidateInputs(r.Inputs)
+	m := struct {
+		Method string
+	}{
+		Method: methodStartRequest,
+	}
+	err := r.Inputs.UnwrapTo(&m)
 	if err != nil {
-		return nil, err
+		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %w", err)
 	}
 
-	return o.queueRequestForProcessing(ctx, r.Metadata, inputs)
+	switch m.Method {
+	case methodSendResponse:
+		unwrapped, err := r.Inputs.Unwrap()
+		if err != nil {
+			return nil, fmt.Errorf("failed to unwrap response inputs: %w", err)
+		}
+
+		withoutHeader := map[string]any{}
+		for k, v := range unwrapped.(map[string]any) {
+			if k != methodHeader {
+				withoutHeader[k] = v
+			}
+		}
+		inputs, err := values.NewMap(withoutHeader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create map for response inputs: %w", err)
+		}
+		out := &outputs{
+			WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
+			CapabilityResponse: capabilities.CapabilityResponse{
+				Value: inputs,
+				Err:   nil,
+			},
+		}
+		err = o.transmitResponse(ctx, out)
+		return nil, err
+	case methodStartRequest:
+		// Receives and stores an observation to do consensus on
+		// Receives an aggregation method; at this point the method has been validated
+		// Returns the consensus result over a channel
+		inputs, err := o.ValidateInputs(r.Inputs)
+		if err != nil {
+			return nil, err
+		}
+
+		return o.queueRequestForProcessing(ctx, r.Metadata, inputs)
+	}
+
+	return nil, fmt.Errorf("unknown method: %s", m.Method)
 }
 
 // queueRequestForProcessing queues a request for processing by the worker
@@ -174,8 +216,7 @@ func (o *capability) queueRequestForProcessing(
 	i *inputs) (<-chan capabilities.CapabilityResponse, error) {
 	callbackCh := make(chan capabilities.CapabilityResponse, o.callbackChannelBufferSize)
 	r := &request{
-		// TODO: set correct context
-		RequestCtx:          context.Background(),
+		StopCh:              make(chan struct{}),
 		CallbackCh:          callbackCh,
 		WorkflowExecutionID: metadata.WorkflowExecutionID,
 		WorkflowID:          metadata.WorkflowID,
@@ -221,7 +262,7 @@ func (o *capability) handleTransmitMsg(ctx context.Context, resp *outputs) {
 	select {
 	// This should only happen if the client has closed the upstream context.
 	// In this case, the request is cancelled and we shouldn't transmit.
-	case <-req.RequestCtx.Done():
+	case <-req.StopCh:
 	case req.CallbackCh <- resp.CapabilityResponse:
 		close(req.CallbackCh)
 	}
@@ -245,7 +286,7 @@ func (o *capability) expiryTimer(ctx context.Context, r *request) {
 				Value: nil,
 			},
 		}
-
+		o.lggr.Debugw("expiryTimer - expired request", "workflowExecutionID", r.WorkflowExecutionID)
 		o.transmitCh <- resp
 	}
 }

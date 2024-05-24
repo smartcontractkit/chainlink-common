@@ -8,16 +8,18 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-var mercuryInfo = capabilities.MustNewCapabilityInfo(
-	"mercury-trigger",
+const triggerID = "streams-trigger"
+
+var capInfo = capabilities.MustNewCapabilityInfo(
+	triggerID,
 	capabilities.CapabilityTypeTrigger,
-	"An example mercury trigger.",
+	"Streams Trigger",
 	"v1.0.0",
 	nil,
 )
@@ -38,7 +40,7 @@ type inputs struct {
 	TriggerID string `json:"triggerId"`
 }
 
-var mercuryTriggerValidator = capabilities.NewValidator[config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: mercuryInfo})
+var mercuryTriggerValidator = capabilities.NewValidator[config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo})
 
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
@@ -46,7 +48,7 @@ type MercuryTriggerService struct {
 	capabilities.CapabilityInfo
 	tickerResolutionMs int64
 	subscribers        map[string]*subscriber
-	latestReports      map[mercury.FeedID]mercury.FeedReport
+	latestReports      map[datastreams.FeedID]datastreams.FeedReport
 	mu                 sync.Mutex
 	stopCh             services.StopChan
 	wg                 sync.WaitGroup
@@ -71,20 +73,20 @@ func NewMercuryTriggerService(tickerResolutionMs int64, lggr logger.Logger) *Mer
 	}
 	return &MercuryTriggerService{
 		Validator:          mercuryTriggerValidator,
-		CapabilityInfo:     mercuryInfo,
+		CapabilityInfo:     capInfo,
 		tickerResolutionMs: tickerResolutionMs,
 		subscribers:        make(map[string]*subscriber),
-		latestReports:      make(map[mercury.FeedID]mercury.FeedReport),
+		latestReports:      make(map[datastreams.FeedID]datastreams.FeedReport),
 		stopCh:             make(services.StopChan),
 		lggr:               logger.Named(lggr, "MercuryTriggerService")}
 }
 
-func (o *MercuryTriggerService) ProcessReport(reports []mercury.FeedReport) error {
+func (o *MercuryTriggerService) ProcessReport(reports []datastreams.FeedReport) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.lggr.Debugw("ProcessReport", "nReports", len(reports))
 	for _, report := range reports {
-		feedID := mercury.FeedID(report.FeedID)
+		feedID := datastreams.FeedID(report.FeedID)
 		o.latestReports[feedID] = report
 	}
 	return nil
@@ -189,16 +191,16 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 	defer o.mu.Unlock()
 	for _, sub := range o.subscribers {
 		if timestamp%int64(sub.config.MaxFrequencyMs) == 0 {
-			reportList := make([]mercury.FeedReport, 0)
+			reportList := make([]datastreams.FeedReport, 0)
 			for _, feedID := range sub.config.FeedIDs {
-				if latest, ok := o.latestReports[mercury.FeedID(feedID)]; ok {
+				if latest, ok := o.latestReports[datastreams.FeedID(feedID)]; ok {
 					reportList = append(reportList, latest)
 				}
 			}
 
 			// use 32-byte-padded timestamp as EventID (human-readable)
-			eventID := fmt.Sprintf("mercury_%024s", strconv.FormatInt(timestamp, 10))
-			capabilityResponse, err := wrapReports(reportList, eventID, timestamp)
+			eventID := fmt.Sprintf("streams_%024s", strconv.FormatInt(timestamp, 10))
+			capabilityResponse, err := wrapReports(reportList, eventID, timestamp, datastreams.SignersMetadata{})
 			if err != nil {
 				o.lggr.Errorw("error wrapping reports", "err", err)
 				continue
@@ -214,16 +216,22 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 	}
 }
 
-func wrapReports(reportList []mercury.FeedReport, eventID string, timestamp int64) (capabilities.CapabilityResponse, error) {
-	val, err := mercury.Codec{}.Wrap(reportList)
+func wrapReports(reportList []datastreams.FeedReport, eventID string, timestamp int64, meta datastreams.SignersMetadata) (capabilities.CapabilityResponse, error) {
+	val, err := values.Wrap(reportList)
+	if err != nil {
+		return capabilities.CapabilityResponse{}, err
+	}
+
+	metaVal, err := values.Wrap(meta)
 	if err != nil {
 		return capabilities.CapabilityResponse{}, err
 	}
 
 	triggerEvent := capabilities.TriggerEvent{
-		TriggerType: "mercury",
+		TriggerType: triggerID,
 		ID:          eventID,
 		Timestamp:   strconv.FormatInt(timestamp, 10),
+		Metadata:    metaVal,
 		Payload:     val,
 	}
 

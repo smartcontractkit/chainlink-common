@@ -182,12 +182,19 @@ func Test_Capabilities(t *testing.T) {
 			capabilities.CapabilityRequest{})
 		require.NoError(t, err)
 
+		v, err := values.NewMap(map[string]any{"hello": "world"})
+		require.NoError(t, err)
+
 		cr1 := capabilities.CapabilityResponse{
-			Value: values.NewString("hello1"),
+			Value: v,
 		}
 		mtr.callback <- cr1
+
+		v, err = values.NewMap(map[string]any{"hello": "world"})
+		require.NoError(t, err)
+
 		cr2 := capabilities.CapabilityResponse{
-			Value: values.NewString("hello2"),
+			Value: v,
 		}
 		mtr.callback <- cr2
 

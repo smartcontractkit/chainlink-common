@@ -42,11 +42,11 @@ func UnmarshalCapabilityResponse(raw []byte) (capabilities.CapabilityResponse, e
 }
 
 func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityRequest {
-	inputs := &values.Map{Underlying: map[string]values.Value{}}
+	inputs := values.EmptyMap()
 	if req.Inputs != nil {
 		inputs = req.Inputs
 	}
-	config := &values.Map{Underlying: map[string]values.Value{}}
+	config := values.EmptyMap()
 	if req.Config != nil {
 		config = req.Config
 	}
@@ -69,9 +69,14 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 		errStr = resp.Err.Error()
 	}
 
+	var val values.Value
+	if resp.Value != nil {
+		val = resp.Value
+	}
+
 	return &CapabilityResponse{
 		Error: errStr,
-		Value: values.Proto(resp.Value),
+		Value: values.Proto(val),
 	}
 }
 
@@ -100,8 +105,13 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) capabilities.Capability
 	if pr.Error != "" {
 		err = errors.New(pr.Error)
 	}
-	return capabilities.CapabilityResponse{
-		Value: val,
-		Err:   err,
+
+	resp := capabilities.CapabilityResponse{
+		Err: err,
 	}
+	if mval, ok := val.(*values.Map); ok {
+		resp.Value = mval
+	}
+
+	return resp
 }

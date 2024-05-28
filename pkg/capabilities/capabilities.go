@@ -70,7 +70,7 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value values.Value
+	Value *values.Map
 	Err   error
 }
 

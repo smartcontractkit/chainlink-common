@@ -42,8 +42,10 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 }
 
 func TestMarshalUnmarshalResponse(t *testing.T) {
+	v, err := values.NewMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
 	resp := capabilities.CapabilityResponse{
-		Value: &values.String{Underlying: testConfigValue},
+		Value: v,
 		Err:   errors.New(testError),
 	}
 	raw, err := pb.MarshalCapabilityResponse(resp)

@@ -15,16 +15,21 @@ const (
 	KeywordTrigger = "trigger"
 )
 
+type StepInputs struct {
+	OutputRef string
+	Mapping   map[string]any
+}
+
 // StepDefinition is the parsed representation of a step in a workflow.
 //
 // Within the workflow spec, they are called "Capability Properties".
 type StepDefinition struct {
-	ID     string         `json:"id" jsonschema:"required"`
-	Ref    string         `json:"ref,omitempty" jsonschema:"pattern=^[a-z0-9_]+$"`
-	Inputs map[string]any `json:"inputs,omitempty"`
-	Config map[string]any `json:"config" jsonschema:"required"`
+	ID     string
+	Ref    string
+	Inputs StepInputs
+	Config map[string]any
 
-	CapabilityType capabilities.CapabilityType `json:"-"`
+	CapabilityType capabilities.CapabilityType
 }
 
 // WorkflowSpec is the parsed representation of a workflow.
@@ -32,12 +37,12 @@ type StepDefinition struct {
 // Marshalling this struct is not guaranteed to produce the original yaml spec.
 // Access the original yaml spec using the `String` method.
 type WorkflowSpec struct {
-	Name      string           `json:"name,omitempty"`
-	Owner     string           `json:"owner,omitempty"`
-	Triggers  []StepDefinition `json:"triggers" jsonschema:"required"`
-	Actions   []StepDefinition `json:"actions,omitempty"`
-	Consensus []StepDefinition `json:"consensus" jsonschema:"required"`
-	Targets   []StepDefinition `json:"targets" jsonschema:"required"`
+	Name      string
+	Owner     string
+	Triggers  []StepDefinition
+	Actions   []StepDefinition
+	Consensus []StepDefinition
+	Targets   []StepDefinition
 
 	cid  string // content hash of the original yaml spec
 	yaml string // original yaml spec
@@ -141,14 +146,21 @@ func ParseDependencyGraph(yamlWorkflow string) (*DependencyGraph, error) {
 			return nil, innerErr
 		}
 
-		refs, innerErr := findRefs(step.Inputs)
+		var inputs any
+		if step.Inputs.OutputRef != "" {
+			inputs = step.Inputs.OutputRef
+		} else {
+			inputs = step.Inputs.Mapping
+		}
+
+		refs, innerErr := findRefs(inputs)
 		if innerErr != nil {
 			return nil, innerErr
 		}
 		step.Dependencies = refs
 
 		if stepRef != KeywordTrigger && len(refs) == 0 {
-			return nil, errors.New("all non-trigger steps must have a dependent ref")
+			return nil, fmt.Errorf("invalid refs %+v for step %s", inputs, stepRef)
 		}
 
 		for _, r := range refs {
@@ -180,9 +192,9 @@ var (
 	InterpolationTokenRe = regexp.MustCompile(`^\$\((\S+)\)$`)
 )
 
-// findRefs takes an `inputs` map and returns a list of all the step references
+// findRefs takes an `inputs` and returns a list of all the step references
 // contained within it.
-func findRefs(inputs map[string]any) ([]string, error) {
+func findRefs(inputs any) ([]string, error) {
 	refs := []string{}
 	_, err := DeepMap(
 		inputs,

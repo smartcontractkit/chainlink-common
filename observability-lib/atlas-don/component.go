@@ -8,17 +8,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
 )
 
-type Props struct {
-	PrometheusDataSource string
-	PlatformOpts         PlatformOpts
-	OcrVersion           string
-}
-
 func BuildDashboard(name string, dataSourceMetric string, platform string, ocrVersion string) (dashboard.Dashboard, error) {
 	props := Props{
-		PrometheusDataSource: dataSourceMetric,
-		PlatformOpts:         PlatformPanelOpts(platform, ocrVersion),
-		OcrVersion:           ocrVersion,
+		MetricsDataSource: dataSourceMetric,
+		PlatformOpts:      PlatformPanelOpts(platform, ocrVersion),
+		OcrVersion:        ocrVersion,
 	}
 
 	builder := dashboard.NewDashboardBuilder(name).
@@ -53,15 +47,15 @@ func vars(p Props) []cog.Builder[dashboard.VariableModel] {
 	var variables []cog.Builder[dashboard.VariableModel]
 
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "namespace", "Namespace",
+		utils.QueryVariable(p.MetricsDataSource, "namespace", "Namespace",
 			`label_values(namespace)`, true).Regex("otpe[1-3]?$"))
 
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "job", "Job",
+		utils.QueryVariable(p.MetricsDataSource, "job", "Job",
 			`label_values(up{namespace="$namespace"}, job)`, true))
 
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "pod", "Pod",
+		utils.QueryVariable(p.MetricsDataSource, "pod", "Pod",
 			`label_values(up{namespace="$namespace", job="$job"}, pod)`, true))
 
 	variableFeedID := "feed_id"
@@ -69,10 +63,10 @@ func vars(p Props) []cog.Builder[dashboard.VariableModel] {
 		variableFeedID = "feed_id_name"
 	}
 
-	variableQueryContract := utils.QueryVariable(p.PrometheusDataSource, "contract", "Contract",
+	variableQueryContract := utils.QueryVariable(p.MetricsDataSource, "contract", "Contract",
 		`label_values(`+p.OcrVersion+`_contract_config_f{job="$job"}, contract)`, true)
 
-	variableQueryFeedID := utils.QueryVariable(p.PrometheusDataSource, variableFeedID, "Feed ID",
+	variableQueryFeedID := utils.QueryVariable(p.MetricsDataSource, variableFeedID, "Feed ID",
 		`label_values(`+p.OcrVersion+`_contract_config_f{job="$job", contract="$contract"}, `+variableFeedID+`)`, true)
 
 	variables = append(variables, variableQueryContract)
@@ -91,7 +85,7 @@ func summary(p Props) []cog.Builder[dashboard.Panel] {
 	var panelsArray []cog.Builder[dashboard.Panel]
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Telemetry Down",
 		"Which jobs are not receiving any telemetry?",
 		4,
@@ -116,7 +110,7 @@ func summary(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Oracle Down",
 		"Which NOPs are not providing any telemetry?",
 		4,
@@ -141,7 +135,7 @@ func summary(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Feeds reporting failure",
 		"Which feeds are failing to report?",
 		4,
@@ -166,7 +160,7 @@ func summary(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Feed telemetry Down",
 		"Which feeds are not receiving any telemetry?",
 		4,
@@ -191,7 +185,7 @@ func summary(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Oracles no observations",
 		"Which NOPs are not providing observations?",
 		4,
@@ -216,7 +210,7 @@ func summary(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Oracles not contributing observations to feeds",
 		"Which oracles are failing to make observations on feeds they should be participating in?",
 		4,
@@ -247,7 +241,7 @@ func ocrContractConfigOracle(p Props) []cog.Builder[dashboard.Panel] {
 	var panelsArray []cog.Builder[dashboard.Panel]
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"OCR Contract Oracle Active",
 		"set to one as long as an oracle is on a feed",
 		8,
@@ -288,7 +282,7 @@ func ocrContractConfigNodes(p Props) []cog.Builder[dashboard.Panel] {
 	}
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Number of NOPs",
 		"",
 		6,
@@ -317,7 +311,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	var panelsArray []cog.Builder[dashboard.Panel]
 
 	telemetryP2PReceivedTotal := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"P2P messages received",
 		"From an individual node's perspective, how many messages are they receiving from other nodes? Uses ocr_telemetry_p2p_received_total",
 		6,
@@ -332,7 +326,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryP2PReceivedTotalRate := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"P2P messages received Rate",
 		"From an individual node's perspective, how many messages are they receiving from other nodes? Uses ocr_telemetry_p2p_received_total",
 		6,
@@ -347,7 +341,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryObservationAsk := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Ask observation in MessageObserve sent",
 		"",
 		6,
@@ -362,7 +356,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryObservation := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Price observation in MessageObserve sent",
 		"",
 		6,
@@ -377,7 +371,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryObservationBid := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Bid observation in MessageObserve sent",
 		"",
 		6,
@@ -392,7 +386,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryMessageProposeObservationAsk := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Ask MessagePropose observations",
 		"",
 		6,
@@ -407,7 +401,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryMessageProposeObservation := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Price MessagePropose observations",
 		"",
 		6,
@@ -422,7 +416,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryMessageProposeObservationBid := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Bid MessagePropose observations",
 		"",
 		6,
@@ -437,7 +431,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryMessageProposeObservationTotal := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Total number of observations included in MessagePropose",
 		"How often is a node's observation included in the report?",
 		6,
@@ -452,7 +446,7 @@ func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	telemetryMessageObserveTotal := utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Total MessageObserve sent",
 		"From an individual node's perspective, how often are they sending an observation?",
 		6,
@@ -502,7 +496,7 @@ func roundEpochProgression(p Props) []cog.Builder[dashboard.Panel] {
 	}
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Agreed Epoch Progression",
 		"",
 		6,
@@ -517,7 +511,7 @@ func roundEpochProgression(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Round Epoch Progression",
 		"",
 		6,
@@ -532,7 +526,7 @@ func roundEpochProgression(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Rounds Started",
 		`Tracks individual nodes firing "new round" message via telemetry (not part of P2P messages)`,
 		6,
@@ -547,7 +541,7 @@ func roundEpochProgression(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Telemetry Ingested",
 		"",
 		6,
@@ -568,7 +562,7 @@ func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
 	var panelsArray []cog.Builder[dashboard.Panel]
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Relative Deviation Threshold",
 		"",
 		4,
@@ -586,7 +580,7 @@ func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Max Contract Value Age Seconds",
 		"",
 		4,
@@ -604,7 +598,7 @@ func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Observation Grace Period Seconds",
 		"",
 		4,
@@ -622,7 +616,7 @@ func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Bad Epoch Timeout Seconds",
 		"",
 		4,
@@ -640,7 +634,7 @@ func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Resend Interval Seconds",
 		"",
 		4,
@@ -658,7 +652,7 @@ func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Round Interval Seconds",
 		"",
 		4,
@@ -676,7 +670,7 @@ func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Transmission Stage Timeout Seconds",
 		"",
 		4,

@@ -5,7 +5,6 @@ go 1.21.4
 require (
 	github.com/K-Phoen/grabana v0.22.1
 	github.com/grafana/grafana-foundation-sdk/go v0.0.0-20240415154618-2fd5b8b03249
-	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.32.0
 	github.com/smartcontractkit/chainlink-testing-framework/grafana v0.0.0-20240508164646-7ae47c88ecbb
 	github.com/spf13/cobra v1.8.0

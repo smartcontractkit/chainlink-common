@@ -11,8 +11,8 @@ import (
 
 func BuildDashboard(name string, dataSourceMetric string) (dashboard.Dashboard, error) {
 	props := Props{
-		PrometheusDataSource: dataSourceMetric,
-		PlatformOpts:         PlatformPanelOpts(),
+		MetricsDataSource: dataSourceMetric,
+		PlatformOpts:      PlatformPanelOpts(),
 	}
 
 	builder := dashboard.NewDashboardBuilder(name).
@@ -32,21 +32,21 @@ func vars(p Props) []cog.Builder[dashboard.VariableModel] {
 	variables = append(variables,
 		utils.IntervalVariable("interval", "Interval", "30s,1m,5m,15m,30m,1h,6h,12h"))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "env", "Environment", `label_values(up, env)`, false))
+		utils.QueryVariable(p.MetricsDataSource, "env", "Environment", `label_values(up, env)`, false))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "cluster", "Cluster", `label_values(up{env="$env"}, cluster)`, false))
+		utils.QueryVariable(p.MetricsDataSource, "cluster", "Cluster", `label_values(up{env="$env"}, cluster)`, false))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "blockchain", "Blockchain", `label_values(up{env="$env", cluster="$cluster"}, blockchain)`, false))
+		utils.QueryVariable(p.MetricsDataSource, "blockchain", "Blockchain", `label_values(up{env="$env", cluster="$cluster"}, blockchain)`, false))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "product", "Product", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain"}, product)`, false))
+		utils.QueryVariable(p.MetricsDataSource, "product", "Product", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain"}, product)`, false))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "network_type", "Network Type", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain", product="$product"}, network_type)`, false))
+		utils.QueryVariable(p.MetricsDataSource, "network_type", "Network Type", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain", product="$product"}, network_type)`, false))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "component", "Component", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain", network_type="$network_type"}, component)`, false))
+		utils.QueryVariable(p.MetricsDataSource, "component", "Component", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain", network_type="$network_type"}, component)`, false))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "service", "Service", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain", network_type="$network_type", component="$component"}, service)`, false))
+		utils.QueryVariable(p.MetricsDataSource, "service", "Service", `label_values(up{env="$env", cluster="$cluster", blockchain="$blockchain", network_type="$network_type", component="$component"}, service)`, false))
 	variables = append(variables,
-		utils.QueryVariable(p.PrometheusDataSource, "service_id", "Service ID", `label_values(health{cluster="$cluster", blockchain="$blockchain", network_type="$network_type", component="$component", service="$service"}, service_id)`, true))
+		utils.QueryVariable(p.MetricsDataSource, "service_id", "Service ID", `label_values(health{cluster="$cluster", blockchain="$blockchain", network_type="$network_type", component="$component", service="$service"}, service_id)`, true))
 
 	return variables
 }
@@ -55,7 +55,7 @@ func panelsGeneralInfo(p Props) []cog.Builder[dashboard.Panel] {
 	var panelsArray []cog.Builder[dashboard.Panel]
 
 	panelsArray = append(panelsArray, utils.TablePanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"List Nodes",
 		"",
 		4,
@@ -70,7 +70,7 @@ func panelsGeneralInfo(p Props) []cog.Builder[dashboard.Panel] {
 	))
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Uptime",
 		"",
 		4,
@@ -85,7 +85,7 @@ func panelsGeneralInfo(p Props) []cog.Builder[dashboard.Panel] {
 	).Min(0).Max(100))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Components Health Avg by Service",
 		"",
 		4,
@@ -111,7 +111,7 @@ func panelsGeneralInfo(p Props) []cog.Builder[dashboard.Panel] {
 	)
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Components Health by Service",
 		"",
 		6,
@@ -126,7 +126,7 @@ func panelsGeneralInfo(p Props) []cog.Builder[dashboard.Panel] {
 	).Min(0).Max(100))
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.PrometheusDataSource,
+		p.MetricsDataSource,
 		"Components Health Avg by Service",
 		"",
 		6,

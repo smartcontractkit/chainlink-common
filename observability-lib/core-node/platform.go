@@ -12,8 +12,8 @@ type PlatformOpts struct {
 }
 
 type Props struct {
-	PrometheusDataSource string
-	PlatformOpts         PlatformOpts
+	MetricsDataSource string
+	PlatformOpts      PlatformOpts
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms

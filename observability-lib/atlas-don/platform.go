@@ -11,6 +11,12 @@ type PlatformOpts struct {
 	LabelQuery   string
 }
 
+type Props struct {
+	MetricsDataSource string
+	PlatformOpts      PlatformOpts
+	OcrVersion        string
+}
+
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms
 func PlatformPanelOpts(platform string, ocrVersion string) PlatformOpts {
 	po := PlatformOpts{

@@ -10,6 +10,7 @@ import (
 	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
 	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/core-node"
 	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
+	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/k8s-resources"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
 )
 
@@ -37,6 +38,8 @@ var DeployCmd = &cobra.Command{
 			builder, err = corenode.BuildDashboard(name, dataSourcesType.Metrics, platform)
 		case "core-node-components":
 			builder, err = corenodecomponents.BuildDashboard(name, dataSourcesType.Metrics)
+		case "core-node-resources":
+			builder, err = k8sresources.BuildDashboard(name, dataSourcesType.Metrics, dataSourcesType.Logs)
 		case "ocr":
 			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
 		case "ocr2":

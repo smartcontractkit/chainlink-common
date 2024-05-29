@@ -1,4 +1,4 @@
-package k8sresources_test
+package corenodecomponents_test
 
 import (
 	"testing"

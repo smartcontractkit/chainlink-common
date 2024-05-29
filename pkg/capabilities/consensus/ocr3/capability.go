@@ -75,7 +75,7 @@ func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration
 		encoderFactory:    encoderFactory,
 		encoders:          map[string]types.Encoder{},
 
-		transmitCh: make(chan *outputs),
+		transmitCh: make(chan *outputs, 1000),
 		newTimerCh: make(chan *request),
 
 		callbackChannelBufferSize: callbackChannelBufferSize,
@@ -191,7 +191,11 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			},
 		}
 		err = o.transmitResponse(ctx, out)
-		return nil, err
+		o.lggr.Debugw("Execute - sending response, done with transmit", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
+		fakeRespCh := make(chan capabilities.CapabilityResponse, 1)
+		fakeRespCh <- capabilities.CapabilityResponse{}
+		//close(fakeRespCh)
+		return fakeRespCh, err
 	case methodStartRequest:
 		// Receives and stores an observation to do consensus on
 		// Receives an aggregation method; at this point the method has been validated

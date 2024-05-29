@@ -261,6 +261,9 @@ func ExecuteSync(ctx context.Context, c CallbackExecutable, request CapabilityRe
 	if err != nil {
 		return nil, fmt.Errorf("error executing capability: %w", err)
 	}
+	/*if responseCh == nil {
+		return nil, nil
+	}*/
 
 	vs := make([]values.Value, 0)
 outerLoop:
@@ -270,6 +273,7 @@ outerLoop:
 			if !isOpen {
 				break outerLoop
 			}
+
 			// An error means execution has been interrupted.
 			// We'll return the value discarding values received
 			// until now.
@@ -278,6 +282,8 @@ outerLoop:
 			}
 
 			vs = append(vs, response.Value)
+			break outerLoop
+
 		// Timeout when a capability exceeds maximum permitted execution time or the caller cancels the context and does not close the channel.
 		case <-ctxWithT.Done():
 			return nil, fmt.Errorf("context timed out after %f seconds", maximumExecuteTimeout.Seconds())

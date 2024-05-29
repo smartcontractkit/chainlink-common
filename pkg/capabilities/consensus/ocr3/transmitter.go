@@ -2,6 +2,7 @@ package ocr3
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -40,7 +41,10 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 		methodHeader: methodSendResponse,
 	}
 	if info.ShouldReport {
-		resp["report"] = []byte(rwi.Report)
+		// append digest + seqNr to the report so signatures can be validated onchain
+		seqNrBytes := [32]byte{}
+		binary.BigEndian.PutUint64(seqNrBytes[:], seqNr)
+		resp["report"] = append(append([]byte(rwi.Report), configDigest[:]...), seqNrBytes[:]...)
 
 		sigs := [][]byte{}
 		for _, s := range signatures {
@@ -69,7 +73,8 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 		c.capability = cp.(capabilities.CallbackCapability)
 	}
 
-	_, err = c.capability.Execute(ctx, capabilities.CapabilityRequest{
+	c.lggr.Debugw("ContractTransmitter transmitting calling ExecuteSync", "shouldReport", info.ShouldReport, "len", len(rwi.Report))
+	_, err = capabilities.ExecuteSync(ctx, c.capability, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: info.Id.WorkflowExecutionId,
 			WorkflowID:          info.Id.WorkflowId,
@@ -79,6 +84,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 	if err != nil {
 		c.lggr.Errorw("could not transmit response", "error", err, "weid", info.Id.WorkflowExecutionId)
 	}
+	c.lggr.Debugw("ContractTransmitter transmitting done", "shouldReport", info.ShouldReport, "len", len(rwi.Report))
 	return err
 }
 

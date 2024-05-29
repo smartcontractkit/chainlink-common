@@ -164,6 +164,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
 	o.CurrentReports = []*pbtypes.Report{}
+	allWeids := []string{}
 
 	for _, weid := range q.Ids {
 		obs, ok := m[weid.WorkflowExecutionId]
@@ -199,6 +200,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			Id:      weid,
 		}
 		o.CurrentReports = append(o.CurrentReports, report)
+		allWeids = append(allWeids, weid.WorkflowExecutionId)
 
 		o.Outcomes[weid.WorkflowId] = outcome
 	}
@@ -207,7 +209,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	h := sha256.New()
 	h.Write(rawOutcome)
 	outcomeHash := h.Sum(nil)
-	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nAggregatedWorkflowExecutions", len(o.CurrentReports), "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
+	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nAggregatedWorkflowExecutions", len(o.CurrentReports), "allWEIDs", allWeids, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
 	return rawOutcome, err
 }
 
@@ -274,6 +276,7 @@ func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr 
 
 func (r *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	// True because we always want to transmit a report, even if shouldReport = false.
+	r.lggr.Debugw("ShouldTransmitAcceptedReport", "seqNr", seqNr)
 	return true, nil
 }
 

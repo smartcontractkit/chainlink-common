@@ -36,4 +36,6 @@ type request struct {
 	WorkflowExecutionID string
 	WorkflowID          string
 	WorkflowOwner       string
+	WorkflowName        string
+	ReportID            string
 }

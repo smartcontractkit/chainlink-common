@@ -28,7 +28,9 @@ var info = capabilities.MustNewCapabilityInfo(
 	capabilities.CapabilityTypeConsensus,
 	"OCR3 consensus exposed as a capability.",
 	"v1.0.0",
-	nil,
+	&capabilities.DON{
+		ID: "00010203", // TODO: set real DON ID
+	},
 )
 
 type capability struct {
@@ -237,6 +239,8 @@ func (o *capability) queueRequestForProcessing(
 		WorkflowExecutionID: metadata.WorkflowExecutionID,
 		WorkflowID:          metadata.WorkflowID,
 		WorkflowOwner:       metadata.WorkflowOwner,
+		WorkflowName:        metadata.WorkflowName,
+		ReportID:            metadata.ReportID,
 		Observations:        i.Observations,
 		ExpiresAt:           o.clock.Now().Add(o.requestTimeout),
 	}

@@ -19,6 +19,8 @@ const (
 type ContractReader = ChainReader
 
 // Deprecated: use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
+//
+//go:generate mockery --quiet --name ChainReader --output ./mocks/ --case=underscore
 type ChainReader interface {
 	services.Service
 	// GetLatestValue gets the latest value....

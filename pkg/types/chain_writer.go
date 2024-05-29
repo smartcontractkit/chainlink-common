@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockery --quiet --name ChainWriter --output ./mocks/ --case=underscore
 type ChainWriter interface {
 	// SubmitTransaction packs and broadcasts a transaction to the underlying chain.
 	//

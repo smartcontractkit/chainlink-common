@@ -487,3 +487,6 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader) {
 	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader})
 }
+func RegisterContractStateReaderService(s *grpc.Server, contractStateReader types.ContractStateReader) {
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractStateReader})
+}

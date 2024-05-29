@@ -16,6 +16,13 @@ const (
 	ErrNotFound                 = NotFoundError("not found")
 )
 
+// ContractStateReader is a subset of ContractReader and does not support querying events
+type ContractStateReader interface {
+	services.Service
+	GetLatestValue(ctx context.Context, contractName, method string, params, returnVal any) error
+	Bind(ctx context.Context, bindings []BoundContract) error
+}
+
 type ContractReader = ChainReader
 
 // Deprecated: use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.

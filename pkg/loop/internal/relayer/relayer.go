@@ -177,6 +177,18 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
+func (r *relayerClient) NewContractStateReader(ctx context.Context, config []byte) (types.ContractStateReader, error) {
+	cc := r.NewClientConn("ChainReader", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewContractStateReader(ctx, &pb.NewContractStateReaderRequest{ContractStateReaderConfig: config})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.ContractStateReaderID, nil, nil
+	})
+
+	return chainreader.NewClient(r.WithName("ContractStateReaderClient"), cc), nil
+}
+
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	cc := r.NewClientConn("ChainReader", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewContractReader(ctx, &pb.NewContractReaderRequest{ContractReaderConfig: contractReaderConfig})
@@ -329,6 +341,27 @@ type relayerServer struct {
 
 func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerServer {
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
+}
+
+func (r *relayerServer) NewContractStateReader(ctx context.Context, request *pb.NewContractStateReaderRequest) (*pb.NewContractStateReaderReply, error) {
+	csr, err := r.impl.NewContractStateReader(ctx, request.GetContractStateReaderConfig())
+	if err != nil {
+		return nil, err
+	}
+
+	if err = csr.Start(ctx); err != nil {
+		return nil, err
+	}
+
+	const name = "ContractReader"
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		chainreader.RegisterContractStateReaderService(s, csr)
+	}, net.Resource{Closer: csr, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.NewContractStateReaderReply{ContractStateReaderID: id}, nil
 }
 
 func (r *relayerServer) NewContractReader(ctx context.Context, request *pb.NewContractReaderRequest) (*pb.NewContractReaderReply, error) {

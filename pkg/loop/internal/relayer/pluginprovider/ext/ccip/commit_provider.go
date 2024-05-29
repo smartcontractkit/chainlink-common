@@ -35,27 +35,6 @@ type CommitProviderClient struct {
 	grpcClient ccippb.CommitCustomHandlersClient
 }
 
-func (e *CommitProviderClient) NewOffRampReaders(ctx context.Context, addr cciptypes.Address) ([]cciptypes.OffRampReader, error) {
-	req := ccippb.NewOffRampReadersRequest{DestRouterAddress: string(addr)}
-
-	resp, err := e.grpcClient.NewOffRampReaders(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-	// TODO BCF-3061: this works because the broker is shared and the id refers to a resource served by the broker
-	var readers []cciptypes.OffRampReader
-	for _, id := range resp.OfframpReadersServiceIds {
-		offRampReadersConn, err := e.BrokerExt.Dial(uint32(id))
-		if err != nil {
-			return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", id, err)
-		}
-		client := NewOffRampReaderGRPCClient(e.BrokerExt, offRampReadersConn)
-		readers = append(readers, client)
-	}
-	// need to wrap grpc commitStore into the desired interface
-	return readers, nil
-}
-
 func (e *CommitProviderClient) GetStaticConfig(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreStaticConfig, error) {
 	panic("TODO: cleanup if I get for free from OffRampReader")
 }

@@ -77,18 +77,19 @@ type staticPluginRelayerConfig struct {
 func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
 	return staticPluginRelayer{
 		staticPluginRelayerConfig: staticPluginRelayerConfig{
-			StaticChecks:              staticChecks,
-			relayArgs:                 RelayArgs,
-			pluginArgs:                PluginArgs,
-			contractReaderConfig:      []byte("test"),
-			contractStateReaderConfig: []byte("test-contract-state-reader"),
-			medianProvider:            mediantest.MedianProvider,
-			mercuryProvider:           mercurytest.MercuryProvider,
-			executionProvider:         cciptest.ExecutionProvider,
-			agnosticProvider:          ocr2test.AgnosticProvider,
-			configProvider:            ocr2test.ConfigProvider,
-			ocr3CapabilityProvider:    ocr3capabilitytest.OCR3CapabilityProvider,
-			contractReaderProvider:    chainreadertest.ChainReader,
+			StaticChecks:                staticChecks,
+			relayArgs:                   RelayArgs,
+			pluginArgs:                  PluginArgs,
+			contractReaderConfig:        []byte("test"),
+			contractStateReaderConfig:   []byte("test-contract-state-reader"),
+			medianProvider:              mediantest.MedianProvider,
+			mercuryProvider:             mercurytest.MercuryProvider,
+			executionProvider:           cciptest.ExecutionProvider,
+			agnosticProvider:            ocr2test.AgnosticProvider,
+			configProvider:              ocr2test.ConfigProvider,
+			ocr3CapabilityProvider:      ocr3capabilitytest.OCR3CapabilityProvider,
+			contractReaderProvider:      chainreadertest.ChainReader,
+			contractStateReaderProvider: chainreadertest.ChainReader,
 			nodeRequest: nodeRequest{
 				pageSize:  137,
 				pageToken: "",
@@ -142,7 +143,7 @@ func (s staticPluginRelayer) NewContractStateReader(_ context.Context, config []
 	if s.StaticChecks && !(bytes.Equal(s.contractStateReaderConfig, config)) {
 		return nil, fmt.Errorf("expected contractStateReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.contractStateReaderConfig), string(config))
 	}
-	return s.contractReaderProvider, nil
+	return s.contractStateReaderProvider, nil
 }
 
 func (s staticPluginRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

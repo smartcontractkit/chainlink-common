@@ -302,8 +302,3 @@ func (o *capability) expiryTimer(ctx context.Context, r *request) {
 		o.transmitCh <- resp
 	}
 }
-
-func (o *capability) transmitResponse(ctx context.Context, resp *outputs) error {
-	o.transmitCh <- resp
-	return nil
-}

@@ -1,7 +1,6 @@
 package ocr3
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -24,7 +23,7 @@ func newStore() *store {
 	}
 }
 
-func (s *store) add(ctx context.Context, req *request) error {
+func (s *store) add(req *request) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -37,7 +36,7 @@ func (s *store) add(ctx context.Context, req *request) error {
 }
 
 // best-effort, doesn't return requests that are not in store
-func (s *store) getN(ctx context.Context, requestIDs []string) []*request {
+func (s *store) getN(requestIDs []string) []*request {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -52,7 +51,7 @@ func (s *store) getN(ctx context.Context, requestIDs []string) []*request {
 	return o
 }
 
-func (s *store) firstN(ctx context.Context, batchSize int) ([]*request, error) {
+func (s *store) firstN(batchSize int) ([]*request, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if batchSize == 0 {
@@ -84,7 +83,7 @@ func (s *store) firstN(ctx context.Context, batchSize int) ([]*request, error) {
 	return got, nil
 }
 
-func (s *store) evict(ctx context.Context, requestID string) (*request, bool) {
+func (s *store) evict(requestID string) (*request, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

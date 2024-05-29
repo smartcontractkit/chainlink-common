@@ -84,11 +84,7 @@ func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration
 }
 
 func (o *capability) Start(ctx context.Context) error {
-	return o.StartOnce("OCR3Capability", func() error {
-		o.wg.Add(1)
-		go o.worker()
-		return nil
-	})
+	return nil
 }
 
 func (o *capability) Close() error {
@@ -190,19 +186,8 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 				Err:   nil,
 			},
 		}
-		o.transmitCh <- out
-
-		// Return a dummy response back to the caller
-		// This allows the transmitter to block on a response before
-		// returning from Transmit()
-		// TODO(cedric): our current stream-based implementation for the Execute
-		// returns immediately without waiting for the server-side to complete. This
-		// breaks the API since callers can no longer rely on a non-error response
-		// from Execute() serving as an acknowledgement that the request in being handled.
-		callbackCh := make(chan capabilities.CapabilityResponse, 1)
-		callbackCh <- capabilities.CapabilityResponse{}
-		close(callbackCh)
-		return callbackCh, nil
+		o.handleTransmitMsg(out)
+		return nil, nil
 	case methodStartRequest:
 		// Receives and stores an observation to do consensus on
 		// Receives an aggregation method; at this point the method has been validated
@@ -238,7 +223,7 @@ func (o *capability) queueRequestForProcessing(
 
 	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
 
-	err := o.store.add(ctx, r)
+	err := o.store.add(r)
 	if err != nil {
 		return nil, err
 	}
@@ -247,26 +232,8 @@ func (o *capability) queueRequestForProcessing(
 	return callbackCh, nil
 }
 
-func (o *capability) worker() {
-	ctx, cancel := o.stopCh.NewCtx()
-	defer cancel()
-	defer o.wg.Done()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case r := <-o.newTimerCh:
-			o.wg.Add(1)
-			go o.expiryTimer(ctx, r)
-		case resp := <-o.transmitCh:
-			o.handleTransmitMsg(ctx, resp)
-		}
-	}
-}
-
-func (o *capability) handleTransmitMsg(ctx context.Context, resp *outputs) {
-	req, wasPresent := o.store.evict(ctx, resp.WorkflowExecutionID)
+func (o *capability) handleTransmitMsg(resp *outputs) {
+	req, wasPresent := o.store.evict(resp.WorkflowExecutionID)
 	if !wasPresent {
 		return
 	}
@@ -280,7 +247,7 @@ func (o *capability) handleTransmitMsg(ctx context.Context, resp *outputs) {
 	}
 }
 
-func (o *capability) expiryTimer(ctx context.Context, r *request) {
+func (o *capability) expiryTimer(r *request) {
 	defer o.wg.Done()
 
 	d := r.ExpiresAt.Sub(o.clock.Now())
@@ -288,7 +255,7 @@ func (o *capability) expiryTimer(ctx context.Context, r *request) {
 	defer tr.Stop()
 
 	select {
-	case <-ctx.Done():
+	case <-o.stopCh:
 		return
 	case <-tr.Chan():
 		resp := &outputs{
@@ -298,7 +265,7 @@ func (o *capability) expiryTimer(ctx context.Context, r *request) {
 				Value: nil,
 			},
 		}
+		o.handleTransmitMsg(resp)
 		o.lggr.Debugw("expiryTimer - expired request", "workflowExecutionID", r.WorkflowExecutionID)
-		o.transmitCh <- resp
 	}
 }

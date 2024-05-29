@@ -44,7 +44,7 @@ func newReportingPlugin(s *store, r capabilityIface, batchSize int, config ocr3t
 }
 
 func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
-	batch, err := r.s.firstN(ctx, r.batchSize)
+	batch, err := r.s.firstN(r.batchSize)
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
@@ -76,7 +76,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		weids = append(weids, q.WorkflowExecutionId)
 	}
 
-	reqs := r.s.getN(ctx, weids)
+	reqs := r.s.getN(weids)
 	reqMap := map[string]*request{}
 	for _, req := range reqs {
 		reqMap[req.WorkflowExecutionID] = req

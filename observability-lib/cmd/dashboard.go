@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/K-Phoen/grabana"
@@ -84,4 +85,14 @@ func (d *Dashboard) Deploy() error {
 		Msg("Dashboard deployed")
 
 	return nil
+}
+
+func (d *Dashboard) GetJSON() ([]byte, error) {
+	newDashboard := d.builder
+	dashboardJSON, err := json.MarshalIndent(newDashboard, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	return dashboardJSON, nil
 }

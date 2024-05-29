@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 
@@ -14,9 +15,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
 )
 
-var DeployCmd = &cobra.Command{
-	Use:   "deploy",
-	Short: "Deploy Grafana Dashboards, Prometheus Alerts",
+var GenerateCmd = &cobra.Command{
+	Use:   "generate",
+	Short: "Generate Grafana Dashboard JSON",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dataSources, errDataSources := cmd.Flags().GetStringArray("grafana-data-sources")
 		if errDataSources != nil || len(dataSources) < 1 {
@@ -26,8 +27,6 @@ var DeployCmd = &cobra.Command{
 		dataSourcesType := SetDataSources(dataSources)
 		name := cmd.Flag("dashboard-name").Value.String()
 		platform := cmd.Flag("platform").Value.String()
-		url := cmd.Flag("grafana-url").Value.String()
-		folder := cmd.Flag("dashboard-folder").Value.String()
 		typeDashboard := cmd.Flag("type").Value.String()
 
 		var builder dashboard.Dashboard
@@ -52,8 +51,6 @@ var DeployCmd = &cobra.Command{
 		if err != nil {
 			utils.Logger.Error().
 				Str("Name", name).
-				Str("URL", url).
-				Str("Folder", folder).
 				Str("Type", typeDashboard).
 				Msg("Could not build dashboard")
 			return err
@@ -61,44 +58,31 @@ var DeployCmd = &cobra.Command{
 
 		dashboard := NewDashboard(
 			name,
-			cmd.Flag("grafana-token").Value.String(),
-			url,
-			folder,
+			"",
+			"",
+			"",
 			dataSourcesType,
 			platform,
 			builder,
 		)
-		errDeploy := dashboard.Deploy()
-		if errDeploy != nil {
-			return errDeploy
+		jsonDashboard, errGenerate := dashboard.GetJSON()
+		if errGenerate != nil {
+			return errGenerate
 		}
+
+		fmt.Print(string(jsonDashboard))
 
 		return nil
 	},
 }
 
 func init() {
-	DeployCmd.Flags().String("dashboard-name", "", "Name of the dashboard to deploy")
-	errName := DeployCmd.MarkFlagRequired("dashboard-name")
+	GenerateCmd.Flags().String("dashboard-name", "", "Name of the dashboard to deploy")
+	errName := GenerateCmd.MarkFlagRequired("dashboard-name")
 	if errName != nil {
 		panic(errName)
 	}
-	DeployCmd.Flags().String("dashboard-folder", "", "Dashboard folder")
-	errFolder := DeployCmd.MarkFlagRequired("dashboard-folder")
-	if errFolder != nil {
-		panic(errFolder)
-	}
-	DeployCmd.Flags().String("grafana-url", "", "Grafana URL")
-	errURL := DeployCmd.MarkFlagRequired("grafana-url")
-	if errURL != nil {
-		panic(errURL)
-	}
-	DeployCmd.Flags().String("grafana-token", "", "Grafana API token")
-	errToken := DeployCmd.MarkFlagRequired("grafana-token")
-	if errToken != nil {
-		panic(errToken)
-	}
-	DeployCmd.Flags().StringArray("grafana-data-sources", []string{"Prometheus"}, "Data sources to add to the dashboard, at least one required")
-	DeployCmd.Flags().String("platform", "docker", "Platform where the dashboard is deployed (docker or kubernetes)")
-	DeployCmd.Flags().String("type", "core-node", "Dashboard type can be either core-node | core-node-components")
+	GenerateCmd.Flags().StringArray("grafana-data-sources", []string{"Prometheus"}, "Data sources to add to the dashboard, at least one required")
+	GenerateCmd.Flags().String("platform", "docker", "Platform where the dashboard is deployed (docker or kubernetes)")
+	GenerateCmd.Flags().String("type", "core-node", "Dashboard type can be either core-node | core-node-components")
 }

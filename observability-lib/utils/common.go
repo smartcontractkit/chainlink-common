@@ -183,5 +183,9 @@ func TablePanel(
 		Description(description).
 		Unit(unit)
 
+	for _, q := range query {
+		panel.WithTarget(prometheusQuery(q.Query, q.Legend))
+	}
+
 	return panel
 }

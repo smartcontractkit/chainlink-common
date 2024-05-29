@@ -45,7 +45,7 @@ type UpkeepStateReader interface {
 }
 
 type Encoder interface {
-	Encode(...CheckResult) ([]byte, []*big.Int, error)
+	Encode(...CheckResult) ([]byte, error)
 	Extract([]byte) ([]ReportedUpkeep, error)
 }
 

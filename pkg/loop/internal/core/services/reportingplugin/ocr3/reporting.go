@@ -292,7 +292,7 @@ func (o *reportingPluginServer) Outcome(ctx context.Context, request *ocr3.Outco
 }
 
 func (o *reportingPluginServer) Reports(ctx context.Context, request *ocr3.ReportsRequest) (*ocr3.ReportsReply, error) {
-	ri, err := o.impl.Reports(request.SeqNr, request.Outcome)
+	ri, err := o.impl.Reports(request.SeqNr, request.Outcome) //network boundary?
 	if err != nil {
 		return nil, err
 	}

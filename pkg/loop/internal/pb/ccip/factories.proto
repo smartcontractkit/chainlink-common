@@ -55,12 +55,10 @@ message NewCommitFactoryResponse {
 service CommitCustomHandlers {
     rpc NewCommitStoreReader(NewCommitStoreReaderRequest) returns (NewCommitStoreReaderResponse) {}
     rpc NewOffRampReader(NewOffRampReaderRequest) returns (NewOffRampReaderResponse) {}
-    rpc NewOffRampReaders(NewOffRampReadersRequest) returns (NewOffRampReadersResponse) {}
     rpc NewOnRampReader(NewOnRampReaderRequest) returns (NewOnRampReaderResponse) {}
     rpc NewPriceGetter(google.protobuf.Empty) returns (NewPriceGetterResponse) {}
     rpc NewPriceRegistryReader(NewPriceRegistryReaderRequest) returns (NewPriceRegistryReaderResponse) {}
     rpc SourceNativeToken(SourceNativeTokenRequest) returns (SourceNativeTokenResponse) {}
-    //rpc GetStaticConfig(GetStaticConfigRequest) returns (GetStaticConfigResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 

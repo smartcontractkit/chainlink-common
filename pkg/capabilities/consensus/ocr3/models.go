@@ -13,6 +13,7 @@ type config struct {
 	AggregationConfig *values.Map `mapstructure:"aggregation_config" json:"aggregation_config"`
 	Encoder           string      `mapstructure:"encoder" json:"encoder"`
 	EncoderConfig     *values.Map `mapstructure:"encoder_config" json:"encoder_config"`
+	ReportID          string
 }
 
 type inputs struct {
@@ -37,5 +38,5 @@ type request struct {
 	WorkflowID          string
 	WorkflowOwner       string
 	WorkflowName        string
-	ReportID            string // WorkflowStepRef
+	ReportID            string
 }

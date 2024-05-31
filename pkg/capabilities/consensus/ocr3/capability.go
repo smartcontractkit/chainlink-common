@@ -218,7 +218,12 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			return nil, err
 		}
 
-		return o.queueRequestForProcessing(ctx, r.Metadata, inputs)
+		config, err := o.ValidateConfig(r.Config)
+		if err != nil {
+			return nil, err
+		}
+
+		return o.queueRequestForProcessing(ctx, r.Metadata, inputs, config)
 	}
 
 	return nil, fmt.Errorf("unknown method: %s", m.Method)
@@ -231,7 +236,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 func (o *capability) queueRequestForProcessing(
 	ctx context.Context,
 	metadata capabilities.RequestMetadata,
-	i *inputs) (<-chan capabilities.CapabilityResponse, error) {
+	i *inputs, c *config) (<-chan capabilities.CapabilityResponse, error) {
 	callbackCh := make(chan capabilities.CapabilityResponse, o.callbackChannelBufferSize)
 	r := &request{
 		StopCh:              make(chan struct{}),
@@ -240,12 +245,9 @@ func (o *capability) queueRequestForProcessing(
 		WorkflowID:          metadata.WorkflowID,
 		WorkflowOwner:       metadata.WorkflowOwner,
 		WorkflowName:        metadata.WorkflowName,
-		// Use the WorkflowStepRef as the ReportID. The workflow step ref
-		// uniquely identifies the step within a workflow, so this will
-		// uniquely identify a report if there are multiple consensus steps in a workflow.
-		ReportID:     metadata.WorkflowStepRef,
-		Observations: i.Observations,
-		ExpiresAt:    o.clock.Now().Add(o.requestTimeout),
+		ReportID:            c.ReportID,
+		Observations:        i.Observations,
+		ExpiresAt:           o.clock.Now().Add(o.requestTimeout),
 	}
 
 	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)

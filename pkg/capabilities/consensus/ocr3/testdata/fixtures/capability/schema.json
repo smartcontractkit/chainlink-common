@@ -37,7 +37,7 @@
             "Underlying"
           ]
         },
-        "ReportID": {
+        "report_id": {
           "type": "string"
         }
       },
@@ -48,7 +48,7 @@
         "aggregation_config",
         "encoder",
         "encoder_config",
-        "ReportID"
+        "report_id"
       ]
     },
     "inputs": {

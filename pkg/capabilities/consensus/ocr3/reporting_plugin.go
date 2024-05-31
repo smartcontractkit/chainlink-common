@@ -58,8 +58,8 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			WorkflowId:          rq.WorkflowID,
 			WorkflowOwner:       rq.WorkflowOwner,
 			WorkflowName:        rq.WorkflowName,
-			ReportId:            rq.ReportID,
 			WorkflowDonId:       rq.WorkflowDonID,
+			ReportId:            rq.ReportID,
 		})
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
@@ -108,8 +108,8 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 				WorkflowId:          rq.WorkflowID,
 				WorkflowOwner:       rq.WorkflowOwner,
 				WorkflowName:        rq.WorkflowName,
-				ReportId:            rq.ReportID,
 				WorkflowDonId:       rq.WorkflowDonID,
+				ReportId:            rq.ReportID,
 			},
 		}
 

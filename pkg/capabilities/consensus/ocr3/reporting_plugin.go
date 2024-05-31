@@ -20,7 +20,6 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
-	getDonID() string
 }
 
 type reportingPlugin struct {
@@ -60,6 +59,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			WorkflowOwner:       rq.WorkflowOwner,
 			WorkflowName:        rq.WorkflowName,
 			ReportId:            rq.ReportID,
+			WorkflowDonId:       rq.WorkflowDonID,
 		})
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
@@ -109,6 +109,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 				WorkflowOwner:       rq.WorkflowOwner,
 				WorkflowName:        rq.WorkflowName,
 				ReportId:            rq.ReportID,
+				WorkflowDonId:       rq.WorkflowDonID,
 			},
 		}
 
@@ -245,8 +246,8 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			meta := &pbtypes.Metadata{
 				Version:       1,
 				ExecutionID:   id.WorkflowExecutionId,
-				Timestamp:     0,              // TODO include timestamp in consensus phase
-				DONID:         r.r.getDonID(), // TODO set DON ID correctly
+				Timestamp:     0, // TODO include timestamp in consensus phase
+				DONID:         id.WorkflowDonId,
 				WorkflowID:    id.WorkflowId,
 				WorkflowName:  id.WorkflowName,
 				WorkflowOwner: id.WorkflowOwner,

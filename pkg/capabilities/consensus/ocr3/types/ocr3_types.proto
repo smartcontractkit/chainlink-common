@@ -24,6 +24,7 @@ message Id {
   string workflowOwner = 3;
   string workflowName = 4;
   string reportId = 5;
+  string workflowDonId = 6;
 }
 
 message Observation {

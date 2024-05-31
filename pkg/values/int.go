@@ -56,11 +56,11 @@ func (i *Int64) UnwrapTo(to any) error {
 		return nil
 	case *uint32:
 		if i.Underlying > math.MaxInt {
-			return fmt.Errorf("cannot unwrap int64 to int: number would overflow %d", i)
+			return fmt.Errorf("cannot unwrap int64 to uint32: number would overflow %d", i)
 		}
 
 		if i.Underlying < 0 {
-			return fmt.Errorf("cannot unwrap int64 to uint: number would underflow %d", i)
+			return fmt.Errorf("cannot unwrap int64 to uint32: number would underflow %d", i)
 		}
 
 		*tv = uint32(i.Underlying)

@@ -22,6 +22,7 @@ message Id {
   string workflowExecutionId = 1;
   string workflowId = 2;
   string workflowOwner = 3;
+  string workflowDonId = 4;
 }
 
 message Observation {

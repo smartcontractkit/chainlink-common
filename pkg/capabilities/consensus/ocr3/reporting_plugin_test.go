@@ -178,10 +178,6 @@ func (mc *mockCapability) getEncoder(workflowID string) (pbtypes.Encoder, error)
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getDonID() string {
-	return "fooaa"
-}
-
 func TestReportingPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
 	s := newStore()
@@ -304,10 +300,12 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	var sqNr uint64
 	weid := uuid.New().String()
 	wowner := uuid.New().String()
+	donId := "fooaa"
 	id := &pbtypes.Id{
 		WorkflowExecutionId: weid,
 		WorkflowId:          workflowTestID,
 		WorkflowOwner:       wowner,
+		WorkflowDonId:       donId,
 	}
 	nm, err := values.NewMap(
 		map[string]any{
@@ -341,7 +339,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 
 	// The workflow ID and execution ID get added to the report.
 	nm.Underlying[pbtypes.WorkflowIDFieldName] = values.NewString(workflowTestID)
-	nm.Underlying[pbtypes.DonIDFieldName] = values.NewString(cap.getDonID())
+	nm.Underlying[pbtypes.DonIDFieldName] = values.NewString(donId)
 	nm.Underlying[pbtypes.ExecutionIDFieldName] = values.NewString(weid)
 	nm.Underlying[pbtypes.WorkflowOwnerFieldName] = values.NewString(wowner)
 	fp := values.FromProto(rep)

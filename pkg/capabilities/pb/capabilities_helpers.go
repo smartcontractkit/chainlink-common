@@ -54,6 +54,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 		Metadata: &RequestMetadata{
 			WorkflowId:          req.Metadata.WorkflowID,
 			WorkflowExecutionId: req.Metadata.WorkflowExecutionID,
+			WorkflowDonId:       req.Metadata.WorkflowDonID,
 		},
 		Inputs: values.Proto(inputs),
 		Config: values.Proto(config),
@@ -81,6 +82,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) capabilities.CapabilityRe
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:          md.WorkflowId,
 			WorkflowExecutionID: md.WorkflowExecutionId,
+			WorkflowDonID:       md.WorkflowDonId,
 		},
 		Config: config.(*values.Map),
 		Inputs: inputs.(*values.Map),

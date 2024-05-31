@@ -29,6 +29,7 @@ message CapabilityInfoReply {
 message RequestMetadata {
   string workflow_id = 1;
   string workflow_execution_id = 2;
+  string workflow_don_id = 3;
 }
 
 message CapabilityRequest {

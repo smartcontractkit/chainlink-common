@@ -37,5 +37,5 @@ type request struct {
 	WorkflowID          string
 	WorkflowOwner       string
 	WorkflowName        string
-	ReportID            string
+	ReportID            string // WorkflowStepRef
 }

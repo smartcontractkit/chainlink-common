@@ -65,7 +65,7 @@ type RequestMetadata struct {
 	WorkflowOwner       string
 	WorkflowExecutionID string
 	WorkflowName        string
-	ReportID            string
+	WorkflowStepRef     string
 }
 
 type RegistrationMetadata struct {

@@ -240,9 +240,12 @@ func (o *capability) queueRequestForProcessing(
 		WorkflowID:          metadata.WorkflowID,
 		WorkflowOwner:       metadata.WorkflowOwner,
 		WorkflowName:        metadata.WorkflowName,
-		ReportID:            metadata.ReportID,
-		Observations:        i.Observations,
-		ExpiresAt:           o.clock.Now().Add(o.requestTimeout),
+		// Use the WorkflowStepRef as the ReportID. The workflow step ref
+		// uniquely identifies the step within a workflow, so this will
+		// uniquely identify a report if there are multiple consensus steps in a workflow.
+		ReportID:     metadata.WorkflowStepRef,
+		Observations: i.Observations,
+		ExpiresAt:    o.clock.Now().Add(o.requestTimeout),
 	}
 
 	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)

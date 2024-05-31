@@ -28,9 +28,6 @@ var info = capabilities.MustNewCapabilityInfo(
 	capabilities.CapabilityTypeConsensus,
 	"OCR3 consensus exposed as a capability.",
 	"v1.0.0",
-	&capabilities.DON{
-		ID: "00010203", // TODO: set real DON ID
-	},
 )
 
 type capability struct {

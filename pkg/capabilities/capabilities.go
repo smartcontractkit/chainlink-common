@@ -204,6 +204,19 @@ func NewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	version string,
+) (CapabilityInfo, error) {
+	return NewRemoteCapabilityInfo(id, capabilityType, description, version, nil)
+}
+
+// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
+// This is largely intended for internal use by the registry syncer.
+// Capability developers should use `NewCapabilityInfo` instead as this
+// omits the requirement to pass in the DON Info.
+func NewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+	version string,
 	don *DON,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
@@ -237,9 +250,20 @@ func MustNewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	version string,
+) CapabilityInfo {
+	return MustNewRemoteCapabilityInfo(id, capabilityType, description, version, nil)
+}
+
+// MustNewRemoteCapabilityInfo returns a new CapabilityInfo,
+// `panic`ing if we could not instantiate a CapabilityInfo.
+func MustNewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+	version string,
 	don *DON,
 ) CapabilityInfo {
-	c, err := NewCapabilityInfo(id, capabilityType, description, version, don)
+	c, err := NewRemoteCapabilityInfo(id, capabilityType, description, version, don)
 	if err != nil {
 		panic(err)
 	}

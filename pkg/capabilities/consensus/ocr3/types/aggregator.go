@@ -10,6 +10,7 @@ import (
 const MetadataFieldName = "INTERNAL_METADATA"
 
 type Metadata struct {
+	Version       uint32 // 1 byte
 	ExecutionID   string // 32 hex bytes
 	Timestamp     uint32 //  4 bytes
 	DONID         string //  4 hex bytes

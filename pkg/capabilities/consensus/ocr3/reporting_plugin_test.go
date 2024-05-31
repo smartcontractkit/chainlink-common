@@ -349,6 +349,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 
 	// The workflow ID and execution ID get added to the report.
 	nm.Underlying[pbtypes.MetadataFieldName], err = values.NewMap(map[string]any{
+		"Version":       1,
 		"ExecutionID":   weid,
 		"Timestamp":     0,
 		"DONID":         cap.getDonID(),

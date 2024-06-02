@@ -153,7 +153,7 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// SourceNativeToken test case
-	otherSourceNativeToken, err := other.SourceNativeToken(ctx)
+	otherSourceNativeToken, err := other.SourceNativeToken(ctx, "ignored")
 	if err != nil {
 		return fmt.Errorf("failed to get other source native token: %w", err)
 	}
@@ -214,7 +214,7 @@ func (s staticExecProvider) Ready() error {
 }
 
 // SourceNativeToken implements ExecProviderEvaluator.
-func (s staticExecProvider) SourceNativeToken(ctx context.Context) (ccip.Address, error) {
+func (s staticExecProvider) SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error) {
 	return s.sourceNativeTokenResponse, nil
 }
 
@@ -249,7 +249,7 @@ func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other
 
 		// SourceNativeToken test case
 		t.Run("SourceNativeToken", func(t *testing.T) {
-			other, err := other.SourceNativeToken(ctx)
+			other, err := other.SourceNativeToken(ctx, "ignored")
 			require.NoError(t, err)
 			assert.Equal(t, s.sourceNativeTokenResponse, other)
 		})

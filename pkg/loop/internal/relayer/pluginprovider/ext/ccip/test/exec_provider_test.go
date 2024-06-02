@@ -90,7 +90,7 @@ func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 	})
 
 	t.Run("SourceNativeToken", func(t *testing.T) {
-		token, err := client.SourceNativeToken(tests.Context(t))
+		token, err := client.SourceNativeToken(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		assert.Equal(t, ExecutionProvider.sourceNativeTokenResponse, token)
 	})

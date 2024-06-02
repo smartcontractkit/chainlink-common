@@ -2,7 +2,6 @@ package ccip
 
 import (
 	"encoding/hex"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type Address string
@@ -15,15 +14,6 @@ func (a Addresses) Strings() []string {
 		s[i] = string(addr)
 	}
 	return s
-}
-
-func (a Address) ToCommonAddress() common.Address {
-	return common.HexToAddress(string("0x" + a))
-}
-
-func FromCommonAddress(addr common.Address) Address {
-	// cut out "0x"
-	return Address(addr.String()[2:])
 }
 
 func MakeAddresses(s []string) Addresses {

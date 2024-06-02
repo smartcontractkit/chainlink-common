@@ -35,10 +35,6 @@ type CommitProviderClient struct {
 	grpcClient ccippb.CommitCustomHandlersClient
 }
 
-func (e *CommitProviderClient) GetStaticConfig(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreStaticConfig, error) {
-	panic("TODO: cleanup if I get for free from OffRampReader")
-}
-
 func NewCommitProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *CommitProviderClient {
 	pluginProviderClient := ocr2.NewPluginProviderClient(b, conn)
 	client := ccippb.NewCommitCustomHandlersClient(conn)
@@ -169,7 +165,7 @@ func (e *CommitProviderServer) Close(context.Context, *emptypb.Empty) (*emptypb.
 
 // NewCommitStoreReader implements ccippb.CommitCustomHandlersServer.
 func (e *CommitProviderServer) NewCommitStoreReader(ctx context.Context, req *ccippb.NewCommitStoreReaderRequest) (*ccippb.NewCommitStoreReaderResponse, error) {
-	// TODO: why is this context background?
+	// TODO: use stop ch?
 	reader, err := e.impl.NewCommitStoreReader(context.Background(), ccip.Address(req.Address))
 	if err != nil {
 		return nil, err

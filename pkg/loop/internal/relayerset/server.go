@@ -137,53 +137,6 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 	return &relayerset.NewPluginProviderResponse{PluginProviderId: providerID}, nil
 }
 
-//func (s *Server) NewCrossRelayerPluginProvider(ctx context.Context, req *relayerset.NewCrossRelayerPluginProviderRequest) (*relayerset.NewCrossRelayerPluginProviderResponse, error) {
-//	relayArgs := core.RelayArgs{
-//		ContractID:   req.RelayArgs.ContractID,
-//		RelayConfig:  req.RelayArgs.RelayConfig,
-//		ProviderType: req.RelayArgs.ProviderType,
-//	}
-//
-//	// TODO - the mercury credentials should be set as part of the relay config and not as a separate field
-//	if req.RelayArgs.MercuryCredentials != nil {
-//		relayArgs.MercuryCredentials = &types.MercuryCredentials{
-//			LegacyURL: req.RelayArgs.MercuryCredentials.LegacyUrl,
-//			URL:       req.RelayArgs.MercuryCredentials.Url,
-//			Username:  req.RelayArgs.MercuryCredentials.Username,
-//			Password:  req.RelayArgs.MercuryCredentials.Password,
-//		}
-//	}
-//
-//	pluginArgs := core.PluginArgs{
-//		TransmitterID: req.PluginArgs.TransmitterID,
-//		PluginConfig:  req.PluginArgs.PluginConfig,
-//	}
-//
-//	crossRelayerPluginProvider, err := s.impl.NewCrossRelayerPluginProvider(ctx, relayArgs, pluginArgs)
-//	if err != nil {
-//		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error creating plugin provider: %v", err))
-//	}
-//
-//	var providerClientConn grpc.ClientConnInterface
-//	providerConn, ok := crossRelayerPluginProvider.(connProvider)
-//	if !ok {
-//		providerClientConn, err = s.getProviderConnection(crossRelayerPluginProvider, relayArgs.ProviderType)
-//		if err != nil {
-//			return nil, status.Errorf(codes.Internal, fmt.Sprintf("error getting provider connection: %v", err))
-//		}
-//	} else {
-//		providerClientConn = providerConn.ClientConn()
-//	}
-//
-//	providerID, providerRes, err := s.broker.Serve("CrossRelayerPluginProvider", proxy.NewProxy(providerClientConn))
-//	if err != nil {
-//		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error serving cross relayer plugin provider: %v", err))
-//	}
-//	s.serverResources.Add(providerRes)
-//
-//	return &relayerset.NewCrossRelayerPluginProviderResponse{PluginProviderId: providerID}, nil
-//}
-
 // getProviderConnection wraps a non-LOOPP provider in an in process provider server.  This can be removed once all providers are LOOPP providers.
 // For completeness the original comment from the equivalent code in core is included here:
 //

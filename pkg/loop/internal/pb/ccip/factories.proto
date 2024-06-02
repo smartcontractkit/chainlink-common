@@ -174,15 +174,3 @@ message NewOffRampReadersRequest {
 message NewOffRampReadersResponse {
     repeated int32 offramp_readers_service_ids = 1;
 }
-
-//// GetStaticConfigRequest is a gRPC adapter for the input arguments of
-//// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.GetStaticConfig]
-//message GetStaticConfigRequest {
-//    string commit_store_address = 1;
-//}
-//
-//// GetStaticConfigRequest is a gRPC adapter for the output arguments of
-//// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.GetStaticConfig]
-//message GetStaticConfigResponse {
-//    int32 static_config_service_id = 1;
-//}

@@ -571,7 +571,6 @@ type CommitCustomHandlersClient interface {
 	NewPriceGetter(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewPriceGetterResponse, error)
 	NewPriceRegistryReader(ctx context.Context, in *NewPriceRegistryReaderRequest, opts ...grpc.CallOption) (*NewPriceRegistryReaderResponse, error)
 	SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
-	// rpc GetStaticConfig(GetStaticConfigRequest) returns (GetStaticConfigResponse) {}
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -656,7 +655,6 @@ type CommitCustomHandlersServer interface {
 	NewPriceGetter(context.Context, *emptypb.Empty) (*NewPriceGetterResponse, error)
 	NewPriceRegistryReader(context.Context, *NewPriceRegistryReaderRequest) (*NewPriceRegistryReaderResponse, error)
 	SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error)
-	// rpc GetStaticConfig(GetStaticConfigRequest) returns (GetStaticConfigResponse) {}
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCommitCustomHandlersServer()
 }

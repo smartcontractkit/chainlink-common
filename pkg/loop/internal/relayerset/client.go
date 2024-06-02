@@ -124,27 +124,3 @@ func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, r
 	}
 	return resp.PluginProviderId, nil
 }
-
-func (k *Client) NewCrossRelayerPluginProvider(ctx context.Context, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {
-	// TODO at a later phase these credentials should be set as part of the relay config and not as a separate field
-	var mercuryCredentials *relayerset.MercuryCredentials
-	if relayArgs.MercuryCredentials != nil {
-		mercuryCredentials = &relayerset.MercuryCredentials{
-			LegacyUrl: relayArgs.MercuryCredentials.LegacyURL,
-			Url:       relayArgs.MercuryCredentials.URL,
-			Username:  relayArgs.MercuryCredentials.Username,
-			Password:  relayArgs.MercuryCredentials.Password,
-		}
-	}
-
-	req := &relayerset.NewCrossRelayerPluginProviderRequest{
-		RelayArgs:  &relayerset.RelayArgs{ContractID: relayArgs.ContractID, RelayConfig: relayArgs.RelayConfig, ProviderType: relayArgs.ProviderType, MercuryCredentials: mercuryCredentials},
-		PluginArgs: &relayerset.PluginArgs{TransmitterID: pluginArgs.TransmitterID, PluginConfig: pluginArgs.PluginConfig},
-	}
-
-	resp, err := k.relayerSetClient.NewCrossRelayerPluginProvider(ctx, req)
-	if err != nil {
-		return 0, fmt.Errorf("error getting new plugin provider: %w", err)
-	}
-	return resp.PluginProviderId, nil
-}

@@ -28,7 +28,6 @@ var info = capabilities.MustNewCapabilityInfo(
 	capabilities.CapabilityTypeConsensus,
 	"OCR3 consensus exposed as a capability.",
 	"v1.0.0",
-	nil,
 )
 
 type capability struct {
@@ -190,8 +189,19 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 				Err:   nil,
 			},
 		}
-		err = o.transmitResponse(ctx, out)
-		return nil, err
+		o.transmitCh <- out
+
+		// Return a dummy response back to the caller
+		// This allows the transmitter to block on a response before
+		// returning from Transmit()
+		// TODO(cedric): our current stream-based implementation for the Execute
+		// returns immediately without waiting for the server-side to complete. This
+		// breaks the API since callers can no longer rely on a non-error response
+		// from Execute() serving as an acknowledgement that the request in being handled.
+		callbackCh := make(chan capabilities.CapabilityResponse, 1)
+		callbackCh <- capabilities.CapabilityResponse{}
+		close(callbackCh)
+		return callbackCh, nil
 	case methodStartRequest:
 		// Receives and stores an observation to do consensus on
 		// Receives an aggregation method; at this point the method has been validated
@@ -201,7 +211,12 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			return nil, err
 		}
 
-		return o.queueRequestForProcessing(ctx, r.Metadata, inputs)
+		config, err := o.ValidateConfig(r.Config)
+		if err != nil {
+			return nil, err
+		}
+
+		return o.queueRequestForProcessing(ctx, r.Metadata, inputs, config)
 	}
 
 	return nil, fmt.Errorf("unknown method: %s", m.Method)
@@ -214,13 +229,17 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 func (o *capability) queueRequestForProcessing(
 	ctx context.Context,
 	metadata capabilities.RequestMetadata,
-	i *inputs) (<-chan capabilities.CapabilityResponse, error) {
+	i *inputs, c *config) (<-chan capabilities.CapabilityResponse, error) {
 	callbackCh := make(chan capabilities.CapabilityResponse, o.callbackChannelBufferSize)
 	r := &request{
 		StopCh:              make(chan struct{}),
 		CallbackCh:          callbackCh,
 		WorkflowExecutionID: metadata.WorkflowExecutionID,
 		WorkflowID:          metadata.WorkflowID,
+		WorkflowOwner:       metadata.WorkflowOwner,
+		WorkflowName:        metadata.WorkflowName,
+		ReportID:            c.ReportID,
+		WorkflowDonID:       metadata.WorkflowDonID,
 		Observations:        i.Observations,
 		ExpiresAt:           o.clock.Now().Add(o.requestTimeout),
 	}
@@ -290,9 +309,4 @@ func (o *capability) expiryTimer(ctx context.Context, r *request) {
 		o.lggr.Debugw("expiryTimer - expired request", "workflowExecutionID", r.WorkflowExecutionID)
 		o.transmitCh <- resp
 	}
-}
-
-func (o *capability) transmitResponse(ctx context.Context, resp *outputs) error {
-	o.transmitCh <- resp
-	return nil
 }

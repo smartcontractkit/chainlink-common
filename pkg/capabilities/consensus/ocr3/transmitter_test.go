@@ -24,6 +24,7 @@ import (
 
 func TestTransmitter(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
+	wowner := "foo-owner"
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := newStore()
@@ -43,11 +44,20 @@ func TestTransmitter(t *testing.T) {
 
 	payload, err := values.NewMap(map[string]any{"observations": []string{"something happened"}})
 	require.NoError(t, err)
+	config, err := values.NewMap(map[string]any{
+		"aggregation_method": "data_feeds",
+		"aggregation_config": map[string]any{},
+		"encoder":            "",
+		"encoder_config":     map[string]any{},
+		"report_id":          "aa",
+	})
+	require.NoError(t, err)
 	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
 			WorkflowID:          wid,
 		},
+		Config: config,
 		Inputs: payload,
 	})
 	require.NoError(t, err)
@@ -59,6 +69,7 @@ func TestTransmitter(t *testing.T) {
 		Id: &pbtypes.Id{
 			WorkflowExecutionId: weid,
 			WorkflowId:          wid,
+			WorkflowOwner:       wowner,
 		},
 		ShouldReport: true,
 	}
@@ -97,6 +108,7 @@ func TestTransmitter(t *testing.T) {
 
 func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
+	wowner := "foo-owner"
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := newStore()
@@ -116,12 +128,21 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 
 	payload, err := values.NewMap(map[string]any{"observations": []string{"something happened"}})
 	require.NoError(t, err)
+	config, err := values.NewMap(map[string]any{
+		"aggregation_method": "data_feeds",
+		"aggregation_config": map[string]any{},
+		"encoder":            "",
+		"encoder_config":     map[string]any{},
+		"report_id":          "aa",
+	})
+	require.NoError(t, err)
 	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
 			WorkflowID:          wid,
 		},
 		Inputs: payload,
+		Config: config,
 	})
 	require.NoError(t, err)
 
@@ -132,6 +153,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 		Id: &pbtypes.Id{
 			WorkflowExecutionId: weid,
 			WorkflowId:          wid,
+			WorkflowOwner:       wowner,
 		},
 		ShouldReport: false,
 	}

@@ -7,10 +7,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-const (
-	WorkflowIDFieldName  = "INTERNAL_workflow_id"
-	ExecutionIDFieldName = "INTERNAL_execution_id"
-)
+const MetadataFieldName = "INTERNAL_METADATA"
+
+type Metadata struct {
+	Version       uint32 // 1 byte
+	ExecutionID   string // 32 hex bytes
+	Timestamp     uint32 //  4 bytes
+	DONID         string //  4 hex bytes
+	WorkflowID    string // 32 hex bytes
+	WorkflowName  string // 10 hex bytes
+	WorkflowOwner string // 20 hex bytes
+	ReportID      string //  2 hex bytes
+}
 
 type Aggregator interface {
 	// Called by the Outcome() phase of OCR reporting.
@@ -18,17 +26,12 @@ type Aggregator interface {
 	Aggregate(previousOutcome *AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*AggregationOutcome, error)
 }
 
-func AppendWorkflowIDs(outcome *AggregationOutcome, workflowID string, workflowExecutionID string) (*AggregationOutcome, error) {
-	valueWID, err := values.Wrap(workflowID)
+func AppendMetadata(outcome *AggregationOutcome, meta *Metadata) (*AggregationOutcome, error) {
+	metaWrapped, err := values.Wrap(meta)
 	if err != nil {
 		return nil, err
 	}
-	outcome.EncodableOutcome.Fields[WorkflowIDFieldName] = values.Proto(valueWID)
-	valueWEID, err := values.Wrap(workflowExecutionID)
-	if err != nil {
-		return nil, err
-	}
-	outcome.EncodableOutcome.Fields[ExecutionIDFieldName] = values.Proto(valueWEID)
+	outcome.EncodableOutcome.Fields[MetadataFieldName] = values.Proto(metaWrapped)
 	return outcome, nil
 }
 

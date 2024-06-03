@@ -1,4 +1,4 @@
-package mercury
+package datastreams
 
 import (
 	"encoding/hex"
@@ -54,27 +54,29 @@ func FeedIDFromBytes(b [FeedIDBytesLen]byte) FeedID {
 }
 
 type FeedReport struct {
-	FeedID               string `json:"feedId"`
-	FullReport           []byte `json:"fullReport"`
-	BenchmarkPrice       int64  `json:"benchmarkPrice"`
-	ObservationTimestamp int64  `json:"observationTimestamp"`
+	FeedID        string
+	FullReport    []byte
+	ReportContext []byte
+	Signatures    [][]byte
+
+	// Fields below are derived from FullReport
+	// NOTE: BenchmarkPrice is a byte representation of big.Int. We can't use big.Int
+	// directly due to Value serialization problems using mapstructure.
+	BenchmarkPrice       []byte
+	ObservationTimestamp int64
 }
 
-type Codec struct {
+// passed alongside Streams trigger events
+type SignersMetadata struct {
+	Signers               [][]byte
+	MinRequiredSignatures int
 }
 
-func (c Codec) Unwrap(raw values.Value) ([]FeedReport, error) {
-	dest := []FeedReport{}
-	err := raw.UnwrapTo(&dest)
-	// TODO: validate reports
-	return dest, err
-}
+//go:generate mockery --quiet --name ReportCodec --output ./mocks/ --case=underscore
+type ReportCodec interface {
+	// unwrap and validate each report, then convert to a list of Feed reports
+	UnwrapValid(wrapped values.Value, allowedSigners [][]byte, minRequiredSignatures int) ([]FeedReport, error)
 
-func (c Codec) Wrap(reports []FeedReport) (values.Value, error) {
-	// TODO: validate reports
-	return values.Wrap(reports)
-}
-
-func NewCodec() Codec {
-	return Codec{}
+	// convert back to Value
+	Wrap(reports []FeedReport) (values.Value, error)
 }

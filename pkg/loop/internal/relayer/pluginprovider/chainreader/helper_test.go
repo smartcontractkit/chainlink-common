@@ -7,9 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+
+	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint
 )
 
 var errorTypes = []error{
@@ -99,7 +100,7 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 
 func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	var queryFilters []query.KeyFilter
-	confirmationsValues := []primitives.ConfirmationLevel{primitives.Finalized, primitives.Unconfirmed}
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
 	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
 	comparableValues := []string{"", " ", "number", "123"}
 
@@ -119,7 +120,7 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	}
 
 	for _, conf := range confirmationsValues {
-		primitiveExpressions = append(primitiveExpressions, query.Confirmation(conf))
+		primitiveExpressions = append(primitiveExpressions, query.Confidence(conf))
 	}
 
 	qf, err := query.Where("primitives", primitiveExpressions...)

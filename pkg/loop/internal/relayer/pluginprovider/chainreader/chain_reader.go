@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -20,21 +21,15 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
-var _ types.ChainReader = (*Client)(nil)
-
-// NewChainReaderTestClient is a test client for [types.ChainReader]
-// internal users should instantiate a client directly and set all private fields.
-func NewChainReaderTestClient(conn *grpc.ClientConn) types.ChainReader {
-	return &Client{grpc: pb.NewChainReaderClient(conn)}
-}
+var _ types.ContractReader = (*Client)(nil)
 
 type Client struct {
-	*net.BrokerExt
+	*goplugin.ServiceClient
 	grpc pb.ChainReaderClient
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *Client {
-	return &Client{BrokerExt: b, grpc: pb.NewChainReaderClient(cc)}
+	return &Client{ServiceClient: goplugin.NewServiceClient(b, cc), grpc: pb.NewChainReaderClient(cc)}
 }
 
 // enum of all known encoding formats for versioned data.
@@ -150,13 +145,13 @@ func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error
 
 var _ pb.ChainReaderServer = (*Server)(nil)
 
-func NewServer(impl types.ChainReader) pb.ChainReaderServer {
+func NewServer(impl types.ContractReader) pb.ChainReaderServer {
 	return &Server{impl: impl}
 }
 
 type Server struct {
 	pb.UnimplementedChainReaderServer
-	impl types.ChainReader
+	impl types.ContractReader
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
@@ -267,11 +262,10 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 					BlockNumber: primitive.Block,
 					Operator:    pb.ComparisonOperator(primitive.Operator),
 				}}
-		case *primitives.Confirmations:
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confirmations{
-				Confirmations: &pb.Confirmations{
-					Confirmations: pb.ConfirmationLevel(primitive.ConfirmationLevel),
-				}}
+		case *primitives.Confidence:
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confidence{
+				Confidence: confidenceToProto(primitive.ConfidenceLevel),
+			}
 		case *primitives.Timestamp:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
 				Timestamp: &pb.Timestamp{
@@ -305,6 +299,17 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 		}}
 
 	return pbExpression, nil
+}
+
+func confidenceToProto(level primitives.ConfidenceLevel) pb.Confidence {
+	switch level {
+	case primitives.Finalized:
+		return pb.Confidence_Finalized
+	case primitives.Unconfirmed:
+		return pb.Confidence_Unconfirmed
+	default:
+		panic("invalid confidence level")
+	}
 }
 
 func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSort, error) {
@@ -404,8 +409,8 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 				valueComparators = append(valueComparators, primitives.ValueComparator{Value: pbValueComparator.Value, Operator: primitives.ComparisonOperator(pbValueComparator.Operator)})
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
-		case *pb.Primitive_Confirmations:
-			return query.Confirmation(primitives.ConfirmationLevel(primitive.Confirmations.Confirmations)), nil
+		case *pb.Primitive_Confidence:
+			return query.Confidence(confidenceFromProto(primitive.Confidence)), nil
 		case *pb.Primitive_Block:
 			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
 		case *pb.Primitive_TxHash:
@@ -417,6 +422,17 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 		}
 	default:
 		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
+	}
+}
+
+func confidenceFromProto(conf pb.Confidence) primitives.ConfidenceLevel {
+	switch conf {
+	case pb.Confidence_Finalized:
+		return primitives.Finalized
+	case pb.Confidence_Unconfirmed:
+		return primitives.Unconfirmed
+	default:
+		panic("invalid confidence level")
 	}
 }
 
@@ -487,4 +503,8 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 	}
 
 	return sequences, nil
+}
+
+func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader) {
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader})
 }

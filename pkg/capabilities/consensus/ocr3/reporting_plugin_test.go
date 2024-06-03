@@ -42,9 +42,13 @@ func TestReportingPlugin_Query(t *testing.T) {
 	require.NoError(t, err)
 
 	eid := uuid.New().String()
+	wowner := uuid.New().String()
 	err = s.add(ctx, &request{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportID:            reportTestId,
 	})
 	require.NoError(t, err)
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -74,9 +78,13 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	require.NoError(t, err)
 
 	eid := uuid.New().String()
+	wowner := uuid.New().String()
 	err = s.add(ctx, &request{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportID:            reportTestId,
 		Observations:        o,
 	})
 	require.NoError(t, err)
@@ -141,7 +149,7 @@ type aggregator struct {
 	outcome *pbtypes.AggregationOutcome
 }
 
-func (a *aggregator) Aggregate(pout *pbtypes.AggregationOutcome, observations map[commontypes.OracleID][]values.Value) (*pbtypes.AggregationOutcome, error) {
+func (a *aggregator) Aggregate(pout *pbtypes.AggregationOutcome, observations map[commontypes.OracleID][]values.Value, _ int) (*pbtypes.AggregationOutcome, error) {
 	a.gotObs = observations
 	nm, err := values.NewMap(
 		map[string]any{
@@ -185,9 +193,13 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
+	wowner := uuid.New().String()
 	id := &pbtypes.Id{
 		WorkflowExecutionId: weid,
 		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestId,
 	}
 	q := &pbtypes.Query{
 		Ids: []*pbtypes.Id{id},
@@ -241,9 +253,11 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 
 	var sqNr uint64
 	weid := uuid.New().String()
+	wowner := uuid.New().String()
 	id := &pbtypes.Id{
 		WorkflowExecutionId: weid,
 		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
 	}
 	nm, err := values.NewMap(
 		map[string]any{
@@ -291,9 +305,15 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 
 	var sqNr uint64
 	weid := uuid.New().String()
+	wowner := uuid.New().String()
+	donId := "fooaa"
 	id := &pbtypes.Id{
 		WorkflowExecutionId: weid,
 		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestId,
+		WorkflowDonId:       donId,
 	}
 	nm, err := values.NewMap(
 		map[string]any{
@@ -326,10 +346,19 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	require.NoError(t, err)
 
 	// The workflow ID and execution ID get added to the report.
-	nm.Underlying[pbtypes.WorkflowIDFieldName] = values.NewString(workflowTestID)
-	nm.Underlying[pbtypes.ExecutionIDFieldName] = values.NewString(weid)
+	nm.Underlying[pbtypes.MetadataFieldName], err = values.NewMap(map[string]any{
+		"Version":       1,
+		"ExecutionID":   weid,
+		"Timestamp":     0,
+		"DONID":         donId,
+		"WorkflowID":    workflowTestID,
+		"WorkflowName":  workflowTestName,
+		"WorkflowOwner": wowner,
+		"ReportID":      reportTestId,
+	})
+	require.NoError(t, err)
 	fp := values.FromProto(rep)
-	assert.Equal(t, nm, fp)
+	require.Equal(t, nm, fp)
 
 	ib := gotRep.Info
 	info := &pbtypes.ReportInfo{}

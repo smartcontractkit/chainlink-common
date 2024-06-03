@@ -16,7 +16,7 @@ import (
 
 type ChainReaderInterfaceTester interface {
 	BasicTester
-	GetChainReader(t *testing.T) types.ChainReader
+	GetChainReader(t *testing.T) types.ContractReader
 
 	// SetLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
@@ -45,7 +45,12 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 
 const AnyExtraValue = 3
 
-func RunChainReaderGetLatestValueInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
+func RunChainReaderInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
+	t.Run("GetLatestValue for "+tester.Name(), func(t *testing.T) { runChainReaderGetLatestValueInterfaceTests(t, tester) })
+	t.Run("QueryKey for "+tester.Name(), func(t *testing.T) { runQueryKeyInterfaceTests(t, tester) })
+}
+
+func runChainReaderGetLatestValueInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
 	tests := []testcase{
 		{
 			name: "Gets the latest value",
@@ -209,18 +214,20 @@ func RunChainReaderGetLatestValueInterfaceTests(t *testing.T, tester ChainReader
 	runTests(t, tester, tests)
 }
 
-func RunQueryKeyInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
+func runQueryKeyInterfaceTests(t *testing.T, tester ChainReaderInterfaceTester) {
 	tests := []testcase{
 		{
 			name: "QueryKey returns not found if sequence never happened",
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
+
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
-				sequenceDataType := &TestStruct{}
-				_, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &sequenceDataType)
-				assert.True(t, errors.Is(err, types.ErrNotFound))
+				logs, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &TestStruct{})
+
+				require.NoError(t, err)
+				assert.Len(t, logs, 0)
 			},
 		},
 		{

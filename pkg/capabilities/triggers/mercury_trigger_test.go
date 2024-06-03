@@ -2,6 +2,7 @@ package triggers
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/mercury"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -85,19 +86,20 @@ func TestMercuryTrigger(t *testing.T) {
 	)
 
 	// Send events to trigger and check for them in the callback
-	mfr := []mercury.FeedReport{
+	mfr := []datastreams.FeedReport{
 		{
 			FeedID:               feedOne,
 			FullReport:           []byte("0x1234"),
-			BenchmarkPrice:       2,
+			BenchmarkPrice:       big.NewInt(2).Bytes(),
 			ObservationTimestamp: 3,
+			Signatures:           [][]byte{},
 		},
 	}
 	err = ts.ProcessReport(mfr)
 	assert.NoError(t, err)
 	msg := <-callback
 	triggerEvent, reports := upwrapTriggerEvent(t, msg.Value)
-	assert.Equal(t, "mercury", triggerEvent.TriggerType)
+	assert.Equal(t, triggerID, triggerEvent.TriggerType)
 	assert.Len(t, reports, 1)
 	assert.Equal(t, mfr[0], reports[0])
 
@@ -139,30 +141,34 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	)
 
 	// Send events to trigger and check for them in the callback
-	mfr1 := []mercury.FeedReport{
+	mfr1 := []datastreams.FeedReport{
 		{
 			FeedID:               feedOne,
 			FullReport:           []byte("0x1234"),
-			BenchmarkPrice:       20,
+			BenchmarkPrice:       big.NewInt(20).Bytes(),
 			ObservationTimestamp: 5,
+			Signatures:           [][]byte{},
 		},
 		{
 			FeedID:               feedThree,
 			FullReport:           []byte("0x1234"),
-			BenchmarkPrice:       25,
+			BenchmarkPrice:       big.NewInt(25).Bytes(),
 			ObservationTimestamp: 8,
+			Signatures:           [][]byte{},
 		},
 		{
 			FeedID:               feedTwo,
 			FullReport:           []byte("0x1234"),
-			BenchmarkPrice:       30,
+			BenchmarkPrice:       big.NewInt(30).Bytes(),
 			ObservationTimestamp: 10,
+			Signatures:           [][]byte{},
 		},
 		{
 			FeedID:               feedFour,
 			FullReport:           []byte("0x1234"),
-			BenchmarkPrice:       40,
+			BenchmarkPrice:       big.NewInt(40).Bytes(),
 			ObservationTimestamp: 15,
+			Signatures:           [][]byte{},
 		},
 	}
 
@@ -171,7 +177,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 
 	msg := <-callback1
 	triggerEvent, reports := upwrapTriggerEvent(t, msg.Value)
-	assert.Equal(t, "mercury", triggerEvent.TriggerType)
+	assert.Equal(t, triggerID, triggerEvent.TriggerType)
 	assert.Len(t, reports, 3)
 	assert.Equal(t, mfr1[0], reports[0])
 	assert.Equal(t, mfr1[1], reports[1])
@@ -179,17 +185,17 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 
 	msg = <-callback2
 	triggerEvent, reports = upwrapTriggerEvent(t, msg.Value)
-	assert.Equal(t, "mercury", triggerEvent.TriggerType)
+	assert.Equal(t, triggerID, triggerEvent.TriggerType)
 	assert.Len(t, reports, 2)
 	assert.Equal(t, mfr1[2], reports[0])
 	assert.Equal(t, mfr1[1], reports[1])
 
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr1))
-	mfr2 := []mercury.FeedReport{
+	mfr2 := []datastreams.FeedReport{
 		{
 			FeedID:               feedThree,
 			FullReport:           []byte("0x1234"),
-			BenchmarkPrice:       50,
+			BenchmarkPrice:       big.NewInt(50).Bytes(),
 			ObservationTimestamp: 20,
 		},
 	}
@@ -201,8 +207,9 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 		triggerEvent, reports = upwrapTriggerEvent(t, rMsg.Value)
 		require.NoError(t, err)
 		require.Len(t, reports, 2)
-		require.Equal(t, "mercury", triggerEvent.TriggerType)
-		if reports[1].BenchmarkPrice == 50 {
+		require.Equal(t, triggerID, triggerEvent.TriggerType)
+		price := big.NewInt(0).SetBytes(reports[1].BenchmarkPrice)
+		if price.Cmp(big.NewInt(50)) == 0 {
 			// expect to eventually get updated feed value
 			break
 		}
@@ -281,12 +288,12 @@ func TestGetNextWaitIntervalMs(t *testing.T) {
 	assert.Equal(t, int64(0), getNextWaitIntervalMs(12000, 1000, 14600))
 }
 
-func upwrapTriggerEvent(t *testing.T, wrappedEvent values.Value) (capabilities.TriggerEvent, []mercury.FeedReport) {
+func upwrapTriggerEvent(t *testing.T, wrappedEvent values.Value) (capabilities.TriggerEvent, []datastreams.FeedReport) {
 	event := capabilities.TriggerEvent{}
 	err := wrappedEvent.UnwrapTo(&event)
 	require.NoError(t, err)
 	require.NotNil(t, event.Payload)
-	mercuryReports, err := mercury.Codec{}.Unwrap(event.Payload)
+	mercuryReports, err := testMercuryCodec{}.UnwrapValid(event.Payload, nil, 0)
 	require.NoError(t, err)
 	return event, mercuryReports
 }

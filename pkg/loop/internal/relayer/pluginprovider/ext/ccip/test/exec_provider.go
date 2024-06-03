@@ -113,7 +113,7 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// OnRampReader test case
-	otherOnRamp, err := other.NewOnRampReader(ctx, "ignored")
+	otherOnRamp, err := other.NewOnRampReader(ctx, "ignored", 0, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create other on ramp reader: %w", err)
 	}
@@ -184,7 +184,7 @@ func (s staticExecProvider) NewOffRampReader(ctx context.Context, addr ccip.Addr
 }
 
 // NewOnRampReader implements ExecProviderEvaluator.
-func (s staticExecProvider) NewOnRampReader(ctx context.Context, addr ccip.Address) (ccip.OnRampReader, error) {
+func (s staticExecProvider) NewOnRampReader(ctx context.Context, addr ccip.Address, srcChainSelector uint64, dstChainSelector uint64) (ccip.OnRampReader, error) {
 	return s.onRampReader, nil
 }
 
@@ -228,7 +228,7 @@ func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other
 	t.Run("StaticExecProvider", func(t *testing.T) {
 		// OnRampReader test case
 		t.Run(onRampComponent, func(t *testing.T) {
-			other, err := other.NewOnRampReader(ctx, "ignored")
+			other, err := other.NewOnRampReader(ctx, "ignored", 0, 0)
 			require.NoError(t, err)
 			assert.NoError(t, s.onRampReader.Evaluate(ctx, other))
 		})

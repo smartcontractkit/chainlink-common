@@ -22,7 +22,7 @@ type CCIPExecProvider interface {
 
 	NewCommitStoreReader(ctx context.Context, addr ccip.Address) (ccip.CommitStoreReader, error)
 	NewOffRampReader(ctx context.Context, addr ccip.Address) (ccip.OffRampReader, error)
-	NewOnRampReader(ctx context.Context, addr ccip.Address) (ccip.OnRampReader, error)
+	NewOnRampReader(ctx context.Context, addr ccip.Address, sourceSelector uint64, destSelector uint64) (ccip.OnRampReader, error)
 	NewPriceRegistryReader(ctx context.Context, addr ccip.Address) (ccip.PriceRegistryReader, error)
 	NewTokenDataReader(ctx context.Context, tokenAddress ccip.Address) (ccip.TokenDataReader, error)
 	NewTokenPoolBatchedReader(ctx context.Context) (ccip.TokenPoolBatchedReader, error)

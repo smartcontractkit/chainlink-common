@@ -84,8 +84,8 @@ func (e *ExecProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 }
 
 // NewOnRampReader implements types.CCIPExecProvider.
-func (e *ExecProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
-	req := ccippb.NewOnRampReaderRequest{Address: string(addr)}
+func (e *ExecProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address, srcChainSelector uint64, dstChainSelector uint64) (cciptypes.OnRampReader, error) {
+	req := ccippb.NewOnRampReaderRequest{Address: string(addr), SourceChainSelector: srcChainSelector, DestChainSelector: dstChainSelector}
 
 	resp, err := e.grpcClient.NewOnRampReader(ctx, &req)
 	if err != nil {
@@ -241,7 +241,7 @@ func (e *ExecProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 }
 
 func (e *ExecProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
-	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address))
+	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address), req.SourceChainSelector, req.DestChainSelector)
 	if err != nil {
 		return nil, err
 	}

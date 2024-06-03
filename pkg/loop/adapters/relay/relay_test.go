@@ -104,6 +104,14 @@ type staticOCR3CapabilityProvider struct {
 	types.OCR3CapabilityProvider
 }
 
+type staticCCIPCommitProvider struct {
+	types.CCIPCommitProvider
+}
+
+type staticCCIPExecProvider struct {
+	types.CCIPExecProvider
+}
+
 type mockRelayer struct {
 	types.Relayer
 }
@@ -130,6 +138,14 @@ func (m *mockRelayer) NewPluginProvider(rargs types.RelayArgs, pargs types.Plugi
 
 func (m *mockRelayer) NewOCR3CapabilityProvider(rargs types.RelayArgs, pargs types.PluginArgs) (types.OCR3CapabilityProvider, error) {
 	return staticOCR3CapabilityProvider{}, nil
+}
+
+func (m *mockRelayer) NewCCIPCommitProvider(rargs types.RelayArgs, pargs types.PluginArgs) (types.CCIPCommitProvider, error) {
+	return staticCCIPCommitProvider{}, nil
+}
+
+func (m *mockRelayer) NewCCIPExecProvider(rargs types.RelayArgs, pargs types.PluginArgs) (types.CCIPExecProvider, error) {
+	return staticCCIPExecProvider{}, nil
 }
 
 type mockRelayerExt struct {
@@ -164,7 +180,7 @@ func TestRelayerServerAdapter(t *testing.T) {
 		},
 		{
 			ProviderType: string(types.CCIPCommit),
-			Error:        "provider type not supported",
+			Test:         isType[types.CCIPCommitProvider],
 		},
 		{
 			ProviderType: string(types.CCIPExecution),
@@ -196,7 +212,7 @@ func TestRelayerServerAdapter(t *testing.T) {
 			assert.ErrorContains(t, err, tc.Error)
 		} else {
 			assert.NoError(t, err)
-			assert.True(t, tc.Test(pp))
+			assert.True(t, tc.Test(pp), tc.ProviderType)
 		}
 	}
 }

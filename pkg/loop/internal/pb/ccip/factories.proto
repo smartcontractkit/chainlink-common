@@ -146,6 +146,7 @@ message NewTokenDataResponse {
 
 message NewTokenPoolBatchedReaderRequest {
     string address = 1;
+    uint64 sourceChainSelector = 2;
 }
 
 // NewTokenPoolBatchedReaderResponse is a gRPC adapter for the output arguments of

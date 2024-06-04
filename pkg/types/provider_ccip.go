@@ -25,7 +25,7 @@ type CCIPExecProvider interface {
 	NewOnRampReader(ctx context.Context, addr ccip.Address, sourceSelector uint64, destSelector uint64) (ccip.OnRampReader, error)
 	NewPriceRegistryReader(ctx context.Context, addr ccip.Address) (ccip.PriceRegistryReader, error)
 	NewTokenDataReader(ctx context.Context, tokenAddress ccip.Address) (ccip.TokenDataReader, error)
-	NewTokenPoolBatchedReader(ctx context.Context, offRampAddress ccip.Address) (ccip.TokenPoolBatchedReader, error)
+	NewTokenPoolBatchedReader(ctx context.Context, offRampAddress ccip.Address, sourceSelector uint64) (ccip.TokenPoolBatchedReader, error)
 	SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error)
 }
 

@@ -144,8 +144,8 @@ func (e *ExecProviderClient) NewTokenDataReader(ctx context.Context, tokenAddres
 }
 
 // NewTokenPoolBatchedReader implements types.CCIPExecProvider.
-func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context, offRampAddress cciptypes.Address) (cciptypes.TokenPoolBatchedReader, error) {
-	req := ccippb.NewTokenPoolBatchedReaderRequest{Address: string(offRampAddress)}
+func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context, offRampAddress cciptypes.Address, srcChainSelector uint64) (cciptypes.TokenPoolBatchedReader, error) {
+	req := ccippb.NewTokenPoolBatchedReaderRequest{Address: string(offRampAddress), SourceChainSelector: srcChainSelector}
 	resp, err := e.grpcClient.NewTokenPoolBatchedReader(ctx, &req)
 	if err != nil {
 		return nil, err
@@ -302,7 +302,7 @@ func (e *ExecProviderServer) NewTokenDataReader(ctx context.Context, req *ccippb
 }
 
 func (e *ExecProviderServer) NewTokenPoolBatchedReader(ctx context.Context, req *ccippb.NewTokenPoolBatchedReaderRequest) (*ccippb.NewTokenPoolBatchedReaderResponse, error) {
-	reader, err := e.impl.NewTokenPoolBatchedReader(ctx, cciptypes.Address(req.Address))
+	reader, err := e.impl.NewTokenPoolBatchedReader(ctx, cciptypes.Address(req.Address), req.SourceChainSelector)
 	if err != nil {
 		return nil, err
 	}

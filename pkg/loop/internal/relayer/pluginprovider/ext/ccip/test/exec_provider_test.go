@@ -83,7 +83,7 @@ func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 	})
 
 	t.Run("TokenPool", func(t *testing.T) {
-		tokenReaderClient, err := client.NewTokenPoolBatchedReader(tests.Context(t))
+		tokenReaderClient, err := client.NewTokenPoolBatchedReader(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		roundTripTokenPoolTests(t, tokenReaderClient)
 		require.NoError(t, tokenReaderClient.Close())

@@ -143,7 +143,7 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// TokenPoolBatchedReader test case
-	otherPool, err := other.NewTokenPoolBatchedReader(ctx)
+	otherPool, err := other.NewTokenPoolBatchedReader(ctx, "ignored")
 	if err != nil {
 		return fmt.Errorf("failed to create other token pool batched reader: %w", err)
 	}
@@ -199,7 +199,7 @@ func (s staticExecProvider) NewTokenDataReader(ctx context.Context, tokenAddress
 }
 
 // NewTokenPoolBatchedReader implements ExecProviderEvaluator.
-func (s staticExecProvider) NewTokenPoolBatchedReader(ctx context.Context) (ccip.TokenPoolBatchedReader, error) {
+func (s staticExecProvider) NewTokenPoolBatchedReader(ctx context.Context, offRampAddress ccip.Address) (ccip.TokenPoolBatchedReader, error) {
 	return s.tokenPoolBatchedReader, nil
 }
 

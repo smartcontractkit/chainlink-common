@@ -19,7 +19,7 @@ service ExecutionCustomHandlers {
     rpc NewOnRampReader(NewOnRampReaderRequest) returns (NewOnRampReaderResponse) {}
     rpc NewPriceRegistryReader(NewPriceRegistryReaderRequest) returns (NewPriceRegistryReaderResponse) {}
     rpc NewTokenDataReader(NewTokenDataRequest) returns (NewTokenDataResponse) {}
-    rpc NewTokenPoolBatchedReader(google.protobuf.Empty) returns (NewTokenPoolBatchedReaderResponse) {}
+    rpc NewTokenPoolBatchedReader(NewTokenPoolBatchedReaderRequest) returns (NewTokenPoolBatchedReaderResponse) {}
     rpc SourceNativeToken(SourceNativeTokenRequest) returns (SourceNativeTokenResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
@@ -142,6 +142,10 @@ message NewTokenDataRequest {
 // It contains the id of the created token data reader service that was created
 message NewTokenDataResponse {
     int32 token_data_reader_service_id = 1;
+}
+
+message NewTokenPoolBatchedReaderRequest {
+    string address = 1;
 }
 
 // NewTokenPoolBatchedReaderResponse is a gRPC adapter for the output arguments of

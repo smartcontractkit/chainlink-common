@@ -130,7 +130,7 @@ type ExecutionCustomHandlersClient interface {
 	NewOnRampReader(ctx context.Context, in *NewOnRampReaderRequest, opts ...grpc.CallOption) (*NewOnRampReaderResponse, error)
 	NewPriceRegistryReader(ctx context.Context, in *NewPriceRegistryReaderRequest, opts ...grpc.CallOption) (*NewPriceRegistryReaderResponse, error)
 	NewTokenDataReader(ctx context.Context, in *NewTokenDataRequest, opts ...grpc.CallOption) (*NewTokenDataResponse, error)
-	NewTokenPoolBatchedReader(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error)
+	NewTokenPoolBatchedReader(ctx context.Context, in *NewTokenPoolBatchedReaderRequest, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error)
 	SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -188,7 +188,7 @@ func (c *executionCustomHandlersClient) NewTokenDataReader(ctx context.Context, 
 	return out, nil
 }
 
-func (c *executionCustomHandlersClient) NewTokenPoolBatchedReader(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error) {
+func (c *executionCustomHandlersClient) NewTokenPoolBatchedReader(ctx context.Context, in *NewTokenPoolBatchedReaderRequest, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error) {
 	out := new(NewTokenPoolBatchedReaderResponse)
 	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_NewTokenPoolBatchedReader_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -224,7 +224,7 @@ type ExecutionCustomHandlersServer interface {
 	NewOnRampReader(context.Context, *NewOnRampReaderRequest) (*NewOnRampReaderResponse, error)
 	NewPriceRegistryReader(context.Context, *NewPriceRegistryReaderRequest) (*NewPriceRegistryReaderResponse, error)
 	NewTokenDataReader(context.Context, *NewTokenDataRequest) (*NewTokenDataResponse, error)
-	NewTokenPoolBatchedReader(context.Context, *emptypb.Empty) (*NewTokenPoolBatchedReaderResponse, error)
+	NewTokenPoolBatchedReader(context.Context, *NewTokenPoolBatchedReaderRequest) (*NewTokenPoolBatchedReaderResponse, error)
 	SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error)
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedExecutionCustomHandlersServer()
@@ -249,7 +249,7 @@ func (UnimplementedExecutionCustomHandlersServer) NewPriceRegistryReader(context
 func (UnimplementedExecutionCustomHandlersServer) NewTokenDataReader(context.Context, *NewTokenDataRequest) (*NewTokenDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewTokenDataReader not implemented")
 }
-func (UnimplementedExecutionCustomHandlersServer) NewTokenPoolBatchedReader(context.Context, *emptypb.Empty) (*NewTokenPoolBatchedReaderResponse, error) {
+func (UnimplementedExecutionCustomHandlersServer) NewTokenPoolBatchedReader(context.Context, *NewTokenPoolBatchedReaderRequest) (*NewTokenPoolBatchedReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewTokenPoolBatchedReader not implemented")
 }
 func (UnimplementedExecutionCustomHandlersServer) SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error) {
@@ -363,7 +363,7 @@ func _ExecutionCustomHandlers_NewTokenDataReader_Handler(srv interface{}, ctx co
 }
 
 func _ExecutionCustomHandlers_NewTokenPoolBatchedReader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(NewTokenPoolBatchedReaderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -375,7 +375,7 @@ func _ExecutionCustomHandlers_NewTokenPoolBatchedReader_Handler(srv interface{},
 		FullMethod: ExecutionCustomHandlers_NewTokenPoolBatchedReader_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecutionCustomHandlersServer).NewTokenPoolBatchedReader(ctx, req.(*emptypb.Empty))
+		return srv.(ExecutionCustomHandlersServer).NewTokenPoolBatchedReader(ctx, req.(*NewTokenPoolBatchedReaderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -54,6 +54,10 @@ func (r *RelayerAdapter) NewCCIPCommitProvider(ctx context.Context, rargs types.
 	return r.Relayer.NewCCIPCommitProvider(rargs, pargs)
 }
 
+func (r *RelayerAdapter) NewCCIPExecProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.CCIPExecProvider, error) {
+	return r.Relayer.NewCCIPExecProvider(rargs, pargs)
+}
+
 func (r *RelayerAdapter) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
 	return r.Relayer.NewPluginProvider(rargs, pargs)
 }

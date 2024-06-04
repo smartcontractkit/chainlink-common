@@ -43,6 +43,7 @@ func NewSeqNumRange(start, end SeqNum) SeqNumRange {
 	return SeqNumRange{start, end}
 }
 
+// SeqNumRange defines an inclusive range of sequence numbers.
 type SeqNumRange [2]SeqNum
 
 func (s SeqNumRange) Start() SeqNum {

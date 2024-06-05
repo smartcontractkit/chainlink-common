@@ -1,8 +1,6 @@
 package ocr3
 
 import (
-	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -15,19 +13,7 @@ type config struct {
 	AggregationConfig *values.Map `mapstructure:"aggregation_config" json:"aggregation_config"`
 	Encoder           string      `mapstructure:"encoder" json:"encoder"`
 	EncoderConfig     *values.Map `mapstructure:"encoder_config" json:"encoder_config"`
-	ReportID          string      `mapstructure:"report_id" json:"report_id" jsonschema:"required, pattern=^[a-f0-9]{4}$"`
-}
-
-// TODO: KS-83 remove this once we have a proper tests for the json schema validation
-func (c *config) validate() error {
-	_, err := hex.DecodeString(c.ReportID)
-	if err != nil {
-		return fmt.Errorf("report_id must be a hex string that represents 2 bytes: %w", err)
-	}
-	if len(c.ReportID) != 4 {
-		return fmt.Errorf("report_id must be a hex string that represents 2 bytes: expected 4 characters, got %d", len(c.ReportID))
-	}
-	return nil
+	ReportID          string      `mapstructure:"report_id" json:"report_id" jsonschema:"required,pattern=^[a-f0-9]{4}$"`
 }
 
 type inputs struct {

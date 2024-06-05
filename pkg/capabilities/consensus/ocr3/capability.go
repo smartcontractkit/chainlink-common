@@ -215,11 +215,6 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return nil, err
 		}
-		// Validate the config that isn't easily done in the json schema
-		// TODO: KS-83 remove this once we have a proper tests for the json schema validation
-		if err := config.validate(); err != nil {
-			return nil, err
-		}
 
 		return o.queueRequestForProcessing(ctx, r.Metadata, inputs, config)
 	}

@@ -16,6 +16,8 @@ import (
 // CapabilityType is an enum for the type of capability.
 type CapabilityType int
 
+const ErrStopExecution = "__workflow_stop_execution"
+
 // CapabilityType enum values.
 const (
 	CapabilityTypeTrigger CapabilityType = iota

@@ -176,7 +176,7 @@ func TestJsonSchema(t *testing.T) {
 		require.NoError(t, err)
 
 		// change this to update golden file
-		shouldUpdateSchema := true
+		shouldUpdateSchema := false
 		if shouldUpdateSchema {
 			err = os.WriteFile(expectedSchemaPath, generatedSchema, 0600)
 			require.NoError(t, err)

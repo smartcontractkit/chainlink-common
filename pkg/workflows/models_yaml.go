@@ -304,7 +304,7 @@ func (s *stepDefinitionID) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	// If the JSON data is a table, unmarshal it into a StepDefinitionTableID
+	// If the JSON data is a table, unmarshal it into a stepDefinitionTableID
 	var table stepDefinitionTableID
 	err = json.Unmarshal(data, &table)
 	if err != nil {

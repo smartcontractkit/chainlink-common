@@ -118,6 +118,10 @@ func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty)
 		return nil, err
 	}
 
+	return capabilityInfoToCapabilityInfoReply(info), nil
+}
+
+func capabilityInfoToCapabilityInfoReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInfoReply {
 	var ct capabilitiespb.CapabilityType
 	switch info.CapabilityType {
 	case capabilities.CapabilityTypeTrigger:
@@ -135,7 +139,7 @@ func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty)
 		CapabilityType: ct,
 		Description:    info.Description,
 		Version:        info.Version,
-	}, nil
+	}
 }
 
 type baseCapabilityClient struct {
@@ -150,11 +154,15 @@ func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *b
 }
 
 func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
-	resp, err := c.grpc.Info(ctx, &emptypb.Empty{})
+	reply, err := c.grpc.Info(ctx, &emptypb.Empty{})
 	if err != nil {
 		return capabilities.CapabilityInfo{}, err
 	}
 
+	return capabilityInfoReplyToCapabilityInfo(reply)
+}
+
+func capabilityInfoReplyToCapabilityInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
 	var ct capabilities.CapabilityType
 	switch resp.CapabilityType {
 	case capabilitiespb.CapabilityTypeTrigger:

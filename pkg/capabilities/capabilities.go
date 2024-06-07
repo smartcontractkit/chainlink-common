@@ -16,7 +16,19 @@ import (
 // CapabilityType is an enum for the type of capability.
 type CapabilityType int
 
-const ErrStopExecution = "__workflow_stop_execution"
+var ErrStopExecution = &errStopExecution{}
+
+type errStopExecution struct{}
+
+const errStopExecutionMsg = "__workflow_stop_execution"
+
+func (e errStopExecution) Error() string {
+	return errStopExecutionMsg
+}
+
+func (e errStopExecution) Is(err error) bool {
+	return err.Error() == errStopExecutionMsg
+}
 
 // CapabilityType enum values.
 const (

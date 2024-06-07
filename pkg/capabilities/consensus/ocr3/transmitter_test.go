@@ -2,6 +2,7 @@ package ocr3
 
 import (
 	"encoding/hex"
+	"errors"
 	"testing"
 	"time"
 
@@ -181,5 +182,5 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 
 	resp := <-gotCh
 	assert.NotNil(t, resp.Err)
-	assert.Equal(t, capabilities.ErrStopExecution, resp.Err.Error())
+	assert.True(t, errors.Is(resp.Err, capabilities.ErrStopExecution))
 }

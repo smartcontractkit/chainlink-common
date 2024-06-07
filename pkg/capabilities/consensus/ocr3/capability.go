@@ -2,7 +2,6 @@ package ocr3
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -178,7 +177,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		var responseErr error
 		if m.Terminate {
 			o.lggr.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
-			responseErr = errors.New(capabilities.ErrStopExecution)
+			responseErr = capabilities.ErrStopExecution
 		}
 		out := &outputs{
 			WorkflowExecutionID: r.Metadata.WorkflowExecutionID,

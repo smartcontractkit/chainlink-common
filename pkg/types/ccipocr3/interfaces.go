@@ -53,3 +53,9 @@ type ExecutePluginCodec interface {
 type MessageHasher interface {
 	Hash(context.Context, CCIPMsg) (Bytes32, error)
 }
+
+type HomeChainPoller interface {
+	GetConfig() HomeChainConfig
+	StartPolling(ctx context.Context, interval time.Duration)
+	Close(ctx context.Context) error
+}

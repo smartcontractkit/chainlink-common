@@ -85,10 +85,6 @@ func BuildDashboard(name string, dataSourceMetric string, platform string) (dash
 
 func vars(p Props) []cog.Builder[dashboard.VariableModel] {
 	var variables []cog.Builder[dashboard.VariableModel]
-
-	//variables = append(variables,
-	//	utils.QueryVariable(p.MetricsDataSource, "evmChainID", "EvmChainID", fmt.Sprintf("label_values(%s)", "evmChainID"), true))
-
 	if p.PlatformOpts.Platform == "kubernetes" {
 		variables = append(variables,
 			utils.QueryVariable(p.MetricsDataSource, "env", "Environment", `label_values(up, env)`, false))

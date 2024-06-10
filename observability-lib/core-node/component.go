@@ -85,10 +85,29 @@ func BuildDashboard(name string, dataSourceMetric string, platform string) (dash
 
 func vars(p Props) []cog.Builder[dashboard.VariableModel] {
 	var variables []cog.Builder[dashboard.VariableModel]
-	variables = append(variables,
-		utils.QueryVariable(p.MetricsDataSource, "instance", "Instance", fmt.Sprintf("label_values(%s)", p.PlatformOpts.LabelFilter), true))
-	variables = append(variables,
-		utils.QueryVariable(p.MetricsDataSource, "evmChainID", "EvmChainID", fmt.Sprintf("label_values(%s)", "evmChainID"), true))
+
+	//variables = append(variables,
+	//	utils.QueryVariable(p.MetricsDataSource, "evmChainID", "EvmChainID", fmt.Sprintf("label_values(%s)", "evmChainID"), true))
+
+	if p.PlatformOpts.Platform == "kubernetes" {
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "env", "Environment", `label_values(up, env)`, false))
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "cluster", "Cluster", `label_values(up{env="$env"}, cluster)`, false))
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "namespace", "Namespace", `label_values(up{env="$env", cluster="$cluster"}, namespace)`, false))
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "blockchain", "Blockchain", `label_values(up{env="$env", cluster="$cluster", namespace="$namespace"}, blockchain)`, false))
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "product", "Product", `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain"}, product)`, false))
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "network_type", "Network Type", `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product"}, network_type)`, false))
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "job", "Job", `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product", network_type="$network_type"}, job)`, true))
+	} else if p.PlatformOpts.Platform == "docker" {
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "instance", "Instance", fmt.Sprintf("label_values(%s)", p.PlatformOpts.LabelFilter), true))
+	}
 
 	return variables
 }
@@ -264,7 +283,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `count(count by (evmChainID) (log_poller_query_duration_sum{job=~"$instance"}))`,
+			Query:  `count(count by (evmChainID) (log_poller_query_duration_sum{` + p.PlatformOpts.LabelQuery + `}))`,
 			Legend: "Goroutines",
 		},
 	))
@@ -279,11 +298,11 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"reqps",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `avg by (query) (sum by (query, job) (rate(log_poller_query_duration_count{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval])))`,
+			Query:  `avg by (query) (sum by (query, job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
 			Legend: "{{query}} - {{job}}",
 		},
 		utils.PrometheusQuery{
-			Query:  `avg (sum by(job) (rate(log_poller_query_duration_count{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval])))`,
+			Query:  `avg (sum by(job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
 			Legend: "Total",
 		},
 	))
@@ -298,7 +317,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"reqps",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `avg by (type) (sum by (type, job) (rate(log_poller_query_duration_count{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval])))`,
+			Query:  `avg by (type) (sum by (type, job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
 			Legend: "{{query}} - {{job}}",
 		},
 	))
@@ -313,7 +332,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `avg by (query) (log_poller_query_dataset_size{job=~"$instance", evmChainID=~"$evmChainID"})`,
+			Query:  `avg by (query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
 			Legend: "{{query}} - {{job}}",
 		},
 	))
@@ -328,7 +347,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `max by (query) (log_poller_query_dataset_size{job=~"$instance", evmChainID=~"$evmChainID"})`,
+			Query:  `max by (query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
 			Legend: "{{query}} - {{job}}",
 		},
 	))
@@ -343,7 +362,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `max by (evmChainID) (log_poller_query_dataset_size{job=~"$instance", evmChainID=~"$evmChainID"})`,
+			Query:  `max by (evmChainID) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
 			Legend: "{{evmChainID}}",
 		},
 	))
@@ -358,7 +377,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"ms",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval])) by (le, query)) / 1e6`,
+			Query:  `histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, query)) / 1e6`,
 			Legend: "{{query}}",
 		},
 	))
@@ -373,7 +392,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"ms",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval])) by (le, query)) / 1e6`,
+			Query:  `histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, query)) / 1e6`,
 			Legend: "{{query}}",
 		},
 	))
@@ -388,7 +407,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"ms",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval])) by (le, query)) / 1e6`,
+			Query:  `histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, query)) / 1e6`,
 			Legend: "{{query}}",
 		},
 	))
@@ -403,7 +422,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"ms",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval])) by (le, evmChainID)) / 1e6`,
+			Query:  `histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, evmChainID)) / 1e6`,
 			Legend: "{{query}}",
 		},
 	))
@@ -418,7 +437,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `avg by (evmChainID) (log_poller_logs_inserted{job=~"$instance", evmChainID=~"$evmChainID"})`,
+			Query:  `avg by (evmChainID) (log_poller_logs_inserted{` + p.PlatformOpts.LabelQuery + `})`,
 			Legend: "{{evmChainID}}",
 		},
 	))
@@ -433,7 +452,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `avg by (evmChainID) (rate(log_poller_logs_inserted{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval]))`,
+			Query:  `avg by (evmChainID) (rate(log_poller_logs_inserted{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval]))`,
 			Legend: "{{evmChainID}}",
 		},
 	))
@@ -448,7 +467,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `avg by (evmChainID) (log_poller_blocks_inserted{job=~"$instance", evmChainID=~"$evmChainID"})`,
+			Query:  `avg by (evmChainID) (log_poller_blocks_inserted{` + p.PlatformOpts.LabelQuery + `})`,
 			Legend: "{{evmChainID}}",
 		},
 	))
@@ -463,7 +482,7 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		"",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `avg by (evmChainID) (rate(log_poller_blocks_inserted{job=~"$instance", evmChainID=~"$evmChainID"}[$__rate_interval]))`,
+			Query:  `avg by (evmChainID) (rate(log_poller_blocks_inserted{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval]))`,
 			Legend: "{{evmChainID}}",
 		},
 	))
@@ -974,7 +993,7 @@ func evmPoolLifecycle(p Props) []cog.Builder[dashboard.Panel] {
 		"Block",
 		common.LegendPlacementBottom,
 		utils.PrometheusQuery{
-			Query:  `evm_pool_rpc_node_highest_seen_block{` + p.PlatformOpts.LabelQuery + `evmChainID="${evmChainID}"}`,
+			Query:  `evm_pool_rpc_node_highest_seen_block{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 		},
 	))
@@ -1058,7 +1077,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="Alive"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Alive"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1076,7 +1095,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="Closed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Closed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1094,7 +1113,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="Dialed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Dialed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1112,7 +1131,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="InvalidChainID"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="InvalidChainID"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1130,7 +1149,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="OutOfSync"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="OutOfSync"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1148,7 +1167,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="Undialed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Undialed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1166,7 +1185,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="Unreachable"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Unreachable"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1184,7 +1203,7 @@ func nodesRPC(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `chainId=~"$evmChainID", state="Unusable"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
+			Query:  `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Unusable"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
 		},
 	))
@@ -1605,20 +1624,6 @@ func httpAPI(p Props) []cog.Builder[dashboard.Panel] {
 
 func promHTTP(p Props) []cog.Builder[dashboard.Panel] {
 	var panelsArray []cog.Builder[dashboard.Panel]
-
-	panelsArray = append(panelsArray, utils.GaugePanel(
-		p.MetricsDataSource,
-		"HTTP Request in flight",
-		"",
-		6,
-		24,
-		1,
-		"",
-		utils.PrometheusQuery{
-			Query:  `promhttp_metric_handler_requests_in_flight{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-		},
-	))
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
 		p.MetricsDataSource,

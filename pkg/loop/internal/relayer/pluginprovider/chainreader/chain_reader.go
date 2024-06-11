@@ -1,13 +1,13 @@
 package chainreader
 
 import (
+	"bytes"
 	"context"
-	jsonv1 "encoding/json"
+	"encoding/json"
 	"fmt"
 	"reflect"
 
 	"github.com/fxamacker/cbor/v2"
-	jsonv2 "github.com/go-json-experiment/json"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,12 +48,12 @@ func EncodeVersionedBytes(data any, version uint32) (*pb.VersionedBytes, error) 
 
 	switch version {
 	case JSONEncodingVersion1:
-		bytes, err = jsonv1.Marshal(data)
+		bytes, err = json.Marshal(data)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	case JSONEncodingVersion2:
-		bytes, err = jsonv2.Marshal(data)
+		bytes, err = json.Marshal(data)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
@@ -80,9 +80,12 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	var err error
 	switch vData.Version {
 	case JSONEncodingVersion1:
-		err = jsonv1.Unmarshal(vData.Data, res)
+		err = json.Unmarshal(vData.Data, res)
 	case JSONEncodingVersion2:
-		err = jsonv2.Unmarshal(vData.Data, res)
+		decoder := json.NewDecoder(bytes.NewBuffer(vData.Data))
+		decoder.UseNumber()
+
+		err = decoder.Decode(res)
 	case CBOREncodingVersion:
 		decopt := cbor.DecOptions{UTF8: cbor.UTF8DecodeInvalid}
 		var dec cbor.DecMode

@@ -1,12 +1,10 @@
 package workflows
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
-	"text/template"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/santhosh-tekuri/jsonschema/v5"
@@ -246,8 +244,8 @@ func TestJsonSchema(t *testing.T) {
 			},
 			{
 				testName: "valid: no name",
-				name:     "", // the helper function will omit the name field, which not the same as an empty string for a name
-				owner:    "0x0123456789abcdef0123456789abcdef01234567",
+				// the helper function will omit the name field, which not the same as an empty string for a name
+				owner: "0x0123456789abcdef0123456789abcdef01234567",
 			},
 			{
 				testName: "invalid: name to long",
@@ -264,7 +262,7 @@ func TestJsonSchema(t *testing.T) {
 			{
 				testName: "valid: no owner",
 				name:     "ten_digits",
-				owner:    "", // the helper function will omit the owner field, which not the same as an empty string for an owner
+				// the helper function will omit the owner field, which not the same as an empty string for an owner
 			},
 			{
 				testName: "invalid: owner too short",
@@ -293,7 +291,7 @@ func TestJsonSchema(t *testing.T) {
 		}
 		for _, tt := range testCases {
 			t.Run(tt.testName, func(t *testing.T) {
-				err := jsonSchema.Validate(wfYamlSpec(t, tt.name, tt.owner))
+				err := jsonSchema.Validate(wfSpec(t, tt.name, tt.owner))
 				if tt.wantErr {
 					require.Error(t, err, "%s: expected error but got nil", tt.testName)
 				} else {
@@ -321,43 +319,12 @@ func TestMappingCustomType(t *testing.T) {
 	assert.Equal(t, decimal.NewFromFloat(11.10), m["baz"].(map[string]any)["gnat"], m)
 }
 
-func wfYamlSpec(t *testing.T, name, owner string) any {
+func wfSpec(t *testing.T, name, owner string) any {
 	t.Helper()
-	// we use a template to generate the yaml spec so that we can omitting the name and owner fields as needed
-	var wfTmpl = `
-{{if .HasName}}
-name: {{.Name}}
-{{end}}
-{{if .HasOwner}}
-owner: {{.Owner}}
-{{end}}
-triggers:
-- id: trigger_test@1.0.0
-  config: {}
-
-consensus:
-  - id: offchain_reporting@1.0.0
-    ref: offchain_reporting_1
-    config: {}
-
-targets:
-  - id: write_polygon_mainnet@1.0.0
-    ref: write_polygon_mainnet_1 
-    config: {}
-`
-	type cfg struct {
-		HasName, HasOwner bool // these are hacks because i couldn't figure out how to test empty field in the template itself
-		Name, Owner       string
-	}
-	c := cfg{HasName: (name != ""), HasOwner: (owner != ""), Name: name, Owner: owner}
-
-	tm := template.Must(template.New("yaml").Parse(wfTmpl))
-
-	buf := new(bytes.Buffer)
-	require.NoError(t, tm.Execute(buf, c))
+	yamlSpec := WFYamlSpec(t, name, owner)
 
 	var wf any
-	err := yaml.Unmarshal(buf.Bytes(), &wf)
+	err := yaml.Unmarshal([]byte(yamlSpec), &wf)
 	require.NoError(t, err)
 	return wf
 }

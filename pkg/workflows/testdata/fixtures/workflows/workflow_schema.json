@@ -64,6 +64,15 @@
     },
     "workflowSpecYaml": {
       "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 10,
+          "minLength": 10
+        },
+        "owner": {
+          "type": "string",
+          "pattern": "^0x[0-9a-f]{40}$"
+        },
         "triggers": {
           "items": {
             "$ref": "#/$defs/stepDefinitionYaml"

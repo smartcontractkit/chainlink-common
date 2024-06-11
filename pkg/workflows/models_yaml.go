@@ -2,6 +2,7 @@ package workflows
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -49,6 +50,10 @@ func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
 		return WorkflowSpec{}, err
 	}
 
+	sha256Hash := sha256.New()
+	sha256Hash.Write([]byte(data))
+	w.cid = fmt.Sprintf("%x", sha256Hash.Sum(nil))
+
 	return w.toWorkflowSpec(), nil
 }
 
@@ -57,6 +62,9 @@ func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
 // It allows for multiple ways of defining a workflow spec, which we later
 // convert to a single representation, `WorkflowSpec`.
 type workflowSpecYaml struct {
+	Name string `json:"name,omitempty" jsonschema:"minLength=10,maxLength=10"` // plain text string
+	//Name nameYaml `json:"name"`
+	Owner string `json:"owner,omitempty" jsonschema:"pattern=^0x[0-9a-f]{40}$"` // 20 bytes represented as hex string with 0x prefix
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.
 	Triggers []stepDefinitionYaml `json:"triggers" jsonschema:"required"`
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
@@ -65,6 +73,9 @@ type workflowSpecYaml struct {
 	Consensus []stepDefinitionYaml `json:"consensus" jsonschema:"required"`
 	// Targets represents the final step of the workflow, delivering the processed data to a specified location.
 	Targets []stepDefinitionYaml `json:"targets" jsonschema:"required"`
+
+	// computed hash of the original workflow yaml spec
+	cid string
 }
 
 // toWorkflowSpec converts a workflowSpecYaml to a WorkflowSpec.
@@ -105,6 +116,7 @@ func (w workflowSpecYaml) toWorkflowSpec() WorkflowSpec {
 		Actions:   actions,
 		Consensus: consensus,
 		Targets:   targets,
+		CID:       w.cid,
 	}
 }
 
@@ -330,7 +342,7 @@ func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	tableSchema := reflector.Reflect(&stepDefinitionTableID{})
 	tableSchema.ID = ""
 	tableSchema.Version = ""
-	// Allow for a-z, 0-9, _, -, and : characters as the capability type, follwed by a semver regex enforcing a full version.
+	// Allow for a-z, 0-9, _, -, and : characters as the capability type, followed by a semver regex enforcing a full version.
 	//
 	// Prereleases and build metadata are also allowed
 	//
@@ -376,3 +388,5 @@ func (s stepDefinitionTableID) String() string {
 
 	return fmt.Sprintf("%s:%s@%s", s.Name, strings.Join(labels, ":"), s.Version)
 }
+
+type nameYaml string

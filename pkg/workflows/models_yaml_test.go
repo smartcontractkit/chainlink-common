@@ -1,10 +1,12 @@
 package workflows
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
+	"text/template"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/santhosh-tekuri/jsonschema/v5"
@@ -27,7 +29,7 @@ func yamlFixtureReaderObj(t *testing.T, testCase string) func(name string) any {
 		var testFileYaml any
 		err := yaml.Unmarshal(testFileBytes, &testFileYaml)
 		require.NoError(t, err)
-
+		fmt.Sprintf("%s", &testFileBytes)
 		return testFileYaml
 	}
 }
@@ -143,11 +145,8 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		expectedSpecPath := fixtureDir + "marshalling/" + "workflow_2_spec.json"
 		workflowBytes := fixtureReader("workflow_2")
 
-		workflowYaml := &workflowSpecYaml{}
-		err := yaml.Unmarshal(workflowBytes, workflowYaml)
+		workflowSpec, err := ParseWorkflowSpecYaml(string(workflowBytes))
 		require.NoError(t, err)
-
-		workflowSpec := workflowYaml.toWorkflowSpec()
 		workflowSpecBytes, err := json.MarshalIndent(workflowSpec, "", "  ")
 		require.NoError(t, err)
 
@@ -166,9 +165,11 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 			t.FailNow()
 		}
 	})
+
 }
 
 func TestJsonSchema(t *testing.T) {
+
 	t.Parallel()
 	t.Run("GenerateJsonSchema", func(t *testing.T) {
 		expectedSchemaPath := fixtureDir + "workflow_schema.json"
@@ -176,7 +177,7 @@ func TestJsonSchema(t *testing.T) {
 		require.NoError(t, err)
 
 		// change this to update golden file
-		shouldUpdateSchema := false
+		shouldUpdateSchema := true
 		if shouldUpdateSchema {
 			err = os.WriteFile(expectedSchemaPath, generatedSchema, 0600)
 			require.NoError(t, err)
@@ -194,6 +195,8 @@ func TestJsonSchema(t *testing.T) {
 	t.Run("ValidateJsonSchema", func(t *testing.T) {
 		generatedSchema, err := GenerateJSONSchema()
 		require.NoError(t, err)
+		jsonSchema, err := jsonschema.CompileString("github.com/smartcontractkit/chainlink", string(generatedSchema))
+		require.NoError(t, err)
 
 		t.Run("version", func(t *testing.T) {
 			readVersionFixture := yamlFixtureReaderObj(t, "versioning")
@@ -201,8 +204,6 @@ func TestJsonSchema(t *testing.T) {
 			failingFixture2 := readVersionFixture("failing_2")
 			failingFixture3 := readVersionFixture("failing_3")
 			passingFixture1 := readVersionFixture("passing_1")
-			jsonSchema, err := jsonschema.CompileString("github.com/smartcontractkit/chainlink", string(generatedSchema))
-			require.NoError(t, err)
 
 			err = jsonSchema.Validate(failingFixture1)
 			require.Error(t, err)
@@ -222,8 +223,6 @@ func TestJsonSchema(t *testing.T) {
 			readRefFixture := yamlFixtureReaderObj(t, "references")
 			failingFixture1 := readRefFixture("failing_1")
 			passingFixture1 := readRefFixture("passing_1")
-			jsonSchema, err := jsonschema.CompileString("github.com/smartcontractkit/chainlink", string(generatedSchema))
-			require.NoError(t, err)
 
 			err = jsonSchema.Validate(failingFixture1)
 			require.Error(t, err)
@@ -231,7 +230,79 @@ func TestJsonSchema(t *testing.T) {
 			err = jsonSchema.Validate(passingFixture1)
 			require.NoError(t, err)
 		})
+		// name, owner tests
+		type testCase = struct {
+			testName string
+			name     string
+			owner    string
+			wantErr  bool
+		}
+
+		var testCases = []testCase{
+			{
+				testName: "valid",
+				name:     "ten_digits",
+				owner:    "0x0123456789abcdef0123456789abcdef01234567",
+			},
+			{
+				testName: "valid: no name",
+				name:     "", // the helper function will omit the name field, which not the same as an empty string for a name
+				owner:    "0x0123456789abcdef0123456789abcdef01234567",
+			},
+			{
+				testName: "invalid: name to long",
+				name:     "more than ten digits",
+				owner:    "0x0123456789abcdef0123456789abcdef01234567",
+				wantErr:  true,
+			},
+			{
+				testName: "invalid: name to short",
+				name:     "only_nine",
+				owner:    "0x0123456789abcdef0123456789abcdef01234567",
+				wantErr:  true,
+			},
+			{
+				testName: "valid: no owner",
+				name:     "ten_digits",
+				owner:    "", // the helper function will omit the owner field, which not the same as an empty string for an owner
+			},
+			{
+				testName: "invalid: owner too short",
+				name:     "ten_digits",
+				owner:    "0x0123456789abcdef0123456789abcdef",
+				wantErr:  true,
+			},
+			{
+				testName: "invalid: owner too long",
+				name:     "ten_digits",
+				owner:    "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+				wantErr:  true,
+			},
+			{
+				testName: "invalid: wrong prefix",
+				name:     "ten_digits",
+				owner:    "1z0123456789abcdef0123456789abcdef01234567",
+				wantErr:  true,
+			},
+			{
+				testName: "invalid: no 0x prefix",
+				name:     "ten_digits",
+				owner:    "0123456789abcdef0123456789abcdef01234567",
+				wantErr:  true,
+			},
+		}
+		for _, tt := range testCases {
+			t.Run(tt.testName, func(t *testing.T) {
+				err := jsonSchema.Validate(wfYamlSpec(t, tt.name, tt.owner))
+				if tt.wantErr {
+					require.Error(t, err, "%s: expected error but got nil", tt.testName)
+				} else {
+					require.NoError(t, err, "%s: expected no error but got %v", tt.testName, err)
+				}
+			})
+		}
 	})
+
 }
 
 func TestMappingCustomType(t *testing.T) {
@@ -248,4 +319,45 @@ func TestMappingCustomType(t *testing.T) {
 	assert.Equal(t, int64(100), m["foo"], m)
 	assert.Equal(t, decimal.NewFromFloat(100.00), m["bar"], m)
 	assert.Equal(t, decimal.NewFromFloat(11.10), m["baz"].(map[string]any)["gnat"], m)
+}
+
+func wfYamlSpec(t *testing.T, name, owner string) any {
+	t.Helper()
+	// we use a template to generate the yaml spec so that we can omitting the name and owner fields as needed
+	var wfTmpl = `
+{{if .HasName}}
+name: {{.Name}}
+{{end}}
+{{if .HasOwner}}
+owner: {{.Owner}}
+{{end}}
+triggers:
+- id: trigger_test@1.0.0
+  config: {}
+
+consensus:
+  - id: offchain_reporting@1.0.0
+    ref: offchain_reporting_1
+    config: {}
+
+targets:
+  - id: write_polygon_mainnet@1.0.0
+    ref: write_polygon_mainnet_1 
+    config: {}
+`
+	type cfg struct {
+		HasName, HasOwner bool // these are hacks because i couldn't figure out how to test empty field in the template itself
+		Name, Owner       string
+	}
+	c := cfg{HasName: (name != ""), HasOwner: (owner != ""), Name: name, Owner: owner}
+
+	tm := template.Must(template.New("yaml").Parse(wfTmpl))
+
+	buf := new(bytes.Buffer)
+	require.NoError(t, tm.Execute(buf, c))
+
+	var wf any
+	err := yaml.Unmarshal(buf.Bytes(), &wf)
+	require.NoError(t, err)
+	return wf
 }

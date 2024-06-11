@@ -29,6 +29,9 @@ type StepDefinition struct {
 
 // WorkflowSpec is the parsed representation of a workflow.
 type WorkflowSpec struct {
+	CID       string           `json:"cid" jsonschema:"required"` // content of the original workflow yaml spec
+	Name      string           `json:"name,omitempty"`
+	Owner     string           `json:"owner,,omitempty"`
 	Triggers  []StepDefinition `json:"triggers" jsonschema:"required"`
 	Actions   []StepDefinition `json:"actions,omitempty"`
 	Consensus []StepDefinition `json:"consensus" jsonschema:"required"`

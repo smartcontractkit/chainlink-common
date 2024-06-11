@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccippb";
+
+package loop.internal.pb.ccipocr3;
+
+service CommitPluginCodec {
+  rpc Encode(EncodeCommitPluginReportInput) returns (EncodeCommitPluginReportOutput) {}
+  rpc Decode(DecodeCommitPluginReportInput) returns (EncodeCommitPluginReportOutput) {}
+}
+
+message EncodeCommitPluginReportInput {
+  CommitPluginReport report = 1;
+}
+
+message EncodeCommitPluginReportOutput {
+  bytes encoded_report = 1;
+}
+
+message DecodeCommitPluginReportInput {
+  bytes encoded_report = 1;
+}
+
+message DecodeCommitPluginReportOutput {
+  CommitPluginReport report = 1;
+}
+
+// ----------------------------------------
+
+// CommitPluginReport is a gRPC adapter to the struct
+// [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3:CommitPluginReport]
+message CommitPluginReport {
+  PriceUpdates price_updates = 1;
+  repeated MerkleRootChain merkle_roots = 2;
+}
+
+message PriceUpdates {
+  repeated TokenPrice token_price_updates = 1;
+  repeated GasPriceChain gas_price_updates = 2;
+}
+
+message TokenPrice {
+  string token_id = 1;
+  BigInt value = 2;
+}
+
+message GasPriceChain {
+  uint64 chain_selector = 1;
+  BigInt price = 2;
+}
+
+message MerkleRootChain {
+  uint64 chain_selector = 1;
+  bytes merkle_root = 2;
+  SeqNumRange seq_num_range = 3;
+}
+
+message SeqNumRange {
+  uint64 start = 1;
+  uint64 end = 2;
+}
+
+// BigInt represents a [big.Int].
+message BigInt {
+  bool negative = 1;
+  bytes value = 2;
+}

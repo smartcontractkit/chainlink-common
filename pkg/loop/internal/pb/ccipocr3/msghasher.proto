@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccippb";
+
+package loop.internal.pb.ccipocr3;
+
+service MsgHasher {
+  rpc HashMsg(HashMsgInput) returns (HashMsgOutput);
+}
+
+message HashMsgInput {
+  CCIPMessage msg = 1;
+}
+
+message HashMsgOutput {
+  bytes hash = 1;
+}
+
+// ----------------------------------------
+
+// CCIPMessage is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3:CCIPMessage]
+message CCIPMessage {
+  uint64 sequence_number = 1;
+  BigInt chain_fee_limit = 2;
+  uint64 nonce = 3;
+  uint64 chain_fee_price = 4;
+  bytes message_id = 5; // Hash [32]byte
+  uint64 source_chain_selector = 6;
+  string sender = 7; // Address
+  string receiver = 8; // Address
+  bool strict = 9;
+  string fee_token = 10; // Address
+  BigInt fee_token_amount = 11;
+  bytes data = 12;
+  repeated TokenAmount token_amounts = 13;
+  repeated bytes source_token_data = 14;
+}
+
+// BigInt represents a [big.Int].
+message BigInt {
+  bool negative = 1;
+  bytes value = 2;
+}
+
+message TokenAmount {
+  string token = 1; // Address
+  BigInt amount = 2;
+}

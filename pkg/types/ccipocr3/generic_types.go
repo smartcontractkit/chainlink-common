@@ -83,16 +83,16 @@ func (c ChainSelector) String() string {
 }
 
 type CCIPMsg struct {
-	ChainFeeLimit   *big.Int
-	Nonce           uint64
-	Sender          types.Account
-	Receiver        types.Account
-	Strict          bool
-	FeeToken        types.Account
-	FeeTokenAmount  *big.Int
-	Data            []byte
-	TokenAmounts    []TokenAmount
-	SourceTokenData [][]byte
+	ChainFeeLimit   BigInt        `json:"chainFeeLimit"`
+	Nonce           uint64        `json:"nonce"`
+	Sender          types.Account `json:"sender"`
+	Receiver        types.Account `json:"receiver"`
+	Strict          bool          `json:"strict"`
+	FeeToken        types.Account `json:"feeToken"`
+	FeeTokenAmount  BigInt        `json:"feeTokenAmount"`
+	Data            []byte        `json:"data"`
+	TokenAmounts    []TokenAmount `json:"tokenAmounts"`
+	SourceTokenData [][]byte      `json:"sourceTokenData"`
 
 	CCIPMsgBaseDetails
 }

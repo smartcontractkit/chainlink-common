@@ -1,7 +1,6 @@
 package ccipocr3
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -44,29 +43,6 @@ type ExecutePluginCommitData struct {
 	ExecutedMessages []SeqNum `json:"executed"`
 }
 
-func (epcd ExecutePluginCommitData) ToBytes() []byte {
-	var bytes = make([]byte, 64)
-
-	// seqNumRange - 16
-	binary.LittleEndian.PutUint64(bytes[:8], uint64(epcd.SequenceNumberRange.Start()))
-	binary.LittleEndian.PutUint64(bytes[8:16], uint64(epcd.SequenceNumberRange.End()))
-	// blockNum - 8
-	binary.LittleEndian.PutUint64(bytes[16:24], epcd.BlockNum)
-	// timestamp - 8
-	binary.LittleEndian.PutUint64(bytes[24:32], uint64(epcd.Timestamp.UnixMicro()))
-	// merkleRoot - 32
-	copy(bytes[32:64], epcd.MerkleRoot[:])
-
-	// executedMessages - 8 * len
-	for _, executed := range epcd.ExecutedMessages {
-		var num [8]byte
-		binary.LittleEndian.PutUint64(num[:], uint64(executed))
-		bytes = append(bytes, num[:]...)
-	}
-
-	return bytes[:]
-}
-
 type ExecutePluginCommitObservations map[ChainSelector][]ExecutePluginCommitDataWithMessages
 type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]CCIPMsg
 
@@ -106,7 +82,6 @@ func DecodeExecutePluginObservation(b []byte) (ExecutePluginObservation, error) 
 // Execute Outcome //
 /////////////////////
 
-// TODO: outcome != observation. The outcome can store the entire cache of messages if we want it to.
 // ExecutePluginOutcome is the outcome of the ExecutePlugin.
 type ExecutePluginOutcome struct {
 	// PendingCommitReports are the oldest reports with pending commits. The slice is

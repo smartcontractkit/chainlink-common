@@ -1,6 +1,7 @@
 package ccipocr3
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -24,6 +25,8 @@ type ExecutionPluginReportSingleChain struct {
 
 // ExecutePluginCommitData is the data that is committed to the chain.
 type ExecutePluginCommitData struct {
+	// Selector of the chain that contains the commit report.
+	Selector ChainSelector `json:"chainSelector"`
 	// Timestamp of the block that contains the commit.
 	Timestamp time.Time `json:"timestamp"`
 	// BlockNum of the block that contains the commit.
@@ -36,8 +39,31 @@ type ExecutePluginCommitData struct {
 	ExecutedMessages []SeqNum `json:"executed"`
 }
 
+func (epcd ExecutePluginCommitData) ToBytes() []byte {
+	var bytes = make([]byte, 64)
+
+	// seqNumRange - 16
+	binary.LittleEndian.PutUint64(bytes[:8], uint64(epcd.SequenceNumberRange.Start()))
+	binary.LittleEndian.PutUint64(bytes[8:16], uint64(epcd.SequenceNumberRange.End()))
+	// blockNum - 8
+	binary.LittleEndian.PutUint64(bytes[16:24], epcd.BlockNum)
+	// timestamp - 8
+	binary.LittleEndian.PutUint64(bytes[24:32], uint64(epcd.Timestamp.UnixMicro()))
+	// merkleRoot - 32
+	copy(bytes[32:64], epcd.MerkleRoot[:])
+
+	// executedMessages - 8 * len
+	for _, executed := range epcd.ExecutedMessages {
+		var num [8]byte
+		binary.LittleEndian.PutUint64(num[:], uint64(executed))
+		bytes = append(bytes, num[:]...)
+	}
+
+	return bytes[:]
+}
+
 type ExecutePluginCommitObservations map[ChainSelector][]ExecutePluginCommitData
-type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]Bytes32
+type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]CCIPMsg
 
 // ExecutePluginObservation is the observation of the ExecutePlugin.
 // TODO: revisit observation types. The maps used here are more space efficient and easier to work
@@ -75,11 +101,14 @@ func DecodeExecutePluginObservation(b []byte) (ExecutePluginObservation, error) 
 // Execute Outcome //
 /////////////////////
 
+// TODO: outcome != observation. The outcome can store the entire cache of messages if we want it to.
 // ExecutePluginOutcome is the outcome of the ExecutePlugin.
 type ExecutePluginOutcome struct {
-	// NextCommits are determined during the first phase of execute.
-	// It contains the commit reports we would like to execute in the following round.
-	NextCommits ExecutePluginCommitObservations `json:"nextCommits"`
+	// PendingCommitReports are the oldest reports with pending commits. The slice is
+	// sorted from oldest to newest.
+	PendingCommitReports []ExecutePluginCommitData `json:"commitReports"`
+
+	// TODO: Don't use a map here. Use a slice of messages ordered according to the PendingCommitReports.
 	// Messages are determined during the second phase of execute.
 	// Ideally, it contains all the messages identified by the previous outcome's
 	// NextCommits. With the previous outcome, and these messsages, we can build the
@@ -88,12 +117,12 @@ type ExecutePluginOutcome struct {
 }
 
 func NewExecutePluginOutcome(
-	nextCommits ExecutePluginCommitObservations,
+	nextCommits []ExecutePluginCommitData,
 	messages ExecutePluginMessageObservations,
 ) ExecutePluginOutcome {
 	return ExecutePluginOutcome{
-		NextCommits: nextCommits,
-		Messages:    messages,
+		PendingCommitReports: nextCommits,
+		Messages:             messages,
 	}
 }
 
@@ -108,5 +137,5 @@ func DecodeExecutePluginOutcome(b []byte) (ExecutePluginOutcome, error) {
 }
 
 func (o ExecutePluginOutcome) String() string {
-	return fmt.Sprintf("NextCommits: %v, Messages: %v", o.NextCommits, o.Messages)
+	return fmt.Sprintf("NextCommits: %v, Messages: %v", o.PendingCommitReports, o.Messages)
 }

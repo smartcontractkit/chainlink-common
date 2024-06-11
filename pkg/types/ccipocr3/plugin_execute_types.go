@@ -23,6 +23,11 @@ type ExecutionPluginReportSingleChain struct {
 // Execute Observation //
 /////////////////////////
 
+type ExecutePluginCommitDataWithMessages struct {
+	ExecutePluginCommitData
+	Messages []CCIPMsg `json:"messages"`
+}
+
 // ExecutePluginCommitData is the data that is committed to the chain.
 type ExecutePluginCommitData struct {
 	// Selector of the chain that contains the commit report.
@@ -62,7 +67,7 @@ func (epcd ExecutePluginCommitData) ToBytes() []byte {
 	return bytes[:]
 }
 
-type ExecutePluginCommitObservations map[ChainSelector][]ExecutePluginCommitData
+type ExecutePluginCommitObservations map[ChainSelector][]ExecutePluginCommitDataWithMessages
 type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]CCIPMsg
 
 // ExecutePluginObservation is the observation of the ExecutePlugin.
@@ -106,23 +111,14 @@ func DecodeExecutePluginObservation(b []byte) (ExecutePluginObservation, error) 
 type ExecutePluginOutcome struct {
 	// PendingCommitReports are the oldest reports with pending commits. The slice is
 	// sorted from oldest to newest.
-	PendingCommitReports []ExecutePluginCommitData `json:"commitReports"`
-
-	// TODO: Don't use a map here. Use a slice of messages ordered according to the PendingCommitReports.
-	// Messages are determined during the second phase of execute.
-	// Ideally, it contains all the messages identified by the previous outcome's
-	// NextCommits. With the previous outcome, and these messsages, we can build the
-	// execute report.
-	Messages ExecutePluginMessageObservations `json:"messages"`
+	PendingCommitReports []ExecutePluginCommitDataWithMessages `json:"commitReports"`
 }
 
 func NewExecutePluginOutcome(
-	nextCommits []ExecutePluginCommitData,
-	messages ExecutePluginMessageObservations,
+	nextCommits []ExecutePluginCommitDataWithMessages,
 ) ExecutePluginOutcome {
 	return ExecutePluginOutcome{
 		PendingCommitReports: nextCommits,
-		Messages:             messages,
 	}
 }
 
@@ -137,5 +133,5 @@ func DecodeExecutePluginOutcome(b []byte) (ExecutePluginOutcome, error) {
 }
 
 func (o ExecutePluginOutcome) String() string {
-	return fmt.Sprintf("NextCommits: %v, Messages: %v", o.PendingCommitReports, o.Messages)
+	return fmt.Sprintf("NextCommits: %v", o.PendingCommitReports)
 }

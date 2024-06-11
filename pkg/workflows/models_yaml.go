@@ -117,6 +117,8 @@ func (w workflowSpecYaml) toWorkflowSpec() WorkflowSpec {
 		Consensus: consensus,
 		Targets:   targets,
 		CID:       w.cid,
+		Name:      w.Name,
+		Owner:     w.Owner,
 	}
 }
 

@@ -307,10 +307,7 @@ func (n Number) MarshalCBOR() ([]byte, error) {
 }
 
 func (n *Number) UnmarshalCBOR(data []byte) error {
-	fmt.Println("unmarshalling Number")
-
 	var value string
-
 	if err := cbor.Unmarshal(data, &value); err != nil {
 		return err
 	}
@@ -321,24 +318,12 @@ func (n *Number) UnmarshalCBOR(data []byte) error {
 }
 
 func (n Number) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBuffer([]byte{})
-	encoder := json.NewEncoder(buffer)
-
-	if err := encoder.Encode(json.Number(n)); err != nil {
-		return nil, err
-	}
-
-	return buffer.Bytes(), nil
+	return json.Marshal(json.Number(n))
 }
 
 func (n *Number) UnmarshalJSON(data []byte) error {
-	fmt.Println("unmarshalling Number as JSON")
-	decoder := json.NewDecoder(bytes.NewBuffer(data))
-	decoder.UseNumber()
-
 	var value json.Number
-
-	if err := decoder.Decode(&value); err != nil {
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
 

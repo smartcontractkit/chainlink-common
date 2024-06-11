@@ -24,8 +24,9 @@ func TestNumberJSONMarshal(t *testing.T) {
 
 	require.NoError(t, err)
 
-	var result A
+	assert.Equal(t, `{"B":8}`, string(bts))
 
+	var result A
 	require.NoError(t, json.Unmarshal(bts, &result))
 
 	assert.Equal(t, expected, result)

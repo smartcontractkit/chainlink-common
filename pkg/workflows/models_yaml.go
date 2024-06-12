@@ -62,9 +62,9 @@ func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
 // It allows for multiple ways of defining a workflow spec, which we later
 // convert to a single representation, `WorkflowSpec`.
 type workflowSpecYaml struct {
-	Name string `json:"name,omitempty" jsonschema:"minLength=10,maxLength=10"` // plain text string
+	Name string `json:"name,omitempty" jsonschema:"minLength=10,maxLength=10"` // plain text string exactly 10 characters long, or  empty name allowed for anonymous workflows
 	//Name nameYaml `json:"name"`
-	Owner string `json:"owner,omitempty" jsonschema:"pattern=^0x[0-9a-f]{40}$"` // 20 bytes represented as hex string with 0x prefix
+	Owner string `json:"owner,omitempty" jsonschema:"pattern=^0x[0-9a-f]{40}$"` // 20 bytes represented as hex string with 0x prefix, or empty owner allowed for anonymous workflows
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.
 	Triggers []stepDefinitionYaml `json:"triggers" jsonschema:"required"`
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
@@ -390,5 +390,3 @@ func (s stepDefinitionTableID) String() string {
 
 	return fmt.Sprintf("%s:%s@%s", s.Name, strings.Join(labels, ":"), s.Version)
 }
-
-type nameYaml string

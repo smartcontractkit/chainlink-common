@@ -27,7 +27,6 @@ func yamlFixtureReaderObj(t *testing.T, testCase string) func(name string) any {
 		var testFileYaml any
 		err := yaml.Unmarshal(testFileBytes, &testFileYaml)
 		require.NoError(t, err)
-		fmt.Sprintf("%s", &testFileBytes)
 		return testFileYaml
 	}
 }
@@ -163,11 +162,9 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 			t.FailNow()
 		}
 	})
-
 }
 
 func TestJsonSchema(t *testing.T) {
-
 	t.Parallel()
 	t.Run("GenerateJsonSchema", func(t *testing.T) {
 		expectedSchemaPath := fixtureDir + "workflow_schema.json"
@@ -300,7 +297,6 @@ func TestJsonSchema(t *testing.T) {
 			})
 		}
 	})
-
 }
 
 func TestMappingCustomType(t *testing.T) {

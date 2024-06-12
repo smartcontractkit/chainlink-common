@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop.internal.pb.ccipocr3;
 
-// CCIPMsg is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CCIPMsg]
+// CCIPMsg is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CCIPMsg].
 message CCIPMsg {
   uint64 sequence_number = 1;
   BigInt chain_fee_limit = 2;
@@ -24,44 +24,42 @@ message CCIPMsg {
 
 // BigInt represents a [big.Int].
 message BigInt {
-  bool negative = 1;
-  bytes value = 2;
+  bytes value = 1;
 }
 
+// TokenAmount is a helper type that defines a token and an amount.
 message TokenAmount {
-  string token = 1; // Address
+  string token = 1; // Token address
   BigInt amount = 2;
 }
 
 
-// CommitPluginReport is a gRPC adapter to the struct:
-// [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CommitPluginReport]
+// CommitPluginReport is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CommitPluginReport].
 message CommitPluginReport {
   PriceUpdates price_updates = 1;
   repeated MerkleRootChain merkle_roots = 2;
 }
 
+// PriceUpdates is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.PriceUpdates].
 message PriceUpdates {
-  repeated TokenPrice token_price_updates = 1;
+  repeated TokenAmount token_price_updates = 1;
   repeated GasPriceChain gas_price_updates = 2;
 }
 
-message TokenPrice {
-  string token_id = 1;
-  BigInt value = 2;
-}
-
+// GasPriceChain is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.GasPriceChain].
 message GasPriceChain {
   uint64 chain_selector = 1;
   BigInt price = 2;
 }
 
+// MerkleRootChain is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.MerkleRootChain].
 message MerkleRootChain {
   uint64 chain_selector = 1;
   bytes merkle_root = 2;
   SeqNumRange seq_num_range = 3;
 }
 
+// SeqNumRange defines an inclusive range of sequence numbers.
 message SeqNumRange {
   uint64 start = 1;
   uint64 end = 2;

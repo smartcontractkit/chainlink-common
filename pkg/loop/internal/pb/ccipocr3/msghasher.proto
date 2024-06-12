@@ -6,6 +6,9 @@ package loop.internal.pb.ccipocr3;
 
 import "models.proto";
 
+// MsgHasher is responsible for hashing CCIP messages.
+// Every chain family defines its own hashing algorithms and encoding schemes.
+// For example an EVM implementation of MsgHasher would use keccak256 as the hashing algorithm and ABI encoding.
 service MsgHasher {
   rpc HashMsg(HashMsgInput) returns (HashMsgOutput);
 }

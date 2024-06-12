@@ -1,0 +1,146 @@
+pkg/capabilities/datastreams/types_test.go:12:2: const `testFeedID` is unused (unused)
+	testFeedID               = datastreams.FeedID("0x1111111111111111111100000000000000000000000000000000000000000000")
+	^
+pkg/capabilities/datastreams/types_test.go:13:2: const `testFullReport` is unused (unused)
+	testFullReport           = "0x1234"
+	^
+pkg/capabilities/datastreams/types_test.go:14:2: const `testObservationTimestamp` is unused (unused)
+	testObservationTimestamp = int64(3)
+	^
+pkg/loop/internal/relayer/pluginprovider/ext/median/median.go:28:30: cannot use (*ProviderClient)(nil) (value of type *ProviderClient) as "github.com/smartcontractkit/chainlink-common/pkg/types".MedianProvider value in variable declaration: *ProviderClient does not implement "github.com/smartcontractkit/chainlink-common/pkg/types".MedianProvider (missing method Close) (typecheck)
+	_ types.MedianProvider    = (*ProviderClient)(nil)
+	                            ^
+pkg/loop/internal/relayer/pluginprovider/ext/median/median.go:29:30: cannot use (*ProviderClient)(nil) (value of type *ProviderClient) as goplugin.GRPCClientConn value in variable declaration: *ProviderClient does not implement goplugin.GRPCClientConn (missing method ClientConn) (typecheck)
+	_ goplugin.GRPCClientConn = (*ProviderClient)(nil)
+	                            ^
+pkg/loop/internal/relayer/pluginprovider/ext/median/median.go:323:9: cannot use NewProviderClient(be, conn) (value of type *ProviderClient) as "github.com/smartcontractkit/chainlink-common/pkg/types".MedianProvider value in return statement: *ProviderClient does not implement "github.com/smartcontractkit/chainlink-common/pkg/types".MedianProvider (missing method Close) (typecheck)
+	return NewProviderClient(be, conn)
+	       ^
+pkg/loop/internal/relayer/pluginprovider/ext/mercury/mercury.go:23:28: cannot use (*ProviderClient)(nil) (value of type *ProviderClient) as "github.com/smartcontractkit/chainlink-common/pkg/types".MercuryProvider value in variable declaration: *ProviderClient does not implement "github.com/smartcontractkit/chainlink-common/pkg/types".MercuryProvider (missing method Close) (typecheck)
+	_ types.MercuryProvider = (*ProviderClient)(nil)
+	                          ^
+pkg/loop/internal/relayer/pluginprovider/ext/mercury/mercury.go:25:30: cannot use (*ProviderClient)(nil) (value of type *ProviderClient) as goplugin.GRPCClientConn value in variable declaration: *ProviderClient does not implement goplugin.GRPCClientConn (missing method ClientConn) (typecheck)
+	_ goplugin.GRPCClientConn = (*ProviderClient)(nil)
+	                            ^
+pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability/capability.go:19:35: cannot use (*ProviderClient)(nil) (value of type *ProviderClient) as "github.com/smartcontractkit/chainlink-common/pkg/types".OCR3CapabilityProvider value in variable declaration: *ProviderClient does not implement "github.com/smartcontractkit/chainlink-common/pkg/types".OCR3CapabilityProvider (missing method ChainReader) (typecheck)
+	_ types.OCR3CapabilityProvider = (*ProviderClient)(nil)
+	                                 ^
+pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability/capability.go:20:35: cannot use (*ProviderClient)(nil) (value of type *ProviderClient) as goplugin.GRPCClientConn value in variable declaration: *ProviderClient does not implement goplugin.GRPCClientConn (missing method ClientConn) (typecheck)
+	_ goplugin.GRPCClientConn      = (*ProviderClient)(nil)
+	                                 ^
+pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability/capability.go:45:9: cannot use NewProviderClient(be, conn) (value of type *ProviderClient) as "github.com/smartcontractkit/chainlink-common/pkg/types".OCR3CapabilityProvider value in return statement: *ProviderClient does not implement "github.com/smartcontractkit/chainlink-common/pkg/types".OCR3CapabilityProvider (missing method ChainReader) (typecheck)
+	return NewProviderClient(be, conn)
+	       ^
+pkg/loop/internal/test/cmd/main.go:111:3: loggerTest declared and not used (typecheck)
+		loggerTest := &test.GRPCPluginLoggerTest{SugaredLogger: logger.Sugared(lggr), ErrorType: throwErrorType}
+		^
+pkg/loop/internal/test/cmd/main.go:14:2: "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/test" imported as sctest and not used (typecheck)
+	sctest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/test"
+	^
+pkg/loop/internal/test/cmd/main.go:24:2: "github.com/smartcontractkit/chainlink-common/pkg/types" imported and not used (typecheck)
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	^
+pkg/capabilities/consensus/ocr3/ocr3.go:76:5: cp.SubService undefined (type *Capability has no field or method SubService) (typecheck)
+	cp.SubService(config.capability)
+	   ^
+pkg/capabilities/consensus/ocr3/ocr3.go:98:34: o.Logger undefined (type *Capability has no field or method Logger) (typecheck)
+	s := &validationService{lggr: o.Logger}
+	                                ^
+pkg/capabilities/consensus/ocr3/ocr3.go:99:4: o.SubService undefined (type *Capability has no field or method SubService) (typecheck)
+	o.SubService(s)
+	  ^
+pkg/capabilities/consensus/ocr3/ocr3_test.go:25:23: o.Start undefined (type *Capability has no field or method Start) (typecheck)
+	require.NoError(t, o.Start(ctx))
+	                     ^
+pkg/capabilities/consensus/ocr3/ocr3_test.go:48:23: o.Start undefined (type *Capability has no field or method Start) (typecheck)
+	require.NoError(t, o.Start(ctx))
+	                     ^
+pkg/loop/ccip_execution_test.go:33:2: cannot infer R (pkg/services/servicetest/run.go:28:1) (typecheck)
+	servicetest.Run(t, exec)
+	^
+pkg/loop/ccip_execution_test.go:68:2: cannot infer R (pkg/services/servicetest/run.go:28:1) (typecheck)
+	servicetest.Run(t, exec)
+	^
+pkg/loop/ccip_execution_test.go:111:2: cannot infer R (pkg/services/servicetest/run.go:28:1) (typecheck)
+	servicetest.Run(t, r)
+	^
+pkg/loop/process_test.go:12:4: h.CommandLocation undefined (type *HelperProcessCommand has no field or method CommandLocation) (typecheck)
+	h.CommandLocation = "./internal/test/cmd/main.go"
+	  ^
+pkg/loop/internal/relayer/pluginprovider/chainreader/chain_reader_test.go:68:34: undefined: chainreadertest (typecheck)
+	RunChainReaderInterfaceTests(t, chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+	                                ^
+pkg/loop/internal/relayer/pluginprovider/chainreader/chain_reader_test.go:73:15: undefined: chainreadertest (typecheck)
+	errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	             ^
+pkg/loop/internal/relayer/pluginprovider/chainreader/chain_reader_test.go:89:15: undefined: chainreadertest (typecheck)
+	errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+	             ^
+pkg/loop/internal/relayer/pluginprovider/ext/ccip/commit_provider.go:26:31: cannot use (*CommitProviderClient)(nil) (value of type *CommitProviderClient) as "github.com/smartcontractkit/chainlink-common/pkg/types".CCIPCommitProvider value in variable declaration: *CommitProviderClient does not implement "github.com/smartcontractkit/chainlink-common/pkg/types".CCIPCommitProvider (missing method ChainReader) (typecheck)
+	_ types.CCIPCommitProvider = (*CommitProviderClient)(nil)
+	                             ^
+pkg/loop/internal/relayer/pluginprovider/ext/ccip/commit_provider.go:27:31: cannot use (*CommitProviderClient)(nil) (value of type *CommitProviderClient) as goplugin.GRPCClientConn value in variable declaration: *CommitProviderClient does not implement goplugin.GRPCClientConn (missing method ClientConn) (typecheck)
+	_ goplugin.GRPCClientConn  = (*CommitProviderClient)(nil)
+	                             ^
+pkg/loop/internal/relayer/pluginprovider/ext/ccip/execution_provider.go:26:30: cannot use (*ExecProviderClient)(nil) (value of type *ExecProviderClient) as "github.com/smartcontractkit/chainlink-common/pkg/types".CCIPExecProvider value in variable declaration: *ExecProviderClient does not implement "github.com/smartcontractkit/chainlink-common/pkg/types".CCIPExecProvider (missing method ChainReader) (typecheck)
+	_ types.CCIPExecProvider  = (*ExecProviderClient)(nil)
+	                            ^
+pkg/loop/internal/relayer/pluginprovider/ext/ccip/execution_provider.go:27:30: cannot use (*ExecProviderClient)(nil) (value of type *ExecProviderClient) as goplugin.GRPCClientConn value in variable declaration: *ExecProviderClient does not implement goplugin.GRPCClientConn (missing method ClientConn) (typecheck)
+	_ goplugin.GRPCClientConn = (*ExecProviderClient)(nil)
+	                            ^
+pkg/loop/reportingplugins/loopp_service_test.go:30:4: h.CommandLocation undefined (type *HelperProcessCommand has no field or method CommandLocation) (typecheck)
+	h.CommandLocation = "../internal/test/cmd/main.go"
+	  ^
+pkg/loop/reportingplugins/grpc_test.go:21:2: "github.com/smartcontractkit/chainlink-common/pkg/types" imported and not used (typecheck)
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	^
+pkg/loop/reportingplugins/ocr3/loopp_service_test.go:27:4: h.CommandLocation undefined (type *HelperProcessCommand has no field or method CommandLocation) (typecheck)
+	h.CommandLocation = "../../internal/test/cmd/main.go"
+	  ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_any.go:83:1: missing return (typecheck)
+}
+^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_any.go:180:65: cannot infer Bytes (/Users/awbreyhughlett/go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_default.go:79:12) (typecheck)
+				err := export.NewDuplicateNameError(name, dec.InputOffset()-len64(name))
+				                                                            ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_default.go:849:67: cannot infer Bytes (/Users/awbreyhughlett/go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_default.go:79:12) (typecheck)
+						err := export.NewDuplicateNameError(name, dec.InputOffset()-len64(name))
+						                                                            ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_default.go:1116:67: cannot infer Bytes (/Users/awbreyhughlett/go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_default.go:79:12) (typecheck)
+							err := export.NewDuplicateNameError(val, dec.InputOffset()-len64(val))
+							                                                           ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_default.go:1276:18: cannot range over n (variable of type int) (typecheck)
+		for i := range n {
+		               ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/arshal_default.go:1375:18: cannot range over n (variable of type int) (typecheck)
+		for i := range n {
+		               ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/fields.go:75:18: cannot range over t.NumField() (value of type int) (typecheck)
+		for i := range t.NumField() {
+		               ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/internal/jsonwire/decode.go:389:17: cannot range over len(b) (value of type int) (typecheck)
+	for i := range len(b) {
+	               ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/internal/jsonwire/decode.go:570:17: cannot range over 4 (untyped int constant) (typecheck)
+	for i := range 4 {
+	               ^
+../../go/pkg/mod/github.com/go-json-experiment/json@v0.0.0-20240524174822-2d9f40f7385b/jsontext/state.go:328:17: cannot range over m.Depth() (value of type int) (typecheck)
+	for i := range m.Depth() {
+	               ^
+pkg/types/ccipocr3/generic_types_test.go:6: File is not `goimports`-ed with -local github.com/smartcontractkit/chainlink (goimports)
+	"github.com/stretchr/testify/assert"
+)
+
+import (
+pkg/sqlutil/monitor_test.go:103: unnecessary leading newline (whitespace)
+		t.Run(tt.name, func(t *testing.T) {
+
+pkg/sqlutil/monitor_test.go:168: unnecessary trailing newline (whitespace)
+
+			})
+pkg/codec/encodings/binary/int_gen_test.go:71:25: SA4000: identical expressions on the left and right side of the '-' operator (staticcheck)
+		bytes := make([]byte, 1-1)
+		                      ^
+pkg/codec/encodings/binary/int_gen_test.go:152:25: SA4000: identical expressions on the left and right side of the '-' operator (staticcheck)
+		bytes := make([]byte, 1-1)
+		                      ^

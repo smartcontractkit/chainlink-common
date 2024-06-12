@@ -245,14 +245,19 @@ func TestJsonSchema(t *testing.T) {
 				owner: "0x0123456789abcdef0123456789abcdef01234567",
 			},
 			{
-				testName: "invalid: name to long",
-				name:     "more than ten digits",
+				testName: "valid: short name",
+				name:     "abc",
+				owner:    "0x0123456789abcdef0123456789abcdef01234567",
+			},
+			{
+				testName: "invalid: name too long",
+				name:     "wf_name_too_long_for_schema_validation",
 				owner:    "0x0123456789abcdef0123456789abcdef01234567",
 				wantErr:  true,
 			},
 			{
-				testName: "invalid: name to short",
-				name:     "only_nine",
+				testName: "invalid: name characters",
+				name:     "abc def",
 				owner:    "0x0123456789abcdef0123456789abcdef01234567",
 				wantErr:  true,
 			},
@@ -260,6 +265,11 @@ func TestJsonSchema(t *testing.T) {
 				testName: "valid: no owner",
 				name:     "ten_digits",
 				// the helper function will omit the owner field, which not the same as an empty string for an owner
+			},
+			{
+				testName: "valid: capital letters",
+				name:     "ten_digits",
+				owner:    "0x0123456789ABCDEF0123456789ABCDEF01234567",
 			},
 			{
 				testName: "invalid: owner too short",

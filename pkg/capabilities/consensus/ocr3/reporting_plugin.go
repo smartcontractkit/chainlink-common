@@ -226,6 +226,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			prunedWorkflows = append(prunedWorkflows, wfID)
 		}
 	}
+	r.r.removeDeregisteredWorkflows(prunedWorkflows)
 
 	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o)
 	h := sha256.New()

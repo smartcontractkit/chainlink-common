@@ -70,7 +70,7 @@ type ExecutePluginConfig struct {
 	FChain map[ChainSelector]int `json:"fChain"`
 
 	// F is the ocr3 big F value for the execute plugin.
-	F int `json:"F"`
+	F int `json:"f"`
 }
 
 type ObserverInfo struct {

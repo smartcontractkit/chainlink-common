@@ -29,8 +29,8 @@ type ExecutePluginCommitDataWithMessages struct {
 
 // ExecutePluginCommitData is the data that is committed to the chain.
 type ExecutePluginCommitData struct {
-	// Selector of the chain that contains the commit report.
-	Selector ChainSelector `json:"chainSelector"`
+	// SourceChain of the chain that contains the commit report.
+	SourceChain ChainSelector `json:"chainSelector"`
 	// Timestamp of the block that contains the commit.
 	Timestamp time.Time `json:"timestamp"`
 	// BlockNum of the block that contains the commit.
@@ -90,10 +90,10 @@ type ExecutePluginOutcome struct {
 }
 
 func NewExecutePluginOutcome(
-	nextCommits []ExecutePluginCommitDataWithMessages,
+	pendingCommits []ExecutePluginCommitDataWithMessages,
 ) ExecutePluginOutcome {
 	return ExecutePluginOutcome{
-		PendingCommitReports: nextCommits,
+		PendingCommitReports: pendingCommits,
 	}
 }
 

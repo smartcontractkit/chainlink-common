@@ -68,9 +68,6 @@ type ExecutePluginConfig struct {
 
 	// FChain defines the FChain value for each chain. FChain is used while forming consensus based on the observations.
 	FChain map[ChainSelector]int `json:"fChain"`
-
-	// F is the ocr3 big F value for the execute plugin.
-	F int `json:"f"`
 }
 
 type ObserverInfo struct {

@@ -20,6 +20,8 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
+	getDeregisteredWorkflows() []string
+	removeDeregisteredWorkflows(workflowIDs []string)
 }
 
 type reportingPlugin struct {
@@ -175,7 +177,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
 	o.CurrentReports = []*pbtypes.Report{}
-	allExecutionIDs := []string{}
+	var allExecutionIDs []string
 
 	for _, weid := range q.Ids {
 		obs, ok := m[weid.WorkflowExecutionId]
@@ -214,6 +216,15 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
 		o.Outcomes[weid.WorkflowId] = outcome
+	}
+
+	// Prune previous outcomes for deleted workflows
+	var prunedWorkflows []string
+	for _, wfID := range r.r.getDeregisteredWorkflows() {
+		if _, ok := o.Outcomes[wfID]; ok {
+			delete(o.Outcomes, wfID)
+			prunedWorkflows = append(prunedWorkflows, wfID)
+		}
 	}
 
 	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o)

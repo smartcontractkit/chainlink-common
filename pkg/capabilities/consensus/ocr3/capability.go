@@ -54,6 +54,9 @@ type capability struct {
 	newTimerCh chan *request
 
 	callbackChannelBufferSize int
+
+	deregisteredWorkflows     map[string]struct{}
+	deregisteredWorkflowsLock sync.RWMutex
 }
 
 var _ capabilityIface = (*capability)(nil)
@@ -79,6 +82,8 @@ func newCapability(s *store, clock clockwork.Clock, requestTimeout time.Duration
 		newTimerCh: make(chan *request),
 
 		callbackChannelBufferSize: callbackChannelBufferSize,
+
+		deregisteredWorkflows: make(map[string]struct{}),
 	}
 	return o
 }
@@ -143,7 +148,31 @@ func (o *capability) getEncoder(workflowID string) (types.Encoder, error) {
 	return enc, nil
 }
 
+func (o *capability) getDeregisteredWorkflows() []string {
+	o.deregisteredWorkflowsLock.RLock()
+	defer o.deregisteredWorkflowsLock.RUnlock()
+
+	deregisteredWorkflows := make([]string, 0, len(o.deregisteredWorkflows))
+	for key := range o.deregisteredWorkflows {
+		deregisteredWorkflows = append(deregisteredWorkflows, key)
+	}
+
+	return deregisteredWorkflows
+}
+
+func (o *capability) removeDeregisteredWorkflows(workflowIDs []string) {
+	o.deregisteredWorkflowsLock.Lock()
+	defer o.deregisteredWorkflowsLock.Unlock()
+
+	for _, workflowID := range workflowIDs {
+		delete(o.deregisteredWorkflows, workflowID)
+	}
+}
+
 func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+	o.deregisteredWorkflowsLock.Lock()
+	defer o.deregisteredWorkflowsLock.Unlock()
+	o.deregisteredWorkflows[request.Metadata.WorkflowID] = struct{}{}
 	delete(o.aggregators, request.Metadata.WorkflowID)
 	delete(o.encoders, request.Metadata.WorkflowID)
 	return nil

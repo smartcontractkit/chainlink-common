@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+
+package loop;
+
+service PluginCCIPCommit {
+  rpc NewCCIPCommitFactory (NewCCIPCommitFactoryRequest) returns (NewCCIPCommitFactoryReply) {}
+}
+
+// NewCCIPCommitFactoryRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewCCIPCommitFactory].
+message NewCCIPCommitFactoryRequest {
+  uint32 CCIPCommitProviderID = 1;
+}
+
+// NewCCIPCommitFactoryRequest has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewCCIPCommitFactory].
+message NewCCIPCommitFactoryReply {
+  uint32 reportingPluginFactoryID = 1;
+}

@@ -182,6 +182,10 @@ func (mc *mockCapability) getEncoder(workflowID string) (pbtypes.Encoder, error)
 	return mc.encoder, nil
 }
 
+func (mc *mockCapability) getDeregisteredWorkflows() []string { return []string{} }
+
+func (mc *mockCapability) removeDeregisteredWorkflows(workflowIDs []string) {}
+
 func TestReportingPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
 	s := newStore()

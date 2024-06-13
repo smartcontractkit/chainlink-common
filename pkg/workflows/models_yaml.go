@@ -120,9 +120,9 @@ func (w workflowSpecYaml) toWorkflowSpec() WorkflowSpec {
 		Actions:   actions,
 		Consensus: consensus,
 		Targets:   targets,
+		Name:      w.Name,
+		Owner:     w.Owner,
 		cid:       w.cid,
-		name:      w.Name,
-		owner:     w.Owner,
 		yaml:      w.yaml,
 	}
 }

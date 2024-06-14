@@ -33,6 +33,28 @@ linters-settings:
   govet:
     # report about shadowed variables
     check-shadowing: true
+    settings:
+      printf:
+        # We are overgenerous here to accomodate potential not yet existing functions.
+        funcs:
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).AssumptionViolationf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Tracef
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Debugf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Infof
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Warnf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Errorf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Criticalf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Panicf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Fatalf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).AssumptionViolationf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Tracef
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Debugf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Infof
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Warnf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Errorf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Criticalf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Panicf
+          - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Fatalf
   errorlint:
     # Allow formatting of errors without %w
     errorf: false

@@ -242,8 +242,9 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 
 				ts := &TestStruct{}
 				assert.Eventually(t, func() bool {
+					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
-					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[0].Data) && reflect.DeepEqual(&ts2, sequences[1].Data)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts2, sequences[0].Data) && reflect.DeepEqual(&ts1, sequences[1].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},

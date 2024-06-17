@@ -1,2 +1,7 @@
 # Keystone
 /pkg/values/ @cedric-cordenier
+
+# CCIP
+/pkg/types/ccip @dimkouv @makramkd @winder
+/pkg/types/ccipocr3 @dimkouv @makramkd @winder
+/pkg/types/provider_ccip* @dimkouv @makramkd @winder

@@ -83,6 +83,7 @@ func (c ChainSelector) String() string {
 }
 
 type CCIPMsg struct {
+	CCIPMsgBaseDetails
 	ChainFeeLimit   BigInt          `json:"chainFeeLimit"`
 	Nonce           uint64          `json:"nonce"`
 	Sender          types.Account   `json:"sender"`
@@ -95,7 +96,10 @@ type CCIPMsg struct {
 	SourceTokenData [][]byte        `json:"sourceTokenData"`
 	Metadata        CCIPMsgMetadata `json:"metadata"`
 
-	CCIPMsgBaseDetails
+	// MsgHash is the hash of all the message fields. The hash is computed on the destination chain.
+	// This means that on the source chain we cannot compute the msg hash and in the off-chain side we need MsgHasher
+	// implementation for the destination chain.
+	MsgHash Bytes32 `json:"msgHash"` // computed
 }
 
 type CCIPMsgMetadata struct {

@@ -2,6 +2,6 @@
 /pkg/values/ @cedric-cordenier
 
 # CCIP
-/pkg/types/ccip @dimkouv @makramkd @winder
-/pkg/types/ccipocr3 @dimkouv @makramkd @winder
-/pkg/types/provider_ccip* @dimkouv @makramkd @winder
+/pkg/types/ccip @smartcontractkit/ccip
+/pkg/types/ccipocr3 @smartcontractkit/ccip
+/pkg/types/provider_ccip* @smartcontractkit/ccip

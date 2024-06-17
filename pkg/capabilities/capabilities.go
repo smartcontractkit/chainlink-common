@@ -173,16 +173,18 @@ type TargetCapability interface {
 	CallbackCapability
 }
 
-type DONConfig struct {
-	SharedSecret [16]byte
-}
-
 type DON struct {
 	ID      string
 	Members []p2ptypes.PeerID
 	F       uint8
 
-	Config DONConfig
+	Config []byte
+}
+
+type Node struct {
+	PeerID         *p2ptypes.PeerID
+	WorkflowDON    DON
+	CapabilityDONs []DON
 }
 
 // CapabilityInfo is a struct for the info of a capability.

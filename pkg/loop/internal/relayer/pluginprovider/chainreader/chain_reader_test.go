@@ -66,7 +66,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 func TestChainReaderInterfaceTests(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.LoopEncodingTestMatrix(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -85,7 +85,7 @@ func TestChainReaderInterfaceTests(t *testing.T) {
 func TestBind(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.LoopEncodingTestMatrix(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -113,7 +113,7 @@ func TestBind(t *testing.T) {
 func TestGetLatestValue(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.LoopEncodingTestMatrix(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -162,7 +162,7 @@ func TestGetLatestValue(t *testing.T) {
 func TestQueryKey(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.LoopEncodingTestMatrix(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -177,7 +177,6 @@ func TestQueryKey(t *testing.T) {
 			chainReader := errTester.GetChainReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
-				t.Parallel()
 				ctx := tests.Context(t)
 
 				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})

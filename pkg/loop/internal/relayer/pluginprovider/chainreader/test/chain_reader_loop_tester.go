@@ -12,7 +12,7 @@ import (
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint common practice to import test mods with .
 )
 
-func LoopEncodingTestMatrix(t *testing.T, test func(chainreader.EncodingVersion) func(t *testing.T)) {
+func TestAllEncodings(t *testing.T, test func(chainreader.EncodingVersion) func(t *testing.T)) {
 	t.Helper()
 
 	encodings := []struct {

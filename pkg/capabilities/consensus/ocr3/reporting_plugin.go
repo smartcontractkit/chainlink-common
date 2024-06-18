@@ -26,6 +26,10 @@ type capabilityIface interface {
 	getRegisteredWorkflows() []string
 }
 
+// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
+// This is affected by OCR round time.
+const outcomePruningThreshold = 3600
+
 type reportingPlugin struct {
 	batchSize int
 	s         *requests.Store
@@ -137,7 +141,7 @@ func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, que
 func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
 	m := map[string]map[ocrcommon.OracleID][]values.Value{}
-	seenWorkflows := map[string]int{}
+	seenWorkflowIDs := map[string]int{}
 	for _, o := range aos {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(o.Observation, obs)
@@ -146,13 +150,19 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 
+		countedWorkflowIds := map[string]bool{}
 		for _, id := range obs.RegisteredWorkflowIds {
-			// Count how many times a workflow ID is seen from Observations
-			if _, ok := seenWorkflows[id]; ok {
-				seenWorkflows[id] += 1
-			} else {
-				seenWorkflows[id] = 1
+			// Skip if we've already counted this workflow ID. we want to avoid duplicates in the seen workflow IDs.
+			if _, ok := countedWorkflowIds[id]; ok {
+				continue
 			}
+			// Count how many times a workflow ID is seen from Observations
+			if _, ok := seenWorkflowIDs[id]; ok {
+				seenWorkflowIDs[id] += 1
+			} else {
+				seenWorkflowIDs[id] = 1
+			}
+			countedWorkflowIds[id] = true
 		}
 
 		for _, rq := range obs.Observations {
@@ -234,12 +244,10 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// We need to prune outcomes from previous workflows that are no longer relevant.
 	for workflowID, outcome := range o.Outcomes {
 		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
-		if seenWorkflows[workflowID] >= (r.config.F + 1) {
+		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > 3600 {
-			// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
-			// We are assuming 1 round per second (1 round = 1 sec).
+		} else if outctx.SeqNr-outcome.LastSeenAt > outcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID)
 			delete(o.Outcomes, workflowID)
 		}

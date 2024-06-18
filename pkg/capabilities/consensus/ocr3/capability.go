@@ -77,8 +77,7 @@ func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time
 		encoders:          map[string]types.Encoder{},
 
 		callbackChannelBufferSize: callbackChannelBufferSize,
-
-		registeredWorkflows: map[string]bool{},
+		registeredWorkflows:       map[string]bool{},
 	}
 	return o
 }

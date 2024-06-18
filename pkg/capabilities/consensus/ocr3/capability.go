@@ -52,6 +52,9 @@ type capability struct {
 	encoders       map[string]types.Encoder
 
 	callbackChannelBufferSize int
+
+	registeredWorkflows   map[string]struct{}
+	registeredWorkflowsMu sync.RWMutex
 }
 
 var _ capabilityIface = (*capability)(nil)
@@ -74,6 +77,8 @@ func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time
 		encoders:          map[string]types.Encoder{},
 
 		callbackChannelBufferSize: callbackChannelBufferSize,
+
+		registeredWorkflows: map[string]struct{}{},
 	}
 	return o
 }
@@ -109,6 +114,9 @@ func (o *capability) HealthReport() map[string]error {
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+	o.registeredWorkflowsMu.Lock()
+	defer o.registeredWorkflowsMu.Unlock()
+
 	c, err := o.ValidateConfig(request.Config)
 	if err != nil {
 		return err
@@ -125,6 +133,7 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 	o.encoders[request.Metadata.WorkflowID] = encoder
+	o.registeredWorkflows[request.Metadata.WorkflowID] = struct{}{}
 	return nil
 }
 
@@ -146,7 +155,21 @@ func (o *capability) getEncoder(workflowID string) (types.Encoder, error) {
 	return enc, nil
 }
 
+func (o *capability) getRegisteredWorkflows() []string {
+	o.registeredWorkflowsMu.RLock()
+	defer o.registeredWorkflowsMu.RUnlock()
+
+	workflows := make([]string, 0, len(o.registeredWorkflows))
+	for wf := range o.registeredWorkflows {
+		workflows = append(workflows, wf)
+	}
+	return workflows
+}
+
 func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+	o.registeredWorkflowsMu.Lock()
+	defer o.registeredWorkflowsMu.Unlock()
+	delete(o.registeredWorkflows, request.Metadata.WorkflowID)
 	delete(o.aggregators, request.Metadata.WorkflowID)
 	delete(o.encoders, request.Metadata.WorkflowID)
 	return nil

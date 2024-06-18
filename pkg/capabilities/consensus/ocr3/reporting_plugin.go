@@ -23,6 +23,7 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
+	getRegisteredWorkflows() []string
 }
 
 type reportingPlugin struct {
@@ -119,6 +120,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		obs.Observations = append(obs.Observations, newOb)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
+	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflows()
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -135,6 +137,7 @@ func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, que
 func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
 	m := map[string]map[ocrcommon.OracleID][]values.Value{}
+	seenWorkflows := map[string]int{}
 	for _, o := range aos {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(o.Observation, obs)
@@ -144,6 +147,13 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		}
 
 		for _, rq := range obs.Observations {
+			// Count how many times a workflow ID is seen from Observations
+			if _, ok := seenWorkflows[rq.Id.WorkflowId]; ok {
+				seenWorkflows[rq.Id.WorkflowId] += 1
+			} else {
+				seenWorkflows[rq.Id.WorkflowId] = 1
+			}
+
 			weid := rq.Id.WorkflowExecutionId
 
 			obsList := values.FromListValueProto(rq.Observations)
@@ -172,15 +182,6 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	}
 	if o.Outcomes == nil {
 		o.Outcomes = map[string]*pbtypes.AggregationOutcome{}
-	}
-
-	// We need to prune outcomes from previous workflows that are no longer relevant.
-	for workflowID, outcome := range o.Outcomes {
-		// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
-		if outctx.SeqNr-outcome.LastSeenAt > 3600 {
-			r.lggr.Debugw("removing outcome for workflow", "workflowID", workflowID)
-			delete(o.Outcomes, workflowID)
-		}
 	}
 
 	// Wipe out the CurrentReports. This gets regenerated
@@ -217,8 +218,6 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			r.lggr.Errorw("error aggregating outcome", "error", err, "workflowID", weid.WorkflowId)
 			return nil, err
 		}
-		// Update the last seen round for this outcome.
-		outcome.LastSeenAt = outctx.SeqNr
 
 		report := &pbtypes.Report{
 			Outcome: outcome,
@@ -227,7 +226,21 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		o.CurrentReports = append(o.CurrentReports, report)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
+		if seenWorkflows[weid.WorkflowId] >= (r.config.F + 1) {
+			// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes
+			outcome.LastSeenAt = outctx.SeqNr
+		}
+
 		o.Outcomes[weid.WorkflowId] = outcome
+	}
+
+	// We need to prune outcomes from previous workflows that are no longer relevant.
+	for workflowID, outcome := range o.Outcomes {
+		// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
+		if outctx.SeqNr-outcome.LastSeenAt > 3600 {
+			r.lggr.Debugw("removing outcome for workflow", "workflowID", workflowID)
+			delete(o.Outcomes, workflowID)
+		}
 	}
 
 	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o)

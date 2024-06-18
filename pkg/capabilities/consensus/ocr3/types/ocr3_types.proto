@@ -37,6 +37,8 @@ message Observation {
 message Observations {
   // batched observations for multiple workflow execution IDs
   repeated Observation observations = 1;
+  // the workflow IDs that are registered in the node
+  repeated string registeredWorkflowIds = 2;
 }
 
 message Report {

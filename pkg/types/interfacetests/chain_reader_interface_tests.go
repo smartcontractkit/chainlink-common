@@ -55,9 +55,9 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 			name: "Gets the latest value",
 			test: func(t T) {
 				ctx := tests.Context(t)
-				firstItem := CreateTestStruct[T](0, tester)
+				firstItem := CreateTestStruct(0, tester)
 				tester.SetLatestValue(t, &firstItem)
-				secondItem := CreateTestStruct[T](1, tester)
+				secondItem := CreateTestStruct(1, tester)
 				tester.SetLatestValue(t, &secondItem)
 
 				cr := tester.GetChainReader(t)
@@ -137,7 +137,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 			name: "Get latest value wraps config with modifiers using its own mapstructure overrides",
 			test: func(t T) {
 				ctx := tests.Context(t)
-				testStruct := CreateTestStruct[T](0, tester)
+				testStruct := CreateTestStruct(0, tester)
 				testStruct.BigField = nil
 				testStruct.Account = nil
 				cr := tester.GetChainReader(t)
@@ -148,7 +148,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 
 				expected := &TestStructWithExtraField{
 					ExtraField: AnyExtraValue,
-					TestStruct: CreateTestStruct[T](0, tester),
+					TestStruct: CreateTestStruct(0, tester),
 				}
 
 				assert.Equal(t, expected, actual)
@@ -190,9 +190,9 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				ts0 := CreateTestStruct[T](0, tester)
+				ts0 := CreateTestStruct(0, tester)
 				tester.TriggerEvent(t, &ts0)
-				ts1 := CreateTestStruct[T](1, tester)
+				ts1 := CreateTestStruct(1, tester)
 				tester.TriggerEvent(t, &ts1)
 
 				filterParams := &FilterEventParams{Field: *ts0.Field}

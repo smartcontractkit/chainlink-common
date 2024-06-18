@@ -3,8 +3,6 @@ package types
 import (
 	"context"
 	"math/big"
-
-	"github.com/google/uuid"
 )
 
 type ChainWriter interface {
@@ -15,7 +13,7 @@ type ChainWriter interface {
 	SubmitTransaction(ctx context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *TxMeta, value *big.Int) error
 
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
-	GetTransactionStatus(ctx context.Context, transactionID uuid.UUID) (TransactionStatus, error)
+	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)
 
 	// GetFeeComponents retrieves the associated gas costs for executing a transaction.
 	GetFeeComponents(ctx context.Context) (*ChainFeeComponents, error)

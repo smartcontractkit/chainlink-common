@@ -124,8 +124,7 @@ type CCIPMsgBaseDetails struct {
 	// NOTE: Sequence numbers are unique per chain. Meaning that the same sequence number can exist on multiple chains.
 	SeqNum SeqNum `json:"seqNum,string"`
 
-	// MsgHash is the hash of all the message fields. The hash is computed on the destination chain.
-	// This means that on the source chain we cannot compute the msg hash and in the off-chain side we need MsgHasher
-	// implementation for the destination chain.
-	MsgHash Bytes32 `json:"msgHash"` // computed
+	// MsgHash is the hash of all the message fields.
+	// NOTE: The field is expected to be empty, and will be populated by the plugin using the MsgHasher interface.
+	MsgHash Bytes32 `json:"msgHash"` // populated
 }

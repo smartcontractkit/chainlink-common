@@ -53,7 +53,7 @@ type capability struct {
 
 	callbackChannelBufferSize int
 
-	registeredWorkflows   map[string]struct{}
+	registeredWorkflows   map[string]bool
 	registeredWorkflowsMu sync.RWMutex
 }
 
@@ -78,7 +78,7 @@ func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time
 
 		callbackChannelBufferSize: callbackChannelBufferSize,
 
-		registeredWorkflows: map[string]struct{}{},
+		registeredWorkflows: map[string]bool{},
 	}
 	return o
 }
@@ -114,9 +114,6 @@ func (o *capability) HealthReport() map[string]error {
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
-	o.registeredWorkflowsMu.Lock()
-	defer o.registeredWorkflowsMu.Unlock()
-
 	c, err := o.ValidateConfig(request.Config)
 	if err != nil {
 		return err
@@ -133,7 +130,9 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 	o.encoders[request.Metadata.WorkflowID] = encoder
-	o.registeredWorkflows[request.Metadata.WorkflowID] = struct{}{}
+	o.registeredWorkflowsMu.Lock()
+	defer o.registeredWorkflowsMu.Unlock()
+	o.registeredWorkflows[request.Metadata.WorkflowID] = true
 	return nil
 }
 

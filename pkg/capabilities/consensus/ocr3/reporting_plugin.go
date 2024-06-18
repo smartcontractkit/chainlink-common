@@ -228,19 +228,19 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		o.CurrentReports = append(o.CurrentReports, report)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
-		if seenWorkflows[weid.WorkflowId] >= (r.config.F + 1) {
-			// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes
-			outcome.LastSeenAt = outctx.SeqNr
-		}
-
 		o.Outcomes[weid.WorkflowId] = outcome
 	}
 
 	// We need to prune outcomes from previous workflows that are no longer relevant.
 	for workflowID, outcome := range o.Outcomes {
-		// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
-		if outctx.SeqNr-outcome.LastSeenAt > 3600 {
-			r.lggr.Debugw("removing outcome for workflow", "workflowID", workflowID)
+		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
+		if seenWorkflows[workflowID] >= (r.config.F + 1) {
+			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
+			outcome.LastSeenAt = outctx.SeqNr
+		} else if outctx.SeqNr-outcome.LastSeenAt > 3600 {
+			// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
+			// We are assuming 1 round per second (1 round = 1 sec).
+			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID)
 			delete(o.Outcomes, workflowID)
 		}
 	}

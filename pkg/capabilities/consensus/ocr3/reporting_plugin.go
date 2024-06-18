@@ -158,7 +158,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			}
 			// Count how many times a workflow ID is seen from Observations
 			if _, ok := seenWorkflowIDs[id]; ok {
-				seenWorkflowIDs[id] += 1
+				seenWorkflowIDs[id]++
 			} else {
 				seenWorkflowIDs[id] = 1
 			}

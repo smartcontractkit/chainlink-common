@@ -84,6 +84,11 @@ type ExecOffchainConfig struct {
 type ExecOnchainConfig struct {
 	PermissionLessExecutionThresholdSeconds time.Duration
 	Router                                  Address
+	MaxDataBytes                            uint32
+	MaxNumberOfTokensPerMsg                 uint16
+	PriceRegistry                           Address
+	MaxPoolReleaseOrMintGas                 uint32
+	MaxTokenTransferGas                     uint32
 }
 
 func (c ExecOnchainConfig) Validate() error {

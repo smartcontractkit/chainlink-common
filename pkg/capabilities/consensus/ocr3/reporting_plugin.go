@@ -23,8 +23,6 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
-	getDeregisteredWorkflows() []string
-	removeDeregisteredWorkflows(workflowIDs []string)
 }
 
 type reportingPlugin struct {
@@ -176,6 +174,15 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		o.Outcomes = map[string]*pbtypes.AggregationOutcome{}
 	}
 
+	// We need to prune outcomes from previous workflows that are no longer relevant.
+	for workflowID, outcome := range o.Outcomes {
+		// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
+		if outctx.SeqNr-outcome.LastSeenAt > 3600 {
+			r.lggr.Debugw("removing outcome for workflow", "workflowID", workflowID)
+			delete(o.Outcomes, workflowID)
+		}
+	}
+
 	// Wipe out the CurrentReports. This gets regenerated
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
@@ -210,6 +217,8 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			r.lggr.Errorw("error aggregating outcome", "error", err, "workflowID", weid.WorkflowId)
 			return nil, err
 		}
+		// Update the last seen round for this outcome.
+		outcome.LastSeenAt = outctx.SeqNr
 
 		report := &pbtypes.Report{
 			Outcome: outcome,
@@ -220,16 +229,6 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 
 		o.Outcomes[weid.WorkflowId] = outcome
 	}
-
-	// Prune previous outcomes for deleted workflows
-	var prunedWorkflows []string
-	for _, wfID := range r.r.getDeregisteredWorkflows() {
-		if _, ok := o.Outcomes[wfID]; ok {
-			delete(o.Outcomes, wfID)
-			prunedWorkflows = append(prunedWorkflows, wfID)
-		}
-	}
-	r.r.removeDeregisteredWorkflows(prunedWorkflows)
 
 	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o)
 	h := sha256.New()

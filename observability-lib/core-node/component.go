@@ -268,8 +268,8 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 
 	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
-		"Goroutines",
-		"goroutines",
+		"Goroutines per ChainId",
+		"goroutines per chainId",
 		6,
 		12,
 		1,
@@ -279,8 +279,8 @@ func logPoller(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `count(count by (evmChainID) (log_poller_query_duration_sum{` + p.PlatformOpts.LabelQuery + `}))`,
-			Legend: "Goroutines",
+			Query:  `count(log_poller_query_duration_sum{` + p.PlatformOpts.LabelQuery + `}) by (evmChainID)`,
+			Legend: "chainId: {{evmChainID}}",
 		},
 	))
 

@@ -77,6 +77,9 @@ Product specific development is the most nuanced kind of development. There are 
 
 ## Protobuf best practices
 
+
 It's extremely important to be mindful of compatibility when changing protobuf definition. See the [official best practices](https://protobuf.dev/programming-guides/dos-donts/) for details.
+
+To update protobuf, update the corresponding `.proto` file in the `pb` package. Then run `make generate` to regenerate the code.
 
 ## FAQ 

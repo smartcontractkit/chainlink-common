@@ -106,7 +106,6 @@ type OffRampStaticConfig struct {
 type OffRampTokens struct {
 	DestinationTokens []Address
 	SourceTokens      []Address
-	DestinationPool   map[Address]Address
 }
 
 // MessageExecutionState defines the execution states of CCIP messages.

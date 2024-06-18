@@ -36,7 +36,7 @@ var GenerateCmd = &cobra.Command{
 		case "core-node":
 			builder, err = corenode.BuildDashboard(name, dataSourcesType.Metrics, platform)
 		case "core-node-components":
-			builder, err = corenodecomponents.BuildDashboard(name, dataSourcesType.Metrics)
+			builder, err = corenodecomponents.BuildDashboard(name, dataSourcesType.Metrics, dataSourcesType.Logs)
 		case "core-node-resources":
 			builder, err = k8sresources.BuildDashboard(name, dataSourcesType.Metrics, dataSourcesType.Logs)
 		case "ocr":

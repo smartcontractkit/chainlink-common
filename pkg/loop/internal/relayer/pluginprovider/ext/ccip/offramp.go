@@ -632,15 +632,10 @@ func offRampTokens(in *ccippb.OffRampTokens) cciptypes.OffRampTokens {
 	for i, t := range in.DestinationTokens {
 		dest[i] = cciptypes.Address(t)
 	}
-	destPool := make(map[cciptypes.Address]cciptypes.Address)
-	for k, v := range in.DestinationPool {
-		destPool[cciptypes.Address(k)] = cciptypes.Address(v)
-	}
 
 	return cciptypes.OffRampTokens{
 		SourceTokens:      source,
 		DestinationTokens: dest,
-		DestinationPool:   destPool,
 	}
 }
 
@@ -653,15 +648,10 @@ func offRampTokensToPB(in cciptypes.OffRampTokens) *ccippb.OffRampTokens {
 	for i, t := range in.DestinationTokens {
 		dest[i] = string(t)
 	}
-	destPool := make(map[string]string)
-	for k, v := range in.DestinationPool {
-		destPool[string(k)] = string(v)
-	}
 
 	return &ccippb.OffRampTokens{
 		SourceTokens:      source,
 		DestinationTokens: dest,
-		DestinationPool:   destPool,
 	}
 }
 

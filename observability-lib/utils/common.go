@@ -5,6 +5,7 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/gauge"
+	"github.com/grafana/grafana-foundation-sdk/go/logs"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 	"github.com/grafana/grafana-foundation-sdk/go/stat"
 	"github.com/grafana/grafana-foundation-sdk/go/table"
@@ -182,6 +183,28 @@ func TablePanel(
 		Title(title).
 		Description(description).
 		Unit(unit)
+
+	for _, q := range query {
+		panel.WithTarget(prometheusQuery(q.Query, q.Legend))
+	}
+
+	return panel
+}
+
+func LogPanel(
+	datasource string,
+	title string,
+	description string,
+	height uint32,
+	span uint32,
+	query ...PrometheusQuery,
+) *logs.PanelBuilder {
+	panel := logs.NewPanelBuilder().
+		Datasource(datasourceRef(datasource)).
+		Height(height).
+		Span(span).
+		Title(title).
+		Description(description)
 
 	for _, q := range query {
 		panel.WithTarget(prometheusQuery(q.Query, q.Legend))

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -294,7 +295,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 	return nil
 }
 
-func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -306,6 +307,16 @@ func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.Key
 		for _, trigger := range f.triggers {
 			sequences = append(sequences, types.Sequence{Data: trigger})
 		}
+
+		if !limitAndSort.HasSequenceSort() {
+			sort.Slice(sequences, func(i, j int) bool {
+				if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
+					return false
+				}
+				return *sequences[i].Data.(TestStruct).Field > *sequences[j].Data.(TestStruct).Field
+			})
+		}
+
 		return sequences, nil
 	}
 	return nil, nil

@@ -11,6 +11,7 @@ type PlatformOpts struct {
 
 type Props struct {
 	MetricsDataSource string
+	LogsDataSource    string
 	PlatformOpts      PlatformOpts
 }
 

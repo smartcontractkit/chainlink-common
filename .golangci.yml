@@ -16,6 +16,7 @@ linters:
     - whitespace
     - depguard
     - containedctx
+    - gomodguard
     - loggercheck
 linters-settings:
   exhaustive:
@@ -130,6 +131,9 @@ linters-settings:
             desc: Use gopkg.in/guregu/null.v4 instead
           - pkg: "gopkg.in/guregu/null.v3"
             desc: Use gopkg.in/guregu/null.v4 instead
+  gomodguard:
+    blocked:
+      local_replace_directives: true
   loggercheck:
     # Check that *w logging functions have even number of args (i.e., well formed key-value pairs).
     rules:
@@ -145,7 +149,7 @@ linters-settings:
       - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).AssumptionViolationw
       - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Tracew
       - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Criticalw
-      - (*github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).With
+      - (*github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).With      
 issues:
   exclude-rules:
     - path: test

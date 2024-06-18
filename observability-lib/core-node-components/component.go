@@ -9,9 +9,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
 )
 
-func BuildDashboard(name string, dataSourceMetric string) (dashboard.Dashboard, error) {
+func BuildDashboard(name string, dataSourceMetric string, dataSourceLog string) (dashboard.Dashboard, error) {
 	props := Props{
 		MetricsDataSource: dataSourceMetric,
+		LogsDataSource:    dataSourceLog,
 		PlatformOpts:      PlatformPanelOpts(),
 	}
 
@@ -139,6 +140,18 @@ func panelsGeneralInfo(p Props) []cog.Builder[dashboard.Panel] {
 			Legend: "{{service_id}}",
 		},
 	).Min(0).Max(100))
+
+	panelsArray = append(panelsArray, utils.LogPanel(
+		p.LogsDataSource,
+		"Logs with severity >= error",
+		"",
+		6,
+		24,
+		utils.PrometheusQuery{
+			Query:  `{env="${env}", cluster="${cluster}", product="${product}", network_type="${network_type}", instance=~"${service}"} | json | level=~"(error|panic|fatal|crit)"`,
+			Legend: "",
+		},
+	))
 
 	return panelsArray
 }

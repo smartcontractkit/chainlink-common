@@ -9,10 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -185,9 +186,7 @@ func (mc *mockCapability) getEncoder(workflowID string) (pbtypes.Encoder, error)
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getDeregisteredWorkflows() []string { return []string{} }
-
-func (mc *mockCapability) removeDeregisteredWorkflows(workflowIDs []string) {}
+func (mc *mockCapability) getRegisteredWorkflows() []string { return []string{} }
 
 func TestReportingPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)

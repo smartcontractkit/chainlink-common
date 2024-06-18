@@ -146,14 +146,16 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 
-		for _, rq := range obs.Observations {
+		for _, id := range obs.RegisteredWorkflowIds {
 			// Count how many times a workflow ID is seen from Observations
-			if _, ok := seenWorkflows[rq.Id.WorkflowId]; ok {
-				seenWorkflows[rq.Id.WorkflowId] += 1
+			if _, ok := seenWorkflows[id]; ok {
+				seenWorkflows[id] += 1
 			} else {
-				seenWorkflows[rq.Id.WorkflowId] = 1
+				seenWorkflows[id] = 1
 			}
+		}
 
+		for _, rq := range obs.Observations {
 			weid := rq.Id.WorkflowExecutionId
 
 			obsList := values.FromListValueProto(rq.Observations)

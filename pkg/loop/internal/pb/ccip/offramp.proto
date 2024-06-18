@@ -207,4 +207,5 @@ message OffRampStaticConfig {
 message OffRampTokens {
     repeated string destination_tokens = 1; // []Address
     repeated string source_tokens = 2; // []Address
+    reserved 3;
 }

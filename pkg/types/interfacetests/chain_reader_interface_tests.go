@@ -235,16 +235,16 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				ts1 := CreateTestStruct[T](0, tester)
+				ts1 := CreateTestStruct[T](1, tester)
 				tester.TriggerEvent(t, &ts1)
-				ts2 := CreateTestStruct[T](1, tester)
+				ts2 := CreateTestStruct[T](0, tester)
 				tester.TriggerEvent(t, &ts2)
 
 				ts := &TestStruct{}
 				assert.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
-					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts2, sequences[0].Data) && reflect.DeepEqual(&ts1, sequences[1].Data)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[0].Data) && reflect.DeepEqual(&ts2, sequences[1].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},

@@ -14,6 +14,7 @@ const (
 	NetworkCosmos   = "cosmos"
 	NetworkSolana   = "solana"
 	NetworkStarkNet = "starknet"
+	NetworkAptos    = "aptos"
 )
 
 var SupportedRelays = map[string]struct{}{
@@ -21,6 +22,7 @@ var SupportedRelays = map[string]struct{}{
 	NetworkCosmos:   {},
 	NetworkSolana:   {},
 	NetworkStarkNet: {},
+	NetworkAptos:    {},
 }
 
 type RelayID struct {

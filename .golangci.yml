@@ -36,7 +36,7 @@ linters-settings:
     check-shadowing: true
     settings:
       printf:
-        # We are overgenerous here to accomodate potential not yet existing functions.
+        # Additionally check chainlink custom loggers
         funcs:
           - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).AssumptionViolationf
           - (github.com/smartcontractkit/chainlink-common/pkg/logger.Logger).Tracef

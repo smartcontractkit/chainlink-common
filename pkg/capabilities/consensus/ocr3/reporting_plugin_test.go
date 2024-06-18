@@ -71,72 +71,6 @@ func TestReportingPlugin_Query(t *testing.T) {
 	assert.Equal(t, qry.Ids[0].WorkflowExecutionId, eid)
 }
 
-func TestReportingPlugin_Observation(t *testing.T) {
-	ctx := tests.Context(t)
-	lggr := logger.Test(t)
-	s := requests.NewStore()
-	rp, err := newReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
-	require.NoError(t, err)
-
-	o, err := values.NewList([]any{"hello"})
-	require.NoError(t, err)
-
-	eid := uuid.New().String()
-	wowner := uuid.New().String()
-	err = s.Add(&requests.Request{
-		WorkflowID:          workflowTestID,
-		WorkflowExecutionID: eid,
-		WorkflowOwner:       wowner,
-		WorkflowName:        workflowTestName,
-		ReportID:            reportTestId,
-		Observations:        o,
-	})
-	require.NoError(t, err)
-	outcomeCtx := ocr3types.OutcomeContext{
-		PreviousOutcome: []byte(""),
-	}
-
-	q, err := rp.Query(ctx, outcomeCtx)
-	require.NoError(t, err)
-
-	obs, err := rp.Observation(ctx, outcomeCtx, q)
-	require.NoError(t, err)
-
-	obspb := &pbtypes.Observations{}
-	err = proto.Unmarshal(obs, obspb)
-	require.NoError(t, err)
-
-	assert.Len(t, obspb.Observations, 1)
-	fo := obspb.Observations[0]
-	assert.Equal(t, fo.Id.WorkflowExecutionId, eid)
-	assert.Equal(t, fo.Id.WorkflowId, workflowTestID)
-	assert.Equal(t, o, values.FromListValueProto(fo.Observations))
-}
-
-func TestReportingPlugin_Observation_NoResults(t *testing.T) {
-	ctx := tests.Context(t)
-	lggr := logger.Test(t)
-	s := requests.NewStore()
-	rp, err := newReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
-	require.NoError(t, err)
-
-	outcomeCtx := ocr3types.OutcomeContext{
-		PreviousOutcome: []byte(""),
-	}
-
-	q, err := rp.Query(ctx, outcomeCtx)
-	require.NoError(t, err)
-
-	obs, err := rp.Observation(ctx, outcomeCtx, q)
-	require.NoError(t, err)
-
-	obspb := &pbtypes.Observations{}
-	err = proto.Unmarshal(obs, obspb)
-	require.NoError(t, err)
-
-	assert.Len(t, obspb.Observations, 0)
-}
-
 type mockCapability struct {
 	gotResponse *requests.Response
 	aggregator  *aggregator
@@ -187,6 +121,80 @@ func (mc *mockCapability) getEncoder(workflowID string) (pbtypes.Encoder, error)
 }
 
 func (mc *mockCapability) getRegisteredWorkflows() []string { return []string{} }
+
+func TestReportingPlugin_Observation(t *testing.T) {
+	ctx := tests.Context(t)
+	lggr := logger.Test(t)
+	s := requests.NewStore()
+	mcap := &mockCapability{
+		aggregator: &aggregator{},
+		encoder:    &enc{},
+	}
+	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
+	require.NoError(t, err)
+
+	o, err := values.NewList([]any{"hello"})
+	require.NoError(t, err)
+
+	eid := uuid.New().String()
+	wowner := uuid.New().String()
+	err = s.Add(&requests.Request{
+		WorkflowID:          workflowTestID,
+		WorkflowExecutionID: eid,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportID:            reportTestId,
+		Observations:        o,
+	})
+	require.NoError(t, err)
+	outcomeCtx := ocr3types.OutcomeContext{
+		PreviousOutcome: []byte(""),
+	}
+
+	q, err := rp.Query(ctx, outcomeCtx)
+	require.NoError(t, err)
+
+	obs, err := rp.Observation(ctx, outcomeCtx, q)
+	require.NoError(t, err)
+
+	obspb := &pbtypes.Observations{}
+	err = proto.Unmarshal(obs, obspb)
+	require.NoError(t, err)
+
+	assert.Len(t, obspb.Observations, 1)
+	fo := obspb.Observations[0]
+	assert.Equal(t, fo.Id.WorkflowExecutionId, eid)
+	assert.Equal(t, fo.Id.WorkflowId, workflowTestID)
+	assert.Equal(t, o, values.FromListValueProto(fo.Observations))
+}
+
+func TestReportingPlugin_Observation_NoResults(t *testing.T) {
+	ctx := tests.Context(t)
+	lggr := logger.Test(t)
+	s := requests.NewStore()
+	mcap := &mockCapability{
+		aggregator: &aggregator{},
+		encoder:    &enc{},
+	}
+	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
+	require.NoError(t, err)
+
+	outcomeCtx := ocr3types.OutcomeContext{
+		PreviousOutcome: []byte(""),
+	}
+
+	q, err := rp.Query(ctx, outcomeCtx)
+	require.NoError(t, err)
+
+	obs, err := rp.Observation(ctx, outcomeCtx, q)
+	require.NoError(t, err)
+
+	obspb := &pbtypes.Observations{}
+	err = proto.Unmarshal(obs, obspb)
+	require.NoError(t, err)
+
+	assert.Len(t, obspb.Observations, 0)
+}
 
 func TestReportingPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)

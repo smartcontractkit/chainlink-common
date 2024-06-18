@@ -16,6 +16,7 @@ linters:
     - whitespace
     - depguard
     - containedctx
+    - gomoddirectives
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
@@ -113,6 +114,8 @@ linters-settings:
             desc: Use gopkg.in/guregu/null.v4 instead
           - pkg: "gopkg.in/guregu/null.v3"
             desc: Use gopkg.in/guregu/null.v4 instead
+  gomoddirectives:
+    replace-local: false
 issues:
   exclude-rules:
     - path: test

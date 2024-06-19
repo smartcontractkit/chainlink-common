@@ -117,6 +117,7 @@ func (c CCIPMsg) String() string {
 
 type CCIPMsgBaseDetails struct {
 	// ID is a unique identifier for the message, it should be unique across all chains.
+	// It is generated on the chain that the CCIP send is requested (i.e. the source chain of a message).
 	ID string `json:"id"`
 	// SourceChain is the chain that the message originated from.
 	SourceChain ChainSelector `json:"sourceChain,string"`

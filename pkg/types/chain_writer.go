@@ -41,8 +41,8 @@ const (
 // ChainFeeComponents contains the different cost components of executing a transaction.
 type ChainFeeComponents struct {
 	// The cost of executing transaction in the chain's EVM (or the L2 environment).
-	ExecutionFee big.Int
+	ExecutionFee *big.Int
 
 	// The cost associated with an L2 posting a transaction's data to the L1.
-	DataAvailabilityFee big.Int
+	DataAvailabilityFee *big.Int
 }

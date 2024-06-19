@@ -148,9 +148,6 @@ var OffRampReader = staticOffRamp{
 				ccip.Address("sourceToken1"),
 				ccip.Address("sourceToken2"),
 			},
-			DestinationPool: map[ccip.Address]ccip.Address{
-				ccip.Address("key1"): ccip.Address("value1"),
-			},
 		},
 
 		// GetRouter test data
@@ -245,7 +242,7 @@ func (s staticOffRamp) DecodeExecutionReport(ctx context.Context, report []byte)
 // EncodeExecutionReport implements OffRampEvaluator.
 func (s staticOffRamp) EncodeExecutionReport(ctx context.Context, report ccip.ExecReport) ([]byte, error) {
 	// struggling to get full report equality via  reflect.DeepEqual or assert.ObjectsAreEqual
-	// take a short cut and compare the fields we care about
+	// take a shortcut and compare the fields we care about
 	if len(report.Messages) != len(s.encodeExecutionReportRequest.Messages) {
 		return nil, fmt.Errorf(" encodeExecutionReport message len %v but got %v", len(s.encodeExecutionReportRequest.Messages), len(report.Messages))
 	}
@@ -378,12 +375,12 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 		return fmt.Errorf("expected gasPrice %v but got %v", GasPriceEstimatorExec.getGasPriceResponse, price)
 	}
 	// DenoteInUSD test case
-	gotusd, err := gasPriceEstimator.DenoteInUSD(GasPriceEstimatorExec.denoteInUSDRequest.p, GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice)
+	gotUsd, err := gasPriceEstimator.DenoteInUSD(GasPriceEstimatorExec.denoteInUSDRequest.p, GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice)
 	if err != nil {
 		return fmt.Errorf("failed to get other usd: %w", err)
 	}
-	if gotusd.Cmp(GasPriceEstimatorExec.denoteInUSDResponse.result) != 0 {
-		return fmt.Errorf("expected usd %v but got %v", GasPriceEstimatorExec.denoteInUSDResponse.result, gotusd)
+	if gotUsd.Cmp(GasPriceEstimatorExec.denoteInUSDResponse.result) != 0 {
+		return fmt.Errorf("expected usd %v but got %v", GasPriceEstimatorExec.denoteInUSDResponse.result, gotUsd)
 	}
 	// EstimateMsgCostUSD test case
 	cost, err := gasPriceEstimator.EstimateMsgCostUSD(

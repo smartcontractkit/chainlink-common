@@ -2,12 +2,14 @@ package workflows
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/invopop/jsonschema"
+	validate "github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/shopspring/decimal"
 	"sigs.k8s.io/yaml"
 
@@ -21,17 +23,51 @@ func GenerateJSONSchema() ([]byte, error) {
 }
 
 func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
+	var url = "https://github.com/smartcontractkit/chainlink/"
 	w := workflowSpecYaml{}
 	err := yaml.Unmarshal([]byte(data), &w)
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+	schemaStr, err := GenerateJSONSchema()
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
 
-	return w.toWorkflowSpec(), err
+	schema, err := validate.CompileString(url, string(schemaStr))
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+
+	var jsonToValidate any
+	err = yaml.Unmarshal([]byte(data), &jsonToValidate)
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+
+	err = schema.Validate(jsonToValidate)
+	if err != nil {
+		return WorkflowSpec{}, err
+	}
+
+	sha256Hash := sha256.New()
+	sha256Hash.Write([]byte(data))
+	w.cid = fmt.Sprintf("%x", sha256Hash.Sum(nil))
+	w.yaml = data
+
+	return w.toWorkflowSpec(), nil
 }
 
 // workflowSpecYaml is the YAML representation of a workflow spec.
 //
 // It allows for multiple ways of defining a workflow spec, which we later
-// convert to a single representation, `workflowSpec`.
+// convert to a single representation, `WorkflowSpec`.
 type workflowSpecYaml struct {
+	// NOTE: Name and Owner are constrained the onchain representation in [github.com/smartcontractkit/chainlink-common/blob/main/pkg/capabilities/consensus/ocr3/types/Metadata]
+
+	Name string `json:"name,omitempty" jsonschema:"pattern=^[0-9A-Za-z_\\-]+$,maxLength=10"` // plain text string exactly 10 characters long, or  empty name allowed for anonymous workflows
+	//Name nameYaml `json:"name"`
+	Owner string `json:"owner,omitempty" jsonschema:"pattern=^0x[0-9a-fA-F]{40}$"` // 20 bytes represented as hex string with 0x prefix, or empty owner allowed for anonymous workflows
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.
 	Triggers []stepDefinitionYaml `json:"triggers" jsonschema:"required"`
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
@@ -40,9 +76,13 @@ type workflowSpecYaml struct {
 	Consensus []stepDefinitionYaml `json:"consensus" jsonschema:"required"`
 	// Targets represents the final step of the workflow, delivering the processed data to a specified location.
 	Targets []stepDefinitionYaml `json:"targets" jsonschema:"required"`
+
+	// computed hash of the original workflow yaml spec
+	cid  string
+	yaml string // original yaml spec
 }
 
-// toWorkflowSpec converts a workflowSpecYaml to a workflowSpec.
+// toWorkflowSpec converts a workflowSpecYaml to a WorkflowSpec.
 //
 // We support multiple ways of defining a workflow spec yaml,
 // but internally we want to work with a single representation.
@@ -80,6 +120,10 @@ func (w workflowSpecYaml) toWorkflowSpec() WorkflowSpec {
 		Actions:   actions,
 		Consensus: consensus,
 		Targets:   targets,
+		Name:      w.Name,
+		Owner:     w.Owner,
+		cid:       w.cid,
+		yaml:      w.yaml,
 	}
 }
 
@@ -105,6 +149,11 @@ func (m *mapping) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// convertNumber detects if a json.Number is an integer or a decimal and converts it to the appropriate type.
+//
+// Supported type conversions:
+// - json.Number -> int64
+// - json.Number -> float64 -> decimal.Decimal
 func convertNumber(el any) (any, error) {
 	switch elv := el.(type) {
 	case json.Number:
@@ -164,15 +213,11 @@ func (m mapping) MarshalJSON() ([]byte, error) {
 // stepDefinitionYaml is the YAML representation of a step in a workflow.
 //
 // It allows for multiple ways of defining a step, which we later
-// convert to a single representation, `stepDefinition`.
+// convert to a single representation, `StepDefinition`.
 type stepDefinitionYaml struct {
 	// A universally unique name for a capability will be defined under the “id” property. The uniqueness will, eventually, be enforced in the Capability Registry.
 	//
 	// Semver must be used to specify the version of the Capability at the end of the id field. Capability versions must be immutable.
-	//
-	// Initially, we will require major versions. This will ease upgrades early on while we develop the infrastructure.
-	//
-	// Eventually, we might support minor version and specific version pins. This will allow workflow authors to have flexibility when selecting the version, and node operators will be able to determine when they should update their capabilities.
 	//
 	// There are two ways to specify an id - using a string as a fully qualified ID or a structured table. When using a table, labels are ordered alphanumerically and joined into a string following a
 	//  {name}:{label1_key}_{label1_value}:{label2_key}_{label2_value}@{version}
@@ -183,16 +228,15 @@ type stepDefinitionYaml struct {
 	// Validation must throw an error if:
 	//
 	// Unsupported characters are used.
-	// (For Keystone only.) More specific than a major version is specified.
 	//
 	// Example (string)
-	//  id: read_chain:chain_ethereum:network_mainnet@1
+	//  id: read_chain:chain_ethereum:network_mainnet@1.0.0
 	//
 	// Example (table)
 	//
 	//  id:
 	//    name: read_chain
-	//    version: 1
+	//    version: 1.0.0
 	//    labels:
 	//      chain: ethereum
 	//      network: mainnet
@@ -233,7 +277,7 @@ type stepDefinitionYaml struct {
 	//
 	// Example
 	//  targets:
-	//    - id: write_polygon_mainnet@1
+	//    - id: write_polygon_mainnet@1.0.0
 	//      inputs:
 	//        report:
 	//          - consensus.evm_median.outputs.report
@@ -244,9 +288,9 @@ type stepDefinitionYaml struct {
 	Config mapping `json:"config" jsonschema:"required"`
 }
 
-// toStepDefinition converts a stepDefinitionYaml to a stepDefinition.
+// toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
 //
-// `stepDefinition` is the converged representation of a step in a workflow.
+// `StepDefinition` is the converged representation of a step in a workflow.
 func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 	return StepDefinition{
 		Ref:    s.Ref,
@@ -256,7 +300,7 @@ func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 	}
 }
 
-// stepDefinitionID represents both the string and table representations of the "id" field in a stepDefinition.
+// stepDefinitionID represents both the string and table representations of the "id" field in a StepDefinition.
 type stepDefinitionID struct {
 	idStr   string
 	idTable *stepDefinitionTableID
@@ -303,9 +347,19 @@ func (s *stepDefinitionID) MarshalJSON() ([]byte, error) {
 func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
 	tableSchema := reflector.Reflect(&stepDefinitionTableID{})
+	tableSchema.ID = ""
+	tableSchema.Version = ""
+	// Allow for a-z, 0-9, _, -, and : characters as the capability type, followed by a semver regex enforcing a full version.
+	//
+	// Prereleases and build metadata are also allowed
+	//
+	// Ex. read_chain:chain_ethereum:network_mainnet@1.0.0
+	// Ex. read_chain:chain_ethereum:network_mainnet@1.0.0-rc1.1+build1
 	stringSchema := &jsonschema.Schema{
-		ID:      "string",
-		Pattern: "^[a-z0-9_\\-:]+@(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+		Pattern: "^[a-z0-9_\\-:]+@(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+		Type:    "string",
+		ID:      "",
+		Version: "",
 	}
 
 	return &jsonschema.Schema{
@@ -319,8 +373,9 @@ func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 
 // stepDefinitionTableID is the structured representation of a stepDefinitionID.
 type stepDefinitionTableID struct {
-	Name    string            `json:"name"`
-	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
+	Name string `json:"name"`
+	// This pattern is the same as the one used in stepDefinitionID.JSONSchema()
+	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
 	Labels  map[string]string `json:"labels"`
 }
 

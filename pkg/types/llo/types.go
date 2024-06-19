@@ -32,6 +32,7 @@ const (
 	ReportFormatSolana   = 3
 	ReportFormatCosmos   = 4
 	ReportFormatStarknet = 5
+	ReportFormatAptos    = 6
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -42,6 +43,7 @@ var ReportFormats = []ReportFormat{
 	ReportFormatSolana,
 	ReportFormatCosmos,
 	ReportFormatStarknet,
+	ReportFormatAptos,
 }
 
 func (rf ReportFormat) String() string {
@@ -56,6 +58,8 @@ func (rf ReportFormat) String() string {
 		return "cosmos"
 	case ReportFormatStarknet:
 		return "starknet"
+	case ReportFormatAptos:
+		return "aptos"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -73,6 +77,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatCosmos, nil
 	case "starknet":
 		return ReportFormatStarknet, nil
+	case "aptos":
+		return ReportFormatAptos, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %s", s)
 	}

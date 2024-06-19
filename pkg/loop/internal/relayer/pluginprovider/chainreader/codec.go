@@ -18,17 +18,36 @@ func NewCodecTestClient(conn *grpc.ClientConn) types.Codec {
 	return &CodecClient{grpc: pb.NewCodecClient(conn)}
 }
 
+type CodecClientOpt func(*CodecClient)
+
 type CodecClient struct {
 	*net.BrokerExt
-	grpc pb.CodecClient
+	grpc       pb.CodecClient
+	encodeWith EncodingVersion
 }
 
-func NewCodecClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CodecClient {
-	return &CodecClient{BrokerExt: b, grpc: pb.NewCodecClient(cc)}
+func NewCodecClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...CodecClientOpt) *CodecClient {
+	client := &CodecClient{
+		BrokerExt:  b,
+		grpc:       pb.NewCodecClient(cc),
+		encodeWith: DefaultEncodingVersion,
+	}
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client
+}
+
+func WithCodecClientEncoding(version EncodingVersion) CodecClientOpt {
+	return func(client *CodecClient) {
+		client.encodeWith = version
+	}
 }
 
 func (c *CodecClient) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
-	versionedParams, err := EncodeVersionedBytes(item, CurrentEncodingVersion)
+	versionedParams, err := EncodeVersionedBytes(item, c.encodeWith)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +67,7 @@ func (c *CodecClient) Decode(ctx context.Context, raw []byte, into any, itemType
 	request := &pb.GetDecodingRequest{
 		Encoded:             raw,
 		ItemType:            itemType,
-		WireEncodingVersion: CurrentEncodingVersion,
+		WireEncodingVersion: c.encodeWith.Uint32(),
 	}
 	resp, err := c.grpc.GetDecoding(ctx, request)
 	if err != nil {
@@ -78,13 +97,13 @@ func (c *CodecClient) GetMaxDecodingSize(ctx context.Context, n int, itemType st
 
 var _ pb.CodecServer = (*CodecServer)(nil)
 
-func NewCodecServer(impl types.Codec) pb.CodecServer {
-	return &CodecServer{impl: impl}
-}
-
 type CodecServer struct {
 	pb.UnimplementedCodecServer
 	impl types.Codec
+}
+
+func NewCodecServer(impl types.Codec) pb.CodecServer {
+	return &CodecServer{impl: impl}
 }
 
 func (c *CodecServer) GetEncoding(ctx context.Context, req *pb.GetEncodingRequest) (*pb.GetEncodingResponse, error) {
@@ -112,7 +131,8 @@ func (c *CodecServer) GetDecoding(ctx context.Context, req *pb.GetDecodingReques
 		return nil, err
 	}
 
-	versionBytes, err := EncodeVersionedBytes(encodedType, req.WireEncodingVersion)
+	versionBytes, err := EncodeVersionedBytes(encodedType, EncodingVersion(req.WireEncodingVersion))
+
 	return &pb.GetDecodingResponse{RetVal: versionBytes}, err
 }
 

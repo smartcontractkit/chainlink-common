@@ -10,7 +10,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
 
-// all methods need to accept a context and return an error
+// OffRampReader all methods need to accept a context and return an error
+//
+//go:generate mockery --quiet --name OffRampReader --filename offramp_reader_mock.go --case=underscore
 type OffRampReader interface {
 	Address(ctx context.Context) (Address, error)
 	// ChangeConfig notifies the reader that the config has changed onchain

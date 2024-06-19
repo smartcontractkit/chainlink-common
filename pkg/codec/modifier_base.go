@@ -274,5 +274,9 @@ type PathMappingError struct {
 }
 
 func (e PathMappingError) Error() string {
-	return fmt.Sprintf("mapping error for path (%s): %s", e.Path, e.Err.Error())
+	return fmt.Sprintf("mapping error for path (%s): %s", e.Path, e.Err)
+}
+
+func (e PathMappingError) Cause() error {
+	return e.Err
 }

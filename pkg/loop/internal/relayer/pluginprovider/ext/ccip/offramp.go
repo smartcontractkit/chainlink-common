@@ -435,6 +435,11 @@ func (o *OffRampReaderGRPCServer) OnchainConfig(ctx context.Context, req *emptyp
 	pbConfig := ccippb.ExecOnchainConfig{
 		PermissionlessExecThresholdSeconds: durationpb.New(config.PermissionLessExecutionThresholdSeconds),
 		Router:                             string(config.Router),
+		MaxDataBytes:                       config.MaxDataBytes,
+		MaxNumberOfTokensPerMsg:            uint32(config.MaxNumberOfTokensPerMsg),
+		PriceRegistry:                      string(config.PriceRegistry),
+		MaxPoolReleaseOrMintGas:            config.MaxPoolReleaseOrMintGas,
+		MaxTokenTransferGas:                config.MaxTokenTransferGas,
 	}
 	return &ccippb.OnchainConfigResponse{Config: &pbConfig}, nil
 }

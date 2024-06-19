@@ -84,23 +84,24 @@ func (c ChainSelector) String() string {
 
 type CCIPMsg struct {
 	CCIPMsgBaseDetails
-	ChainFeeLimit   BigInt          `json:"chainFeeLimit"`
-	Nonce           uint64          `json:"nonce"`
-	Sender          types.Account   `json:"sender"`
-	Receiver        types.Account   `json:"receiver"`
-	Strict          bool            `json:"strict"`
-	FeeToken        types.Account   `json:"feeToken"`
-	FeeTokenAmount  BigInt          `json:"feeTokenAmount"`
-	Data            []byte          `json:"data"`
-	TokenAmounts    []TokenAmount   `json:"tokenAmounts"`
-	SourceTokenData [][]byte        `json:"sourceTokenData"`
-	Metadata        CCIPMsgMetadata `json:"metadata"`
+	ChainFeeLimit   BigInt        `json:"chainFeeLimit"`
+	Nonce           uint64        `json:"nonce"`
+	Sender          types.Account `json:"sender"`
+	Receiver        types.Account `json:"receiver"`
+	Strict          bool          `json:"strict"`
+	FeeToken        types.Account `json:"feeToken"`
+	FeeTokenAmount  BigInt        `json:"feeTokenAmount"`
+	Data            []byte        `json:"data"`
+	TokenAmounts    []TokenAmount `json:"tokenAmounts"`
+	SourceTokenData [][]byte      `json:"sourceTokenData"`
+	// Metadata is used as a backup for any additional data that is not covered by the fields above.
+	Metadata CCIPMsgMetadata `json:"metadata"`
 }
 
 type CCIPMsgMetadata struct {
 	// Version of the message metadata. Required in order to be able to parse the metadata
 	// by the underlying implementation.
-	Version uint64 `json:"version"`
+	Version string `json:"version"`
 	// Data is the metadata payload. The underlying implementation should know how to parse this data.
 	Data []byte `json:"data"`
 }

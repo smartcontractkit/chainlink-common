@@ -56,6 +56,6 @@ type MessageHasher interface {
 
 type HomeChainPoller interface {
 	GetConfig() HomeChainConfig
-	StartPolling(ctx context.Context, interval time.Duration)
-	Close(ctx context.Context) error
+	Start(ctx context.Context) error
+	Close() error
 }

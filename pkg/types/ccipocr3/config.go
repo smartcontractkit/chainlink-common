@@ -158,8 +158,8 @@ type SupportedChains struct {
 	Supported mapset.Set[ChainSelector] `json:"supported"`
 }
 
-func (supportedChains *SupportedChains) IsSupported(chain ChainSelector) bool {
-	return supportedChains.Supported.Contains(chain)
+func (sc *SupportedChains) IsSupported(chain ChainSelector) bool {
+	return sc.Supported.Contains(chain)
 }
 
 func (sc *SupportedChains) UnmarshalJSON(data []byte) error {

@@ -106,7 +106,7 @@ func (b *P2PID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func GetP2pId(id int) P2PID {
+func GetP2pID(id int) P2PID {
 	str := fmt.Sprintf("%032d", id)
 	var pid P2PID
 	copy(pid[:], str)

@@ -72,6 +72,10 @@ func (cm *P2PToSupportedChains) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &temp); err != nil {
 		return err
 	}
+	//if temp == nil {
+	//	*cm = nil
+	//	return nil
+	//}
 	*cm = make(P2PToSupportedChains)
 	for k, v := range temp {
 		var key P2PID

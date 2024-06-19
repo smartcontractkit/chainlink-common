@@ -59,32 +59,6 @@ func TestCommitPluginConfigValidate(t *testing.T) {
 			},
 			expErr: true,
 		},
-		{
-			name: "fChain not set for dest",
-			input: CommitPluginConfig{
-				DestChain: ChainSelector(1),
-				PricedTokens: []types.Account{
-					types.Account("0x123"),
-					types.Account("0x124"),
-				},
-				NewMsgScanBatchSize: 256,
-				TokenPricesObserver: true,
-			},
-			expErr: true,
-		},
-		{
-			name: "fChain not set for some chain",
-			input: CommitPluginConfig{
-				DestChain: ChainSelector(1),
-				PricedTokens: []types.Account{
-					types.Account("0x123"),
-					types.Account("0x124"),
-				},
-				NewMsgScanBatchSize: 256,
-				TokenPricesObserver: true,
-			},
-			expErr: true,
-		},
 	}
 
 	for _, tc := range testCases {

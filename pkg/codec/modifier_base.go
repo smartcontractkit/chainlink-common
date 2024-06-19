@@ -156,6 +156,7 @@ func transformWithMaps[T any](
 	if err != nil {
 		return reflect.Value{}, err
 	}
+
 	return rOutput.Interface(), nil
 }
 
@@ -171,25 +172,30 @@ func transformWithMapsHelper[T any](
 		if elm.Kind() == reflect.Struct {
 			into := reflect.New(toType.Elem())
 			err := changeElements(rItem.Interface(), into.Interface(), fields, fn, hooks)
+
 			return into, err
 		}
 
 		tmp, err := transformWithMapsHelper(elm, toType.Elem(), fields, fn, hooks)
 		result := reflect.New(toType.Elem())
 		reflect.Indirect(result).Set(tmp)
+
 		return result, err
 	case reflect.Struct:
 		into := reflect.New(toType)
 		err := changeElements(rItem.Interface(), into.Interface(), fields, fn, hooks)
+
 		return into.Elem(), err
 	case reflect.Slice:
 		length := rItem.Len()
 		into := reflect.MakeSlice(toType, length, length)
 		err := doMany(rItem, into, fields, fn, hooks)
+
 		return into, err
 	case reflect.Array:
 		into := reflect.New(toType).Elem()
 		err := doMany(rItem, into, fields, fn, hooks)
+
 		return into, err
 	default:
 		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
@@ -202,19 +208,22 @@ func doMany[T any](rInput, rOutput reflect.Value, fields map[string]T, fn mapAct
 		// Make sure the items are addressable
 		inTmp := rInput.Index(i)
 		outTmp := rOutput.Index(i)
+
 		output, err := transformWithMapsHelper(inTmp, outTmp.Type(), fields, fn, hooks)
 		if err != nil {
 			return err
 		}
+
 		outTmp.Set(output)
 	}
+
 	return nil
 }
 
 func changeElements[T any](src, dest any, fields map[string]T, fn mapAction[T], hooks []mapstructure.DecodeHookFunc) error {
 	valueMapping := map[string]any{}
 	if err := mapstructure.Decode(src, &valueMapping); err != nil {
-		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		return fmt.Errorf("%w: failed to decode source type: %w", types.ErrInvalidType, err)
 	}
 
 	if err := doForMapElements(valueMapping, fields, fn); err != nil {
@@ -228,12 +237,13 @@ func changeElements[T any](src, dest any, fields map[string]T, fn mapAction[T], 
 
 	hookedDecoder, err := mapstructure.NewDecoder(conf)
 	if err != nil {
-		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		return fmt.Errorf("%w: failed to create configured decoder: %w", types.ErrInvalidType, err)
 	}
 
 	if err = hookedDecoder.Decode(valueMapping); err != nil {
-		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		return fmt.Errorf("%w: failed to decode destination type: %w", types.ErrInvalidType, err)
 	}
+
 	return nil
 }
 
@@ -242,16 +252,31 @@ func doForMapElements[T any](valueMapping map[string]any, fields map[string]T, f
 		path := strings.Split(key, ".")
 		name := path[len(path)-1]
 		path = path[:len(path)-1]
+
 		extractMaps, err := getMapsFromPath(valueMapping, path)
 		if err != nil {
-			return err
+			return PathMappingError{Err: err, Path: key}
 		}
 
 		for _, em := range extractMaps {
 			if err = fn(em, name, value); err != nil {
-				return err
+				return PathMappingError{Err: err, Path: key}
 			}
 		}
 	}
+
 	return nil
+}
+
+type PathMappingError struct {
+	Err  error
+	Path string
+}
+
+func (e PathMappingError) Error() string {
+	return fmt.Sprintf("mapping error for path (%s): %s", e.Path, e.Err)
+}
+
+func (e PathMappingError) Cause() error {
+	return e.Err
 }

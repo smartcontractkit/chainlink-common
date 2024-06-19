@@ -24,26 +24,50 @@ import (
 
 var _ types.ContractReader = (*Client)(nil)
 
-type Client struct {
-	*goplugin.ServiceClient
-	grpc pb.ChainReaderClient
-}
+type EncodingVersion uint32
 
-func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *Client {
-	return &Client{ServiceClient: goplugin.NewServiceClient(b, cc), grpc: pb.NewChainReaderClient(cc)}
+func (v EncodingVersion) Uint32() uint32 {
+	return uint32(v)
 }
 
 // enum of all known encoding formats for versioned data.
 const (
-	JSONEncodingVersion1 = iota
+	JSONEncodingVersion1 EncodingVersion = iota
 	JSONEncodingVersion2
 	CBOREncodingVersion
 )
 
-// Version to be used for encoding (version used for decoding is determined by data received).
-const CurrentEncodingVersion = CBOREncodingVersion
+const DefaultEncodingVersion = CBOREncodingVersion
 
-func EncodeVersionedBytes(data any, version uint32) (*pb.VersionedBytes, error) {
+type ClientOpt func(*Client)
+
+type Client struct {
+	*goplugin.ServiceClient
+	grpc       pb.ChainReaderClient
+	encodeWith EncodingVersion
+}
+
+func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
+	client := &Client{
+		ServiceClient: goplugin.NewServiceClient(b, cc),
+		grpc:          pb.NewChainReaderClient(cc),
+		encodeWith:    DefaultEncodingVersion,
+	}
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client
+}
+
+func WithClientEncoding(version EncodingVersion) ClientOpt {
+	return func(client *Client) {
+		client.encodeWith = version
+	}
+}
+
+func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes, error) {
 	var bytes []byte
 	var err error
 
@@ -74,12 +98,12 @@ func EncodeVersionedBytes(data any, version uint32) (*pb.VersionedBytes, error) 
 		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
 	}
 
-	return &pb.VersionedBytes{Version: version, Data: bytes}, nil
+	return &pb.VersionedBytes{Version: version.Uint32(), Data: bytes}, nil
 }
 
 func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	var err error
-	switch vData.Version {
+	switch EncodingVersion(vData.Version) {
 	case JSONEncodingVersion1:
 		decoder := json.NewDecoder(bytes.NewBuffer(vData.Data))
 		decoder.UseNumber()
@@ -102,11 +126,12 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}
+
 	return nil
 }
 
 func (c *Client) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
-	versionedParams, err := EncodeVersionedBytes(params, CurrentEncodingVersion)
+	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
 	}
@@ -149,13 +174,31 @@ func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error
 
 var _ pb.ChainReaderServer = (*Server)(nil)
 
-func NewServer(impl types.ContractReader) pb.ChainReaderServer {
-	return &Server{impl: impl}
-}
+type ServerOpt func(*Server)
 
 type Server struct {
 	pb.UnimplementedChainReaderServer
-	impl types.ContractReader
+	impl       types.ContractReader
+	encodeWith EncodingVersion
+}
+
+func NewServer(impl types.ContractReader, opts ...ServerOpt) pb.ChainReaderServer {
+	server := &Server{
+		impl:       impl,
+		encodeWith: DefaultEncodingVersion,
+	}
+
+	for _, opt := range opts {
+		opt(server)
+	}
+
+	return server
+}
+
+func WithServerEncoding(version EncodingVersion) ServerOpt {
+	return func(server *Server) {
+		server.encodeWith = version
+	}
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
@@ -177,7 +220,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	encodedRetVal, err := EncodeVersionedBytes(retVal, request.Params.Version)
+	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +249,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	pbSequences, err := convertSequencesToProto(sequences)
+	pbSequences, err := convertSequencesToProto(sequences, c.encodeWith)
 	if err != nil {
 		return nil, err
 	}
@@ -357,10 +400,10 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 	return pbLimitAndSort, nil
 }
 
-func convertSequencesToProto(sequences []types.Sequence) ([]*pb.Sequence, error) {
+func convertSequencesToProto(sequences []types.Sequence, version EncodingVersion) ([]*pb.Sequence, error) {
 	var pbSequences []*pb.Sequence
 	for _, sequence := range sequences {
-		versionedSequenceDataType, err := EncodeVersionedBytes(sequence.Data, CurrentEncodingVersion)
+		versionedSequenceDataType, err := EncodeVersionedBytes(sequence.Data, version)
 		if err != nil {
 			return nil, err
 		}

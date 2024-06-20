@@ -165,7 +165,6 @@ func (e *CommitProviderServer) Close(context.Context, *emptypb.Empty) (*emptypb.
 
 // NewCommitStoreReader implements ccippb.CommitCustomHandlersServer.
 func (e *CommitProviderServer) NewCommitStoreReader(ctx context.Context, req *ccippb.NewCommitStoreReaderRequest) (*ccippb.NewCommitStoreReaderResponse, error) {
-	// TODO: use stop ch?
 	reader, err := e.impl.NewCommitStoreReader(context.Background(), ccip.Address(req.Address))
 	if err != nil {
 		return nil, err

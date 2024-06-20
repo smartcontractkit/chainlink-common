@@ -6,12 +6,12 @@
 
 /observability-lib/ @Atrax1
 
-/pkg/capabilities/ @cedric-cordenier @krehermann
+/pkg/capabilities/ @smartcontractkit/keystone
 /pkg/codec/ @nolag
 /pkg/loop/ @jmank88 @krehermann
 /pkg/monitoring/ @topliceanu @pedrovsg
 /pkg/services/ @jmank88
 /pkg/sqlutil/ @jmank88
 /pkg/timeutil/ @jmank88
-/pkg/values/ @cedric-cordenier @krehermann
-/pkg/workflows/ @cedric-cordenier @krehermann
+/pkg/values/ @smartcontractkit/keystone
+/pkg/workflows/ @smartcontractkit/keystone

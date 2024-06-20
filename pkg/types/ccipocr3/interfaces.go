@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
@@ -55,7 +56,7 @@ type MessageHasher interface {
 }
 
 type HomeChainPoller interface {
-	GetConfig() HomeChainConfig
-	Start(ctx context.Context) error
-	Close() error
+	GetChainConfig(chainSelector ChainSelector) HomeChainConfig
+	GetAllChainConfigs() map[ChainSelector]HomeChainConfig
+	services.Service
 }

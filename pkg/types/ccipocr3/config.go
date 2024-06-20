@@ -66,59 +66,7 @@ type ObserverInfo struct {
 
 type P2PToSupportedChains map[libocrtypes.PeerID]SupportedChains
 
-//func (cm *P2PToSupportedChains) UnmarshalJSON(data []byte) error {
-//	temp := make(map[string]SupportedChains)
-//	if err := json.Unmarshal(data, &temp); err != nil {
-//		return err
-//	}
-//
-//	*cm = make(P2PToSupportedChains)
-//	for k, v := range temp {
-//		var key libocrtypes.PeerID
-//		//decoded, err := hex.DecodeString(k)
-//		decoded, err := key.UnmarshalBinary(k)
-//		if err != nil {
-//			return err
-//		}
-//		copy(key[:], decoded)
-//		(*cm)[key] = v
-//	}
-//	return nil
-//}
-
-//func (cm P2PToSupportedChains) MarshalJSON() ([]byte, error) {
-//	temp := make(map[string]SupportedChains)
-//	for k, v := range cm {
-//		temp[hex.EncodeToString(k[:])] = v
-//	}
-//	return json.Marshal(temp)
-//}
-//
-
-type ConsensusObservation struct {
-	// FChain defines the FChain value for each chain. FChain is used while forming consensus based on the observations.
-	FChain map[ChainSelector]int `json:"fChain"`
-	// PricedTokens is a list of tokens that we want to submit price updates for.
-	PricedTokens []types.Account `json:"pricedTokens"`
-	// NodeSupportedChains is a map of oracle IDs to SupportedChains.
-	NodeSupportedChains P2PToSupportedChains `json:"nodeSupportedChains"`
-}
-
-func (c ConsensusObservation) Validate() error {
-	for _, inf := range c.NodeSupportedChains {
-		for ch := range inf.Supported.Iter() {
-			if _, ok := c.FChain[ch]; !ok {
-				return fmt.Errorf("fChain not set for chain %d", ch)
-			}
-		}
-	}
-	if len(c.PricedTokens) == 0 {
-		return fmt.Errorf("priced tokens not set, at least one priced token is required")
-	}
-
-	return nil
-}
-
+// HomeChainConfig will act as the centralized configuration for all chains including the F Chain for each as well as the supported chains for each node.
 type HomeChainConfig struct {
 	// FChain defines the FChain value for each chain. FChain is used while forming consensus based on the observations.
 	FChain map[ChainSelector]int `json:"fChain"`
@@ -145,7 +93,7 @@ func (c *HomeChainConfig) IsSupported(node libocrtypes.PeerID, chain ChainSelect
 	if !ok {
 		return false
 	}
-	return supportedChains.IsSupported(chain)
+	return supportedChains.Contains(chain)
 }
 
 func (c *HomeChainConfig) GetSupportedChains(node libocrtypes.PeerID) mapset.Set[ChainSelector] {
@@ -160,7 +108,7 @@ type SupportedChains struct {
 	Supported mapset.Set[ChainSelector] `json:"supported"`
 }
 
-func (sc *SupportedChains) IsSupported(chain ChainSelector) bool {
+func (sc *SupportedChains) Contains(chain ChainSelector) bool {
 	return sc.Supported.Contains(chain)
 }
 

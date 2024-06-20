@@ -2,7 +2,6 @@ package ccipocr3
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math/big"
 )
@@ -85,30 +84,4 @@ func (b *BigInt) UnmarshalJSON(p []byte) error {
 
 func (b BigInt) IsEmpty() bool {
 	return b.Int == nil
-}
-
-type P2PID [32]byte
-
-func (b P2PID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(hex.EncodeToString(b[:]))
-}
-
-func (b *P2PID) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	decoded, err := hex.DecodeString(s)
-	if err != nil {
-		return err
-	}
-	copy(b[:], decoded)
-	return nil
-}
-
-func GetP2pID(id int) P2PID {
-	str := fmt.Sprintf("%032d", id)
-	var pid P2PID
-	copy(pid[:], str)
-	return pid
 }

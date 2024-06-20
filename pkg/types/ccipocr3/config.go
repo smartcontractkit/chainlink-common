@@ -1,8 +1,6 @@
 package ccipocr3
 
-import "C"
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -10,6 +8,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	libocrtypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 type CommitPluginConfig struct {
@@ -65,37 +64,36 @@ type ObserverInfo struct {
 	Reads []ChainSelector `json:"reads"`
 }
 
-type P2PToSupportedChains map[P2PID]SupportedChains
+type P2PToSupportedChains map[libocrtypes.PeerID]SupportedChains
 
-func (cm *P2PToSupportedChains) UnmarshalJSON(data []byte) error {
-	temp := make(map[string]SupportedChains)
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return err
-	}
-	//if temp == nil {
-	//	*cm = nil
-	//	return nil
-	//}
-	*cm = make(P2PToSupportedChains)
-	for k, v := range temp {
-		var key P2PID
-		decoded, err := hex.DecodeString(k)
-		if err != nil {
-			return err
-		}
-		copy(key[:], decoded)
-		(*cm)[key] = v
-	}
-	return nil
-}
+//func (cm *P2PToSupportedChains) UnmarshalJSON(data []byte) error {
+//	temp := make(map[string]SupportedChains)
+//	if err := json.Unmarshal(data, &temp); err != nil {
+//		return err
+//	}
+//
+//	*cm = make(P2PToSupportedChains)
+//	for k, v := range temp {
+//		var key libocrtypes.PeerID
+//		//decoded, err := hex.DecodeString(k)
+//		decoded, err := key.UnmarshalBinary(k)
+//		if err != nil {
+//			return err
+//		}
+//		copy(key[:], decoded)
+//		(*cm)[key] = v
+//	}
+//	return nil
+//}
 
-func (cm P2PToSupportedChains) MarshalJSON() ([]byte, error) {
-	temp := make(map[string]SupportedChains)
-	for k, v := range cm {
-		temp[hex.EncodeToString(k[:])] = v
-	}
-	return json.Marshal(temp)
-}
+//func (cm P2PToSupportedChains) MarshalJSON() ([]byte, error) {
+//	temp := make(map[string]SupportedChains)
+//	for k, v := range cm {
+//		temp[hex.EncodeToString(k[:])] = v
+//	}
+//	return json.Marshal(temp)
+//}
+//
 
 type ConsensusObservation struct {
 	// FChain defines the FChain value for each chain. FChain is used while forming consensus based on the observations.
@@ -142,7 +140,7 @@ func (c *HomeChainConfig) GetFChain(chain ChainSelector) int {
 	return c.FChain[chain]
 }
 
-func (c *HomeChainConfig) IsSupported(node P2PID, chain ChainSelector) bool {
+func (c *HomeChainConfig) IsSupported(node libocrtypes.PeerID, chain ChainSelector) bool {
 	supportedChains, ok := c.NodeSupportedChains[node]
 	if !ok {
 		return false
@@ -150,7 +148,7 @@ func (c *HomeChainConfig) IsSupported(node P2PID, chain ChainSelector) bool {
 	return supportedChains.IsSupported(chain)
 }
 
-func (c *HomeChainConfig) GetSupportedChains(node P2PID) mapset.Set[ChainSelector] {
+func (c *HomeChainConfig) GetSupportedChains(node libocrtypes.PeerID) mapset.Set[ChainSelector] {
 	supportedChains, ok := c.NodeSupportedChains[node]
 	if !ok {
 		return mapset.NewSet[ChainSelector]()
@@ -200,9 +198,9 @@ func (sc SupportedChains) MarshalJSON() ([]byte, error) {
 }
 
 type OnChainConfig struct {
-	Readers []P2PID `json:"readers"`
-	FChain  uint8   `json:"fChain"`
-	Config  []byte  `json:"config"`
+	Readers []libocrtypes.PeerID `json:"readers"`
+	FChain  uint8                `json:"fChain"`
+	Config  []byte               `json:"config"`
 }
 type OnChainCapabilityConfig struct {
 	// Calling function https://github.com/smartcontractkit/ccip/blob/330c5e98f624cfb10108c92fe1e00ced6d345a99/contracts/src/v0.8/ccip/capability/CCIPCapabilityConfiguration.sol#L140

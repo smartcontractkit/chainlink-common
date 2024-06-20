@@ -1,7 +1,6 @@
 package ccipocr3
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -64,94 +63,10 @@ type ObserverInfo struct {
 	Reads []ChainSelector `json:"reads"`
 }
 
-type P2PToSupportedChains map[libocrtypes.PeerID]SupportedChains
-
-// HomeChainConfig will act as the centralized configuration for all chains including the F Chain for each as well as the supported chains for each node.
-type HomeChainConfig struct {
-	// FChain defines the FChain value for each chain. FChain is used while forming consensus based on the observations.
-	FChain map[ChainSelector]int `json:"fChain"`
-	// NodeSupportedChains is a map of PeerIDs to SupportedChains.
-	NodeSupportedChains P2PToSupportedChains `json:"nodeSupportedChains"`
-}
-
-func (c *HomeChainConfig) Validate() error {
-	for _, inf := range c.NodeSupportedChains {
-		for ch := range inf.Supported.Iter() {
-			if _, ok := c.FChain[ch]; !ok {
-				return fmt.Errorf("fChain not set for chain %d", ch)
-			}
-		}
-	}
-	return nil
-}
-func (c *HomeChainConfig) GetFChain(chain ChainSelector) int {
-	return c.FChain[chain]
-}
-
-func (c *HomeChainConfig) IsSupported(node libocrtypes.PeerID, chain ChainSelector) bool {
-	supportedChains, ok := c.NodeSupportedChains[node]
-	if !ok {
-		return false
-	}
-	return supportedChains.Contains(chain)
-}
-
-func (c *HomeChainConfig) GetSupportedChains(node libocrtypes.PeerID) mapset.Set[ChainSelector] {
-	supportedChains, ok := c.NodeSupportedChains[node]
-	if !ok {
-		return mapset.NewSet[ChainSelector]()
-	}
-	return supportedChains.Supported
-}
-
-type SupportedChains struct {
-	Supported mapset.Set[ChainSelector] `json:"supported"`
-}
-
-func (sc *SupportedChains) Contains(chain ChainSelector) bool {
-	return sc.Supported.Contains(chain)
-}
-
-func (sc *SupportedChains) UnmarshalJSON(data []byte) error {
-	temp := struct {
-		Supported []ChainSelector `json:"supported"`
-	}{}
-
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return err
-	}
-
-	sc.Supported = mapset.NewSet[ChainSelector]()
-	for _, ch := range temp.Supported {
-		sc.Supported.Add(ch)
-	}
-
-	return nil
-}
-
-func (sc SupportedChains) MarshalJSON() ([]byte, error) {
-	supportedSlice := make([]ChainSelector, 0, sc.Supported.Cardinality())
-	for ch := range sc.Supported.Iter() {
-		supportedSlice = append(supportedSlice, ch)
-	}
-
-	// Define a temporary struct with a slice for Supported
-	temp := struct {
-		Supported []ChainSelector `json:"supported"`
-	}{
-		Supported: supportedSlice,
-	}
-
-	return json.Marshal(temp)
-}
-
-type OnChainConfig struct {
-	Readers []libocrtypes.PeerID `json:"readers"`
-	FChain  uint8                `json:"fChain"`
-	Config  []byte               `json:"config"`
-}
-type OnChainCapabilityConfig struct {
-	// Calling function https://github.com/smartcontractkit/ccip/blob/330c5e98f624cfb10108c92fe1e00ced6d345a99/contracts/src/v0.8/ccip/capability/CCIPCapabilityConfiguration.sol#L140
-	ChainSelector ChainSelector `json:"chainSelector"`
-	ChainConfig   OnChainConfig `json:"chainConfig"`
+// ChainConfig will live on the home chain and will be used to update chain configuration like F value and supported nodes dynamically.
+type ChainConfig struct {
+	// FChain defines the FChain value for the chain. FChain is used while forming consensus based on the observations.
+	FChain int `json:"fChain"`
+	// SupportedNodes is a map of PeerIDs to SupportedChains.
+	SupportedNodes mapset.Set[libocrtypes.PeerID] `json:"supportedNodes"`
 }

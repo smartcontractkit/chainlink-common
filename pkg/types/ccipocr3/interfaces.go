@@ -56,7 +56,7 @@ type MessageHasher interface {
 }
 
 type HomeChainPoller interface {
-	GetChainConfig(chainSelector ChainSelector) HomeChainConfig
-	GetAllChainConfigs() map[ChainSelector]HomeChainConfig
+	GetChainConfig(chainSelector ChainSelector) ChainConfig
+	GetAllChainConfigs() map[ChainSelector]ChainConfig
 	services.Service
 }

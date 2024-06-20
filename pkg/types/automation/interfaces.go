@@ -3,6 +3,9 @@ package automation
 import (
 	"context"
 	"io"
+	"math/big"
+
+	"github.com/google/uuid"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -82,4 +85,11 @@ type BlockSubscriber interface {
 
 type UpkeepStateUpdater interface {
 	SetUpkeepState(context.Context, CheckResult, UpkeepState) error
+}
+
+type TxStatusStore interface {
+	SaveTxInfo(uuid uuid.UUID, upkeepID *big.Int) error
+	IsStuck(upkeepID *big.Int) bool
+	Start(context.Context) error
+	Close() error
 }

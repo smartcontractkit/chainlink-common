@@ -12,7 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
+	capabilityregistry "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
@@ -80,7 +80,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(errorLogRes)
 
 		capRegistryID, capRegistryRes, err := o.ServeNew("CapRegistry", func(s *grpc.Server) {
-			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry))
+			pb.RegisterCapabilitiesRegistryServer(s, capabilityregistry.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry))
 		})
 		if err != nil {
 			return 0, nil, err
@@ -209,7 +209,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		return nil, net.ErrConnDial{Name: "CapabilitiesRegistry", ID: request.CapRegistryID, Err: err}
 	}
 	capRegistryRes := net.Resource{Closer: capRegistryConn, Name: "CapabilitiesRegistry"}
-	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, m.BrokerExt)
+	capRegistry := capabilityregistry.NewCapabilitiesRegistryClient(capRegistryConn, m.BrokerExt)
 
 	keyValueStoreConn, err := m.Dial(request.KeyValueStoreID)
 	if err != nil {

@@ -1,4 +1,4 @@
-package capability
+package registry
 
 import (
 	"context"

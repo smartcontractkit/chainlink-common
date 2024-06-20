@@ -184,7 +184,7 @@ func TestRelayerServerAdapter(t *testing.T) {
 		},
 		{
 			ProviderType: string(types.CCIPExecution),
-			Error:        "provider type not supported",
+			Test:         isType[types.CCIPExecProvider],
 		},
 		{
 			ProviderType: "unknown",

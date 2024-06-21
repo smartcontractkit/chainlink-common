@@ -5,12 +5,7 @@ import (
 	"math/big"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
-
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-	libocrtypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 type CCIPReader interface {
@@ -57,16 +52,4 @@ type ExecutePluginCodec interface {
 
 type MessageHasher interface {
 	Hash(context.Context, CCIPMsg) (Bytes32, error)
-}
-
-type HomeChainPoller interface {
-	GetChainConfig(chainSelector ChainSelector) (ChainConfig, error)
-	GetAllChainConfigs() (map[ChainSelector]ChainConfig, error)
-	// GetSupportedChainsForPeer Gets all chain selectors that the peerID can read/write from/to
-	GetSupportedChainsForPeer(id libocrtypes.PeerID) (mapset.Set[ChainSelector], error)
-	// GetKnownCCIPChains Gets all chain selectors that are known to CCIP
-	GetKnownCCIPChains() (mapset.Set[ChainSelector], error)
-	// GetFChain Gets the FChain value for each chain
-	GetFChain() (map[ChainSelector]int, error)
-	services.Service
 }

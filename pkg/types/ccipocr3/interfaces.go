@@ -58,8 +58,8 @@ type MessageHasher interface {
 }
 
 type HomeChainPoller interface {
-	GetChainConfig(chainSelector ChainSelector) ChainConfig
-	GetAllChainConfigs() map[ChainSelector]ChainConfig
+	GetChainConfig(chainSelector ChainSelector) (ChainConfig, error)
+	GetAllChainConfigs() (map[ChainSelector]ChainConfig, error)
 	GetSupportedChains(id libocrtypes.PeerID) mapset.Set[ChainSelector]
 	GetKnownChains() mapset.Set[ChainSelector]
 	services.Service

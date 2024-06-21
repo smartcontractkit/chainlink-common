@@ -11,8 +11,8 @@ import (
 func TestCommitPluginObservation_EncodeAndDecode(t *testing.T) {
 	obs := NewCommitPluginObservation(
 		[]CCIPMsgBaseDetails{
-			{ID: [32]byte{1}, SourceChain: math.MaxUint64, SeqNum: 123},
-			{ID: [32]byte{2}, SourceChain: 321, SeqNum: math.MaxUint64},
+			{MsgHash: Bytes32{1}, ID: "1", SourceChain: math.MaxUint64, SeqNum: 123},
+			{MsgHash: Bytes32{2}, ID: "2", SourceChain: 321, SeqNum: math.MaxUint64},
 		},
 		[]GasPriceChain{}, // todo: populate this
 		[]TokenPrice{},
@@ -23,6 +23,7 @@ func TestCommitPluginObservation_EncodeAndDecode(t *testing.T) {
 	b, err := obs.Encode()
 	assert.NoError(t, err)
 	assert.Equal(t, `{"newMsgs":[{"id":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChain":"18446744073709551615","seqNum":"123"},{"id":"0x0200000000000000000000000000000000000000000000000000000000000000","sourceChain":"321","seqNum":"18446744073709551615"}],"gasPrices":[],"tokenPrices":[],"maxSeqNums":[],"fChain":{}}`, string(b))
+
 
 	obs2, err := DecodeCommitPluginObservation(b)
 	assert.NoError(t, err)

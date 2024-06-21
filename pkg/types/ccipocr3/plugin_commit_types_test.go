@@ -17,12 +17,12 @@ func TestCommitPluginObservation_EncodeAndDecode(t *testing.T) {
 		[]GasPriceChain{}, // todo: populate this
 		[]TokenPrice{},
 		[]SeqNumChain{},
-		CommitPluginConfig{},
+		map[ChainSelector]int{},
 	)
 
 	b, err := obs.Encode()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"newMsgs":[{"id":"1","sourceChain":"18446744073709551615","seqNum":"123","msgHash":"0x0100000000000000000000000000000000000000000000000000000000000000"},{"id":"2","sourceChain":"321","seqNum":"18446744073709551615","msgHash":"0x0200000000000000000000000000000000000000000000000000000000000000"}],"gasPrices":[],"tokenPrices":[],"maxSeqNums":[],"pluginConfig":{"destChain":0,"fChain":null,"observerInfo":null,"pricedTokens":null,"tokenPricesObserver":false,"newMsgScanBatchSize":0}}`, string(b))
+	assert.Equal(t, `{"newMsgs":[{"id":"1","sourceChain":"18446744073709551615","seqNum":"123","msgHash":"0x0100000000000000000000000000000000000000000000000000000000000000"},{"id":"2","sourceChain":"321","seqNum":"18446744073709551615","msgHash":"0x0200000000000000000000000000000000000000000000000000000000000000"}],"gasPrices":[],"tokenPrices":[],"maxSeqNums":[],"fChain":{}}`, string(b))
 
 	obs2, err := DecodeCommitPluginObservation(b)
 	assert.NoError(t, err)

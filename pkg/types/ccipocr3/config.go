@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-	libocrtypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 type CommitPluginConfig struct {
@@ -61,14 +59,4 @@ type ObserverInfo struct {
 
 	// Reads define the chains that the current node can read from.
 	Reads []ChainSelector `json:"reads"`
-}
-
-// ChainConfig will live on the home chain and will be used to update chain configuration like F value and supported nodes dynamically.
-type ChainConfig struct {
-	// FChain defines the FChain value for the chain. FChain is used while forming consensus based on the observations.
-	FChain int `json:"fChain"`
-	// SupportedNodes is a map of PeerIDs to SupportedChains.
-	SupportedNodes mapset.Set[libocrtypes.PeerID] `json:"supportedNodes"`
-	// Config is the chain specific configuration.
-	Config []byte `json:"config"`
 }

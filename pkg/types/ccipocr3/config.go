@@ -69,4 +69,6 @@ type ChainConfig struct {
 	FChain int `json:"fChain"`
 	// SupportedNodes is a map of PeerIDs to SupportedChains.
 	SupportedNodes mapset.Set[libocrtypes.PeerID] `json:"supportedNodes"`
+	// Config is the chain specific configuration.
+	Config []byte `json:"config"`
 }

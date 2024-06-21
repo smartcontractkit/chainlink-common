@@ -5,8 +5,10 @@ import (
 	"math/big"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	libocrtypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 type CCIPReader interface {
@@ -58,5 +60,7 @@ type MessageHasher interface {
 type HomeChainPoller interface {
 	GetChainConfig(chainSelector ChainSelector) ChainConfig
 	GetAllChainConfigs() map[ChainSelector]ChainConfig
+	GetSupportedChains(id libocrtypes.PeerID) mapset.Set[ChainSelector]
+	GetKnownChains() mapset.Set[ChainSelector]
 	services.Service
 }

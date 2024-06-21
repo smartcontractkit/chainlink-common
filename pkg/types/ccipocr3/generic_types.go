@@ -83,7 +83,6 @@ func (c ChainSelector) String() string {
 }
 
 type CCIPMsg struct {
-	CCIPMsgBaseDetails
 	ChainFeeLimit   BigInt        `json:"chainFeeLimit"`
 	Nonce           uint64        `json:"nonce"`
 	Sender          types.Account `json:"sender"`
@@ -94,16 +93,8 @@ type CCIPMsg struct {
 	Data            []byte        `json:"data"`
 	TokenAmounts    []TokenAmount `json:"tokenAmounts"`
 	SourceTokenData [][]byte      `json:"sourceTokenData"`
-	// Metadata is used as a backup for any additional data that is not covered by the fields above.
-	Metadata CCIPMsgMetadata `json:"metadata"`
-}
 
-type CCIPMsgMetadata struct {
-	// Version of the message metadata. Required in order to be able to parse the metadata
-	// by the underlying implementation.
-	Version string `json:"version"`
-	// Data is the metadata payload. The underlying implementation should know how to parse this data.
-	Data []byte `json:"data"`
+	CCIPMsgBaseDetails
 }
 
 type TokenAmount struct {
@@ -117,16 +108,7 @@ func (c CCIPMsg) String() string {
 }
 
 type CCIPMsgBaseDetails struct {
-	// ID is a unique identifier for the message, it should be unique across all chains.
-	// It is generated on the chain that the CCIP send is requested (i.e. the source chain of a message).
-	ID string `json:"id"`
-	// SourceChain is the chain that the message originated from.
+	ID          Bytes32       `json:"id"`
 	SourceChain ChainSelector `json:"sourceChain,string"`
-	// SeqNum is an auto-incrementing sequence number for the message.
-	// NOTE: Sequence numbers are unique per chain. Meaning that the same sequence number can exist on multiple chains.
-	SeqNum SeqNum `json:"seqNum,string"`
-
-	// MsgHash is the hash of all the message fields.
-	// NOTE: The field is expected to be empty, and will be populated by the plugin using the MsgHasher interface.
-	MsgHash Bytes32 `json:"msgHash"` // populated
+	SeqNum      SeqNum        `json:"seqNum,string"`
 }

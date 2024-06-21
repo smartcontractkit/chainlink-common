@@ -39,28 +39,3 @@ func TestNewBytes32FromString(t *testing.T) {
 		})
 	}
 }
-
-func TestBytes32_IsEmpty(t *testing.T) {
-	testCases := []struct {
-		name     string
-		input    Bytes32
-		expected bool
-	}{
-		{
-			name:     "empty",
-			input:    Bytes32{},
-			expected: true,
-		},
-		{
-			name:     "not empty",
-			input:    Bytes32{0x20, 0},
-			expected: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expected, tc.input.IsEmpty())
-		})
-	}
-}

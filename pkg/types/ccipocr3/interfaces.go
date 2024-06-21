@@ -62,5 +62,6 @@ type HomeChainPoller interface {
 	GetAllChainConfigs() (map[ChainSelector]ChainConfig, error)
 	GetSupportedChains(id libocrtypes.PeerID) mapset.Set[ChainSelector]
 	GetKnownChains() mapset.Set[ChainSelector]
+	GetFChain() map[ChainSelector]int
 	services.Service
 }

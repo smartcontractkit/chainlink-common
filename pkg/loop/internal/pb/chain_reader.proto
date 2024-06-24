@@ -55,7 +55,7 @@ message QueryKeyReply {
 
 // ContractBatch is gRPC adapter for the BatchGetLatestValueRequest struct map value [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchGetLatestValueRequest].
 message ContractBatch {
-  repeated BatchRead value = 1;
+  repeated BatchRead reads = 1;
 }
 
 // BatchCall is gRPC adapter for the GetLatestValueRequest struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchCall].
@@ -74,6 +74,7 @@ message ContractBatchResult {
 message BatchReadResult {
   string read_name = 1;
   VersionedBytes return_val = 2;
+  string error = 3;
 }
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].

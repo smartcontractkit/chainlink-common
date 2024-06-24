@@ -46,7 +46,7 @@ type ChainReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	GetLatestValue(ctx context.Context, contractName, method string, params, returnVal any) error
 
-	BatchGetLatestValue(ctx context.Context, request BatchGetLatestValueRequest) error
+	BatchGetLatestValue(ctx context.Context, request BatchGetLatestValueRequest) (BatchGetLatestValueResult, error)
 
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
@@ -57,11 +57,20 @@ type ChainReader interface {
 }
 
 // BatchGetLatestValueRequest string is contract name.
-type BatchGetLatestValueRequest map[string][]BatchRead
+type BatchGetLatestValueRequest map[string]ContractBatch
+type ContractBatch []BatchRead
 type BatchRead struct {
 	ReadName  string
 	Params    any
 	ReturnVal any
+}
+
+type BatchGetLatestValueResult map[string]ContractBatchResults
+type ContractBatchResults []BatchReadResult
+type BatchReadResult struct {
+	ReadName    string
+	ReturnValue any
+	Err         error
 }
 
 type Head struct {

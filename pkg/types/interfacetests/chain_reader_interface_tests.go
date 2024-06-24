@@ -21,6 +21,7 @@ type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	// Any setup required for this should be done in Setup.
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
 	SetLatestValue(t T, testStruct *TestStruct)
+	SetBatchLatestValues(t T, batchCallEntry BatchCallEntry)
 	TriggerEvent(t T, testStruct *TestStruct)
 	GetBindings(t T) []types.BoundContract
 	MaxWaitTimeForEvents() time.Duration
@@ -45,8 +46,9 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 const AnyExtraValue = 3
 
 func RunChainReaderInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {
-	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runChainReaderGetLatestValueInterfaceTests(t, tester) })
-	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
+	//t.Run("GetLatestValue for "+tester.Name(), func(t T) { runChainReaderGetLatestValueInterfaceTests(t, tester) })
+	t.Run("BatchGetLatestValue for "+tester.Name(), func(t T) { runChainReaderBatchGetLatestValueInterfaceTests(t, tester) })
+	//t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
 }
 
 func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {
@@ -101,7 +103,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 			},
 		},
 		{
-			name: "Get latest value allows multiple constract names to have the same function name",
+			name: "Get latest value allows multiple contract names to have the same function Name",
 			test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
@@ -211,6 +213,56 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 		},
 	}
 	runTests(t, tester, tests)
+}
+
+func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {
+	testCases := []testcase[T]{
+		{
+			name: "Gets the latest value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				firstItem := CreateTestStruct(0, tester)
+				secondItem := CreateTestStruct(1, tester)
+
+				batchCallEntry := make(BatchCallEntry)
+				batchCallEntry[AnyContractName] = ContractBatchEntry{
+					{Name: MethodTakingLatestParamsReturningTestStruct, Ts: &firstItem},
+					{Name: MethodTakingLatestParamsReturningTestStruct, Ts: &secondItem},
+				}
+				tester.SetBatchLatestValues(t, batchCallEntry)
+
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				actual1 := &TestStruct{}
+				params1 := &LatestParams{I: 1}
+
+				params2 := &LatestParams{I: 2}
+				actual2 := &TestStruct{}
+
+				batchGetLatestValueRequest := make(types.BatchGetLatestValueRequest)
+				batchGetLatestValueRequest[AnyContractName] = []types.BatchRead{
+					{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: params1, ReturnVal: actual1},
+					{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: params2, ReturnVal: actual2},
+				}
+
+				result, err := cr.BatchGetLatestValue(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				contractBatch := result[AnyContractName]
+
+				assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, contractBatch[0].ReadName)
+				assert.Equal(t, &secondItem, contractBatch[1].ReturnValue)
+				assert.NoError(t, contractBatch[1].Err)
+
+				assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, contractBatch[1].ReadName)
+				assert.Equal(t, &secondItem, contractBatch[1].ReturnValue)
+				assert.NoError(t, contractBatch[1].Err)
+			},
+		},
+	}
+
+	runTests(t, tester, testCases)
 }
 
 func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {

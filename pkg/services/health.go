@@ -171,7 +171,7 @@ func (c *HealthChecker) update() {
 func (c *HealthChecker) Register(service HealthReporter) error {
 	name := service.Name()
 	if name == "" {
-		return fmt.Errorf("misconfigured check %#v for %#v", name, service)
+		return fmt.Errorf("misconfigured check %#v for %T", name, service)
 	}
 
 	c.servicesMu.Lock()

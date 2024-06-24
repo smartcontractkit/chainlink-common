@@ -426,7 +426,8 @@ func Test_Capabilities(t *testing.T) {
 
 		expectedErr := errors.New("an error")
 		expectedResp := capabilities.CapabilityResponse{
-			Err: expectedErr,
+			Err:   expectedErr,
+			Value: values.EmptyMap(),
 		}
 
 		ma.callback <- expectedResp

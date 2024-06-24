@@ -9,6 +9,7 @@ import "google/protobuf/empty.proto";
 
 service ChainReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc BatchGetLatestValue (BatchGetLatestValueRequest) returns (BatchGetLatestValueReply) {}
   rpc QueryKey(QueryKeyRequest) returns (QueryKeyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
 }
@@ -18,6 +19,11 @@ message GetLatestValueRequest {
   string contract_name = 1;
   string method = 2;
   VersionedBytes params = 3;
+}
+
+// BatchGetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchGetLatestValue].
+message BatchGetLatestValueRequest {
+  map<string, ContractBatch> requests = 1;
 }
 
 // QueryKeyRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
@@ -37,9 +43,37 @@ message GetLatestValueReply {
   VersionedBytes ret_val = 1;
 }
 
+// BatchGetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchGetLatestValue].
+message BatchGetLatestValueReply {
+  map<string, ContractBatchResult> results = 1;
+}
+
 // QueryKeyReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.QueryKey].
 message QueryKeyReply {
   repeated Sequence sequences = 1;
+}
+
+// ContractBatch is gRPC adapter for the BatchGetLatestValueRequest struct map value [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchGetLatestValueRequest].
+message ContractBatch {
+  repeated BatchRead value = 1;
+}
+
+// BatchCall is gRPC adapter for the GetLatestValueRequest struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchCall].
+message BatchRead  {
+  string read_name = 1;
+  VersionedBytes params = 2;
+  VersionedBytes return_val = 3;
+}
+
+// ContractBatchResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchGetLatestValue].
+message ContractBatchResult {
+  repeated BatchReadResult results = 1;
+}
+
+// BatchCallResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchGetLatestValue].
+message BatchReadResult {
+  string read_name = 1;
+  VersionedBytes return_val = 2;
 }
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Head].

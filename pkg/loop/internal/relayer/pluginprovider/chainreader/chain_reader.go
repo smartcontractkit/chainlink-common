@@ -144,6 +144,20 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
+func (c *Client) BatchGetLatestValue(ctx context.Context, request types.BatchGetLatestValueRequest) error {
+	pbRequest, err := convertBatchGetLatestValueRequestToProto(request, c.encodeWith)
+	if err != nil {
+		return err
+	}
+
+	reply, err := c.grpc.BatchGetLatestValue(ctx, pbRequest)
+	if err != nil {
+		return net.WrapRPCErr(err)
+	}
+
+	return parseBatchGetLatestValueReply(reply, request)
+}
+
 func (c *Client) QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
 	pbQueryFilter, err := convertQueryFilterToProto(filter)
 	if err != nil {
@@ -215,6 +229,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	if err != nil {
 		return nil, err
 	}
+
 	err = c.impl.GetLatestValue(ctx, request.ContractName, request.Method, params, retVal)
 	if err != nil {
 		return nil, err
@@ -226,6 +241,19 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	}
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
+}
+
+func (c *Server) BatchGetLatestValue(ctx context.Context, pbRequest *pb.BatchGetLatestValueRequest) (*pb.BatchGetLatestValueReply, error) {
+	request, err := convertBatchGetLatestValueRequestFromProto(pbRequest, c.impl)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = c.impl.BatchGetLatestValue(ctx, request); err != nil {
+		return nil, err
+	}
+
+	return newPbBatchGetLatestValueReply(request, c.encodeWith)
 }
 
 func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
@@ -272,6 +300,53 @@ func getContractEncodedType(contractName, itemType string, possibleTypeProvider 
 	}
 
 	return &map[string]any{}, nil
+}
+
+func newPbBatchGetLatestValueReply(request types.BatchGetLatestValueRequest, encodeWith EncodingVersion) (*pb.BatchGetLatestValueReply, error) {
+	var pbBatchGetLatestValueReply = &pb.BatchGetLatestValueReply{Results: make(map[string]*pb.ContractBatchResult)}
+	for contractName, contractBatch := range request {
+		if _, ok := pbBatchGetLatestValueReply.Results[contractName]; !ok {
+			pbContractBatchResult := &pb.ContractBatchResult{Results: []*pb.BatchReadResult{}}
+			pbBatchGetLatestValueReply.Results[contractName] = pbContractBatchResult
+		}
+
+		for _, batchCall := range contractBatch {
+			encodedRetVal, err := EncodeVersionedBytes(batchCall.ReturnVal, encodeWith)
+			if err != nil {
+				return nil, err
+			}
+			pbBatchReadResult := &pb.BatchReadResult{ReadName: batchCall.ReadName, ReturnVal: encodedRetVal}
+			pbBatchGetLatestValueReply.Results[contractName].Results = append(pbBatchGetLatestValueReply.Results[contractName].Results, pbBatchReadResult)
+		}
+	}
+	return nil, nil
+}
+
+func convertBatchGetLatestValueRequestToProto(request types.BatchGetLatestValueRequest, encodeWith EncodingVersion) (*pb.BatchGetLatestValueRequest, error) {
+	pbRequest := &pb.BatchGetLatestValueRequest{Requests: make(map[string]*pb.ContractBatch)}
+	for contractName, contractBatch := range request {
+		if _, ok := pbRequest.Requests[contractName]; !ok {
+			var pbContractBatch *pb.ContractBatch
+			pbContractBatch.Value = []*pb.BatchRead{}
+			pbRequest.Requests[contractName] = pbContractBatch
+		}
+
+		for _, batchCall := range contractBatch {
+			versionedParams, err := EncodeVersionedBytes(batchCall.Params, encodeWith)
+			if err != nil {
+				return nil, err
+			}
+
+			pbRequest.Requests[contractName].Value = append(
+				pbRequest.Requests[contractName].Value,
+				&pb.BatchRead{
+					ReadName: batchCall.ReadName,
+					Params:   versionedParams,
+				},
+			)
+		}
+	}
+	return pbRequest, nil
 }
 
 func convertQueryFilterToProto(filter query.KeyFilter) (*pb.QueryKeyFilter, error) {
@@ -419,6 +494,64 @@ func convertSequencesToProto(sequences []types.Sequence, version EncodingVersion
 		pbSequences = append(pbSequences, pbSequence)
 	}
 	return pbSequences, nil
+}
+
+func parseBatchGetLatestValueReply(reply *pb.BatchGetLatestValueReply, request types.BatchGetLatestValueRequest) error {
+	if reply == nil {
+		return fmt.Errorf("received nil reply from grpc BatchGetLatestValue")
+	}
+
+	// parse replies into caller's expected return values
+	for contractName, contractBatch := range reply.Results {
+		for _, callReply := range contractBatch.Results {
+			if _, ok := request[contractName]; !ok {
+				return fmt.Errorf("received unexpected contract name from return values %s", contractName)
+			}
+
+			for _, callReq := range request[contractName] {
+				if callReply.ReadName == callReq.ReadName {
+					if err := DecodeVersionedBytes(callReq.ReturnVal, callReply.ReturnVal); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func convertBatchGetLatestValueRequestFromProto(pbRequest *pb.BatchGetLatestValueRequest, impl types.ContractReader) (types.BatchGetLatestValueRequest, error) {
+	if pbRequest == nil {
+		return nil, fmt.Errorf("received nil request from grpc BatchGetLatestValue")
+	}
+
+	request := make(types.BatchGetLatestValueRequest)
+	for pbContractName, pbContractBatch := range pbRequest.Requests {
+		if _, ok := request[pbContractName]; !ok {
+			request[pbContractName] = []types.BatchRead{}
+		}
+
+		for _, pbCall := range pbContractBatch.Value {
+			call := types.BatchRead{ReadName: pbCall.ReadName}
+			params, err := getContractEncodedType(pbContractName, pbCall.ReadName, impl, true)
+			if err != nil {
+				return nil, err
+			}
+
+			if err = DecodeVersionedBytes(params, pbCall.Params); err != nil {
+				return nil, err
+			}
+
+			retVal, err := getContractEncodedType(pbContractName, call.ReadName, impl, false)
+			if err != nil {
+				return nil, err
+			}
+
+			call.Params, call.ReturnVal = params, retVal
+			request[pbContractName] = append(request[pbContractName], call)
+		}
+	}
+	return request, nil
 }
 
 func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryKeyFilter) (query.KeyFilter, error) {

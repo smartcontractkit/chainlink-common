@@ -343,6 +343,10 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 	return nil
 }
 
+func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) error {
+	return nil
+}
+
 func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if filter.Key == EventName {
 		f.lock.Lock()
@@ -394,6 +398,10 @@ func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any
 	return e.err
 }
 
+func (e *errChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) error {
+	return e.err
+}
+
 func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
 	return e.err
 }
@@ -419,6 +427,10 @@ func (pc *protoConversionTestChainReader) Name() string { panic("unimplemented")
 func (pc *protoConversionTestChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
 func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any) error {
+	return nil
+}
+
+func (pc *protoConversionTestChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) error {
 	return nil
 }
 

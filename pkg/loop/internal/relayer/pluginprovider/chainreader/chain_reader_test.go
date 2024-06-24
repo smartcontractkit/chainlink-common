@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -18,7 +19,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -64,99 +65,147 @@ func TestVersionedBytesFunctions(t *testing.T) {
 }
 
 func TestChainReaderInterfaceTests(t *testing.T) {
-	fake := &fakeChainReader{}
-	RunChainReaderInterfaceTests(t, chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: fake}))
+	t.Parallel()
+
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+
+			fake := &fakeChainReader{}
+			RunChainReaderInterfaceTests(
+				t,
+				chainreadertest.WrapChainReaderTesterForLoop(
+					&fakeChainReaderInterfaceTester{impl: fake},
+					chainreadertest.WithChainReaderLoopEncoding(version),
+				),
+			)
+		}
+	})
 }
 
 func TestBind(t *testing.T) {
-	es := &errChainReader{}
-	errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
-	errTester.Setup(t)
-	chainReader := errTester.GetChainReader(t)
+	t.Parallel()
 
-	for _, errorType := range errorTypes {
-		es.err = errorType
-		t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			ctx := tests.Context(t)
-			err := chainReader.Bind(ctx, []types.BoundContract{{Name: "Name", Address: "address"}})
-			assert.True(t, errors.Is(err, errorType))
-		})
-	}
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+
+			es := &errChainReader{}
+			errTester := chainreadertest.WrapChainReaderTesterForLoop(
+				&fakeChainReaderInterfaceTester{impl: es},
+				chainreadertest.WithChainReaderLoopEncoding(version),
+			)
+
+			errTester.Setup(t)
+			chainReader := errTester.GetChainReader(t)
+
+			for _, errorType := range errorTypes {
+				es.err = errorType
+				t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+					ctx := tests.Context(t)
+					err := chainReader.Bind(ctx, []types.BoundContract{{Name: "Name", Address: "address"}})
+					assert.True(t, errors.Is(err, errorType))
+				})
+			}
+		}
+	})
 }
 
 func TestGetLatestValue(t *testing.T) {
-	es := &errChainReader{}
-	errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
-	errTester.Setup(t)
-	chainReader := errTester.GetChainReader(t)
+	t.Parallel()
 
-	t.Run("nil reader should return unimplemented", func(t *testing.T) {
-		ctx := tests.Context(t)
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
 
-		nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
-		nilTester.Setup(t)
-		nilCr := nilTester.GetChainReader(t)
+			es := &errChainReader{}
+			errTester := chainreadertest.WrapChainReaderTesterForLoop(
+				&fakeChainReaderInterfaceTester{impl: es},
+				chainreadertest.WithChainReaderLoopEncoding(version),
+			)
 
-		err := nilCr.GetLatestValue(ctx, "", "method", "anything", "anything")
-		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
-	})
+			errTester.Setup(t)
+			chainReader := errTester.GetChainReader(t)
 
-	for _, errorType := range errorTypes {
-		es.err = errorType
-		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			ctx := tests.Context(t)
-			err := chainReader.GetLatestValue(ctx, "", "method", nil, "anything")
-			assert.True(t, errors.Is(err, errorType))
-		})
-	}
+			t.Run("nil reader should return unimplemented", func(t *testing.T) {
+				t.Parallel()
 
-	// make sure that errors come from client directly
-	es.err = nil
-	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		ctx := tests.Context(t)
-		err := chainReader.GetLatestValue(ctx, "", "method", &cannotEncode{}, &TestStruct{})
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+				ctx := tests.Context(t)
+
+				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester.Setup(t)
+				nilCr := nilTester.GetChainReader(t)
+
+				err := nilCr.GetLatestValue(ctx, "", "method", "anything", "anything")
+				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+			})
+
+			for _, errorType := range errorTypes {
+				es.err = errorType
+				t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+					ctx := tests.Context(t)
+					err := chainReader.GetLatestValue(ctx, "", "method", nil, "anything")
+					assert.True(t, errors.Is(err, errorType))
+				})
+			}
+
+			// make sure that errors come from client directly
+			es.err = nil
+			t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+				ctx := tests.Context(t)
+				err := chainReader.GetLatestValue(ctx, "", "method", &cannotEncode{}, &TestStruct{})
+				assert.True(t, errors.Is(err, types.ErrInvalidType))
+			})
+		}
 	})
 }
 
 func TestQueryKey(t *testing.T) {
-	impl := &protoConversionTestChainReader{}
-	crTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl})
-	crTester.Setup(t)
-	cr := crTester.GetChainReader(t)
+	t.Parallel()
 
-	es := &errChainReader{}
-	errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
-	errTester.Setup(t)
-	chainReader := errTester.GetChainReader(t)
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
 
-	t.Run("nil reader should return unimplemented", func(t *testing.T) {
-		ctx := tests.Context(t)
+			impl := &protoConversionTestChainReader{}
+			crTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl}, chainreadertest.WithChainReaderLoopEncoding(version))
+			crTester.Setup(t)
+			cr := crTester.GetChainReader(t)
 
-		nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
-		nilTester.Setup(t)
-		nilCr := nilTester.GetChainReader(t)
+			es := &errChainReader{}
+			errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+			errTester.Setup(t)
+			chainReader := errTester.GetChainReader(t)
 
-		_, err := nilCr.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
-		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
-	})
+			t.Run("nil reader should return unimplemented", func(t *testing.T) {
+				ctx := tests.Context(t)
 
-	for _, errorType := range errorTypes {
-		es.err = errorType
-		t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			ctx := tests.Context(t)
-			_, err := chainReader.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
-			assert.True(t, errors.Is(err, errorType))
-		})
-	}
+				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester.Setup(t)
+				nilCr := nilTester.GetChainReader(t)
 
-	t.Run("test QueryKey proto conversion", func(t *testing.T) {
-		for _, tc := range generateQueryFilterTestCases(t) {
-			impl.expectedQueryFilter = tc
-			filter, err := query.Where(tc.Key, tc.Expressions...)
-			require.NoError(t, err)
-			_, err = cr.QueryKey(tests.Context(t), "", filter, query.LimitAndSort{}, &[]interface{}{nil})
-			require.NoError(t, err)
+				_, err := nilCr.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
+				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+			})
+
+			for _, errorType := range errorTypes {
+				es.err = errorType
+				t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+					ctx := tests.Context(t)
+					_, err := chainReader.QueryKey(ctx, "", query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
+					assert.True(t, errors.Is(err, errorType))
+				})
+			}
+
+			t.Run("test QueryKey proto conversion", func(t *testing.T) {
+				for _, tc := range generateQueryFilterTestCases(t) {
+					impl.expectedQueryFilter = tc
+					filter, err := query.Where(tc.Key, tc.Expressions...)
+					require.NoError(t, err)
+					_, err = cr.QueryKey(tests.Context(t), "", filter, query.LimitAndSort{}, &[]interface{}{nil})
+					require.NoError(t, err)
+				}
+			})
 		}
 	})
 }
@@ -294,7 +343,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 	return nil
 }
 
-func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -306,6 +355,16 @@ func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.Key
 		for _, trigger := range f.triggers {
 			sequences = append(sequences, types.Sequence{Data: trigger})
 		}
+
+		if !limitAndSort.HasSequenceSort() {
+			sort.Slice(sequences, func(i, j int) bool {
+				if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
+					return false
+				}
+				return *sequences[i].Data.(TestStruct).Field > *sequences[j].Data.(TestStruct).Field
+			})
+		}
+
 		return sequences, nil
 	}
 	return nil, nil

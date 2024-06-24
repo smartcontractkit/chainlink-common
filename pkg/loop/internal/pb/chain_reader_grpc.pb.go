@@ -20,9 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ChainReader_GetLatestValue_FullMethodName = "/loop.ChainReader/GetLatestValue"
-	ChainReader_QueryKey_FullMethodName       = "/loop.ChainReader/QueryKey"
-	ChainReader_Bind_FullMethodName           = "/loop.ChainReader/Bind"
+	ChainReader_GetLatestValue_FullMethodName      = "/loop.ChainReader/GetLatestValue"
+	ChainReader_BatchGetLatestValue_FullMethodName = "/loop.ChainReader/BatchGetLatestValue"
+	ChainReader_QueryKey_FullMethodName            = "/loop.ChainReader/QueryKey"
+	ChainReader_Bind_FullMethodName                = "/loop.ChainReader/Bind"
 )
 
 // ChainReaderClient is the client API for ChainReader service.
@@ -30,6 +31,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChainReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
+	BatchGetLatestValue(ctx context.Context, in *BatchGetLatestValueRequest, opts ...grpc.CallOption) (*BatchGetLatestValueReply, error)
 	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -45,6 +47,15 @@ func NewChainReaderClient(cc grpc.ClientConnInterface) ChainReaderClient {
 func (c *chainReaderClient) GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error) {
 	out := new(GetLatestValueReply)
 	err := c.cc.Invoke(ctx, ChainReader_GetLatestValue_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chainReaderClient) BatchGetLatestValue(ctx context.Context, in *BatchGetLatestValueRequest, opts ...grpc.CallOption) (*BatchGetLatestValueReply, error) {
+	out := new(BatchGetLatestValueReply)
+	err := c.cc.Invoke(ctx, ChainReader_BatchGetLatestValue_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +85,7 @@ func (c *chainReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...g
 // for forward compatibility
 type ChainReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
+	BatchGetLatestValue(context.Context, *BatchGetLatestValueRequest) (*BatchGetLatestValueReply, error)
 	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChainReaderServer()
@@ -85,6 +97,9 @@ type UnimplementedChainReaderServer struct {
 
 func (UnimplementedChainReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
+}
+func (UnimplementedChainReaderServer) BatchGetLatestValue(context.Context, *BatchGetLatestValueRequest) (*BatchGetLatestValueReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchGetLatestValue not implemented")
 }
 func (UnimplementedChainReaderServer) QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryKey not implemented")
@@ -119,6 +134,24 @@ func _ChainReader_GetLatestValue_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChainReaderServer).GetLatestValue(ctx, req.(*GetLatestValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChainReader_BatchGetLatestValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchGetLatestValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainReaderServer).BatchGetLatestValue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainReader_BatchGetLatestValue_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainReaderServer).BatchGetLatestValue(ctx, req.(*BatchGetLatestValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -169,6 +202,10 @@ var ChainReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLatestValue",
 			Handler:    _ChainReader_GetLatestValue_Handler,
+		},
+		{
+			MethodName: "BatchGetLatestValue",
+			Handler:    _ChainReader_BatchGetLatestValue_Handler,
 		},
 		{
 			MethodName: "QueryKey",

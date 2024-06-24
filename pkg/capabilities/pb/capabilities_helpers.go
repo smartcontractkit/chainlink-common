@@ -69,14 +69,9 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 		errStr = resp.Err.Error()
 	}
 
-	var val values.Value
-	if resp.Value != nil {
-		val = resp.Value
-	}
-
 	return &CapabilityResponse{
 		Error: errStr,
-		Value: values.Proto(val),
+		Value: values.Proto(resp.Value),
 	}
 }
 

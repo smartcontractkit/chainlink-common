@@ -249,6 +249,12 @@ func (it *fakeChainReaderInterfaceTester) SetLatestValue(t *testing.T, testStruc
 	fake.SetLatestValue(testStruct)
 }
 
+func (it *fakeChainReaderInterfaceTester) SetBatchLatestValues(t *testing.T, batchCallEntry BatchCallEntry) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	fake.SetBatchLatestValues(batchCallEntry)
+}
+
 func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
@@ -261,9 +267,10 @@ func (it *fakeChainReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
 
 type fakeChainReader struct {
 	fakeTypeProvider
-	stored   []TestStruct
-	lock     sync.Mutex
-	triggers []TestStruct
+	batchStored BatchCallEntry
+	stored      []TestStruct
+	lock        sync.Mutex
+	triggers    []TestStruct
 }
 
 func (f *fakeChainReader) Start(_ context.Context) error { return nil }
@@ -284,6 +291,15 @@ func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.stored = append(f.stored, *ts)
+}
+
+func (f *fakeChainReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.batchStored = make(BatchCallEntry)
+	for contractName, contractBatchEntry := range batchCallEntry {
+		f.batchStored[contractName] = contractBatchEntry
+	}
 }
 
 func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, params, returnVal any) error {
@@ -343,8 +359,27 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 	return nil
 }
 
-func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) error {
-	return nil
+func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, request types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
+	result := make(types.BatchGetLatestValueResult)
+	for contractName, contractBatchEntry := range f.batchStored {
+		requestContractBatch, ok := request[contractName]
+		if !ok {
+			continue
+		}
+
+		contractBatchResults := types.ContractBatchResults{}
+		for _, readEntry := range contractBatchEntry {
+			for _, requestRead := range requestContractBatch {
+				lp := requestRead.Params.(*LatestParams)
+				if readEntry.Name == requestRead.ReadName && *readEntry.Ts.Field == int32(lp.I) {
+					contractBatchResults = append(contractBatchResults, types.BatchReadResult{ReadName: readEntry.Name, ReturnValue: readEntry.Ts, Err: nil})
+				}
+			}
+
+		}
+		result[contractName] = contractBatchResults
+	}
+	return result, nil
 }
 
 func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
@@ -398,8 +433,8 @@ func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any
 	return e.err
 }
 
-func (e *errChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) error {
-	return e.err
+func (e *errChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
+	return nil, e.err
 }
 
 func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
@@ -430,8 +465,8 @@ func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _
 	return nil
 }
 
-func (pc *protoConversionTestChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) error {
-	return nil
+func (pc *protoConversionTestChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
+	return nil, nil
 }
 
 func (pc *protoConversionTestChainReader) Bind(_ context.Context, bc []types.BoundContract) error {

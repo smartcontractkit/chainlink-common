@@ -91,6 +91,13 @@ type FilterEventParams struct {
 	Field int32
 }
 
+type BatchCallEntry map[string]ContractBatchEntry
+type ContractBatchEntry []ReadEntry
+type ReadEntry struct {
+	Name string
+	Ts   *TestStruct
+}
+
 func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	s := fmt.Sprintf("field%v", i)
 	fv := int32(i)

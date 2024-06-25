@@ -253,13 +253,13 @@ targets:
     inputs:
       consensus_output: $(a-consensus.outputs)
 `,
-			errMsg: "all non-trigger steps must have a dependent ref",
+			errMsg: "invalid refs",
 		},
 		{
 			name: "duplicate refs in a step",
 			yaml: `
 name: length_ten # exactly 10 characters
-owner: 0x0123456789abcdef0123456789abcdef01234567  
+owner: 0x0123456789abcdef0123456789abcdef01234567
 triggers:
   - id: "a-trigger@1.0.0"
     config: {}
@@ -283,6 +283,47 @@ targets:
     config: {}
     inputs:
       consensus_output: $(a-consensus.outputs)
+      consensus_output: $(a-consensus.outputs)
+`,
+			graph: map[string]map[string]struct{}{
+				workflows.KeywordTrigger: {
+					"an-action": struct{}{},
+				},
+				"an-action": {
+					"a-consensus": struct{}{},
+				},
+				"a-consensus": {
+					"a-target": struct{}{},
+				},
+				"a-target": {},
+			},
+		},
+		{
+			name: "passthrough ref interpolation",
+			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567  
+triggers:
+  - id: "a-trigger@1.0.0"
+    config: {}
+  - id: "a-second-trigger@1.0.0"
+    config: {}
+actions:
+  - id: "an-action@1.0.0"
+    ref: "an-action"
+    config: {}
+    inputs: $(trigger.outputs)
+consensus:
+  - id: "a-consensus@1.0.0"
+    config: {}
+    ref: "a-consensus"
+    inputs:
+      action_output: $(an-action.outputs)
+targets:
+  - id: "a-target@1.0.0"
+    ref: "a-target"
+    config: {}
+    inputs:
       consensus_output: $(a-consensus.outputs)
 `,
 			graph: map[string]map[string]struct{}{

@@ -62,7 +62,7 @@ func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 	})
 
 	t.Run("OnRamp", func(t *testing.T) {
-		onRampClient, err := client.NewOnRampReader(tests.Context(t), "ignored")
+		onRampClient, err := client.NewOnRampReader(tests.Context(t), "ignored", 0, 0)
 		require.NoError(t, err)
 		roundTripOnRampTests(t, onRampClient)
 		require.NoError(t, onRampClient.Close())
@@ -83,14 +83,14 @@ func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 	})
 
 	t.Run("TokenPool", func(t *testing.T) {
-		tokenReaderClient, err := client.NewTokenPoolBatchedReader(tests.Context(t))
+		tokenReaderClient, err := client.NewTokenPoolBatchedReader(tests.Context(t), "ignored", 0)
 		require.NoError(t, err)
 		roundTripTokenPoolTests(t, tokenReaderClient)
 		require.NoError(t, tokenReaderClient.Close())
 	})
 
 	t.Run("SourceNativeToken", func(t *testing.T) {
-		token, err := client.SourceNativeToken(tests.Context(t))
+		token, err := client.SourceNativeToken(tests.Context(t), "ignored")
 		require.NoError(t, err)
 		assert.Equal(t, ExecutionProvider.sourceNativeTokenResponse, token)
 	})

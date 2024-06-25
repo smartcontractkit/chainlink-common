@@ -194,7 +194,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 	}
 	err := r.Inputs.UnwrapTo(&m)
 	if err != nil {
-		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %w", err)
+		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
 	}
 
 	switch m.Method {

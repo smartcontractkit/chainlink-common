@@ -24,6 +24,7 @@ type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
 	getRegisteredWorkflowsIDs() []string
+	unregisterWorkflowID(workflowID string)
 }
 
 // TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
@@ -248,6 +249,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		} else if outctx.SeqNr-outcome.LastSeenAt > outcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID)
 			delete(o.Outcomes, workflowID)
+			r.r.unregisterWorkflowID(workflowID)
 		}
 	}
 

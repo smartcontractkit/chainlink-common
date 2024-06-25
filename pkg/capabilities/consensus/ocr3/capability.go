@@ -164,6 +164,12 @@ func (o *capability) getRegisteredWorkflowsIDs() []string {
 	return workflows
 }
 
+func (o *capability) unregisterWorkflowID(workflowID string) {
+	o.registeredWorkflowsMu.Lock()
+	defer o.registeredWorkflowsMu.Unlock()
+	delete(o.registeredWorkflows, workflowID)
+}
+
 func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	o.registeredWorkflowsMu.Lock()
 	defer o.registeredWorkflowsMu.Unlock()

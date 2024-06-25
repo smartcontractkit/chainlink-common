@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -41,7 +42,7 @@ func NewPluginRelayerClient(broker net.Broker, brokerCfg net.BrokerConfig, conn 
 	return &PluginRelayerClient{PluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
 }
 
-func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore core.Keystore) (looptypes.Relayer, error) {
+func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
 	cc := p.NewClientConn("Relayer", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
 		id, ksRes, err = p.ServeNew("Keystore", func(s *grpc.Server) {
@@ -52,9 +53,18 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		}
 		deps.Add(ksRes)
 
+		capabilityRegistryID, capabilityRegistryResource, err := p.ServeNew("CapabilitiesRegistry", func(s *grpc.Server) {
+			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(p.BrokerExt, capabilityRegistry))
+		})
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to serve new capability registry: %w", err)
+		}
+		deps.Add(capabilityRegistryResource)
+
 		reply, err := p.grpc.NewRelayer(ctx, &pb.NewRelayerRequest{
-			Config:     config,
-			KeystoreID: id,
+			Config:               config,
+			KeystoreID:           id,
+			CapabilityRegistryID: capabilityRegistryID,
 		})
 		if err != nil {
 			return 0, nil, fmt.Errorf("Failed to create relayer client: failed request: %w", err)
@@ -87,15 +97,22 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	if err != nil {
 		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
 	}
-	ksRes := net.Resource{Closer: ksConn, Name: "Keystore"}
-	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn))
+	ksRes := net.Resource{Closer: ksConn, Name: "CapabilityRegistry"}
+	capRegistryConn, err := p.Dial(request.CapabilityRegistryID)
 	if err != nil {
-		p.CloseAll(ksRes)
+		return nil, net.ErrConnDial{Name: "CapabilityRegistry", ID: request.CapabilityRegistryID, Err: err}
+	}
+	crRes := net.Resource{Closer: capRegistryConn, Name: "CapabilityRegistry"}
+	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, p.BrokerExt)
+
+	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn), capRegistry)
+	if err != nil {
+		p.CloseAll(ksRes, crRes)
 		return nil, err
 	}
 	err = r.Start(ctx)
 	if err != nil {
-		p.CloseAll(ksRes)
+		p.CloseAll(ksRes, crRes)
 		return nil, err
 	}
 
@@ -104,7 +121,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
-	}, rRes, ksRes)
+	}, rRes, ksRes, crRes)
 	if err != nil {
 		return nil, err
 	}

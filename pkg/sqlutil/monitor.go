@@ -116,32 +116,93 @@ func (q *queryLogger) logError(err error) {
 	q.lggr.Errorw("SQL ERROR", "err", err, "sql", q)
 }
 
-// logTiming logs about context cancellation and timing after a query returns.
-// Queries which use their full timeout log critical level. More than 50% log error, and 10% warn.
+// logTiming logs about context errors and timing.
+// To be deferred to run after a query returns.
 func (q *queryLogger) logTiming(ctx context.Context, start time.Time) {
 	elapsed := time.Since(start)
-	if ctx.Err() != nil {
-		q.lggr.Debugw("SQL CONTEXT CANCELLED", "ms", elapsed.Milliseconds(), "err", ctx.Err(), "sql", q)
+
+	lggr := q.lggr.With("elapsed", elapsed.Round(time.Microsecond), "sql", q)
+	if err := ctx.Err(); err != nil {
+		if errors.Is(err, context.Canceled) {
+			lggr.Debugw("SQL Context Canceled", "err", context.Cause(ctx))
+			return
+		} else if !errors.Is(err, context.DeadlineExceeded) {
+			lggr.Debugw("SQL Context Error", "err", err)
+			return
+		}
+		lggr = lggr.With("err", err)
+		lggr.Debugw("SQL Deadline Exceeded")
 	}
 
+	// Success or Deadline Exceeded, so calculate how much of the timeout was used.
 	deadline, ok := ctx.Deadline()
 	if !ok {
 		return
 	}
 	timeout := deadline.Sub(start)
+	if timeout <= 0 {
+		// never have a chance to run
+		return
+	}
 
-	pct := float64(elapsed) / float64(timeout)
-	pct *= 100
+	var pct float64 // percent of timeout used
+	if timeout > 0 {
+		pct = float64(elapsed) / float64(timeout)
+		pct *= 100
+	} else {
+		timeout = 0
+		pct = 100
+	}
 
-	kvs := []any{"ms", elapsed.Milliseconds(), "timeout", timeout.Milliseconds(), "percent", strconv.FormatFloat(pct, 'f', 1, 64), "sql", q}
+	lggr = lggr.With(
+		"timeout", timeout.Round(time.Microsecond),
+		"percent", strconv.FormatFloat(pct, 'f', 1, 64),
+	)
+
+	var thresholds LogThresholds
+	thresholds.FromContextValue(ctx)
 
 	if elapsed >= timeout {
-		q.lggr.Criticalw(slowMsg, kvs...)
-	} else if errThreshold := timeout / 5; errThreshold > 0 && elapsed > errThreshold {
-		q.lggr.Errorw(slowMsg, kvs...)
-	} else if warnThreshold := timeout / 10; warnThreshold > 0 && elapsed > warnThreshold {
-		q.lggr.Warnw(slowMsg, kvs...)
+		lggr.Criticalw(slowMsg)
+	} else if errThreshold := thresholds.Error(timeout); errThreshold > 0 && elapsed > errThreshold {
+		lggr.Errorw(slowMsg)
+	} else if warnThreshold := thresholds.Warn(timeout); warnThreshold > 0 && elapsed > warnThreshold {
+		lggr.Warnw(slowMsg)
 	}
 
 	PromSQLQueryTime.Observe(pct)
+}
+
+// LogThresholds holds funcs for computing thresholds for timeout usage.
+type LogThresholds struct {
+	Warn  func(timeout time.Duration) (threshold time.Duration)
+	Error func(timeout time.Duration) (threshold time.Duration)
+}
+
+type ctxKeyLogThresholds struct{}
+
+func (t *LogThresholds) ContextWithValue(ctx context.Context) context.Context {
+	if t == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, ctxKeyLogThresholds{}, *t)
+}
+
+// FromContextValue sets LogThresholds from the context value, if one is present.
+// nil fields are set to default functions. 10% for Warn, and 20% for Error.
+func (t *LogThresholds) FromContextValue(ctx context.Context) {
+	v := ctx.Value(ctxKeyLogThresholds{})
+	if v != nil {
+		*t = v.(LogThresholds)
+	}
+	if t.Warn == nil {
+		t.Warn = func(timeout time.Duration) time.Duration {
+			return timeout / 10
+		}
+	}
+	if t.Error == nil {
+		t.Error = func(timeout time.Duration) time.Duration {
+			return timeout / 5
+		}
+	}
 }

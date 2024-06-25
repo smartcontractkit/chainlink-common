@@ -96,9 +96,6 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(keyValueStoreRes)
 
 		relayerSetServer, relayerSetServerRes := relayerset.NewRelayerSetServer(o.Logger, relayerSet, o.BrokerExt)
-		if err != nil {
-			return 0, nil, fmt.Errorf("failed to create new relayer set: %w", err)
-		}
 
 		relayerSetID, relayerSetRes, err := o.ServeNew("RelayerSet", func(s *grpc.Server) {
 			relayersetpb.RegisterRelayerSetServer(s, relayerSetServer)

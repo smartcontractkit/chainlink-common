@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/smartcontractkit/chainlink/capabilities/offchain_reporting/root",
+  "$id": "https://github.com/smartcontractkit/chainlink/capabilities/offchain_reporting@1.0.0/root",
   "properties": {
     "config": {
       "properties": {
@@ -36,6 +36,13 @@
           "required": [
             "Underlying"
           ]
+        },
+        "report_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{4}$"
+        },
+        "request_timeout_ms": {
+          "type": "integer"
         }
       },
       "additionalProperties": false,
@@ -44,7 +51,9 @@
         "aggregation_method",
         "aggregation_config",
         "encoder",
-        "encoder_config"
+        "encoder_config",
+        "report_id",
+        "request_timeout_ms"
       ]
     },
     "inputs": {

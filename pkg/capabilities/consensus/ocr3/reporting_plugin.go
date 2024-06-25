@@ -5,10 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
+	"google.golang.org/protobuf/proto"
+
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-	"google.golang.org/protobuf/proto"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -18,20 +21,19 @@ import (
 var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 
 type capabilityIface interface {
-	transmitResponse(ctx context.Context, resp *outputs) error
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
 }
 
 type reportingPlugin struct {
 	batchSize int
-	s         *store
+	s         *requests.Store
 	r         capabilityIface
 	config    ocr3types.ReportingPluginConfig
 	lggr      logger.Logger
 }
 
-func newReportingPlugin(s *store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
+func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
 	// TODO: extract limits from OnchainConfig
 	// and perform validation.
 
@@ -45,21 +47,27 @@ func newReportingPlugin(s *store, r capabilityIface, batchSize int, config ocr3t
 }
 
 func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
-	batch, err := r.s.firstN(ctx, r.batchSize)
+	batch, err := r.s.FirstN(ctx, r.batchSize)
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
 	}
 
 	ids := []*pbtypes.Id{}
-	for _, r := range batch {
+	allExecutionIDs := []string{}
+	for _, rq := range batch {
 		ids = append(ids, &pbtypes.Id{
-			WorkflowExecutionId: r.WorkflowExecutionID,
-			WorkflowId:          r.WorkflowID,
+			WorkflowExecutionId: rq.WorkflowExecutionID,
+			WorkflowId:          rq.WorkflowID,
+			WorkflowOwner:       rq.WorkflowOwner,
+			WorkflowName:        rq.WorkflowName,
+			WorkflowDonId:       rq.WorkflowDonID,
+			ReportId:            rq.ReportID,
 		})
+		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 
-	r.lggr.Debugw("Query complete", "len", len(ids))
+	r.lggr.Debugw("Query complete", "len", len(ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(&pbtypes.Query{
 		Ids: ids,
 	})
@@ -77,13 +85,14 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		weids = append(weids, q.WorkflowExecutionId)
 	}
 
-	reqs := r.s.getN(ctx, weids)
-	reqMap := map[string]*request{}
+	reqs := r.s.GetN(ctx, weids)
+	reqMap := map[string]*requests.Request{}
 	for _, req := range reqs {
 		reqMap[req.WorkflowExecutionID] = req
 	}
 
 	obs := &pbtypes.Observations{}
+	allExecutionIDs := []string{}
 	for _, weid := range weids {
 		rq, ok := reqMap[weid]
 		if !ok {
@@ -95,18 +104,23 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			r.lggr.Errorw("observations are not a list", "weID", rq.WorkflowExecutionID)
 			continue
 		}
-		r := &pbtypes.Observation{
+		newOb := &pbtypes.Observation{
 			Observations: listProto,
 			Id: &pbtypes.Id{
 				WorkflowExecutionId: rq.WorkflowExecutionID,
 				WorkflowId:          rq.WorkflowID,
+				WorkflowOwner:       rq.WorkflowOwner,
+				WorkflowName:        rq.WorkflowName,
+				WorkflowDonId:       rq.WorkflowDonID,
+				ReportId:            rq.ReportID,
 			},
 		}
 
-		obs.Observations = append(obs.Observations, r)
+		obs.Observations = append(obs.Observations, newOb)
+		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 
-	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids))
+	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
 }
 
@@ -164,6 +178,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
 	o.CurrentReports = []*pbtypes.Report{}
+	allExecutionIDs := []string{}
 
 	for _, weid := range q.Ids {
 		obs, ok := m[weid.WorkflowExecutionId]
@@ -199,6 +214,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			Id:      weid,
 		}
 		o.CurrentReports = append(o.CurrentReports, report)
+		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
 		o.Outcomes[weid.WorkflowId] = outcome
 	}
@@ -207,7 +223,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	h := sha256.New()
 	h.Write(rawOutcome)
 	outcomeHash := h.Sum(nil)
-	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nAggregatedWorkflowExecutions", len(o.CurrentReports), "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
+	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nAggregatedWorkflowExecutions", len(o.CurrentReports), "allExecutionIDs", allExecutionIDs, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
 	return rawOutcome, err
 }
 
@@ -230,7 +246,18 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 
 		var report []byte
 		if info.ShouldReport {
-			newOutcome, err := pbtypes.AppendWorkflowIDs(outcome, id.WorkflowId, id.WorkflowExecutionId)
+			meta := &pbtypes.Metadata{
+				Version:          1,
+				ExecutionID:      id.WorkflowExecutionId,
+				Timestamp:        0, // TODO include timestamp in consensus phase
+				DONID:            id.WorkflowDonId,
+				DONConfigVersion: 0, // TODO include when Syncer is ready
+				WorkflowID:       id.WorkflowId,
+				WorkflowName:     id.WorkflowName,
+				WorkflowOwner:    id.WorkflowOwner,
+				ReportID:         id.ReportId,
+			}
+			newOutcome, err := pbtypes.AppendMetadata(outcome, meta)
 			if err != nil {
 				r.lggr.Errorw("could not append IDs")
 				continue

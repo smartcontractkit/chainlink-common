@@ -5,16 +5,30 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
-	"golang.org/x/mod/semver"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 // CapabilityType is an enum for the type of capability.
 type CapabilityType int
+
+var ErrStopExecution = &errStopExecution{}
+
+type errStopExecution struct{}
+
+const errStopExecutionMsg = "__workflow_stop_execution"
+
+func (e errStopExecution) Error() string {
+	return errStopExecutionMsg
+}
+
+func (e errStopExecution) Is(err error) bool {
+	return err.Error() == errStopExecutionMsg
+}
 
 // CapabilityType enum values.
 const (
@@ -62,11 +76,15 @@ type CapabilityResponse struct {
 
 type RequestMetadata struct {
 	WorkflowID          string
+	WorkflowOwner       string
 	WorkflowExecutionID string
+	WorkflowName        string
+	WorkflowDonID       string
 }
 
 type RegistrationMetadata struct {
-	WorkflowID string
+	WorkflowID    string
+	WorkflowOwner string
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -155,16 +173,18 @@ type TargetCapability interface {
 	CallbackCapability
 }
 
-type DONConfig struct {
-	SharedSecret [16]byte
-}
-
 type DON struct {
 	ID      string
 	Members []p2ptypes.PeerID
 	F       uint8
 
-	Config DONConfig
+	Config []byte
+}
+
+type Node struct {
+	PeerID         *p2ptypes.PeerID
+	WorkflowDON    DON
+	CapabilityDONs []DON
 }
 
 // CapabilityInfo is a struct for the info of a capability.
@@ -177,8 +197,12 @@ type CapabilityInfo struct {
 	ID             string
 	CapabilityType CapabilityType
 	Description    string
-	Version        string
 	DON            *DON
+}
+
+// Parse out the version from the ID.
+func (c CapabilityInfo) Version() string {
+	return c.ID[strings.Index(c.ID, "@")+1:]
 }
 
 // Info returns the info of the capability.
@@ -186,7 +210,18 @@ func (c CapabilityInfo) Info(ctx context.Context) (CapabilityInfo, error) {
 	return c, nil
 }
 
-var idRegex = regexp.MustCompile(`[a-z0-9_\-:]`)
+// This regex allows for the following format:
+//
+// {name}:{label1_key}_{labe1_value}:{label2_key}_{label2_value}@{version}
+//
+// The version regex is taken from https://semver.org/, but has been modified to support only major versions.
+//
+// It is also validated when a workflow is being ingested. See the following link for more details:
+// https://github.com/smartcontractkit/chainlink/blob/a0d1ce5e9cddc540bba8eb193865646cf0ebc0a8/core/services/workflows/models_yaml.go#L309
+//
+// The difference between the regex within the link above and this one is that we do not use double backslashes, since
+// we only needed those for JSON schema regex validation.
+var idRegex = regexp.MustCompile(`^[a-z0-9_\-:]+@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
 
 const (
 	// TODO: this length was largely picked arbitrarily.
@@ -200,7 +235,18 @@ func NewCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
-	version string,
+) (CapabilityInfo, error) {
+	return NewRemoteCapabilityInfo(id, capabilityType, description, nil)
+}
+
+// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
+// This is largely intended for internal use by the registry syncer.
+// Capability developers should use `NewCapabilityInfo` instead as this
+// omits the requirement to pass in the DON Info.
+func NewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
 	don *DON,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
@@ -208,10 +254,6 @@ func NewCapabilityInfo(
 	}
 	if !idRegex.MatchString(id) {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s. Allowed: %s", id, idRegex)
-	}
-
-	if ok := semver.IsValid(version); !ok {
-		return CapabilityInfo{}, fmt.Errorf("invalid version: %+v", version)
 	}
 
 	if err := capabilityType.IsValid(); err != nil {
@@ -222,7 +264,6 @@ func NewCapabilityInfo(
 		ID:             id,
 		CapabilityType: capabilityType,
 		Description:    description,
-		Version:        version,
 		DON:            don,
 	}, nil
 }
@@ -233,10 +274,19 @@ func MustNewCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
-	version string,
+) CapabilityInfo {
+	return MustNewRemoteCapabilityInfo(id, capabilityType, description, nil)
+}
+
+// MustNewRemoteCapabilityInfo returns a new CapabilityInfo,
+// `panic`ing if we could not instantiate a CapabilityInfo.
+func MustNewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
 	don *DON,
 ) CapabilityInfo {
-	c, err := NewCapabilityInfo(id, capabilityType, description, version, don)
+	c, err := NewRemoteCapabilityInfo(id, capabilityType, description, don)
 	if err != nil {
 		panic(err)
 	}
@@ -254,7 +304,12 @@ var maximumExecuteTimeout = 60 * time.Second
 // There is default timeout of 10 seconds. If a capability takes longer than
 // that then it should be executed asynchronously.
 func ExecuteSync(ctx context.Context, c CallbackExecutable, request CapabilityRequest) (*values.List, error) {
-	ctxWithT, cancel := context.WithTimeout(ctx, maximumExecuteTimeout)
+	return ExecuteSyncWithTimeout(ctx, c, request, maximumExecuteTimeout)
+}
+
+// ExecuteSyncWithTimeout allows explicitly passing in a timeout to customise the desired duration.
+func ExecuteSyncWithTimeout(ctx context.Context, c CallbackExecutable, request CapabilityRequest, timeout time.Duration) (*values.List, error) {
+	ctxWithT, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	responseCh, err := c.Execute(ctxWithT, request)

@@ -114,7 +114,7 @@ type staticPluginRelayer struct {
 	staticPluginRelayerConfig
 }
 
-func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore core.Keystore) (looptypes.Relayer, error) {
+func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
 	if s.StaticChecks && config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
@@ -385,7 +385,7 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 	t.Run("Relayer", func(t *testing.T) {
 		ctx := tests.Context(t)
-		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore)
+		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore, nil)
 		require.NoError(t, err)
 		require.NoError(t, relayer.Start(ctx))
 		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })
@@ -422,7 +422,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.P
 		}
 
 		ctx := tests.Context(t)
-		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore)
+		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, nil)
 
 		grpcUnavailableErr(t, err)
 	})

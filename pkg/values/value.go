@@ -44,6 +44,8 @@ func Wrap(v any) (Value, error) {
 		return NewInt64(int64(tv)), nil
 	case uint:
 		return NewInt64(int64(tv)), nil
+	case uint32:
+		return NewInt64(int64(tv)), nil
 	case *big.Int:
 		return NewBigInt(tv), nil
 	case nil:
@@ -172,10 +174,15 @@ func fromDecimalValueProto(decStr string) *Decimal {
 	return NewDecimal(dec)
 }
 
-func fromBigIntValueProto(b []byte) *BigInt {
-	i := big.Int{}
-	bi := i.SetBytes(b)
-	return NewBigInt(bi)
+func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
+	av := &big.Int{}
+	av = av.SetBytes(biv.AbsVal)
+
+	if biv.Sign < 0 {
+		av.Neg(av)
+	}
+
+	return NewBigInt(av)
 }
 
 func createMapFromStruct(v any) (Value, error) {

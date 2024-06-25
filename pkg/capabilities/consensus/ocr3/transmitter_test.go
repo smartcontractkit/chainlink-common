@@ -1,19 +1,23 @@
 package ocr3
 
 import (
+	"encoding/hex"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jonboulle/clockwork"
-	"github.com/smartcontractkit/libocr/offchainreporting2/types"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/libocr/offchainreporting2/types"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
@@ -24,9 +28,11 @@ import (
 
 func TestTransmitter(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
+	wowner := "foo-owner"
+	repId := []byte{0xf0, 0xe0}
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
-	s := newStore()
+	s := requests.NewStore()
 
 	weid := uuid.New().String()
 
@@ -43,11 +49,20 @@ func TestTransmitter(t *testing.T) {
 
 	payload, err := values.NewMap(map[string]any{"observations": []string{"something happened"}})
 	require.NoError(t, err)
+	config, err := values.NewMap(map[string]any{
+		"aggregation_method": "data_feeds",
+		"aggregation_config": map[string]any{},
+		"encoder":            "",
+		"encoder_config":     map[string]any{},
+		"report_id":          hex.EncodeToString(repId),
+	})
+	require.NoError(t, err)
 	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
 			WorkflowID:          wid,
 		},
+		Config: config,
 		Inputs: payload,
 	})
 	require.NoError(t, err)
@@ -59,6 +74,8 @@ func TestTransmitter(t *testing.T) {
 		Id: &pbtypes.Id{
 			WorkflowExecutionId: weid,
 			WorkflowId:          wid,
+			WorkflowOwner:       wowner,
+			ReportId:            hex.EncodeToString(repId),
 		},
 		ShouldReport: true,
 	}
@@ -85,20 +102,21 @@ func TestTransmitter(t *testing.T) {
 	resp := <-gotCh
 	assert.Nil(t, resp.Err)
 
-	unwrapped, err := values.Unwrap(resp.Value)
-	um := unwrapped.(map[string]any)
-	require.NoError(t, err)
-	assert.Equal(t, um["report"].([]byte), spb)
-	assert.Len(t, um["signatures"], 1)
-	_, ok := um[methodHeader]
-	assert.False(t, ok)
+	signedReport := pbtypes.SignedReport{}
+	require.NoError(t, resp.Value.UnwrapTo(&signedReport))
+
+	assert.Equal(t, spb, signedReport.Report)
+	assert.Len(t, signedReport.Signatures, 1)
+	assert.Len(t, signedReport.Context, 96)
+	assert.Equal(t, repId, signedReport.ID)
 }
 
 func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
+	wowner := "foo-owner"
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
-	s := newStore()
+	s := requests.NewStore()
 
 	weid := uuid.New().String()
 
@@ -115,12 +133,21 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 
 	payload, err := values.NewMap(map[string]any{"observations": []string{"something happened"}})
 	require.NoError(t, err)
+	config, err := values.NewMap(map[string]any{
+		"aggregation_method": "data_feeds",
+		"aggregation_config": map[string]any{},
+		"encoder":            "",
+		"encoder_config":     map[string]any{},
+		"report_id":          "aaff",
+	})
+	require.NoError(t, err)
 	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
 			WorkflowID:          wid,
 		},
 		Inputs: payload,
+		Config: config,
 	})
 	require.NoError(t, err)
 
@@ -131,6 +158,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 		Id: &pbtypes.Id{
 			WorkflowExecutionId: weid,
 			WorkflowId:          wid,
+			WorkflowOwner:       wowner,
 		},
 		ShouldReport: false,
 	}
@@ -155,13 +183,6 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	require.NoError(t, err)
 
 	resp := <-gotCh
-	assert.Nil(t, resp.Err)
-
-	unwrapped, err := values.Unwrap(resp.Value)
-	um := unwrapped.(map[string]any)
-	require.NoError(t, err)
-	assert.Nil(t, um["report"])
-	assert.Len(t, um["signatures"], 0)
-	_, ok := um[methodHeader]
-	assert.False(t, ok)
+	assert.NotNil(t, resp.Err)
+	assert.True(t, errors.Is(resp.Err, capabilities.ErrStopExecution))
 }

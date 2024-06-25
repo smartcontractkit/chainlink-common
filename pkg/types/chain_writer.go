@@ -3,18 +3,17 @@ package types
 import (
 	"context"
 	"math/big"
-
-	"github.com/google/uuid"
 )
 
 type ChainWriter interface {
-	// SubmitSignedTransaction packs and broadcasts a transaction to the underlying chain.
+	// SubmitTransaction packs and broadcasts a transaction to the underlying chain.
 	//
-	// The `transactionID` will be used by the underlying TXM as an idempotency key, and unique reference to track transaction attempts.
-	SubmitSignedTransaction(ctx context.Context, payload []byte, signature map[string]any, transactionID uuid.UUID, toAddress string, meta *TxMeta, value big.Int) error
+	// - `args` should be any object which maps a set of method param into the contract and method specific method params.
+	// - `transactionID` will be used by the underlying TXM as an idempotency key, and unique reference to track transaction attempts.
+	SubmitTransaction(ctx context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *TxMeta, value *big.Int) error
 
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
-	GetTransactionStatus(ctx context.Context, transactionID uuid.UUID) (TransactionStatus, error)
+	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)
 
 	// GetFeeComponents retrieves the associated gas costs for executing a transaction.
 	GetFeeComponents(ctx context.Context) (*ChainFeeComponents, error)
@@ -40,8 +39,8 @@ const (
 // ChainFeeComponents contains the different cost components of executing a transaction.
 type ChainFeeComponents struct {
 	// The cost of executing transaction in the chain's EVM (or the L2 environment).
-	ExecutionFee big.Int
+	ExecutionFee *big.Int
 
 	// The cost associated with an L2 posting a transaction's data to the L1.
-	DataAvailabilityFee big.Int
+	DataAvailabilityFee *big.Int
 }

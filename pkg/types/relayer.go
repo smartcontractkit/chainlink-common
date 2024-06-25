@@ -9,20 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	NetworkEVM      = "evm"
-	NetworkCosmos   = "cosmos"
-	NetworkSolana   = "solana"
-	NetworkStarkNet = "starknet"
-)
-
-var SupportedRelays = map[string]struct{}{
-	NetworkEVM:      {},
-	NetworkCosmos:   {},
-	NetworkSolana:   {},
-	NetworkStarkNet: {},
-}
-
 type RelayID struct {
 	Network string
 	ChainID string
@@ -46,22 +32,8 @@ func (i *RelayID) UnmarshalString(s string) error {
 		return fmt.Errorf("error unmarshaling Identifier. %s does not match expected pattern", s)
 	}
 
-	network, chainID := parts[0], parts[1]
-
-	newID := &RelayID{ChainID: chainID}
-	for n := range SupportedRelays {
-		if network == n {
-			newID.Network = n
-			break
-		}
-	}
-
-	if newID.Network == "" {
-		return fmt.Errorf("error unmarshaling identifier: did not find network in supported list %q", newID.Network)
-	}
-
-	i.ChainID = newID.ChainID
-	i.Network = newID.Network
+	i.Network = parts[0]
+	i.ChainID = parts[1]
 	return nil
 }
 
@@ -73,12 +45,14 @@ type PluginArgs struct {
 	PluginConfig  []byte
 }
 
+// RelayArgs are the args required to create relayer.
+// The are common to all relayer implementations.
 type RelayArgs struct {
 	ExternalJobID      uuid.UUID
 	JobID              int32
 	ContractID         string
-	New                bool // Whether this is a first time job add.
-	RelayConfig        []byte
+	New                bool   // Whether this is a first time job add.
+	RelayConfig        []byte // The specific configuration of a given relayer instance. Will vary by relayer type.
 	ProviderType       string
 	MercuryCredentials *MercuryCredentials
 }

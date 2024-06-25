@@ -8,7 +8,7 @@ import (
 )
 
 type PluginRelayer interface {
-	NewRelayer(ctx context.Context, config string, keystore core.Keystore) (Relayer, error)
+	NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
 }
 
 type MedianProvider interface {

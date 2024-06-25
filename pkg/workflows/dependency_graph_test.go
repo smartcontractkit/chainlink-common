@@ -20,24 +20,30 @@ func TestParseDependencyGraph(t *testing.T) {
 		{
 			name: "basic example",
 			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567      
 triggers:
-  - id: "a-trigger"
+  - id: "a-trigger@1.0.0"
+    config: {}
 
 actions:
-  - id: "an-action"
+  - id: "an-action@1.0.0"
+    config: {}
     ref: "an-action"
     inputs:
       trigger_output: $(trigger.outputs)
 
 consensus:
-  - id: "a-consensus"
+  - id: "a-consensus@1.0.0"
+    config: {}
     ref: "a-consensus"
     inputs:
       trigger_output: $(trigger.outputs)
       an-action_output: $(an-action.outputs)
 
 targets:
-  - id: "a-target"
+  - id: "a-target@1.0.0"
+    config: {}
     ref: "a-target"
     inputs: 
       consensus_output: $(a-consensus.outputs)
@@ -59,29 +65,36 @@ targets:
 		{
 			name: "circular relationship",
 			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567  
 triggers:
-  - id: "a-trigger"
+  - id: "a-trigger@1.0.0"
+    config: {}
 
 actions:
-  - id: "an-action"
+  - id: "an-action@1.0.0"
+    config: {}
     ref: "an-action"
     inputs:
       trigger_output: $(trigger.outputs)
       output: $(a-second-action.outputs)
-  - id: "a-second-action"
+  - id: "a-second-action@1.0.0"
+    config: {}
     ref: "a-second-action"
     inputs:
       output: $(an-action.outputs)
 
 consensus:
-  - id: "a-consensus"
+  - id: "a-consensus@1.0.0"
+    config: {}
     ref: "a-consensus"
     inputs:
       trigger_output: $(trigger.outputs)
       an-action_output: $(an-action.outputs)
 
 targets:
-  - id: "a-target"
+  - id: "a-target@1.0.0"
+    config: {}
     ref: "a-target"
     inputs: 
       consensus_output: $(a-consensus.outputs)
@@ -91,33 +104,41 @@ targets:
 		{
 			name: "indirect circular relationship",
 			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567  
 triggers:
-  - id: "a-trigger"
+  - id: "a-trigger@1.0.0"
+    config: {}
 
 actions:
-  - id: "an-action"
+  - id: "an-action@1.0.0"
+    config: {}
     ref: "an-action"
     inputs:
       trigger_output: $(trigger.outputs)
       action_output: $(a-third-action.outputs)
-  - id: "a-second-action"
+  - id: "a-second-action@1.0.0"
+    config: {}
     ref: "a-second-action"
     inputs:
       output: $(an-action.outputs)
-  - id: "a-third-action"
+  - id: "a-third-action@1.0.0"
+    config: {}
     ref: "a-third-action"
     inputs:
       output: $(a-second-action.outputs)
 
 consensus:
-  - id: "a-consensus"
+  - id: "a-consensus@1.0.0"
+    config: {}
     ref: "a-consensus"
     inputs:
       trigger_output: $(trigger.outputs)
       an-action_output: $(an-action.outputs)
 
 targets:
-  - id: "a-target"
+  - id: "a-target@1.0.0"
+    config: {}
     ref: "a-target"
     inputs: 
       consensus_output: $(a-consensus.outputs)
@@ -127,24 +148,30 @@ targets:
 		{
 			name: "relationship doesn't exist",
 			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567  
 triggers:
-  - id: "a-trigger"
+  - id: "a-trigger@1.0.0"
+    config: {}
 
 actions:
-  - id: "an-action"
+  - id: "an-action@1.0.0"
+    config: {}
     ref: "an-action"
     inputs:
       trigger_output: $(trigger.outputs)
       action_output: $(missing-action.outputs)
 
 consensus:
-  - id: "a-consensus"
+  - id: "a-consensus@1.0.0"
+    config: {}
     ref: "a-consensus"
     inputs:
       an-action_output: $(an-action.outputs)
 
 targets:
-  - id: "a-target"
+  - id: "a-target@1.0.0"
+    config: {}
     ref: "a-target"
     inputs: 
       consensus_output: $(a-consensus.outputs)
@@ -154,25 +181,32 @@ targets:
 		{
 			name: "two trigger nodes",
 			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567  
 triggers:
-  - id: "a-trigger"
-  - id: "a-second-trigger"
+  - id: "a-trigger@1.0.0"
+    config: {}
+  - id: "a-second-trigger@1.0.0"
+    config: {}
 
 actions:
-  - id: "an-action"
+  - id: "an-action@1.0.0"
+    config: {}
     ref: "an-action"
     inputs:
       trigger_output: $(trigger.outputs)
 
 consensus:
-  - id: "a-consensus"
+  - id: "a-consensus@1.0.0"
+    config: {}
     ref: "a-consensus"
     inputs:
       an-action_output: $(an-action.outputs)
 
 targets:
-  - id: "a-target"
+  - id: "a-target@1.0.0"
     ref: "a-target"
+    config: {}
     inputs:
       consensus_output: $(a-consensus.outputs)
 `,
@@ -192,22 +226,29 @@ targets:
 		{
 			name: "non-trigger step with no dependent refs",
 			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567  
 triggers:
-  - id: "a-trigger"
-  - id: "a-second-trigger"
+  - id: "a-trigger@1.0.0"
+    config: {}
+  - id: "a-second-trigger@1.0.0"
+    config: {}
 actions:
-  - id: "an-action"
+  - id: "an-action@1.0.0"
+    config: {}
     ref: "an-action"
     inputs:
       hello: "world"
 consensus:
-  - id: "a-consensus"
+  - id: "a-consensus@1.0.0"
     ref: "a-consensus"
+    config: {}
     inputs:
       trigger_output: $(trigger.outputs)
       action_output: $(an-action.outputs)
 targets:
-  - id: "a-target"
+  - id: "a-target@1.0.0"
+    config: {}
     ref: "a-target"
     inputs:
       consensus_output: $(a-consensus.outputs)
@@ -217,22 +258,29 @@ targets:
 		{
 			name: "duplicate refs in a step",
 			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567  
 triggers:
-  - id: "a-trigger"
-  - id: "a-second-trigger"
+  - id: "a-trigger@1.0.0"
+    config: {}
+  - id: "a-second-trigger@1.0.0"
+    config: {}
 actions:
-  - id: "an-action"
+  - id: "an-action@1.0.0"
     ref: "an-action"
+    config: {}
     inputs:
       trigger_output: $(trigger.outputs)
 consensus:
-  - id: "a-consensus"
+  - id: "a-consensus@1.0.0"
+    config: {}
     ref: "a-consensus"
     inputs:
       action_output: $(an-action.outputs)
 targets:
-  - id: "a-target"
+  - id: "a-target@1.0.0"
     ref: "a-target"
+    config: {}
     inputs:
       consensus_output: $(a-consensus.outputs)
       consensus_output: $(a-consensus.outputs)

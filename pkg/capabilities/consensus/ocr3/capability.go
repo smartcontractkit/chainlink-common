@@ -153,7 +153,7 @@ func (o *capability) getEncoder(workflowID string) (types.Encoder, error) {
 	return enc, nil
 }
 
-func (o *capability) getRegisteredWorkflows() []string {
+func (o *capability) getRegisteredWorkflowsIDs() []string {
 	o.registeredWorkflowsMu.RLock()
 	defer o.registeredWorkflowsMu.RUnlock()
 

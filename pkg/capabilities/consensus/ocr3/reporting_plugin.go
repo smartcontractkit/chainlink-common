@@ -23,7 +23,7 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
-	getRegisteredWorkflows() []string
+	getRegisteredWorkflowsIDs() []string
 }
 
 // TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
@@ -124,7 +124,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		obs.Observations = append(obs.Observations, newOb)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
-	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflows()
+	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflowsIDs()
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)

@@ -72,9 +72,10 @@ func TestReportingPlugin_Query(t *testing.T) {
 }
 
 type mockCapability struct {
-	gotResponse *requests.Response
-	aggregator  *aggregator
-	encoder     *enc
+	gotResponse         *requests.Response
+	aggregator          *aggregator
+	encoder             *enc
+	registeredWorkflows []string
 }
 
 func (mc *mockCapability) transmitResponse(ctx context.Context, resp *requests.Response) error {
@@ -120,15 +121,16 @@ func (mc *mockCapability) getEncoder(workflowID string) (pbtypes.Encoder, error)
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getRegisteredWorkflows() []string { return []string{} }
+func (mc *mockCapability) getRegisteredWorkflowsIDs() []string { return mc.registeredWorkflows }
 
 func TestReportingPlugin_Observation(t *testing.T) {
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
-		aggregator: &aggregator{},
-		encoder:    &enc{},
+		aggregator:          &aggregator{},
+		encoder:             &enc{},
+		registeredWorkflows: []string{workflowTestID, workflowTestID2},
 	}
 	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
 	require.NoError(t, err)
@@ -166,6 +168,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	assert.Equal(t, fo.Id.WorkflowExecutionId, eid)
 	assert.Equal(t, fo.Id.WorkflowId, workflowTestID)
 	assert.Equal(t, o, values.FromListValueProto(fo.Observations))
+	assert.Equal(t, []string{workflowTestID, workflowTestID2}, obspb.RegisteredWorkflowIds)
 }
 
 func TestReportingPlugin_Observation_NoResults(t *testing.T) {

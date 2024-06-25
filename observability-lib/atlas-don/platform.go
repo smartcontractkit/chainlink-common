@@ -23,6 +23,7 @@ func PlatformPanelOpts(platform string, ocrVersion string) PlatformOpts {
 		LabelFilters: map[string]string{
 			"contract": `=~"${contract}"`,
 		},
+		Platform: platform,
 	}
 
 	variableFeedID := "feed_id"

@@ -106,7 +106,7 @@ func TestExecLOOP(t *testing.T) {
 
 func newExecutionProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPExecProvider, error) {
 	ctx := context.Background()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore)
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 

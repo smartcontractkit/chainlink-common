@@ -10,7 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
+	standardcapability "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -31,11 +31,11 @@ type StandardCapabilitiesLoop struct {
 	plugin.NetRPCUnsupportedPlugin
 	BrokerConfig
 	PluginServer StandardCapabilities
-	pluginClient *capability.StandardCapabilitiesClient
+	pluginClient *standardcapability.StandardCapabilitiesClient
 }
 
 func (p *StandardCapabilitiesLoop) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
-	return capability.RegisterStandardCapabilitiesServer(server, broker, p.BrokerConfig, p.PluginServer)
+	return standardcapability.RegisterStandardCapabilitiesServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
 func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
@@ -45,7 +45,7 @@ func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.
 	}
 
 	if p.pluginClient == nil {
-		p.pluginClient = capability.NewStandardCapabilitiesClient(bext, conn)
+		p.pluginClient = standardcapability.NewStandardCapabilitiesClient(bext, conn)
 	} else {
 		p.pluginClient.Refresh(broker, conn)
 	}

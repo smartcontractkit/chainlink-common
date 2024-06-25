@@ -75,7 +75,7 @@ type mockCapability struct {
 	gotResponse         *requests.Response
 	aggregator          *aggregator
 	encoder             *enc
-	registeredWorkflows []string
+	registeredWorkflows map[string]bool
 }
 
 func (mc *mockCapability) transmitResponse(ctx context.Context, resp *requests.Response) error {
@@ -121,16 +121,29 @@ func (mc *mockCapability) getEncoder(workflowID string) (pbtypes.Encoder, error)
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getRegisteredWorkflowsIDs() []string { return mc.registeredWorkflows }
+func (mc *mockCapability) getRegisteredWorkflowsIDs() []string {
+	workflows := make([]string, 0, len(mc.registeredWorkflows))
+	for wf := range mc.registeredWorkflows {
+		workflows = append(workflows, wf)
+	}
+	return workflows
+}
+
+func (mc *mockCapability) unregisterWorkflowID(workflowID string) {
+	delete(mc.registeredWorkflows, workflowID)
+}
 
 func TestReportingPlugin_Observation(t *testing.T) {
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
-		aggregator:          &aggregator{},
-		encoder:             &enc{},
-		registeredWorkflows: []string{workflowTestID, workflowTestID2},
+		aggregator: &aggregator{},
+		encoder:    &enc{},
+		registeredWorkflows: map[string]bool{
+			workflowTestID:  true,
+			workflowTestID2: true,
+		},
 	}
 	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
 	require.NoError(t, err)
@@ -385,4 +398,123 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 
 	assert.EqualExportedValues(t, info.Id, id)
 	assert.True(t, info.ShouldReport)
+}
+
+func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
+	lggr := logger.Test(t)
+	s := requests.NewStore()
+	cap := &mockCapability{
+		aggregator: &aggregator{},
+		encoder:    &enc{},
+		registeredWorkflows: map[string]bool{
+			workflowTestID:  true,
+			workflowTestID2: true,
+		},
+	}
+	rp, err := newReportingPlugin(s, cap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
+	require.NoError(t, err)
+
+	// Setup multiple workflows IDs that should appear on F+1 nodes, and also add some workflows IDs which last seen
+	// would satisfy both conditionals, to be pruned from Outcomes, and to be kept around, based on the pruning threshold.
+
+	weid := uuid.New().String()
+	wowner := uuid.New().String()
+	id := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestId,
+	}
+	id2 := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID2,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestId,
+	}
+	id3 := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID3,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestId,
+	}
+	q := &pbtypes.Query{
+		Ids: []*pbtypes.Id{id, id2, id3},
+	}
+	qb, err := proto.Marshal(q)
+	require.NoError(t, err)
+	o, err := values.NewList([]any{"hello"})
+	require.NoError(t, err)
+	obs := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:           id,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id2,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID, workflowTestID2},
+	}
+	obs2 := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:           id,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id2,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID},
+	}
+
+	rawObs, err := proto.Marshal(obs)
+	require.NoError(t, err)
+	rawObs2, err := proto.Marshal(obs2)
+	require.NoError(t, err)
+	aos := []types.AttributedObservation{
+		{
+			Observation: rawObs,
+			Observer:    commontypes.OracleID(1),
+		},
+	}
+	aos2 := []types.AttributedObservation{
+		{
+			Observation: rawObs2,
+			Observer:    commontypes.OracleID(1),
+		},
+	}
+
+	outcome1, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	require.NoError(t, err)
+	opb1 := &pbtypes.Outcome{}
+	err = proto.Unmarshal(outcome1, opb1)
+	require.NoError(t, err)
+
+	outcome2, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: outcomePruningThreshold + 100, PreviousOutcome: outcome1}, qb, aos2)
+	require.NoError(t, err)
+	opb2 := &pbtypes.Outcome{}
+	err = proto.Unmarshal(outcome2, opb2)
+	require.NoError(t, err)
+
+	assert.Equal(t, uint64(100), opb1.Outcomes[workflowTestID].LastSeenAt)
+	assert.Equal(t, uint64(100), opb1.Outcomes[workflowTestID2].LastSeenAt)
+	assert.Equal(t, uint64(0), opb1.Outcomes[workflowTestID3].LastSeenAt)
+	assert.Equal(t, uint64(outcomePruningThreshold+100), opb2.Outcomes[workflowTestID].LastSeenAt)
+	assert.Equal(t, uint64(100), opb2.Outcomes[workflowTestID2].LastSeenAt)
+	assert.Zero(t, opb2.Outcomes[workflowTestID3]) // This outcome was pruned
 }

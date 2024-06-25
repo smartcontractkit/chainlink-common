@@ -230,6 +230,13 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			return nil, err
 		}
 
+		// Only if the previous outcome exists:
+		// We carry the last seen round from the previous outcome, since the aggregation does carry it.
+		// So each `Aggregate()` call will return an outcome with a zero value for LastSeenAt.
+		if workflowOutcome != nil {
+			outcome.LastSeenAt = workflowOutcome.LastSeenAt
+		}
+
 		report := &pbtypes.Report{
 			Outcome: outcome,
 			Id:      weid,
@@ -247,7 +254,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
 		} else if outctx.SeqNr-outcome.LastSeenAt > outcomePruningThreshold {
-			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID)
+			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
 			delete(o.Outcomes, workflowID)
 			r.r.unregisterWorkflowID(workflowID)
 		}

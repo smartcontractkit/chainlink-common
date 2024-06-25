@@ -414,9 +414,6 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 	rp, err := newReportingPlugin(s, cap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, lggr)
 	require.NoError(t, err)
 
-	// Setup multiple workflows IDs that should appear on F+1 nodes, and also add some workflows IDs which last seen
-	// would satisfy both conditionals, to be pruned from Outcomes, and to be kept around, based on the pruning threshold.
-
 	weid := uuid.New().String()
 	wowner := uuid.New().String()
 	id := &pbtypes.Id{

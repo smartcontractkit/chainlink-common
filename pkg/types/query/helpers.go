@@ -1,19 +1,9 @@
-/*
-The `query` utilities package contains helper functions for creating common KeyFilter values for filtering
-logs through `QueryKey`. A complete `ChainReader` implementation should include the following `ValueComparator`
-types.
-
-- AddressComparator
-- EventSigComparator
-- TopicComparator
-*/
 package query
 
 import (
 	"strconv"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
@@ -32,14 +22,14 @@ func SelectIndexedLogs(
 	topicIdx uint64,
 	topicValues []string,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	return query.KeyFilter{
+) KeyFilter {
+	return KeyFilter{
 		Key: strconv.FormatUint(topicIdx, 10),
-		Expressions: []query.Expression{
+		Expressions: []Expression{
 			addressComparator(address),
 			eventComparator(eventSig),
 			filtersForTopics(topicValues),
-			query.Confidence(confidence),
+			Confidence(confidence),
 		},
 	}
 }
@@ -51,15 +41,15 @@ func SelectIndexedLogsByBlockRange(
 	start, end uint64,
 	topicIdx uint64,
 	topicValues []string,
-) query.KeyFilter {
-	return query.KeyFilter{
+) KeyFilter {
+	return KeyFilter{
 		Key: strconv.FormatUint(topicIdx, 10),
-		Expressions: []query.Expression{
+		Expressions: []Expression{
 			addressComparator(addr),
 			eventComparator(eventSig),
 			filtersForTopics(topicValues),
-			query.Block(start, primitives.Gte),
-			query.Block(end, primitives.Lte),
+			Block(start, primitives.Gte),
+			Block(end, primitives.Lte),
 		},
 	}
 }
@@ -70,14 +60,14 @@ func SelectIndexedLogsTopicGreaterThan(
 	addr, eventSig string,
 	topicIdx uint64, topicValue string,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	return query.KeyFilter{
+) KeyFilter {
+	return KeyFilter{
 		Key: strconv.FormatUint(topicIdx, 10),
-		Expressions: []query.Expression{
+		Expressions: []Expression{
 			addressComparator(addr),
 			eventComparator(eventSig),
 			topicComparator(topicValue, primitives.Gte),
-			query.Confidence(confidence),
+			Confidence(confidence),
 		},
 	}
 }
@@ -88,15 +78,15 @@ func SelectIndexedLogsTopicRange(
 	addr, eventSig string,
 	topicIdx uint64, min, max string,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	return query.KeyFilter{
+) KeyFilter {
+	return KeyFilter{
 		Key: strconv.FormatUint(topicIdx, 10),
-		Expressions: []query.Expression{
+		Expressions: []Expression{
 			addressComparator(addr),
 			eventComparator(eventSig),
 			topicComparator(min, primitives.Gte),
 			topicComparator(max, primitives.Lte),
-			query.Confidence(confidence),
+			Confidence(confidence),
 		},
 	}
 }
@@ -104,12 +94,12 @@ func SelectIndexedLogsTopicRange(
 // SelectIndexedLogsByTxHash creates a KeyFilter that filters logs for the provided transaction hash.
 func SelectIndexedLogsByTxHash(
 	addr, eventSig, txHash string,
-) query.KeyFilter {
-	return query.KeyFilter{
-		Expressions: []query.Expression{
+) KeyFilter {
+	return KeyFilter{
+		Expressions: []Expression{
 			addressComparator(addr),
 			eventComparator(eventSig),
-			query.TxHash(txHash),
+			TxHash(txHash),
 		},
 	}
 }
@@ -120,9 +110,9 @@ func SelectLogsDataWordRange(
 	addr, eventSig string,
 	wordIdx uint8, word1, word2 string,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	return query.KeyFilter{
-		Expressions: []query.Expression{
+) KeyFilter {
+	return KeyFilter{
+		Expressions: []Expression{
 			addressComparator(addr),
 			eventComparator(eventSig),
 			wordComparator(
@@ -135,7 +125,7 @@ func SelectLogsDataWordRange(
 				word2,
 				primitives.Lte,
 			),
-			query.Confidence(confidence),
+			Confidence(confidence),
 		},
 	}
 }
@@ -146,9 +136,9 @@ func SelectLogsDataWordGreaterThan(
 	addr, eventSig string,
 	wordIdx uint8, wordValue string,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	return query.KeyFilter{
-		Expressions: []query.Expression{
+) KeyFilter {
+	return KeyFilter{
+		Expressions: []Expression{
 			addressComparator(addr),
 			eventComparator(eventSig),
 			wordComparator(
@@ -156,7 +146,7 @@ func SelectLogsDataWordGreaterThan(
 				wordValue,
 				primitives.Gte,
 			),
-			query.Confidence(confidence),
+			Confidence(confidence),
 		},
 	}
 }
@@ -166,36 +156,36 @@ func SelectLogsDataWordGreaterThan(
 func SelectLogsWithSigs(
 	addr string, sigs []string,
 	startBlock, endBlock uint64,
-) query.KeyFilter {
-	filters := []query.Expression{
+) KeyFilter {
+	filters := []Expression{
 		addressComparator(addr),
 	}
 
 	if len(sigs) > 0 {
-		exp := make([]query.Expression, len(sigs))
+		exp := make([]Expression, len(sigs))
 		for idx, val := range sigs {
 			exp[idx] = eventComparator(val)
 		}
 
-		filters = append(filters, query.Expression{
-			BoolExpression: query.BoolExpression{
+		filters = append(filters, Expression{
+			BoolExpression: BoolExpression{
 				Expressions:  exp,
-				BoolOperator: query.OR,
+				BoolOperator: OR,
 			},
 		})
 	}
 
-	filters = append(filters, query.Expression{
-		BoolExpression: query.BoolExpression{
-			Expressions: []query.Expression{
-				query.Block(startBlock, primitives.Gte),
-				query.Block(endBlock, primitives.Lte),
+	filters = append(filters, Expression{
+		BoolExpression: BoolExpression{
+			Expressions: []Expression{
+				Block(startBlock, primitives.Gte),
+				Block(endBlock, primitives.Lte),
 			},
-			BoolOperator: query.AND,
+			BoolOperator: AND,
 		},
 	})
 
-	return query.KeyFilter{
+	return KeyFilter{
 		Expressions: filters,
 	}
 }
@@ -204,13 +194,13 @@ func SelectLogsWithSigs(
 func SelectLogs(
 	addr, eventSig string,
 	start, end uint64,
-) query.KeyFilter {
-	return query.KeyFilter{
-		Expressions: []query.Expression{
+) KeyFilter {
+	return KeyFilter{
+		Expressions: []Expression{
 			addressComparator(addr),
 			eventComparator(eventSig),
-			query.Block(start, primitives.Gte),
-			query.Block(end, primitives.Lte),
+			Block(start, primitives.Gte),
+			Block(end, primitives.Lte),
 		},
 	}
 }
@@ -220,13 +210,13 @@ func SelectLogsCreatedAfter(
 	address, eventSig string,
 	timestamp time.Time,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	return query.KeyFilter{
-		Expressions: []query.Expression{
+) KeyFilter {
+	return KeyFilter{
+		Expressions: []Expression{
 			addressComparator(address),
 			eventComparator(eventSig),
-			query.Timestamp(uint64(timestamp.Unix()), primitives.Gt),
-			query.Confidence(confidence),
+			Timestamp(uint64(timestamp.Unix()), primitives.Gt),
+			Confidence(confidence),
 		},
 	}
 }
@@ -239,32 +229,32 @@ func SelectIndexedLogsCreatedAfter(
 	topicValues []string,
 	timestamp time.Time,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	filters := []query.Expression{
+) KeyFilter {
+	filters := []Expression{
 		addressComparator(address),
 		eventComparator(eventSig),
 	}
 
 	if len(topicValues) > 0 {
-		exp := make([]query.Expression, len(topicValues))
+		exp := make([]Expression, len(topicValues))
 		for idx, value := range topicValues {
 			exp[idx] = topicComparator(value, primitives.Eq)
 		}
 
-		filters = append(filters, query.Expression{
-			BoolExpression: query.BoolExpression{
+		filters = append(filters, Expression{
+			BoolExpression: BoolExpression{
 				Expressions:  exp,
-				BoolOperator: query.OR,
+				BoolOperator: OR,
 			},
 		})
 	}
 
-	filters = append(filters, []query.Expression{
-		query.Timestamp(uint64(timestamp.Unix()), primitives.Gt),
-		query.Confidence(confidence),
+	filters = append(filters, []Expression{
+		Timestamp(uint64(timestamp.Unix()), primitives.Gt),
+		Confidence(confidence),
 	}...)
 
-	return query.KeyFilter{
+	return KeyFilter{
 		Key:         strconv.FormatUint(topicIdx, 10),
 		Expressions: filters,
 	}
@@ -276,9 +266,9 @@ func SelectLogsDataWordBetween(
 	address, eventSig string,
 	wordIdx1, wordIdx2 uint64, word string,
 	confidence primitives.ConfidenceLevel,
-) query.KeyFilter {
-	return query.KeyFilter{
-		Expressions: []query.Expression{
+) KeyFilter {
+	return KeyFilter{
+		Expressions: []Expression{
 			addressComparator(address),
 			eventComparator(eventSig),
 			wordComparator(
@@ -291,48 +281,48 @@ func SelectLogsDataWordBetween(
 				word,
 				primitives.Gte,
 			),
-			query.Confidence(confidence),
+			Confidence(confidence),
 		},
 	}
 }
 
-func addressComparator(address string) query.Expression {
-	return query.Comparator(string(AddressComparator), primitives.ValueComparator{
+func addressComparator(address string) Expression {
+	return Comparator(string(AddressComparator), primitives.ValueComparator{
 		Value:    address,
 		Operator: primitives.Eq,
 	})
 }
 
-func eventComparator(eventSig string) query.Expression {
-	return query.Comparator(string(EventSigComparator), primitives.ValueComparator{
+func eventComparator(eventSig string) Expression {
+	return Comparator(string(EventSigComparator), primitives.ValueComparator{
 		Value:    eventSig,
 		Operator: primitives.Eq,
 	})
 }
 
-func topicComparator(topic string, op primitives.ComparisonOperator) query.Expression {
-	return query.Comparator(string(TopicComparator), primitives.ValueComparator{
+func topicComparator(topic string, op primitives.ComparisonOperator) Expression {
+	return Comparator(string(TopicComparator), primitives.ValueComparator{
 		Value:    topic,
 		Operator: op,
 	})
 }
 
-func wordComparator(wordName, wordValue string, op primitives.ComparisonOperator) query.Expression {
-	return query.Comparator(wordName, primitives.ValueComparator{
+func wordComparator(wordName, wordValue string, op primitives.ComparisonOperator) Expression {
+	return Comparator(wordName, primitives.ValueComparator{
 		Value:    wordValue,
 		Operator: op,
 	})
 }
 
-func filtersForTopics(topicValues []string) query.Expression {
-	topicFilters := query.BoolExpression{
-		Expressions:  make([]query.Expression, len(topicValues)),
-		BoolOperator: query.OR,
+func filtersForTopics(topicValues []string) Expression {
+	topicFilters := BoolExpression{
+		Expressions:  make([]Expression, len(topicValues)),
+		BoolOperator: OR,
 	}
 
 	for idx, value := range topicValues {
 		topicFilters.Expressions[idx] = topicComparator(value, primitives.Eq)
 	}
 
-	return query.Expression{BoolExpression: topicFilters}
+	return Expression{BoolExpression: topicFilters}
 }

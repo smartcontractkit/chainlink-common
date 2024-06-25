@@ -306,11 +306,7 @@ func getContractEncodedType(contractName, itemType string, possibleTypeProvider 
 func newPbBatchGetLatestValueReply(result types.BatchGetLatestValueResult, encodeWith EncodingVersion) (*pb.BatchGetLatestValueReply, error) {
 	var pbBatchGetLatestValueReply = &pb.BatchGetLatestValueReply{Results: make(map[string]*pb.ContractBatchResult)}
 	for contractName, contractBatch := range result {
-		if _, ok := pbBatchGetLatestValueReply.Results[contractName]; !ok {
-			pbContractBatchResult := &pb.ContractBatchResult{Results: []*pb.BatchReadResult{}}
-			pbBatchGetLatestValueReply.Results[contractName] = pbContractBatchResult
-		}
-
+		pbBatchGetLatestValueReply.Results[contractName] = &pb.ContractBatchResult{Results: []*pb.BatchReadResult{}}
 		for _, batchCall := range contractBatch {
 			encodedRetVal, err := EncodeVersionedBytes(batchCall.ReturnValue, encodeWith)
 			if err != nil {
@@ -502,28 +498,29 @@ func parseBatchGetLatestValueReply(request types.BatchGetLatestValueRequest, rep
 	}
 
 	result := make(types.BatchGetLatestValueResult)
-	// parse replies into caller's expected return values
 	for contractName, contractBatch := range reply.Results {
-		if _, ok := result[contractName]; !ok {
-			result[contractName] = []types.BatchReadResult{}
-		}
-
+		result[contractName] = make([]types.BatchReadResult, len(contractBatch.Results))
+		resultsContractBatch := contractBatch.Results
 		requestContractBatch, ok := request[contractName]
 		if !ok {
-			return nil, fmt.Errorf("received unexpected contract name %s in grpc BatchGetLatestValue reply", contractName)
+			return nil, fmt.Errorf("received unexpected contract name %s from grpc BatchGetLatestValue reply", contractName)
 		}
 
-		for _, replyCall := range contractBatch.Results {
-			for _, requestCall := range requestContractBatch {
-				readResult := types.BatchReadResult{ReadName: replyCall.ReadName}
-				if replyCall.ReadName == requestCall.ReadName {
-					if err := DecodeVersionedBytes(requestCall.ReturnVal, replyCall.ReturnVal); err != nil {
-						return nil, err
-					}
-					readResult.ReturnValue = requestCall.ReturnVal
-				}
-				result[contractName] = append(result[contractName], readResult)
+		if len(requestContractBatch) != len(resultsContractBatch) {
+			return nil, fmt.Errorf("request and results length for contract %s are mismatched %d vs %d", contractName, len(requestContractBatch), len(resultsContractBatch))
+		}
+
+		for i := 0; i < len(resultsContractBatch); i++ {
+			// type lives in the request, so we can use it for result
+			res, req := resultsContractBatch[i], requestContractBatch[i]
+			if err := DecodeVersionedBytes(req.ReturnVal, res.ReturnVal); err != nil {
+				return nil, err
 			}
+			var err error
+			if res.Error != "" {
+				err = fmt.Errorf(res.Error)
+			}
+			result[contractName][i] = types.BatchReadResult{ReadName: res.ReadName, ReturnValue: req.ReturnVal, Err: err}
 		}
 	}
 	return result, nil

@@ -361,23 +361,43 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 
 func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, request types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
 	result := make(types.BatchGetLatestValueResult)
-	for contractName, contractBatchEntry := range f.batchStored {
-		requestContractBatch, ok := request[contractName]
-		if !ok {
-			continue
-		}
+	for requestContractName, requestContractBatch := range request {
+		storedContractBatch := f.batchStored[requestContractName]
 
 		contractBatchResults := types.ContractBatchResults{}
-		for _, readEntry := range contractBatchEntry {
-			for _, requestRead := range requestContractBatch {
-				lp := requestRead.Params.(*LatestParams)
-				if readEntry.Name == requestRead.ReadName && *readEntry.Ts.Field == int32(lp.I) {
-					contractBatchResults = append(contractBatchResults, types.BatchReadResult{ReadName: readEntry.Name, ReturnValue: readEntry.Ts, Err: nil})
+		for i := 0; i < len(requestContractBatch); i++ {
+			var returnVal any
+			req := requestContractBatch[i]
+			res := types.BatchReadResult{ReadName: req.ReadName, Err: nil}
+			if req.ReadName == MethodReturningUint64 {
+				returnVal = req.ReturnVal.(*uint64)
+				if requestContractName == AnyContractName {
+					*returnVal.(*uint64) = AnyValueToReadWithoutAnArgument
+				} else {
+					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
 				}
+			} else if req.ReadName == DifferentMethodReturningUint64 {
+				returnVal = AnyDifferentValueToReadWithoutAnArgument
+			} else if req.ReadName == MethodReturningUint64Slice {
+				returnVal = req.ReturnVal.(*[]uint64)
+				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
+			} else if req.ReadName == MethodReturningSeenStruct {
+				ts := *req.Params.(*TestStruct)
+				ts.Account = anyAccountBytes
+				ts.BigField = big.NewInt(2)
+				returnVal = &TestStructWithExtraField{
+					TestStruct: ts,
+					ExtraField: AnyExtraValue,
+				}
+			} else if req.ReadName == MethodTakingLatestParamsReturningTestStruct {
+				returnVal = storedContractBatch[i].ReturnValue
+			} else {
+				return nil, errors.New("unknown read " + req.ReadName)
 			}
-
+			res.ReturnValue = returnVal
+			contractBatchResults = append(contractBatchResults, res)
 		}
-		result[contractName] = contractBatchResults
+		result[requestContractName] = contractBatchResults
 	}
 	return result, nil
 }

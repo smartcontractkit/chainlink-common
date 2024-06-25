@@ -94,8 +94,8 @@ type FilterEventParams struct {
 type BatchCallEntry map[string]ContractBatchEntry
 type ContractBatchEntry []ReadEntry
 type ReadEntry struct {
-	Name string
-	Ts   *TestStruct
+	Name        string
+	ReturnValue any
 }
 
 func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {

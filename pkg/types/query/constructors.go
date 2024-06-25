@@ -15,9 +15,9 @@ const (
 	TopicComparator    ComparatorType = "TOPIC"
 )
 
-// SelectIndexedLogs creates a KeyFilter that filters logs for the provided topic values at the specified
+// IndexedLogsKeyFilter creates a KeyFilter that filters logs for the provided topic values at the specified
 // topic index. Topic value filters are 'OR'ed together.
-func SelectIndexedLogs(
+func IndexedLogsKeyFilter(
 	address, eventSig string,
 	topicIdx uint64,
 	topicValues []string,
@@ -34,9 +34,9 @@ func SelectIndexedLogs(
 	}
 }
 
-// SelectIndexedLogsByBlockRange creates a KeyFilter that filters logs for the provided topic values at the specified
+// IndexedLogsByBlockRangeKeyFilter creates a KeyFilter that filters logs for the provided topic values at the specified
 // topic index. Topic value filters are 'OR'ed together and results are limited by provided block range.
-func SelectIndexedLogsByBlockRange(
+func IndexedLogsByBlockRangeKeyFilter(
 	addr, eventSig string,
 	start, end uint64,
 	topicIdx uint64,
@@ -54,9 +54,9 @@ func SelectIndexedLogsByBlockRange(
 	}
 }
 
-// SelectIndexedLogsTopicGreaterThan creates a KeyFilter that filters logs for the provided topic value and index
+// IndexedLogsTopicGreaterThanKeyFilter creates a KeyFilter that filters logs for the provided topic value and index
 // at or above the specified confidence level.
-func SelectIndexedLogsTopicGreaterThan(
+func IndexedLogsTopicGreaterThanKeyFilter(
 	addr, eventSig string,
 	topicIdx uint64, topicValue string,
 	confidence primitives.ConfidenceLevel,
@@ -72,9 +72,9 @@ func SelectIndexedLogsTopicGreaterThan(
 	}
 }
 
-// SelectIndexedLogsTopicRange creates a KeyFilter that filters logs for the provided topic index and topic
+// IndexedLogsTopicRangeKeyFilter creates a KeyFilter that filters logs for the provided topic index and topic
 // values between the provided min and max, endpoints inclusive.
-func SelectIndexedLogsTopicRange(
+func IndexedLogsTopicRangeKeyFilter(
 	addr, eventSig string,
 	topicIdx uint64, min, max string,
 	confidence primitives.ConfidenceLevel,
@@ -91,8 +91,8 @@ func SelectIndexedLogsTopicRange(
 	}
 }
 
-// SelectIndexedLogsByTxHash creates a KeyFilter that filters logs for the provided transaction hash.
-func SelectIndexedLogsByTxHash(
+// IndexedLogsByTxHashKeyFilter creates a KeyFilter that filters logs for the provided transaction hash.
+func IndexedLogsByTxHashKeyFilter(
 	addr, eventSig, txHash string,
 ) KeyFilter {
 	return KeyFilter{
@@ -104,9 +104,9 @@ func SelectIndexedLogsByTxHash(
 	}
 }
 
-// SelectLogsDataWordRange creates a KeyFilter that filters logs for the provided word index and word
+// LogsDataWordRangeKeyFilter creates a KeyFilter that filters logs for the provided word index and word
 // values between the provided min and max, endpoints inclusive.
-func SelectLogsDataWordRange(
+func LogsDataWordRangeKeyFilter(
 	addr, eventSig string,
 	wordIdx uint8, word1, word2 string,
 	confidence primitives.ConfidenceLevel,
@@ -130,9 +130,9 @@ func SelectLogsDataWordRange(
 	}
 }
 
-// SelectLogsDataWordGreaterThan creates a KeyFilter that filters logs for the provided word index and
+// LogsDataWordGreaterThanKeyFilter creates a KeyFilter that filters logs for the provided word index and
 // greater than or equal to the provided word value.
-func SelectLogsDataWordGreaterThan(
+func LogsDataWordGreaterThanKeyFilter(
 	addr, eventSig string,
 	wordIdx uint8, wordValue string,
 	confidence primitives.ConfidenceLevel,
@@ -151,9 +151,9 @@ func SelectLogsDataWordGreaterThan(
 	}
 }
 
-// SelectLogsWithSigs creates a KeyFilter that filters logs for the provided event signatures within
+// LogsWithSigsKeyFilter creates a KeyFilter that filters logs for the provided event signatures within
 // the provided block range. Event signature values are 'OR'ed and block range endpoints are inclusive.
-func SelectLogsWithSigs(
+func LogsWithSigsKeyFilter(
 	addr string, sigs []string,
 	startBlock, endBlock uint64,
 ) KeyFilter {
@@ -190,8 +190,8 @@ func SelectLogsWithSigs(
 	}
 }
 
-// SelectLogs creates a KeyFilter that filters logs for the provided block range, endpoints inclusive.
-func SelectLogs(
+// LogsByBlockRangeKeyFilter creates a KeyFilter that filters logs for the provided block range, endpoints inclusive.
+func LogsByBlockRangeKeyFilter(
 	addr, eventSig string,
 	start, end uint64,
 ) KeyFilter {
@@ -205,8 +205,8 @@ func SelectLogs(
 	}
 }
 
-// SelectLogsCreatedAfter creates a KeyFilter that filters logs for after but not equal to the provided time value.
-func SelectLogsCreatedAfter(
+// LogsCreatedAfterKeyFilter creates a KeyFilter that filters logs for after but not equal to the provided time value.
+func LogsCreatedAfterKeyFilter(
 	address, eventSig string,
 	timestamp time.Time,
 	confidence primitives.ConfidenceLevel,
@@ -221,9 +221,9 @@ func SelectLogsCreatedAfter(
 	}
 }
 
-// SelectIndexedLogsCreatedAfter creates a KeyFilter that filters logs for the provided topic index and topic values
+// IndexedLogsCreatedAfterKeyFilter creates a KeyFilter that filters logs for the provided topic index and topic values
 // created after the provided time value. Topic values are 'OR'ed.
-func SelectIndexedLogsCreatedAfter(
+func IndexedLogsCreatedAfterKeyFilter(
 	address, eventSig string,
 	topicIdx uint64,
 	topicValues []string,
@@ -260,9 +260,9 @@ func SelectIndexedLogsCreatedAfter(
 	}
 }
 
-// SelectLogsDataWordBetween creates a KeyFilter that filters logs between the specified word indexes and
+// LogsDataWordBetweenKeyFilter creates a KeyFilter that filters logs between the specified word indexes and
 // provided word value, endpoints inclusive.
-func SelectLogsDataWordBetween(
+func LogsDataWordBetweenKeyFilter(
 	address, eventSig string,
 	wordIdx1, wordIdx2 uint64, word string,
 	confidence primitives.ConfidenceLevel,

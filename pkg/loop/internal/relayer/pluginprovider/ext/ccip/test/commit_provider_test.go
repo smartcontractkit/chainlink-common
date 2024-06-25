@@ -62,7 +62,7 @@ func roundTripCommitProviderTests(t *testing.T, client types.CCIPCommitProvider)
 	})
 
 	t.Run("OnRamp", func(t *testing.T) {
-		onRampClient, err := client.NewOnRampReader(tests.Context(t), "ignored")
+		onRampClient, err := client.NewOnRampReader(tests.Context(t), "ignored", 0, 0)
 		require.NoError(t, err)
 		roundTripOnRampTests(t, onRampClient)
 		require.NoError(t, onRampClient.Close())

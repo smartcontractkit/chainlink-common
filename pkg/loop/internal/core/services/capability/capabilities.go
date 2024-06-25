@@ -120,10 +120,10 @@ func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty)
 		return nil, err
 	}
 
-	return capabilityInfoToCapabilityInfoReply(info), nil
+	return InfoToReply(info), nil
 }
 
-func capabilityInfoToCapabilityInfoReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInfoReply {
+func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInfoReply {
 	var ct capabilitiespb.CapabilityType
 	switch info.CapabilityType {
 	case capabilities.CapabilityTypeTrigger:
@@ -160,10 +160,10 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 		return capabilities.CapabilityInfo{}, err
 	}
 
-	return capabilityInfoReplyToCapabilityInfo(reply)
+	return InfoReplyToInfo(reply)
 }
 
-func capabilityInfoReplyToCapabilityInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
+func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
 	var ct capabilities.CapabilityType
 	switch resp.CapabilityType {
 	case capabilitiespb.CapabilityTypeTrigger:

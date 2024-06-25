@@ -12,12 +12,6 @@ type CommitPluginConfig struct {
 	// DestChain is the ccip destination chain configured for the commit plugin DON.
 	DestChain ChainSelector `json:"destChain"`
 
-	// FChain defines the FChain value for each chain. FChain is used while forming consensus based on the observations.
-	FChain map[ChainSelector]int `json:"fChain"`
-
-	// ObserverInfo is a map of oracle IDs to ObserverInfo.
-	ObserverInfo map[commontypes.OracleID]ObserverInfo `json:"observerInfo"`
-
 	// PricedTokens is a list of tokens that we want to submit price updates for.
 	PricedTokens []types.Account `json:"pricedTokens"`
 
@@ -39,18 +33,6 @@ func (c CommitPluginConfig) Validate() error {
 
 	if c.NewMsgScanBatchSize == 0 {
 		return fmt.Errorf("newMsgScanBatchSize not set")
-	}
-
-	if _, ok := c.FChain[c.DestChain]; !ok {
-		return fmt.Errorf("fChain not set for dest chain")
-	}
-
-	for _, inf := range c.ObserverInfo {
-		for _, ch := range inf.Reads {
-			if _, ok := c.FChain[ch]; !ok {
-				return fmt.Errorf("fChain not set for chain %d", ch)
-			}
-		}
 	}
 
 	return nil

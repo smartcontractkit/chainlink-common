@@ -13,6 +13,7 @@ service PluginRelayer {
 message NewRelayerRequest {
   string config = 1; // toml (is chain instance config enough?)
   uint32 keystoreID = 2;
+  uint32 capabilityRegistryID = 3;
 
   //TODO prometheus? https://smartcontract-it.atlassian.net/browse/BCF-2075
 }

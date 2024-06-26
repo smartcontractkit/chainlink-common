@@ -71,7 +71,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		require.NoError(t, err)
 
 		if diff := cmp.Diff(rawworkflowspecJSON, workflowspecJSON, transformJSON); diff != "" {
-			t.Errorf("ParseWorkflowWorkflowSpecFromString() mismatch (-want +got):\n%s", diff)
+			t.Errorf("ParseWorkflowSpecFromString() mismatch (-want +got):\n%s", diff)
 			t.FailNow()
 		}
 
@@ -244,6 +244,7 @@ func TestJsonSchema(t *testing.T) {
 
 			err = jsonSchema.Validate(passingFixture1)
 			require.NoError(t, err)
+
 		})
 
 		// test ref regex
@@ -258,6 +259,7 @@ func TestJsonSchema(t *testing.T) {
 			err = jsonSchema.Validate(passingFixture1)
 			require.NoError(t, err)
 		})
+
 		// name, owner tests
 		type testCase = struct {
 			testName string

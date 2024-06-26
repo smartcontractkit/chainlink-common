@@ -11,6 +11,7 @@ message AggregationOutcome {
   values.Map encodableOutcome = 1; // passed to encoders
   bytes metadata = 2; // internal to the aggregator
   bool shouldReport = 3;
+  uint64 lastSeenAt = 4; // this is the equivalent of a SeqNr
 }
 
 message Query {
@@ -36,6 +37,8 @@ message Observation {
 message Observations {
   // batched observations for multiple workflow execution IDs
   repeated Observation observations = 1;
+  // the workflow IDs that are registered in the node
+  repeated string registeredWorkflowIds = 2;
 }
 
 message Report {

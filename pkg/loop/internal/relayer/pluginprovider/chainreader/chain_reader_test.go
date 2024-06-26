@@ -160,6 +160,55 @@ func TestGetLatestValue(t *testing.T) {
 	})
 }
 
+func TestBatchGetLatestValue(t *testing.T) {
+	t.Parallel()
+
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+
+			es := &errChainReader{}
+			errTester := chainreadertest.WrapChainReaderTesterForLoop(
+				&fakeChainReaderInterfaceTester{impl: es},
+				chainreadertest.WithChainReaderLoopEncoding(version),
+			)
+
+			errTester.Setup(t)
+			chainReader := errTester.GetChainReader(t)
+
+			t.Run("nil reader should return unimplemented", func(t *testing.T) {
+				t.Parallel()
+
+				ctx := tests.Context(t)
+
+				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester.Setup(t)
+				nilCr := nilTester.GetChainReader(t)
+
+				_, err := nilCr.BatchGetLatestValue(ctx, types.BatchGetLatestValueRequest{})
+				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+			})
+
+			for _, errorType := range errorTypes {
+				es.err = errorType
+				t.Run("BatchGetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+					ctx := tests.Context(t)
+					_, err := chainReader.BatchGetLatestValue(ctx, types.BatchGetLatestValueRequest{})
+					assert.True(t, errors.Is(err, errorType))
+				})
+			}
+
+			// make sure that errors come from client directly
+			es.err = nil
+			t.Run("BatchGetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+				ctx := tests.Context(t)
+				_, err := chainReader.BatchGetLatestValue(ctx, types.BatchGetLatestValueRequest{"contract": {{ReadName: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}}}})
+				assert.True(t, errors.Is(err, types.ErrInvalidType))
+			})
+		}
+	})
+}
+
 func TestQueryKey(t *testing.T) {
 	t.Parallel()
 

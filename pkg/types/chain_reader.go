@@ -46,7 +46,10 @@ type ChainReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	GetLatestValue(ctx context.Context, contractName, method string, params, returnVal any) error
 
-	// TODO add a long detailed comment
+	// BatchGetLatestValue batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
+	// BatchRead params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
+	// BatchGetLatestValueResult response is grouped by contract names, which contain read results that maintain the order from the request.
+	// Contract call errors are returned in the Err field of BatchReadResult.
 	BatchGetLatestValue(ctx context.Context, request BatchGetLatestValueRequest) (BatchGetLatestValueResult, error)
 
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the

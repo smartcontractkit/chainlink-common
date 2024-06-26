@@ -1,10 +1,12 @@
 package datafeeds
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
 	"sort"
+	"strings"
 
 	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/proto"
@@ -28,6 +30,7 @@ const (
 	RawReportOutputFieldName    = "RawReport"
 	PriceOutputFieldName        = "Price"
 	TimestampOutputFieldName    = "Timestamp"
+	RemappedIDOutputFieldName   = "RemappedID"
 
 	addrLen = 20
 )
@@ -46,6 +49,8 @@ type feedConfig struct {
 	Deviation       decimal.Decimal `mapstructure:"-"`
 	Heartbeat       int
 	DeviationString string `mapstructure:"deviation"`
+	RemappedIDHex   string `mapstructure:"remappedId"`
+	RemappedID      []byte `mapstructure:"-"`
 }
 
 type dataFeedsAggregator struct {
@@ -145,12 +150,17 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 	toWrap := []any{}
 	for _, report := range reportsNeedingUpdate {
 		feedID := datastreams.FeedID(report.FeedID).Bytes()
+		remappedID := a.config.Feeds[datastreams.FeedID(report.FeedID)].RemappedID
+		if len(remappedID) == 0 { // fall back to original ID
+			remappedID = feedID[:]
+		}
 		toWrap = append(toWrap,
 			map[string]any{
-				FeedIDOutputFieldName:    feedID[:],
-				RawReportOutputFieldName: report.FullReport,
-				PriceOutputFieldName:     big.NewInt(0).SetBytes(report.BenchmarkPrice),
-				TimestampOutputFieldName: report.ObservationTimestamp,
+				FeedIDOutputFieldName:     feedID[:],
+				RawReportOutputFieldName:  report.FullReport,
+				PriceOutputFieldName:      big.NewInt(0).SetBytes(report.BenchmarkPrice),
+				TimestampOutputFieldName:  report.ObservationTimestamp,
+				RemappedIDOutputFieldName: remappedID,
 			})
 	}
 
@@ -310,6 +320,15 @@ func ParseConfig(config values.Map) (aggregatorConfig, error) {
 				return aggregatorConfig{}, fmt.Errorf("cannot parse deviation config for feed %s: %w", feedID, err)
 			}
 			feedCfg.Deviation = dec
+			parsedConfig.Feeds[feedID] = feedCfg
+		}
+		trimmed, nonEmpty := strings.CutPrefix(feedCfg.RemappedIDHex, "0x")
+		if nonEmpty {
+			rawRemappedID, err := hex.DecodeString(trimmed)
+			if err != nil {
+				return aggregatorConfig{}, fmt.Errorf("cannot parse remappedId config for feed %s: %w", feedID, err)
+			}
+			feedCfg.RemappedID = rawRemappedID
 			parsedConfig.Feeds[feedID] = feedCfg
 		}
 	}

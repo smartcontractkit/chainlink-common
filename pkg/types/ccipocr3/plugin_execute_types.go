@@ -6,11 +6,15 @@ import (
 	"time"
 )
 
+////////////////////
+// Execute Report //
+////////////////////
+
 type ExecutePluginReport struct {
-	ChainReports []ExecutionPluginReportSingleChain `json:"chainReports"`
+	ChainReports []ExecutePluginReportSingleChain `json:"chainReports"`
 }
 
-type ExecutionPluginReportSingleChain struct {
+type ExecutePluginReportSingleChain struct {
 	SourceChainSelector ChainSelector `json:"sourceChainSelector"`
 	Messages            []CCIPMsg     `json:"messages"`
 	OffchainTokenData   [][][]byte    `json:"offchainTokenData"`
@@ -87,13 +91,18 @@ type ExecutePluginOutcome struct {
 	// PendingCommitReports are the oldest reports with pending commits. The slice is
 	// sorted from oldest to newest.
 	PendingCommitReports []ExecutePluginCommitDataWithMessages `json:"commitReports"`
+
+	// Report is built from the oldest pending commit reports.
+	Report ExecutePluginReport `json:"report"`
 }
 
 func NewExecutePluginOutcome(
 	pendingCommits []ExecutePluginCommitDataWithMessages,
+	report ExecutePluginReport,
 ) ExecutePluginOutcome {
 	return ExecutePluginOutcome{
 		PendingCommitReports: pendingCommits,
+		Report:               report,
 	}
 }
 

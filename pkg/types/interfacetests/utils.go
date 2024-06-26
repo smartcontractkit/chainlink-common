@@ -84,6 +84,7 @@ type compatibleTestStruct struct {
 }
 
 type LatestParams struct {
+	// I should be > 0
 	I int
 }
 

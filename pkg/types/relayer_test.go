@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const networkEVM = "evm"
+
 func TestIdentifier_UnmarshalString(t *testing.T) {
 	type fields struct {
 		Network string
@@ -23,11 +25,7 @@ func TestIdentifier_UnmarshalString(t *testing.T) {
 		{name: "evm",
 			args:    args{s: "evm.1"},
 			wantErr: false,
-			want:    fields{Network: NetworkEVM, ChainID: "1"},
-		},
-		{name: "bad network",
-			args:    args{s: "notANetwork.1"},
-			wantErr: true,
+			want:    fields{Network: networkEVM, ChainID: "1"},
 		},
 		{name: "bad pattern",
 			args:    args{s: "evm_1"},
@@ -48,7 +46,7 @@ func TestIdentifier_UnmarshalString(t *testing.T) {
 }
 
 func TestNewID(t *testing.T) {
-	rid := NewRelayID(NetworkEVM, "chain id")
-	assert.Equal(t, NetworkEVM, rid.Network)
+	rid := NewRelayID(networkEVM, "chain id")
+	assert.Equal(t, networkEVM, rid.Network)
 	assert.Equal(t, "chain id", rid.ChainID)
 }

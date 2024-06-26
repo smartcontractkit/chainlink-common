@@ -13,13 +13,15 @@ import (
 	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
 )
 
 func TestRelayerService(t *testing.T) {
 	t.Parallel()
+	capRegistry := mocks.NewCapabilitiesRegistry(t)
 	relayer := loop.NewRelayerService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginRelayerName, false, 0)
-	}, test.ConfigTOML, keystoretest.Keystore)
+	}, test.ConfigTOML, keystoretest.Keystore, capRegistry)
 	hook := relayer.XXXTestHook()
 	servicetest.Run(t, relayer)
 
@@ -55,7 +57,7 @@ func TestRelayerService_recovery(t *testing.T) {
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, test.ConfigTOML, keystoretest.Keystore)
+	}, test.ConfigTOML, keystoretest.Keystore, nil)
 	servicetest.Run(t, relayer)
 
 	relayertest.Run(t, relayer)

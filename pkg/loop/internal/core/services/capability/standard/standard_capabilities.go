@@ -9,6 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
@@ -33,7 +34,6 @@ type StandardCapabilities interface {
 type StandardCapabilitiesClient struct {
 	*goplugin.PluginClient
 	capabilitiespb.StandardCapabilitiesClient
-	*baseCapabilityClient
 	*goplugin.ServiceClient
 	*net.BrokerExt
 
@@ -47,7 +47,6 @@ func NewStandardCapabilitiesClient(brokerExt *net.BrokerExt, conn *grpc.ClientCo
 		PluginClient:               goplugin.NewPluginClient(brokerExt.Broker, brokerExt.BrokerConfig, conn),
 		ServiceClient:              goplugin.NewServiceClient(brokerExt, conn),
 		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(conn),
-		baseCapabilityClient:       newBaseCapabilityClient(brokerExt, conn),
 		BrokerExt:                  brokerExt,
 	}
 }
@@ -75,7 +74,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	resources = append(resources, keyValueStoreRes)
 
 	capabilitiesRegistryID, capabilityRegistryResource, err := c.ServeNew("CapabilitiesRegistry", func(s *grpc.Server) {
-		pb.RegisterCapabilitiesRegistryServer(s, NewCapabilitiesRegistryServer(c.BrokerExt, capabilitiesRegistry))
+		pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(c.BrokerExt, capabilitiesRegistry))
 	})
 	if err != nil {
 		c.CloseAll(resources...)
@@ -142,7 +141,7 @@ func (c *StandardCapabilitiesClient) Infos(ctx context.Context) ([]capabilities.
 
 	var infos []capabilities.CapabilityInfo
 	for _, infoResponse := range infosResponse.Infos {
-		info, err := capabilityInfoReplyToCapabilityInfo(infoResponse)
+		info, err := capability.InfoReplyToInfo(infoResponse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert capability info: %w", err)
 		}
@@ -214,7 +213,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		return nil, net.ErrConnDial{Name: "CapabilitiesRegistry", ID: request.CapRegistryId, Err: err}
 	}
 	resources = append(resources, net.Resource{Closer: capabilitiesRegistryConn, Name: "CapabilitiesRegistryConn"})
-	capabilitiesRegistry := NewCapabilitiesRegistryClient(capabilitiesRegistryConn, s.BrokerExt)
+	capabilitiesRegistry := capability.NewCapabilitiesRegistryClient(capabilitiesRegistryConn, s.BrokerExt)
 
 	errorLogConn, err := s.Dial(request.ErrorLogId)
 	if err != nil {
@@ -258,7 +257,7 @@ func (s *standardCapabilitiesServer) Infos(ctx context.Context, request *emptypb
 
 	var infosReply []*capabilitiespb.CapabilityInfoReply
 	for _, info := range infos {
-		infosReply = append(infosReply, capabilityInfoToCapabilityInfoReply(info))
+		infosReply = append(infosReply, capability.InfoToReply(info))
 	}
 
 	return &capabilitiespb.CapabilityInfosReply{Infos: infosReply}, nil

@@ -9,22 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	NetworkEVM      = "evm"
-	NetworkCosmos   = "cosmos"
-	NetworkSolana   = "solana"
-	NetworkStarkNet = "starknet"
-	NetworkAptos    = "aptos"
-)
-
-var SupportedRelays = map[string]struct{}{
-	NetworkEVM:      {},
-	NetworkCosmos:   {},
-	NetworkSolana:   {},
-	NetworkStarkNet: {},
-	NetworkAptos:    {},
-}
-
 type RelayID struct {
 	Network string
 	ChainID string
@@ -48,22 +32,8 @@ func (i *RelayID) UnmarshalString(s string) error {
 		return fmt.Errorf("error unmarshaling Identifier. %s does not match expected pattern", s)
 	}
 
-	network, chainID := parts[0], parts[1]
-
-	newID := &RelayID{ChainID: chainID}
-	for n := range SupportedRelays {
-		if network == n {
-			newID.Network = n
-			break
-		}
-	}
-
-	if newID.Network == "" {
-		return fmt.Errorf("error unmarshaling identifier: did not find network in supported list %q", newID.Network)
-	}
-
-	i.ChainID = newID.ChainID
-	i.Network = newID.Network
+	i.Network = parts[0]
+	i.ChainID = parts[1]
 	return nil
 }
 
@@ -126,6 +96,8 @@ type Relayer interface {
 	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
 	NewAutomationProvider(rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
 	NewLLOProvider(rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
+	NewCCIPCommitProvider(rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error)
+	NewCCIPExecProvider(rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error)
 	NewPluginProvider(rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 	NewOCR3CapabilityProvider(rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
 }

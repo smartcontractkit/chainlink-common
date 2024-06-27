@@ -13,6 +13,7 @@ import (
 	v1 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1"
 	v2 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v2"
 	v3 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3"
+	v4 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v4"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -27,6 +28,7 @@ const (
 	MercuryAdapter_NewMercuryV1Factory_FullMethodName = "/loop.internal.pb.mercury.MercuryAdapter/NewMercuryV1Factory"
 	MercuryAdapter_NewMercuryV2Factory_FullMethodName = "/loop.internal.pb.mercury.MercuryAdapter/NewMercuryV2Factory"
 	MercuryAdapter_NewMercuryV3Factory_FullMethodName = "/loop.internal.pb.mercury.MercuryAdapter/NewMercuryV3Factory"
+	MercuryAdapter_NewMercuryV4Factory_FullMethodName = "/loop.internal.pb.mercury.MercuryAdapter/NewMercuryV4Factory"
 )
 
 // MercuryAdapterClient is the client API for MercuryAdapter service.
@@ -36,6 +38,7 @@ type MercuryAdapterClient interface {
 	NewMercuryV1Factory(ctx context.Context, in *NewMercuryV1FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV1FactoryReply, error)
 	NewMercuryV2Factory(ctx context.Context, in *NewMercuryV2FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV2FactoryReply, error)
 	NewMercuryV3Factory(ctx context.Context, in *NewMercuryV3FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV3FactoryReply, error)
+	NewMercuryV4Factory(ctx context.Context, in *NewMercuryV4FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV4FactoryReply, error)
 }
 
 type mercuryAdapterClient struct {
@@ -73,6 +76,15 @@ func (c *mercuryAdapterClient) NewMercuryV3Factory(ctx context.Context, in *NewM
 	return out, nil
 }
 
+func (c *mercuryAdapterClient) NewMercuryV4Factory(ctx context.Context, in *NewMercuryV4FactoryRequest, opts ...grpc.CallOption) (*NewMercuryV4FactoryReply, error) {
+	out := new(NewMercuryV4FactoryReply)
+	err := c.cc.Invoke(ctx, MercuryAdapter_NewMercuryV4Factory_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MercuryAdapterServer is the server API for MercuryAdapter service.
 // All implementations must embed UnimplementedMercuryAdapterServer
 // for forward compatibility
@@ -80,6 +92,7 @@ type MercuryAdapterServer interface {
 	NewMercuryV1Factory(context.Context, *NewMercuryV1FactoryRequest) (*NewMercuryV1FactoryReply, error)
 	NewMercuryV2Factory(context.Context, *NewMercuryV2FactoryRequest) (*NewMercuryV2FactoryReply, error)
 	NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryReply, error)
+	NewMercuryV4Factory(context.Context, *NewMercuryV4FactoryRequest) (*NewMercuryV4FactoryReply, error)
 	mustEmbedUnimplementedMercuryAdapterServer()
 }
 
@@ -95,6 +108,9 @@ func (UnimplementedMercuryAdapterServer) NewMercuryV2Factory(context.Context, *N
 }
 func (UnimplementedMercuryAdapterServer) NewMercuryV3Factory(context.Context, *NewMercuryV3FactoryRequest) (*NewMercuryV3FactoryReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV3Factory not implemented")
+}
+func (UnimplementedMercuryAdapterServer) NewMercuryV4Factory(context.Context, *NewMercuryV4FactoryRequest) (*NewMercuryV4FactoryReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryV4Factory not implemented")
 }
 func (UnimplementedMercuryAdapterServer) mustEmbedUnimplementedMercuryAdapterServer() {}
 
@@ -163,6 +179,24 @@ func _MercuryAdapter_NewMercuryV3Factory_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MercuryAdapter_NewMercuryV4Factory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewMercuryV4FactoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MercuryAdapterServer).NewMercuryV4Factory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MercuryAdapter_NewMercuryV4Factory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MercuryAdapterServer).NewMercuryV4Factory(ctx, req.(*NewMercuryV4FactoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MercuryAdapter_ServiceDesc is the grpc.ServiceDesc for MercuryAdapter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -181,6 +215,10 @@ var MercuryAdapter_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewMercuryV3Factory",
 			Handler:    _MercuryAdapter_NewMercuryV3Factory_Handler,
+		},
+		{
+			MethodName: "NewMercuryV4Factory",
+			Handler:    _MercuryAdapter_NewMercuryV4Factory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -308,6 +346,170 @@ var OnchainConfigCodec_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Decode",
 			Handler:    _OnchainConfigCodec_Decode_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "mercury_loop.proto",
+}
+
+const (
+	ReportCodecV4_BuildReport_FullMethodName                    = "/loop.internal.pb.mercury.ReportCodecV4/BuildReport"
+	ReportCodecV4_MaxReportLength_FullMethodName                = "/loop.internal.pb.mercury.ReportCodecV4/MaxReportLength"
+	ReportCodecV4_ObservationTimestampFromReport_FullMethodName = "/loop.internal.pb.mercury.ReportCodecV4/ObservationTimestampFromReport"
+)
+
+// ReportCodecV4Client is the client API for ReportCodecV4 service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ReportCodecV4Client interface {
+	BuildReport(ctx context.Context, in *v4.BuildReportRequest, opts ...grpc.CallOption) (*v4.BuildReportReply, error)
+	MaxReportLength(ctx context.Context, in *v4.MaxReportLengthRequest, opts ...grpc.CallOption) (*v4.MaxReportLengthReply, error)
+	ObservationTimestampFromReport(ctx context.Context, in *v4.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v4.ObservationTimestampFromReportReply, error)
+}
+
+type reportCodecV4Client struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewReportCodecV4Client(cc grpc.ClientConnInterface) ReportCodecV4Client {
+	return &reportCodecV4Client{cc}
+}
+
+func (c *reportCodecV4Client) BuildReport(ctx context.Context, in *v4.BuildReportRequest, opts ...grpc.CallOption) (*v4.BuildReportReply, error) {
+	out := new(v4.BuildReportReply)
+	err := c.cc.Invoke(ctx, ReportCodecV4_BuildReport_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportCodecV4Client) MaxReportLength(ctx context.Context, in *v4.MaxReportLengthRequest, opts ...grpc.CallOption) (*v4.MaxReportLengthReply, error) {
+	out := new(v4.MaxReportLengthReply)
+	err := c.cc.Invoke(ctx, ReportCodecV4_MaxReportLength_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportCodecV4Client) ObservationTimestampFromReport(ctx context.Context, in *v4.ObservationTimestampFromReportRequest, opts ...grpc.CallOption) (*v4.ObservationTimestampFromReportReply, error) {
+	out := new(v4.ObservationTimestampFromReportReply)
+	err := c.cc.Invoke(ctx, ReportCodecV4_ObservationTimestampFromReport_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ReportCodecV4Server is the server API for ReportCodecV4 service.
+// All implementations must embed UnimplementedReportCodecV4Server
+// for forward compatibility
+type ReportCodecV4Server interface {
+	BuildReport(context.Context, *v4.BuildReportRequest) (*v4.BuildReportReply, error)
+	MaxReportLength(context.Context, *v4.MaxReportLengthRequest) (*v4.MaxReportLengthReply, error)
+	ObservationTimestampFromReport(context.Context, *v4.ObservationTimestampFromReportRequest) (*v4.ObservationTimestampFromReportReply, error)
+	mustEmbedUnimplementedReportCodecV4Server()
+}
+
+// UnimplementedReportCodecV4Server must be embedded to have forward compatible implementations.
+type UnimplementedReportCodecV4Server struct {
+}
+
+func (UnimplementedReportCodecV4Server) BuildReport(context.Context, *v4.BuildReportRequest) (*v4.BuildReportReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BuildReport not implemented")
+}
+func (UnimplementedReportCodecV4Server) MaxReportLength(context.Context, *v4.MaxReportLengthRequest) (*v4.MaxReportLengthReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MaxReportLength not implemented")
+}
+func (UnimplementedReportCodecV4Server) ObservationTimestampFromReport(context.Context, *v4.ObservationTimestampFromReportRequest) (*v4.ObservationTimestampFromReportReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ObservationTimestampFromReport not implemented")
+}
+func (UnimplementedReportCodecV4Server) mustEmbedUnimplementedReportCodecV4Server() {}
+
+// UnsafeReportCodecV4Server may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ReportCodecV4Server will
+// result in compilation errors.
+type UnsafeReportCodecV4Server interface {
+	mustEmbedUnimplementedReportCodecV4Server()
+}
+
+func RegisterReportCodecV4Server(s grpc.ServiceRegistrar, srv ReportCodecV4Server) {
+	s.RegisterService(&ReportCodecV4_ServiceDesc, srv)
+}
+
+func _ReportCodecV4_BuildReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v4.BuildReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportCodecV4Server).BuildReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportCodecV4_BuildReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportCodecV4Server).BuildReport(ctx, req.(*v4.BuildReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportCodecV4_MaxReportLength_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v4.MaxReportLengthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportCodecV4Server).MaxReportLength(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportCodecV4_MaxReportLength_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportCodecV4Server).MaxReportLength(ctx, req.(*v4.MaxReportLengthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportCodecV4_ObservationTimestampFromReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v4.ObservationTimestampFromReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportCodecV4Server).ObservationTimestampFromReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportCodecV4_ObservationTimestampFromReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportCodecV4Server).ObservationTimestampFromReport(ctx, req.(*v4.ObservationTimestampFromReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ReportCodecV4_ServiceDesc is the grpc.ServiceDesc for ReportCodecV4 service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ReportCodecV4_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.internal.pb.mercury.ReportCodecV4",
+	HandlerType: (*ReportCodecV4Server)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "BuildReport",
+			Handler:    _ReportCodecV4_BuildReport_Handler,
+		},
+		{
+			MethodName: "MaxReportLength",
+			Handler:    _ReportCodecV4_MaxReportLength_Handler,
+		},
+		{
+			MethodName: "ObservationTimestampFromReport",
+			Handler:    _ReportCodecV4_ObservationTimestampFromReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -3,6 +3,7 @@ package datastreams
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -79,4 +80,74 @@ type ReportCodec interface {
 
 	// convert back to Value
 	Wrap(reports []FeedReport) (values.Value, error)
+}
+
+// Helpers for unwrapping a list of FeedReports - more efficient than using mapstructure/reflection
+func UnwrapFeedReportList(wrapped values.Value) ([]FeedReport, error) {
+	result := []FeedReport{}
+	lst, ok := wrapped.(*values.List)
+	if !ok {
+		return nil, errors.New("expected list")
+	}
+	for _, v := range lst.Underlying {
+		report := FeedReport{}
+		mp, ok := v.(*values.Map)
+		if !ok {
+			return nil, errors.New("expected map")
+		}
+		var err error
+		report.FeedID, err = getStringField(mp, "FeedID")
+		if err != nil {
+			return nil, err
+		}
+		report.FullReport, err = getBytesField(mp, "FullReport")
+		if err != nil {
+			return nil, err
+		}
+		report.ReportContext, err = getBytesField(mp, "ReportContext")
+		if err != nil {
+			return nil, err
+		}
+		sigListVal, ok := mp.Underlying["Signatures"]
+		if !ok {
+			return nil, errors.New("missing Signatures key")
+		}
+		sigList, ok := sigListVal.(*values.List)
+		if !ok {
+			return nil, errors.New("expected list type for Signatures")
+		}
+		for idx, sig := range sigList.Underlying {
+			sigVal, ok := sig.(*values.Bytes)
+			if !ok {
+				return nil, fmt.Errorf("expected bytes type for signature %d", idx)
+			}
+			report.Signatures = append(report.Signatures, sigVal.Underlying)
+		}
+		result = append(result, report)
+	}
+	return result, nil
+}
+
+func getStringField(mp *values.Map, key string) (string, error) {
+	val, ok := mp.Underlying[key]
+	if !ok {
+		return "", fmt.Errorf("missing key %s", key)
+	}
+	strVal, ok := val.(*values.String)
+	if !ok {
+		return "", fmt.Errorf("expected string type for key %s", key)
+	}
+	return strVal.Underlying, nil
+}
+
+func getBytesField(mp *values.Map, key string) ([]byte, error) {
+	val, ok := mp.Underlying[key]
+	if !ok {
+		return nil, fmt.Errorf("missing key %s", key)
+	}
+	byleVal, ok := val.(*values.Bytes)
+	if !ok {
+		return nil, fmt.Errorf("expected bytes type for key %s", key)
+	}
+	return byleVal.Underlying, nil
 }

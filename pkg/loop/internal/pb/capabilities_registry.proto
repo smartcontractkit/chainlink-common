@@ -7,6 +7,7 @@ package loop;
 import "google/protobuf/empty.proto";
 
 service CapabilitiesRegistry {
+  rpc GetLocalNode (google.protobuf.Empty) returns (GetLocalNodeReply) {}
   rpc Get (GetRequest) returns (GetReply) {}
   rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
   rpc GetAction (GetActionRequest) returns (GetActionReply) {}
@@ -20,6 +21,22 @@ enum ExecuteAPIType {
   EXECUTE_API_TYPE_UNKNOWN = 0;
   EXECUTE_API_TYPE_TRIGGER = 1;
   EXECUTE_API_TYPE_CALLBACK = 2;
+}
+
+
+// DON has arguments for [github.com/smartcontractkit/chainlink-common/pkg/capabilities.DON].
+message DON {
+  string id = 1;
+  repeated bytes members = 2; // [membern][32]byte
+  uint32 f = 3; // uint8
+  bytes config  = 4;
+}
+
+// GetLocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetLocalNode].
+message GetLocalNodeReply {
+  bytes peerID = 1; // [32]byte
+  DON workflowDON = 2;
+  repeated DON CapabilityDONs = 3;
 }
 
 // Get has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get].

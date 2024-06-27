@@ -13,7 +13,7 @@ import (
 	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 )
 
 func TestRelayerService(t *testing.T) {

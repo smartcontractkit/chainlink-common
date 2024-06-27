@@ -131,18 +131,18 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 
 	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
-		"Uptime in days",
+		"Uptime",
 		"instance uptime",
 		4,
 		12,
-		1,
-		"",
+		2,
+		"s",
 		common.BigValueColorModeNone,
 		common.BigValueGraphModeNone,
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `} / 86400`,
+			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 		},
 	))

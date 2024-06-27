@@ -16,10 +16,13 @@ const (
 	ErrNotFound                 = NotFoundError("not found")
 )
 
-type ContractReader = ChainReader
+// Deprecated: use ContractReader.
+type ChainReader = ContractReader
 
-// Deprecated: use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
-type ChainReader interface {
+// New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
+//
+//go:generate mockery --quiet --name ContractReader --output ./mocks/ --case=underscore
+type ContractReader interface {
 	services.Service
 	// GetLatestValue gets the latest value....
 	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig.

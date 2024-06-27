@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"testing"
 
@@ -10,11 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -112,6 +115,19 @@ func (r *testRegistryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	return nil
 }
 
+func randomBytes() []byte {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+func randomWord() [32]byte {
+	word := randomBytes()
+	return [32]byte(word)
+}
+
 func TestCapabilitiesRegistry(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
@@ -152,6 +168,65 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	reg.On("Get", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.Get(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
+
+	pid := p2ptypes.PeerID(randomWord())
+	node := capabilities.Node{
+		PeerID: &pid,
+		WorkflowDON: capabilities.DON{
+			ID: "workflow-don-id",
+			Members: []p2ptypes.PeerID{
+				randomWord(),
+				randomWord(),
+			},
+			F:      2,
+			Config: randomBytes(),
+		},
+		CapabilityDONs: []capabilities.DON{
+			{
+				ID: "don-1",
+				Members: []p2ptypes.PeerID{
+					randomWord(),
+				},
+				F:      1,
+				Config: randomBytes(),
+			},
+			{
+				ID: "don-2",
+				Members: []p2ptypes.PeerID{
+					randomWord(),
+					randomWord(),
+					randomWord(),
+				},
+				F:      3,
+				Config: randomBytes(),
+			},
+		},
+	}
+
+	reg.On("GetLocalNode", mock.Anything).Return(node, nil)
+
+	localNode, err := rc.GetLocalNode(tests.Context(t))
+	require.NoError(t, err)
+	require.Len(t, localNode.CapabilityDONs, len(node.CapabilityDONs))
+	// Assert that the returned local node matches our node struct
+	require.Equal(t, node.PeerID, localNode.PeerID)
+	require.Equal(t, node.WorkflowDON.ID, localNode.WorkflowDON.ID)
+
+	require.Len(t, node.CapabilityDONs, len(localNode.CapabilityDONs))
+	for _, actual := range node.WorkflowDON.Members {
+		found := false
+		for _, maybeExpected := range localNode.WorkflowDON.Members {
+			if actual == maybeExpected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("expected member %v not found in %v", actual, localNode.WorkflowDON.Members)
+		}
+	}
+	require.Equal(t, node.WorkflowDON.F, localNode.WorkflowDON.F)
+	require.Equal(t, node.WorkflowDON.Config, localNode.WorkflowDON.Config)
 
 	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetAction(tests.Context(t), "some-id")

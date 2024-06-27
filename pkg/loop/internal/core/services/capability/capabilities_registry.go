@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 var _ core.CapabilitiesRegistry = (*capabilitiesRegistryClient)(nil)
@@ -19,6 +20,44 @@ var _ core.CapabilitiesRegistry = (*capabilitiesRegistryClient)(nil)
 type capabilitiesRegistryClient struct {
 	*net.BrokerExt
 	grpc pb.CapabilitiesRegistryClient
+}
+
+func toPeerID(peerID []byte) p2ptypes.PeerID {
+	return p2ptypes.PeerID(peerID)
+}
+
+func toDON(wf *pb.DON) capabilities.DON {
+	var members []p2ptypes.PeerID
+	for _, m := range wf.Members {
+		members = append(members, toPeerID(m))
+	}
+
+	return capabilities.DON{
+		ID:      wf.Id,
+		Members: members,
+		F:       uint8(wf.F),
+		Config:  wf.Config,
+	}
+}
+
+func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabilities.Node, error) {
+	res, err := cr.grpc.GetLocalNode(ctx, &emptypb.Empty{})
+	if err != nil {
+		return capabilities.Node{}, err
+	}
+
+	pid := toPeerID(res.PeerID)
+
+	cDONs := make([]capabilities.DON, len(res.CapabilityDONs))
+	for i, don := range res.CapabilityDONs {
+		cDONs[i] = toDON(don)
+	}
+
+	return capabilities.Node{
+		PeerID:         &pid,
+		WorkflowDON:    toDON(res.WorkflowDON),
+		CapabilityDONs: cDONs,
+	}, nil
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
@@ -200,6 +239,44 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 		CapabilityID: id,
 		Type:         pb.ExecuteAPIType(getExecuteAPIType(info.CapabilityType)),
 	}, nil
+}
+
+func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.GetLocalNodeReply, error) {
+	node, err := c.impl.GetLocalNode(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	capabilityDONsPb := make([]*pb.DON, len(node.CapabilityDONs))
+	for i, don := range node.CapabilityDONs {
+		membersBytes := make([][]byte, len(don.Members))
+		for j, m := range don.Members {
+			membersBytes[j] = m[:]
+		}
+		capabilityDONsPb[i] = &pb.DON{
+			Id:      don.ID,
+			Members: membersBytes,
+			F:       uint32(don.F),
+			Config:  don.Config,
+		}
+	}
+
+	membersBytes := make([][]byte, len(node.WorkflowDON.Members))
+	for i, m := range node.WorkflowDON.Members {
+		membersBytes[i] = m[:] 
+	}
+	reply := &pb.GetLocalNodeReply{
+		PeerID: node.PeerID[:],
+		WorkflowDON: &pb.DON{
+			Id:      node.WorkflowDON.ID,
+			Members: membersBytes,
+			F:       uint32(node.WorkflowDON.F),
+			Config:  node.WorkflowDON.Config,
+		},
+		CapabilityDONs: capabilityDONsPb,
+	}
+
+	return reply, nil
 }
 
 func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb.GetTriggerRequest) (*pb.GetTriggerReply, error) {

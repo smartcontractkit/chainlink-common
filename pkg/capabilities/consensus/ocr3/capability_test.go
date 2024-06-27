@@ -21,6 +21,8 @@ import (
 )
 
 const workflowTestID = "consensus-workflow-test-id-1"
+const workflowTestID2 = "consensus-workflow-test-id-2"
+const workflowTestID3 = "consensus-workflow-test-id-3"
 const workflowExecutionTestID = "consensus-workflow-execution-test-id-1"
 const workflowTestName = "consensus-workflow-test-name-1"
 const reportTestId = "rep-id-1"

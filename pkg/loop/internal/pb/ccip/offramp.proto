@@ -182,6 +182,7 @@ message ExecOffchainConfig {
     google.protobuf.Duration inflight_cache_expiry = 4; // config.Duration
     google.protobuf.Duration root_snooze_time = 5; // config.Duration
     google.protobuf.Duration message_visibility_interval = 6; // config.Duration
+    google.protobuf.Uint8 batching_strategy_id = 7; // config.Uint8
 }
 
 // ExecOnchainConfig is a gRPC adapter for the struct

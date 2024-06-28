@@ -187,7 +187,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		},
 	}
 
-	reg.On("GetLocalNode", mock.Anything).Return(expectedNode, nil)
+	reg.On("GetLocalNode", mock.Anything).Once().Return(expectedNode, nil)
 
 	actualNode, err := rc.GetLocalNode(tests.Context(t))
 	require.NoError(t, err)
@@ -210,6 +210,18 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
 		require.Equal(t, expectedNode.CapabilityDONs[i].Config, actualNode.CapabilityDONs[i].Config)
 	}
+
+	// Check zero values for empty node
+	emptyNode := capabilities.Node{}
+	reg.On("GetLocalNode", mock.Anything).Once().Return(emptyNode, nil)
+	actualNode, err = rc.GetLocalNode(tests.Context(t))
+	require.NoError(t, err)
+	require.Nil(t, actualNode.PeerID)
+	require.Empty(t, actualNode.WorkflowDON.Config)
+	require.Empty(t, actualNode.WorkflowDON.Members)
+	require.Empty(t, actualNode.WorkflowDON.ID)
+	require.Empty(t, actualNode.WorkflowDON.Config)
+	require.Empty(t, actualNode.CapabilityDONs)
 
 	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetAction(tests.Context(t), "some-id")

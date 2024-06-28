@@ -42,7 +42,11 @@ func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabil
 		return capabilities.Node{}, err
 	}
 
-	pid := p2ptypes.PeerID(res.PeerID)
+	var pid *p2ptypes.PeerID
+	if len(res.PeerID) > 0 {
+		p := p2ptypes.PeerID(res.PeerID)
+		pid = &p
+	}
 
 	cDONs := make([]capabilities.DON, len(res.CapabilityDONs))
 	for i, don := range res.CapabilityDONs {
@@ -50,7 +54,7 @@ func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabil
 	}
 
 	return capabilities.Node{
-		PeerID:         &pid,
+		PeerID:         pid,
 		WorkflowDON:    toDON(res.WorkflowDON),
 		CapabilityDONs: cDONs,
 	}, nil
@@ -272,8 +276,12 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 		}
 	}
 
+	var pid []byte
+	if node.PeerID != nil {
+		pid = node.PeerID[:]
+	}
 	reply := &pb.GetLocalNodeReply{
-		PeerID:         node.PeerID[:],
+		PeerID:         pid,
 		WorkflowDON:    workflowDONpb,
 		CapabilityDONs: capabilityDONsPb,
 	}

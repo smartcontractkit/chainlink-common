@@ -77,7 +77,7 @@ type DON struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id      string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Members [][]byte `protobuf:"bytes,2,rep,name=members,proto3" json:"members,omitempty"` // [membern][32]byte
+	Members [][]byte `protobuf:"bytes,2,rep,name=members,proto3" json:"members,omitempty"` // [n][32]byte where n is the number of members
 	F       uint32   `protobuf:"varint,3,opt,name=f,proto3" json:"f,omitempty"`            // uint8
 	Config  []byte   `protobuf:"bytes,4,opt,name=config,proto3" json:"config,omitempty"`
 }

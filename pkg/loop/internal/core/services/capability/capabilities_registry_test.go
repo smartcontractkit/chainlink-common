@@ -2,7 +2,6 @@ package capability
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"testing"
 
@@ -115,19 +114,6 @@ func (r *testRegistryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	return nil
 }
 
-func randomBytes() []byte {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
-func randomWord() [32]byte {
-	word := randomBytes()
-	return [32]byte(word)
-}
-
 func TestCapabilitiesRegistry(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
@@ -169,64 +155,61 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	_, err = rc.Get(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
-	pid := p2ptypes.PeerID(randomWord())
-	node := capabilities.Node{
+	pid := p2ptypes.PeerID([32]byte{0: 1})
+	expectedNode := capabilities.Node{
 		PeerID: &pid,
 		WorkflowDON: capabilities.DON{
 			ID: "workflow-don-id",
 			Members: []p2ptypes.PeerID{
-				randomWord(),
-				randomWord(),
+				[32]byte{0: 2},
+				[32]byte{0: 3},
 			},
 			F:      2,
-			Config: randomBytes(),
+			Config: []byte{1, 2, 3},
 		},
 		CapabilityDONs: []capabilities.DON{
 			{
-				ID: "don-1",
-				Members: []p2ptypes.PeerID{
-					randomWord(),
-				},
-				F:      1,
-				Config: randomBytes(),
+				ID:      "don-1",
+				Members: []p2ptypes.PeerID{},
+				F:       1,
+				Config:  []byte{4, 5, 6},
 			},
 			{
 				ID: "don-2",
 				Members: []p2ptypes.PeerID{
-					randomWord(),
-					randomWord(),
-					randomWord(),
+					[32]byte{0: 4},
+					[32]byte{0: 5},
+					[32]byte{0: 6},
 				},
 				F:      3,
-				Config: randomBytes(),
+				Config: []byte{7, 8, 9},
 			},
 		},
 	}
 
-	reg.On("GetLocalNode", mock.Anything).Return(node, nil)
+	reg.On("GetLocalNode", mock.Anything).Return(expectedNode, nil)
 
-	localNode, err := rc.GetLocalNode(tests.Context(t))
+	actualNode, err := rc.GetLocalNode(tests.Context(t))
 	require.NoError(t, err)
-	require.Len(t, localNode.CapabilityDONs, len(node.CapabilityDONs))
-	// Assert that the returned local node matches our node struct
-	require.Equal(t, node.PeerID, localNode.PeerID)
-	require.Equal(t, node.WorkflowDON.ID, localNode.WorkflowDON.ID)
+	// check local node struct
+	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)
 
-	require.Len(t, node.CapabilityDONs, len(localNode.CapabilityDONs))
-	for _, actual := range node.WorkflowDON.Members {
-		found := false
-		for _, maybeExpected := range localNode.WorkflowDON.Members {
-			if actual == maybeExpected {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Fatalf("expected member %v not found in %v", actual, localNode.WorkflowDON.Members)
-		}
+	// check workflow DON
+	require.Len(t, expectedNode.WorkflowDON.Members, len(actualNode.WorkflowDON.Members))
+	require.ElementsMatch(t, expectedNode.WorkflowDON.Members, actualNode.WorkflowDON.Members)
+	require.Equal(t, expectedNode.WorkflowDON.ID, actualNode.WorkflowDON.ID)
+	require.Equal(t, expectedNode.WorkflowDON.F, actualNode.WorkflowDON.F)
+	require.Equal(t, expectedNode.WorkflowDON.Config, actualNode.WorkflowDON.Config)
+
+	// check capability DONs
+	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
+	for i := range expectedNode.CapabilityDONs {
+		require.Equal(t, expectedNode.CapabilityDONs[i].ID, actualNode.CapabilityDONs[i].ID)
+		require.Len(t, expectedNode.CapabilityDONs[i].Members, len(actualNode.CapabilityDONs[i].Members))
+		require.ElementsMatch(t, expectedNode.CapabilityDONs[i].Members, actualNode.CapabilityDONs[i].Members)
+		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
+		require.Equal(t, expectedNode.CapabilityDONs[i].Config, actualNode.CapabilityDONs[i].Config)
 	}
-	require.Equal(t, node.WorkflowDON.F, localNode.WorkflowDON.F)
-	require.Equal(t, node.WorkflowDON.Config, localNode.WorkflowDON.Config)
 
 	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetAction(tests.Context(t), "some-id")

@@ -247,10 +247,25 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 		return nil, err
 	}
 
+	// convert workflowDON to pb.DON
+	membersBytes := make([][]byte, len(node.WorkflowDON.Members))
+	for i, m := range node.WorkflowDON.Members {
+		m := m
+		membersBytes[i] = m[:]
+	}
+	workflowDONpb := &pb.DON{
+		Id:      node.WorkflowDON.ID,
+		Members: membersBytes,
+		F:       uint32(node.WorkflowDON.F),
+		Config:  node.WorkflowDON.Config,
+	}
+
+	// convert capabilityDONs to pb.DON
 	capabilityDONsPb := make([]*pb.DON, len(node.CapabilityDONs))
 	for i, don := range node.CapabilityDONs {
 		membersBytes := make([][]byte, len(don.Members))
 		for j, m := range don.Members {
+			m := m
 			membersBytes[j] = m[:]
 		}
 		capabilityDONsPb[i] = &pb.DON{
@@ -261,18 +276,9 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 		}
 	}
 
-	membersBytes := make([][]byte, len(node.WorkflowDON.Members))
-	for i, m := range node.WorkflowDON.Members {
-		membersBytes[i] = m[:] 
-	}
 	reply := &pb.GetLocalNodeReply{
-		PeerID: node.PeerID[:],
-		WorkflowDON: &pb.DON{
-			Id:      node.WorkflowDON.ID,
-			Members: membersBytes,
-			F:       uint32(node.WorkflowDON.F),
-			Config:  node.WorkflowDON.Config,
-		},
+		PeerID:         node.PeerID[:],
+		WorkflowDON:    workflowDONpb,
 		CapabilityDONs: capabilityDONsPb,
 	}
 

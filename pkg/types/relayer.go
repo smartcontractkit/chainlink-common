@@ -95,9 +95,13 @@ type ChainService interface {
 // Deprecated: use loop.Relayer, which includes context.Context.
 type Relayer interface {
 	Service
+<<<<<<< HEAD
 
 	// NewContractReader returns a new ContractReader.
 	// The format of contractReaderConfig depends on the implementation.
+=======
+	NewChainWriter(chainWriterConfig []byte) (ChainWriter, error)
+>>>>>>> 02f4a607 (loop: Add chain writer support to the relayer)
 	NewContractReader(contractReaderConfig []byte) (ContractReader, error)
 
 	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)

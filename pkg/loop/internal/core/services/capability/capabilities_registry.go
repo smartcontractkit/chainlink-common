@@ -22,21 +22,17 @@ type capabilitiesRegistryClient struct {
 	grpc pb.CapabilitiesRegistryClient
 }
 
-func toPeerID(peerID []byte) p2ptypes.PeerID {
-	return p2ptypes.PeerID(peerID)
-}
-
-func toDON(wf *pb.DON) capabilities.DON {
+func toDON(don *pb.DON) capabilities.DON {
 	var members []p2ptypes.PeerID
-	for _, m := range wf.Members {
-		members = append(members, toPeerID(m))
+	for _, m := range don.Members {
+		members = append(members, p2ptypes.PeerID(m))
 	}
 
 	return capabilities.DON{
-		ID:      wf.Id,
+		ID:      don.Id,
 		Members: members,
-		F:       uint8(wf.F),
-		Config:  wf.Config,
+		F:       uint8(don.F),
+		Config:  don.Config,
 	}
 }
 
@@ -46,7 +42,7 @@ func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabil
 		return capabilities.Node{}, err
 	}
 
-	pid := toPeerID(res.PeerID)
+	pid := p2ptypes.PeerID(res.PeerID)
 
 	cDONs := make([]capabilities.DON, len(res.CapabilityDONs))
 	for i, don := range res.CapabilityDONs {

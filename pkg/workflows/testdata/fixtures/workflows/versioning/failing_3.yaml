@@ -11,10 +11,12 @@ consensus:
       labels:
         - key: value
     ref: offchain_reporting_1
+    inputs: $(trigger.outputs)
     config: {}
 
 targets:
   - id: write_polygon_mainnet@1.0.0-alpha+sha246er3
     ref: write_polygon_mainnet_1
+    inputs: $(offchain_reporting_1.outputs)
     config: {}
 # yaml-language-server: $schema=../workflow_schema.json

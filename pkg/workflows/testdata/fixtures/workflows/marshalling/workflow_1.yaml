@@ -72,6 +72,7 @@
           456: # LINKUSD
             deviation: "0.001"
             heartbeat: 24h
+            remappedId: "0x1234567890abcdef1234567890abcdef12345678"
           789: # USDBTC
             deviation: "0.002"
             heartbeat: 6h

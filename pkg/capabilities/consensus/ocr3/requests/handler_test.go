@@ -30,7 +30,7 @@ func Test_Handler_SendsResponse(t *testing.T) {
 		ExpiresAt:           time.Now().Add(1 * time.Hour),
 	})
 
-	testVal, err := values.Wrap("testval")
+	testVal, err := values.NewMap(map[string]any{"result": "testval"})
 	require.NoError(t, err)
 
 	h.SendResponse(ctx, &requests.Response{
@@ -53,9 +53,8 @@ func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
 	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
 
-	testVal, err := values.Wrap("testval")
+	testVal, err := values.NewMap(map[string]any{"result": "testval"})
 	require.NoError(t, err)
-
 	h.SendResponse(ctx, &requests.Response{
 		WorkflowExecutionID: "test",
 		CapabilityResponse: capabilities.CapabilityResponse{
@@ -83,7 +82,7 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
 
-	testVal, err := values.Wrap("testval")
+	testVal, err := values.NewMap(map[string]any{"result": "testval"})
 	require.NoError(t, err)
 
 	h.SendResponse(ctx, &requests.Response{

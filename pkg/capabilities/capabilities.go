@@ -189,7 +189,7 @@ type DON struct {
 //
 // There is a 1:0..1 relationship between this node and a workflow DON.
 // This means that this node can be part at most one workflow DON at a time.
-// As a side note, a worklflow DON can have multiple nodes.
+// As a side note, a workflow DON can have multiple nodes.
 //
 // There is a 1:N relationship between this node and capability DONs, where N is the number of capability DONs.
 // This means that this node can be part of multiple capability DONs at a time.

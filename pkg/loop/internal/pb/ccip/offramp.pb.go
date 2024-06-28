@@ -1304,6 +1304,11 @@ type ExecOnchainConfig struct {
 
 	PermissionlessExecThresholdSeconds *durationpb.Duration `protobuf:"bytes,1,opt,name=permissionless_exec_threshold_seconds,json=permissionlessExecThresholdSeconds,proto3" json:"permissionless_exec_threshold_seconds,omitempty"` // time.Duration
 	Router                             string               `protobuf:"bytes,2,opt,name=router,proto3" json:"router,omitempty"`                                                                                                       // Address
+	MaxDataBytes                       uint32               `protobuf:"varint,3,opt,name=max_data_bytes,json=maxDataBytes,proto3" json:"max_data_bytes,omitempty"`
+	MaxNumberOfTokensPerMsg            uint32               `protobuf:"varint,4,opt,name=max_number_of_tokens_per_msg,json=maxNumberOfTokensPerMsg,proto3" json:"max_number_of_tokens_per_msg,omitempty"`
+	PriceRegistry                      string               `protobuf:"bytes,5,opt,name=price_registry,json=priceRegistry,proto3" json:"price_registry,omitempty"` // Address
+	MaxPoolReleaseOrMintGas            uint32               `protobuf:"varint,6,opt,name=max_pool_release_or_mint_gas,json=maxPoolReleaseOrMintGas,proto3" json:"max_pool_release_or_mint_gas,omitempty"`
+	MaxTokenTransferGas                uint32               `protobuf:"varint,7,opt,name=max_token_transfer_gas,json=maxTokenTransferGas,proto3" json:"max_token_transfer_gas,omitempty"`
 }
 
 func (x *ExecOnchainConfig) Reset() {
@@ -1350,6 +1355,41 @@ func (x *ExecOnchainConfig) GetRouter() string {
 		return x.Router
 	}
 	return ""
+}
+
+func (x *ExecOnchainConfig) GetMaxDataBytes() uint32 {
+	if x != nil {
+		return x.MaxDataBytes
+	}
+	return 0
+}
+
+func (x *ExecOnchainConfig) GetMaxNumberOfTokensPerMsg() uint32 {
+	if x != nil {
+		return x.MaxNumberOfTokensPerMsg
+	}
+	return 0
+}
+
+func (x *ExecOnchainConfig) GetPriceRegistry() string {
+	if x != nil {
+		return x.PriceRegistry
+	}
+	return ""
+}
+
+func (x *ExecOnchainConfig) GetMaxPoolReleaseOrMintGas() uint32 {
+	if x != nil {
+		return x.MaxPoolReleaseOrMintGas
+	}
+	return 0
+}
+
+func (x *ExecOnchainConfig) GetMaxTokenTransferGas() uint32 {
+	if x != nil {
+		return x.MaxTokenTransferGas
+	}
+	return 0
 }
 
 // OffRampStaticConfig is a gRPC adapter for the struct
@@ -1448,9 +1488,8 @@ type OffRampTokens struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	DestinationTokens []string          `protobuf:"bytes,1,rep,name=destination_tokens,json=destinationTokens,proto3" json:"destination_tokens,omitempty"`                                                                                   // []Address
-	SourceTokens      []string          `protobuf:"bytes,2,rep,name=source_tokens,json=sourceTokens,proto3" json:"source_tokens,omitempty"`                                                                                                  // []Address
-	DestinationPool   map[string]string `protobuf:"bytes,3,rep,name=destination_pool,json=destinationPool,proto3" json:"destination_pool,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // map[Address]Address
+	DestinationTokens []string `protobuf:"bytes,1,rep,name=destination_tokens,json=destinationTokens,proto3" json:"destination_tokens,omitempty"` // []Address
+	SourceTokens      []string `protobuf:"bytes,2,rep,name=source_tokens,json=sourceTokens,proto3" json:"source_tokens,omitempty"`                // []Address
 }
 
 func (x *OffRampTokens) Reset() {
@@ -1495,13 +1534,6 @@ func (x *OffRampTokens) GetDestinationTokens() []string {
 func (x *OffRampTokens) GetSourceTokens() []string {
 	if x != nil {
 		return x.SourceTokens
-	}
-	return nil
-}
-
-func (x *OffRampTokens) GetDestinationPool() map[string]string {
-	if x != nil {
-		return x.DestinationPool
 	}
 	return nil
 }
@@ -1860,7 +1892,7 @@ func file_offramp_proto_rawDescGZIP() []byte {
 	return file_offramp_proto_rawDescData
 }
 
-var file_offramp_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_offramp_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_offramp_proto_goTypes = []interface{}{
 	(*EncodeExecutionReportRequest)(nil),         // 0: loop.internal.pb.ccip.EncodeExecutionReportRequest
 	(*EncodeExecutionReportResponse)(nil),        // 1: loop.internal.pb.ccip.EncodeExecutionReportResponse
@@ -1891,68 +1923,66 @@ var file_offramp_proto_goTypes = []interface{}{
 	(*OffRampTokens)(nil),                        // 26: loop.internal.pb.ccip.OffRampTokens
 	nil,                                          // 27: loop.internal.pb.ccip.ListSenderNoncesResponse.NonceMappingEntry
 	nil,                                          // 28: loop.internal.pb.ccip.GetSourceToDestTokensMappingResponse.TokenMappingsEntry
-	nil,                                          // 29: loop.internal.pb.ccip.OffRampTokens.DestinationPoolEntry
-	(*ExecutionReport)(nil),                      // 30: loop.internal.pb.ccip.ExecutionReport
-	(*TokenPoolRateLimit)(nil),                   // 31: loop.internal.pb.ccip.TokenPoolRateLimit
-	(*TxMeta)(nil),                               // 32: loop.internal.pb.ccip.TxMeta
-	(*durationpb.Duration)(nil),                  // 33: google.protobuf.Duration
-	(*emptypb.Empty)(nil),                        // 34: google.protobuf.Empty
+	(*ExecutionReport)(nil),                      // 29: loop.internal.pb.ccip.ExecutionReport
+	(*TokenPoolRateLimit)(nil),                   // 30: loop.internal.pb.ccip.TokenPoolRateLimit
+	(*TxMeta)(nil),                               // 31: loop.internal.pb.ccip.TxMeta
+	(*durationpb.Duration)(nil),                  // 32: google.protobuf.Duration
+	(*emptypb.Empty)(nil),                        // 33: google.protobuf.Empty
 }
 var file_offramp_proto_depIdxs = []int32{
-	30, // 0: loop.internal.pb.ccip.EncodeExecutionReportRequest.report:type_name -> loop.internal.pb.ccip.ExecutionReport
-	30, // 1: loop.internal.pb.ccip.DecodeExecutionReportResponse.report:type_name -> loop.internal.pb.ccip.ExecutionReport
+	29, // 0: loop.internal.pb.ccip.EncodeExecutionReportRequest.report:type_name -> loop.internal.pb.ccip.ExecutionReport
+	29, // 1: loop.internal.pb.ccip.DecodeExecutionReportResponse.report:type_name -> loop.internal.pb.ccip.ExecutionReport
 	21, // 2: loop.internal.pb.ccip.GetExecutionStateChangesResponse.execution_state_changes:type_name -> loop.internal.pb.ccip.ExecutionStateChangeWithTxMeta
 	23, // 3: loop.internal.pb.ccip.OffchainConfigResponse.config:type_name -> loop.internal.pb.ccip.ExecOffchainConfig
 	24, // 4: loop.internal.pb.ccip.OnchainConfigResponse.config:type_name -> loop.internal.pb.ccip.ExecOnchainConfig
 	27, // 5: loop.internal.pb.ccip.ListSenderNoncesResponse.nonce_mapping:type_name -> loop.internal.pb.ccip.ListSenderNoncesResponse.NonceMappingEntry
-	31, // 6: loop.internal.pb.ccip.CurrentRateLimiterStateResponse.rate_limiter:type_name -> loop.internal.pb.ccip.TokenPoolRateLimit
+	30, // 6: loop.internal.pb.ccip.CurrentRateLimiterStateResponse.rate_limiter:type_name -> loop.internal.pb.ccip.TokenPoolRateLimit
 	25, // 7: loop.internal.pb.ccip.GetStaticConfigResponse.config:type_name -> loop.internal.pb.ccip.OffRampStaticConfig
 	28, // 8: loop.internal.pb.ccip.GetSourceToDestTokensMappingResponse.token_mappings:type_name -> loop.internal.pb.ccip.GetSourceToDestTokensMappingResponse.TokenMappingsEntry
 	26, // 9: loop.internal.pb.ccip.GetTokensResponse.tokens:type_name -> loop.internal.pb.ccip.OffRampTokens
 	22, // 10: loop.internal.pb.ccip.ExecutionStateChangeWithTxMeta.execution_state_change:type_name -> loop.internal.pb.ccip.ExecutionStateChange
-	32, // 11: loop.internal.pb.ccip.ExecutionStateChangeWithTxMeta.tx_meta:type_name -> loop.internal.pb.ccip.TxMeta
-	33, // 12: loop.internal.pb.ccip.ExecOffchainConfig.inflight_cache_expiry:type_name -> google.protobuf.Duration
-	33, // 13: loop.internal.pb.ccip.ExecOffchainConfig.root_snooze_time:type_name -> google.protobuf.Duration
-	33, // 14: loop.internal.pb.ccip.ExecOffchainConfig.message_visibility_interval:type_name -> google.protobuf.Duration
-	33, // 15: loop.internal.pb.ccip.ExecOnchainConfig.permissionless_exec_threshold_seconds:type_name -> google.protobuf.Duration
-	29, // 16: loop.internal.pb.ccip.OffRampTokens.destination_pool:type_name -> loop.internal.pb.ccip.OffRampTokens.DestinationPoolEntry
-	34, // 17: loop.internal.pb.ccip.OffRampReader.Address:input_type -> google.protobuf.Empty
-	7,  // 18: loop.internal.pb.ccip.OffRampReader.ChangeConfig:input_type -> loop.internal.pb.ccip.ChangeConfigRequest
-	34, // 19: loop.internal.pb.ccip.OffRampReader.CurrentRateLimiterState:input_type -> google.protobuf.Empty
-	2,  // 20: loop.internal.pb.ccip.OffRampReader.DecodeExecutionReport:input_type -> loop.internal.pb.ccip.DecodeExecutionReportRequest
-	0,  // 21: loop.internal.pb.ccip.OffRampReader.EncodeExecutionReport:input_type -> loop.internal.pb.ccip.EncodeExecutionReportRequest
-	34, // 22: loop.internal.pb.ccip.OffRampReader.GasPriceEstimator:input_type -> google.protobuf.Empty
-	15, // 23: loop.internal.pb.ccip.OffRampReader.GetExecutionState:input_type -> loop.internal.pb.ccip.GetExecutionStateRequest
-	4,  // 24: loop.internal.pb.ccip.OffRampReader.GetExecutionStateChanges:input_type -> loop.internal.pb.ccip.GetExecutionStateChangesRequest
-	34, // 25: loop.internal.pb.ccip.OffRampReader.GetRouter:input_type -> google.protobuf.Empty
-	34, // 26: loop.internal.pb.ccip.OffRampReader.GetSourceToDestTokensMapping:input_type -> google.protobuf.Empty
-	34, // 27: loop.internal.pb.ccip.OffRampReader.GetStaticConfig:input_type -> google.protobuf.Empty
-	34, // 28: loop.internal.pb.ccip.OffRampReader.GetTokens:input_type -> google.protobuf.Empty
-	12, // 29: loop.internal.pb.ccip.OffRampReader.ListSenderNonces:input_type -> loop.internal.pb.ccip.ListSenderNoncesRequest
-	34, // 30: loop.internal.pb.ccip.OffRampReader.OffchainConfig:input_type -> google.protobuf.Empty
-	34, // 31: loop.internal.pb.ccip.OffRampReader.OnchainConfig:input_type -> google.protobuf.Empty
-	34, // 32: loop.internal.pb.ccip.OffRampReader.Close:input_type -> google.protobuf.Empty
-	6,  // 33: loop.internal.pb.ccip.OffRampReader.Address:output_type -> loop.internal.pb.ccip.OffRampAddressResponse
-	8,  // 34: loop.internal.pb.ccip.OffRampReader.ChangeConfig:output_type -> loop.internal.pb.ccip.ChangeConfigResponse
-	14, // 35: loop.internal.pb.ccip.OffRampReader.CurrentRateLimiterState:output_type -> loop.internal.pb.ccip.CurrentRateLimiterStateResponse
-	3,  // 36: loop.internal.pb.ccip.OffRampReader.DecodeExecutionReport:output_type -> loop.internal.pb.ccip.DecodeExecutionReportResponse
-	1,  // 37: loop.internal.pb.ccip.OffRampReader.EncodeExecutionReport:output_type -> loop.internal.pb.ccip.EncodeExecutionReportResponse
-	11, // 38: loop.internal.pb.ccip.OffRampReader.GasPriceEstimator:output_type -> loop.internal.pb.ccip.GasPriceEstimatorResponse
-	16, // 39: loop.internal.pb.ccip.OffRampReader.GetExecutionState:output_type -> loop.internal.pb.ccip.GetExecutionStateResponse
-	5,  // 40: loop.internal.pb.ccip.OffRampReader.GetExecutionStateChanges:output_type -> loop.internal.pb.ccip.GetExecutionStateChangesResponse
-	20, // 41: loop.internal.pb.ccip.OffRampReader.GetRouter:output_type -> loop.internal.pb.ccip.GetRouterResponse
-	18, // 42: loop.internal.pb.ccip.OffRampReader.GetSourceToDestTokensMapping:output_type -> loop.internal.pb.ccip.GetSourceToDestTokensMappingResponse
-	17, // 43: loop.internal.pb.ccip.OffRampReader.GetStaticConfig:output_type -> loop.internal.pb.ccip.GetStaticConfigResponse
-	19, // 44: loop.internal.pb.ccip.OffRampReader.GetTokens:output_type -> loop.internal.pb.ccip.GetTokensResponse
-	13, // 45: loop.internal.pb.ccip.OffRampReader.ListSenderNonces:output_type -> loop.internal.pb.ccip.ListSenderNoncesResponse
-	9,  // 46: loop.internal.pb.ccip.OffRampReader.OffchainConfig:output_type -> loop.internal.pb.ccip.OffchainConfigResponse
-	10, // 47: loop.internal.pb.ccip.OffRampReader.OnchainConfig:output_type -> loop.internal.pb.ccip.OnchainConfigResponse
-	34, // 48: loop.internal.pb.ccip.OffRampReader.Close:output_type -> google.protobuf.Empty
-	33, // [33:49] is the sub-list for method output_type
-	17, // [17:33] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	31, // 11: loop.internal.pb.ccip.ExecutionStateChangeWithTxMeta.tx_meta:type_name -> loop.internal.pb.ccip.TxMeta
+	32, // 12: loop.internal.pb.ccip.ExecOffchainConfig.inflight_cache_expiry:type_name -> google.protobuf.Duration
+	32, // 13: loop.internal.pb.ccip.ExecOffchainConfig.root_snooze_time:type_name -> google.protobuf.Duration
+	32, // 14: loop.internal.pb.ccip.ExecOffchainConfig.message_visibility_interval:type_name -> google.protobuf.Duration
+	32, // 15: loop.internal.pb.ccip.ExecOnchainConfig.permissionless_exec_threshold_seconds:type_name -> google.protobuf.Duration
+	33, // 16: loop.internal.pb.ccip.OffRampReader.Address:input_type -> google.protobuf.Empty
+	7,  // 17: loop.internal.pb.ccip.OffRampReader.ChangeConfig:input_type -> loop.internal.pb.ccip.ChangeConfigRequest
+	33, // 18: loop.internal.pb.ccip.OffRampReader.CurrentRateLimiterState:input_type -> google.protobuf.Empty
+	2,  // 19: loop.internal.pb.ccip.OffRampReader.DecodeExecutionReport:input_type -> loop.internal.pb.ccip.DecodeExecutionReportRequest
+	0,  // 20: loop.internal.pb.ccip.OffRampReader.EncodeExecutionReport:input_type -> loop.internal.pb.ccip.EncodeExecutionReportRequest
+	33, // 21: loop.internal.pb.ccip.OffRampReader.GasPriceEstimator:input_type -> google.protobuf.Empty
+	15, // 22: loop.internal.pb.ccip.OffRampReader.GetExecutionState:input_type -> loop.internal.pb.ccip.GetExecutionStateRequest
+	4,  // 23: loop.internal.pb.ccip.OffRampReader.GetExecutionStateChanges:input_type -> loop.internal.pb.ccip.GetExecutionStateChangesRequest
+	33, // 24: loop.internal.pb.ccip.OffRampReader.GetRouter:input_type -> google.protobuf.Empty
+	33, // 25: loop.internal.pb.ccip.OffRampReader.GetSourceToDestTokensMapping:input_type -> google.protobuf.Empty
+	33, // 26: loop.internal.pb.ccip.OffRampReader.GetStaticConfig:input_type -> google.protobuf.Empty
+	33, // 27: loop.internal.pb.ccip.OffRampReader.GetTokens:input_type -> google.protobuf.Empty
+	12, // 28: loop.internal.pb.ccip.OffRampReader.ListSenderNonces:input_type -> loop.internal.pb.ccip.ListSenderNoncesRequest
+	33, // 29: loop.internal.pb.ccip.OffRampReader.OffchainConfig:input_type -> google.protobuf.Empty
+	33, // 30: loop.internal.pb.ccip.OffRampReader.OnchainConfig:input_type -> google.protobuf.Empty
+	33, // 31: loop.internal.pb.ccip.OffRampReader.Close:input_type -> google.protobuf.Empty
+	6,  // 32: loop.internal.pb.ccip.OffRampReader.Address:output_type -> loop.internal.pb.ccip.OffRampAddressResponse
+	8,  // 33: loop.internal.pb.ccip.OffRampReader.ChangeConfig:output_type -> loop.internal.pb.ccip.ChangeConfigResponse
+	14, // 34: loop.internal.pb.ccip.OffRampReader.CurrentRateLimiterState:output_type -> loop.internal.pb.ccip.CurrentRateLimiterStateResponse
+	3,  // 35: loop.internal.pb.ccip.OffRampReader.DecodeExecutionReport:output_type -> loop.internal.pb.ccip.DecodeExecutionReportResponse
+	1,  // 36: loop.internal.pb.ccip.OffRampReader.EncodeExecutionReport:output_type -> loop.internal.pb.ccip.EncodeExecutionReportResponse
+	11, // 37: loop.internal.pb.ccip.OffRampReader.GasPriceEstimator:output_type -> loop.internal.pb.ccip.GasPriceEstimatorResponse
+	16, // 38: loop.internal.pb.ccip.OffRampReader.GetExecutionState:output_type -> loop.internal.pb.ccip.GetExecutionStateResponse
+	5,  // 39: loop.internal.pb.ccip.OffRampReader.GetExecutionStateChanges:output_type -> loop.internal.pb.ccip.GetExecutionStateChangesResponse
+	20, // 40: loop.internal.pb.ccip.OffRampReader.GetRouter:output_type -> loop.internal.pb.ccip.GetRouterResponse
+	18, // 41: loop.internal.pb.ccip.OffRampReader.GetSourceToDestTokensMapping:output_type -> loop.internal.pb.ccip.GetSourceToDestTokensMappingResponse
+	17, // 42: loop.internal.pb.ccip.OffRampReader.GetStaticConfig:output_type -> loop.internal.pb.ccip.GetStaticConfigResponse
+	19, // 43: loop.internal.pb.ccip.OffRampReader.GetTokens:output_type -> loop.internal.pb.ccip.GetTokensResponse
+	13, // 44: loop.internal.pb.ccip.OffRampReader.ListSenderNonces:output_type -> loop.internal.pb.ccip.ListSenderNoncesResponse
+	9,  // 45: loop.internal.pb.ccip.OffRampReader.OffchainConfig:output_type -> loop.internal.pb.ccip.OffchainConfigResponse
+	10, // 46: loop.internal.pb.ccip.OffRampReader.OnchainConfig:output_type -> loop.internal.pb.ccip.OnchainConfigResponse
+	33, // 47: loop.internal.pb.ccip.OffRampReader.Close:output_type -> google.protobuf.Empty
+	32, // [32:48] is the sub-list for method output_type
+	16, // [16:32] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_offramp_proto_init() }
@@ -2293,7 +2323,7 @@ func file_offramp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_offramp_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

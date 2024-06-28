@@ -90,8 +90,8 @@ func TestCCIPMsg_String(t *testing.T) {
 	}{
 		{
 			"base",
-			CCIPMsg{CCIPMsgBaseDetails{ID: [32]byte{123}, SourceChain: ChainSelector(1), SeqNum: 2}},
-			`{"id":"0x7b00000000000000000000000000000000000000000000000000000000000000","sourceChain":"1","seqNum":"2"}`,
+			CCIPMsg{CCIPMsgBaseDetails: CCIPMsgBaseDetails{MsgHash: Bytes32{123}, ID: "123", SourceChain: ChainSelector(1), SeqNum: 2}, Metadata: CCIPMsgMetadata{Version: "0.1"}},
+			`{"id":"123","sourceChain":"1","seqNum":"2","msgHash":"0x7b00000000000000000000000000000000000000000000000000000000000000","chainFeeLimit":null,"nonce":0,"sender":"","receiver":"","strict":false,"feeToken":"","feeTokenAmount":null,"data":null,"tokenAmounts":null,"sourceTokenData":null,"metadata":{"version":"0.1","data":null}}`,
 		},
 	}
 

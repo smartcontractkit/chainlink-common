@@ -108,11 +108,16 @@ func (m *mockCapabilityWithExecute) Execute(ctx context.Context, req CapabilityR
 }
 
 func Test_ExecuteSyncReturnSingleValue(t *testing.T) {
+	v := map[string]any{"hello": "world"}
 	mcwe := &mockCapabilityWithExecute{
 		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
 			ch := make(chan CapabilityResponse, 10)
 
-			val := values.NewString("hello")
+			val, err := values.NewMap(v)
+			if err != nil {
+				return nil, err
+			}
+
 			ch <- CapabilityResponse{val, nil}
 
 			close(ch)
@@ -124,19 +129,24 @@ func Test_ExecuteSyncReturnSingleValue(t *testing.T) {
 	val, err := ExecuteSync(tests.Context(t), mcwe, req)
 
 	assert.NoError(t, err, val)
-	assert.Equal(t, "hello", val.Underlying[0].(*values.String).Underlying)
+	gotList, err := val.Unwrap()
+	require.NoError(t, err)
+	assert.Equal(t, v, gotList.([]any)[0])
 }
 
 func Test_ExecuteSyncReturnMultipleValues(t *testing.T) {
-	es := values.NewString("hello")
-	expectedList := []values.Value{es, es, es}
+	v := map[string]any{"hello": "world"}
+	val, err := values.NewMap(v)
+	require.NoError(t, err)
+
+	expectedList := []values.Value{val, val, val}
 	mcwe := &mockCapabilityWithExecute{
 		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
 			ch := make(chan CapabilityResponse, 10)
 
-			ch <- CapabilityResponse{es, nil}
-			ch <- CapabilityResponse{es, nil}
-			ch <- CapabilityResponse{es, nil}
+			ch <- CapabilityResponse{val, nil}
+			ch <- CapabilityResponse{val, nil}
+			ch <- CapabilityResponse{val, nil}
 
 			close(ch)
 
@@ -144,10 +154,10 @@ func Test_ExecuteSyncReturnMultipleValues(t *testing.T) {
 		},
 	}
 	req := CapabilityRequest{}
-	val, err := ExecuteSync(tests.Context(t), mcwe, req)
+	gotVal, err := ExecuteSync(tests.Context(t), mcwe, req)
 
 	assert.NoError(t, err, val)
-	assert.ElementsMatch(t, expectedList, val.Underlying)
+	assert.ElementsMatch(t, expectedList, gotVal.Underlying)
 }
 
 func Test_ExecuteSyncCapabilitySetupErrors(t *testing.T) {

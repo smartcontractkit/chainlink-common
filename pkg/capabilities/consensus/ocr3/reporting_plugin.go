@@ -5,10 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
+	"google.golang.org/protobuf/proto"
+
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-	"google.golang.org/protobuf/proto"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -20,17 +23,23 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
 	getEncoder(workflowID string) (pbtypes.Encoder, error)
+	getRegisteredWorkflowsIDs() []string
+	unregisterWorkflowID(workflowID string)
 }
+
+// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
+// This is affected by OCR round time.
+const outcomePruningThreshold = 3600
 
 type reportingPlugin struct {
 	batchSize int
-	s         *store
+	s         *requests.Store
 	r         capabilityIface
 	config    ocr3types.ReportingPluginConfig
 	lggr      logger.Logger
 }
 
-func newReportingPlugin(s *store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
+func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
 	// TODO: extract limits from OnchainConfig
 	// and perform validation.
 
@@ -44,7 +53,7 @@ func newReportingPlugin(s *store, r capabilityIface, batchSize int, config ocr3t
 }
 
 func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
-	batch, err := r.s.firstN(ctx, r.batchSize)
+	batch, err := r.s.FirstN(ctx, r.batchSize)
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
@@ -82,8 +91,8 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		weids = append(weids, q.WorkflowExecutionId)
 	}
 
-	reqs := r.s.getN(ctx, weids)
-	reqMap := map[string]*request{}
+	reqs := r.s.GetN(ctx, weids)
+	reqMap := map[string]*requests.Request{}
 	for _, req := range reqs {
 		reqMap[req.WorkflowExecutionID] = req
 	}
@@ -116,6 +125,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		obs.Observations = append(obs.Observations, newOb)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
+	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflowsIDs()
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -132,12 +142,26 @@ func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, que
 func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
 	m := map[string]map[ocrcommon.OracleID][]values.Value{}
+	seenWorkflowIDs := map[string]int{}
 	for _, o := range aos {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(o.Observation, obs)
 		if err != nil {
 			r.lggr.Errorw("could not unmarshal observation", "error", err, "observation", obs)
 			continue
+		}
+
+		countedWorkflowIds := map[string]bool{}
+		for _, id := range obs.RegisteredWorkflowIds {
+			// Skip if we've already counted this workflow ID. we want to avoid duplicates in the seen workflow IDs.
+			if _, ok := countedWorkflowIds[id]; ok {
+				continue
+			}
+
+			// Count how many times a workflow ID is seen from Observations, no need for initial value since it's 0 by default.
+			seenWorkflowIDs[id]++
+
+			countedWorkflowIds[id] = true
 		}
 
 		for _, rq := range obs.Observations {
@@ -175,7 +199,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
 	o.CurrentReports = []*pbtypes.Report{}
-	allExecutionIDs := []string{}
+	var allExecutionIDs []string
 
 	for _, weid := range q.Ids {
 		obs, ok := m[weid.WorkflowExecutionId]
@@ -206,6 +230,13 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			return nil, err
 		}
 
+		// Only if the previous outcome exists:
+		// We carry the last seen round from the previous outcome, since the aggregation does carry it.
+		// So each `Aggregate()` call will return an outcome with a zero value for LastSeenAt.
+		if workflowOutcome != nil {
+			outcome.LastSeenAt = workflowOutcome.LastSeenAt
+		}
+
 		report := &pbtypes.Report{
 			Outcome: outcome,
 			Id:      weid,
@@ -214,6 +245,19 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
 		o.Outcomes[weid.WorkflowId] = outcome
+	}
+
+	// We need to prune outcomes from previous workflows that are no longer relevant.
+	for workflowID, outcome := range o.Outcomes {
+		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
+		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
+			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
+			outcome.LastSeenAt = outctx.SeqNr
+		} else if outctx.SeqNr-outcome.LastSeenAt > outcomePruningThreshold {
+			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
+			delete(o.Outcomes, workflowID)
+			r.r.unregisterWorkflowID(workflowID)
+		}
 	}
 
 	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o)

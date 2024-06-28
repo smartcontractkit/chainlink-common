@@ -23,24 +23,30 @@ func NewBytes32FromString(s string) (Bytes32, error) {
 	return res, nil
 }
 
-func (m Bytes32) String() string {
-	return "0x" + hex.EncodeToString(m[:])
+func (b Bytes32) String() string {
+	return "0x" + hex.EncodeToString(b[:])
 }
 
-func (m Bytes32) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, m.String())), nil
+func (b Bytes32) IsEmpty() bool {
+	return b == Bytes32{}
 }
 
-func (m *Bytes32) UnmarshalJSON(data []byte) error {
+func (b Bytes32) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, b.String())), nil
+}
+
+func (b *Bytes32) UnmarshalJSON(data []byte) error {
 	v := string(data)
 	if len(v) < 4 {
 		return fmt.Errorf("invalid MerkleRoot: %s", v)
 	}
-	b, err := hex.DecodeString(v[1 : len(v)-1][2:])
+
+	bCp, err := hex.DecodeString(v[1 : len(v)-1][2:])
 	if err != nil {
 		return err
 	}
-	copy(m[:], b)
+
+	copy(b[:], bCp)
 	return nil
 }
 
@@ -57,6 +63,9 @@ func NewBigIntFromInt64(i int64) BigInt {
 }
 
 func (b BigInt) MarshalJSON() ([]byte, error) {
+	if b.Int == nil {
+		return []byte("null"), nil
+	}
 	return []byte(fmt.Sprintf(`"%s"`, b.String())), nil
 }
 

@@ -20,19 +20,16 @@ type Props struct {
 func PlatformPanelOpts(platform string) PlatformOpts {
 	po := PlatformOpts{
 		LabelFilters: map[string]string{},
+		Platform:     platform,
 	}
 	switch platform {
 	case "kubernetes":
-		po.LabelFilters = map[string]string{
-			"namespace": `=~"${namespace}"`,
-			"pod":       `=~"${pod}"`,
-		}
+		po.LabelFilters["namespace"] = `=~"${namespace}"`
+		po.LabelFilters["job"] = `=~"${job}"`
 		po.LabelFilter = "job"
 		po.LegendString = "pod"
 	case "docker":
-		po.LabelFilters = map[string]string{
-			"instance": `=~"${instance}"`,
-		}
+		po.LabelFilters["instance"] = `=~"${instance}"`
 		po.LabelFilter = "instance"
 		po.LegendString = "instance"
 	default:

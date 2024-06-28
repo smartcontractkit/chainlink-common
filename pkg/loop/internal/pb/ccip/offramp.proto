@@ -190,6 +190,11 @@ message ExecOffchainConfig {
 message ExecOnchainConfig {
     google.protobuf.Duration  permissionless_exec_threshold_seconds = 1; // time.Duration
     string router = 2; // Address
+    uint32 max_data_bytes = 3;
+    uint32 max_number_of_tokens_per_msg = 4;
+    string price_registry = 5; // Address
+    uint32 max_pool_release_or_mint_gas = 6;
+    uint32 max_token_transfer_gas = 7;
 }
 
 // OffRampStaticConfig is a gRPC adapter for the struct
@@ -208,5 +213,5 @@ message OffRampStaticConfig {
 message OffRampTokens {
     repeated string destination_tokens = 1; // []Address
     repeated string source_tokens = 2; // []Address
-    map<string,string> destination_pool = 3; // map[Address]Address
+    reserved 3;
 }

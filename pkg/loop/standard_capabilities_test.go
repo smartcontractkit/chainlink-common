@@ -11,7 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	sctest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/test"
+	sctest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 )
 

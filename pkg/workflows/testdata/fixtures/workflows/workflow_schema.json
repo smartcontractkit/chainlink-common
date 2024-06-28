@@ -3,6 +3,18 @@
   "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/workflows/workflow-spec-yaml",
   "$ref": "#/$defs/workflowSpecYaml",
   "$defs": {
+    "inputs": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\$\\([a-z0-9_-]+\\.outputs\\)$"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "title": "id"
+    },
     "mapping": {
       "type": "object"
     },
@@ -49,7 +61,28 @@
           "pattern": "^[a-z0-9_-]+$"
         },
         "inputs": {
+          "$ref": "#/$defs/inputs"
+        },
+        "config": {
           "$ref": "#/$defs/mapping"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "inputs",
+        "config"
+      ]
+    },
+    "triggerDefinitionYaml": {
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stepDefinitionID"
+        },
+        "ref": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$"
         },
         "config": {
           "$ref": "#/$defs/mapping"
@@ -64,9 +97,18 @@
     },
     "workflowSpecYaml": {
       "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^[0-9A-Za-z_\\-]+$"
+        },
+        "owner": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
         "triggers": {
           "items": {
-            "$ref": "#/$defs/stepDefinitionYaml"
+            "$ref": "#/$defs/triggerDefinitionYaml"
           },
           "type": "array"
         },

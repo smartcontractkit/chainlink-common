@@ -84,8 +84,8 @@ func (e *ExecProviderClient) NewOffRampReader(ctx context.Context, addr cciptype
 }
 
 // NewOnRampReader implements types.CCIPExecProvider.
-func (e *ExecProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OnRampReader, error) {
-	req := ccippb.NewOnRampReaderRequest{Address: string(addr)}
+func (e *ExecProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address, srcChainSelector uint64, dstChainSelector uint64) (cciptypes.OnRampReader, error) {
+	req := ccippb.NewOnRampReaderRequest{Address: string(addr), SourceChainSelector: srcChainSelector, DestChainSelector: dstChainSelector}
 
 	resp, err := e.grpcClient.NewOnRampReader(ctx, &req)
 	if err != nil {
@@ -144,8 +144,9 @@ func (e *ExecProviderClient) NewTokenDataReader(ctx context.Context, tokenAddres
 }
 
 // NewTokenPoolBatchedReader implements types.CCIPExecProvider.
-func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context) (cciptypes.TokenPoolBatchedReader, error) {
-	resp, err := e.grpcClient.NewTokenPoolBatchedReader(ctx, &emptypb.Empty{})
+func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context, offRampAddress cciptypes.Address, srcChainSelector uint64) (cciptypes.TokenPoolBatchedReader, error) {
+	req := ccippb.NewTokenPoolBatchedReaderRequest{Address: string(offRampAddress), SourceChainSelector: srcChainSelector}
+	resp, err := e.grpcClient.NewTokenPoolBatchedReader(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
@@ -159,10 +160,10 @@ func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context) (cci
 }
 
 // SourceNativeToken implements types.CCIPExecProvider.
-func (e *ExecProviderClient) SourceNativeToken(ctx context.Context) (cciptypes.Address, error) {
+func (e *ExecProviderClient) SourceNativeToken(ctx context.Context, addr cciptypes.Address) (cciptypes.Address, error) {
 	// unlike the other methods, this one does not create a new resource, so we do not
 	// need the broker to serve it. we can just call the grpc method directly.
-	resp, err := e.grpcClient.SourceNativeToken(ctx, &emptypb.Empty{})
+	resp, err := e.grpcClient.SourceNativeToken(ctx, &ccippb.SourceNativeTokenRequest{SourceRouterAddress: string(addr)})
 	if err != nil {
 		return "", err
 	}
@@ -241,7 +242,7 @@ func (e *ExecProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 }
 
 func (e *ExecProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
-	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address))
+	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address), req.SourceChainSelector, req.DestChainSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -300,8 +301,8 @@ func (e *ExecProviderServer) NewTokenDataReader(ctx context.Context, req *ccippb
 	return &ccippb.NewTokenDataResponse{TokenDataReaderServiceId: int32(tokeDataReaderID)}, nil
 }
 
-func (e *ExecProviderServer) NewTokenPoolBatchedReader(ctx context.Context, _ *emptypb.Empty) (*ccippb.NewTokenPoolBatchedReaderResponse, error) {
-	reader, err := e.impl.NewTokenPoolBatchedReader(ctx)
+func (e *ExecProviderServer) NewTokenPoolBatchedReader(ctx context.Context, req *ccippb.NewTokenPoolBatchedReaderRequest) (*ccippb.NewTokenPoolBatchedReaderResponse, error) {
+	reader, err := e.impl.NewTokenPoolBatchedReader(ctx, cciptypes.Address(req.Address), req.SourceChainSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -319,8 +320,8 @@ func (e *ExecProviderServer) NewTokenPoolBatchedReader(ctx context.Context, _ *e
 	return &ccippb.NewTokenPoolBatchedReaderResponse{TokenPoolBatchedReaderServiceId: int32(tokenPoolID)}, nil
 }
 
-func (e *ExecProviderServer) SourceNativeToken(ctx context.Context, _ *emptypb.Empty) (*ccippb.SourceNativeTokenResponse, error) {
-	addr, err := e.impl.SourceNativeToken(ctx)
+func (e *ExecProviderServer) SourceNativeToken(ctx context.Context, req *ccippb.SourceNativeTokenRequest) (*ccippb.SourceNativeTokenResponse, error) {
+	addr, err := e.impl.SourceNativeToken(ctx, cciptypes.Address(req.SourceRouterAddress))
 	if err != nil {
 		return nil, err
 	}

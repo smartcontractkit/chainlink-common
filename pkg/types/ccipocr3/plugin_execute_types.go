@@ -6,24 +6,35 @@ import (
 	"time"
 )
 
+////////////////////
+// Execute Report //
+////////////////////
+
 type ExecutePluginReport struct {
-	ChainReports []ExecutionPluginReportSingleChain `json:"chainReports"`
+	ChainReports []ExecutePluginReportSingleChain `json:"chainReports"`
 }
 
-type ExecutionPluginReportSingleChain struct {
-	SourceChainSelector ChainSelector    `json:"sourceChainSelector"`
-	Messages            []Evm2EvmMessage `json:"messages"`
-	OffchainTokenData   [][][]byte       `json:"offchainTokenData"`
-	Proofs              []Bytes32        `json:"proofs"`
-	ProofFlagBits       BigInt           `json:"proofFlagBits"`
+type ExecutePluginReportSingleChain struct {
+	SourceChainSelector ChainSelector `json:"sourceChainSelector"`
+	Messages            []CCIPMsg     `json:"messages"`
+	OffchainTokenData   [][][]byte    `json:"offchainTokenData"`
+	Proofs              []Bytes32     `json:"proofs"`
+	ProofFlagBits       BigInt        `json:"proofFlagBits"`
 }
 
 /////////////////////////
 // Execute Observation //
 /////////////////////////
 
+type ExecutePluginCommitDataWithMessages struct {
+	ExecutePluginCommitData
+	Messages []CCIPMsg `json:"messages"`
+}
+
 // ExecutePluginCommitData is the data that is committed to the chain.
 type ExecutePluginCommitData struct {
+	// SourceChain of the chain that contains the commit report.
+	SourceChain ChainSelector `json:"chainSelector"`
 	// Timestamp of the block that contains the commit.
 	Timestamp time.Time `json:"timestamp"`
 	// BlockNum of the block that contains the commit.
@@ -36,8 +47,8 @@ type ExecutePluginCommitData struct {
 	ExecutedMessages []SeqNum `json:"executed"`
 }
 
-type ExecutePluginCommitObservations map[ChainSelector][]ExecutePluginCommitData
-type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]Bytes32
+type ExecutePluginCommitObservations map[ChainSelector][]ExecutePluginCommitDataWithMessages
+type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]CCIPMsg
 
 // ExecutePluginObservation is the observation of the ExecutePlugin.
 // TODO: revisit observation types. The maps used here are more space efficient and easier to work
@@ -77,23 +88,21 @@ func DecodeExecutePluginObservation(b []byte) (ExecutePluginObservation, error) 
 
 // ExecutePluginOutcome is the outcome of the ExecutePlugin.
 type ExecutePluginOutcome struct {
-	// NextCommits are determined during the first phase of execute.
-	// It contains the commit reports we would like to execute in the following round.
-	NextCommits ExecutePluginCommitObservations `json:"nextCommits"`
-	// Messages are determined during the second phase of execute.
-	// Ideally, it contains all the messages identified by the previous outcome's
-	// NextCommits. With the previous outcome, and these messsages, we can build the
-	// execute report.
-	Messages ExecutePluginMessageObservations `json:"messages"`
+	// PendingCommitReports are the oldest reports with pending commits. The slice is
+	// sorted from oldest to newest.
+	PendingCommitReports []ExecutePluginCommitDataWithMessages `json:"commitReports"`
+
+	// Report is built from the oldest pending commit reports.
+	Report ExecutePluginReport `json:"report"`
 }
 
 func NewExecutePluginOutcome(
-	nextCommits ExecutePluginCommitObservations,
-	messages ExecutePluginMessageObservations,
+	pendingCommits []ExecutePluginCommitDataWithMessages,
+	report ExecutePluginReport,
 ) ExecutePluginOutcome {
 	return ExecutePluginOutcome{
-		NextCommits: nextCommits,
-		Messages:    messages,
+		PendingCommitReports: pendingCommits,
+		Report:               report,
 	}
 }
 
@@ -108,5 +117,5 @@ func DecodeExecutePluginOutcome(b []byte) (ExecutePluginOutcome, error) {
 }
 
 func (o ExecutePluginOutcome) String() string {
-	return fmt.Sprintf("NextCommits: %v, Messages: %v", o.NextCommits, o.Messages)
+	return fmt.Sprintf("NextCommits: %v", o.PendingCommitReports)
 }

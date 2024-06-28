@@ -183,6 +183,19 @@ type DON struct {
 	AcceptsWorkflows bool
 }
 
+// Node contains the node's peer ID and the DONs it is part of.
+//
+// Note the following relationships between the workflow and capability DONs and this node.
+//
+// There is a 1:0..1 relationship between this node and a workflow DON.
+// This means that this node can be part at most one workflow DON at a time.
+// As a side note, a worklflow DON can have multiple nodes.
+//
+// There is a 1:N relationship between this node and capability DONs, where N is the number of capability DONs.
+// This means that this node can be part of multiple capability DONs at a time.
+//
+// Although WorkflowDON is a value rather than a pointer, a node can be part of no workflow DON but 0 or more capability DONs.
+// You can assert this by checking for zero values in the WorkflowDON field.
 type Node struct {
 	PeerID         *p2ptypes.PeerID
 	WorkflowDON    DON

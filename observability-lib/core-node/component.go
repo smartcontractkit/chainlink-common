@@ -136,13 +136,13 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		4,
 		12,
 		2,
-		"h",
+		"s",
 		common.BigValueColorModeNone,
 		common.BigValueGraphModeNone,
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `} / 3600`,
+			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 		},
 	))

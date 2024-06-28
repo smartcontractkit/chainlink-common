@@ -2,6 +2,8 @@ package triggers
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"math/big"
 	"os"
 	"testing"
@@ -367,4 +369,40 @@ func TestMercuryTrigger_GenerateSchema(t *testing.T) {
 	require.NoError(t, err)
 
 	utils.AssertJSONEqual(t, fixture, []byte(schema))
+}
+
+func TestMercuryTrigger_WrapReports(t *testing.T) {
+	S := 31   // signers
+	P := 50   // feeds
+	B := 1000 // report size in bytes
+	meta := datastreams.SignersMetadata{}
+	for i := 0; i < S; i++ {
+		meta.Signers = append(meta.Signers, randomByteArray(t, 20))
+	}
+	reportList := []datastreams.FeedReport{}
+	for i := 0; i < P; i++ {
+		signatures := [][]byte{}
+		for j := 0; j < S; j++ {
+			signatures = append(signatures, randomByteArray(t, 65))
+		}
+		reportList = append(reportList, datastreams.FeedReport{
+			FeedID:               "0x" + hex.EncodeToString(randomByteArray(t, 32)),
+			FullReport:           randomByteArray(t, B),
+			ReportContext:        randomByteArray(t, 96),
+			Signatures:           signatures,
+			BenchmarkPrice:       big.NewInt(56789).Bytes(),
+			ObservationTimestamp: 876543,
+		})
+	}
+	wrapped, err := wrapReports(reportList, "event_id", 1234, meta)
+	require.NoError(t, err)
+	require.NotNil(t, wrapped.Value)
+	require.Len(t, wrapped.Value.Underlying["Payload"].(*values.List).Underlying, P)
+}
+
+func randomByteArray(t *testing.T, n int) []byte {
+	b := make([]byte, n)
+	_, err := rand.Read(b[:])
+	require.NoError(t, err)
+	return b
 }

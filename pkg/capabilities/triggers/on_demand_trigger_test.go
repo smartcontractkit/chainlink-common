@@ -29,8 +29,11 @@ func TestOnDemand(t *testing.T) {
 	ch, err := tr.RegisterTrigger(ctx, req)
 	require.NoError(t, err)
 
+	v, err := values.NewMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
+
 	er := capabilities.CapabilityResponse{
-		Value: &values.String{Underlying: testID},
+		Value: v,
 	}
 
 	err = tr.FanOutEvent(ctx, er)
@@ -42,10 +45,13 @@ func TestOnDemand_ChannelDoesntExist(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
 	ctx := tests.Context(t)
 
+	v, err := values.NewMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
+
 	er := capabilities.CapabilityResponse{
-		Value: &values.String{Underlying: testID},
+		Value: v,
 	}
-	err := tr.SendEvent(ctx, testID, er)
+	err = tr.SendEvent(ctx, testID, er)
 	assert.ErrorContains(t, err, "no registration")
 }
 
@@ -62,8 +68,11 @@ func TestOnDemand_(t *testing.T) {
 	callback, err := tr.RegisterTrigger(ctx, req)
 	require.NoError(t, err)
 
+	v, err := values.NewMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
+
 	er := capabilities.CapabilityResponse{
-		Value: &values.String{Underlying: testID},
+		Value: v,
 	}
 	err = tr.SendEvent(ctx, "hello", er)
 	require.NoError(t, err)

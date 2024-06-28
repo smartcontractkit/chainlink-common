@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+
+package loop;
+
+import "codec.proto";
+import "relayer.proto";
+import "google/protobuf/empty.proto";
+
+service ChainWriter {
+    rpc SubmitTransaction(SubmitTransactionRequest) returns (google.protobuf.Empty) {}
+    rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply) {}
+    rpc GetFeeComponents(google.protobuf.Empty) returns (GetFeeComponentsReply) {}
+}
+
+message SubmitTransactionRequest {
+    string contract_name = 1;
+    string method = 2;
+    VersionedBytes params = 3;
+    string transaction_id = 4;
+    string to_address = 5;
+    TransactionMeta meta = 6;
+    BigInt value = 7;
+}
+
+message TransactionMeta {
+    string workflow_execution_id = 1;
+}
+
+// GetTransactionStatusRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetTransactionStatus].
+message GetTransactionStatusRequest {
+    string transaction_id = 1;
+}
+
+// GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetTransactionStatus].
+message GetTransactionStatusReply {
+    int64 transaction_status = 1;
+}
+
+// GetFeeComponentsReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetFeeComponents].
+message GetFeeComponentsReply {
+    BigInt execution_fee = 1;
+    BigInt data_availability_fee = 2;
+}

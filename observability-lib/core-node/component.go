@@ -114,9 +114,9 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
 		"App Version",
-		"app version",
+		"app version with commit and branch links",
 		4,
-		4,
+		12,
 		1,
 		"",
 		common.BigValueColorModeNone,
@@ -125,42 +125,24 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
 			Query:  `version{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{version}}",
+			Legend: "Version: {{version}} https://github.com/smartcontractkit/chainlink/commit/{{commit}} https://github.com/smartcontractkit/chainlink/tree/release/{{version}}",
 		},
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
-		"Go Version",
-		"golang version",
-		4,
-		4,
-		1,
-		"",
-		common.BigValueColorModeNone,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `go_info{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{version}}",
-		},
-	))
-
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Uptime in days",
+		"Uptime",
 		"instance uptime",
 		4,
-		16,
-		1,
-		"",
+		12,
+		2,
+		"s",
 		common.BigValueColorModeNone,
 		common.BigValueGraphModeNone,
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `} / 86400`,
+			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 		},
 	))
@@ -257,6 +239,24 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		utils.PrometheusQuery{
 			Query:  `solana_balance{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.StatPanel(
+		p.MetricsDataSource,
+		"Go Version",
+		"golang version",
+		4,
+		4,
+		1,
+		"",
+		common.BigValueColorModeNone,
+		common.BigValueGraphModeNone,
+		common.BigValueTextModeName,
+		common.VizOrientationHorizontal,
+		utils.PrometheusQuery{
+			Query:  `go_info{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: "{{version}}",
 		},
 	))
 

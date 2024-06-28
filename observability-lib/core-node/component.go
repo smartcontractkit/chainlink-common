@@ -197,20 +197,32 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 			})),
 	)
 
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
-		"Service Components Health",
-		"service components health",
-		6,
+		"Components Health Avg by Service over 15m",
+		"Only displays services with health average < 90%",
+		4,
 		24,
 		1,
-		"",
-		common.LegendPlacementRight,
+		"percent",
+		common.BigValueColorModeValue,
+		common.BigValueGraphModeLine,
+		common.BigValueTextModeValueAndName,
+		common.VizOrientationVertical,
 		utils.PrometheusQuery{
-			Query:  `health{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{service_id}}`,
+			Query:  `100 * avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `}[15m])) by (service_id, version, service, cluster, env) < 90`,
+			Legend: "{{service_id}}",
 		},
-	))
+	).NoValue("All services healthy").Thresholds(
+		dashboard.NewThresholdsConfigBuilder().
+			Mode(dashboard.ThresholdsModeAbsolute).
+			Steps([]dashboard.Threshold{
+				{Value: nil, Color: "green"},
+				{Value: utils.Float64Ptr(1), Color: "red"},
+				{Value: utils.Float64Ptr(80), Color: "orange"},
+				{Value: utils.Float64Ptr(99), Color: "green"},
+			})),
+	)
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
 		p.MetricsDataSource,

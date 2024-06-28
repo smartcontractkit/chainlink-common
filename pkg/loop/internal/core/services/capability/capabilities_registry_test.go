@@ -349,3 +349,28 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 	require.Equal(t, expectedInfo.Description, gotInfo.Description)
 	require.Equal(t, expectedInfo.Version(), gotInfo.Version())
 }
+func TestToDON(t *testing.T) {
+	don := &pb.DON{
+		Id: "don-id",
+		Members: [][]byte{
+			{0: 4, 31: 0},
+			{0: 5, 31: 0},
+		},
+		F:      2,
+		Config: []byte{7, 8, 9},
+	}
+
+	expected := capabilities.DON{
+		ID: "don-id",
+		Members: []p2ptypes.PeerID{
+			[32]byte{0: 4},
+			[32]byte{0: 5},
+		},
+		F:      2,
+		Config: []byte{7, 8, 9},
+	}
+
+	actual := toDON(don)
+
+	require.Equal(t, expected, actual)
+}

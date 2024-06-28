@@ -80,7 +80,7 @@ type ExecOffchainConfig struct {
 	// MessageVisibilityInterval is the interval at which we check for new messages.
 	MessageVisibilityInterval config.Duration
 	// BatchingStrategyId is the strategy to use for batching messages.
-	BatchingStrategyId uint8
+	BatchingStrategyID uint32
 }
 
 type ExecOnchainConfig struct {

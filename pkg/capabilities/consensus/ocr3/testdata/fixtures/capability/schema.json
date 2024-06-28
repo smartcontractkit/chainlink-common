@@ -83,7 +83,18 @@
         "WorkflowExecutionID": {
           "type": "string"
         },
-        "Value": true,
+        "Value": {
+          "properties": {
+            "Underlying": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "Underlying"
+          ]
+        },
         "Err": true
       },
       "additionalProperties": false,

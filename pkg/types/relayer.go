@@ -96,6 +96,8 @@ type Relayer interface {
 	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
 	NewAutomationProvider(rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
 	NewLLOProvider(rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
+	NewCCIPCommitProvider(rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error)
+	NewCCIPExecProvider(rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error)
 	NewPluginProvider(rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 	NewOCR3CapabilityProvider(rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
 }

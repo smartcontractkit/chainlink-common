@@ -240,7 +240,7 @@ func wrapReports(reportList []datastreams.FeedReport, eventID string, timestamp 
 
 	// Create a new CapabilityResponse with the MercuryTriggerEvent
 	return capabilities.CapabilityResponse{
-		Value: eventVal,
+		Value: eventVal.(*values.Map),
 	}, nil
 }
 

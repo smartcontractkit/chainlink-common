@@ -118,7 +118,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	reg := mocks.NewCapabilitiesRegistry(t)
 
 	capabilityResponse := capabilities.CapabilityResponse{
-		Value: nil,
+		Value: values.EmptyMap(),
 		Err:   errors.New("some-error"),
 	}
 

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -69,7 +71,7 @@ type workflowSpecYaml struct {
 	//Name nameYaml `json:"name"`
 	Owner string `json:"owner,omitempty" jsonschema:"pattern=^0x[0-9a-fA-F]{40}$"` // 20 bytes represented as hex string with 0x prefix, or empty owner allowed for anonymous workflows
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.
-	Triggers []stepDefinitionYaml `json:"triggers" jsonschema:"required"`
+	Triggers []triggerDefinitionYaml `json:"triggers" jsonschema:"required"`
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
 	Actions []stepDefinitionYaml `json:"actions,omitempty"`
 	// Consensus encapsulates the logic for aggregating and validating the results from various nodes.
@@ -210,6 +212,84 @@ func (m mapping) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]any(m))
 }
 
+// triggerDefinitionYaml is the YAML representation of a trigger step in a workflow.
+// Like `stepDefinitionYaml`, this will get reduced to a single representation for
+// all steps, `StepDefinition`.
+// NOTE: unlike stepDefinitionYaml, this omits the `inputs` field, which isn't used
+// for triggers.
+type triggerDefinitionYaml struct {
+	// A universally unique name for a capability will be defined under the “id” property. The uniqueness will, eventually, be enforced in the Capability Registry.
+	//
+	// Semver must be used to specify the version of the Capability at the end of the id field. Capability versions must be immutable.
+	//
+	// There are two ways to specify an id - using a string as a fully qualified ID or a structured table. When using a table, labels are ordered alphanumerically and joined into a string following a
+	//  {name}:{label1_key}_{label1_value}:{label2_key}_{label2_value}@{version}
+	// pattern.
+	//
+	// The “id” supports [a-z0-9_-:] characters followed by an @ and [semver regex] at the end.
+	//
+	// Validation must throw an error if:
+	//
+	// Unsupported characters are used.
+	//
+	// Example (string)
+	//  id: read_chain:chain_ethereum:network_mainnet@1.0.0
+	//
+	// Example (table)
+	//
+	//  id:
+	//    name: read_chain
+	//    version: 1.0.0
+	//    labels:
+	//      chain: ethereum
+	//      network: mainnet
+	//
+	// [semver regex]: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+	ID stepDefinitionID `json:"id" jsonschema:"required"`
+
+	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
+	//
+	// The “ref” supports [a-z0-9_] characters.
+	//
+	// Validation must throw an error if:
+	//  - Unsupported characters are used.
+	//  - The same “ref” appears in the workflow multiple times.
+	//  - “ref” is used on a Target capability.
+	//  - “ref” has a circular reference.
+	//
+	// NOTE: Should introduce a custom validator to cover trigger case
+	Ref string `json:"ref,omitempty" jsonschema:"pattern=^[a-z0-9_-]+$"`
+
+	// The configuration of a Capability will be done using the “config” property. Each capability is responsible for defining an external interface used during setup. This interface may be unique or identical, meaning multiple Capabilities might use the same configuration properties.
+	//
+	// The interpolation of “inputs”
+	//
+	// Interpolation of self inputs is allowed from within the “config” property.
+	//
+	// Example
+	//  targets:
+	//    - id: write_polygon_mainnet@1.0.0
+	//      inputs:
+	//        report:
+	//          - consensus.evm_median.outputs.report
+	//      config:
+	//        address: "0xaabbcc"
+	//        method: "updateFeedValues(report bytes, role uint8)"
+	//        params: [$(inputs.report), 1]
+	Config mapping `json:"config" jsonschema:"required"`
+}
+
+// toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
+//
+// `StepDefinition` is the converged representation of a step in a workflow.
+func (s triggerDefinitionYaml) toStepDefinition() StepDefinition {
+	return StepDefinition{
+		Ref:    s.Ref,
+		ID:     s.ID.String(),
+		Config: s.Config,
+	}
+}
+
 // stepDefinitionYaml is the YAML representation of a step in a workflow.
 //
 // It allows for multiple ways of defining a step, which we later
@@ -259,7 +339,7 @@ type stepDefinitionYaml struct {
 
 	// Capabilities can specify an additional optional ”inputs” property. It allows specifying a dependency on the result of one or more other capabilities. These are always runtime values that cannot be provided upfront. It takes a map of the argument name internal to the capability and an explicit reference to the values.
 	//
-	// References are specified using the [id].[ref].[path_to_value] pattern.
+	// References are specified using the [id].[path_to_value] pattern.
 	//
 	// The interpolation of “inputs” is allowed
 	//
@@ -267,7 +347,7 @@ type stepDefinitionYaml struct {
 	//  - Input reference cannot be resolved.
 	//  - Input is defined on triggers
 	// NOTE: Should introduce a custom validator to cover trigger case
-	Inputs mapping `json:"inputs,omitempty"`
+	Inputs inputs `json:"inputs" jsonschema:"required"`
 
 	// The configuration of a Capability will be done using the “config” property. Each capability is responsible for defining an external interface used during setup. This interface may be unique or identical, meaning multiple Capabilities might use the same configuration properties.
 	//
@@ -293,10 +373,79 @@ type stepDefinitionYaml struct {
 // `StepDefinition` is the converged representation of a step in a workflow.
 func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 	return StepDefinition{
-		Ref:    s.Ref,
-		ID:     s.ID.String(),
-		Inputs: s.Inputs,
+		Ref: s.Ref,
+		ID:  s.ID.String(),
+		Inputs: StepInputs{
+			OutputRef: s.Inputs.outputRef,
+			Mapping:   s.Inputs.mapping,
+		},
 		Config: s.Config,
+	}
+}
+
+// input is the mapping or interpolation-style representation of the "inputs" field in a StepDefinition.
+// If an interpolation value is provided, it must obey the following rules be a valid interpolation string,
+// of the form "$(<REF>.outputs)", where ref is either "trigger" or a ref in the workflow.
+type inputs struct {
+	mapping   mapping
+	outputRef string
+}
+
+var outputRefTokenRe = regexp.MustCompile(`^\$\([a-z0-9_-]+\.outputs\)$`)
+
+func (i *inputs) UnmarshalJSON(data []byte) error {
+	var s string
+	err := json.Unmarshal(data, &s)
+	if err == nil {
+		if !outputRefTokenRe.MatchString(s) {
+			return errors.New("incorrect ref provided as inputs: ref must be of the form `$(<ref>.outputs)`")
+		}
+
+		i.outputRef = s
+		return nil
+	}
+
+	var m mapping
+	err = json.Unmarshal(data, &m)
+	if err != nil {
+		return err
+	}
+
+	i.mapping = m
+	return nil
+}
+
+func (i *inputs) MarshalJSON() ([]byte, error) {
+	if i.outputRef != "" {
+		return json.Marshal(i.outputRef)
+	}
+
+	return json.Marshal(i.mapping)
+}
+
+// JSONSchema returns the JSON schema for a inputs
+//
+// The schema is a oneOf schema that allows either a string or a mapping.
+func (inputs) JSONSchema() *jsonschema.Schema {
+	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
+	var m mapping
+	mappingSchema := reflector.Reflect(&m)
+	mappingSchema.ID = ""
+	mappingSchema.Version = ""
+
+	outputRefSchema := &jsonschema.Schema{
+		Pattern: outputRefTokenRe.String(),
+		Type:    "string",
+		ID:      "",
+		Version: "",
+	}
+
+	return &jsonschema.Schema{
+		Title: "id",
+		OneOf: []*jsonschema.Schema{
+			outputRefSchema,
+			mappingSchema,
+		},
 	}
 }
 

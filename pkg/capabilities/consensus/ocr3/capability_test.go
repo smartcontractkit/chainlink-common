@@ -21,6 +21,8 @@ import (
 )
 
 const workflowTestID = "consensus-workflow-test-id-1"
+const workflowTestID2 = "consensus-workflow-test-id-2"
+const workflowTestID3 = "consensus-workflow-test-id-3"
 const workflowExecutionTestID = "consensus-workflow-execution-test-id-1"
 const workflowTestName = "consensus-workflow-test-name-1"
 const reportTestId = "rep-id-1"
@@ -110,16 +112,17 @@ func TestOCR3Capability(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response
+	mresp, err := values.NewMap(map[string]any{"observations": obsv})
 	cp.reqHandler.SendResponse(ctx, &requests.Response{
 		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: obsv,
+			Value: mresp,
 		},
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
 
 	expectedCapabilityResponse := capabilities.CapabilityResponse{
-		Value: obsv,
+		Value: mresp,
 	}
 
 	assert.Equal(t, expectedCapabilityResponse, <-callback)
@@ -355,11 +358,11 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 	ethUsdValue, err := decimal.NewFromString(ethUsdValStr)
 	require.NoError(t, err)
 	observationKey := "ETH_USD"
-	obs := []any{map[string]any{observationKey: ethUsdValue}}
-	inputs, err := values.NewMap(map[string]any{"observations": obs})
+	obs := map[string]any{observationKey: ethUsdValue}
+	inputs, err := values.NewMap(map[string]any{"observations": []any{obs}})
 	require.NoError(t, err)
 
-	obsv, err := values.NewList(obs)
+	obsv, err := values.NewMap(obs)
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent
@@ -416,11 +419,11 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 	ethUsdValue, err := decimal.NewFromString(ethUsdValStr)
 	require.NoError(t, err)
 	observationKey := "ETH_USD"
-	obs := []any{map[string]any{observationKey: ethUsdValue}}
-	inputs, err := values.NewMap(map[string]any{"observations": obs})
+	obs := map[string]any{observationKey: ethUsdValue}
+	inputs, err := values.NewMap(map[string]any{"observations": []any{obs}})
 	require.NoError(t, err)
 
-	obsv, err := values.NewList(obs)
+	obsv, err := values.NewMap(obs)
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent

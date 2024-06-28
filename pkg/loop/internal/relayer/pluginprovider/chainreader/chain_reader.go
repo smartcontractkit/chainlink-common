@@ -312,7 +312,13 @@ func newPbBatchGetLatestValueReply(result types.BatchGetLatestValueResult, encod
 			if err != nil {
 				return nil, err
 			}
-			pbBatchReadResult := &pb.BatchReadResult{ReadName: batchCall.ReadName, ReturnVal: encodedRetVal}
+
+			replyErr := ""
+			if batchCall.Err != nil {
+				replyErr = batchCall.Err.Error()
+			}
+
+			pbBatchReadResult := &pb.BatchReadResult{ReadName: batchCall.ReadName, ReturnVal: encodedRetVal, Error: replyErr}
 			pbBatchGetLatestValueReply.Results[contractName].Results = append(pbBatchGetLatestValueReply.Results[contractName].Results, pbBatchReadResult)
 		}
 	}

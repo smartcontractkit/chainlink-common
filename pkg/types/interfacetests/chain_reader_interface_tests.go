@@ -398,6 +398,35 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 				}
 			},
 		},
+		{
+			name: "BatchGetLatestValue sets errors properly",
+			test: func(t T) {
+				batchGetLatestValueRequest := make(types.BatchGetLatestValueRequest)
+				for i := 0; i < 100; i++ {
+					// setup call data and set invalid params that cause an error
+					batchGetLatestValueRequest[AnyContractName] = append(batchGetLatestValueRequest[AnyContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 0}, ReturnVal: &TestStruct{}})
+					batchGetLatestValueRequest[AnySecondContractName] = append(batchGetLatestValueRequest[AnySecondContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 0}, ReturnVal: &TestStruct{}})
+				}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				result, err := cr.BatchGetLatestValue(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				for i := 0; i < 100; i++ {
+					resultAnyContract := result[AnyContractName]
+					resultAnySecondContract := result[AnySecondContractName]
+					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
+					assert.Error(t, resultAnyContract[i].Err)
+					assert.Error(t, resultAnySecondContract[i].Err)
+					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnySecondContract[i].ReadName)
+					assert.Equal(t, &TestStruct{}, resultAnyContract[i].ReturnValue)
+					assert.Equal(t, &TestStruct{}, resultAnySecondContract[i].ReturnValue)
+				}
+			},
+		},
 	}
 
 	runTests(t, tester, testCases)

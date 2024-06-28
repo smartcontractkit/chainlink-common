@@ -439,7 +439,13 @@ func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, request types.B
 					ExtraField: AnyExtraValue,
 				}
 			} else if req.ReadName == MethodTakingLatestParamsReturningTestStruct {
-				returnVal = storedContractBatch[i].ReturnValue
+				latestParams := requestContractBatch[i].Params.(*LatestParams)
+				if latestParams.I <= 0 {
+					returnVal = &LatestParams{}
+					res.Err = fmt.Errorf("invalid param %d", latestParams.I)
+				} else {
+					returnVal = storedContractBatch[latestParams.I-1].ReturnValue
+				}
 			} else {
 				return nil, errors.New("unknown read " + req.ReadName)
 			}

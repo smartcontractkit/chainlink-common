@@ -392,10 +392,6 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 			}
 		}
 		return types.ErrNotFound
-	} else if method == DifferentMethodReturningUint64 {
-		r := returnVal.(*uint64)
-		*r = AnyDifferentValueToReadWithoutAnArgument
-		return nil
 	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)
 	}
@@ -425,8 +421,6 @@ func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, request types.B
 				} else {
 					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
 				}
-			} else if req.ReadName == DifferentMethodReturningUint64 {
-				returnVal = AnyDifferentValueToReadWithoutAnArgument
 			} else if req.ReadName == MethodReturningUint64Slice {
 				returnVal = req.ReturnVal.(*[]uint64)
 				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument

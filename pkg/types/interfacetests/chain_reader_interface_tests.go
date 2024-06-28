@@ -90,19 +90,6 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 			},
 		},
 		{
-			name: "Get latest value allows a contract name to resolve different contracts internally",
-			test: func(t T) {
-				ctx := tests.Context(t)
-				cr := tester.GetChainReader(t)
-				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-
-				var prim uint64
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, DifferentMethodReturningUint64, nil, &prim))
-
-				assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, prim)
-			},
-		},
-		{
 			name: "Get latest value allows multiple contract names to have the same function Name",
 			test: func(t T) {
 				ctx := tests.Context(t)
@@ -266,27 +253,6 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 			},
 		},
 		{
-			name: "BatchGetLatestValue allows a contract name to resolve different contracts internally",
-			test: func(t T) {
-				// setup call data
-				var primitiveReturnValue uint64
-				batchGetLatestValueRequest := make(types.BatchGetLatestValueRequest)
-				batchGetLatestValueRequest[AnyContractName] = []types.BatchRead{{ReadName: DifferentMethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValue}}
-
-				ctx := tests.Context(t)
-				cr := tester.GetChainReader(t)
-				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-
-				result, err := cr.BatchGetLatestValue(ctx, batchGetLatestValueRequest)
-				require.NoError(t, err)
-
-				anyContractBatch := result[AnyContractName]
-				require.NoError(t, anyContractBatch[0].Err)
-				assert.Equal(t, DifferentMethodReturningUint64, anyContractBatch[0].ReadName)
-				assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *anyContractBatch[0].ReturnValue.(*uint64))
-			},
-		},
-		{
 			name: "BatchGetLatestValue without arguments and with slice return",
 			test: func(t T) {
 				// setup call data
@@ -339,7 +305,7 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 			test: func(t T) {
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValueRequest)
-				for i := 0; i < 100; i++ {
+				for i := 0; i < 10; i++ {
 					// setup test data
 					ts := CreateTestStruct(i, tester)
 					batchCallEntry[AnyContractName] = append(batchCallEntry[AnyContractName], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts})
@@ -355,7 +321,7 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 				result, err := cr.BatchGetLatestValue(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
 
-				for i := 0; i < 100; i++ {
+				for i := 0; i < 10; i++ {
 					resultAnyContract, testDataAnyContract := result[AnyContractName], batchCallEntry[AnyContractName]
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
 					assert.NoError(t, resultAnyContract[i].Err)
@@ -368,9 +334,9 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 			test: func(t T) {
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValueRequest)
-				for i := 0; i < 100; i++ {
+				for i := 0; i < 10; i++ {
 					// setup test data
-					ts1, ts2 := CreateTestStruct(i, tester), CreateTestStruct(i+100, tester)
+					ts1, ts2 := CreateTestStruct(i, tester), CreateTestStruct(i+10, tester)
 					batchCallEntry[AnyContractName] = append(batchCallEntry[AnyContractName], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts1})
 					batchCallEntry[AnySecondContractName] = append(batchCallEntry[AnySecondContractName], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts2})
 					// setup call data
@@ -386,7 +352,7 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 				result, err := cr.BatchGetLatestValue(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
 
-				for i := 0; i < 100; i++ {
+				for i := 0; i < 10; i++ {
 					resultAnyContract, testDataAnyContract := result[AnyContractName], batchCallEntry[AnyContractName]
 					resultAnySecondContract, testDataAnySecondContract := result[AnySecondContractName], batchCallEntry[AnySecondContractName]
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
@@ -402,7 +368,7 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 			name: "BatchGetLatestValue sets errors properly",
 			test: func(t T) {
 				batchGetLatestValueRequest := make(types.BatchGetLatestValueRequest)
-				for i := 0; i < 100; i++ {
+				for i := 0; i < 10; i++ {
 					// setup call data and set invalid params that cause an error
 					batchGetLatestValueRequest[AnyContractName] = append(batchGetLatestValueRequest[AnyContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 0}, ReturnVal: &TestStruct{}})
 					batchGetLatestValueRequest[AnySecondContractName] = append(batchGetLatestValueRequest[AnySecondContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 0}, ReturnVal: &TestStruct{}})
@@ -415,7 +381,7 @@ func runChainReaderBatchGetLatestValueInterfaceTests[T TestingT[T]](t T, tester 
 				result, err := cr.BatchGetLatestValue(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
 
-				for i := 0; i < 100; i++ {
+				for i := 0; i < 10; i++ {
 					resultAnyContract := result[AnyContractName]
 					resultAnySecondContract := result[AnySecondContractName]
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)

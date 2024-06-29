@@ -47,7 +47,7 @@ func (a *mercuryRemoteAggregator) Aggregate(triggerEventID string, responses [][
 			a.lggr.Errorw("could not unwrap one of trigger events", "error", err)
 			continue
 		}
-		feedReports, err := a.codec.UnwrapValid(triggerEvent.Payload, a.allowedSigners, a.minRequiredSignatures)
+		feedReports, err := a.codec.Unwrap(triggerEvent.Payload)
 		if err != nil {
 			a.lggr.Errorw("could not unwrap one of capability responses", "error", err)
 			continue
@@ -56,11 +56,16 @@ func (a *mercuryRemoteAggregator) Aggregate(triggerEventID string, responses [][
 		for _, report := range feedReports {
 			latestTs, ok := latestTimestamps[datastreams.FeedID(report.FeedID)]
 			if !ok || report.ObservationTimestamp > latestTs {
-				latestReports[datastreams.FeedID(report.FeedID)] = report
-				latestTimestamps[datastreams.FeedID(report.FeedID)] = report.ObservationTimestamp
-			}
-			if report.ObservationTimestamp > latestGlobalTs {
-				latestGlobalTs = report.ObservationTimestamp
+				// lazy signature validation
+				if err := a.codec.Validate(report, a.allowedSigners, a.minRequiredSignatures); err != nil {
+					a.lggr.Errorw("invalid report", "error", err)
+				} else {
+					latestReports[datastreams.FeedID(report.FeedID)] = report
+					latestTimestamps[datastreams.FeedID(report.FeedID)] = report.ObservationTimestamp
+					if report.ObservationTimestamp > latestGlobalTs {
+						latestGlobalTs = report.ObservationTimestamp
+					}
+				}
 			}
 		}
 	}

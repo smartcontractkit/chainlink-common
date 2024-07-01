@@ -130,18 +130,25 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
-func (c *Client) GetLatestValue(ctx context.Context, contractName, method string, params, retVal any) error {
+func (c *Client) GetLatestValue(ctx context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
 	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
 	}
 
-	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams})
+	var pbConfidence pb.Confidence
+	if confidenceLevel == primitives.Finalized {
+		pbConfidence = pb.Confidence_Finalized
+	} else {
+		pbConfidence = pb.Confidence_Unconfirmed
+	}
+
+	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams, Confidence: pbConfidence})
 	if err != nil {
 		return net.WrapRPCErr(err)
 	}
 
-	return DecodeVersionedBytes(retVal, reply.RetVal)
+	return DecodeVersionedBytes(returnVal, reply.RetVal)
 }
 
 func (c *Client) QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
@@ -166,7 +173,7 @@ func (c *Client) QueryKey(ctx context.Context, contractName string, filter query
 func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
-		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
 	}
 	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
 	return net.WrapRPCErr(err)
@@ -211,16 +218,24 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	retVal, err := getContractEncodedType(request.ContractName, request.Method, c.impl, false)
-	if err != nil {
-		return nil, err
-	}
-	err = c.impl.GetLatestValue(ctx, request.ContractName, request.Method, params, retVal)
+	returnVal, err := getContractEncodedType(request.ContractName, request.Method, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
 
-	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
+	var confidenceLevel primitives.ConfidenceLevel
+	if request.Confidence == pb.Confidence_Unconfirmed {
+		confidenceLevel = primitives.Unconfirmed
+	} else if request.Confidence == pb.Confidence_Finalized {
+		confidenceLevel = primitives.Finalized
+	}
+
+	err = c.impl.GetLatestValue(ctx, request.ContractName, request.Method, confidenceLevel, params, returnVal)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedRetVal, err := EncodeVersionedBytes(returnVal, EncodingVersion(request.Params.Version))
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +275,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
 	tBindings := make([]types.BoundContract, len(bindings.Bindings))
 	for i, b := range bindings.Bindings {
-		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name, Pending: b.Pending}
+		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name}
 	}
 
 	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)

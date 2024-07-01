@@ -22,6 +22,7 @@ import (
 	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint
@@ -136,7 +137,7 @@ func TestGetLatestValue(t *testing.T) {
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
-				err := nilCr.GetLatestValue(ctx, "", "method", "anything", "anything")
+				err := nilCr.GetLatestValue(ctx, "", "method", "", "anything", "anything")
 				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 			})
 
@@ -144,7 +145,7 @@ func TestGetLatestValue(t *testing.T) {
 				es.err = errorType
 				t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := tests.Context(t)
-					err := chainReader.GetLatestValue(ctx, "", "method", nil, "anything")
+					err := chainReader.GetLatestValue(ctx, "", "method", "", nil, "anything")
 					assert.True(t, errors.Is(err, errorType))
 				})
 			}
@@ -153,7 +154,7 @@ func TestGetLatestValue(t *testing.T) {
 			es.err = nil
 			t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 				ctx := tests.Context(t)
-				err := chainReader.GetLatestValue(ctx, "", "method", &cannotEncode{}, &TestStruct{})
+				err := chainReader.GetLatestValue(ctx, "", "method", "", &cannotEncode{}, &TestStruct{})
 				assert.True(t, errors.Is(err, types.ErrInvalidType))
 			})
 		}
@@ -286,7 +287,7 @@ func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
 	f.stored = append(f.stored, *ts)
 }
 
-func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, params, returnVal any) error {
+func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, _ primitives.ConfidenceLevel, params, returnVal any) error {
 	if method == MethodReturningUint64 {
 		r := returnVal.(*uint64)
 		if contractName == AnyContractName {
@@ -390,7 +391,7 @@ func (e *errChainReader) Name() string { panic("unimplemented") }
 
 func (e *errChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
-func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any) error {
+func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _ primitives.ConfidenceLevel, _, _ any) error {
 	return e.err
 }
 
@@ -418,7 +419,7 @@ func (pc *protoConversionTestChainReader) Name() string { panic("unimplemented")
 
 func (pc *protoConversionTestChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
-func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any) error {
+func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _ string, _ primitives.ConfidenceLevel, _, _ any) error {
 	return nil
 }
 

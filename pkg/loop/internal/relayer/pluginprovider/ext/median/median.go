@@ -46,7 +46,7 @@ func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderC
 
 	maybeCr := chainreader.NewClient(b, cc)
 	var anyRetVal int
-	err := maybeCr.GetLatestValue(context.Background(), "", "", nil, &anyRetVal)
+	err := maybeCr.GetLatestValue(context.Background(), types.BoundContract{}, nil, &anyRetVal)
 	if status.Convert(err).Code() != codes.Unimplemented {
 		m.chainReader = maybeCr
 	}

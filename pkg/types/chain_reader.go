@@ -16,10 +16,11 @@ const (
 	ErrNotFound                 = NotFoundError("not found")
 )
 
-type ContractReader = ChainReader
+// Deprecated: Use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
+type ChainReader = ContractReader
 
-// Deprecated: use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
-type ChainReader interface {
+// ContractReader defines essential read operations a chain should implement for reading contract values and events.
+type ContractReader interface {
 	services.Service
 	// GetLatestValue gets the latest value....
 	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig.
@@ -44,14 +45,17 @@ type ChainReader interface {
 	// Note that implementations should ignore extra fields in params that are not expected in the call to allow easier
 	// use across chains and contract versions.
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
-	GetLatestValue(ctx context.Context, contractName, method string, params, returnVal any) error
+	GetLatestValue(ctx context.Context, contract BoundContract, params, returnVal any) error
 
-	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
-	// contract is not known by the ChainReader, or if the Address is invalid
+	// Bind will add provided bindings and will return an error if the contract is not known by the ContractReader, or if
+	// the Address is invalid. Any provided binding that already exists should result in a noop.
 	Bind(ctx context.Context, bindings []BoundContract) error
 
+	// Unbind will remove all bindings provided.
+	Unbind(ctx context.Context, bindings []BoundContract) error
+
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
-	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryKey(ctx context.Context, contract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 
 type Head struct {
@@ -68,11 +72,12 @@ type Sequence struct {
 }
 
 type BoundContract struct {
-	Address string
-	Name    string
-	Pending bool
+	Address  string
+	Contract string
+	Method   string
+	Pending  bool
 }
 
 func (bc BoundContract) Key() string {
-	return bc.Address + "-" + bc.Name
+	return bc.Address + "-" + bc.Contract + "-" + bc.Method
 }

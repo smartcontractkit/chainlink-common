@@ -65,12 +65,12 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 
 				actual := &TestStruct{}
 				params := &LatestParams{I: 1}
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodTakingLatestParamsReturningTestStruct, params, actual))
+				require.NoError(t, cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: MethodTakingLatestParamsReturningTestStruct}, params, actual))
 				assert.Equal(t, &firstItem, actual)
 
 				params.I = 2
 				actual = &TestStruct{}
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodTakingLatestParamsReturningTestStruct, params, actual))
+				require.NoError(t, cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: MethodTakingLatestParamsReturningTestStruct}, params, actual))
 				assert.Equal(t, &secondItem, actual)
 			},
 		},
@@ -82,7 +82,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				var prim uint64
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningUint64, nil, &prim))
+				require.NoError(t, cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: MethodReturningUint64}, nil, &prim))
 
 				assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
 			},
@@ -95,7 +95,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				var prim uint64
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, DifferentMethodReturningUint64, nil, &prim))
+				require.NoError(t, cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: DifferentMethodReturningUint64}, nil, &prim))
 
 				assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, prim)
 			},
@@ -115,7 +115,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				require.NoError(t, cr.Bind(ctx, bindings))
 
 				var prim uint64
-				require.NoError(t, cr.GetLatestValue(ctx, AnySecondContractName, MethodReturningUint64, nil, &prim))
+				require.NoError(t, cr.GetLatestValue(ctx, types.BoundContract{Contract: AnySecondContractName, Method: MethodReturningUint64}, nil, &prim))
 
 				assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, prim)
 			},
@@ -128,7 +128,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				var slice []uint64
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningUint64Slice, nil, &slice))
+				require.NoError(t, cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: MethodReturningUint64Slice}, nil, &slice))
 
 				assert.Equal(t, AnySliceToReadWithoutAnArgument, slice)
 			},
@@ -144,7 +144,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				actual := &TestStructWithExtraField{}
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningSeenStruct, testStruct, actual))
+				require.NoError(t, cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: MethodReturningSeenStruct}, testStruct, actual))
 
 				expected := &TestStructWithExtraField{
 					ExtraField: AnyExtraValue,
@@ -160,14 +160,14 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				ts := CreateTestStruct[T](0, tester)
+				ts := CreateTestStruct(0, tester)
 				tester.TriggerEvent(t, &ts)
-				ts = CreateTestStruct[T](1, tester)
+				ts = CreateTestStruct(1, tester)
 				tester.TriggerEvent(t, &ts)
 
 				result := &TestStruct{}
 				assert.Eventually(t, func() bool {
-					err := cr.GetLatestValue(ctx, AnyContractName, EventName, nil, &result)
+					err := cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: EventName}, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
@@ -180,7 +180,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
 				result := &TestStruct{}
-				err := cr.GetLatestValue(ctx, AnyContractName, EventName, nil, &result)
+				err := cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: EventName}, nil, &result)
 				assert.True(t, errors.Is(err, types.ErrNotFound))
 			},
 		},
@@ -198,13 +198,14 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				filterParams := &FilterEventParams{Field: *ts0.Field}
 				assert.Never(t, func() bool {
 					result := &TestStruct{}
-					err := cr.GetLatestValue(ctx, AnyContractName, EventWithFilterName, filterParams, &result)
+					err := cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: EventWithFilterName}, filterParams, &result)
 					return err == nil && reflect.DeepEqual(result, &ts1)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+
 				// get the result one more time to verify it.
 				// Using the result from the Never statement by creating result outside the block is a data race
 				result := &TestStruct{}
-				err := cr.GetLatestValue(ctx, AnyContractName, EventWithFilterName, filterParams, &result)
+				err := cr.GetLatestValue(ctx, types.BoundContract{Contract: AnyContractName, Method: EventWithFilterName}, filterParams, &result)
 				require.NoError(t, err)
 				assert.Equal(t, &ts0, result)
 			},
@@ -223,7 +224,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
-				logs, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &TestStruct{})
+				logs, err := cr.QueryKey(ctx, types.BoundContract{Contract: AnyContractName}, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &TestStruct{})
 
 				require.NoError(t, err)
 				assert.Len(t, logs, 0)
@@ -235,15 +236,15 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				ts1 := CreateTestStruct[T](0, tester)
+				ts1 := CreateTestStruct(0, tester)
 				tester.TriggerEvent(t, &ts1)
-				ts2 := CreateTestStruct[T](1, tester)
+				ts2 := CreateTestStruct(1, tester)
 				tester.TriggerEvent(t, &ts2)
 
 				ts := &TestStruct{}
 				assert.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
-					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
+					sequences, err := cr.QueryKey(ctx, types.BoundContract{Contract: AnyContractName}, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
 					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},

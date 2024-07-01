@@ -174,11 +174,10 @@ type TargetCapability interface {
 }
 
 type DON struct {
-	ID      string
-	Members []p2ptypes.PeerID
-	F       uint8
-
-	Config []byte
+	ID            uint32
+	ConfigVersion uint32 // ConfigCount in the registry
+	Members       []p2ptypes.PeerID
+	F             uint8
 }
 
 type Node struct {

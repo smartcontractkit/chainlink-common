@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )

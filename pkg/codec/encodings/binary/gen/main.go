@@ -6,12 +6,18 @@ import (
 	"fmt"
 	"go/format"
 	"os"
-	"runtime"
+	"runtime/debug"
 	"strings"
 	"text/template"
 )
 
 func main() {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		panic("build info unavailable")
+	}
+	location := strings.TrimPrefix(bi.Path, "github.com/smartcontractkit/")
+
 	for _, gen := range []genInfo{
 		{template: intsTemplate, fileName: "int_gen.go"},
 		{template: intsTestTemplate, fileName: "int_gen_test.go"},
@@ -33,22 +39,9 @@ func main() {
 			panic(err)
 		}
 
-		_, location, _, ok := runtime.Caller(0)
-		if !ok {
-			panic("cannot find location of file")
-		}
-		// We need to use strings.LastIndex instead of strings.Index because the
-		// file path in CI can contain the string "chainlink-common" multiple
-		// times.
-		chainlinkLoc := strings.LastIndex(location, "chainlink-common/")
-		if chainlinkLoc == -1 {
-			panic("cannot find location of chainlink-common, repository must be in a folder named chainlink-common when cloned")
-		}
-		location = location[chainlinkLoc:]
-
 		res = []byte(
 			fmt.Sprintf(
-				"// DO NOT MODIFY: automatically generated from %s using the template %s\n\n%s",
+				"// DO NOT MODIFY: automatically generated from %s/main.go using the template %s\n\n%s",
 				location,
 				gen.fileName,
 				string(res),

@@ -73,7 +73,6 @@ type SignersMetadata struct {
 	MinRequiredSignatures int
 }
 
-//go:generate mockery --quiet --name ReportCodec --output ./mocks/ --case=underscore
 type ReportCodec interface {
 	// unwrap reports and convert to a list of FeedReport
 	Unwrap(wrapped values.Value) ([]FeedReport, error)

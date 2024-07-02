@@ -27,7 +27,6 @@ type RelayArgs struct {
 	MercuryCredentials *types.MercuryCredentials
 }
 
-//go:generate mockery --quiet --name Relayer --output ./mocks/ --case=underscore
 type Relayer interface {
 	services.Service
 	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (types.PluginProvider, error)

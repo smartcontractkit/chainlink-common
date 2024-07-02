@@ -336,7 +336,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	var sqNr uint64
 	weid := uuid.New().String()
 	wowner := uuid.New().String()
-	donId := "fooaa"
+	donId := uint32(1)
 	id := &pbtypes.Id{
 		WorkflowExecutionId: weid,
 		WorkflowId:          workflowTestID,

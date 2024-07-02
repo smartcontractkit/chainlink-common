@@ -159,30 +159,30 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	expectedNode := capabilities.Node{
 		PeerID: &pid,
 		WorkflowDON: capabilities.DON{
-			ID: "workflow-don-id",
+			ID: 11,
 			Members: []p2ptypes.PeerID{
 				[32]byte{0: 2},
 				[32]byte{0: 3},
 			},
-			F:      2,
-			Config: []byte{1, 2, 3},
+			F:             2,
+			ConfigVersion: 1,
 		},
 		CapabilityDONs: []capabilities.DON{
 			{
-				ID:      "don-1",
-				Members: []p2ptypes.PeerID{},
-				F:       1,
-				Config:  []byte{4, 5, 6},
+				ID:            22,
+				Members:       []p2ptypes.PeerID{},
+				F:             1,
+				ConfigVersion: 2,
 			},
 			{
-				ID: "don-2",
+				ID: 33,
 				Members: []p2ptypes.PeerID{
 					[32]byte{0: 4},
 					[32]byte{0: 5},
 					[32]byte{0: 6},
 				},
-				F:      3,
-				Config: []byte{7, 8, 9},
+				F:             3,
+				ConfigVersion: 3,
 			},
 		},
 	}
@@ -199,7 +199,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.ElementsMatch(t, expectedNode.WorkflowDON.Members, actualNode.WorkflowDON.Members)
 	require.Equal(t, expectedNode.WorkflowDON.ID, actualNode.WorkflowDON.ID)
 	require.Equal(t, expectedNode.WorkflowDON.F, actualNode.WorkflowDON.F)
-	require.Equal(t, expectedNode.WorkflowDON.Config, actualNode.WorkflowDON.Config)
+	require.Equal(t, expectedNode.WorkflowDON.ConfigVersion, actualNode.WorkflowDON.ConfigVersion)
 
 	// check capability DONs
 	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
@@ -208,7 +208,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		require.Len(t, expectedNode.CapabilityDONs[i].Members, len(actualNode.CapabilityDONs[i].Members))
 		require.ElementsMatch(t, expectedNode.CapabilityDONs[i].Members, actualNode.CapabilityDONs[i].Members)
 		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
-		require.Equal(t, expectedNode.CapabilityDONs[i].Config, actualNode.CapabilityDONs[i].Config)
+		require.Equal(t, expectedNode.CapabilityDONs[i].ConfigVersion, actualNode.CapabilityDONs[i].ConfigVersion)
 	}
 
 	// Check zero values for empty node
@@ -218,10 +218,10 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, actualNode.PeerID)
 	require.Equal(t, capabilities.DON{
-		ID:      "",
-		Members: nil,
-		F:       0,
-		Config:  nil,
+		ID:            0,
+		Members:       nil,
+		F:             0,
+		ConfigVersion: 0,
 	}, actualNode.WorkflowDON)
 	require.Empty(t, actualNode.CapabilityDONs)
 
@@ -365,23 +365,23 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 }
 func TestToDON(t *testing.T) {
 	don := &pb.DON{
-		Id: "don-id",
+		Id: 0,
 		Members: [][]byte{
 			{0: 4, 31: 0},
 			{0: 5, 31: 0},
 		},
-		F:      2,
-		Config: []byte{7, 8, 9},
+		F:             2,
+		ConfigVersion: 1,
 	}
 
 	expected := capabilities.DON{
-		ID: "don-id",
+		ID: 0,
 		Members: []p2ptypes.PeerID{
 			[32]byte{0: 4},
 			[32]byte{0: 5},
 		},
-		F:      2,
-		Config: []byte{7, 8, 9},
+		F:             2,
+		ConfigVersion: 1,
 	}
 
 	actual := toDON(don)

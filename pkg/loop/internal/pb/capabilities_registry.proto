@@ -26,10 +26,10 @@ enum ExecuteAPIType {
 
 // DON has arguments for [github.com/smartcontractkit/chainlink-common/pkg/capabilities.DON].
 message DON {
-  string id = 1;
+  uint32 id = 1;
   repeated bytes members = 2; // [n][32]byte where n is the number of members
   uint32 f = 3; // uint8
-  bytes config  = 4;
+  uint32 configVersion  = 4;
 }
 
 // GetLocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetLocalNode].

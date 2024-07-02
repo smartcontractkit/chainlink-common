@@ -30,10 +30,10 @@ func toDON(don *pb.DON) capabilities.DON {
 	}
 
 	return capabilities.DON{
-		ID:      don.Id,
-		Members: members,
-		F:       uint8(don.F),
-		Config:  don.Config,
+		ID:            don.Id,
+		Members:       members,
+		F:             uint8(don.F),
+		ConfigVersion: don.ConfigVersion,
 	}
 }
 
@@ -255,10 +255,10 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 		membersBytes[i] = m[:]
 	}
 	workflowDONpb := &pb.DON{
-		Id:      node.WorkflowDON.ID,
-		Members: membersBytes,
-		F:       uint32(node.WorkflowDON.F),
-		Config:  node.WorkflowDON.Config,
+		Id:            node.WorkflowDON.ID,
+		Members:       membersBytes,
+		F:             uint32(node.WorkflowDON.F),
+		ConfigVersion: node.WorkflowDON.ConfigVersion,
 	}
 
 	// convert capabilityDONs to pb.DON
@@ -270,10 +270,10 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 			membersBytes[j] = m[:]
 		}
 		capabilityDONsPb[i] = &pb.DON{
-			Id:      don.ID,
-			Members: membersBytes,
-			F:       uint32(don.F),
-			Config:  don.Config,
+			Id:            don.ID,
+			Members:       membersBytes,
+			F:             uint32(don.F),
+			ConfigVersion: don.ConfigVersion,
 		}
 	}
 

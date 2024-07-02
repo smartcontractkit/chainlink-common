@@ -237,6 +237,7 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	Relayer_NewChainWriter_FullMethodName    = "/loop.Relayer/NewChainWriter"
 	Relayer_NewContractReader_FullMethodName = "/loop.Relayer/NewContractReader"
 	Relayer_NewConfigProvider_FullMethodName = "/loop.Relayer/NewConfigProvider"
 	Relayer_NewPluginProvider_FullMethodName = "/loop.Relayer/NewPluginProvider"
@@ -249,6 +250,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RelayerClient interface {
+	NewChainWriter(ctx context.Context, in *NewChainWriterRequest, opts ...grpc.CallOption) (*NewChainWriterReply, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error)
 	NewConfigProvider(ctx context.Context, in *NewConfigProviderRequest, opts ...grpc.CallOption) (*NewConfigProviderReply, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderReply, error)
@@ -263,6 +265,15 @@ type relayerClient struct {
 
 func NewRelayerClient(cc grpc.ClientConnInterface) RelayerClient {
 	return &relayerClient{cc}
+}
+
+func (c *relayerClient) NewChainWriter(ctx context.Context, in *NewChainWriterRequest, opts ...grpc.CallOption) (*NewChainWriterReply, error) {
+	out := new(NewChainWriterReply)
+	err := c.cc.Invoke(ctx, Relayer_NewChainWriter_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *relayerClient) NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error) {
@@ -323,6 +334,7 @@ func (c *relayerClient) Transact(ctx context.Context, in *TransactionRequest, op
 // All implementations must embed UnimplementedRelayerServer
 // for forward compatibility
 type RelayerServer interface {
+	NewChainWriter(context.Context, *NewChainWriterRequest) (*NewChainWriterReply, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error)
 	NewConfigProvider(context.Context, *NewConfigProviderRequest) (*NewConfigProviderReply, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderReply, error)
@@ -336,6 +348,9 @@ type RelayerServer interface {
 type UnimplementedRelayerServer struct {
 }
 
+func (UnimplementedRelayerServer) NewChainWriter(context.Context, *NewChainWriterRequest) (*NewChainWriterReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewChainWriter not implemented")
+}
 func (UnimplementedRelayerServer) NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
 }
@@ -365,6 +380,24 @@ type UnsafeRelayerServer interface {
 
 func RegisterRelayerServer(s grpc.ServiceRegistrar, srv RelayerServer) {
 	s.RegisterService(&Relayer_ServiceDesc, srv)
+}
+
+func _Relayer_NewChainWriter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewChainWriterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerServer).NewChainWriter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Relayer_NewChainWriter_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerServer).NewChainWriter(ctx, req.(*NewChainWriterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Relayer_NewContractReader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -482,6 +515,10 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.Relayer",
 	HandlerType: (*RelayerServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "NewChainWriter",
+			Handler:    _Relayer_NewChainWriter_Handler,
+		},
 		{
 			MethodName: "NewContractReader",
 			Handler:    _Relayer_NewContractReader_Handler,

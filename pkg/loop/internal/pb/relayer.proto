@@ -41,6 +41,7 @@ message SignReply {
 }
 
 service Relayer {
+  rpc NewChainWriter(NewChainWriterRequest) returns (NewChainWriterReply) {}
   rpc NewContractReader (NewContractReaderRequest) returns (NewContractReaderReply) {}
   rpc NewConfigProvider (NewConfigProviderRequest) returns (NewConfigProviderReply) {}
   rpc NewPluginProvider (NewPluginProviderRequest) returns (NewPluginProviderReply) {}
@@ -64,6 +65,16 @@ message RelayArgs {
 message PluginArgs {
   string transmitterID = 1;
   bytes pluginConfig = 2;
+}
+
+// NewChainWriterReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewChainWriter].
+message NewChainWriterRequest {
+    bytes chainWriterConfig = 1;
+}
+
+// NewChainWriterReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewChainWriter].
+message NewChainWriterReply {
+    uint32 chainWriterID = 1;
 }
 
 // NewContractReaderRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractReader].

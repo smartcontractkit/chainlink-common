@@ -75,11 +75,14 @@ type SignersMetadata struct {
 
 //go:generate mockery --quiet --name ReportCodec --output ./mocks/ --case=underscore
 type ReportCodec interface {
-	// unwrap and validate each report, then convert to a list of Feed reports
-	UnwrapValid(wrapped values.Value, allowedSigners [][]byte, minRequiredSignatures int) ([]FeedReport, error)
+	// unwrap reports and convert to a list of FeedReport
+	Unwrap(wrapped values.Value) ([]FeedReport, error)
 
-	// convert back to Value
+	// wrap a list of FeedReport to Value
 	Wrap(reports []FeedReport) (values.Value, error)
+
+	// validate signatures on a single FeedReport
+	Validate(feedReport FeedReport, allowedSigners [][]byte, minRequiredSignatures int) error
 }
 
 // Helpers for unwrapping a list of FeedReports - more efficient than using mapstructure/reflection

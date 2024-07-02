@@ -113,7 +113,7 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// OnRampReader test case
-	otherOnRamp, err := other.NewOnRampReader(ctx, "ignored")
+	otherOnRamp, err := other.NewOnRampReader(ctx, "ignored", 0, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create other on ramp reader: %w", err)
 	}
@@ -143,7 +143,7 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// TokenPoolBatchedReader test case
-	otherPool, err := other.NewTokenPoolBatchedReader(ctx)
+	otherPool, err := other.NewTokenPoolBatchedReader(ctx, "ignored", 0)
 	if err != nil {
 		return fmt.Errorf("failed to create other token pool batched reader: %w", err)
 	}
@@ -153,7 +153,7 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	}
 
 	// SourceNativeToken test case
-	otherSourceNativeToken, err := other.SourceNativeToken(ctx)
+	otherSourceNativeToken, err := other.SourceNativeToken(ctx, "ignored")
 	if err != nil {
 		return fmt.Errorf("failed to get other source native token: %w", err)
 	}
@@ -184,7 +184,7 @@ func (s staticExecProvider) NewOffRampReader(ctx context.Context, addr ccip.Addr
 }
 
 // NewOnRampReader implements ExecProviderEvaluator.
-func (s staticExecProvider) NewOnRampReader(ctx context.Context, addr ccip.Address) (ccip.OnRampReader, error) {
+func (s staticExecProvider) NewOnRampReader(ctx context.Context, addr ccip.Address, srcChainSelector uint64, dstChainSelector uint64) (ccip.OnRampReader, error) {
 	return s.onRampReader, nil
 }
 
@@ -199,7 +199,7 @@ func (s staticExecProvider) NewTokenDataReader(ctx context.Context, tokenAddress
 }
 
 // NewTokenPoolBatchedReader implements ExecProviderEvaluator.
-func (s staticExecProvider) NewTokenPoolBatchedReader(ctx context.Context) (ccip.TokenPoolBatchedReader, error) {
+func (s staticExecProvider) NewTokenPoolBatchedReader(ctx context.Context, offRampAddress ccip.Address, sourceChainSelector uint64) (ccip.TokenPoolBatchedReader, error) {
 	return s.tokenPoolBatchedReader, nil
 }
 
@@ -214,7 +214,7 @@ func (s staticExecProvider) Ready() error {
 }
 
 // SourceNativeToken implements ExecProviderEvaluator.
-func (s staticExecProvider) SourceNativeToken(ctx context.Context) (ccip.Address, error) {
+func (s staticExecProvider) SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error) {
 	return s.sourceNativeTokenResponse, nil
 }
 
@@ -228,7 +228,7 @@ func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other
 	t.Run("StaticExecProvider", func(t *testing.T) {
 		// OnRampReader test case
 		t.Run(onRampComponent, func(t *testing.T) {
-			other, err := other.NewOnRampReader(ctx, "ignored")
+			other, err := other.NewOnRampReader(ctx, "ignored", 0, 0)
 			require.NoError(t, err)
 			assert.NoError(t, s.onRampReader.Evaluate(ctx, other))
 		})
@@ -249,7 +249,7 @@ func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other
 
 		// SourceNativeToken test case
 		t.Run("SourceNativeToken", func(t *testing.T) {
-			other, err := other.SourceNativeToken(ctx)
+			other, err := other.SourceNativeToken(ctx, "ignored")
 			require.NoError(t, err)
 			assert.Equal(t, s.sourceNativeTokenResponse, other)
 		})

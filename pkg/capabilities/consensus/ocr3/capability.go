@@ -52,6 +52,9 @@ type capability struct {
 	encoders       map[string]types.Encoder
 
 	callbackChannelBufferSize int
+
+	registeredWorkflowsIDs map[string]bool
+	registeredWorkflowsMu  sync.RWMutex
 }
 
 var _ capabilityIface = (*capability)(nil)
@@ -74,6 +77,7 @@ func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time
 		encoders:          map[string]types.Encoder{},
 
 		callbackChannelBufferSize: callbackChannelBufferSize,
+		registeredWorkflowsIDs:    map[string]bool{},
 	}
 	return o
 }
@@ -125,6 +129,9 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 	o.encoders[request.Metadata.WorkflowID] = encoder
+	o.registeredWorkflowsMu.Lock()
+	defer o.registeredWorkflowsMu.Unlock()
+	o.registeredWorkflowsIDs[request.Metadata.WorkflowID] = true
 	return nil
 }
 
@@ -146,7 +153,27 @@ func (o *capability) getEncoder(workflowID string) (types.Encoder, error) {
 	return enc, nil
 }
 
+func (o *capability) getRegisteredWorkflowsIDs() []string {
+	o.registeredWorkflowsMu.RLock()
+	defer o.registeredWorkflowsMu.RUnlock()
+
+	workflows := make([]string, 0, len(o.registeredWorkflowsIDs))
+	for wf := range o.registeredWorkflowsIDs {
+		workflows = append(workflows, wf)
+	}
+	return workflows
+}
+
+func (o *capability) unregisterWorkflowID(workflowID string) {
+	o.registeredWorkflowsMu.Lock()
+	defer o.registeredWorkflowsMu.Unlock()
+	delete(o.registeredWorkflowsIDs, workflowID)
+}
+
 func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+	o.registeredWorkflowsMu.Lock()
+	defer o.registeredWorkflowsMu.Unlock()
+	delete(o.registeredWorkflowsIDs, request.Metadata.WorkflowID)
 	delete(o.aggregators, request.Metadata.WorkflowID)
 	delete(o.encoders, request.Metadata.WorkflowID)
 	return nil
@@ -243,16 +270,17 @@ func (o *capability) queueRequestForProcessing(
 	}
 
 	r := &requests.Request{
-		StopCh:              make(chan struct{}),
-		CallbackCh:          callbackCh,
-		WorkflowExecutionID: metadata.WorkflowExecutionID,
-		WorkflowID:          metadata.WorkflowID,
-		WorkflowOwner:       metadata.WorkflowOwner,
-		WorkflowName:        metadata.WorkflowName,
-		ReportID:            c.ReportID,
-		WorkflowDonID:       metadata.WorkflowDonID,
-		Observations:        i.Observations,
-		ExpiresAt:           o.clock.Now().Add(requestTimeout),
+		StopCh:                   make(chan struct{}),
+		CallbackCh:               callbackCh,
+		WorkflowExecutionID:      metadata.WorkflowExecutionID,
+		WorkflowID:               metadata.WorkflowID,
+		WorkflowOwner:            metadata.WorkflowOwner,
+		WorkflowName:             metadata.WorkflowName,
+		ReportID:                 c.ReportID,
+		WorkflowDonID:            metadata.WorkflowDonID,
+		WorkflowDonConfigVersion: metadata.WorkflowDonConfigVersion,
+		Observations:             i.Observations,
+		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}
 
 	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)

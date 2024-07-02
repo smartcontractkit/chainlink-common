@@ -2,6 +2,7 @@ package datafeeds_test
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"math/big"
 	"testing"
 
@@ -22,6 +23,7 @@ import (
 
 var (
 	feedIDA                 = datastreams.FeedID("0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292")
+	remappedIDA             = "0x680084f7347baFfb5C323c2982dfC90e04F9F918"
 	deviationA              = decimal.NewFromFloat(0.1)
 	heartbeatA              = 60
 	feedIDB                 = datastreams.FeedID("0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d")
@@ -70,7 +72,8 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 			FullReport:           mercuryFullReportA,
 		},
 	}
-	codec.On("UnwrapValid", mock.Anything, mock.Anything, mock.Anything).Return(latestMercuryReports, nil)
+	codec.On("Unwrap", mock.Anything).Return(latestMercuryReports, nil)
+	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	outcome, err = agg.Aggregate(outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
@@ -92,13 +95,16 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	require.True(t, ok)
 
 	idBytes := feedIDA.Bytes()
+	remappedIDABytes, err := hex.DecodeString(remappedIDA[2:])
+	require.NoError(t, err)
 	expected := map[string]any{
 		datafeeds.TopLevelListOutputFieldName: []any{
 			map[string]any{
-				datafeeds.FeedIDOutputFieldName:    idBytes[:],
-				datafeeds.RawReportOutputFieldName: mercuryFullReportA,
-				datafeeds.TimestampOutputFieldName: int64(1),
-				datafeeds.PriceOutputFieldName:     big.NewInt(100),
+				datafeeds.FeedIDOutputFieldName:     idBytes[:],
+				datafeeds.RawReportOutputFieldName:  mercuryFullReportA,
+				datafeeds.TimestampOutputFieldName:  int64(1),
+				datafeeds.PriceOutputFieldName:      big.NewInt(100),
+				datafeeds.RemappedIDOutputFieldName: remappedIDABytes,
 			},
 		},
 	}
@@ -134,7 +140,8 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 			BenchmarkPrice:       big.NewInt(200).Bytes(),
 		},
 	}
-	codec.On("UnwrapValid", mock.Anything, mock.Anything, mock.Anything).Return(latestReportsRound1, nil).Twice()
+	codec.On("Unwrap", mock.Anything).Return(latestReportsRound1, nil).Twice()
+	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	outcome, err := agg.Aggregate(nil, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
@@ -153,7 +160,8 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 			BenchmarkPrice:       big.NewInt(400).Bytes(),
 		},
 	}
-	codec.On("UnwrapValid", mock.Anything, mock.Anything, mock.Anything).Return(latestReportsRound2, nil).Twice()
+	codec.On("Unwrap", mock.Anything).Return(latestReportsRound2, nil).Twice()
+	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	outcome, err = agg.Aggregate(outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
@@ -172,7 +180,8 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 			BenchmarkPrice:       big.NewInt(600).Bytes(),
 		},
 	}
-	codec.On("UnwrapValid", mock.Anything, mock.Anything, mock.Anything).Return(latestReportsRound3, nil).Twice()
+	codec.On("Unwrap", mock.Anything).Return(latestReportsRound3, nil).Twice()
+	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	outcome, err = agg.Aggregate(outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
@@ -231,8 +240,9 @@ func getConfig(t *testing.T, feedID string, deviation string, heartbeat int) *va
 	unwrappedConfig := map[string]any{
 		"feeds": map[string]any{
 			feedID: map[string]any{
-				"deviation": deviation,
-				"heartbeat": heartbeat,
+				"deviation":  deviation,
+				"heartbeat":  heartbeat,
+				"remappedID": remappedIDA,
 			},
 			feedIDB.String(): map[string]any{
 				"deviation": deviationB.String(),

@@ -70,16 +70,17 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value values.Value
+	Value *values.Map
 	Err   error
 }
 
 type RequestMetadata struct {
-	WorkflowID          string
-	WorkflowOwner       string
-	WorkflowExecutionID string
-	WorkflowName        string
-	WorkflowDonID       string
+	WorkflowID               string
+	WorkflowOwner            string
+	WorkflowExecutionID      string
+	WorkflowName             string
+	WorkflowDonID            uint32
+	WorkflowDonConfigVersion uint32
 }
 
 type RegistrationMetadata struct {
@@ -174,11 +175,10 @@ type TargetCapability interface {
 }
 
 type DON struct {
-	ID      string
-	Members []p2ptypes.PeerID
-	F       uint8
-
-	Config []byte
+	ID            uint32
+	ConfigVersion uint32
+	Members       []p2ptypes.PeerID
+	F             uint8
 }
 
 type Node struct {

@@ -111,7 +111,7 @@ func (s staticCommitProvider) Evaluate(ctx context.Context, other types.CCIPComm
 	}
 
 	// OnRampReader test case
-	otherOnRamp, err := other.NewOnRampReader(ctx, "ignored")
+	otherOnRamp, err := other.NewOnRampReader(ctx, "ignored", 0, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create other on ramp reader: %w", err)
 	}
@@ -141,7 +141,7 @@ func (s staticCommitProvider) Evaluate(ctx context.Context, other types.CCIPComm
 	}
 
 	// SourceNativeToken test case
-	otherSourceNativeToken, err := other.SourceNativeToken(ctx)
+	otherSourceNativeToken, err := other.SourceNativeToken(ctx, "ignored")
 	if err != nil {
 		return fmt.Errorf("failed to get other source native token: %w", err)
 	}
@@ -172,7 +172,7 @@ func (s staticCommitProvider) NewOffRampReader(ctx context.Context, addr ccip.Ad
 }
 
 // NewOnRampReader implements CommitProviderEvaluator.
-func (s staticCommitProvider) NewOnRampReader(ctx context.Context, addr ccip.Address) (ccip.OnRampReader, error) {
+func (s staticCommitProvider) NewOnRampReader(ctx context.Context, addr ccip.Address, srcChainSelector uint64, dstChainSelector uint64) (ccip.OnRampReader, error) {
 	return s.onRampReader, nil
 }
 
@@ -197,7 +197,7 @@ func (s staticCommitProvider) Ready() error {
 }
 
 // SourceNativeToken implements CommitProviderEvaluator.
-func (s staticCommitProvider) SourceNativeToken(ctx context.Context) (ccip.Address, error) {
+func (s staticCommitProvider) SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error) {
 	return s.sourceNativeTokenResponse, nil
 }
 
@@ -211,7 +211,7 @@ func (s staticCommitProvider) AssertEqual(ctx context.Context, t *testing.T, oth
 	t.Run("StaticCommitProvider", func(t *testing.T) {
 		// OnRampReader test case
 		t.Run(onRampComponent, func(t *testing.T) {
-			other, err := other.NewOnRampReader(ctx, "ignored")
+			other, err := other.NewOnRampReader(ctx, "ignored", 0, 0)
 			require.NoError(t, err)
 			assert.NoError(t, s.onRampReader.Evaluate(ctx, other))
 		})
@@ -232,7 +232,7 @@ func (s staticCommitProvider) AssertEqual(ctx context.Context, t *testing.T, oth
 
 		// SourceNativeToken test case
 		t.Run("SourceNativeToken", func(t *testing.T) {
-			other, err := other.SourceNativeToken(ctx)
+			other, err := other.SourceNativeToken(ctx, "ignored")
 			require.NoError(t, err)
 			assert.Equal(t, s.sourceNativeTokenResponse, other)
 		})

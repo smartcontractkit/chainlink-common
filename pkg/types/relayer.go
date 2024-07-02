@@ -90,6 +90,7 @@ type ChainService interface {
 type Relayer interface {
 	Service
 	NewContractReader(contractReaderConfig []byte) (ContractReader, error)
+	NewContractStateReader(config []byte) (ContractStateReader, error)
 	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)

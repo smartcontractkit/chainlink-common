@@ -27,11 +27,12 @@ message CapabilityInfoReply {
 }
 
 message RequestMetadata {
+  reserved 5;
   string workflow_id = 1;
   string workflow_execution_id = 2;
   string workflow_owner = 3;
   string workflow_name = 4;
-  string workflow_don_id = 5;
+  uint32 workflow_don_id = 6;
 }
 
 message CapabilityRequest {

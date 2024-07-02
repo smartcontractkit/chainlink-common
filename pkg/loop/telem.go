@@ -121,6 +121,7 @@ func SetupTracing(config TracingConfig) (err error) {
 
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(traceExporter),
+		//TODO replace/add beholder exporter?
 		sdktrace.WithResource(resource),
 		sdktrace.WithSampler(
 			sdktrace.ParentBased(

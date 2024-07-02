@@ -270,16 +270,17 @@ func (o *capability) queueRequestForProcessing(
 	}
 
 	r := &requests.Request{
-		StopCh:              make(chan struct{}),
-		CallbackCh:          callbackCh,
-		WorkflowExecutionID: metadata.WorkflowExecutionID,
-		WorkflowID:          metadata.WorkflowID,
-		WorkflowOwner:       metadata.WorkflowOwner,
-		WorkflowName:        metadata.WorkflowName,
-		ReportID:            c.ReportID,
-		WorkflowDonID:       metadata.WorkflowDonID,
-		Observations:        i.Observations,
-		ExpiresAt:           o.clock.Now().Add(requestTimeout),
+		StopCh:                   make(chan struct{}),
+		CallbackCh:               callbackCh,
+		WorkflowExecutionID:      metadata.WorkflowExecutionID,
+		WorkflowID:               metadata.WorkflowID,
+		WorkflowOwner:            metadata.WorkflowOwner,
+		WorkflowName:             metadata.WorkflowName,
+		ReportID:                 c.ReportID,
+		WorkflowDonID:            metadata.WorkflowDonID,
+		WorkflowDonConfigVersion: metadata.WorkflowDonConfigVersion,
+		Observations:             i.Observations,
+		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}
 
 	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)

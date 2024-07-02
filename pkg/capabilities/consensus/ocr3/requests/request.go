@@ -17,12 +17,13 @@ type Request struct {
 	CallbackCh chan capabilities.CapabilityResponse
 	StopCh     services.StopChan
 
-	WorkflowExecutionID string
-	WorkflowID          string
-	WorkflowOwner       string
-	WorkflowName        string
-	WorkflowDonID       string
-	ReportID            string
+	WorkflowExecutionID      string
+	WorkflowID               string
+	WorkflowOwner            string
+	WorkflowName             string
+	WorkflowDonID            uint32
+	WorkflowDonConfigVersion uint32
+	ReportID                 string
 }
 
 type Response struct {

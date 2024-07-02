@@ -76,7 +76,7 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 	// find latest valid report for each feed ID
 	latestReportPerFeed := make(map[datastreams.FeedID]datastreams.FeedReport)
 	for nodeID, payload := range payloads {
-		mercuryReports, err := a.reportCodec.UnwrapValid(payload, allowedSigners, minRequiredSignatures)
+		mercuryReports, err := a.reportCodec.Unwrap(payload)
 		if err != nil {
 			a.lggr.Errorf("node %d contributed with invalid reports: %v", nodeID, err)
 			continue
@@ -84,7 +84,12 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 		for _, report := range mercuryReports {
 			latest, ok := latestReportPerFeed[datastreams.FeedID(report.FeedID)]
 			if !ok || report.ObservationTimestamp > latest.ObservationTimestamp {
-				latestReportPerFeed[datastreams.FeedID(report.FeedID)] = report
+				// lazy signature validation
+				if err := a.reportCodec.Validate(report, allowedSigners, minRequiredSignatures); err != nil {
+					a.lggr.Errorf("node %d contributed with an invalid report: %v", nodeID, err)
+				} else {
+					latestReportPerFeed[datastreams.FeedID(report.FeedID)] = report
+				}
 			}
 		}
 	}

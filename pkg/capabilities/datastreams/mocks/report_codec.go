@@ -14,34 +14,52 @@ type ReportCodec struct {
 	mock.Mock
 }
 
-// UnwrapValid provides a mock function with given fields: wrapped, allowedSigners, minRequiredSignatures
-func (_m *ReportCodec) UnwrapValid(wrapped values.Value, allowedSigners [][]byte, minRequiredSignatures int) ([]datastreams.FeedReport, error) {
-	ret := _m.Called(wrapped, allowedSigners, minRequiredSignatures)
+// Unwrap provides a mock function with given fields: wrapped
+func (_m *ReportCodec) Unwrap(wrapped values.Value) ([]datastreams.FeedReport, error) {
+	ret := _m.Called(wrapped)
 
 	if len(ret) == 0 {
-		panic("no return value specified for UnwrapValid")
+		panic("no return value specified for Unwrap")
 	}
 
 	var r0 []datastreams.FeedReport
 	var r1 error
-	if rf, ok := ret.Get(0).(func(values.Value, [][]byte, int) ([]datastreams.FeedReport, error)); ok {
-		return rf(wrapped, allowedSigners, minRequiredSignatures)
+	if rf, ok := ret.Get(0).(func(values.Value) ([]datastreams.FeedReport, error)); ok {
+		return rf(wrapped)
 	}
-	if rf, ok := ret.Get(0).(func(values.Value, [][]byte, int) []datastreams.FeedReport); ok {
-		r0 = rf(wrapped, allowedSigners, minRequiredSignatures)
+	if rf, ok := ret.Get(0).(func(values.Value) []datastreams.FeedReport); ok {
+		r0 = rf(wrapped)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]datastreams.FeedReport)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(values.Value, [][]byte, int) error); ok {
-		r1 = rf(wrapped, allowedSigners, minRequiredSignatures)
+	if rf, ok := ret.Get(1).(func(values.Value) error); ok {
+		r1 = rf(wrapped)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// Validate provides a mock function with given fields: feedReport, allowedSigners, minRequiredSignatures
+func (_m *ReportCodec) Validate(feedReport datastreams.FeedReport, allowedSigners [][]byte, minRequiredSignatures int) error {
+	ret := _m.Called(feedReport, allowedSigners, minRequiredSignatures)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Validate")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(datastreams.FeedReport, [][]byte, int) error); ok {
+		r0 = rf(feedReport, allowedSigners, minRequiredSignatures)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Wrap provides a mock function with given fields: reports

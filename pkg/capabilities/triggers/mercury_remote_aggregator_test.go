@@ -23,10 +23,14 @@ const (
 type testMercuryCodec struct {
 }
 
-func (c testMercuryCodec) UnwrapValid(wrapped values.Value, _ [][]byte, _ int) ([]datastreams.FeedReport, error) {
+func (c testMercuryCodec) Unwrap(wrapped values.Value) ([]datastreams.FeedReport, error) {
 	dest := []datastreams.FeedReport{}
 	err := wrapped.UnwrapTo(&dest)
 	return dest, err
+}
+
+func (c testMercuryCodec) Validate(report datastreams.FeedReport, _ [][]byte, _ int) error {
+	return nil
 }
 
 func (c testMercuryCodec) Wrap(reports []datastreams.FeedReport) (values.Value, error) {
@@ -84,7 +88,7 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 	require.NoError(t, err)
 	aggEvent := capabilities.TriggerEvent{}
 	require.NoError(t, aggResponse.Value.UnwrapTo(&aggEvent))
-	decodedReports, err := testMercuryCodec{}.UnwrapValid(aggEvent.Payload, nil, 0)
+	decodedReports, err := testMercuryCodec{}.Unwrap(aggEvent.Payload)
 	require.NoError(t, err)
 
 	require.Len(t, decodedReports, 2)

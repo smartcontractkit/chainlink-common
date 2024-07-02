@@ -63,12 +63,13 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 	allExecutionIDs := []string{}
 	for _, rq := range batch {
 		ids = append(ids, &pbtypes.Id{
-			WorkflowExecutionId: rq.WorkflowExecutionID,
-			WorkflowId:          rq.WorkflowID,
-			WorkflowOwner:       rq.WorkflowOwner,
-			WorkflowName:        rq.WorkflowName,
-			WorkflowDonId:       rq.WorkflowDonID,
-			ReportId:            rq.ReportID,
+			WorkflowExecutionId:      rq.WorkflowExecutionID,
+			WorkflowId:               rq.WorkflowID,
+			WorkflowOwner:            rq.WorkflowOwner,
+			WorkflowName:             rq.WorkflowName,
+			WorkflowDonId:            rq.WorkflowDonID,
+			WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
+			ReportId:                 rq.ReportID,
 		})
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
@@ -113,12 +114,13 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		newOb := &pbtypes.Observation{
 			Observations: listProto,
 			Id: &pbtypes.Id{
-				WorkflowExecutionId: rq.WorkflowExecutionID,
-				WorkflowId:          rq.WorkflowID,
-				WorkflowOwner:       rq.WorkflowOwner,
-				WorkflowName:        rq.WorkflowName,
-				WorkflowDonId:       rq.WorkflowDonID,
-				ReportId:            rq.ReportID,
+				WorkflowExecutionId:      rq.WorkflowExecutionID,
+				WorkflowId:               rq.WorkflowID,
+				WorkflowOwner:            rq.WorkflowOwner,
+				WorkflowName:             rq.WorkflowName,
+				WorkflowDonId:            rq.WorkflowDonID,
+				WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
+				ReportId:                 rq.ReportID,
 			},
 		}
 
@@ -292,7 +294,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 				ExecutionID:      id.WorkflowExecutionId,
 				Timestamp:        0, // TODO include timestamp in consensus phase
 				DONID:            id.WorkflowDonId,
-				DONConfigVersion: 0, // TODO include when Syncer is ready
+				DONConfigVersion: id.WorkflowDonConfigVersion,
 				WorkflowID:       id.WorkflowId,
 				WorkflowName:     id.WorkflowName,
 				WorkflowOwner:    id.WorkflowOwner,

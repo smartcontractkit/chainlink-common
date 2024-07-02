@@ -295,7 +295,7 @@ func upwrapTriggerEvent(t *testing.T, wrappedEvent values.Value) (capabilities.T
 	err := wrappedEvent.UnwrapTo(&event)
 	require.NoError(t, err)
 	require.NotNil(t, event.Payload)
-	mercuryReports, err := testMercuryCodec{}.UnwrapValid(event.Payload, nil, 0)
+	mercuryReports, err := testMercuryCodec{}.Unwrap(event.Payload)
 	require.NoError(t, err)
 	return event, mercuryReports
 }

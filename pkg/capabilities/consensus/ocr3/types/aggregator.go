@@ -15,7 +15,7 @@ type Metadata struct {
 	Version          uint32 //  1 byte
 	ExecutionID      string // 32 hex bytes
 	Timestamp        uint32 //  4 bytes
-	DONID            string //  4 hex bytes
+	DONID            uint32 //  4 bytes
 	DONConfigVersion uint32 //  4 bytes
 	WorkflowID       string // 32 hex bytes
 	WorkflowName     string // 10 hex bytes

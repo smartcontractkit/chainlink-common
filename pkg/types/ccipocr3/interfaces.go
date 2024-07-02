@@ -22,10 +22,10 @@ type CCIPReader interface {
 	// Messages are sorted ascending based on their timestamp and limited up to the provided limit.
 	MsgsBetweenSeqNums(ctx context.Context, chain ChainSelector, seqNumRange SeqNumRange) ([]CCIPMsg, error)
 
-	// NextSeqNum reads the destination chain.
-	// Returns the next expected sequence number for each one of the provided chains.
+	// CommittedSeqNums reads the destination chain and returns
+	// the committed sequence numbers for each provided source chain.
 	// TODO: if destination was a parameter, this could be a capability reused across plugin instances.
-	NextSeqNum(ctx context.Context, chains []ChainSelector) (seqNum []SeqNum, err error)
+	CommittedSeqNums(ctx context.Context, chains []ChainSelector) (seqNum []SeqNum, err error)
 
 	// GasPrices reads the provided chains gas prices.
 	GasPrices(ctx context.Context, chains []ChainSelector) ([]BigInt, error)

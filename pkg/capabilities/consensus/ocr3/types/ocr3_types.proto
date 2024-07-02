@@ -20,12 +20,14 @@ message Query {
 }
 
 message Id {
+  reserved 5;
   string workflowExecutionId = 1;
   string workflowId = 2;
   string workflowOwner = 3;
   string workflowName = 4;
-  string workflowDonId = 5;
   string reportId = 6;
+  uint32 workflowDonId = 7;
+  uint32 workflowDonConfigVersion = 8;
 }
 
 message Observation {

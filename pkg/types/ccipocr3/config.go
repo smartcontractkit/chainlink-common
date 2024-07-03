@@ -20,6 +20,12 @@ type CommitPluginConfig struct {
 
 	// NewMsgScanBatchSize is the number of max new messages to scan, typically set to 256.
 	NewMsgScanBatchSize int `json:"newMsgScanBatchSize"`
+
+	// SyncFrequency is the frequency at which the plugin should perform internal syncing operations.
+	SyncFrequency time.Duration `json:"syncFrequency"`
+
+	// SyncTimeout is the timeout for the syncing operation.
+	SyncTimeout time.Duration `json:"syncTimeout"`
 }
 
 func (c CommitPluginConfig) Validate() error {

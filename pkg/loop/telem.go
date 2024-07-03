@@ -126,9 +126,7 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 		creds = insecure.NewCredentials()
 	}
 
-	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-	//nolint:staticcheck
-	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
+	conn, err := grpc.NewClient(config.CollectorTarget,
 		// Note the potential use of insecure transport here. TLS is recommended in production.
 		grpc.WithTransportCredentials(creds),
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
@@ -162,15 +160,14 @@ func dialOptions(r prometheus.Registerer) []grpc.DialOption {
 	r.MustRegister(cm)
 	ctxExemplar := grpcprom.WithExemplarFromContext(exemplarFromContext)
 	return []grpc.DialOption{
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
 		grpc.WithChainUnaryInterceptor(
 			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.UnaryClientInterceptor(), //nolint:staticcheck
 			cm.UnaryClientInterceptor(ctxExemplar),
 		),
 		grpc.WithChainStreamInterceptor(
 			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.StreamClientInterceptor(), //nolint:staticcheck
 			cm.StreamClientInterceptor(ctxExemplar),
 		),
 	}
@@ -184,15 +181,14 @@ func newServerFn(r prometheus.Registerer) func(opts []grpc.ServerOption) *grpc.S
 	r.MustRegister(srvMetrics)
 	ctxExemplar := grpcprom.WithExemplarFromContext(exemplarFromContext)
 	interceptors := []grpc.ServerOption{
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
 		grpc.ChainUnaryInterceptor(
 			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.UnaryServerInterceptor(), //nolint:staticcheck
 			srvMetrics.UnaryServerInterceptor(ctxExemplar),
 		),
 		grpc.ChainStreamInterceptor(
 			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.StreamServerInterceptor(), //nolint:staticcheck
 			srvMetrics.StreamServerInterceptor(ctxExemplar),
 		),
 	}

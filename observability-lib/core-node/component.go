@@ -114,9 +114,9 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
 		"App Version",
-		"app version",
+		"app version with commit and branch links",
 		4,
-		4,
+		12,
 		1,
 		"",
 		common.BigValueColorModeNone,
@@ -125,42 +125,24 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
 			Query:  `version{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{version}}",
+			Legend: "Version: {{version}} https://github.com/smartcontractkit/chainlink/commit/{{commit}} https://github.com/smartcontractkit/chainlink/tree/release/{{version}}",
 		},
 	))
 
 	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
-		"Go Version",
-		"golang version",
-		4,
-		4,
-		1,
-		"",
-		common.BigValueColorModeNone,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `go_info{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{version}}",
-		},
-	))
-
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Uptime in days",
+		"Uptime",
 		"instance uptime",
 		4,
-		16,
-		1,
-		"",
+		12,
+		2,
+		"s",
 		common.BigValueColorModeNone,
 		common.BigValueGraphModeNone,
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `} / 86400`,
+			Query:  `uptime_seconds{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 		},
 	))
@@ -215,20 +197,32 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 			})),
 	)
 
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
-		"Service Components Health",
-		"service components health",
-		6,
+		"Components Health Avg by Service over 15m",
+		"Only displays services with health average < 90%",
+		4,
 		24,
 		1,
-		"",
-		common.LegendPlacementRight,
+		"percent",
+		common.BigValueColorModeValue,
+		common.BigValueGraphModeLine,
+		common.BigValueTextModeValueAndName,
+		common.VizOrientationVertical,
 		utils.PrometheusQuery{
-			Query:  `health{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{service_id}}`,
+			Query:  `100 * avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `}[15m])) by (service_id, version, service, cluster, env) < 90`,
+			Legend: "{{service_id}}",
 		},
-	))
+	).NoValue("All services healthy").Thresholds(
+		dashboard.NewThresholdsConfigBuilder().
+			Mode(dashboard.ThresholdsModeAbsolute).
+			Steps([]dashboard.Threshold{
+				{Value: nil, Color: "green"},
+				{Value: utils.Float64Ptr(1), Color: "red"},
+				{Value: utils.Float64Ptr(80), Color: "orange"},
+				{Value: utils.Float64Ptr(99), Color: "green"},
+			})),
+	)
 
 	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
 		p.MetricsDataSource,
@@ -257,6 +251,24 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		utils.PrometheusQuery{
 			Query:  `solana_balance{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.StatPanel(
+		p.MetricsDataSource,
+		"Go Version",
+		"golang version",
+		4,
+		4,
+		1,
+		"",
+		common.BigValueColorModeNone,
+		common.BigValueGraphModeNone,
+		common.BigValueTextModeName,
+		common.VizOrientationHorizontal,
+		utils.PrometheusQuery{
+			Query:  `go_info{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: "{{version}}",
 		},
 	))
 

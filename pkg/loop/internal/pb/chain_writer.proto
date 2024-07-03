@@ -44,7 +44,7 @@ enum TransactionStatus {
 }
 
 // GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetTransactionStatus].
-message GetTransactionStausReply {
+message GetTransactionStatusReply {
     TransactionStatus transaction_status = 1;
 }
 

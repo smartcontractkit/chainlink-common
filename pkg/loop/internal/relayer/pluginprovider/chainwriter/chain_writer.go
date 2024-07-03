@@ -135,7 +135,7 @@ func (s *Server) GetTransactionStatus(ctx context.Context, req *pb.GetTransactio
 		return nil, err
 	}
 
-	return &pb.GetTransactionStatusReply{TransactionStatus: int64(status)}, nil
+	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(status)}, nil
 }
 
 func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.GetFeeComponentsReply, error) {

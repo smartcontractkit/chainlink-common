@@ -177,7 +177,7 @@ type TargetCapability interface {
 // DON represents a network of connected nodes.
 //
 // For an example of an empty DON check, see the following link:
-// https://github.com/smartcontractkit/chainlink/blob/2a1b0c4eecb9cc23a364d62a080cc9ae0d08c518/core/capabilities/transmission/local_target_capability.go#L31
+// https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31
 type DON struct {
 	ID               uint32
 	ConfigVersion    uint32
@@ -200,7 +200,7 @@ type DON struct {
 //
 // Although WorkflowDON is a value rather than a pointer, a node can be part of no workflow DON but 0 or more capability DONs.
 // You can assert this by checking for zero values in the WorkflowDON field.
-// See https://github.com/smartcontractkit/chainlink/blob/2a1b0c4eecb9cc23a364d62a080cc9ae0d08c518/core/capabilities/transmission/local_target_capability.go#L31 for an example.
+// See https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31 for an example.
 type Node struct {
 	PeerID         *p2ptypes.PeerID
 	WorkflowDON    DON

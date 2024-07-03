@@ -37,6 +37,21 @@ func toDON(don *pb.DON) capabilities.DON {
 	}
 }
 
+func toPbDON(don capabilities.DON) *pb.DON {
+	membersBytes := make([][]byte, len(don.Members))
+	for j, m := range don.Members {
+		m := m
+		membersBytes[j] = m[:]
+	}
+
+	return &pb.DON{
+		Id:            don.ID,
+		Members:       membersBytes,
+		F:             uint32(don.F),
+		ConfigVersion: don.ConfigVersion,
+	}
+}
+
 func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabilities.Node, error) {
 	res, err := cr.grpc.GetLocalNode(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -248,33 +263,11 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 		return nil, err
 	}
 
-	// convert workflowDON to pb.DON
-	membersBytes := make([][]byte, len(node.WorkflowDON.Members))
-	for i, m := range node.WorkflowDON.Members {
-		m := m
-		membersBytes[i] = m[:]
-	}
-	workflowDONpb := &pb.DON{
-		Id:            node.WorkflowDON.ID,
-		Members:       membersBytes,
-		F:             uint32(node.WorkflowDON.F),
-		ConfigVersion: node.WorkflowDON.ConfigVersion,
-	}
+	workflowDONpb := toPbDON(node.WorkflowDON)
 
-	// convert capabilityDONs to pb.DON
 	capabilityDONsPb := make([]*pb.DON, len(node.CapabilityDONs))
 	for i, don := range node.CapabilityDONs {
-		membersBytes := make([][]byte, len(don.Members))
-		for j, m := range don.Members {
-			m := m
-			membersBytes[j] = m[:]
-		}
-		capabilityDONsPb[i] = &pb.DON{
-			Id:            don.ID,
-			Members:       membersBytes,
-			F:             uint32(don.F),
-			ConfigVersion: don.ConfigVersion,
-		}
+		capabilityDONsPb[i] = toPbDON(don)
 	}
 
 	var pid []byte

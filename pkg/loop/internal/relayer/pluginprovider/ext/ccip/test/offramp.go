@@ -115,6 +115,27 @@ var OffRampReader = staticOffRamp{
 			},
 		},
 
+		getExecutionStateChangesForSeqNumsRequest: getExecutionStateChangesForSeqNumsRequest{
+			seqNums:       []ccip.SequenceNumberRange{{Min: 6, Max: 7}},
+			confirmations: 8,
+		},
+
+		getExecutionStateChangesForSeqNumsResponse: getExecutionStateChangesForSeqNumsResponse{
+			executionStateChangedWithTxMeta: []ccip.ExecutionStateChangedWithTxMeta{
+				{
+					TxMeta: ccip.TxMeta{
+						BlockTimestampUnixMilli: 1,
+						BlockNumber:             2,
+						TxHash:                  "txHash",
+						LogIndex:                3,
+					},
+					ExecutionStateChanged: ccip.ExecutionStateChanged{
+						SequenceNumber: 9,
+						Finalized:      true,
+					},
+				},
+			},
+		},
 		// GetSenderNonce test data
 		getSenderNonceRequest:  ccip.Address("getSenderNonceRequest"),
 		getSenderNonceResponse: 10,
@@ -183,6 +204,9 @@ type staticOffRampConfig struct {
 	getExecutionStateChangesBetweenSeqNumsRequest  getExecutionStateChangesBetweenSeqNumsRequest
 	getExecutionStateChangesBetweenSeqNumsResponse getExecutionStateChangesBetweenSeqNumsResponse
 
+	getExecutionStateChangesForSeqNumsRequest  getExecutionStateChangesForSeqNumsRequest
+	getExecutionStateChangesForSeqNumsResponse getExecutionStateChangesForSeqNumsResponse
+
 	getSenderNonceRequest  ccip.Address
 	getSenderNonceResponse uint64
 
@@ -204,6 +228,16 @@ type staticOffRampConfig struct {
 
 type staticOffRamp struct {
 	staticOffRampConfig
+}
+
+func (s staticOffRamp) GetExecutionStateChangesForSeqNums(ctx context.Context, seqNums []ccip.SequenceNumberRange, confirmations int) ([]ccip.ExecutionStateChangedWithTxMeta, error) {
+	if !reflect.DeepEqual(seqNums, s.getExecutionStateChangesForSeqNumsRequest.seqNums) {
+		return nil, fmt.Errorf("expected seqNums %v but got %v", s.getExecutionStateChangesForSeqNumsRequest.seqNums, seqNums)
+	}
+	if confirmations != s.getExecutionStateChangesForSeqNumsRequest.confirmations {
+		return nil, fmt.Errorf("expected confirmations %d but got %d", s.getExecutionStateChangesForSeqNumsRequest.confirmations, confirmations)
+	}
+	return s.getExecutionStateChangesForSeqNumsResponse.executionStateChangedWithTxMeta, nil
 }
 
 // Address implements OffRampEvaluator.
@@ -490,5 +524,14 @@ type getExecutionStateChangesBetweenSeqNumsRequest struct {
 }
 
 type getExecutionStateChangesBetweenSeqNumsResponse struct {
+	executionStateChangedWithTxMeta []ccip.ExecutionStateChangedWithTxMeta
+}
+
+type getExecutionStateChangesForSeqNumsRequest struct {
+	seqNums       []ccip.SequenceNumberRange
+	confirmations int
+}
+
+type getExecutionStateChangesForSeqNumsResponse struct {
 	executionStateChangedWithTxMeta []ccip.ExecutionStateChangedWithTxMeta
 }

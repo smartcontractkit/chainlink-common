@@ -703,6 +703,61 @@ func (x *GasPrice) GetValue() *pb.BigInt {
 	return nil
 }
 
+type SequenceNumberRange struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Min uint64 `protobuf:"varint,1,opt,name=min,proto3" json:"min,omitempty"`
+	Max uint64 `protobuf:"varint,2,opt,name=max,proto3" json:"max,omitempty"`
+}
+
+func (x *SequenceNumberRange) Reset() {
+	*x = SequenceNumberRange{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_models_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SequenceNumberRange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SequenceNumberRange) ProtoMessage() {}
+
+func (x *SequenceNumberRange) ProtoReflect() protoreflect.Message {
+	mi := &file_models_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SequenceNumberRange.ProtoReflect.Descriptor instead.
+func (*SequenceNumberRange) Descriptor() ([]byte, []int) {
+	return file_models_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SequenceNumberRange) GetMin() uint64 {
+	if x != nil {
+		return x.Min
+	}
+	return 0
+}
+
+func (x *SequenceNumberRange) GetMax() uint64 {
+	if x != nil {
+		return x.Max
+	}
+	return 0
+}
+
 var File_models_proto protoreflect.FileDescriptor
 
 var file_models_proto_rawDesc = []byte{
@@ -820,12 +875,16 @@ var file_models_proto_rawDesc = []byte{
 	0x74, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x53, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x12, 0x22,
 	0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e,
 	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x42, 0x69, 0x67, 0x49, 0x6e, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c,
-	0x75, 0x65, 0x42, 0x4f, 0x5a, 0x4d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x73, 0x6d, 0x61, 0x72, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69,
-	0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d,
-	0x6f, 0x6e, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x6c, 0x6f, 0x6f, 0x70, 0x2f, 0x69, 0x6e, 0x74, 0x65,
-	0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x62, 0x2f, 0x63, 0x63, 0x69, 0x70, 0x3b, 0x63, 0x63, 0x69,
-	0x70, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x65, 0x22, 0x39, 0x0a, 0x13, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x4e, 0x75,
+	0x6d, 0x62, 0x65, 0x72, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x69, 0x6e,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6d, 0x69, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x6d,
+	0x61, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6d, 0x61, 0x78, 0x42, 0x4f, 0x5a,
+	0x4d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72,
+	0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61,
+	0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b,
+	0x67, 0x2f, 0x6c, 0x6f, 0x6f, 0x70, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f,
+	0x70, 0x62, 0x2f, 0x63, 0x63, 0x69, 0x70, 0x3b, 0x63, 0x63, 0x69, 0x70, 0x70, 0x62, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -840,7 +899,7 @@ func file_models_proto_rawDescGZIP() []byte {
 	return file_models_proto_rawDescData
 }
 
-var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_models_proto_goTypes = []interface{}{
 	(*TxMeta)(nil),         // 0: loop.internal.pb.ccip.TxMeta
 	(*EVM2EVMMessage)(nil), // 1: loop.internal.pb.ccip.EVM2EVMMessage
@@ -851,24 +910,25 @@ var file_models_proto_goTypes = []interface{}{
 	(*TokenData)(nil),                              // 6: loop.internal.pb.ccip.TokenData
 	(*TokenPrice)(nil),                             // 7: loop.internal.pb.ccip.TokenPrice
 	(*GasPrice)(nil),                               // 8: loop.internal.pb.ccip.GasPrice
-	(*pb.BigInt)(nil),                              // 9: loop.BigInt
-	(*timestamppb.Timestamp)(nil),                  // 10: google.protobuf.Timestamp
+	(*SequenceNumberRange)(nil),                    // 9: loop.internal.pb.ccip.SequenceNumberRange
+	(*pb.BigInt)(nil),                              // 10: loop.BigInt
+	(*timestamppb.Timestamp)(nil),                  // 11: google.protobuf.Timestamp
 }
 var file_models_proto_depIdxs = []int32{
-	9,  // 0: loop.internal.pb.ccip.EVM2EVMMessage.gas_limit:type_name -> loop.BigInt
-	9,  // 1: loop.internal.pb.ccip.EVM2EVMMessage.fee_token_amount:type_name -> loop.BigInt
+	10, // 0: loop.internal.pb.ccip.EVM2EVMMessage.gas_limit:type_name -> loop.BigInt
+	10, // 1: loop.internal.pb.ccip.EVM2EVMMessage.fee_token_amount:type_name -> loop.BigInt
 	4,  // 2: loop.internal.pb.ccip.EVM2EVMMessage.token_amounts:type_name -> loop.internal.pb.ccip.TokenAmount
 	1,  // 3: loop.internal.pb.ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta.evm_to_evm_msg:type_name -> loop.internal.pb.ccip.EVM2EVMMessage
-	10, // 4: loop.internal.pb.ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta.block_timestamp:type_name -> google.protobuf.Timestamp
-	9,  // 5: loop.internal.pb.ccip.TokenPoolRateLimit.tokens:type_name -> loop.BigInt
-	9,  // 6: loop.internal.pb.ccip.TokenPoolRateLimit.capacity:type_name -> loop.BigInt
-	9,  // 7: loop.internal.pb.ccip.TokenPoolRateLimit.rate:type_name -> loop.BigInt
-	9,  // 8: loop.internal.pb.ccip.TokenAmount.amount:type_name -> loop.BigInt
+	11, // 4: loop.internal.pb.ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta.block_timestamp:type_name -> google.protobuf.Timestamp
+	10, // 5: loop.internal.pb.ccip.TokenPoolRateLimit.tokens:type_name -> loop.BigInt
+	10, // 6: loop.internal.pb.ccip.TokenPoolRateLimit.capacity:type_name -> loop.BigInt
+	10, // 7: loop.internal.pb.ccip.TokenPoolRateLimit.rate:type_name -> loop.BigInt
+	10, // 8: loop.internal.pb.ccip.TokenAmount.amount:type_name -> loop.BigInt
 	1,  // 9: loop.internal.pb.ccip.ExecutionReport.evm_to_evm_messages:type_name -> loop.internal.pb.ccip.EVM2EVMMessage
 	6,  // 10: loop.internal.pb.ccip.ExecutionReport.offchain_token_data:type_name -> loop.internal.pb.ccip.TokenData
-	9,  // 11: loop.internal.pb.ccip.ExecutionReport.proof_flag_bits:type_name -> loop.BigInt
-	9,  // 12: loop.internal.pb.ccip.TokenPrice.value:type_name -> loop.BigInt
-	9,  // 13: loop.internal.pb.ccip.GasPrice.value:type_name -> loop.BigInt
+	10, // 11: loop.internal.pb.ccip.ExecutionReport.proof_flag_bits:type_name -> loop.BigInt
+	10, // 12: loop.internal.pb.ccip.TokenPrice.value:type_name -> loop.BigInt
+	10, // 13: loop.internal.pb.ccip.GasPrice.value:type_name -> loop.BigInt
 	14, // [14:14] is the sub-list for method output_type
 	14, // [14:14] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
@@ -990,6 +1050,18 @@ func file_models_proto_init() {
 				return nil
 			}
 		}
+		file_models_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SequenceNumberRange); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -997,7 +1069,7 @@ func file_models_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_models_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

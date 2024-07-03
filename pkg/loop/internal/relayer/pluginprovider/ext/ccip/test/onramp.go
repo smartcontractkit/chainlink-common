@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	"github.com/stretchr/testify/assert"
 
@@ -69,6 +70,45 @@ var OnRampReader = staticOnRamp{
 			SeqNumMax: 2,
 			Finalized: true,
 		},
+		getSendRequestsForSeqNumsRequest: getSendRequestsForSeqNumsRequest{
+			SeqNums:   []ccip.SequenceNumberRange{{1, 2}},
+			Finalized: true,
+		},
+		getSendRequestsForSeqNumsResponse: getSendRequestsForSeqNumsResponse{
+			EVM2EVMMessageWithTxMeta: []ccip.EVM2EVMMessageWithTxMeta{
+				{
+					TxMeta: ccip.TxMeta{
+						BlockNumber:             1,
+						BlockTimestampUnixMilli: 2,
+						TxHash:                  "tx-hash",
+						LogIndex:                3,
+					},
+					EVM2EVMMessage: ccip.EVM2EVMMessage{
+						SequenceNumber:      5,
+						GasLimit:            big.NewInt(7),
+						Nonce:               11,
+						MessageID:           ccip.Hash{0: 1, 31: 7},
+						SourceChainSelector: 13,
+						Sender:              "sender",
+						Receiver:            "receiver",
+						Strict:              true,
+						FeeToken:            "fee-token",
+						FeeTokenAmount:      big.NewInt(17),
+						Data:                []byte{19},
+						TokenAmounts: []ccip.TokenAmount{
+							{
+								Token:  "token-1",
+								Amount: big.NewInt(23),
+							},
+							{
+								Token:  "token-2",
+								Amount: big.NewInt(29),
+							},
+						},
+					},
+				},
+			},
+		},
 	},
 }
 
@@ -89,6 +129,8 @@ type staticOnRampConfig struct {
 	sourcePriceRegistryResponse  ccip.Address
 	getSendRequestsBetweenSeqNums
 	getSendRequestsBetweenSeqNumsResponse
+	getSendRequestsForSeqNumsRequest
+	getSendRequestsForSeqNumsResponse
 }
 
 type staticOnRamp struct {
@@ -185,6 +227,16 @@ func (s staticOnRamp) GetSendRequestsBetweenSeqNums(ctx context.Context, seqNumM
 	return s.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, nil
 }
 
+func (s staticOnRamp) GetSendRequestsForSeqNums(ctx context.Context, seqNums []ccip.SequenceNumberRange, finalized bool) ([]ccip.EVM2EVMMessageWithTxMeta, error) {
+	if !reflect.DeepEqual(seqNums, s.getSendRequestsForSeqNumsRequest.SeqNums) {
+		return nil, fmt.Errorf("expected seqNums %v but got %v", s.getSendRequestsForSeqNumsRequest.SeqNums, seqNums)
+	}
+	if finalized != s.getSendRequestsForSeqNumsRequest.Finalized {
+		return nil, fmt.Errorf("expected finalized %t but got %t", s.getSendRequestsForSeqNumsRequest.Finalized, finalized)
+	}
+	return s.getSendRequestsForSeqNumsResponse.EVM2EVMMessageWithTxMeta, nil
+}
+
 // RouterAddress implements OnRampEvaluator.
 func (s staticOnRamp) RouterAddress(context.Context) (ccip.Address, error) {
 	return s.routerResponse, nil
@@ -200,6 +252,15 @@ func (s staticOnRamp) IsSourceCursed(ctx context.Context) (bool, error) {
 
 func (s staticOnRamp) SourcePriceRegistryAddress(ctx context.Context) (ccip.Address, error) {
 	return s.sourcePriceRegistryResponse, nil
+}
+
+type getSendRequestsForSeqNumsRequest struct {
+	SeqNums   []ccip.SequenceNumberRange
+	Finalized bool
+}
+
+type getSendRequestsForSeqNumsResponse struct {
+	EVM2EVMMessageWithTxMeta []ccip.EVM2EVMMessageWithTxMeta
 }
 
 type getSendRequestsBetweenSeqNums struct {

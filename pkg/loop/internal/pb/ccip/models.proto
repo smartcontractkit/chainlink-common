@@ -72,7 +72,7 @@ message ExecutionReport {
 }
 
 message TokenData {
-    repeated bytes data= 1; 
+    repeated bytes data= 1;
 }
 
 // TokenPrice is the price of the stated token. It is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.TokenPrice]
@@ -85,4 +85,9 @@ message TokenPrice {
 message GasPrice {
     uint64 dest_chain_selector = 1;
     BigInt value = 2;
+}
+
+message SequenceNumberRange {
+    uint64  min = 1;
+    uint64  max = 2;
 }

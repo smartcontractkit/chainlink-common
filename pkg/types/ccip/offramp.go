@@ -26,7 +26,10 @@ type OffRampReader interface {
 	GasPriceEstimator(ctx context.Context) (GasPriceEstimatorExec, error)
 	GetExecutionState(ctx context.Context, sequenceNumber uint64) (uint8, error)
 	// GetExecutionStateChangesBetweenSeqNums returns all the execution state change events for the provided message sequence numbers (inclusive).
+	// Deprecated: use GetExecutionStateChangesForSeqNums instead
 	GetExecutionStateChangesBetweenSeqNums(ctx context.Context, seqNumMin, seqNumMax uint64, confirmations int) ([]ExecutionStateChangedWithTxMeta, error)
+	// GetExecutionStateChangesForSeqNums returns all the execution state change events for the provided message sequence ranges (inclusive).
+	GetExecutionStateChangesForSeqNums(ctx context.Context, seqNums []SequenceNumberRange, confirmations int) ([]ExecutionStateChangedWithTxMeta, error)
 	GetRouter(ctx context.Context) (Address, error)
 	ListSenderNonces(ctx context.Context, senders []Address) (map[Address]uint64, error)
 	GetSourceToDestTokensMapping(ctx context.Context) (map[Address]Address, error)

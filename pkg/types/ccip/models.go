@@ -24,6 +24,11 @@ func MakeAddresses(s []string) Addresses {
 	return addresses
 }
 
+type SequenceNumberRange struct {
+	Min uint64
+	Max uint64
+}
+
 type Hash [32]byte
 
 func (h Hash) String() string {

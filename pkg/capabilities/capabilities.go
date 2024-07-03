@@ -175,10 +175,12 @@ type TargetCapability interface {
 }
 
 type DON struct {
-	ID            uint32
-	ConfigVersion uint32
-	Members       []p2ptypes.PeerID
-	F             uint8
+	ID               uint32
+	ConfigVersion    uint32
+	Members          []p2ptypes.PeerID
+	F                uint8
+	IsPublic         bool
+	AcceptsWorkflows bool
 }
 
 type Node struct {

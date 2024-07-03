@@ -130,8 +130,3 @@ type CCIPMsgBaseDetails struct {
 	// NOTE: The field is expected to be empty, and will be populated by the plugin using the MsgHasher interface.
 	MsgHash Bytes32 `json:"msgHash"` // populated
 }
-
-type AccountChain struct {
-	Account types.Account `json:"account"`
-	Chain   ChainSelector `json:"chain"`
-}

@@ -22,7 +22,7 @@ jobs:
         run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s --out-format checkstyle:golangci-lint-report.xml \;
       
       - name: Check golangci-lint report for errors
-        run: find . -name "golangci-lint-report.xml" -exec cat {} + && exit 1 || true
+        run: find . -name "golangci-lint-report.xml" -exec grep "error" {} + && exit 1 || true
 
       - name: Upload golangci-lint report
         if: always()

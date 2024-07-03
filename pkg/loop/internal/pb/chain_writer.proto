@@ -33,9 +33,19 @@ message GetTransactionStatusRequest {
     string transaction_id = 1;
 }
 
+// TransactionStatus is an enum for the status of a transaction.
+// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
+enum TransactionStatus {
+    TRANSACTION_STATUS_UNKNOWN = 0;
+    TRANSACTION_STATUS_UNCONFIRMED = 1;
+    TRANSACTION_STATUS_FINALIZED = 2;
+    TRANSACTION_STATUS_FAILED = 3;
+    TRANSACTION_STATUS_FATAL = 4;
+}
+
 // GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetTransactionStatus].
-message GetTransactionStatusReply {
-    int64 transaction_status = 1;
+message GetTransactionStausReply {
+    TransactionStatus transaction_status = 1;
 }
 
 // GetFeeComponentsReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetFeeComponents].

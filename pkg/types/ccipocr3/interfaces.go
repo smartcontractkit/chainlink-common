@@ -30,6 +30,9 @@ type CCIPReader interface {
 	// GasPrices reads the provided chains gas prices.
 	GasPrices(ctx context.Context, chains []ChainSelector) ([]BigInt, error)
 
+	// GetOnRampAddresses returns all the configured on ramp addresses.
+	GetOnRampAddresses(ctx context.Context) ([]AccountChain, error)
+
 	// Close closes any open resources.
 	Close(ctx context.Context) error
 }

@@ -46,11 +46,11 @@ type ChainReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	GetLatestValue(ctx context.Context, contractName, method string, params, returnVal any) error
 
-	// BatchGetLatestValue batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
-	// BatchRead params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
-	// BatchGetLatestValueResult response is grouped by contract names, which contain read results that maintain the order from the request.
-	// Contract call errors are returned in the Err field of BatchReadResult.
-	BatchGetLatestValue(ctx context.Context, request BatchGetLatestValueRequest) (BatchGetLatestValueResult, error)
+	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
+	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
+	// BatchGetLatestValuesResult response is grouped by contract names, which contain read results that maintain the order from the request.
+	// Contract call errors are returned in the Err field of BatchGetLatestValuesResult.
+	BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error)
 
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
@@ -60,8 +60,8 @@ type ChainReader interface {
 	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 
-// BatchGetLatestValueRequest string is contract name.
-type BatchGetLatestValueRequest map[string]ContractBatch
+// BatchGetLatestValuesRequest string is contract name.
+type BatchGetLatestValuesRequest map[string]ContractBatch
 type ContractBatch []BatchRead
 type BatchRead struct {
 	ReadName  string
@@ -69,7 +69,7 @@ type BatchRead struct {
 	ReturnVal any
 }
 
-type BatchGetLatestValueResult map[string]ContractBatchResults
+type BatchGetLatestValuesResult map[string]ContractBatchResults
 type ContractBatchResults []BatchReadResult
 type BatchReadResult struct {
 	ReadName    string

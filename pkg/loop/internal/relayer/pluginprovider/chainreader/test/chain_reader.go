@@ -74,7 +74,7 @@ func (c staticChainReader) GetLatestValue(_ context.Context, contractName, metho
 	return nil
 }
 
-func (c staticChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
+func (c staticChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	return nil, nil
 }
 

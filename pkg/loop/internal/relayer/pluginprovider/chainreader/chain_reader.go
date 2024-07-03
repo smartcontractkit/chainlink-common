@@ -144,18 +144,18 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *Client) BatchGetLatestValue(ctx context.Context, request types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
-	pbRequest, err := convertBatchGetLatestValueRequestToProto(request, c.encodeWith)
+func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	pbRequest, err := convertBatchGetLatestValuesRequestToProto(request, c.encodeWith)
 	if err != nil {
 		return nil, err
 	}
 
-	reply, err := c.grpc.BatchGetLatestValue(ctx, pbRequest)
+	reply, err := c.grpc.BatchGetLatestValues(ctx, pbRequest)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	return parseBatchGetLatestValueReply(request, reply)
+	return parseBatchGetLatestValuesReply(request, reply)
 }
 
 func (c *Client) QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
@@ -243,18 +243,18 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }
 
-func (c *Server) BatchGetLatestValue(ctx context.Context, pbRequest *pb.BatchGetLatestValueRequest) (*pb.BatchGetLatestValueReply, error) {
-	request, err := convertBatchGetLatestValueRequestFromProto(pbRequest, c.impl)
+func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
+	request, err := convertBatchGetLatestValuesRequestFromProto(pbRequest, c.impl)
 	if err != nil {
 		return nil, err
 	}
 
-	reply, err := c.impl.BatchGetLatestValue(ctx, request)
+	reply, err := c.impl.BatchGetLatestValues(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
-	return newPbBatchGetLatestValueReply(reply, c.encodeWith)
+	return newPbBatchGetLatestValuesReply(reply, c.encodeWith)
 }
 
 func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
@@ -303,10 +303,10 @@ func getContractEncodedType(contractName, itemType string, possibleTypeProvider 
 	return &map[string]any{}, nil
 }
 
-func newPbBatchGetLatestValueReply(result types.BatchGetLatestValueResult, encodeWith EncodingVersion) (*pb.BatchGetLatestValueReply, error) {
-	var pbBatchGetLatestValueReply = &pb.BatchGetLatestValueReply{Results: make(map[string]*pb.ContractBatchResult)}
+func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, encodeWith EncodingVersion) (*pb.BatchGetLatestValuesReply, error) {
+	var pbBatchGetLatestValuesReply = &pb.BatchGetLatestValuesReply{Results: make(map[string]*pb.ContractBatchResult)}
 	for contractName, contractBatch := range result {
-		pbBatchGetLatestValueReply.Results[contractName] = &pb.ContractBatchResult{Results: []*pb.BatchReadResult{}}
+		pbBatchGetLatestValuesReply.Results[contractName] = &pb.ContractBatchResult{Results: []*pb.BatchReadResult{}}
 		for _, batchCall := range contractBatch {
 			encodedRetVal, err := EncodeVersionedBytes(batchCall.ReturnValue, encodeWith)
 			if err != nil {
@@ -319,14 +319,14 @@ func newPbBatchGetLatestValueReply(result types.BatchGetLatestValueResult, encod
 			}
 
 			pbBatchReadResult := &pb.BatchReadResult{ReadName: batchCall.ReadName, ReturnVal: encodedRetVal, Error: replyErr}
-			pbBatchGetLatestValueReply.Results[contractName].Results = append(pbBatchGetLatestValueReply.Results[contractName].Results, pbBatchReadResult)
+			pbBatchGetLatestValuesReply.Results[contractName].Results = append(pbBatchGetLatestValuesReply.Results[contractName].Results, pbBatchReadResult)
 		}
 	}
-	return pbBatchGetLatestValueReply, nil
+	return pbBatchGetLatestValuesReply, nil
 }
 
-func convertBatchGetLatestValueRequestToProto(request types.BatchGetLatestValueRequest, encodeWith EncodingVersion) (*pb.BatchGetLatestValueRequest, error) {
-	pbRequest := &pb.BatchGetLatestValueRequest{Requests: make(map[string]*pb.ContractBatch)}
+func convertBatchGetLatestValuesRequestToProto(request types.BatchGetLatestValuesRequest, encodeWith EncodingVersion) (*pb.BatchGetLatestValuesRequest, error) {
+	pbRequest := &pb.BatchGetLatestValuesRequest{Requests: make(map[string]*pb.ContractBatch)}
 	for contractName, contractBatch := range request {
 		if _, ok := pbRequest.Requests[contractName]; !ok {
 			pbContractBatch := &pb.ContractBatch{Reads: []*pb.BatchRead{}}
@@ -498,18 +498,18 @@ func convertSequencesToProto(sequences []types.Sequence, version EncodingVersion
 	return pbSequences, nil
 }
 
-func parseBatchGetLatestValueReply(request types.BatchGetLatestValueRequest, reply *pb.BatchGetLatestValueReply) (types.BatchGetLatestValueResult, error) {
+func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, reply *pb.BatchGetLatestValuesReply) (types.BatchGetLatestValuesResult, error) {
 	if reply == nil {
-		return nil, fmt.Errorf("received nil reply from grpc BatchGetLatestValue")
+		return nil, fmt.Errorf("received nil reply from grpc BatchGetLatestValues")
 	}
 
-	result := make(types.BatchGetLatestValueResult)
+	result := make(types.BatchGetLatestValuesResult)
 	for contractName, contractBatch := range reply.Results {
 		result[contractName] = make([]types.BatchReadResult, len(contractBatch.Results))
 		resultsContractBatch := contractBatch.Results
 		requestContractBatch, ok := request[contractName]
 		if !ok {
-			return nil, fmt.Errorf("received unexpected contract name %s from grpc BatchGetLatestValue reply", contractName)
+			return nil, fmt.Errorf("received unexpected contract name %s from grpc BatchGetLatestValues reply", contractName)
 		}
 
 		if len(requestContractBatch) != len(resultsContractBatch) {
@@ -532,12 +532,12 @@ func parseBatchGetLatestValueReply(request types.BatchGetLatestValueRequest, rep
 	return result, nil
 }
 
-func convertBatchGetLatestValueRequestFromProto(pbRequest *pb.BatchGetLatestValueRequest, impl types.ContractReader) (types.BatchGetLatestValueRequest, error) {
+func convertBatchGetLatestValuesRequestFromProto(pbRequest *pb.BatchGetLatestValuesRequest, impl types.ContractReader) (types.BatchGetLatestValuesRequest, error) {
 	if pbRequest == nil {
-		return nil, fmt.Errorf("received nil request from grpc BatchGetLatestValue")
+		return nil, fmt.Errorf("received nil request from grpc BatchGetLatestValues")
 	}
 
-	request := make(types.BatchGetLatestValueRequest)
+	request := make(types.BatchGetLatestValuesRequest)
 	for pbContractName, pbContractBatch := range pbRequest.Requests {
 		if _, ok := request[pbContractName]; !ok {
 			request[pbContractName] = []types.BatchRead{}

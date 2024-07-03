@@ -160,7 +160,7 @@ func TestGetLatestValue(t *testing.T) {
 	})
 }
 
-func TestBatchGetLatestValue(t *testing.T) {
+func TestBatchGetLatestValues(t *testing.T) {
 	t.Parallel()
 
 	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
@@ -185,24 +185,24 @@ func TestBatchGetLatestValue(t *testing.T) {
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
-				_, err := nilCr.BatchGetLatestValue(ctx, types.BatchGetLatestValueRequest{})
+				_, err := nilCr.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
 				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 			})
 
 			for _, errorType := range errorTypes {
 				es.err = errorType
-				t.Run("BatchGetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+				t.Run("BatchGetLatestValues unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := tests.Context(t)
-					_, err := chainReader.BatchGetLatestValue(ctx, types.BatchGetLatestValueRequest{})
+					_, err := chainReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
 					assert.True(t, errors.Is(err, errorType))
 				})
 			}
 
 			// make sure that errors come from client directly
 			es.err = nil
-			t.Run("BatchGetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+			t.Run("BatchGetLatestValues returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 				ctx := tests.Context(t)
-				_, err := chainReader.BatchGetLatestValue(ctx, types.BatchGetLatestValueRequest{"contract": {{ReadName: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}}}})
+				_, err := chainReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{"contract": {{ReadName: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}}}})
 				assert.True(t, errors.Is(err, types.ErrInvalidType))
 			})
 		}
@@ -392,10 +392,6 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 			}
 		}
 		return types.ErrNotFound
-	} else if method == DifferentMethodReturningUint64 {
-		r := returnVal.(*uint64)
-		*r = AnyDifferentValueToReadWithoutAnArgument
-		return nil
 	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)
 	}
@@ -408,8 +404,8 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 	return nil
 }
 
-func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, request types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
-	result := make(types.BatchGetLatestValueResult)
+func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	result := make(types.BatchGetLatestValuesResult)
 	for requestContractName, requestContractBatch := range request {
 		storedContractBatch := f.batchStored[requestContractName]
 
@@ -425,8 +421,6 @@ func (f *fakeChainReader) BatchGetLatestValue(_ context.Context, request types.B
 				} else {
 					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
 				}
-			} else if req.ReadName == DifferentMethodReturningUint64 {
-				returnVal = AnyDifferentValueToReadWithoutAnArgument
 			} else if req.ReadName == MethodReturningUint64Slice {
 				returnVal = req.ReturnVal.(*[]uint64)
 				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
@@ -508,7 +502,7 @@ func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any
 	return e.err
 }
 
-func (e *errChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
+func (e *errChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	return nil, e.err
 }
 
@@ -540,7 +534,7 @@ func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _
 	return nil
 }
 
-func (pc *protoConversionTestChainReader) BatchGetLatestValue(_ context.Context, _ types.BatchGetLatestValueRequest) (types.BatchGetLatestValueResult, error) {
+func (pc *protoConversionTestChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	return nil, nil
 }
 

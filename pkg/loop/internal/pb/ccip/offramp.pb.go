@@ -1211,7 +1211,7 @@ type ExecOffchainConfig struct {
 	InflightCacheExpiry         *durationpb.Duration `protobuf:"bytes,4,opt,name=inflight_cache_expiry,json=inflightCacheExpiry,proto3" json:"inflight_cache_expiry,omitempty"`                      // config.Duration
 	RootSnoozeTime              *durationpb.Duration `protobuf:"bytes,5,opt,name=root_snooze_time,json=rootSnoozeTime,proto3" json:"root_snooze_time,omitempty"`                                     // config.Duration
 	MessageVisibilityInterval   *durationpb.Duration `protobuf:"bytes,6,opt,name=message_visibility_interval,json=messageVisibilityInterval,proto3" json:"message_visibility_interval,omitempty"`    // config.Duration
-	BatchingStrategyId          uint32               `protobuf:"varint,7,opt,name=batching_strategy_id,json=batchingStrategyId,proto3" json:"batching_strategy_id,omitempty"`                        // uint32
+	BatchingStrategyId          uint32               `protobuf:"varint,7,opt,name=batching_strategy_id,json=batchingStrategyId,proto3" json:"batching_strategy_id,omitempty"`
 }
 
 func (x *ExecOffchainConfig) Reset() {

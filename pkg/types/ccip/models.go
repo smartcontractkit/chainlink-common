@@ -24,6 +24,12 @@ func MakeAddresses(s []string) Addresses {
 	return addresses
 }
 
+// SequenceNumberRange represents the inclusive range of the sequence number that will be used for searching logs
+type SequenceNumberRange struct {
+	Min uint64
+	Max uint64
+}
+
 type Hash [32]byte
 
 func (h Hash) String() string {

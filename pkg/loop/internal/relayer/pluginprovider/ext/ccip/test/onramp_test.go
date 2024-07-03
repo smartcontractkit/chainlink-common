@@ -68,6 +68,14 @@ func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
 		}
 	})
 
+	t.Run("GetSendRequestsBetweenSeqNums", func(t *testing.T) {
+		got, err := client.GetSendRequestsForSeqNums(tests.Context(t), OnRampReader.getSendRequestsForSeqNumsRequest.SeqNums, OnRampReader.getSendRequestsForSeqNumsRequest.Finalized)
+		require.NoError(t, err)
+		if !reflect.DeepEqual(OnRampReader.getSendRequestsForSeqNumsResponse.EVM2EVMMessageWithTxMeta, got) {
+			t.Errorf("expected %v, got %v", OnRampReader.getSendRequestsForSeqNumsResponse.EVM2EVMMessageWithTxMeta, got)
+		}
+	})
+
 	t.Run("IsSourceChainHealthy", func(t *testing.T) {
 		got, err := client.IsSourceChainHealthy(tests.Context(t))
 		require.NoError(t, err)

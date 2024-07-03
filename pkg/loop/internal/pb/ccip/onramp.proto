@@ -13,6 +13,7 @@ service OnRampReader {
     rpc Address(google.protobuf.Empty) returns (OnrampAddressResponse) {}
     rpc GetDynamicConfig(google.protobuf.Empty) returns (GetDynamicConfigResponse) {}
     rpc GetSendRequestsBetweenSeqNums(GetSendRequestsBetweenSeqNumsRequest) returns (GetSendRequestsBetweenSeqNumsResponse) {}
+    rpc GetSendRequestsForSeqNums(GetSendRequestsForSeqNumsRequest) returns (GetSendRequestsForSeqNumsResponse) {}
     rpc IsSourceChainHealthy(google.protobuf.Empty) returns (IsSourceChainHealthyResponse) {}
     rpc IsSourceCursed(google.protobuf.Empty) returns (IsSourceCursedResponse) {}
     rpc RouterAddress(google.protobuf.Empty) returns (RouterAddressResponse) {}
@@ -33,6 +34,15 @@ message GetSendRequestsBetweenSeqNumsRequest {
 message GetSendRequestsBetweenSeqNumsResponse {
     // Note, the content here maybe better modeled as a oneof when CCIP supports
     // multiple types of messages/chains
+    repeated EVM2EVMMessageWithTxMeta send_requests = 1;
+}
+
+message GetSendRequestsForSeqNumsRequest {
+    repeated SequenceNumberRange seq_nums = 1;
+    bool finalized = 2;
+}
+
+message GetSendRequestsForSeqNumsResponse {
     repeated EVM2EVMMessageWithTxMeta send_requests = 1;
 }
 

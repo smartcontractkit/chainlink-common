@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	CapabilitiesRegistry_GetLocalNode_FullMethodName = "/loop.CapabilitiesRegistry/GetLocalNode"
 	CapabilitiesRegistry_Get_FullMethodName          = "/loop.CapabilitiesRegistry/Get"
 	CapabilitiesRegistry_GetTrigger_FullMethodName   = "/loop.CapabilitiesRegistry/GetTrigger"
 	CapabilitiesRegistry_GetAction_FullMethodName    = "/loop.CapabilitiesRegistry/GetAction"
@@ -33,6 +34,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CapabilitiesRegistryClient interface {
+	GetLocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLocalNodeReply, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetReply, error)
 	GetTrigger(ctx context.Context, in *GetTriggerRequest, opts ...grpc.CallOption) (*GetTriggerReply, error)
 	GetAction(ctx context.Context, in *GetActionRequest, opts ...grpc.CallOption) (*GetActionReply, error)
@@ -48,6 +50,15 @@ type capabilitiesRegistryClient struct {
 
 func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface) CapabilitiesRegistryClient {
 	return &capabilitiesRegistryClient{cc}
+}
+
+func (c *capabilitiesRegistryClient) GetLocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLocalNodeReply, error) {
+	out := new(GetLocalNodeReply)
+	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetLocalNode_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *capabilitiesRegistryClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetReply, error) {
@@ -117,6 +128,7 @@ func (c *capabilitiesRegistryClient) Add(ctx context.Context, in *AddRequest, op
 // All implementations must embed UnimplementedCapabilitiesRegistryServer
 // for forward compatibility
 type CapabilitiesRegistryServer interface {
+	GetLocalNode(context.Context, *emptypb.Empty) (*GetLocalNodeReply, error)
 	Get(context.Context, *GetRequest) (*GetReply, error)
 	GetTrigger(context.Context, *GetTriggerRequest) (*GetTriggerReply, error)
 	GetAction(context.Context, *GetActionRequest) (*GetActionReply, error)
@@ -131,6 +143,9 @@ type CapabilitiesRegistryServer interface {
 type UnimplementedCapabilitiesRegistryServer struct {
 }
 
+func (UnimplementedCapabilitiesRegistryServer) GetLocalNode(context.Context, *emptypb.Empty) (*GetLocalNodeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLocalNode not implemented")
+}
 func (UnimplementedCapabilitiesRegistryServer) Get(context.Context, *GetRequest) (*GetReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
@@ -163,6 +178,24 @@ type UnsafeCapabilitiesRegistryServer interface {
 
 func RegisterCapabilitiesRegistryServer(s grpc.ServiceRegistrar, srv CapabilitiesRegistryServer) {
 	s.RegisterService(&CapabilitiesRegistry_ServiceDesc, srv)
+}
+
+func _CapabilitiesRegistry_GetLocalNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CapabilitiesRegistryServer).GetLocalNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CapabilitiesRegistry_GetLocalNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CapabilitiesRegistryServer).GetLocalNode(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _CapabilitiesRegistry_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -298,6 +331,10 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.CapabilitiesRegistry",
 	HandlerType: (*CapabilitiesRegistryServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetLocalNode",
+			Handler:    _CapabilitiesRegistry_GetLocalNode_Handler,
+		},
 		{
 			MethodName: "Get",
 			Handler:    _CapabilitiesRegistry_Get_Handler,

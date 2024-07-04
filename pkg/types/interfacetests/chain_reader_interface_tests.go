@@ -225,9 +225,10 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				require.NoError(t, err)
 
 				anyContractBatch := result[AnyContractName]
+				returnValue, err := anyContractBatch[0].GetResult()
+				assert.NoError(t, err)
 				assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, anyContractBatch[0].ReadName)
-				assert.Equal(t, &firstItem, anyContractBatch[0].ReturnValue)
-				assert.NoError(t, anyContractBatch[0].Err)
+				assert.Equal(t, &firstItem, returnValue)
 			},
 		},
 		{
@@ -246,9 +247,10 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				require.NoError(t, err)
 
 				anyContractBatch := result[AnyContractName]
-				require.NoError(t, anyContractBatch[0].Err)
+				returnValue, err := anyContractBatch[0].GetResult()
+				require.NoError(t, err)
 				assert.Equal(t, MethodReturningUint64, anyContractBatch[0].ReadName)
-				assert.Equal(t, AnyValueToReadWithoutAnArgument, *anyContractBatch[0].ReturnValue.(*uint64))
+				assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValue.(*uint64))
 			},
 		},
 		{
@@ -266,9 +268,10 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				require.NoError(t, err)
 
 				anyContractBatch := result[AnyContractName]
-				require.NoError(t, anyContractBatch[0].Err)
+				returnValue, err := anyContractBatch[0].GetResult()
+				require.NoError(t, err)
 				assert.Equal(t, MethodReturningUint64Slice, anyContractBatch[0].ReadName)
-				assert.Equal(t, AnySliceToReadWithoutAnArgument, *anyContractBatch[0].ReturnValue.(*[]uint64))
+				assert.Equal(t, AnySliceToReadWithoutAnArgument, *returnValue.(*[]uint64))
 			},
 		},
 		{
@@ -289,14 +292,15 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				require.NoError(t, err)
 
 				anyContractBatch := result[AnyContractName]
-				require.NoError(t, anyContractBatch[0].Err)
+				returnValue, err := anyContractBatch[0].GetResult()
+				require.NoError(t, err)
 				assert.Equal(t, MethodReturningSeenStruct, anyContractBatch[0].ReadName)
 				assert.Equal(t,
 					&TestStructWithExtraField{
 						ExtraField: AnyExtraValue,
 						TestStruct: CreateTestStruct(0, tester),
 					},
-					anyContractBatch[0].ReturnValue)
+					returnValue)
 			},
 		},
 		{
@@ -322,9 +326,10 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 
 				for i := 0; i < 10; i++ {
 					resultAnyContract, testDataAnyContract := result[AnyContractName], batchCallEntry[AnyContractName]
+					returnValue, err := resultAnyContract[i].GetResult()
+					assert.NoError(t, err)
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
-					assert.NoError(t, resultAnyContract[i].Err)
-					assert.Equal(t, testDataAnyContract[i].ReturnValue, resultAnyContract[i].ReturnValue)
+					assert.Equal(t, testDataAnyContract[i].ReturnValue, returnValue)
 				}
 			},
 		},
@@ -352,14 +357,16 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				require.NoError(t, err)
 
 				for i := 0; i < 10; i++ {
-					resultAnyContract, testDataAnyContract := result[AnyContractName], batchCallEntry[AnyContractName]
-					resultAnySecondContract, testDataAnySecondContract := result[AnySecondContractName], batchCallEntry[AnySecondContractName]
+					testDataAnyContract, testDataAnySecondContract := batchCallEntry[AnyContractName], batchCallEntry[AnySecondContractName]
+					resultAnyContract, resultAnySecondContract := result[AnyContractName], result[AnySecondContractName]
+					returnValueAnyContract, errAnyContract := resultAnyContract[i].GetResult()
+					returnValueAnySecondContract, errAnySecondContract := resultAnySecondContract[i].GetResult()
+					assert.NoError(t, errAnyContract)
+					assert.NoError(t, errAnySecondContract)
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
-					assert.NoError(t, resultAnyContract[i].Err)
-					assert.NoError(t, resultAnySecondContract[i].Err)
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnySecondContract[i].ReadName)
-					assert.Equal(t, testDataAnyContract[i].ReturnValue, resultAnyContract[i].ReturnValue)
-					assert.Equal(t, testDataAnySecondContract[i].ReturnValue, resultAnySecondContract[i].ReturnValue)
+					assert.Equal(t, testDataAnyContract[i].ReturnValue, returnValueAnyContract)
+					assert.Equal(t, testDataAnySecondContract[i].ReturnValue, returnValueAnySecondContract)
 				}
 			},
 		},
@@ -381,14 +388,15 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				require.NoError(t, err)
 
 				for i := 0; i < 10; i++ {
-					resultAnyContract := result[AnyContractName]
-					resultAnySecondContract := result[AnySecondContractName]
+					resultAnyContract, resultAnySecondContract := result[AnyContractName], result[AnySecondContractName]
+					returnValueAnyContract, errAnyContract := resultAnyContract[i].GetResult()
+					returnValueAnySecondContract, errAnySecondContract := resultAnySecondContract[i].GetResult()
+					assert.Error(t, errAnyContract)
+					assert.Error(t, errAnySecondContract)
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
-					assert.Error(t, resultAnyContract[i].Err)
-					assert.Error(t, resultAnySecondContract[i].Err)
 					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnySecondContract[i].ReadName)
-					assert.Equal(t, &TestStruct{}, resultAnyContract[i].ReturnValue)
-					assert.Equal(t, &TestStruct{}, resultAnySecondContract[i].ReturnValue)
+					assert.Equal(t, &TestStruct{}, returnValueAnyContract)
+					assert.Equal(t, &TestStruct{}, returnValueAnySecondContract)
 				}
 			},
 		},

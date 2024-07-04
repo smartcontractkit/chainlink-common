@@ -308,14 +308,15 @@ func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, enc
 	for contractName, contractBatch := range result {
 		pbBatchGetLatestValuesReply.Results[contractName] = &pb.ContractBatchResult{Results: []*pb.BatchReadResult{}}
 		for _, batchCall := range contractBatch {
-			encodedRetVal, err := EncodeVersionedBytes(batchCall.ReturnValue, encodeWith)
+			replyErr := ""
+			returnVal, err := batchCall.GetResult()
 			if err != nil {
-				return nil, err
+				replyErr = err.Error()
 			}
 
-			replyErr := ""
-			if batchCall.Err != nil {
-				replyErr = batchCall.Err.Error()
+			encodedRetVal, err := EncodeVersionedBytes(returnVal, encodeWith)
+			if err != nil {
+				return nil, err
 			}
 
 			pbBatchReadResult := &pb.BatchReadResult{ReadName: batchCall.ReadName, ReturnVal: encodedRetVal, Error: replyErr}
@@ -526,7 +527,10 @@ func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, r
 			if res.Error != "" {
 				err = fmt.Errorf(res.Error)
 			}
-			result[contractName][i] = types.BatchReadResult{ReadName: res.ReadName, ReturnValue: req.ReturnVal, Err: err}
+
+			brr := types.BatchReadResult{ReadName: res.ReadName}
+			brr.SetResult(req.ReturnVal, err)
+			result[contractName][i] = brr
 		}
 	}
 	return result, nil

@@ -73,8 +73,21 @@ type BatchGetLatestValuesResult map[string]ContractBatchResults
 type ContractBatchResults []BatchReadResult
 type BatchReadResult struct {
 	ReadName    string
-	ReturnValue any
-	Err         error
+	returnValue any
+	err         error
+}
+
+// GetResult returns an error if this specific read from the batch failed, otherwise returns the result in format that was provided in the request.
+func (brr *BatchReadResult) GetResult() (any, error) {
+	if brr.err != nil {
+		return brr.returnValue, brr.err
+	}
+
+	return brr.returnValue, nil
+}
+
+func (brr *BatchReadResult) SetResult(returnValue any, err error) {
+	brr.returnValue, brr.err = returnValue, err
 }
 
 type Head struct {

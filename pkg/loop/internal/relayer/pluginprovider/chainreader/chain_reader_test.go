@@ -411,9 +411,9 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 
 		contractBatchResults := types.ContractBatchResults{}
 		for i := 0; i < len(requestContractBatch); i++ {
+			var err error
 			var returnVal any
 			req := requestContractBatch[i]
-			res := types.BatchReadResult{ReadName: req.ReadName, Err: nil}
 			if req.ReadName == MethodReturningUint64 {
 				returnVal = req.ReturnVal.(*uint64)
 				if requestContractName == AnyContractName {
@@ -436,15 +436,16 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 				latestParams := requestContractBatch[i].Params.(*LatestParams)
 				if latestParams.I <= 0 {
 					returnVal = &LatestParams{}
-					res.Err = fmt.Errorf("invalid param %d", latestParams.I)
+					err = fmt.Errorf("invalid param %d", latestParams.I)
 				} else {
 					returnVal = storedContractBatch[latestParams.I-1].ReturnValue
 				}
 			} else {
 				return nil, errors.New("unknown read " + req.ReadName)
 			}
-			res.ReturnValue = returnVal
-			contractBatchResults = append(contractBatchResults, res)
+			brr := types.BatchReadResult{ReadName: req.ReadName}
+			brr.SetResult(returnVal, err)
+			contractBatchResults = append(contractBatchResults, brr)
 		}
 		result[requestContractName] = contractBatchResults
 	}

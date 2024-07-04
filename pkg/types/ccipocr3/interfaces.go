@@ -2,8 +2,6 @@ package ccipocr3
 
 import (
 	"context"
-
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 type CommitPluginCodec interface {

@@ -254,6 +254,32 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 			},
 		},
 		{
+			name: "BatchGetLatestValues allows multiple contract names to have the same function Name",
+			test: func(t T) {
+				var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
+				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
+				batchGetLatestValuesRequest[AnyContractName] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
+				batchGetLatestValuesRequest[AnySecondContractName] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
+				require.NoError(t, err)
+
+				anyContractBatch, anySecondContractBatch := result[AnyContractName], result[AnySecondContractName]
+				returnValueAnyContract, errAnyContract := anyContractBatch[0].GetResult()
+				returnValueAnySecondContract, errAnySecondContract := anySecondContractBatch[0].GetResult()
+				require.NoError(t, errAnyContract)
+				require.NoError(t, errAnySecondContract)
+				assert.Equal(t, MethodReturningUint64, anyContractBatch[0].ReadName)
+				assert.Equal(t, MethodReturningUint64, anySecondContractBatch[0].ReadName)
+				assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract.(*uint64))
+				assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract.(*uint64))
+			},
+		},
+		{
 			name: "BatchGetLatestValue without arguments and with slice return",
 			test: func(t T) {
 				// setup call data

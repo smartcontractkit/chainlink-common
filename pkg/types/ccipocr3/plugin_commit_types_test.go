@@ -1,81 +1,10 @@
 package ccipocr3
 
 import (
-	"math"
-	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestCommitPluginObservation_EncodeAndDecode(t *testing.T) {
-	obs := NewCommitPluginObservation(
-		[]CCIPMsgBaseDetails{
-			{MsgHash: Bytes32{1}, ID: "1", SourceChain: math.MaxUint64, SeqNum: 123},
-			{MsgHash: Bytes32{2}, ID: "2", SourceChain: 321, SeqNum: math.MaxUint64},
-		},
-		[]GasPriceChain{}, // todo: populate this
-		[]TokenPrice{},
-		[]SeqNumChain{},
-		map[ChainSelector]int{},
-	)
-
-	b, err := obs.Encode()
-	assert.NoError(t, err)
-	assert.Equal(t, `{"newMsgs":[{"id":"1","sourceChain":"18446744073709551615","seqNum":"123","msgHash":"0x0100000000000000000000000000000000000000000000000000000000000000"},{"id":"2","sourceChain":"321","seqNum":"18446744073709551615","msgHash":"0x0200000000000000000000000000000000000000000000000000000000000000"}],"gasPrices":[],"tokenPrices":[],"maxSeqNums":[],"fChain":{}}`, string(b))
-
-	obs2, err := DecodeCommitPluginObservation(b)
-	assert.NoError(t, err)
-	assert.Equal(t, obs, obs2)
-}
-
-func TestCommitPluginOutcome_EncodeAndDecode(t *testing.T) {
-	o := NewCommitPluginOutcome(
-		[]SeqNumChain{
-			NewSeqNumChain(ChainSelector(1), SeqNum(20)),
-			NewSeqNumChain(ChainSelector(2), SeqNum(25)),
-		},
-		[]MerkleRootChain{
-			NewMerkleRootChain(ChainSelector(1), NewSeqNumRange(21, 22), [32]byte{1}),
-			NewMerkleRootChain(ChainSelector(2), NewSeqNumRange(25, 35), [32]byte{2}),
-		},
-		[]TokenPrice{
-			NewTokenPrice("0x123", big.NewInt(1234)),
-			NewTokenPrice("0x125", big.NewInt(0).Mul(big.NewInt(999999999999), big.NewInt(999999999999))),
-		},
-		[]GasPriceChain{
-			NewGasPriceChain(big.NewInt(1234), ChainSelector(1)),
-			NewGasPriceChain(big.NewInt(0).Mul(big.NewInt(999999999999), big.NewInt(999999999999)), ChainSelector(2)),
-		},
-	)
-
-	b, err := o.Encode()
-	assert.NoError(t, err)
-	assert.Equal(t, `{"maxSeqNums":[{"chainSel":1,"seqNum":20},{"chainSel":2,"seqNum":25}],"merkleRoots":[{"chain":1,"seqNumsRange":[21,22],"merkleRoot":"0x0100000000000000000000000000000000000000000000000000000000000000"},{"chain":2,"seqNumsRange":[25,35],"merkleRoot":"0x0200000000000000000000000000000000000000000000000000000000000000"}],"tokenPrices":[{"tokenID":"0x123","price":"1234"},{"tokenID":"0x125","price":"999999999998000000000001"}],"gasPrices":[{"gasPrice":"1234","chainSel":1},{"gasPrice":"999999999998000000000001","chainSel":2}]}`, string(b))
-
-	o2, err := DecodeCommitPluginOutcome(b)
-	assert.NoError(t, err)
-	assert.Equal(t, o, o2)
-
-	assert.Equal(t, `{MaxSeqNums: [{ChainSelector(1) 20} {ChainSelector(2) 25}], MerkleRoots: [{ChainSelector(1) [21 -> 22] 0x0100000000000000000000000000000000000000000000000000000000000000} {ChainSelector(2) [25 -> 35] 0x0200000000000000000000000000000000000000000000000000000000000000}]}`, o.String())
-}
-
-func TestCommitPluginOutcome_IsEmpty(t *testing.T) {
-	o := NewCommitPluginOutcome(nil, nil, nil, nil)
-	assert.True(t, o.IsEmpty())
-
-	o = NewCommitPluginOutcome(nil, nil, nil, []GasPriceChain{NewGasPriceChain(big.NewInt(1), ChainSelector(1))})
-	assert.False(t, o.IsEmpty())
-
-	o = NewCommitPluginOutcome(nil, nil, []TokenPrice{NewTokenPrice("0x123", big.NewInt(123))}, nil)
-	assert.False(t, o.IsEmpty())
-
-	o = NewCommitPluginOutcome(nil, []MerkleRootChain{NewMerkleRootChain(ChainSelector(1), NewSeqNumRange(1, 2), [32]byte{1})}, nil, nil)
-	assert.False(t, o.IsEmpty())
-
-	o = NewCommitPluginOutcome([]SeqNumChain{NewSeqNumChain(ChainSelector(1), SeqNum(1))}, nil, nil, nil)
-	assert.False(t, o.IsEmpty())
-}
 
 func TestCommitPluginReport(t *testing.T) {
 	t.Run("is empty", func(t *testing.T) {

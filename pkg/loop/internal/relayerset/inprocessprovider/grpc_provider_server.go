@@ -38,7 +38,8 @@ func (p *ProviderServer) Close() error {
 }
 
 func (p *ProviderServer) GetConn() (grpc.ClientConnInterface, error) {
-	cc, err := grpc.Dial(p.lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
+	cc, err := grpc.Dial(p.lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials())) //nolint:staticcheck
 	p.conns = append(p.conns, cc)
 	return cc, err
 }

@@ -67,7 +67,8 @@ func NewGRPCScaffold[T Client, S any](t *testing.T, serverFn SetupGRPCServer[S],
 		require.NoError(t, grpcServer.Serve(lis))
 	}()
 
-	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
+	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials())) //nolint:staticcheck
 	require.NoError(t, err, "failed to dial %s", lis.Addr().String())
 	t.Cleanup(func() { require.NoError(t, conn.Close(), "failed to close connection") })
 

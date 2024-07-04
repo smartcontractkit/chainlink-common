@@ -3,36 +3,9 @@ package ccipocr3
 import (
 	"context"
 	"math/big"
-	"time"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
-
-type CCIPReader interface {
-	// CommitReportsGTETimestamp reads the requested chain starting at a given timestamp
-	// and finds all ReportAccepted up to the provided limit.
-	CommitReportsGTETimestamp(ctx context.Context, dest ChainSelector, ts time.Time, limit int) ([]CommitPluginReportWithMeta, error)
-
-	// ExecutedMessageRanges reads the destination chain and finds which messages are executed.
-	// A slice of sequence number ranges is returned to express which messages are executed.
-	ExecutedMessageRanges(ctx context.Context, source, dest ChainSelector, seqNumRange SeqNumRange) ([]SeqNumRange, error)
-
-	// MsgsBetweenSeqNums reads the provided chains.
-	// Finds and returns ccip messages submitted between the provided sequence numbers.
-	// Messages are sorted ascending based on their timestamp and limited up to the provided limit.
-	MsgsBetweenSeqNums(ctx context.Context, chain ChainSelector, seqNumRange SeqNumRange) ([]CCIPMsg, error)
-
-	// CommittedSeqNums reads the destination chain and returns
-	// the committed sequence numbers for each provided source chain.
-	// TODO: if destination was a parameter, this could be a capability reused across plugin instances.
-	CommittedSeqNums(ctx context.Context, chains []ChainSelector) (seqNum []SeqNum, err error)
-
-	// GasPrices reads the provided chains gas prices.
-	GasPrices(ctx context.Context, chains []ChainSelector) ([]BigInt, error)
-
-	// Close closes any open resources.
-	Close(ctx context.Context) error
-}
 
 type TokenPricesReader interface {
 	// GetTokenPricesUSD returns the prices of the provided tokens in USD.

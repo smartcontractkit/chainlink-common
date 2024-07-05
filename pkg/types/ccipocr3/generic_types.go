@@ -120,6 +120,10 @@ type RampMessageHeader struct {
 	// MsgHash is the hash of all the message fields.
 	// NOTE: The field is expected to be empty, and will be populated by the plugin using the MsgHasher interface.
 	MsgHash Bytes32 `json:"msgHash"` // populated
+
+	// OnRamp is the address of the onramp that sent the message.
+	// NOTE: This is populated by the ccip reader. Not emitted explicitly onchain.
+	OnRamp Bytes `json:"onRamp"`
 }
 
 // EVM2AnyRampMessage is the family-agnostic message sent from an EVM onramp

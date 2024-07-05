@@ -40,13 +40,20 @@ func (b *Bytes) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("Bytes must be of at least length 2 (i.e, '0x' prefix): %s", v)
 	}
 
+	// trim the start and end double quotes
+	v = v[1 : len(v)-1]
+
+	if !strings.HasPrefix(v, "0x") {
+		return fmt.Errorf("Bytes must start with '0x' prefix: %s", v)
+	}
+
 	// Decode everything after the '0x' prefix.
-	bCp, err := hex.DecodeString(v[2:])
+	bs, err := hex.DecodeString(v[2:])
 	if err != nil {
 		return fmt.Errorf("failed to decode hex: %w", err)
 	}
 
-	*b = bCp
+	*b = bs
 	return nil
 }
 

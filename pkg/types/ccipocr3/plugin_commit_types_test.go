@@ -12,8 +12,26 @@ import (
 func TestCommitPluginObservation_EncodeAndDecode(t *testing.T) {
 	obs := NewCommitPluginObservation(
 		[]RampMessageHeader{
-			{MsgHash: Bytes32{1}, MessageID: mustNewBytes32(t, "0x01"), SourceChainSelector: math.MaxUint64, SequenceNumber: 123},
-			{MsgHash: Bytes32{2}, MessageID: mustNewBytes32(t, "0x02"), SourceChainSelector: 321, SequenceNumber: math.MaxUint64},
+			{
+				MessageID:           mustNewBytes32(t, "0x01"),
+				SourceChainSelector: math.MaxUint64,
+				SequenceNumber:      123,
+				DestChainSelector:   ChainSelector(10),
+				Nonce:               1,
+
+				MsgHash: Bytes32{1},
+				OnRamp:  mustNewBytes(t, "0x1213"),
+			},
+			{
+				MessageID:           mustNewBytes32(t, "0x02"),
+				SourceChainSelector: 321,
+				SequenceNumber:      math.MaxUint64,
+				DestChainSelector:   ChainSelector(11),
+				Nonce:               0,
+
+				MsgHash: Bytes32{2},
+				OnRamp:  mustNewBytes(t, "0x1214"),
+			},
 		},
 		[]GasPriceChain{
 			NewGasPriceChain(big.NewInt(1234), ChainSelector(1)),
@@ -25,7 +43,7 @@ func TestCommitPluginObservation_EncodeAndDecode(t *testing.T) {
 
 	b, err := obs.Encode()
 	require.NoError(t, err)
-	require.Equal(t, `{"newMsgs":[{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"18446744073709551615","destChainSelector":"0","seqNum":"123","nonce":0,"msgHash":"0x0100000000000000000000000000000000000000000000000000000000000000"},{"messageId":"0x0200000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"321","destChainSelector":"0","seqNum":"18446744073709551615","nonce":0,"msgHash":"0x0200000000000000000000000000000000000000000000000000000000000000"}],"gasPrices":[{"gasPrice":"1234","chainSel":1}],"tokenPrices":[],"maxSeqNums":[],"fChain":{}}`, string(b))
+	require.Equal(t, `{"newMsgs":[{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"18446744073709551615","destChainSelector":"10","seqNum":"123","nonce":1,"msgHash":"0x0100000000000000000000000000000000000000000000000000000000000000","onRamp":"0x1213"},{"messageId":"0x0200000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"321","destChainSelector":"11","seqNum":"18446744073709551615","nonce":0,"msgHash":"0x0200000000000000000000000000000000000000000000000000000000000000","onRamp":"0x1214"}],"gasPrices":[{"gasPrice":"1234","chainSel":1}],"tokenPrices":[],"maxSeqNums":[],"fChain":{}}`, string(b))
 
 	obs2, err := DecodeCommitPluginObservation(b)
 	require.NoError(t, err)

@@ -90,26 +90,30 @@ func TestCCIPMsg_String(t *testing.T) {
 			"base",
 			Message{
 				Header: RampMessageHeader{
-					MsgHash:             mustNewBytes32(t, "0x23"),
 					MessageID:           mustNewBytes32(t, "0x01"),
 					SourceChainSelector: ChainSelector(1),
 					DestChainSelector:   ChainSelector(2),
 					SequenceNumber:      2,
 					Nonce:               1,
+
+					MsgHash: mustNewBytes32(t, "0x23"),
+					OnRamp:  mustNewBytes(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
 				},
 			},
-			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000"}}`,
+			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000","onRamp":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f"}}`,
 		},
 		{
 			"with evm ramp message",
 			Message{
 				Header: RampMessageHeader{
-					MsgHash:             mustNewBytes32(t, "0x23"),
 					MessageID:           mustNewBytes32(t, "0x01"),
 					SourceChainSelector: ChainSelector(1),
 					DestChainSelector:   ChainSelector(2),
 					SequenceNumber:      2,
 					Nonce:               1,
+
+					MsgHash: mustNewBytes32(t, "0x23"),
+					OnRamp:  mustNewBytes(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
 				},
 				EVM2AnyRampMessage: &EVM2AnyRampMessage{
 					Sender:         mustNewBytes(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
@@ -128,7 +132,7 @@ func TestCCIPMsg_String(t *testing.T) {
 					},
 				},
 			},
-			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000"},"evm2AnyRampMessage":{"sender":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f","data":"0x736f6d652064617461","receiver":"0x101112131415","extraArgs":"0x65787472612061726773","feeToken":"0xb5fcc870d2ac8745054b4ba99b1f176b93382162","feeTokenAmount":"1000","tokenAmounts":[{"sourcePoolAddress":"0x3e8456720b88a1dadce8e2808c9bf73dfffd807c","destTokenAddress":"0x0102030405060708090a","extraData":"0x657874726120746f6b656e2064617461","amount":"2000"}]}}`,
+			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000","onRamp":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f"},"evm2AnyRampMessage":{"sender":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f","data":"0x736f6d652064617461","receiver":"0x101112131415","extraArgs":"0x65787472612061726773","feeToken":"0xb5fcc870d2ac8745054b4ba99b1f176b93382162","feeTokenAmount":"1000","tokenAmounts":[{"sourcePoolAddress":"0x3e8456720b88a1dadce8e2808c9bf73dfffd807c","destTokenAddress":"0x0102030405060708090a","extraData":"0x657874726120746f6b656e2064617461","amount":"2000"}]}}`,
 		},
 	}
 

@@ -22,6 +22,8 @@ message RampMessageHeader {
   uint64 nonce = 5;
   // MsgHash is the hash of all the message fields.
   repeated bytes message_hash = 6;
+  // OnRamp is the address of the onramp that sent the message.
+  repeated bytes on_ramp = 7;
 }
 
 // RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.

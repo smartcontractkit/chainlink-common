@@ -90,9 +90,24 @@ type Message struct {
 	// Header is the family-agnostic header for OnRamp and OffRamp messages.
 	// This is always set on all CCIP messages.
 	Header RampMessageHeader `json:"header"`
-
-	// EVM2AnyRampMessage is populated if the CCIP message originated from an EVM chain.
-	EVM2AnyRampMessage *EVM2AnyRampMessage `json:"evm2AnyRampMessage,omitempty"`
+	// Sender address on the source chain.
+	// i.e if the source chain is EVM, this is an EVM address, so len(Sender) == 20 in that case.
+	Sender Bytes `json:"sender"`
+	// Data is the arbitrary data payload supplied by the message sender.
+	Data Bytes `json:"data"`
+	// Receiver is the receiver address on the destination chain.
+	// This is encoded in the destination chain family specific encoding.
+	// i.e if the destination is EVM, this is abi.encode(receiver).
+	Receiver Bytes `json:"receiver"`
+	// ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains.
+	ExtraArgs Bytes `json:"extraArgs"`
+	// FeeToken is the fee token address.
+	// i.e if the source chain is EVM, len(FeeToken) == 20 (i.e, is not abi-encoded).
+	FeeToken Bytes `json:"feeToken"`
+	// FeeTokenAmount is the amount of fee tokens paid.
+	FeeTokenAmount BigInt `json:"feeTokenAmount"`
+	// TokenAmounts is the array of tokens and amounts to transfer.
+	TokenAmounts []RampTokenAmount `json:"tokenAmounts"`
 }
 
 func (c Message) String() string {
@@ -126,35 +141,13 @@ type RampMessageHeader struct {
 	OnRamp Bytes `json:"onRamp"`
 }
 
-// EVM2AnyRampMessage is the family-agnostic message sent from an EVM onramp
-// to all other chain families.
-type EVM2AnyRampMessage struct {
-	// Sender address on the source chain.
-	// This is an EVM address, so len(Sender) == 20.
-	Sender Bytes `json:"sender"`
-	// Data is the arbitrary data payload supplied by the message sender.
-	Data Bytes `json:"data"`
-	// Receiver is the receiver address on the destination chain.
-	// This is encoded in the destination chain family specific encoding.
-	// i.e if the destination is EVM, this is abi.encode(receiver).
-	Receiver Bytes `json:"receiver"`
-	// ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
-	ExtraArgs Bytes `json:"extraArgs"`
-	// FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
-	FeeToken Bytes `json:"feeToken"`
-	// FeeTokenAmount is the amount of fee tokens paid.
-	FeeTokenAmount BigInt `json:"feeTokenAmount"`
-	// TokenAmounts is the array of tokens and amounts to transfer.
-	TokenAmounts []RampTokenAmount `json:"tokenAmounts"`
-}
-
 // RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.
 type RampTokenAmount struct {
-	// SourcePoolAddress is the source pool address, abi encoded. This value is trusted
-	// as it was obtained through the onRamp. It can be relied upon by the destination
+	// SourcePoolAddress is the source pool address, encoded according to source family native encoding scheme.
+	// This value is trusted as it was obtained through the onRamp. It can be relied upon by the destination
 	// pool to validate the source pool.
 	SourcePoolAddress Bytes `json:"sourcePoolAddress"`
-	// DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains
+	// DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains.
 	// This value is UNTRUSTED as any pool owner can return whatever value they want.
 	DestTokenAddress Bytes `json:"destTokenAddress"`
 	// ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at

@@ -43,37 +43,28 @@ message RampTokenAmount {
   BigInt amount = 4;
 }
 
-// EVM2AnyRampMessage is the family-agnostic message sent from an EVM onramp
-// to all other chain families.
-message EVM2AnyRampMessage {
-  // Sender address on the source chain.
-	// This is an EVM address, so len(Sender) == 20.
-  repeated bytes sender = 1;
-  // Data is the arbitrary data payload supplied by the message sender.
-  repeated bytes data = 2;
-  // Receiver is the receiver address on the destination chain.
-	// This is encoded in the destination chain family specific encoding.
-	// i.e if the destination is EVM, this is abi.encode(receiver).
-  repeated bytes receiver = 3;
-  // ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
-  repeated bytes extra_args = 4;
-  // FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
-  repeated bytes fee_token = 5;
-  // FeeTokenAmount is the amount of fee tokens paid.
-  BigInt fee_token_amount = 6;
-  // TokenAmounts is the array of tokens and amounts to transfer.
-  repeated RampTokenAmount token_amounts = 7;
-}
-
 // Message is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.Message].
 message Message {
   // Header is the family-agnostic header for OnRamp and OffRamp messages.
 	// This is always set on all CCIP messages.
   RampMessageHeader header = 1;
-  oneof ramp_message {
-    // EVM2AnyRampMessage is populated if the CCIP message originated from an EVM chain.
-    EVM2AnyRampMessage evm_2_any_ramp_message = 2;
-  }
+  // Sender address on the source chain.
+	// This is an EVM address, so len(Sender) == 20.
+  repeated bytes sender = 2;
+  // Data is the arbitrary data payload supplied by the message sender.
+  repeated bytes data = 3;
+  // Receiver is the receiver address on the destination chain.
+	// This is encoded in the destination chain family specific encoding.
+	// i.e if the destination is EVM, this is abi.encode(receiver).
+  repeated bytes receiver = 4;
+  // ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
+  repeated bytes extra_args = 5;
+  // FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
+  repeated bytes fee_token = 6;
+  // FeeTokenAmount is the amount of fee tokens paid.
+  BigInt fee_token_amount = 7;
+  // TokenAmounts is the array of tokens and amounts to transfer.
+  repeated RampTokenAmount token_amounts = 8;
 }
 
 // BigInt represents a [big.Int].

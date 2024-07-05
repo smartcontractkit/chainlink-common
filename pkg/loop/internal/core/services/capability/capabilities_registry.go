@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
@@ -73,6 +74,33 @@ func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabil
 		PeerID:         pid,
 		WorkflowDON:    toDON(res.WorkflowDON),
 		CapabilityDONs: cDONs,
+	}, nil
+}
+
+func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+	res, err := cr.grpc.ConfigForCapability(ctx, &pb.ConfigForCapabilityRequest{
+		CapabilityID: capabilityID,
+		DonID:        donID,
+	})
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, err
+	}
+
+	mc := values.FromMapValueProto(res.CapabilityConfig.ExecuteConfig)
+
+	var rtc capabilities.RemoteTriggerConfig
+	rtc.ApplyDefaults()
+
+	if prtc := res.CapabilityConfig.GetRemoteTriggerConfig(); prtc != nil {
+		rtc.RegistrationRefreshMs = prtc.RegistrationRefreshMs
+		rtc.RegistrationExpiryMs = prtc.RegistrationExpiryMs
+		rtc.MinResponsesToAggregate = prtc.MinResponsesToAggregate
+		rtc.MessageExpiryMs = prtc.MessageExpiryMs
+	}
+
+	return capabilities.CapabilityConfiguration{
+		ExecuteConfig:       mc,
+		RemoteTriggerConfig: rtc,
 	}, nil
 }
 
@@ -254,6 +282,31 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 	return &pb.GetReply{
 		CapabilityID: id,
 		Type:         pb.ExecuteAPIType(getExecuteAPIType(info.CapabilityType)),
+	}, nil
+}
+
+func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, req *pb.ConfigForCapabilityRequest) (*pb.ConfigForCapabilityReply, error) {
+	cc, err := c.impl.ConfigForCapability(ctx, req.CapabilityID, req.DonID)
+	if err != nil {
+		return nil, err
+	}
+
+	ecm := values.Proto(cc.ExecuteConfig).GetMapValue()
+
+	ccp := &capabilitiespb.CapabilityConfig{
+		ExecuteConfig: ecm,
+		RemoteConfig: &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
+			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
+				RegistrationRefreshMs:   cc.RemoteTriggerConfig.RegistrationRefreshMs,
+				RegistrationExpiryMs:    cc.RemoteTriggerConfig.RegistrationExpiryMs,
+				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
+				MessageExpiryMs:         cc.RemoteTriggerConfig.MessageExpiryMs,
+			},
+		},
+	}
+
+	return &pb.ConfigForCapabilityReply{
+		CapabilityConfig: ccp,
 	}, nil
 }
 

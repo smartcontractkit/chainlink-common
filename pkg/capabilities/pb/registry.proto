@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb";
+
+package loop;
+
+import "values/pb/values.proto";
+
+message RemoteTriggerConfig {
+  uint32 registrationRefreshMs = 1;
+  uint32 registrationExpiryMs = 2;
+  uint32 minResponsesToAggregate = 3;
+  uint32 messageExpiryMs = 4;
+}
+
+message CapabilityConfig {
+  values.Map execute_config = 1;
+
+  oneof remote_config {
+    RemoteTriggerConfig remote_trigger_config = 2;
+  }
+}
+

@@ -20,14 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	CapabilitiesRegistry_GetLocalNode_FullMethodName = "/loop.CapabilitiesRegistry/GetLocalNode"
-	CapabilitiesRegistry_Get_FullMethodName          = "/loop.CapabilitiesRegistry/Get"
-	CapabilitiesRegistry_GetTrigger_FullMethodName   = "/loop.CapabilitiesRegistry/GetTrigger"
-	CapabilitiesRegistry_GetAction_FullMethodName    = "/loop.CapabilitiesRegistry/GetAction"
-	CapabilitiesRegistry_GetConsensus_FullMethodName = "/loop.CapabilitiesRegistry/GetConsensus"
-	CapabilitiesRegistry_GetTarget_FullMethodName    = "/loop.CapabilitiesRegistry/GetTarget"
-	CapabilitiesRegistry_List_FullMethodName         = "/loop.CapabilitiesRegistry/List"
-	CapabilitiesRegistry_Add_FullMethodName          = "/loop.CapabilitiesRegistry/Add"
+	CapabilitiesRegistry_GetLocalNode_FullMethodName        = "/loop.CapabilitiesRegistry/GetLocalNode"
+	CapabilitiesRegistry_ConfigForCapability_FullMethodName = "/loop.CapabilitiesRegistry/ConfigForCapability"
+	CapabilitiesRegistry_Get_FullMethodName                 = "/loop.CapabilitiesRegistry/Get"
+	CapabilitiesRegistry_GetTrigger_FullMethodName          = "/loop.CapabilitiesRegistry/GetTrigger"
+	CapabilitiesRegistry_GetAction_FullMethodName           = "/loop.CapabilitiesRegistry/GetAction"
+	CapabilitiesRegistry_GetConsensus_FullMethodName        = "/loop.CapabilitiesRegistry/GetConsensus"
+	CapabilitiesRegistry_GetTarget_FullMethodName           = "/loop.CapabilitiesRegistry/GetTarget"
+	CapabilitiesRegistry_List_FullMethodName                = "/loop.CapabilitiesRegistry/List"
+	CapabilitiesRegistry_Add_FullMethodName                 = "/loop.CapabilitiesRegistry/Add"
 )
 
 // CapabilitiesRegistryClient is the client API for CapabilitiesRegistry service.
@@ -35,6 +36,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CapabilitiesRegistryClient interface {
 	GetLocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLocalNodeReply, error)
+	ConfigForCapability(ctx context.Context, in *ConfigForCapabilityRequest, opts ...grpc.CallOption) (*ConfigForCapabilityReply, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetReply, error)
 	GetTrigger(ctx context.Context, in *GetTriggerRequest, opts ...grpc.CallOption) (*GetTriggerReply, error)
 	GetAction(ctx context.Context, in *GetActionRequest, opts ...grpc.CallOption) (*GetActionReply, error)
@@ -55,6 +57,15 @@ func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface) CapabilitiesRegi
 func (c *capabilitiesRegistryClient) GetLocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLocalNodeReply, error) {
 	out := new(GetLocalNodeReply)
 	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetLocalNode_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, in *ConfigForCapabilityRequest, opts ...grpc.CallOption) (*ConfigForCapabilityReply, error) {
+	out := new(ConfigForCapabilityReply)
+	err := c.cc.Invoke(ctx, CapabilitiesRegistry_ConfigForCapability_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +140,7 @@ func (c *capabilitiesRegistryClient) Add(ctx context.Context, in *AddRequest, op
 // for forward compatibility
 type CapabilitiesRegistryServer interface {
 	GetLocalNode(context.Context, *emptypb.Empty) (*GetLocalNodeReply, error)
+	ConfigForCapability(context.Context, *ConfigForCapabilityRequest) (*ConfigForCapabilityReply, error)
 	Get(context.Context, *GetRequest) (*GetReply, error)
 	GetTrigger(context.Context, *GetTriggerRequest) (*GetTriggerReply, error)
 	GetAction(context.Context, *GetActionRequest) (*GetActionReply, error)
@@ -145,6 +157,9 @@ type UnimplementedCapabilitiesRegistryServer struct {
 
 func (UnimplementedCapabilitiesRegistryServer) GetLocalNode(context.Context, *emptypb.Empty) (*GetLocalNodeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLocalNode not implemented")
+}
+func (UnimplementedCapabilitiesRegistryServer) ConfigForCapability(context.Context, *ConfigForCapabilityRequest) (*ConfigForCapabilityReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfigForCapability not implemented")
 }
 func (UnimplementedCapabilitiesRegistryServer) Get(context.Context, *GetRequest) (*GetReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
@@ -194,6 +209,24 @@ func _CapabilitiesRegistry_GetLocalNode_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CapabilitiesRegistryServer).GetLocalNode(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CapabilitiesRegistry_ConfigForCapability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfigForCapabilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CapabilitiesRegistryServer).ConfigForCapability(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CapabilitiesRegistry_ConfigForCapability_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CapabilitiesRegistryServer).ConfigForCapability(ctx, req.(*ConfigForCapabilityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -334,6 +367,10 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLocalNode",
 			Handler:    _CapabilitiesRegistry_GetLocalNode_Handler,
+		},
+		{
+			MethodName: "ConfigForCapability",
+			Handler:    _CapabilitiesRegistry_ConfigForCapability_Handler,
 		},
 		{
 			MethodName: "Get",

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -387,4 +388,53 @@ func TestToDON(t *testing.T) {
 	actual := toDON(don)
 
 	require.Equal(t, expected, actual)
+}
+
+func TestCapabilitiesRegistry_ConfigForCapabilities(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "some-cap@1.0.0"
+	donID := uint32(1)
+	wm, err := values.WrapMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
+
+	var rtc capabilities.RemoteTriggerConfig
+	rtc.ApplyDefaults()
+	expectedCapConfig := capabilities.CapabilityConfiguration{
+		ExecuteConfig:       wm,
+		RemoteTriggerConfig: rtc,
+	}
+	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
+
+	capConf, err := rc.ConfigForCapability(tests.Context(t), capID, donID)
+	require.NoError(t, err)
+	assert.Equal(t, expectedCapConfig, capConf)
 }

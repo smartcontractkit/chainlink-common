@@ -5,9 +5,11 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "google/protobuf/empty.proto";
+import "capabilities/pb/registry.proto";
 
 service CapabilitiesRegistry {
   rpc GetLocalNode (google.protobuf.Empty) returns (GetLocalNodeReply) {}
+  rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
   rpc Get (GetRequest) returns (GetReply) {}
   rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
   rpc GetAction (GetActionRequest) returns (GetActionReply) {}
@@ -100,4 +102,13 @@ message GetTargetReply {
 message AddRequest {
   uint32 capabilityID = 1;
   ExecuteAPIType type = 2;
+}
+
+message ConfigForCapabilityRequest {
+  string capabilityID = 1;
+  uint32 donID = 2;
+}
+
+message ConfigForCapabilityReply {
+  loop.CapabilityConfig capability_config = 1;
 }

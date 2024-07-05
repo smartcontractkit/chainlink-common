@@ -70,6 +70,64 @@ func (_c *CapabilitiesRegistry_Add_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
+// ConfigForCapability provides a mock function with given fields: ctx, capabilityID, donID
+func (_m *CapabilitiesRegistry) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+	ret := _m.Called(ctx, capabilityID, donID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ConfigForCapability")
+	}
+
+	var r0 capabilities.CapabilityConfiguration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint32) (capabilities.CapabilityConfiguration, error)); ok {
+		return rf(ctx, capabilityID, donID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint32) capabilities.CapabilityConfiguration); ok {
+		r0 = rf(ctx, capabilityID, donID)
+	} else {
+		r0 = ret.Get(0).(capabilities.CapabilityConfiguration)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, uint32) error); ok {
+		r1 = rf(ctx, capabilityID, donID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CapabilitiesRegistry_ConfigForCapability_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ConfigForCapability'
+type CapabilitiesRegistry_ConfigForCapability_Call struct {
+	*mock.Call
+}
+
+// ConfigForCapability is a helper method to define mock.On call
+//   - ctx context.Context
+//   - capabilityID string
+//   - donID uint32
+func (_e *CapabilitiesRegistry_Expecter) ConfigForCapability(ctx interface{}, capabilityID interface{}, donID interface{}) *CapabilitiesRegistry_ConfigForCapability_Call {
+	return &CapabilitiesRegistry_ConfigForCapability_Call{Call: _e.mock.On("ConfigForCapability", ctx, capabilityID, donID)}
+}
+
+func (_c *CapabilitiesRegistry_ConfigForCapability_Call) Run(run func(ctx context.Context, capabilityID string, donID uint32)) *CapabilitiesRegistry_ConfigForCapability_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(uint32))
+	})
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_ConfigForCapability_Call) Return(_a0 capabilities.CapabilityConfiguration, _a1 error) *CapabilitiesRegistry_ConfigForCapability_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_ConfigForCapability_Call) RunAndReturn(run func(context.Context, string, uint32) (capabilities.CapabilityConfiguration, error)) *CapabilitiesRegistry_ConfigForCapability_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: ctx, ID
 func (_m *CapabilitiesRegistry) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
 	ret := _m.Called(ctx, ID)

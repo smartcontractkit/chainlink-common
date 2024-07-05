@@ -160,8 +160,3 @@ type RampTokenAmount struct {
 	// Amount is the amount of tokens to be transferred.
 	Amount BigInt `json:"amount"`
 }
-
-type EVMTokenAmount struct {
-	Token  types.Account
-	Amount BigInt
-}

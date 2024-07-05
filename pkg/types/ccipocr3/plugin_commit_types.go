@@ -1,103 +1,8 @@
 package ccipocr3
 
-import (
-	"encoding/json"
-	"fmt"
-	"time"
-)
-
-// ---[ Observation ]-----------------------------------------------------------
-
-type CommitPluginObservation struct {
-	NewMsgs     []RampMessageHeader   `json:"newMsgs"`
-	GasPrices   []GasPriceChain       `json:"gasPrices"`
-	TokenPrices []TokenPrice          `json:"tokenPrices"`
-	MaxSeqNums  []SeqNumChain         `json:"maxSeqNums"`
-	FChain      map[ChainSelector]int `json:"fChain"`
-}
-
-func NewCommitPluginObservation(
-	newMsgs []RampMessageHeader,
-	gasPrices []GasPriceChain,
-	tokenPrices []TokenPrice,
-	maxSeqNums []SeqNumChain,
-	FChain map[ChainSelector]int,
-) CommitPluginObservation {
-	return CommitPluginObservation{
-		NewMsgs:     newMsgs,
-		GasPrices:   gasPrices,
-		TokenPrices: tokenPrices,
-		MaxSeqNums:  maxSeqNums,
-		FChain:      FChain,
-	}
-}
-
-func (obs CommitPluginObservation) Encode() ([]byte, error) {
-	return json.Marshal(obs)
-}
-
-func DecodeCommitPluginObservation(b []byte) (CommitPluginObservation, error) {
-	obs := CommitPluginObservation{}
-	err := json.Unmarshal(b, &obs)
-	return obs, err
-}
-
-// ---[ Outcome ]---------------------------------------------------------------
-
-type CommitPluginOutcome struct {
-	MaxSeqNums  []SeqNumChain     `json:"maxSeqNums"`
-	MerkleRoots []MerkleRootChain `json:"merkleRoots"`
-	TokenPrices []TokenPrice      `json:"tokenPrices"`
-	GasPrices   []GasPriceChain   `json:"gasPrices"`
-}
-
-func NewCommitPluginOutcome(
-	seqNums []SeqNumChain,
-	merkleRoots []MerkleRootChain,
-	tokenPrices []TokenPrice,
-	gasPrices []GasPriceChain,
-) CommitPluginOutcome {
-	return CommitPluginOutcome{
-		MaxSeqNums:  seqNums,
-		MerkleRoots: merkleRoots,
-		TokenPrices: tokenPrices,
-		GasPrices:   gasPrices,
-	}
-}
-
-func (o CommitPluginOutcome) Encode() ([]byte, error) {
-	return json.Marshal(o)
-}
-
-// IsEmpty returns true if the CommitPluginOutcome is empty
-func (o CommitPluginOutcome) IsEmpty() bool {
-	return len(o.MaxSeqNums) == 0 &&
-		len(o.MerkleRoots) == 0 &&
-		len(o.TokenPrices) == 0 &&
-		len(o.GasPrices) == 0
-}
-
-func DecodeCommitPluginOutcome(b []byte) (CommitPluginOutcome, error) {
-	o := CommitPluginOutcome{}
-	err := json.Unmarshal(b, &o)
-	return o, err
-}
-
-func (o CommitPluginOutcome) String() string {
-	return fmt.Sprintf("{MaxSeqNums: %v, MerkleRoots: %v}", o.MaxSeqNums, o.MerkleRoots)
-}
-
-// ---[ Report ]---------------------------------------------------------------
-
 type CommitPluginReport struct {
 	MerkleRoots  []MerkleRootChain `json:"merkleRoots"`
 	PriceUpdates PriceUpdates      `json:"priceUpdates"`
-}
-
-type CommitPluginReportWithMeta struct {
-	Report    CommitPluginReport `json:"report"`
-	Timestamp time.Time          `json:"timestamp"`
-	BlockNum  uint64             `json:"blockNum"`
 }
 
 func NewCommitPluginReport(merkleRoots []MerkleRootChain, tokenPriceUpdates []TokenPrice, gasPriceUpdate []GasPriceChain) CommitPluginReport {
@@ -109,21 +14,9 @@ func NewCommitPluginReport(merkleRoots []MerkleRootChain, tokenPriceUpdates []To
 
 // IsEmpty returns true if the CommitPluginReport is empty
 func (r CommitPluginReport) IsEmpty() bool {
-	return len(r.MerkleRoots) == 0 && len(r.PriceUpdates.TokenPriceUpdates) == 0 && len(r.PriceUpdates.GasPriceUpdates) == 0
-}
-
-// ---[ Generic ]--------------------------------------------------------------
-
-type SeqNumChain struct {
-	ChainSel ChainSelector `json:"chainSel"`
-	SeqNum   SeqNum        `json:"seqNum"`
-}
-
-func NewSeqNumChain(chainSel ChainSelector, seqNum SeqNum) SeqNumChain {
-	return SeqNumChain{
-		ChainSel: chainSel,
-		SeqNum:   seqNum,
-	}
+	return len(r.MerkleRoots) == 0 &&
+		len(r.PriceUpdates.TokenPriceUpdates) == 0 &&
+		len(r.PriceUpdates.GasPriceUpdates) == 0
 }
 
 type MerkleRootChain struct {
@@ -132,7 +25,11 @@ type MerkleRootChain struct {
 	MerkleRoot   Bytes32       `json:"merkleRoot"`
 }
 
-func NewMerkleRootChain(chainSel ChainSelector, seqNumsRange SeqNumRange, merkleRoot Bytes32) MerkleRootChain {
+func NewMerkleRootChain(
+	chainSel ChainSelector,
+	seqNumsRange SeqNumRange,
+	merkleRoot Bytes32,
+) MerkleRootChain {
 	return MerkleRootChain{
 		ChainSel:     chainSel,
 		SeqNumsRange: seqNumsRange,

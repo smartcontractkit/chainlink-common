@@ -137,7 +137,7 @@ func TestGetLatestValue(t *testing.T) {
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
-				err := nilCr.GetLatestValue(ctx, "", "method", "", "anything", "anything")
+				err := nilCr.GetLatestValue(ctx, "", "method", primitives.Unconfirmed, "anything", "anything")
 				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 			})
 
@@ -145,7 +145,7 @@ func TestGetLatestValue(t *testing.T) {
 				es.err = errorType
 				t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := tests.Context(t)
-					err := chainReader.GetLatestValue(ctx, "", "method", "", nil, "anything")
+					err := chainReader.GetLatestValue(ctx, "", "method", primitives.Unconfirmed, nil, "anything")
 					assert.True(t, errors.Is(err, errorType))
 				})
 			}
@@ -154,7 +154,7 @@ func TestGetLatestValue(t *testing.T) {
 			es.err = nil
 			t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 				ctx := tests.Context(t)
-				err := chainReader.GetLatestValue(ctx, "", "method", "", &cannotEncode{}, &TestStruct{})
+				err := chainReader.GetLatestValue(ctx, "", "method", primitives.Unconfirmed, &cannotEncode{}, &TestStruct{})
 				assert.True(t, errors.Is(err, types.ErrInvalidType))
 			})
 		}

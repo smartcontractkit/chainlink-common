@@ -136,11 +136,9 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 		return err
 	}
 
-	var pbConfidence pb.Confidence
-	if confidenceLevel == primitives.Finalized {
-		pbConfidence = pb.Confidence_Finalized
-	} else {
-		pbConfidence = pb.Confidence_Unconfirmed
+	pbConfidence, err := confidenceToProto(confidenceLevel)
+	if err != nil {
+		return err
 	}
 
 	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams, Confidence: pbConfidence})
@@ -223,11 +221,9 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	var confidenceLevel primitives.ConfidenceLevel
-	if request.Confidence == pb.Confidence_Unconfirmed {
-		confidenceLevel = primitives.Unconfirmed
-	} else if request.Confidence == pb.Confidence_Finalized {
-		confidenceLevel = primitives.Finalized
+	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	if err != nil {
+		return nil, err
 	}
 
 	err = c.impl.GetLatestValue(ctx, request.ContractName, request.Method, confidenceLevel, params, returnVal)
@@ -325,8 +321,12 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 					Operator:    pb.ComparisonOperator(primitive.Operator),
 				}}
 		case *primitives.Confidence:
+			pbConfidence, err := confidenceToProto(primitive.ConfidenceLevel)
+			if err != nil {
+				return nil, err
+			}
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confidence{
-				Confidence: confidenceToProto(primitive.ConfidenceLevel),
+				Confidence: pbConfidence,
 			}
 		case *primitives.Timestamp:
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
@@ -363,14 +363,14 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 	return pbExpression, nil
 }
 
-func confidenceToProto(level primitives.ConfidenceLevel) pb.Confidence {
-	switch level {
+func confidenceToProto(confidenceLevel primitives.ConfidenceLevel) (pb.Confidence, error) {
+	switch confidenceLevel {
 	case primitives.Finalized:
-		return pb.Confidence_Finalized
+		return pb.Confidence_Finalized, nil
 	case primitives.Unconfirmed:
-		return pb.Confidence_Unconfirmed
+		return pb.Confidence_Unconfirmed, nil
 	default:
-		panic("invalid confidence level")
+		return -1, fmt.Errorf("invalid confidence level %s", confidenceLevel)
 	}
 }
 
@@ -472,7 +472,8 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 		case *pb.Primitive_Confidence:
-			return query.Confidence(confidenceFromProto(primitive.Confidence)), nil
+			confidence, err := confidenceFromProto(primitive.Confidence)
+			return query.Confidence(confidence), err
 		case *pb.Primitive_Block:
 			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
 		case *pb.Primitive_TxHash:
@@ -487,14 +488,14 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 	}
 }
 
-func confidenceFromProto(conf pb.Confidence) primitives.ConfidenceLevel {
-	switch conf {
+func confidenceFromProto(pbConfidence pb.Confidence) (primitives.ConfidenceLevel, error) {
+	switch pbConfidence {
 	case pb.Confidence_Finalized:
-		return primitives.Finalized
+		return primitives.Finalized, nil
 	case pb.Confidence_Unconfirmed:
-		return primitives.Unconfirmed
+		return primitives.Unconfirmed, nil
 	default:
-		panic("invalid confidence level")
+		return "", fmt.Errorf("invalid pb confidence level: %d", pbConfidence)
 	}
 }
 

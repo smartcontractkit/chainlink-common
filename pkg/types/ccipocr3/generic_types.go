@@ -82,51 +82,86 @@ func (c ChainSelector) String() string {
 	return fmt.Sprintf("ChainSelector(%d)", c)
 }
 
-type CCIPMsg struct {
-	CCIPMsgBaseDetails
-	ChainFeeLimit   BigInt        `json:"chainFeeLimit"`
-	Nonce           uint64        `json:"nonce"`
-	Sender          types.Account `json:"sender"`
-	Receiver        types.Account `json:"receiver"`
-	Strict          bool          `json:"strict"`
-	FeeToken        types.Account `json:"feeToken"`
-	FeeTokenAmount  BigInt        `json:"feeTokenAmount"`
-	Data            []byte        `json:"data"`
-	TokenAmounts    []TokenAmount `json:"tokenAmounts"`
-	SourceTokenData [][]byte      `json:"sourceTokenData"`
-	// Metadata is used as a backup for any additional data that is not covered by the fields above.
-	Metadata CCIPMsgMetadata `json:"metadata"`
+// Message is the generic Any2Any message type for CCIP messages.
+// It represents, in particular, a message emitted by a CCIP onramp.
+// The message is expected to be consumed by a CCIP offramp after
+// translating it into the appropriate format for the destination chain.
+type Message struct {
+	// Header is the family-agnostic header for OnRamp and OffRamp messages.
+	// This is always set on all CCIP messages.
+	Header RampMessageHeader `json:"header"`
+
+	// EVM2AnyRampMessage is populated if the CCIP message originated from an EVM chain.
+	EVM2AnyRampMessage *EVM2AnyRampMessage `json:"evm2AnyRampMessage,omitempty"`
 }
 
-type CCIPMsgMetadata struct {
-	// Version of the message metadata. Required in order to be able to parse the metadata
-	// by the underlying implementation.
-	Version string `json:"version"`
-	// Data is the metadata payload. The underlying implementation should know how to parse this data.
-	Data []byte `json:"data"`
-}
-
-type TokenAmount struct {
-	Token  types.Account
-	Amount *big.Int
-}
-
-func (c CCIPMsg) String() string {
+func (c Message) String() string {
 	js, _ := json.Marshal(c)
 	return string(js)
 }
 
-type CCIPMsgBaseDetails struct {
-	// ID is a unique identifier for the message, it should be unique across all chains.
+// RampMessageHeader is the family-agnostic header for OnRamp and OffRamp messages.
+// The MessageID is not expected to match MsgHash, since it may originate from a different
+// ramp family.
+type RampMessageHeader struct {
+	// MessageID is a unique identifier for the message, it should be unique across all chains.
 	// It is generated on the chain that the CCIP send is requested (i.e. the source chain of a message).
-	ID string `json:"id"`
-	// SourceChain is the chain that the message originated from.
-	SourceChain ChainSelector `json:"sourceChain,string"`
-	// SeqNum is an auto-incrementing sequence number for the message.
-	// NOTE: Sequence numbers are unique per chain. Meaning that the same sequence number can exist on multiple chains.
-	SeqNum SeqNum `json:"seqNum,string"`
+	MessageID Bytes32 `json:"messageId"`
+	// SourceChainSelector is the chain selector of the chain that the message originated from.
+	SourceChainSelector ChainSelector `json:"sourceChainSelector,string"`
+	// DestChainSelector is the chain selector of the chain that the message is destined for.
+	DestChainSelector ChainSelector `json:"destChainSelector,string"`
+	// SequenceNumber is an auto-incrementing sequence number for the message.
+	// Not unique across lanes.
+	SequenceNumber SeqNum `json:"seqNum,string"`
+	// Nonce is the nonce for this lane for this sender, not unique across senders/lanes
+	Nonce uint64 `json:"nonce"`
 
 	// MsgHash is the hash of all the message fields.
 	// NOTE: The field is expected to be empty, and will be populated by the plugin using the MsgHasher interface.
 	MsgHash Bytes32 `json:"msgHash"` // populated
+}
+
+// EVM2AnyRampMessage is the family-agnostic message sent from an EVM onramp
+// to all other chain families.
+type EVM2AnyRampMessage struct {
+	// Sender address on the source chain.
+	// This is an EVM address, so len(Sender) == 20.
+	Sender Bytes `json:"sender"`
+	// Data is the arbitrary data payload supplied by the message sender.
+	Data Bytes `json:"data"`
+	// Receiver is the receiver address on the destination chain.
+	// This is encoded in the destination chain family specific encoding.
+	// i.e if the destination is EVM, this is abi.encode(receiver).
+	Receiver Bytes `json:"receiver"`
+	// ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
+	ExtraArgs Bytes `json:"extraArgs"`
+	// FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
+	FeeToken Bytes `json:"feeToken"`
+	// FeeTokenAmount is the amount of fee tokens paid.
+	FeeTokenAmount BigInt `json:"feeTokenAmount"`
+	// TokenAmounts is the array of tokens and amounts to transfer.
+	TokenAmounts []RampTokenAmount `json:"tokenAmounts"`
+}
+
+// RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.
+type RampTokenAmount struct {
+	// SourcePoolAddress is the source pool address, abi encoded. This value is trusted
+	// as it was obtained through the onRamp. It can be relied upon by the destination
+	// pool to validate the source pool.
+	SourcePoolAddress Bytes `json:"sourcePoolAddress"`
+	// DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains
+	// This value is UNTRUSTED as any pool owner can return whatever value they want.
+	DestTokenAddress Bytes `json:"destTokenAddress"`
+	// ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at
+	// CCIP_LOCK_OR_BURN_V1_RET_BYTES bytes. If more data is required, the TokenTransferFeeConfig.destBytesOverhead
+	// has to be set for the specific token.
+	ExtraData Bytes `json:"extraData"`
+	// Amount is the amount of tokens to be transferred.
+	Amount BigInt `json:"amount"`
+}
+
+type EVMTokenAmount struct {
+	Token  types.Account
+	Amount BigInt
 }

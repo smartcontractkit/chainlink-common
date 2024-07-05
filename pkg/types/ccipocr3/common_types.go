@@ -4,18 +4,66 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strings"
 )
+
+type Bytes []byte
+
+func NewBytesFromString(s string) (Bytes, error) {
+	if len(s) < 2 {
+		return nil, fmt.Errorf("Bytes must be of at least length 2 (i.e, '0x' prefix): %s", s)
+	}
+
+	if !strings.HasPrefix(s, "0x") {
+		return nil, fmt.Errorf("Bytes must start with '0x' prefix: %s", s)
+	}
+
+	b, err := hex.DecodeString(s[2:])
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode hex: %w", err)
+	}
+
+	return Bytes(b), nil
+}
+
+func (b Bytes) String() string {
+	return "0x" + hex.EncodeToString(b)
+}
+
+func (b Bytes) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, b.String())), nil
+}
+
+func (b *Bytes) UnmarshalJSON(data []byte) error {
+	v := string(data)
+	if len(v) < 2 {
+		return fmt.Errorf("Bytes must be of at least length 2 (i.e, '0x' prefix): %s", v)
+	}
+
+	// Decode everything after the '0x' prefix.
+	bCp, err := hex.DecodeString(v[2:])
+	if err != nil {
+		return fmt.Errorf("failed to decode hex: %w", err)
+	}
+
+	*b = bCp
+	return nil
+}
 
 type Bytes32 [32]byte
 
 func NewBytes32FromString(s string) (Bytes32, error) {
 	if len(s) < 2 {
-		return Bytes32{}, fmt.Errorf("invalid Bytes32: %s", s)
+		return Bytes32{}, fmt.Errorf("Bytes32 must be of at least length 2 (i.e, '0x' prefix): %s", s)
+	}
+
+	if !strings.HasPrefix(s, "0x") {
+		return Bytes32{}, fmt.Errorf("Bytes32 must start with '0x' prefix: %s", s)
 	}
 
 	b, err := hex.DecodeString(s[2:])
 	if err != nil {
-		return Bytes32{}, err
+		return Bytes32{}, fmt.Errorf("failed to decode hex: %w", err)
 	}
 
 	var res Bytes32

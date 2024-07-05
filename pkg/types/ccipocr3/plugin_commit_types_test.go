@@ -6,27 +6,30 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCommitPluginObservation_EncodeAndDecode(t *testing.T) {
 	obs := NewCommitPluginObservation(
-		[]CCIPMsgBaseDetails{
-			{MsgHash: Bytes32{1}, ID: "1", SourceChain: math.MaxUint64, SeqNum: 123},
-			{MsgHash: Bytes32{2}, ID: "2", SourceChain: 321, SeqNum: math.MaxUint64},
+		[]RampMessageHeader{
+			{MsgHash: Bytes32{1}, MessageID: mustNewBytes32(t, "0x01"), SourceChainSelector: math.MaxUint64, SequenceNumber: 123},
+			{MsgHash: Bytes32{2}, MessageID: mustNewBytes32(t, "0x02"), SourceChainSelector: 321, SequenceNumber: math.MaxUint64},
 		},
-		[]GasPriceChain{}, // todo: populate this
+		[]GasPriceChain{
+			NewGasPriceChain(big.NewInt(1234), ChainSelector(1)),
+		},
 		[]TokenPrice{},
 		[]SeqNumChain{},
 		map[ChainSelector]int{},
 	)
 
 	b, err := obs.Encode()
-	assert.NoError(t, err)
-	assert.Equal(t, `{"newMsgs":[{"id":"1","sourceChain":"18446744073709551615","seqNum":"123","msgHash":"0x0100000000000000000000000000000000000000000000000000000000000000"},{"id":"2","sourceChain":"321","seqNum":"18446744073709551615","msgHash":"0x0200000000000000000000000000000000000000000000000000000000000000"}],"gasPrices":[],"tokenPrices":[],"maxSeqNums":[],"fChain":{}}`, string(b))
+	require.NoError(t, err)
+	require.Equal(t, `{"newMsgs":[{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"18446744073709551615","destChainSelector":"0","seqNum":"123","nonce":0,"msgHash":"0x0100000000000000000000000000000000000000000000000000000000000000"},{"messageId":"0x0200000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"321","destChainSelector":"0","seqNum":"18446744073709551615","nonce":0,"msgHash":"0x0200000000000000000000000000000000000000000000000000000000000000"}],"gasPrices":[{"gasPrice":"1234","chainSel":1}],"tokenPrices":[],"maxSeqNums":[],"fChain":{}}`, string(b))
 
 	obs2, err := DecodeCommitPluginObservation(b)
-	assert.NoError(t, err)
-	assert.Equal(t, obs, obs2)
+	require.NoError(t, err)
+	require.Equal(t, obs, obs2)
 }
 
 func TestCommitPluginOutcome_EncodeAndDecode(t *testing.T) {

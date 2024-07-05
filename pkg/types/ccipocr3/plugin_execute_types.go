@@ -16,7 +16,7 @@ type ExecutePluginReport struct {
 
 type ExecutePluginReportSingleChain struct {
 	SourceChainSelector ChainSelector `json:"sourceChainSelector"`
-	Messages            []CCIPMsg     `json:"messages"`
+	Messages            []Message     `json:"messages"`
 	OffchainTokenData   [][][]byte    `json:"offchainTokenData"`
 	Proofs              []Bytes32     `json:"proofs"`
 	ProofFlagBits       BigInt        `json:"proofFlagBits"`
@@ -28,7 +28,7 @@ type ExecutePluginReportSingleChain struct {
 
 type ExecutePluginCommitDataWithMessages struct {
 	ExecutePluginCommitData
-	Messages []CCIPMsg `json:"messages"`
+	Messages []Message `json:"messages"`
 }
 
 // ExecutePluginCommitData is the data that is committed to the chain.
@@ -48,7 +48,7 @@ type ExecutePluginCommitData struct {
 }
 
 type ExecutePluginCommitObservations map[ChainSelector][]ExecutePluginCommitDataWithMessages
-type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]CCIPMsg
+type ExecutePluginMessageObservations map[ChainSelector]map[SeqNum]Message
 
 // ExecutePluginObservation is the observation of the ExecutePlugin.
 // TODO: revisit observation types. The maps used here are more space efficient and easier to work

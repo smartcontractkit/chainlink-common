@@ -14,7 +14,7 @@ service MsgHasher {
 }
 
 message HashMsgInput {
-  CCIPMsg msg = 1;
+  Message msg = 1;
 }
 
 message HashMsgOutput {

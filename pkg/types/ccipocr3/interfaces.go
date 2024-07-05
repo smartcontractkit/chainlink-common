@@ -24,5 +24,5 @@ type ExecutePluginCodec interface {
 }
 
 type MessageHasher interface {
-	Hash(context.Context, CCIPMsg) (Bytes32, error)
+	Hash(context.Context, Message) (Bytes32, error)
 }

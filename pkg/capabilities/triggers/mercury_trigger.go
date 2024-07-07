@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
 const triggerID = "streams-trigger@1.0.0"
@@ -27,7 +28,7 @@ const defaultTickerResolutionMs = 1000
 // TODO pending capabilities configuration implementation - this should be configurable with a sensible default
 const defaultSendChannelBufferSize = 1000
 
-type config struct {
+type Config struct {
 	// strings should be hex-encoded 32-byte values, prefixed with "0x", all lowercase, minimum 1 item
 	FeedIDs []string `json:"feedIds" jsonschema:"pattern=^0x[0-9a-f]{64}$,minItems=1"`
 	// must be greater than 0
@@ -38,11 +39,11 @@ type inputs struct {
 	TriggerID string `json:"triggerId"`
 }
 
-var mercuryTriggerValidator = capabilities.NewValidator[config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo})
+var mercuryTriggerValidator = capabilities.NewValidator[Config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo})
 
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
-	capabilities.Validator[config, inputs, capabilities.TriggerEvent]
+	capabilities.Validator[Config, inputs, capabilities.TriggerEvent]
 	capabilities.CapabilityInfo
 	tickerResolutionMs int64
 	subscribers        map[string]*subscriber
@@ -59,7 +60,45 @@ var _ services.Service = &MercuryTriggerService{}
 type subscriber struct {
 	ch         chan<- capabilities.CapabilityResponse
 	workflowID string
-	config     config
+	config     Config
+}
+
+// TODO: Include mock outputs for typechecking and testing
+type CapabilityDefinition interface {
+	Config()
+}
+
+type MercuryCapabilityDefinition struct {
+	Config Config
+}
+
+type MercuryOutput = []datastreams.FeedReport
+
+type NewMercuryTriggerParams struct {
+	Config Config
+}
+
+func NewMercuryTrigger(params NewMercuryTriggerParams) workflows.Trigger[MercuryOutput] {
+	// TODO: Call .ValidateConfig to check for more complex JSON Schema validation
+	outputs := []datastreams.FeedReport{}
+
+	for _, feedID := range params.Config.FeedIDs {
+		outputs = append(outputs, datastreams.FeedReport{
+			FeedID: feedID,
+		})
+	}
+
+	return workflows.Trigger[MercuryOutput]{
+		Definition: workflows.TriggerDefinitionYaml{
+			ID: workflows.StepDefinitionID{IdStr: triggerID},
+			Config: workflows.Mapping{
+				"feedIds":        params.Config.FeedIDs,
+				"maxFrequencyMs": params.Config.MaxFrequencyMs,
+			},
+		},
+		// TODO: Output should be based on params
+		Output: outputs,
+	}
 }
 
 // Mercury Trigger will send events to each subscriber every MaxFrequencyMs (configurable per subscriber).

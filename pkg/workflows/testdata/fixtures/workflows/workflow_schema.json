@@ -18,7 +18,7 @@
     "mapping": {
       "type": "object"
     },
-    "stepDefinitionID": {
+    "StepDefinitionID": {
       "oneOf": [
         {
           "type": "string",
@@ -42,11 +42,7 @@
           },
           "additionalProperties": false,
           "type": "object",
-          "required": [
-            "name",
-            "version",
-            "labels"
-          ]
+          "required": ["name", "version", "labels"]
         }
       ],
       "title": "id"
@@ -54,7 +50,7 @@
     "stepDefinitionYaml": {
       "properties": {
         "id": {
-          "$ref": "#/$defs/stepDefinitionID"
+          "$ref": "#/$defs/StepDefinitionID"
         },
         "ref": {
           "type": "string",
@@ -69,16 +65,12 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "id",
-        "inputs",
-        "config"
-      ]
+      "required": ["id", "inputs", "config"]
     },
-    "triggerDefinitionYaml": {
+    "TriggerDefinitionYaml": {
       "properties": {
         "id": {
-          "$ref": "#/$defs/stepDefinitionID"
+          "$ref": "#/$defs/StepDefinitionID"
         },
         "ref": {
           "type": "string",
@@ -90,10 +82,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "id",
-        "config"
-      ]
+      "required": ["id", "config"]
     },
     "workflowSpecYaml": {
       "properties": {
@@ -108,7 +97,7 @@
         },
         "triggers": {
           "items": {
-            "$ref": "#/$defs/triggerDefinitionYaml"
+            "$ref": "#/$defs/TriggerDefinitionYaml"
           },
           "type": "array"
         },
@@ -133,11 +122,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "triggers",
-        "consensus",
-        "targets"
-      ]
+      "required": ["triggers", "consensus", "targets"]
     }
   }
 }

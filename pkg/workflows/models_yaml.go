@@ -71,7 +71,7 @@ type workflowSpecYaml struct {
 	//Name nameYaml `json:"name"`
 	Owner string `json:"owner,omitempty" jsonschema:"pattern=^0x[0-9a-fA-F]{40}$"` // 20 bytes represented as hex string with 0x prefix, or empty owner allowed for anonymous workflows
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.
-	Triggers []triggerDefinitionYaml `json:"triggers" jsonschema:"required"`
+	Triggers []TriggerDefinitionYaml `json:"triggers" jsonschema:"required"`
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
 	Actions []stepDefinitionYaml `json:"actions,omitempty"`
 	// Consensus encapsulates the logic for aggregating and validating the results from various nodes.
@@ -129,9 +129,9 @@ func (w workflowSpecYaml) toWorkflowSpec() WorkflowSpec {
 	}
 }
 
-type mapping map[string]any
+type Mapping map[string]any
 
-func (m *mapping) UnmarshalJSON(b []byte) error {
+func (m *Mapping) UnmarshalJSON(b []byte) error {
 	mp := map[string]any{}
 
 	d := json.NewDecoder(bytes.NewReader(b))
@@ -147,7 +147,7 @@ func (m *mapping) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	*m = (mapping)(nm)
+	*m = (Mapping)(nm)
 	return err
 }
 
@@ -208,16 +208,16 @@ func convertNumbers(m map[string]any) (map[string]any, error) {
 	return nm, nil
 }
 
-func (m mapping) MarshalJSON() ([]byte, error) {
+func (m Mapping) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]any(m))
 }
 
-// triggerDefinitionYaml is the YAML representation of a trigger step in a workflow.
+// TriggerDefinitionYaml is the YAML representation of a trigger step in a workflow.
 // Like `stepDefinitionYaml`, this will get reduced to a single representation for
 // all steps, `StepDefinition`.
 // NOTE: unlike stepDefinitionYaml, this omits the `inputs` field, which isn't used
 // for triggers.
-type triggerDefinitionYaml struct {
+type TriggerDefinitionYaml struct {
 	// A universally unique name for a capability will be defined under the “id” property. The uniqueness will, eventually, be enforced in the Capability Registry.
 	//
 	// Semver must be used to specify the version of the Capability at the end of the id field. Capability versions must be immutable.
@@ -245,7 +245,7 @@ type triggerDefinitionYaml struct {
 	//      network: mainnet
 	//
 	// [semver regex]: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-	ID stepDefinitionID `json:"id" jsonschema:"required"`
+	ID StepDefinitionID `json:"id" jsonschema:"required"`
 
 	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
 	//
@@ -276,13 +276,13 @@ type triggerDefinitionYaml struct {
 	//        address: "0xaabbcc"
 	//        method: "updateFeedValues(report bytes, role uint8)"
 	//        params: [$(inputs.report), 1]
-	Config mapping `json:"config" jsonschema:"required"`
+	Config Mapping `json:"config" jsonschema:"required"`
 }
 
 // toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
 //
 // `StepDefinition` is the converged representation of a step in a workflow.
-func (s triggerDefinitionYaml) toStepDefinition() StepDefinition {
+func (s TriggerDefinitionYaml) toStepDefinition() StepDefinition {
 	return StepDefinition{
 		Ref:    s.Ref,
 		ID:     s.ID.String(),
@@ -322,7 +322,7 @@ type stepDefinitionYaml struct {
 	//      network: mainnet
 	//
 	// [semver regex]: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-	ID stepDefinitionID `json:"id" jsonschema:"required"`
+	ID StepDefinitionID `json:"id" jsonschema:"required"`
 
 	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
 	//
@@ -365,7 +365,7 @@ type stepDefinitionYaml struct {
 	//        address: "0xaabbcc"
 	//        method: "updateFeedValues(report bytes, role uint8)"
 	//        params: [$(inputs.report), 1]
-	Config mapping `json:"config" jsonschema:"required"`
+	Config Mapping `json:"config" jsonschema:"required"`
 }
 
 // toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
@@ -377,7 +377,7 @@ func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 		ID:  s.ID.String(),
 		Inputs: StepInputs{
 			OutputRef: s.Inputs.outputRef,
-			Mapping:   s.Inputs.mapping,
+			Mapping:   s.Inputs.Mapping,
 		},
 		Config: s.Config,
 	}
@@ -387,7 +387,7 @@ func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 // If an interpolation value is provided, it must obey the following rules be a valid interpolation string,
 // of the form "$(<REF>.outputs)", where ref is either "trigger" or a ref in the workflow.
 type inputs struct {
-	mapping   mapping
+	Mapping   Mapping
 	outputRef string
 }
 
@@ -405,13 +405,13 @@ func (i *inputs) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	var m mapping
+	var m Mapping
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		return err
 	}
 
-	i.mapping = m
+	i.Mapping = m
 	return nil
 }
 
@@ -420,7 +420,7 @@ func (i *inputs) MarshalJSON() ([]byte, error) {
 		return json.Marshal(i.outputRef)
 	}
 
-	return json.Marshal(i.mapping)
+	return json.Marshal(i.Mapping)
 }
 
 // JSONSchema returns the JSON schema for a inputs
@@ -428,7 +428,7 @@ func (i *inputs) MarshalJSON() ([]byte, error) {
 // The schema is a oneOf schema that allows either a string or a mapping.
 func (inputs) JSONSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
-	var m mapping
+	var m Mapping
 	mappingSchema := reflector.Reflect(&m)
 	mappingSchema.ID = ""
 	mappingSchema.Version = ""
@@ -449,26 +449,26 @@ func (inputs) JSONSchema() *jsonschema.Schema {
 	}
 }
 
-// stepDefinitionID represents both the string and table representations of the "id" field in a StepDefinition.
-type stepDefinitionID struct {
-	idStr   string
+// StepDefinitionID represents both the string and table representations of the "id" field in a StepDefinition.
+type StepDefinitionID struct {
+	IdStr   string
 	idTable *stepDefinitionTableID
 }
 
-func (s stepDefinitionID) String() string {
-	if s.idStr != "" {
-		return s.idStr
+func (s StepDefinitionID) String() string {
+	if s.IdStr != "" {
+		return s.IdStr
 	}
 
 	return s.idTable.String()
 }
 
-func (s *stepDefinitionID) UnmarshalJSON(data []byte) error {
+func (s *StepDefinitionID) UnmarshalJSON(data []byte) error {
 	// Unmarshal the JSON data into a map to determine if it's a string or a table
 	var m string
 	err := json.Unmarshal(data, &m)
 	if err == nil {
-		s.idStr = m
+		s.IdStr = m
 		return nil
 	}
 
@@ -482,18 +482,18 @@ func (s *stepDefinitionID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *stepDefinitionID) MarshalJSON() ([]byte, error) {
-	if s.idStr != "" {
-		return json.Marshal(s.idStr)
+func (s *StepDefinitionID) MarshalJSON() ([]byte, error) {
+	if s.IdStr != "" {
+		return json.Marshal(s.IdStr)
 	}
 
 	return json.Marshal(s.idTable)
 }
 
-// JSONSchema returns the JSON schema for a stepDefinitionID.
+// JSONSchema returns the JSON schema for a StepDefinitionID.
 //
 // The schema is a oneOf schema that allows either a string or a table.
-func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
+func (StepDefinitionID) JSONSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
 	tableSchema := reflector.Reflect(&stepDefinitionTableID{})
 	tableSchema.ID = ""
@@ -520,10 +520,10 @@ func (stepDefinitionID) JSONSchema() *jsonschema.Schema {
 	}
 }
 
-// stepDefinitionTableID is the structured representation of a stepDefinitionID.
+// stepDefinitionTableID is the structured representation of a StepDefinitionID.
 type stepDefinitionTableID struct {
 	Name string `json:"name"`
-	// This pattern is the same as the one used in stepDefinitionID.JSONSchema()
+	// This pattern is the same as the one used in StepDefinitionID.JSONSchema()
 	Version string            `json:"version" jsonschema:"pattern=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"`
 	Labels  map[string]string `json:"labels"`
 }

@@ -345,7 +345,7 @@ func TestJsonSchema(t *testing.T) {
 }
 
 func TestMappingCustomType(t *testing.T) {
-	m := mapping(map[string]any{})
+	m := Mapping(map[string]any{})
 	data := `
 {
 	"foo": 100,

@@ -6,7 +6,7 @@ type ExecutePluginReport struct {
 
 type ExecutePluginReportSingleChain struct {
 	SourceChainSelector ChainSelector `json:"sourceChainSelector"`
-	Messages            []CCIPMsg     `json:"messages"`
+	Messages            []Message     `json:"messages"`
 	OffchainTokenData   [][][]byte    `json:"offchainTokenData"`
 	Proofs              []Bytes32     `json:"proofs"`
 	ProofFlagBits       BigInt        `json:"proofFlagBits"`

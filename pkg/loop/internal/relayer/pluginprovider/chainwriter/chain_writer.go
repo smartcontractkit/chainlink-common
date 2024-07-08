@@ -150,6 +150,6 @@ func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 	}, nil
 }
 
-func RegisterContractWriterService(s *grpc.Server, chainWriter types.ChainWriter) {
+func RegisterChainWriterService(s *grpc.Server, chainWriter types.ChainWriter) {
 	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: chainWriter})
 }

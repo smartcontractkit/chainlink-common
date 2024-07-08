@@ -360,6 +360,27 @@ func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerSer
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
+func (r *relayerServer) NewChainWriter(ctx context.Context, request *pb.NewChainWriterRequest) (*pb.NewChainWriterReply, error) {
+	cw, err := r.impl.NewChainWriter(ctx, request.GetChainWriterConfig())
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cw.Start(ctx); err != nil {
+		return nil, err
+	}
+
+	const name = "ChainWriter"
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		chainwriter.RegisterChainWriterService(s, cw)
+	}, net.Resource{Closer: cw, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.NewChainWriterReply{ChainWriterID: id}, nil
+}
+
 func (r *relayerServer) NewContractReader(ctx context.Context, request *pb.NewContractReaderRequest) (*pb.NewContractReaderReply, error) {
 	cr, err := r.impl.NewContractReader(ctx, request.GetContractReaderConfig())
 	if err != nil {

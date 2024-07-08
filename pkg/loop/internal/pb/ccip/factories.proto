@@ -30,6 +30,7 @@ message NewExecutionFactoryRequest {
     uint32 dst_provider_service_id = 2;
     uint32 src_chain = 3;
     uint32 dst_chain = 4;
+    string src_token_address = 5;
 }
 
 // NewExecutionFactoryResponse is a contains the id of the created execution factory

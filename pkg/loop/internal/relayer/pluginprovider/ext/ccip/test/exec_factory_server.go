@@ -30,7 +30,7 @@ type execFactoryServer struct {
 }
 
 // NewExecutionFactory implements types.CCIPExecFactoryGenerator.
-func (e execFactoryServer) NewExecutionFactory(ctx context.Context, srcProvider types.CCIPExecProvider, dstProvider types.CCIPExecProvider, srcChainID int64, dstChainID int64) (types.ReportingPluginFactory, error) {
+func (e execFactoryServer) NewExecutionFactory(ctx context.Context, srcProvider types.CCIPExecProvider, dstProvider types.CCIPExecProvider, srcChainID int64, dstChainID int64, sourceTokenAddress string) (types.ReportingPluginFactory, error) {
 	err := e.provider.Evaluate(ctx, srcProvider)
 	if err != nil {
 		return nil, err
@@ -48,16 +48,17 @@ func RunExecutionLOOP(t *testing.T, p types.CCIPExecutionFactoryGenerator) {
 }
 
 type ExecutionLOOPTester struct {
-	SrcProvider types.CCIPExecProvider
-	DstProvider types.CCIPExecProvider
-	SrcChainID  int64
-	DstChainID  int64
+	SrcProvider        types.CCIPExecProvider
+	DstProvider        types.CCIPExecProvider
+	SrcChainID         int64
+	DstChainID         int64
+	SourceTokenAddress string
 }
 
 func (e ExecutionLOOPTester) Run(t *testing.T, p types.CCIPExecutionFactoryGenerator) {
 	t.Run("ExecutionLOOP", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewExecutionFactory(ctx, e.SrcProvider, e.DstProvider, e.SrcChainID, e.DstChainID)
+		factory, err := p.NewExecutionFactory(ctx, e.SrcProvider, e.DstProvider, e.SrcChainID, e.DstChainID, e.SourceTokenAddress)
 		require.NoError(t, err)
 
 		runReportingPluginFactory(t, factory)

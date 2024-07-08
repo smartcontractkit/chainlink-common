@@ -28,7 +28,7 @@ func TestExecService(t *testing.T) {
 
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false, 0)
-	}, cciptest.ExecutionProvider, cciptest.ExecutionProvider, 0, 0)
+	}, cciptest.ExecutionProvider, cciptest.ExecutionProvider, 0, 0, "")
 	hook := exec.PluginService.XXXTestHook()
 	servicetest.Run(t, exec)
 
@@ -64,7 +64,7 @@ func TestExecService_recovery(t *testing.T) {
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, cciptest.ExecutionProvider, cciptest.ExecutionProvider, 0, 0)
+	}, cciptest.ExecutionProvider, cciptest.ExecutionProvider, 0, 0, "")
 	servicetest.Run(t, exec)
 
 	reportingplugintest.RunFactory(t, exec)
@@ -100,10 +100,11 @@ func TestExecLOOP(t *testing.T) {
 		if err == nil {
 			// test to run when BCF-3061 is fixed
 			cciptest.ExecutionLOOPTester{
-				SrcProvider: remoteProvider,
-				DstProvider: remoteProvider,
-				SrcChainID:  0,
-				DstChainID:  0,
+				SrcProvider:        remoteProvider,
+				DstProvider:        remoteProvider,
+				SrcChainID:         0,
+				DstChainID:         0,
+				SourceTokenAddress: "",
 			}.Run(t, remoteExecFactory)
 		}
 	})

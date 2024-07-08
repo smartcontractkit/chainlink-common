@@ -44,7 +44,7 @@ func NewExecutionLOOPClient(broker net.Broker, brokerCfg net.BrokerConfig, conn 
 // is run as an external process via hashicorp plugin. If the given provider is a GRPCClientConn, then the provider is proxied to the
 // to the relayer, which is its own process via hashicorp plugin. If the provider is not a GRPCClientConn, then the provider is a local
 // to the core node. The core must wrap the provider in a grpc server and serve it locally.
-func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvider types.CCIPExecProvider, dstProvider types.CCIPExecProvider, srcChainID int64, dstChainID int64) (types.ReportingPluginFactory, error) {
+func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvider types.CCIPExecProvider, dstProvider types.CCIPExecProvider, srcChainID int64, dstChainID int64, srcTokenAddress string) (types.ReportingPluginFactory, error) {
 	newExecClientFn := func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		// TODO are there any local resources that need to be passed to the executor and started as a server?
 
@@ -92,6 +92,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 			DstProviderServiceId: dstProviderID,
 			SrcChain:             uint32(srcChainID),
 			DstChain:             uint32(dstChainID),
+			SrcTokenAddress:      srcTokenAddress,
 		})
 		if err != nil {
 			return 0, nil, err
@@ -152,7 +153,7 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 	deps.Add(net.Resource{Closer: dstProviderConn, Name: "ExecProvider"})
 	dstProvider := ccipprovider.NewExecProviderClient(r.BrokerExt, dstProviderConn)
 
-	factory, err := r.impl.NewExecutionFactory(ctx, srcProvider, dstProvider, int64(request.SrcChain), int64(request.DstChain))
+	factory, err := r.impl.NewExecutionFactory(ctx, srcProvider, dstProvider, int64(request.SrcChain), int64(request.DstChain), request.SrcTokenAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new execution factory: %w", err)
 	}

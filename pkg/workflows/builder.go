@@ -21,7 +21,12 @@ type Trigger[O any] struct {
 	Output     O
 }
 
-type TriggerDefinition[O any] struct {
+type Consensus[O any] struct {
+	Definition StepDefinitionYaml
+	Output     O
+}
+
+type CapabilityDefinition[O any] struct {
 	Ref    string
 	Output O
 }
@@ -42,17 +47,27 @@ func NewWorkflow(
 	}
 }
 
-func AddTrigger[O any](b *Workflow, trigger Trigger[O]) TriggerDefinition[O] {
+func AddTrigger[O any](w *Workflow, trigger Trigger[O]) CapabilityDefinition[O] {
 	// Add ref to trigger.Definition
-	trigger.Definition.Ref = fmt.Sprintf("trigger-%s", strconv.Itoa((len(b.spec.Triggers))))
-	b.spec.Triggers = append(b.spec.Triggers, trigger.Definition)
+	trigger.Definition.Ref = fmt.Sprintf("trigger-%s", strconv.Itoa((len(w.spec.Triggers))))
+	w.spec.Triggers = append(w.spec.Triggers, trigger.Definition)
 
-	return TriggerDefinition[O]{
+	return CapabilityDefinition[O]{
 		Output: trigger.Output,
 		Ref:    trigger.Definition.Ref,
 	}
 }
 
-func (b Workflow) Spec() WorkflowSpec {
-	return b.spec.toWorkflowSpec()
+func AddConsensus[O any](w *Workflow, consensus Consensus[O]) CapabilityDefinition[O] {
+	// Add ref to trigger.Definition
+	consensus.Definition.Ref = fmt.Sprintf("consensus-%s", strconv.Itoa((len(w.spec.Consensus))))
+
+	return CapabilityDefinition[O]{
+		Output: consensus.Output,
+		Ref:    consensus.Definition.Ref,
+	}
+}
+
+func (w Workflow) Spec() WorkflowSpec {
+	return w.spec.toWorkflowSpec()
 }

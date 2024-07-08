@@ -14,6 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
 const (
@@ -31,6 +32,32 @@ var info = capabilities.MustNewCapabilityInfo(
 	capabilities.CapabilityTypeConsensus,
 	"OCR3 consensus exposed as a capability.",
 )
+
+type OCR3Output = any
+
+// type NewMercuryTriggerParams struct {
+// 	Config Config
+// }
+
+func NewOCR3Consensus() workflows.Consensus[OCR3Output] {
+	// // TODO: Call .ValidateConfig to check for more complex JSON Schema validation
+	// outputs := []datastreams.FeedReport{}
+
+	// for _, feedID := range params.Config.FeedIDs {
+	// 	outputs = append(outputs, datastreams.FeedReport{
+	// 		FeedID: feedID,
+	// 	})
+	// }
+
+	return workflows.Consensus[OCR3Output]{
+		Definition: workflows.StepDefinitionYaml{
+			ID:     workflows.StepDefinitionID{IdStr: ocrCapabilityID},
+			Config: workflows.Mapping{},
+		},
+		// TODO: Output should be based on params
+		Output: nil,
+	}
+}
 
 type capability struct {
 	services.StateMachine

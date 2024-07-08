@@ -81,6 +81,8 @@ type ExecOffchainConfig struct {
 	RootSnoozeTime config.Duration
 	// MessageVisibilityInterval is the interval at which we check for new messages.
 	MessageVisibilityInterval config.Duration
+	// BatchingStrategyID is the strategy to use for batching messages.
+	BatchingStrategyID uint32
 }
 
 type ExecOnchainConfig struct {

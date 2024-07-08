@@ -73,11 +73,11 @@ type workflowSpecYaml struct {
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.
 	Triggers []TriggerDefinitionYaml `json:"triggers" jsonschema:"required"`
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
-	Actions []stepDefinitionYaml `json:"actions,omitempty"`
+	Actions []StepDefinitionYaml `json:"actions,omitempty"`
 	// Consensus encapsulates the logic for aggregating and validating the results from various nodes.
-	Consensus []stepDefinitionYaml `json:"consensus" jsonschema:"required"`
+	Consensus []StepDefinitionYaml `json:"consensus" jsonschema:"required"`
 	// Targets represents the final step of the workflow, delivering the processed data to a specified location.
-	Targets []stepDefinitionYaml `json:"targets" jsonschema:"required"`
+	Targets []StepDefinitionYaml `json:"targets" jsonschema:"required"`
 
 	// computed hash of the original workflow yaml spec
 	cid  string
@@ -213,9 +213,9 @@ func (m Mapping) MarshalJSON() ([]byte, error) {
 }
 
 // TriggerDefinitionYaml is the YAML representation of a trigger step in a workflow.
-// Like `stepDefinitionYaml`, this will get reduced to a single representation for
+// Like `StepDefinitionYaml`, this will get reduced to a single representation for
 // all steps, `StepDefinition`.
-// NOTE: unlike stepDefinitionYaml, this omits the `inputs` field, which isn't used
+// NOTE: unlike StepDefinitionYaml, this omits the `inputs` field, which isn't used
 // for triggers.
 type TriggerDefinitionYaml struct {
 	// A universally unique name for a capability will be defined under the “id” property. The uniqueness will, eventually, be enforced in the Capability Registry.
@@ -279,7 +279,7 @@ type TriggerDefinitionYaml struct {
 	Config Mapping `json:"config" jsonschema:"required"`
 }
 
-// toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
+// toStepDefinition converts a StepDefinitionYaml to a StepDefinition.
 //
 // `StepDefinition` is the converged representation of a step in a workflow.
 func (s TriggerDefinitionYaml) toStepDefinition() StepDefinition {
@@ -290,11 +290,11 @@ func (s TriggerDefinitionYaml) toStepDefinition() StepDefinition {
 	}
 }
 
-// stepDefinitionYaml is the YAML representation of a step in a workflow.
+// StepDefinitionYaml is the YAML representation of a step in a workflow.
 //
 // It allows for multiple ways of defining a step, which we later
 // convert to a single representation, `StepDefinition`.
-type stepDefinitionYaml struct {
+type StepDefinitionYaml struct {
 	// A universally unique name for a capability will be defined under the “id” property. The uniqueness will, eventually, be enforced in the Capability Registry.
 	//
 	// Semver must be used to specify the version of the Capability at the end of the id field. Capability versions must be immutable.
@@ -368,10 +368,10 @@ type stepDefinitionYaml struct {
 	Config Mapping `json:"config" jsonschema:"required"`
 }
 
-// toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
+// toStepDefinition converts a StepDefinitionYaml to a StepDefinition.
 //
 // `StepDefinition` is the converged representation of a step in a workflow.
-func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
+func (s StepDefinitionYaml) toStepDefinition() StepDefinition {
 	return StepDefinition{
 		Ref: s.Ref,
 		ID:  s.ID.String(),

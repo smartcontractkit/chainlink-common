@@ -101,7 +101,6 @@ func Test_queryLogger_logTiming(t *testing.T) {
 		}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-
 			t.Run("no-deadline", func(t *testing.T) {
 				lggr, ol := logger.TestObservedSugared(t, zap.DebugLevel)
 				ql := newQueryLogger(lggr, "TEST QUERY", "foo", "bar")
@@ -165,7 +164,6 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				log := logs[0]
 				assert.Equal(t, zap.WarnLevel, log.Level)
 				assert.Equal(t, "TEST QUERY", log.ContextMap()["sql"])
-
 			})
 
 			t.Run("error", func(t *testing.T) {

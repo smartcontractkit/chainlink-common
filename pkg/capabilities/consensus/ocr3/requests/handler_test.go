@@ -43,7 +43,6 @@ func Test_Handler_SendsResponse(t *testing.T) {
 
 	resp := <-responseCh
 	require.Equal(t, testVal, resp.Value)
-
 }
 
 func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
@@ -72,7 +71,6 @@ func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
 
 	resp := <-responseCh
 	require.Equal(t, testVal, resp.Value)
-
 }
 
 func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
@@ -117,7 +115,6 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 		t.Fatal("Should not have received a response")
 	default:
 	}
-
 }
 
 func Test_Handler_PendingRequestsExpiry(t *testing.T) {

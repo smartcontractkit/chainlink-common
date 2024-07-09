@@ -291,6 +291,65 @@ func (_c *Relayer_Name_Call) RunAndReturn(run func() string) *Relayer_Name_Call 
 	return _c
 }
 
+// NewChainWriter provides a mock function with given fields: ctx, chainWriterConfig
+func (_m *Relayer) NewChainWriter(ctx context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+	ret := _m.Called(ctx, chainWriterConfig)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewChainWriter")
+	}
+
+	var r0 types.ChainWriter
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ChainWriter, error)); ok {
+		return rf(ctx, chainWriterConfig)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ChainWriter); ok {
+		r0 = rf(ctx, chainWriterConfig)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.ChainWriter)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
+		r1 = rf(ctx, chainWriterConfig)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_NewChainWriter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewChainWriter'
+type Relayer_NewChainWriter_Call struct {
+	*mock.Call
+}
+
+// NewChainWriter is a helper method to define mock.On call
+//   - ctx context.Context
+//   - chainWriterConfig []byte
+func (_e *Relayer_Expecter) NewChainWriter(ctx interface{}, chainWriterConfig interface{}) *Relayer_NewChainWriter_Call {
+	return &Relayer_NewChainWriter_Call{Call: _e.mock.On("NewChainWriter", ctx, chainWriterConfig)}
+}
+
+func (_c *Relayer_NewChainWriter_Call) Run(run func(ctx context.Context, chainWriterConfig []byte)) *Relayer_NewChainWriter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewChainWriter_Call) Return(_a0 types.ChainWriter, _a1 error) *Relayer_NewChainWriter_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewChainWriter_Call) RunAndReturn(run func(context.Context, []byte) (types.ChainWriter, error)) *Relayer_NewChainWriter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewConfigProvider provides a mock function with given fields: _a0, _a1
 func (_m *Relayer) NewConfigProvider(_a0 context.Context, _a1 types.RelayArgs) (types.ConfigProvider, error) {
 	ret := _m.Called(_a0, _a1)

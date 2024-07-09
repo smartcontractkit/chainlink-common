@@ -32,20 +32,39 @@ func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
 		},
 	))
 
-	fmt.Print("mercuryTriggerOutput", mercuryTriggerOutput)
+	fmt.Println("mercuryTriggerOutput", mercuryTriggerOutput)
 
-	// TODO: Input shows up as an interpolated value in the spec
-	// QQ: How is interpolated value represented today?
-	// A: workflows.StepInputs
-	// QQ: How does workflows.StepInputs look like?
-	// A: It has OutputRef and Mapping
-	// QQ: How would one represent inputs from multiple nodes to the consensus
-	// capability?
-	// A: Consensus capability can multiple the inputs for testing purposes.
+	consensusOutput := workflows.AddConsensus(workflow, ocr3.NewOCR3Consensus(
+		ocr3.NewOCR3ConsensusParams{
+			Inputs: ocr3.CapabilityInputs{
+				Observations: mercuryTriggerOutput,
+			},
+			Config: ocr3.CapabilityConfig{
+				AggregationMethod: "data_feeds",
+				AggregationConfig: map[string]any{
+					"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd": map[string]interface{}{
+						"deviation": "0.05",
+						"heartbeat": 3600,
+					},
+					"0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d": map[string]interface{}{
+						"deviation": "0.05",
+						"heartbeat": 3600,
+					},
+					"0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12": map[string]interface{}{
+						"deviation": "0.05",
+						"heartbeat": 3600,
+					},
+				},
+				ReportID: "0001",
+				Encoder:  "EVM",
+				EncoderConfig: map[string]interface{}{
+					"abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
+				},
+			},
+		},
+	))
 
-	consensusOutput := workflows.AddConsensus(workflow, ocr3.NewOCR3Consensus())
-
-	fmt.Print("consensusOutput", consensusOutput)
+	fmt.Println("consensusOutput", consensusOutput)
 
 	return workflow.Spec(), nil
 }
@@ -72,12 +91,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 				CapabilityType: capabilities.CapabilityTypeTrigger,
 			},
 		},
-		Actions: []workflows.StepDefinition{
+		Consensus: []workflows.StepDefinition{
 			{
 				ID:  "offchain_reporting@1.0.0",
 				Ref: "consensus-0",
 				Inputs: workflows.StepInputs{
-					OutputRef: "trigger-0",
 					Mapping: map[string]any{
 						"observations": "$(trigger-0.outputs)",
 					},
@@ -104,30 +122,9 @@ func TestBuilder_ValidSpec(t *testing.T) {
 						"abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 					},
 				},
+				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},
-			//    inputs:
-			//      observations:
-			//        - "$(trigger.outputs)"
-			//    config:
-			//      report_id: "0001"
-			//      aggregation_method: "data_feeds"
-			//      aggregation_config:
-			//        "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd":
-			//          deviation: "0.05"
-			//          heartbeat: 3600
-			//        "0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d":
-			//          deviation: "0.05"
-			//          heartbeat: 3600
-			//        "0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12":
-			//          deviation: "0.05"
-			//          heartbeat: 3600
-			//      encoder: "EVM"
-			//      encoder_config:
-			//        abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
-
 		},
-		Consensus: []workflows.StepDefinition{},
-		Targets:   []workflows.StepDefinition{},
 	}
 
 	assert.Equal(t, expectedSpec, testWorkflowSpec)

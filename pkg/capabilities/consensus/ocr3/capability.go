@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -33,13 +34,43 @@ var info = capabilities.MustNewCapabilityInfo(
 	"OCR3 consensus exposed as a capability.",
 )
 
-type OCR3Output = any
+type Output = any
+
+type CapabilityConfig struct {
+	AggregationMethod string `json:"aggregationMethod" jsonschema:"required"`
+	AggregationConfig any    `json:"aggregationConfig" jsonschema:"required"`
+	Encoder           string `json:"encoder" jsonschema:"required"`
+	EncoderConfig     any    `json:"encoderConfig" jsonschema:"required"`
+	ReportID          string `json:"reportId" jsonschema:"required"`
+}
+
+type CapabilityInputs struct {
+	// This Input is coupled to the Datastreams Trigger. This was an
+	// intentional short-term trade-off that we'll fix in the future.
+	Observations workflows.CapabilityDefinition[[]datastreams.FeedReport]
+}
+
+type NewOCR3ConsensusParams struct {
+	Inputs CapabilityInputs
+	Config CapabilityConfig
+}
 
 // type NewMercuryTriggerParams struct {
 // 	Config Config
 // }
 
-func NewOCR3Consensus() workflows.Consensus[OCR3Output] {
+// triggers.NewMercuryTriggerParams{
+// 	Config: triggers.Config{
+// 		FeedIDs: []string{
+// 			"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
+// 			"0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d",
+// 			"0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12",
+// 		},
+// 		MaxFrequencyMs: 100,
+// 	},
+// },
+
+func NewOCR3Consensus(params NewOCR3ConsensusParams) workflows.Consensus[Output] {
 	// // TODO: Call .ValidateConfig to check for more complex JSON Schema validation
 	// outputs := []datastreams.FeedReport{}
 
@@ -49,10 +80,22 @@ func NewOCR3Consensus() workflows.Consensus[OCR3Output] {
 	// 	})
 	// }
 
-	return workflows.Consensus[OCR3Output]{
-		Definition: workflows.StepDefinitionYaml{
-			ID:     workflows.StepDefinitionID{IdStr: ocrCapabilityID},
-			Config: workflows.Mapping{},
+	return workflows.Consensus[Output]{
+		Definition: workflows.StepDefinition{
+			ID: ocrCapabilityID,
+			Inputs: workflows.StepInputs{
+				Mapping: map[string]any{
+					"observations": fmt.Sprintf("$(%s.outputs)", params.Inputs.Observations.Ref),
+				},
+			},
+			Config: map[string]any{
+				"aggregation_method": params.Config.AggregationMethod,
+				"aggregation_config": params.Config.AggregationConfig,
+				"encoder":            params.Config.Encoder,
+				"encoder_config":     params.Config.EncoderConfig,
+				"report_id":          params.Config.ReportID,
+			},
+			CapabilityType: capabilities.CapabilityTypeConsensus,
 		},
 		// TODO: Output should be based on params
 		Output: nil,

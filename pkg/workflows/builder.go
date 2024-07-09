@@ -13,16 +13,16 @@ import (
 // })
 
 type Workflow struct {
-	spec *workflowSpecYaml
+	spec *WorkflowSpec
 }
 
 type Trigger[O any] struct {
-	Definition TriggerDefinitionYaml
+	Definition StepDefinition
 	Output     O
 }
 
 type Consensus[O any] struct {
-	Definition StepDefinitionYaml
+	Definition StepDefinition
 	Output     O
 }
 
@@ -40,7 +40,7 @@ func NewWorkflow(
 	params NewWorkflowParams,
 ) *Workflow {
 	return &Workflow{
-		spec: &workflowSpecYaml{
+		spec: &WorkflowSpec{
 			Owner: params.Owner,
 			Name:  params.Name,
 		},
@@ -61,6 +61,7 @@ func AddTrigger[O any](w *Workflow, trigger Trigger[O]) CapabilityDefinition[O] 
 func AddConsensus[O any](w *Workflow, consensus Consensus[O]) CapabilityDefinition[O] {
 	// Add ref to trigger.Definition
 	consensus.Definition.Ref = fmt.Sprintf("consensus-%s", strconv.Itoa((len(w.spec.Consensus))))
+	w.spec.Consensus = append(w.spec.Consensus, consensus.Definition)
 
 	return CapabilityDefinition[O]{
 		Output: consensus.Output,
@@ -69,5 +70,5 @@ func AddConsensus[O any](w *Workflow, consensus Consensus[O]) CapabilityDefiniti
 }
 
 func (w Workflow) Spec() WorkflowSpec {
-	return w.spec.toWorkflowSpec()
+	return *w.spec
 }

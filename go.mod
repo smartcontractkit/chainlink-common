@@ -45,17 +45,6 @@ require (
 )
 
 require (
-	github.com/atombender/go-jsonschema v0.16.0 // indirect
-	github.com/goccy/go-yaml v1.11.3 // indirect
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
-	github.com/sanity-io/litter v1.5.5 // indirect
-	github.com/spf13/cobra v1.8.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-)
-
-require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect

@@ -44,6 +44,9 @@ type OCR3CapabilityProvider interface {
 //go:generate mockery --quiet --name Relayer --output ../../mocks/ --case=underscore
 type Relayer interface {
 	types.ChainService
+
+	// NewContractReader returns a new ContractReader.
+	// The format of contractReaderConfig depends on the implementation.
 	NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewContractStateReader(ctx context.Context, config []byte) (types.ContractStateReader, error)
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)

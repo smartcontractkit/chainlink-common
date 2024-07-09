@@ -20,30 +20,34 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// CCIPMsg is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CCIPMsg].
-type CCIPMsg struct {
+// RampMessageHeader is the family-agnostic header for OnRamp and OffRamp messages.
+// The MessageID is not expected to match MsgHash, since it may originate from a different
+// ramp family.
+type RampMessageHeader struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	SequenceNumber      uint64         `protobuf:"varint,1,opt,name=sequence_number,json=sequenceNumber,proto3" json:"sequence_number,omitempty"`
-	ChainFeeLimit       *BigInt        `protobuf:"bytes,2,opt,name=chain_fee_limit,json=chainFeeLimit,proto3" json:"chain_fee_limit,omitempty"`
-	Nonce               uint64         `protobuf:"varint,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	ChainFeePrice       uint64         `protobuf:"varint,4,opt,name=chain_fee_price,json=chainFeePrice,proto3" json:"chain_fee_price,omitempty"`
-	MessageId           []byte         `protobuf:"bytes,5,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // Hash [32]byte
-	SourceChainSelector uint64         `protobuf:"varint,6,opt,name=source_chain_selector,json=sourceChainSelector,proto3" json:"source_chain_selector,omitempty"`
-	Sender              string         `protobuf:"bytes,7,opt,name=sender,proto3" json:"sender,omitempty"`     // Address
-	Receiver            string         `protobuf:"bytes,8,opt,name=receiver,proto3" json:"receiver,omitempty"` // Address
-	Strict              bool           `protobuf:"varint,9,opt,name=strict,proto3" json:"strict,omitempty"`
-	FeeToken            string         `protobuf:"bytes,10,opt,name=fee_token,json=feeToken,proto3" json:"fee_token,omitempty"` // Address
-	FeeTokenAmount      *BigInt        `protobuf:"bytes,11,opt,name=fee_token_amount,json=feeTokenAmount,proto3" json:"fee_token_amount,omitempty"`
-	Data                []byte         `protobuf:"bytes,12,opt,name=data,proto3" json:"data,omitempty"`
-	TokenAmounts        []*TokenAmount `protobuf:"bytes,13,rep,name=token_amounts,json=tokenAmounts,proto3" json:"token_amounts,omitempty"`
-	SourceTokenData     [][]byte       `protobuf:"bytes,14,rep,name=source_token_data,json=sourceTokenData,proto3" json:"source_token_data,omitempty"`
+	// MessageID is a unique identifier for the message, it should be unique across all chains.
+	// It is generated on the chain that the CCIP send is requested (i.e. the source chain of a message).
+	MessageId [][]byte `protobuf:"bytes,1,rep,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	// SourceChainSelector is the chain selector of the chain that the message originated from.
+	SourceChainSelector uint64 `protobuf:"varint,2,opt,name=source_chain_selector,json=sourceChainSelector,proto3" json:"source_chain_selector,omitempty"`
+	// DestChainSelector is the chain selector of the chain that the message is destined for.
+	DestChainSelector uint64 `protobuf:"varint,3,opt,name=dest_chain_selector,json=destChainSelector,proto3" json:"dest_chain_selector,omitempty"`
+	// SequenceNumber is an auto-incrementing sequence number for the message.
+	// Not unique across lanes.
+	SequenceNumber uint64 `protobuf:"varint,4,opt,name=sequence_number,json=sequenceNumber,proto3" json:"sequence_number,omitempty"`
+	// Nonce is the nonce for this lane for this sender, not unique across senders/lanes
+	Nonce uint64 `protobuf:"varint,5,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// MsgHash is the hash of all the message fields.
+	MessageHash [][]byte `protobuf:"bytes,6,rep,name=message_hash,json=messageHash,proto3" json:"message_hash,omitempty"`
+	// OnRamp is the address of the onramp that sent the message.
+	OnRamp [][]byte `protobuf:"bytes,7,rep,name=on_ramp,json=onRamp,proto3" json:"on_ramp,omitempty"`
 }
 
-func (x *CCIPMsg) Reset() {
-	*x = CCIPMsg{}
+func (x *RampMessageHeader) Reset() {
+	*x = RampMessageHeader{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_models_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -51,13 +55,13 @@ func (x *CCIPMsg) Reset() {
 	}
 }
 
-func (x *CCIPMsg) String() string {
+func (x *RampMessageHeader) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CCIPMsg) ProtoMessage() {}
+func (*RampMessageHeader) ProtoMessage() {}
 
-func (x *CCIPMsg) ProtoReflect() protoreflect.Message {
+func (x *RampMessageHeader) ProtoReflect() protoreflect.Message {
 	mi := &file_models_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -69,105 +73,253 @@ func (x *CCIPMsg) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CCIPMsg.ProtoReflect.Descriptor instead.
-func (*CCIPMsg) Descriptor() ([]byte, []int) {
+// Deprecated: Use RampMessageHeader.ProtoReflect.Descriptor instead.
+func (*RampMessageHeader) Descriptor() ([]byte, []int) {
 	return file_models_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CCIPMsg) GetSequenceNumber() uint64 {
-	if x != nil {
-		return x.SequenceNumber
-	}
-	return 0
-}
-
-func (x *CCIPMsg) GetChainFeeLimit() *BigInt {
-	if x != nil {
-		return x.ChainFeeLimit
-	}
-	return nil
-}
-
-func (x *CCIPMsg) GetNonce() uint64 {
-	if x != nil {
-		return x.Nonce
-	}
-	return 0
-}
-
-func (x *CCIPMsg) GetChainFeePrice() uint64 {
-	if x != nil {
-		return x.ChainFeePrice
-	}
-	return 0
-}
-
-func (x *CCIPMsg) GetMessageId() []byte {
+func (x *RampMessageHeader) GetMessageId() [][]byte {
 	if x != nil {
 		return x.MessageId
 	}
 	return nil
 }
 
-func (x *CCIPMsg) GetSourceChainSelector() uint64 {
+func (x *RampMessageHeader) GetSourceChainSelector() uint64 {
 	if x != nil {
 		return x.SourceChainSelector
 	}
 	return 0
 }
 
-func (x *CCIPMsg) GetSender() string {
+func (x *RampMessageHeader) GetDestChainSelector() uint64 {
 	if x != nil {
-		return x.Sender
+		return x.DestChainSelector
 	}
-	return ""
+	return 0
 }
 
-func (x *CCIPMsg) GetReceiver() string {
+func (x *RampMessageHeader) GetSequenceNumber() uint64 {
 	if x != nil {
-		return x.Receiver
+		return x.SequenceNumber
 	}
-	return ""
+	return 0
 }
 
-func (x *CCIPMsg) GetStrict() bool {
+func (x *RampMessageHeader) GetNonce() uint64 {
 	if x != nil {
-		return x.Strict
+		return x.Nonce
 	}
-	return false
+	return 0
 }
 
-func (x *CCIPMsg) GetFeeToken() string {
+func (x *RampMessageHeader) GetMessageHash() [][]byte {
 	if x != nil {
-		return x.FeeToken
-	}
-	return ""
-}
-
-func (x *CCIPMsg) GetFeeTokenAmount() *BigInt {
-	if x != nil {
-		return x.FeeTokenAmount
+		return x.MessageHash
 	}
 	return nil
 }
 
-func (x *CCIPMsg) GetData() []byte {
+func (x *RampMessageHeader) GetOnRamp() [][]byte {
+	if x != nil {
+		return x.OnRamp
+	}
+	return nil
+}
+
+// RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.
+type RampTokenAmount struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// SourcePoolAddress is the source pool address, abi encoded. This value is trusted
+	// as it was obtained through the onRamp. It can be relied upon by the destination
+	// pool to validate the source pool.
+	SourcePoolAddress [][]byte `protobuf:"bytes,1,rep,name=source_pool_address,json=sourcePoolAddress,proto3" json:"source_pool_address,omitempty"`
+	// DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains
+	// This value is UNTRUSTED as any pool owner can return whatever value they want.
+	DestTokenAddress [][]byte `protobuf:"bytes,2,rep,name=dest_token_address,json=destTokenAddress,proto3" json:"dest_token_address,omitempty"`
+	// ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at
+	// CCIP_LOCK_OR_BURN_V1_RET_BYTES bytes. If more data is required, the TokenTransferFeeConfig.destBytesOverhead
+	// has to be set for the specific token.
+	ExtraData [][]byte `protobuf:"bytes,3,rep,name=extra_data,json=extraData,proto3" json:"extra_data,omitempty"`
+	// Amount is the amount of tokens to be transferred.
+	Amount *BigInt `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
+}
+
+func (x *RampTokenAmount) Reset() {
+	*x = RampTokenAmount{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_models_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RampTokenAmount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RampTokenAmount) ProtoMessage() {}
+
+func (x *RampTokenAmount) ProtoReflect() protoreflect.Message {
+	mi := &file_models_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RampTokenAmount.ProtoReflect.Descriptor instead.
+func (*RampTokenAmount) Descriptor() ([]byte, []int) {
+	return file_models_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *RampTokenAmount) GetSourcePoolAddress() [][]byte {
+	if x != nil {
+		return x.SourcePoolAddress
+	}
+	return nil
+}
+
+func (x *RampTokenAmount) GetDestTokenAddress() [][]byte {
+	if x != nil {
+		return x.DestTokenAddress
+	}
+	return nil
+}
+
+func (x *RampTokenAmount) GetExtraData() [][]byte {
+	if x != nil {
+		return x.ExtraData
+	}
+	return nil
+}
+
+func (x *RampTokenAmount) GetAmount() *BigInt {
+	if x != nil {
+		return x.Amount
+	}
+	return nil
+}
+
+// Message is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.Message].
+type Message struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Header is the family-agnostic header for OnRamp and OffRamp messages.
+	// This is always set on all CCIP messages.
+	Header *RampMessageHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// Sender address on the source chain.
+	// This is an EVM address, so len(Sender) == 20.
+	Sender [][]byte `protobuf:"bytes,2,rep,name=sender,proto3" json:"sender,omitempty"`
+	// Data is the arbitrary data payload supplied by the message sender.
+	Data [][]byte `protobuf:"bytes,3,rep,name=data,proto3" json:"data,omitempty"`
+	// Receiver is the receiver address on the destination chain.
+	// This is encoded in the destination chain family specific encoding.
+	// i.e if the destination is EVM, this is abi.encode(receiver).
+	Receiver [][]byte `protobuf:"bytes,4,rep,name=receiver,proto3" json:"receiver,omitempty"`
+	// ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
+	ExtraArgs [][]byte `protobuf:"bytes,5,rep,name=extra_args,json=extraArgs,proto3" json:"extra_args,omitempty"`
+	// FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
+	FeeToken [][]byte `protobuf:"bytes,6,rep,name=fee_token,json=feeToken,proto3" json:"fee_token,omitempty"`
+	// FeeTokenAmount is the amount of fee tokens paid.
+	FeeTokenAmount *BigInt `protobuf:"bytes,7,opt,name=fee_token_amount,json=feeTokenAmount,proto3" json:"fee_token_amount,omitempty"`
+	// TokenAmounts is the array of tokens and amounts to transfer.
+	TokenAmounts []*RampTokenAmount `protobuf:"bytes,8,rep,name=token_amounts,json=tokenAmounts,proto3" json:"token_amounts,omitempty"`
+}
+
+func (x *Message) Reset() {
+	*x = Message{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_models_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Message) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Message) ProtoMessage() {}
+
+func (x *Message) ProtoReflect() protoreflect.Message {
+	mi := &file_models_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Message.ProtoReflect.Descriptor instead.
+func (*Message) Descriptor() ([]byte, []int) {
+	return file_models_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Message) GetHeader() *RampMessageHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *Message) GetSender() [][]byte {
+	if x != nil {
+		return x.Sender
+	}
+	return nil
+}
+
+func (x *Message) GetData() [][]byte {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-func (x *CCIPMsg) GetTokenAmounts() []*TokenAmount {
+func (x *Message) GetReceiver() [][]byte {
 	if x != nil {
-		return x.TokenAmounts
+		return x.Receiver
 	}
 	return nil
 }
 
-func (x *CCIPMsg) GetSourceTokenData() [][]byte {
+func (x *Message) GetExtraArgs() [][]byte {
 	if x != nil {
-		return x.SourceTokenData
+		return x.ExtraArgs
+	}
+	return nil
+}
+
+func (x *Message) GetFeeToken() [][]byte {
+	if x != nil {
+		return x.FeeToken
+	}
+	return nil
+}
+
+func (x *Message) GetFeeTokenAmount() *BigInt {
+	if x != nil {
+		return x.FeeTokenAmount
+	}
+	return nil
+}
+
+func (x *Message) GetTokenAmounts() []*RampTokenAmount {
+	if x != nil {
+		return x.TokenAmounts
 	}
 	return nil
 }
@@ -184,7 +336,7 @@ type BigInt struct {
 func (x *BigInt) Reset() {
 	*x = BigInt{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_models_proto_msgTypes[1]
+		mi := &file_models_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -197,7 +349,7 @@ func (x *BigInt) String() string {
 func (*BigInt) ProtoMessage() {}
 
 func (x *BigInt) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[1]
+	mi := &file_models_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -210,7 +362,7 @@ func (x *BigInt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BigInt.ProtoReflect.Descriptor instead.
 func (*BigInt) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{1}
+	return file_models_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BigInt) GetValue() []byte {
@@ -233,7 +385,7 @@ type TokenAmount struct {
 func (x *TokenAmount) Reset() {
 	*x = TokenAmount{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_models_proto_msgTypes[2]
+		mi := &file_models_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -246,7 +398,7 @@ func (x *TokenAmount) String() string {
 func (*TokenAmount) ProtoMessage() {}
 
 func (x *TokenAmount) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[2]
+	mi := &file_models_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -259,7 +411,7 @@ func (x *TokenAmount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenAmount.ProtoReflect.Descriptor instead.
 func (*TokenAmount) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{2}
+	return file_models_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TokenAmount) GetToken() string {
@@ -289,7 +441,7 @@ type CommitPluginReport struct {
 func (x *CommitPluginReport) Reset() {
 	*x = CommitPluginReport{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_models_proto_msgTypes[3]
+		mi := &file_models_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -302,7 +454,7 @@ func (x *CommitPluginReport) String() string {
 func (*CommitPluginReport) ProtoMessage() {}
 
 func (x *CommitPluginReport) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[3]
+	mi := &file_models_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -315,7 +467,7 @@ func (x *CommitPluginReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitPluginReport.ProtoReflect.Descriptor instead.
 func (*CommitPluginReport) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{3}
+	return file_models_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CommitPluginReport) GetPriceUpdates() *PriceUpdates {
@@ -345,7 +497,7 @@ type PriceUpdates struct {
 func (x *PriceUpdates) Reset() {
 	*x = PriceUpdates{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_models_proto_msgTypes[4]
+		mi := &file_models_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -358,7 +510,7 @@ func (x *PriceUpdates) String() string {
 func (*PriceUpdates) ProtoMessage() {}
 
 func (x *PriceUpdates) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[4]
+	mi := &file_models_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +523,7 @@ func (x *PriceUpdates) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PriceUpdates.ProtoReflect.Descriptor instead.
 func (*PriceUpdates) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{4}
+	return file_models_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PriceUpdates) GetTokenPriceUpdates() []*TokenAmount {
@@ -401,7 +553,7 @@ type GasPriceChain struct {
 func (x *GasPriceChain) Reset() {
 	*x = GasPriceChain{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_models_proto_msgTypes[5]
+		mi := &file_models_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -414,7 +566,7 @@ func (x *GasPriceChain) String() string {
 func (*GasPriceChain) ProtoMessage() {}
 
 func (x *GasPriceChain) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[5]
+	mi := &file_models_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +579,7 @@ func (x *GasPriceChain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasPriceChain.ProtoReflect.Descriptor instead.
 func (*GasPriceChain) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{5}
+	return file_models_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GasPriceChain) GetChainSelector() uint64 {
@@ -458,7 +610,7 @@ type MerkleRootChain struct {
 func (x *MerkleRootChain) Reset() {
 	*x = MerkleRootChain{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_models_proto_msgTypes[6]
+		mi := &file_models_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -471,7 +623,7 @@ func (x *MerkleRootChain) String() string {
 func (*MerkleRootChain) ProtoMessage() {}
 
 func (x *MerkleRootChain) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[6]
+	mi := &file_models_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -484,7 +636,7 @@ func (x *MerkleRootChain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MerkleRootChain.ProtoReflect.Descriptor instead.
 func (*MerkleRootChain) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{6}
+	return file_models_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MerkleRootChain) GetChainSelector() uint64 {
@@ -521,7 +673,7 @@ type SeqNumRange struct {
 func (x *SeqNumRange) Reset() {
 	*x = SeqNumRange{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_models_proto_msgTypes[7]
+		mi := &file_models_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -534,7 +686,7 @@ func (x *SeqNumRange) String() string {
 func (*SeqNumRange) ProtoMessage() {}
 
 func (x *SeqNumRange) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[7]
+	mi := &file_models_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +699,7 @@ func (x *SeqNumRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeqNumRange.ProtoReflect.Descriptor instead.
 func (*SeqNumRange) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{7}
+	return file_models_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SeqNumRange) GetStart() uint64 {
@@ -569,44 +721,60 @@ var File_models_proto protoreflect.FileDescriptor
 var file_models_proto_rawDesc = []byte{
 	0x0a, 0x0c, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x19,
 	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62,
-	0x2e, 0x63, 0x63, 0x69, 0x70, 0x6f, 0x63, 0x72, 0x33, 0x22, 0xd1, 0x04, 0x0a, 0x07, 0x43, 0x43,
-	0x49, 0x50, 0x4d, 0x73, 0x67, 0x12, 0x27, 0x0a, 0x0f, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63,
-	0x65, 0x5f, 0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0e,
-	0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x12, 0x49,
-	0x0a, 0x0f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x66, 0x65, 0x65, 0x5f, 0x6c, 0x69, 0x6d, 0x69,
-	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x69,
-	0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62, 0x2e, 0x63, 0x63, 0x69, 0x70, 0x6f,
-	0x63, 0x72, 0x33, 0x2e, 0x42, 0x69, 0x67, 0x49, 0x6e, 0x74, 0x52, 0x0d, 0x63, 0x68, 0x61, 0x69,
-	0x6e, 0x46, 0x65, 0x65, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e,
-	0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12,
-	0x26, 0x0a, 0x0f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x66, 0x65, 0x65, 0x5f, 0x70, 0x72, 0x69,
-	0x63, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0d, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x46,
-	0x65, 0x65, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x65, 0x73, 0x73, 0x61,
-	0x67, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x6d, 0x65, 0x73,
-	0x73, 0x61, 0x67, 0x65, 0x49, 0x64, 0x12, 0x32, 0x0a, 0x15, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x5f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x18,
-	0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x13, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x43, 0x68, 0x61,
-	0x69, 0x6e, 0x53, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65,
-	0x6e, 0x64, 0x65, 0x72, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64,
-	0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18, 0x08,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x12, 0x16,
-	0x0a, 0x06, 0x73, 0x74, 0x72, 0x69, 0x63, 0x74, 0x18, 0x09, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06,
-	0x73, 0x74, 0x72, 0x69, 0x63, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x66, 0x65, 0x65, 0x5f, 0x74, 0x6f,
-	0x6b, 0x65, 0x6e, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x66, 0x65, 0x65, 0x54, 0x6f,
-	0x6b, 0x65, 0x6e, 0x12, 0x4b, 0x0a, 0x10, 0x66, 0x65, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
-	0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e,
-	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62,
-	0x2e, 0x63, 0x63, 0x69, 0x70, 0x6f, 0x63, 0x72, 0x33, 0x2e, 0x42, 0x69, 0x67, 0x49, 0x6e, 0x74,
-	0x52, 0x0e, 0x66, 0x65, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
-	0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04,
-	0x64, 0x61, 0x74, 0x61, 0x12, 0x4b, 0x0a, 0x0d, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x61, 0x6d,
-	0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x0d, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x6c, 0x6f,
-	0x6f, 0x70, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62, 0x2e, 0x63,
-	0x63, 0x69, 0x70, 0x6f, 0x63, 0x72, 0x33, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f,
-	0x75, 0x6e, 0x74, 0x52, 0x0c, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
-	0x73, 0x12, 0x2a, 0x0a, 0x11, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65,
-	0x6e, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x0e, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0f, 0x73, 0x6f,
-	0x75, 0x72, 0x63, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x22, 0x1e, 0x0a,
+	0x2e, 0x63, 0x63, 0x69, 0x70, 0x6f, 0x63, 0x72, 0x33, 0x22, 0x91, 0x02, 0x0a, 0x11, 0x52, 0x61,
+	0x6d, 0x70, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12,
+	0x1d, 0x0a, 0x0a, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x0c, 0x52, 0x09, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x49, 0x64, 0x12, 0x32,
+	0x0a, 0x15, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x73,
+	0x65, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x13, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x53, 0x65, 0x6c, 0x65, 0x63, 0x74,
+	0x6f, 0x72, 0x12, 0x2e, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x5f, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x11, 0x64, 0x65, 0x73, 0x74, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x53, 0x65, 0x6c, 0x65, 0x63, 0x74,
+	0x6f, 0x72, 0x12, 0x27, 0x0a, 0x0f, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x5f, 0x6e,
+	0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0e, 0x73, 0x65, 0x71,
+	0x75, 0x65, 0x6e, 0x63, 0x65, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x6e,
+	0x6f, 0x6e, 0x63, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63,
+	0x65, 0x12, 0x21, 0x0a, 0x0c, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x5f, 0x68, 0x61, 0x73,
+	0x68, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0b, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x48, 0x61, 0x73, 0x68, 0x12, 0x17, 0x0a, 0x07, 0x6f, 0x6e, 0x5f, 0x72, 0x61, 0x6d, 0x70, 0x18,
+	0x07, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x06, 0x6f, 0x6e, 0x52, 0x61, 0x6d, 0x70, 0x22, 0xc9, 0x01,
+	0x0a, 0x0f, 0x52, 0x61, 0x6d, 0x70, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f, 0x75, 0x6e,
+	0x74, 0x12, 0x2e, 0x0a, 0x13, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x70, 0x6f, 0x6f, 0x6c,
+	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x11,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x6f, 0x6c, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x12, 0x2c, 0x0a, 0x12, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f,
+	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x10, 0x64,
+	0x65, 0x73, 0x74, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12,
+	0x1d, 0x0a, 0x0a, 0x65, 0x78, 0x74, 0x72, 0x61, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x03, 0x20,
+	0x03, 0x28, 0x0c, 0x52, 0x09, 0x65, 0x78, 0x74, 0x72, 0x61, 0x44, 0x61, 0x74, 0x61, 0x12, 0x39,
+	0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21,
+	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70,
+	0x62, 0x2e, 0x63, 0x63, 0x69, 0x70, 0x6f, 0x63, 0x72, 0x33, 0x2e, 0x42, 0x69, 0x67, 0x49, 0x6e,
+	0x74, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0xf1, 0x02, 0x0a, 0x07, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x44, 0x0a, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x69, 0x6e, 0x74,
+	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62, 0x2e, 0x63, 0x63, 0x69, 0x70, 0x6f, 0x63, 0x72,
+	0x33, 0x2e, 0x52, 0x61, 0x6d, 0x70, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x65, 0x61,
+	0x64, 0x65, 0x72, 0x52, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x73,
+	0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x06, 0x73, 0x65, 0x6e,
+	0x64, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x03, 0x20, 0x03, 0x28,
+	0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69,
+	0x76, 0x65, 0x72, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69,
+	0x76, 0x65, 0x72, 0x12, 0x1d, 0x0a, 0x0a, 0x65, 0x78, 0x74, 0x72, 0x61, 0x5f, 0x61, 0x72, 0x67,
+	0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x09, 0x65, 0x78, 0x74, 0x72, 0x61, 0x41, 0x72,
+	0x67, 0x73, 0x12, 0x1b, 0x0a, 0x09, 0x66, 0x65, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18,
+	0x06, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x08, 0x66, 0x65, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12,
+	0x4b, 0x0a, 0x10, 0x66, 0x65, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x61, 0x6d, 0x6f,
+	0x75, 0x6e, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x6c, 0x6f, 0x6f, 0x70,
+	0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62, 0x2e, 0x63, 0x63, 0x69,
+	0x70, 0x6f, 0x63, 0x72, 0x33, 0x2e, 0x42, 0x69, 0x67, 0x49, 0x6e, 0x74, 0x52, 0x0e, 0x66, 0x65,
+	0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x4f, 0x0a, 0x0d,
+	0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x08, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72,
+	0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62, 0x2e, 0x63, 0x63, 0x69, 0x70, 0x6f, 0x63, 0x72, 0x33, 0x2e,
+	0x52, 0x61, 0x6d, 0x70, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x52,
+	0x0c, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0x1e, 0x0a,
 	0x06, 0x42, 0x69, 0x67, 0x49, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x5e, 0x0a,
 	0x0b, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05,
@@ -680,33 +848,36 @@ func file_models_proto_rawDescGZIP() []byte {
 	return file_models_proto_rawDescData
 }
 
-var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_models_proto_goTypes = []interface{}{
-	(*CCIPMsg)(nil),            // 0: loop.internal.pb.ccipocr3.CCIPMsg
-	(*BigInt)(nil),             // 1: loop.internal.pb.ccipocr3.BigInt
-	(*TokenAmount)(nil),        // 2: loop.internal.pb.ccipocr3.TokenAmount
-	(*CommitPluginReport)(nil), // 3: loop.internal.pb.ccipocr3.CommitPluginReport
-	(*PriceUpdates)(nil),       // 4: loop.internal.pb.ccipocr3.PriceUpdates
-	(*GasPriceChain)(nil),      // 5: loop.internal.pb.ccipocr3.GasPriceChain
-	(*MerkleRootChain)(nil),    // 6: loop.internal.pb.ccipocr3.MerkleRootChain
-	(*SeqNumRange)(nil),        // 7: loop.internal.pb.ccipocr3.SeqNumRange
+	(*RampMessageHeader)(nil),  // 0: loop.internal.pb.ccipocr3.RampMessageHeader
+	(*RampTokenAmount)(nil),    // 1: loop.internal.pb.ccipocr3.RampTokenAmount
+	(*Message)(nil),            // 2: loop.internal.pb.ccipocr3.Message
+	(*BigInt)(nil),             // 3: loop.internal.pb.ccipocr3.BigInt
+	(*TokenAmount)(nil),        // 4: loop.internal.pb.ccipocr3.TokenAmount
+	(*CommitPluginReport)(nil), // 5: loop.internal.pb.ccipocr3.CommitPluginReport
+	(*PriceUpdates)(nil),       // 6: loop.internal.pb.ccipocr3.PriceUpdates
+	(*GasPriceChain)(nil),      // 7: loop.internal.pb.ccipocr3.GasPriceChain
+	(*MerkleRootChain)(nil),    // 8: loop.internal.pb.ccipocr3.MerkleRootChain
+	(*SeqNumRange)(nil),        // 9: loop.internal.pb.ccipocr3.SeqNumRange
 }
 var file_models_proto_depIdxs = []int32{
-	1,  // 0: loop.internal.pb.ccipocr3.CCIPMsg.chain_fee_limit:type_name -> loop.internal.pb.ccipocr3.BigInt
-	1,  // 1: loop.internal.pb.ccipocr3.CCIPMsg.fee_token_amount:type_name -> loop.internal.pb.ccipocr3.BigInt
-	2,  // 2: loop.internal.pb.ccipocr3.CCIPMsg.token_amounts:type_name -> loop.internal.pb.ccipocr3.TokenAmount
-	1,  // 3: loop.internal.pb.ccipocr3.TokenAmount.amount:type_name -> loop.internal.pb.ccipocr3.BigInt
-	4,  // 4: loop.internal.pb.ccipocr3.CommitPluginReport.price_updates:type_name -> loop.internal.pb.ccipocr3.PriceUpdates
-	6,  // 5: loop.internal.pb.ccipocr3.CommitPluginReport.merkle_roots:type_name -> loop.internal.pb.ccipocr3.MerkleRootChain
-	2,  // 6: loop.internal.pb.ccipocr3.PriceUpdates.token_price_updates:type_name -> loop.internal.pb.ccipocr3.TokenAmount
-	5,  // 7: loop.internal.pb.ccipocr3.PriceUpdates.gas_price_updates:type_name -> loop.internal.pb.ccipocr3.GasPriceChain
-	1,  // 8: loop.internal.pb.ccipocr3.GasPriceChain.price:type_name -> loop.internal.pb.ccipocr3.BigInt
-	7,  // 9: loop.internal.pb.ccipocr3.MerkleRootChain.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3,  // 0: loop.internal.pb.ccipocr3.RampTokenAmount.amount:type_name -> loop.internal.pb.ccipocr3.BigInt
+	0,  // 1: loop.internal.pb.ccipocr3.Message.header:type_name -> loop.internal.pb.ccipocr3.RampMessageHeader
+	3,  // 2: loop.internal.pb.ccipocr3.Message.fee_token_amount:type_name -> loop.internal.pb.ccipocr3.BigInt
+	1,  // 3: loop.internal.pb.ccipocr3.Message.token_amounts:type_name -> loop.internal.pb.ccipocr3.RampTokenAmount
+	3,  // 4: loop.internal.pb.ccipocr3.TokenAmount.amount:type_name -> loop.internal.pb.ccipocr3.BigInt
+	6,  // 5: loop.internal.pb.ccipocr3.CommitPluginReport.price_updates:type_name -> loop.internal.pb.ccipocr3.PriceUpdates
+	8,  // 6: loop.internal.pb.ccipocr3.CommitPluginReport.merkle_roots:type_name -> loop.internal.pb.ccipocr3.MerkleRootChain
+	4,  // 7: loop.internal.pb.ccipocr3.PriceUpdates.token_price_updates:type_name -> loop.internal.pb.ccipocr3.TokenAmount
+	7,  // 8: loop.internal.pb.ccipocr3.PriceUpdates.gas_price_updates:type_name -> loop.internal.pb.ccipocr3.GasPriceChain
+	3,  // 9: loop.internal.pb.ccipocr3.GasPriceChain.price:type_name -> loop.internal.pb.ccipocr3.BigInt
+	9,  // 10: loop.internal.pb.ccipocr3.MerkleRootChain.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_models_proto_init() }
@@ -716,7 +887,7 @@ func file_models_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_models_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CCIPMsg); i {
+			switch v := v.(*RampMessageHeader); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -728,7 +899,7 @@ func file_models_proto_init() {
 			}
 		}
 		file_models_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BigInt); i {
+			switch v := v.(*RampTokenAmount); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -740,7 +911,7 @@ func file_models_proto_init() {
 			}
 		}
 		file_models_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TokenAmount); i {
+			switch v := v.(*Message); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -752,7 +923,7 @@ func file_models_proto_init() {
 			}
 		}
 		file_models_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitPluginReport); i {
+			switch v := v.(*BigInt); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -764,7 +935,7 @@ func file_models_proto_init() {
 			}
 		}
 		file_models_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PriceUpdates); i {
+			switch v := v.(*TokenAmount); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -776,7 +947,7 @@ func file_models_proto_init() {
 			}
 		}
 		file_models_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GasPriceChain); i {
+			switch v := v.(*CommitPluginReport); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -788,7 +959,7 @@ func file_models_proto_init() {
 			}
 		}
 		file_models_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MerkleRootChain); i {
+			switch v := v.(*PriceUpdates); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -800,6 +971,30 @@ func file_models_proto_init() {
 			}
 		}
 		file_models_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GasPriceChain); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_models_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MerkleRootChain); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_models_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SeqNumRange); i {
 			case 0:
 				return &v.state
@@ -818,7 +1013,7 @@ func file_models_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_models_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

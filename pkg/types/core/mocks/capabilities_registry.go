@@ -123,6 +123,34 @@ func (_m *CapabilitiesRegistry) GetConsensus(ctx context.Context, ID string) (ca
 	return r0, r1
 }
 
+// GetLocalNode provides a mock function with given fields: ctx
+func (_m *CapabilitiesRegistry) GetLocalNode(ctx context.Context) (capabilities.Node, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLocalNode")
+	}
+
+	var r0 capabilities.Node
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (capabilities.Node, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) capabilities.Node); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(capabilities.Node)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTarget provides a mock function with given fields: ctx, ID
 func (_m *CapabilitiesRegistry) GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error) {
 	ret := _m.Called(ctx, ID)

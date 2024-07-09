@@ -74,9 +74,7 @@ func SetupTracing(config TracingConfig) (err error) {
 		creds = insecure.NewCredentials()
 	}
 
-	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-	//nolint:staticcheck
-	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
+	conn, err := grpc.NewClient(config.CollectorTarget,
 		// Note the potential use of insecure transport here. TLS is recommended in production.
 		grpc.WithTransportCredentials(creds),
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {

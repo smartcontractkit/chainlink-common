@@ -49,12 +49,9 @@ func (lst *loopServerTester) GetConn(t *testing.T) *grpc.ClientConn {
 		return lst.conn
 	}
 
-	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-	//nolint:staticcheck
-	conn, err := grpc.Dial("bufnet",
+	conn, err := grpc.NewClient("bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lst.lis.Dial() }),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock())
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	lst.conn = conn
 	return conn

@@ -7,6 +7,7 @@ import (
 )
 
 type CapabilitiesRegistry interface {
+	GetLocalNode(ctx context.Context) (capabilities.Node, error)
 	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)
 	GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error)
 	GetAction(ctx context.Context, ID string) (capabilities.ActionCapability, error)

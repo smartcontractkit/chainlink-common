@@ -10,11 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -153,6 +155,76 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	_, err = rc.Get(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
+	pid := p2ptypes.PeerID([32]byte{0: 1})
+	expectedNode := capabilities.Node{
+		PeerID: &pid,
+		WorkflowDON: capabilities.DON{
+			ID: 11,
+			Members: []p2ptypes.PeerID{
+				[32]byte{0: 2},
+				[32]byte{0: 3},
+			},
+			F:             2,
+			ConfigVersion: 1,
+		},
+		CapabilityDONs: []capabilities.DON{
+			{
+				ID:            22,
+				Members:       []p2ptypes.PeerID{},
+				F:             1,
+				ConfigVersion: 2,
+			},
+			{
+				ID: 33,
+				Members: []p2ptypes.PeerID{
+					[32]byte{0: 4},
+					[32]byte{0: 5},
+					[32]byte{0: 6},
+				},
+				F:             3,
+				ConfigVersion: 3,
+			},
+		},
+	}
+
+	reg.On("GetLocalNode", mock.Anything).Once().Return(expectedNode, nil)
+
+	actualNode, err := rc.GetLocalNode(tests.Context(t))
+	require.NoError(t, err)
+	// check local node struct
+	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)
+
+	// check workflow DON
+	require.Len(t, expectedNode.WorkflowDON.Members, len(actualNode.WorkflowDON.Members))
+	require.ElementsMatch(t, expectedNode.WorkflowDON.Members, actualNode.WorkflowDON.Members)
+	require.Equal(t, expectedNode.WorkflowDON.ID, actualNode.WorkflowDON.ID)
+	require.Equal(t, expectedNode.WorkflowDON.F, actualNode.WorkflowDON.F)
+	require.Equal(t, expectedNode.WorkflowDON.ConfigVersion, actualNode.WorkflowDON.ConfigVersion)
+
+	// check capability DONs
+	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
+	for i := range expectedNode.CapabilityDONs {
+		require.Equal(t, expectedNode.CapabilityDONs[i].ID, actualNode.CapabilityDONs[i].ID)
+		require.Len(t, expectedNode.CapabilityDONs[i].Members, len(actualNode.CapabilityDONs[i].Members))
+		require.ElementsMatch(t, expectedNode.CapabilityDONs[i].Members, actualNode.CapabilityDONs[i].Members)
+		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
+		require.Equal(t, expectedNode.CapabilityDONs[i].ConfigVersion, actualNode.CapabilityDONs[i].ConfigVersion)
+	}
+
+	// Check zero values for empty node
+	emptyNode := capabilities.Node{}
+	reg.On("GetLocalNode", mock.Anything).Once().Return(emptyNode, nil)
+	actualNode, err = rc.GetLocalNode(tests.Context(t))
+	require.NoError(t, err)
+	require.Nil(t, actualNode.PeerID)
+	require.Equal(t, capabilities.DON{
+		ID:            0,
+		Members:       nil,
+		F:             0,
+		ConfigVersion: 0,
+	}, actualNode.WorkflowDON)
+	require.Empty(t, actualNode.CapabilityDONs)
+
 	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetAction(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
@@ -290,4 +362,29 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 	require.Equal(t, expectedInfo.CapabilityType, gotInfo.CapabilityType)
 	require.Equal(t, expectedInfo.Description, gotInfo.Description)
 	require.Equal(t, expectedInfo.Version(), gotInfo.Version())
+}
+func TestToDON(t *testing.T) {
+	don := &pb.DON{
+		Id: 0,
+		Members: [][]byte{
+			{0: 4, 31: 0},
+			{0: 5, 31: 0},
+		},
+		F:             2,
+		ConfigVersion: 1,
+	}
+
+	expected := capabilities.DON{
+		ID: 0,
+		Members: []p2ptypes.PeerID{
+			[32]byte{0: 4},
+			[32]byte{0: 5},
+		},
+		F:             2,
+		ConfigVersion: 1,
+	}
+
+	actual := toDON(don)
+
+	require.Equal(t, expected, actual)
 }

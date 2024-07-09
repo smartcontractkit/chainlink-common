@@ -91,7 +91,7 @@ type Message struct {
 	// This is always set on all CCIP messages.
 	Header RampMessageHeader `json:"header"`
 	// Sender address on the source chain.
-	// i.e if the source chain is EVM, this is an EVM address, so len(Sender) == 20 in that case.
+	// i.e if the source chain is EVM, this is an abi-encoded EVM address.
 	Sender Bytes `json:"sender"`
 	// Data is the arbitrary data payload supplied by the message sender.
 	Data Bytes `json:"data"`

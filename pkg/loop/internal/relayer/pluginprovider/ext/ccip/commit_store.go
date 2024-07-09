@@ -250,6 +250,25 @@ func (c *CommitStoreGRPCClient) VerifyExecutionReport(ctx context.Context, repor
 	return resp.IsValid, nil
 }
 
+func (c *CommitStoreGRPCClient) GetCommitReportsForExecution(ctx context.Context, logsAge time.Duration, confirmations int) ([]ccip.CommitStoreReportWithTxMeta, error) {
+	resp, err := c.client.GetCommitReportsForExecution(ctx, &ccippb.GetCommitReportsForExecutionRequest{
+		LogsAgeNanos:  int64(logsAge),
+		Confirmations: uint64(confirmations),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return commitStoreReportWithTxMetaSlice(resp.Reports)
+}
+
+func (c *CommitStoreGRPCClient) SnoozeCommitReportExecution(ctx context.Context, root [32]byte, markAsExecuted bool) error {
+	_, err := c.client.SnoozeCommitReportExecution(ctx, &ccippb.SnoozeCommitReportExecutionRequest{
+		Root:           root[:],
+		MarkAsExecuted: markAsExecuted,
+	})
+	return err
+}
+
 // Server implementation
 
 // ChangeConfig implements ccippb.CommitStoreReaderServer.
@@ -413,6 +432,30 @@ func (c *CommitStoreGRPCServer) VerifyExecutionReport(ctx context.Context, req *
 		return nil, err
 	}
 	return &ccippb.VerifyExecutionReportResponse{IsValid: valid}, nil
+}
+
+func (c *CommitStoreGRPCServer) GetCommitReportsForExecution(ctx context.Context, req *ccippb.GetCommitReportsForExecutionRequest) (*ccippb.GetCommitReportsForExecutionResponse, error) {
+	reports, err := c.impl.GetCommitReportsForExecution(ctx, time.Duration(req.LogsAgeNanos), int(req.Confirmations))
+	if err != nil {
+		return nil, err
+	}
+	pbReports, err := commitStoreReportWithTxMetaPBSlice(reports)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetCommitReportsForExecutionResponse{Reports: pbReports}, nil
+}
+
+func (c *CommitStoreGRPCServer) SnoozeCommitReportExecution(ctx context.Context, req *ccippb.SnoozeCommitReportExecutionRequest) (*emptypb.Empty, error) {
+	root, err := merkleRoot(req.Root)
+	if err != nil {
+		return nil, err
+	}
+	err = c.impl.SnoozeCommitReportExecution(ctx, root, req.MarkAsExecuted)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }
 
 // AddDep adds a closer to the list of dependencies that will be closed when the server is closed.

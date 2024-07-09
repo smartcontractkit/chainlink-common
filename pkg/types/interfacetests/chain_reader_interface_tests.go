@@ -17,7 +17,6 @@ import (
 type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
 	GetChainReader(t T) types.ContractReader
-
 	// SetTestStructLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
@@ -25,7 +24,8 @@ type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	// SetUintLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
 	// The contract should take a uint64 as the params and returns the same.
-	SetUintLatestValue(t T, val uint64)
+	// forCall is used to attach value to a call, this is useful in chain specific test since in chain agnostic tests we can just use hard coded readName constants.
+	SetUintLatestValue(t T, val uint64, forCall ExpectedGetLatestValueArgs)
 	TriggerEvent(t T, testStruct *TestStruct)
 	GetBindings(t T) []types.BoundContract
 	// GenerateBlocksTillConfidenceLevel raises confidence level to the provided level for a specific read.
@@ -39,7 +39,6 @@ const (
 	MethodTakingLatestParamsReturningTestStruct = "GetLatestValues"
 	MethodReturningUint64                       = "GetPrimitiveValue"
 	MethodReturningAlterableUint64              = "GetAlterablePrimitiveValue"
-	DifferentMethodReturningUint64              = "GetDifferentPrimitiveValue"
 	MethodReturningUint64Slice                  = "GetSliceValue"
 	MethodReturningSeenStruct                   = "GetSeenStruct"
 	EventName                                   = "SomeEvent"
@@ -95,40 +94,43 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
 			},
 		},
-		// EVM tests can't access past blocks
-		//{
-		//	name: "Get latest value based on confidence level",
-		//	test: func(t T) {
-		//		ctx := tests.Context(t)
-		//		cr := tester.GetChainReader(t)
-		//		require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-		//
-		//		var prim1 uint64
-		//		tester.SetUintLatestValue(t, 10)
-		//		require.Error(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
-		//
-		//		tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, EventName, primitives.Finalized)
-		//		tester.SetUintLatestValue(t, 20)
-		//
-		//		require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
-		//		assert.Equal(t, uint64(10), prim1)
-		//
-		//		var prim2 uint64
-		//		require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Unconfirmed, nil, &prim2))
-		//		assert.Equal(t, uint64(20), prim2)
-		//	},
-		//},
 		{
-			name: "Get latest value allows a contract name to resolve different contracts internally",
+			name: "Get latest value based on confidence level",
 			test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
-				var prim uint64
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, DifferentMethodReturningUint64, primitives.Unconfirmed, nil, &prim))
+				var returnVal1 uint64
+				callArgs := ExpectedGetLatestValueArgs{
+					ContractName:    AnyContractName,
+					ReadName:        MethodReturningAlterableUint64,
+					ConfidenceLevel: primitives.Unconfirmed,
+					Params:          nil,
+					ReturnVal:       &returnVal1,
+				}
 
-				assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, prim)
+				var prim1 uint64
+				tester.SetUintLatestValue(t, 10, callArgs)
+				require.Error(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, primitives.Finalized, callArgs.Params, &prim1))
+
+				tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized)
+				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
+				assert.Equal(t, uint64(10), prim1)
+
+				var returnVal2 uint64
+				callArgs2 := ExpectedGetLatestValueArgs{
+					ContractName:    AnyContractName,
+					ReadName:        MethodReturningAlterableUint64,
+					ConfidenceLevel: primitives.Unconfirmed,
+					Params:          nil,
+					ReturnVal:       returnVal2,
+				}
+
+				var prim2 uint64
+				tester.SetUintLatestValue(t, 20, callArgs2)
+				require.NoError(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, callArgs.ConfidenceLevel, callArgs.Params, &prim2))
+				assert.Equal(t, uint64(20), prim2)
 			},
 		},
 		{
@@ -203,37 +205,36 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},
-		// EVM tests can't access past blocks
-		//{
-		//	name: "Get latest event based on provided confidence level",
-		//	test: func(t T) {
-		//		ctx := tests.Context(t)
-		//		cr := tester.GetChainReader(t)
-		//		require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-		//		ts1 := CreateTestStruct[T](2, tester)
-		//		tester.TriggerEvent(t, &ts1)
-		//
-		//		result := &TestStruct{}
-		//		assert.Eventually(t, func() bool {
-		//			err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Finalized, nil, &result)
-		//			return err != nil && assert.ErrorContains(t, err, types.ErrNotFound.Error())
-		//		}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
-		//
-		//		tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, EventName, primitives.Finalized)
-		//		ts2 := CreateTestStruct[T](3, tester)
-		//		tester.TriggerEvent(t, &ts2)
-		//
-		//		assert.Eventually(t, func() bool {
-		//			err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Finalized, nil, &result)
-		//			return err == nil && reflect.DeepEqual(result, &ts1)
-		//		}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
-		//
-		//		assert.Eventually(t, func() bool {
-		//			err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Unconfirmed, nil, &result)
-		//			return err == nil && reflect.DeepEqual(result, &ts2)
-		//		}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
-		//	},
-		//},
+		{
+			name: "Get latest event based on provided confidence level",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				ts1 := CreateTestStruct[T](2, tester)
+				tester.TriggerEvent(t, &ts1)
+
+				result := &TestStruct{}
+				assert.Eventually(t, func() bool {
+					err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Finalized, nil, &result)
+					return err != nil && assert.ErrorContains(t, err, types.ErrNotFound.Error())
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+
+				tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, EventName, primitives.Finalized)
+				ts2 := CreateTestStruct[T](3, tester)
+				tester.TriggerEvent(t, &ts2)
+
+				assert.Eventually(t, func() bool {
+					err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Finalized, nil, &result)
+					return err == nil && reflect.DeepEqual(result, &ts1)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+
+				assert.Eventually(t, func() bool {
+					err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Unconfirmed, nil, &result)
+					return err == nil && reflect.DeepEqual(result, &ts2)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
 		{
 			name: "Get latest value returns not found if event was never triggered",
 			test: func(t T) {

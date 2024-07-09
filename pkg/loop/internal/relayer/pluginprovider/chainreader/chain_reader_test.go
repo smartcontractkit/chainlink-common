@@ -251,10 +251,10 @@ func (it *fakeChainReaderInterfaceTester) SetTestStructLatestValue(t *testing.T,
 	fake.SetTestStructLatestValue(testStruct)
 }
 
-func (it *fakeChainReaderInterfaceTester) SetUintLatestValue(t *testing.T, val uint64) {
+func (it *fakeChainReaderInterfaceTester) SetUintLatestValue(t *testing.T, val uint64, forCall ExpectedGetLatestValueArgs) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
-	fake.SetUintLatestValue(val)
+	fake.SetUintLatestValue(val, forCall)
 }
 
 func (it *fakeChainReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel) {
@@ -311,7 +311,7 @@ func (f *fakeChainReader) SetTestStructLatestValue(ts *TestStruct) {
 	f.stored = append(f.stored, *ts)
 }
 
-func (f *fakeChainReader) SetUintLatestValue(val uint64) {
+func (f *fakeChainReader) SetUintLatestValue(val uint64, _ ExpectedGetLatestValueArgs) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.vals = append(f.vals, valConfidencePair{val: val, confidenceLevel: primitives.Unconfirmed})
@@ -374,10 +374,6 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 			}
 		}
 		return types.ErrNotFound
-	} else if method == DifferentMethodReturningUint64 {
-		r := returnVal.(*uint64)
-		*r = AnyDifferentValueToReadWithoutAnArgument
-		return nil
 	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)
 	}

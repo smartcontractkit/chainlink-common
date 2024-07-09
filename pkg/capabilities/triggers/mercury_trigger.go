@@ -89,12 +89,13 @@ func NewMercuryTrigger(params NewMercuryTriggerParams) workflows.Trigger[Mercury
 	}
 
 	return workflows.Trigger[MercuryOutput]{
-		Definition: workflows.TriggerDefinitionYaml{
-			ID: workflows.StepDefinitionID{IdStr: triggerID},
+		Definition: workflows.StepDefinition{
+			ID: triggerID,
 			Config: workflows.Mapping{
 				"feedIds":        params.Config.FeedIDs,
 				"maxFrequencyMs": params.Config.MaxFrequencyMs,
 			},
+			CapabilityType: capabilities.CapabilityTypeTrigger,
 		},
 		// TODO: Output should be based on params
 		Output: outputs,

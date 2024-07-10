@@ -21,5 +21,4 @@ func Test_TypesFromJSONSchema(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutputFilePath, generatedFilepath, "Generated file path does not match expected file path")
 	assert.Equal(t, expectedOutputFileContents, generatedContents, "Generated file contents do not match expected contents")
-
 }

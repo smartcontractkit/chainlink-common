@@ -9,10 +9,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd"
 )
 
-// 1. Input filepath
-// 2. Output filepath
-// Test that the contents produced by the function matches the contents of 2.
-
 func Test_TypesFromJSONSchema(t *testing.T) {
 	schemaFilePath := "testdata/streams.capability.json"
 	expectedOutputFilePath := "testdata/streams.generated.go"

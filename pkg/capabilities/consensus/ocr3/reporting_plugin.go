@@ -142,7 +142,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		obs.Observations = append(obs.Observations, newOb)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
-	obs.RegisteredWorkflowIDs = r.r.getRegisteredWorkflowsIDs()
+	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflowsIDs()
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -169,7 +169,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		}
 
 		countedWorkflowIDs := map[string]bool{}
-		for _, id := range obs.RegisteredWorkflowIDs {
+		for _, id := range obs.RegisteredWorkflowIds {
 			// Skip if we've already counted this workflow ID. we want to avoid duplicates in the seen workflow IDs.
 			if _, ok := countedWorkflowIDs[id]; ok {
 				continue

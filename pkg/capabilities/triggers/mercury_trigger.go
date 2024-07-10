@@ -63,16 +63,35 @@ type subscriber struct {
 	config     Config
 }
 
-type MercuryOutput = []datastreams.FeedReport
+type Output = []datastreams.FeedReport
+
+type CapabilityDefinition struct {
+	definition workflows.StepDefinition
+	output     Output
+}
+
+func (m CapabilityDefinition) Definition() workflows.StepDefinition {
+	return m.definition
+}
+
+func (m CapabilityDefinition) Output() Output {
+	return m.output
+}
+
+func (m CapabilityDefinition) Ref() string {
+	return m.definition.Ref
+}
 
 type NewMercuryTriggerParams struct {
+	Ref    string
 	Config Config
 }
 
-func NewMercuryTrigger(params NewMercuryTriggerParams) workflows.Trigger[MercuryOutput] {
-	return workflows.Trigger[MercuryOutput]{
-		Definition: workflows.StepDefinition{
-			ID: triggerID,
+func NewMercuryTrigger(params NewMercuryTriggerParams) workflows.CapabilityDefinition[Output] {
+	return CapabilityDefinition{
+		definition: workflows.StepDefinition{
+			ID:  triggerID,
+			Ref: params.Ref,
 			Config: workflows.Mapping{
 				"feedIds":        params.Config.FeedIDs,
 				"maxFrequencyMs": params.Config.MaxFrequencyMs,

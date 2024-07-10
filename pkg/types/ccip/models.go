@@ -35,4 +35,13 @@ type TxMeta struct {
 	BlockNumber             uint64
 	TxHash                  string
 	LogIndex                uint64
+	Finalized               FinalizedStatus
 }
+
+type FinalizedStatus int
+
+const (
+	FinalizedStatusUnknown FinalizedStatus = iota
+	FinalizedStatusFinalized
+	FinalizedStatusNotFinalized
+)

@@ -254,12 +254,7 @@ type staticCommitStoreReader struct {
 	staticCommitStoreReaderConfig
 }
 
-func (s staticCommitStoreReader) GetCommitReportsForExecution(ctx context.Context, logsAge time.Duration, confirmations int) ([]ccip.CommitStoreReportWithTxMeta, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s staticCommitStoreReader) SnoozeCommitReportExecution(ctx context.Context, root [32]byte, markAsExecuted bool) error {
+func (s staticCommitStoreReader) GetCommitReportsForExecution(ctx context.Context, logsAge time.Duration, ignoredRoots [][32]byte) ([]ccip.CommitStoreReportWithTxMeta, error) {
 	//TODO implement me
 	panic("implement me")
 }

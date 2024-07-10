@@ -28,21 +28,15 @@ service CommitStoreReader {
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty);
 
     rpc GetCommitReportsForExecution(GetCommitReportsForExecutionRequest) returns (GetCommitReportsForExecutionResponse);
-    rpc SnoozeCommitReportExecution(SnoozeCommitReportExecutionRequest) returns (google.protobuf.Empty);
 }
 
 message GetCommitReportsForExecutionRequest {
     int64 logs_age_nanos = 1;
-    uint64 confirmations = 2;
+    repeated bytes ignored_roots = 2; // [][32]byte
 }
 
 message GetCommitReportsForExecutionResponse {
     repeated CommitStoreReportWithTxMeta reports = 1;
-}
-
-message SnoozeCommitReportExecutionRequest {
-    bytes root = 1; // [32]byte
-    bool mark_as_executed = 2;
 }
 
 // GetExpectedNextSequenceNumberResponse returns the expected next sequence number. It is a gRPC adapter to the return values of

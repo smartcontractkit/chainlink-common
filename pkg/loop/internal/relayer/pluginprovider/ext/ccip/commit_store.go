@@ -250,23 +250,15 @@ func (c *CommitStoreGRPCClient) VerifyExecutionReport(ctx context.Context, repor
 	return resp.IsValid, nil
 }
 
-func (c *CommitStoreGRPCClient) GetCommitReportsForExecution(ctx context.Context, logsAge time.Duration, confirmations int) ([]ccip.CommitStoreReportWithTxMeta, error) {
+func (c *CommitStoreGRPCClient) GetCommitReportsForExecution(ctx context.Context, logsAge time.Duration, ignoredRoots [][32]byte) ([]ccip.CommitStoreReportWithTxMeta, error) {
 	resp, err := c.client.GetCommitReportsForExecution(ctx, &ccippb.GetCommitReportsForExecutionRequest{
-		LogsAgeNanos:  int64(logsAge),
-		Confirmations: uint64(confirmations),
+		LogsAgeNanos: int64(logsAge),
+		IgnoredRoots: rootsToBytes(ignoredRoots),
 	})
 	if err != nil {
 		return nil, err
 	}
 	return commitStoreReportWithTxMetaSlice(resp.Reports)
-}
-
-func (c *CommitStoreGRPCClient) SnoozeCommitReportExecution(ctx context.Context, root [32]byte, markAsExecuted bool) error {
-	_, err := c.client.SnoozeCommitReportExecution(ctx, &ccippb.SnoozeCommitReportExecutionRequest{
-		Root:           root[:],
-		MarkAsExecuted: markAsExecuted,
-	})
-	return err
 }
 
 // Server implementation
@@ -435,7 +427,7 @@ func (c *CommitStoreGRPCServer) VerifyExecutionReport(ctx context.Context, req *
 }
 
 func (c *CommitStoreGRPCServer) GetCommitReportsForExecution(ctx context.Context, req *ccippb.GetCommitReportsForExecutionRequest) (*ccippb.GetCommitReportsForExecutionResponse, error) {
-	reports, err := c.impl.GetCommitReportsForExecution(ctx, time.Duration(req.LogsAgeNanos), int(req.Confirmations))
+	reports, err := c.impl.GetCommitReportsForExecution(ctx, time.Duration(req.LogsAgeNanos), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -444,18 +436,6 @@ func (c *CommitStoreGRPCServer) GetCommitReportsForExecution(ctx context.Context
 		return nil, err
 	}
 	return &ccippb.GetCommitReportsForExecutionResponse{Reports: pbReports}, nil
-}
-
-func (c *CommitStoreGRPCServer) SnoozeCommitReportExecution(ctx context.Context, req *ccippb.SnoozeCommitReportExecutionRequest) (*emptypb.Empty, error) {
-	root, err := merkleRoot(req.Root)
-	if err != nil {
-		return nil, err
-	}
-	err = c.impl.SnoozeCommitReportExecution(ctx, root, req.MarkAsExecuted)
-	if err != nil {
-		return nil, err
-	}
-	return &emptypb.Empty{}, nil
 }
 
 // AddDep adds a closer to the list of dependencies that will be closed when the server is closed.
@@ -597,4 +577,12 @@ func commitStoreReportWithTxMetaPB(r ccip.CommitStoreReportWithTxMeta) (*ccippb.
 		TxMeta: txMetaPB(r.TxMeta),
 		Report: report,
 	}, nil
+}
+
+func rootsToBytes(roots [][32]byte) [][]byte {
+	out := make([][]byte, len(roots))
+	for i, r := range roots {
+		out[i] = r[:]
+	}
+	return out
 }

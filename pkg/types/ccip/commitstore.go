@@ -28,8 +28,7 @@ type CommitStoreReader interface {
 	OffchainConfig(ctx context.Context) (CommitOffchainConfig, error)
 	VerifyExecutionReport(ctx context.Context, report ExecReport) (bool, error)
 
-	GetCommitReportsForExecution(ctx context.Context, logsAge time.Duration, confirmations int) ([]CommitStoreReportWithTxMeta, error)
-	SnoozeCommitReportExecution(ctx context.Context, root [32]byte, markAsExecuted bool) error
+	GetCommitReportsForExecution(ctx context.Context, logsAge time.Duration, ignoredRoots [][32]byte) ([]CommitStoreReportWithTxMeta, error)
 
 	io.Closer
 }

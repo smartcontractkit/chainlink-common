@@ -1,5 +1,7 @@
 package workflows
 
+import "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+
 // 1. Capability defines JSON schema for inputs and outputs of a capability.
 // Trigger: triggerOutputType := workflowBuilder.addTrigger(DataStreamsTrigger.Config{})
 // Adds metadata to the builder. Returns output type.
@@ -11,19 +13,10 @@ type Workflow struct {
 	spec *WorkflowSpec
 }
 
-type Trigger[O any] struct {
-	Definition StepDefinition
-	Output     O
-}
-
-type Consensus[O any] struct {
-	Definition StepDefinition
-	Output     O
-}
-
-type CapabilityDefinition[O any] struct {
-	Ref    string
-	Output O
+type CapabilityDefinition[O any] interface {
+	Ref() string
+	Definition() StepDefinition
+	Output() O
 }
 
 type NewWorkflowParams struct {
@@ -42,24 +35,30 @@ func NewWorkflow(
 	}
 }
 
-func AddTrigger[O any](w *Workflow, ref string, trigger Trigger[O]) CapabilityDefinition[O] {
-	trigger.Definition.Ref = ref
-	w.spec.Triggers = append(w.spec.Triggers, trigger.Definition)
+func AddStep[O any](w *Workflow, step CapabilityDefinition[O]) CapabilityDefinition[O] {
+	stepDefinition := step.Definition()
 
-	return CapabilityDefinition[O]{
-		Output: trigger.Output,
-		Ref:    trigger.Definition.Ref,
+	switch stepDefinition.CapabilityType {
+	case capabilities.CapabilityTypeTrigger:
+		w.spec.Triggers = append(w.spec.Triggers, stepDefinition)
+	case capabilities.CapabilityTypeAction:
+		w.spec.Actions = append(w.spec.Actions, stepDefinition)
+	case capabilities.CapabilityTypeConsensus:
+		w.spec.Consensus = append(w.spec.Consensus, stepDefinition)
+	case capabilities.CapabilityTypeTarget:
+		w.spec.Targets = append(w.spec.Targets, stepDefinition)
 	}
+
+	return step
 }
 
-func AddConsensus[O any](w *Workflow, ref string, consensus Consensus[O]) CapabilityDefinition[O] {
-	consensus.Definition.Ref = ref
-	w.spec.Consensus = append(w.spec.Consensus, consensus.Definition)
+func AddTrigger[O any](w *Workflow, trigger CapabilityDefinition[O]) CapabilityDefinition[O] {
+	return trigger
+}
 
-	return CapabilityDefinition[O]{
-		Output: consensus.Output,
-		Ref:    consensus.Definition.Ref,
-	}
+func AddConsensus[O any](w *Workflow, consensus CapabilityDefinition[O]) CapabilityDefinition[O] {
+	w.spec.Consensus = append(w.spec.Consensus, consensus.Definition())
+	return consensus
 }
 
 func (w Workflow) Spec() WorkflowSpec {

@@ -19,8 +19,9 @@ func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
 		Name:  "ccipethsep",
 	})
 
-	mercuryTriggerOutput := workflows.AddTrigger(workflow, "streams", triggers.NewMercuryTrigger(
+	mercuryTriggerOutput := workflows.AddStep(workflow, triggers.NewMercuryTrigger(
 		triggers.NewMercuryTriggerParams{
+			Ref: "streams",
 			Config: triggers.Config{
 				FeedIDs: []string{
 					"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
@@ -34,8 +35,9 @@ func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
 
 	fmt.Println("mercuryTriggerOutput", mercuryTriggerOutput)
 
-	consensusOutput := workflows.AddConsensus(workflow, "data-feeds-report", ocr3.NewOCR3Consensus(
+	consensusOutput := workflows.AddStep(workflow, ocr3.NewOCR3Consensus(
 		ocr3.NewOCR3ConsensusParams{
+			Ref: "data-feeds-report",
 			Inputs: ocr3.CapabilityInputs{
 				Observations: mercuryTriggerOutput,
 			},

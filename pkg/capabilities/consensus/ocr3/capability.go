@@ -51,17 +51,36 @@ type CapabilityInputs struct {
 }
 
 type NewOCR3ConsensusParams struct {
+	Ref    string
 	Inputs CapabilityInputs
 	Config CapabilityConfig
 }
 
-func NewOCR3Consensus(params NewOCR3ConsensusParams) workflows.Consensus[Output] {
-	return workflows.Consensus[Output]{
-		Definition: workflows.StepDefinition{
-			ID: ocrCapabilityID,
+type CapabilityDefinition struct {
+	definition workflows.StepDefinition
+	output     Output
+}
+
+func (m CapabilityDefinition) Definition() workflows.StepDefinition {
+	return m.definition
+}
+
+func (m CapabilityDefinition) Output() Output {
+	return m.output
+}
+
+func (m CapabilityDefinition) Ref() string {
+	return m.definition.Ref
+}
+
+func NewOCR3Consensus(params NewOCR3ConsensusParams) workflows.CapabilityDefinition[Output] {
+	return CapabilityDefinition{
+		definition: workflows.StepDefinition{
+			ID:  ocrCapabilityID,
+			Ref: params.Ref,
 			Inputs: workflows.StepInputs{
 				Mapping: map[string]any{
-					"observations": fmt.Sprintf("$(%s.outputs)", params.Inputs.Observations.Ref),
+					"observations": fmt.Sprintf("$(%s.outputs)", params.Inputs.Observations.Ref()),
 				},
 			},
 			Config: map[string]any{

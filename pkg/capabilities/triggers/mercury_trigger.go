@@ -63,15 +63,6 @@ type subscriber struct {
 	config     Config
 }
 
-// TODO: Include mock outputs for typechecking and testing
-type CapabilityDefinition interface {
-	Config()
-}
-
-type MercuryCapabilityDefinition struct {
-	Config Config
-}
-
 type MercuryOutput = []datastreams.FeedReport
 
 type NewMercuryTriggerParams struct {
@@ -79,15 +70,6 @@ type NewMercuryTriggerParams struct {
 }
 
 func NewMercuryTrigger(params NewMercuryTriggerParams) workflows.Trigger[MercuryOutput] {
-	// TODO: Call .ValidateConfig to check for more complex JSON Schema validation
-	outputs := []datastreams.FeedReport{}
-
-	for _, feedID := range params.Config.FeedIDs {
-		outputs = append(outputs, datastreams.FeedReport{
-			FeedID: feedID,
-		})
-	}
-
 	return workflows.Trigger[MercuryOutput]{
 		Definition: workflows.StepDefinition{
 			ID: triggerID,
@@ -97,8 +79,6 @@ func NewMercuryTrigger(params NewMercuryTriggerParams) workflows.Trigger[Mercury
 			},
 			CapabilityType: capabilities.CapabilityTypeTrigger,
 		},
-		// TODO: Output should be based on params
-		Output: outputs,
 	}
 }
 

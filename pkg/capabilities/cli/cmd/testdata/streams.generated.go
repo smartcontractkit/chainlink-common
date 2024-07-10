@@ -115,9 +115,6 @@ func (j *StreamsCapability) UnmarshalJSON(b []byte) error {
 	if _, ok := raw["config"]; raw != nil && !ok {
 		return fmt.Errorf("field config in StreamsCapability: required")
 	}
-	if _, ok := raw["outputs"]; raw != nil && !ok {
-		return fmt.Errorf("field outputs in StreamsCapability: required")
-	}
 	type Plain StreamsCapability
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {

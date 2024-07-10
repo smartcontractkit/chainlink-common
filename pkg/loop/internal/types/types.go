@@ -40,8 +40,6 @@ type OCR3CapabilityProvider interface {
 }
 
 // Relayer is like types.Relayer, but with a dynamic NewPluginProvider method.
-//
-//go:generate mockery --quiet --name Relayer --output ../../mocks/ --case=underscore
 type Relayer interface {
 	types.ChainService
 

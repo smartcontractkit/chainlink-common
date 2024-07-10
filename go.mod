@@ -1,6 +1,8 @@
 module github.com/smartcontractkit/chainlink-common
 
-go 1.21
+go 1.22
+
+toolchain go1.22.5
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
@@ -35,11 +37,22 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.24.0
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
+	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
 	gonum.org/v1/gonum v0.14.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
 	sigs.k8s.io/yaml v1.4.0
+)
+
+require (
+	github.com/atombender/go-jsonschema v0.16.0 // indirect
+	github.com/goccy/go-yaml v1.11.3 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
+	github.com/sanity-io/litter v1.5.5 // indirect
+	github.com/spf13/cobra v1.8.1 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
+	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 )
 
 require (
@@ -49,7 +62,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/fatih/color v1.14.1 // indirect
+	github.com/fatih/color v1.16.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -59,7 +72,7 @@ require (
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect

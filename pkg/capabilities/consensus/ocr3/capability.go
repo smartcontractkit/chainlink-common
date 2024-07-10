@@ -55,31 +55,7 @@ type NewOCR3ConsensusParams struct {
 	Config CapabilityConfig
 }
 
-// type NewMercuryTriggerParams struct {
-// 	Config Config
-// }
-
-// triggers.NewMercuryTriggerParams{
-// 	Config: triggers.Config{
-// 		FeedIDs: []string{
-// 			"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
-// 			"0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d",
-// 			"0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12",
-// 		},
-// 		MaxFrequencyMs: 100,
-// 	},
-// },
-
 func NewOCR3Consensus(params NewOCR3ConsensusParams) workflows.Consensus[Output] {
-	// // TODO: Call .ValidateConfig to check for more complex JSON Schema validation
-	// outputs := []datastreams.FeedReport{}
-
-	// for _, feedID := range params.Config.FeedIDs {
-	// 	outputs = append(outputs, datastreams.FeedReport{
-	// 		FeedID: feedID,
-	// 	})
-	// }
-
 	return workflows.Consensus[Output]{
 		Definition: workflows.StepDefinition{
 			ID: ocrCapabilityID,
@@ -97,8 +73,6 @@ func NewOCR3Consensus(params NewOCR3ConsensusParams) workflows.Consensus[Output]
 			},
 			CapabilityType: capabilities.CapabilityTypeConsensus,
 		},
-		// TODO: Output should be based on params
-		Output: nil,
 	}
 }
 

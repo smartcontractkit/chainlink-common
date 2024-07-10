@@ -38,6 +38,24 @@ type TxMeta struct {
 	Finalized               FinalizedStatus
 }
 
+func (t *TxMeta) IsFinalized() bool {
+	return t.Finalized == FinalizedStatusFinalized
+}
+
+func (t *TxMeta) UpdateFinalityStatus(finalizedBlockNumber uint64) TxMeta {
+	txMeta := TxMeta{
+		BlockTimestampUnixMilli: t.BlockTimestampUnixMilli,
+		BlockNumber:             t.BlockNumber,
+		TxHash:                  t.TxHash,
+		LogIndex:                t.LogIndex,
+		Finalized:               FinalizedStatusNotFinalized,
+	}
+	if txMeta.BlockNumber <= finalizedBlockNumber {
+		txMeta.Finalized = FinalizedStatusFinalized
+	}
+	return txMeta
+}
+
 type FinalizedStatus int
 
 const (

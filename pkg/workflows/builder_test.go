@@ -19,7 +19,7 @@ func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
 		Name:  "ccipethsep",
 	})
 
-	mercuryTriggerOutput := workflows.AddTrigger(workflow, triggers.NewMercuryTrigger(
+	mercuryTriggerOutput := workflows.AddTrigger(workflow, "streams", triggers.NewMercuryTrigger(
 		triggers.NewMercuryTriggerParams{
 			Config: triggers.Config{
 				FeedIDs: []string{
@@ -34,7 +34,7 @@ func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
 
 	fmt.Println("mercuryTriggerOutput", mercuryTriggerOutput)
 
-	consensusOutput := workflows.AddConsensus(workflow, ocr3.NewOCR3Consensus(
+	consensusOutput := workflows.AddConsensus(workflow, "data-feeds-report", ocr3.NewOCR3Consensus(
 		ocr3.NewOCR3ConsensusParams{
 			Inputs: ocr3.CapabilityInputs{
 				Observations: mercuryTriggerOutput,
@@ -79,7 +79,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		Triggers: []workflows.StepDefinition{
 			{
 				ID:  "streams-trigger@1.0.0",
-				Ref: "trigger-0",
+				Ref: "streams",
 				Config: map[string]interface{}{
 					"feedIds": []string{
 						"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
@@ -94,10 +94,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		Consensus: []workflows.StepDefinition{
 			{
 				ID:  "offchain_reporting@1.0.0",
-				Ref: "consensus-0",
+				Ref: "data-feeds-report",
 				Inputs: workflows.StepInputs{
 					Mapping: map[string]any{
-						"observations": "$(trigger-0.outputs)",
+						"observations": "$(streams.outputs)",
 					},
 				},
 				Config: map[string]interface{}{

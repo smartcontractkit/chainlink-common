@@ -226,3 +226,15 @@ func Test_Value(t *testing.T) {
 		})
 	}
 }
+
+func Test_WrapMap(t *testing.T) {
+	a := struct{ A string }{A: "foo"}
+	am, err := WrapMap(a)
+	require.NoError(t, err)
+
+	assert.Len(t, am.Underlying, 1)
+	assert.Equal(t, am.Underlying["A"], NewString("foo"))
+
+	_, err = WrapMap("foo")
+	require.ErrorContains(t, err, "could not wrap")
+}

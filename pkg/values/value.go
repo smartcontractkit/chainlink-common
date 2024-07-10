@@ -104,6 +104,20 @@ func Wrap(v any) (Value, error) {
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
 }
 
+func WrapMap(a any) (*Map, error) {
+	v, err := Wrap(a)
+	if err != nil {
+		return nil, err
+	}
+
+	vm, ok := v.(*Map)
+	if !ok {
+		return nil, fmt.Errorf("could not wrap %+v to map", a)
+	}
+
+	return vm, nil
+}
+
 func Unwrap(v Value) (any, error) {
 	if v == nil {
 		return nil, nil

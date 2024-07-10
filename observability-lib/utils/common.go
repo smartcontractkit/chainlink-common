@@ -62,8 +62,9 @@ func prometheusQuery(query string, legend string) *prometheus.DataqueryBuilder {
 }
 
 type PrometheusQuery struct {
-	Query  string
-	Legend string
+	Query   string
+	Legend  string
+	Instant bool
 }
 
 func Float64Ptr(f float64) *float64 {
@@ -99,7 +100,7 @@ func StatPanel(
 		Orientation(orientation)
 
 	for _, q := range query {
-		panel.WithTarget(prometheusQuery(q.Query, q.Legend))
+		panel.WithTarget(prometheusQuery(q.Query, q.Legend).Instant(q.Instant))
 	}
 
 	return panel

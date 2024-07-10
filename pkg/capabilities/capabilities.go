@@ -70,16 +70,17 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value values.Value
+	Value *values.Map
 	Err   error
 }
 
 type RequestMetadata struct {
-	WorkflowID          string
-	WorkflowOwner       string
-	WorkflowExecutionID string
-	WorkflowName        string
-	WorkflowDonID       string
+	WorkflowID               string
+	WorkflowOwner            string
+	WorkflowExecutionID      string
+	WorkflowName             string
+	WorkflowDonID            uint32
+	WorkflowDonConfigVersion uint32
 }
 
 type RegistrationMetadata struct {
@@ -173,14 +174,33 @@ type TargetCapability interface {
 	CallbackCapability
 }
 
+// DON represents a network of connected nodes.
+//
+// For an example of an empty DON check, see the following link:
+// https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31
 type DON struct {
-	ID      string
-	Members []p2ptypes.PeerID
-	F       uint8
-
-	Config []byte
+	ID               uint32
+	ConfigVersion    uint32
+	Members          []p2ptypes.PeerID
+	F                uint8
+	IsPublic         bool
+	AcceptsWorkflows bool
 }
 
+// Node contains the node's peer ID and the DONs it is part of.
+//
+// Note the following relationships between the workflow and capability DONs and this node.
+//
+// There is a 1:0..1 relationship between this node and a workflow DON.
+// This means that this node can be part at most one workflow DON at a time.
+// As a side note, a workflow DON can have multiple nodes.
+//
+// There is a 1:N relationship between this node and capability DONs, where N is the number of capability DONs.
+// This means that this node can be part of multiple capability DONs at a time.
+//
+// Although WorkflowDON is a value rather than a pointer, a node can be part of no workflow DON but 0 or more capability DONs.
+// You can assert this by checking for zero values in the WorkflowDON field.
+// See https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31 for an example.
 type Node struct {
 	PeerID         *p2ptypes.PeerID
 	WorkflowDON    DON

@@ -26,11 +26,13 @@ triggers:
 consensus:
   - id: offchain_reporting@1.0.0
     ref: offchain_reporting_1
+    inputs: $(trigger.outputs)
     config: {}
 
 targets:
   - id: write_polygon_mainnet@1.0.0
     ref: write_polygon_mainnet_1 
+    inputs: $(offchain_reporting_1.outputs)
     config: {}
 `
 	type cfg struct {

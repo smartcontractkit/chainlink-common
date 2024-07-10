@@ -669,6 +669,10 @@ func offChainConfig(in *ccippb.ExecOffchainConfig) (cciptypes.ExecOffchainConfig
 	if err != nil {
 		return cciptypes.ExecOffchainConfig{}, fmt.Errorf("offChainConfig: invalid RootSnoozeTime: %w", err)
 	}
+	messageVisibleInterval, err := config.NewDuration(in.MessageVisibilityInterval.AsDuration())
+	if err != nil {
+		return cciptypes.ExecOffchainConfig{}, fmt.Errorf("offChainConfig: invalid MessageVisibilityInterval: %w", err)
+	}
 
 	return cciptypes.ExecOffchainConfig{
 		DestOptimisticConfirmations: in.DestOptimisticConfirmations,
@@ -676,6 +680,8 @@ func offChainConfig(in *ccippb.ExecOffchainConfig) (cciptypes.ExecOffchainConfig
 		RelativeBoostPerWaitHour:    in.RelativeBoostPerWaitHour,
 		InflightCacheExpiry:         cachedExpiry,
 		RootSnoozeTime:              rootSnoozeTime,
+		MessageVisibilityInterval:   messageVisibleInterval,
+		BatchingStrategyID:          in.BatchingStrategyId,
 	}, nil
 }
 
@@ -686,6 +692,8 @@ func offChainConfigToPB(in cciptypes.ExecOffchainConfig) *ccippb.ExecOffchainCon
 		RelativeBoostPerWaitHour:    in.RelativeBoostPerWaitHour,
 		InflightCacheExpiry:         durationpb.New(in.InflightCacheExpiry.Duration()),
 		RootSnoozeTime:              durationpb.New(in.RootSnoozeTime.Duration()),
+		MessageVisibilityInterval:   durationpb.New(in.MessageVisibilityInterval.Duration()),
+		BatchingStrategyId:          in.BatchingStrategyID,
 	}
 }
 

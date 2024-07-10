@@ -22,11 +22,7 @@ var Dir string
 var PackageRegexPattern = regexp.MustCompile(`([^/]+)\.capability\.json$`)
 
 func init() {
-	generateTypesCmd.Flags().StringVar(&Dir, "dir", "", fmt.Sprintf("Directory to search for %s files", CapabilitySchemaFileExtension))
-	if err := generateTypesCmd.MarkFlagRequired("dir"); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	generateTypesCmd.Flags().StringVar(&Dir, "dir", ".", fmt.Sprintf("Directory to search for %s files", CapabilitySchemaFileExtension))
 	if err := generateTypesCmd.MarkFlagDirname("dir"); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

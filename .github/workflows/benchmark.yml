@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run Go Benchmark Action
-        uses: patrickhuie19/benchmark-action@v0.2.2
+        uses: patrickhuie19/benchmark-action@b46d0ce6c3b4bd423380f7d3c6abed389e38ea4a
         with:
           benchmarks-pr: 'BenchmarkKeystore_Sign'  # Use benchmarks specified in PR, or default benchmarks
           benchmarks-merge: 'BenchmarkKeystore_Sign' # Default list of benchmarks to run on merges

@@ -5,6 +5,9 @@ package streams
 import "encoding/json"
 import "fmt"
 
+// The ID of the data feed.
+type FeedId string
+
 // Streams Trigger
 type StreamsTrigger struct {
 	// Config corresponds to the JSON schema field "config".
@@ -15,8 +18,9 @@ type StreamsTrigger struct {
 }
 
 type StreamsTriggerConfig struct {
-	// FeedIds corresponds to the JSON schema field "feedIds".
-	FeedIds []string
+	// The IDs of the data feeds that will have their reports included in the trigger
+	// event.
+	FeedIds []FeedId
 
 	// The interval in seconds after which a new trigger event is generated.
 	MaxFrequencyMs int
@@ -52,7 +56,7 @@ type StreamsTriggerOutputsElem struct {
 	BenchmarkPrice string
 
 	// FeedId corresponds to the JSON schema field "feedId".
-	FeedId string
+	FeedId FeedId
 
 	// Full report represented as bytes encoded as base64 string.
 	FullReport string

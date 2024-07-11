@@ -2,18 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/smartcontractkit/chainlink/capabilities/streams@1.0.0",
   "description": "Streams Trigger",
+  "$defs": {
+    "feedId": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$",
+      "description": "The ID of the data feed.",
+      "examples": [
+        "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd"
+      ]
+    }
+  },
   "properties": {
     "config": {
       "properties": {
         "feedIds": {
           "type": "array",
+          "description": "The IDs of the data feeds that will have their reports included in the trigger event.",
           "items": {
-            "type": "string",
-            "pattern": "^0x[0-9a-f]{64}$",
-            "description": "The feedId of the data feed.",
-            "examples": [
-              "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd"
-            ]
+            "$ref": "#/$defs/feedId"
           },
           "minItems": 1,
           "uniqueItems": true
@@ -33,8 +39,7 @@
         "type": "object",
         "properties": {
           "feedId": {
-            "type": "string",
-            "pattern": "^0x[0-9a-f]{64}$"
+            "$ref": "#/$defs/feedId"
           },
           "fullReport": {
             "type": "string",

@@ -180,6 +180,20 @@ func main() {
 		lggr.Debugf("Done serving %s", loop.CCIPExecutionLOOPName)
 		os.Exit(0)
 
+	case loop.CCIPCommitLOOPName:
+		lggr.Debugf("Starting %s", loop.CCIPCommitLOOPName)
+		plugin.Serve(&plugin.ServeConfig{
+			HandshakeConfig: loop.PluginCCIPCommitHandshakeConfig(),
+			Plugins: map[string]plugin.Plugin{
+				loop.CCIPCommitLOOPName: &loop.CommitLoop{
+					PluginServer: cciptest.CommitFactoryServer,
+					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+			},
+			GRPCServer: grpcServer,
+		})
+		lggr.Debugf("Done serving %s", loop.CCIPCommitLOOPName)
+		os.Exit(0)
+
 	case ocr3.PluginServiceName:
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: reportingplugins.ReportingPluginHandshakeConfig(),

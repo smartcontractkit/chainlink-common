@@ -13,24 +13,24 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-var ExecFactoryServer = execFactoryServer{
-	execFactoryServerConfig: execFactoryServerConfig{
-		provider: ExecutionProvider,
+var CommitFactoryServer = commitFactoryServer{
+	commitFactoryServerConfig: commitFactoryServerConfig{
+		provider: CommitProvider,
 	},
 }
 
-type execFactoryServerConfig struct {
-	provider ExecProviderEvaluator
+type commitFactoryServerConfig struct {
+	provider CommitProviderEvaluator
 }
 
-var _ types.CCIPExecutionFactoryGenerator = execFactoryServer{}
+var _ types.CCIPCommitFactoryGenerator = commitFactoryServer{}
 
-type execFactoryServer struct {
-	execFactoryServerConfig
+type commitFactoryServer struct {
+	commitFactoryServerConfig
 }
 
-// NewExecutionFactory implements types.CCIPExecFactoryGenerator.
-func (e execFactoryServer) NewExecutionFactory(ctx context.Context, provider types.CCIPExecProvider) (types.ReportingPluginFactory, error) {
+// NewCommitFactory implements types.CCIPCommitFactoryGenerator.
+func (e commitFactoryServer) NewCommitFactory(ctx context.Context, provider types.CCIPCommitProvider) (types.ReportingPluginFactory, error) {
 	err := e.provider.Evaluate(ctx, provider)
 	if err != nil {
 		return nil, err
@@ -38,25 +38,25 @@ func (e execFactoryServer) NewExecutionFactory(ctx context.Context, provider typ
 	return reportingplugintest.Factory, nil
 }
 
-func RunExecutionLOOP(t *testing.T, p types.CCIPExecutionFactoryGenerator) {
-	ExecutionLOOPTester{ExecutionProvider}.Run(t, p)
+func RunCommitLOOP(t *testing.T, p types.CCIPCommitFactoryGenerator) {
+	CommitLOOPTester{CommitProvider}.Run(t, p)
 }
 
-type ExecutionLOOPTester struct {
-	types.CCIPExecProvider
+type CommitLOOPTester struct {
+	types.CCIPCommitProvider
 }
 
-func (e ExecutionLOOPTester) Run(t *testing.T, p types.CCIPExecutionFactoryGenerator) {
-	t.Run("ExecutionLOOP", func(t *testing.T) {
+func (e CommitLOOPTester) Run(t *testing.T, p types.CCIPCommitFactoryGenerator) {
+	t.Run("CommitLOOP", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewExecutionFactory(ctx, e.CCIPExecProvider)
+		factory, err := p.NewCommitFactory(ctx, e.CCIPCommitProvider)
 		require.NoError(t, err)
 
-		runExecReportingPluginFactory(t, factory)
+		runCommitReportingPluginFactory(t, factory)
 	})
 }
 
-func runExecReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) {
+func runCommitReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) {
 	// TODO BCF-3068 de-dupe this with the same function in median/test/median.go
 	rpi := libocr.ReportingPluginInfo{
 		Name:          "test",

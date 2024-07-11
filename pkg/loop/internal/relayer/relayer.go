@@ -293,6 +293,8 @@ func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterfa
 		// for now we return an error and test for the this error case
 		// return nil, fmt.Errorf("need to fix BCF-3061")
 		return ccip.NewExecProviderClient(broker, cc), fmt.Errorf("need to fix BCF-3061")
+	case string(types.CCIPCommit):
+		return ccip.NewCommitProviderClient(broker, cc), fmt.Errorf("need to fix BCF-3061")
 	default:
 		return nil, fmt.Errorf("provider type not supported: %s", providerType)
 	}

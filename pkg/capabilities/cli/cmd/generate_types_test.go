@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd"
 )
 
@@ -39,9 +40,12 @@ func Test_TypesFromJSONSchema(t *testing.T) {
 	expectedOutputFileContents, err := os.ReadFile(expectedOutputFilePath)
 	assert.NoError(t, err)
 
-	generatedFilepath, generatedContents, err := cmd.TypesFromJSONSchema(schemaFilePath)
+	generatedFilepath, generatedContents, rootType, capabilityType, err := cmd.TypesFromJSONSchema(schemaFilePath)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutputFilePath, generatedFilepath, "Generated file path does not match expected file path")
-	assert.Equal(t, expectedOutputFileContents, generatedContents, "Generated file contents do not match expected contents")
+	assert.Equal(t, string(expectedOutputFileContents), generatedContents, "Generated file contents do not match expected contents")
+	assert.Equal(t, capabilities.CapabilityTypeTrigger.String(), capabilityType, "Wrong type for capability")
+	assert.Equal(t, "StreamsTrigger", rootType, "Root type does not match expected root type")
+	assert.Equal(t, "trigger", capabilityType, "Capability type does not match expected capability type")
 }

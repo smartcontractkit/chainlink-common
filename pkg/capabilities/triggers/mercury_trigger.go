@@ -27,7 +27,7 @@ const defaultTickerResolutionMs = 1000
 // TODO pending capabilities configuration implementation - this should be configurable with a sensible default
 const defaultSendChannelBufferSize = 1000
 
-type config struct {
+type Config struct {
 	// strings should be hex-encoded 32-byte values, prefixed with "0x", all lowercase, minimum 1 item
 	FeedIDs []string `json:"feedIds" jsonschema:"pattern=^0x[0-9a-f]{64}$,minItems=1"`
 	// must be greater than 0
@@ -38,11 +38,11 @@ type inputs struct {
 	TriggerID string `json:"triggerId"`
 }
 
-var mercuryTriggerValidator = capabilities.NewValidator[config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo})
+var mercuryTriggerValidator = capabilities.NewValidator[Config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo})
 
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
-	capabilities.Validator[config, inputs, capabilities.TriggerEvent]
+	capabilities.Validator[Config, inputs, capabilities.TriggerEvent]
 	capabilities.CapabilityInfo
 	tickerResolutionMs int64
 	subscribers        map[string]*subscriber
@@ -59,7 +59,7 @@ var _ services.Service = &MercuryTriggerService{}
 type subscriber struct {
 	ch         chan<- capabilities.CapabilityResponse
 	workflowID string
-	config     config
+	config     Config
 }
 
 // Mercury Trigger will send events to each subscriber every MaxFrequencyMs (configurable per subscriber).

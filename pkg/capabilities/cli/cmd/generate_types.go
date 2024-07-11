@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -10,6 +12,8 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/generator"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 	"github.com/spf13/cobra"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
 var Dir string
@@ -36,57 +40,90 @@ var generateTypesCmd = &cobra.Command{
 	Use:   "generate-types",
 	Short: "Generate Go types from JSON schema capability definitions",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		dir := cmd.Flag("dir").Value.String()
-
-		var schemaPaths []string
-
-		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			// Ignore directories and files that don't match the CapabilitySchemaFileExtension
-			if info.IsDir() || !CapabilitySchemaFilePattern.MatchString(path) {
-				return nil
-			}
-
-			schemaPaths = append(schemaPaths, path)
-			return nil
-		}); err != nil {
-			return fmt.Errorf("error walking the directory %v: %v", dir, err)
-		}
-
-		for _, schemaPath := range schemaPaths {
-			file, content, err := TypesFromJSONSchema(schemaPath)
-
-			if err != nil {
-				return err
-			}
-
-			if err = os.WriteFile(file, content, 0400); err != nil {
-				return err
-			}
-
-			fmt.Println("Generated types for", schemaPath)
-		}
-
-		return nil
+		return GenerateTypes(dir, []WorkflowHelperGenerator{
+			&TemplateWorkflowGeneratorHelper{
+				Templates: map[string]string{"{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},
+			},
+		})
 	},
 }
 
+func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
+	var schemaPaths []string
+
+	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Ignore directories and files that don't match the CapabilitySchemaFileExtension
+		if info.IsDir() || !CapabilitySchemaFilePattern.MatchString(path) {
+			return nil
+		}
+
+		schemaPaths = append(schemaPaths, path)
+		return nil
+	}); err != nil {
+		return errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
+	}
+
+	for _, schemaPath := range schemaPaths {
+		allFiles := map[string]string{}
+		file, content, rootType, capabilityTypeRaw, err := TypesFromJSONSchema(schemaPath)
+		if err != nil {
+			return err
+		}
+
+		var capabilityType capabilities.CapabilityType
+		for ; capabilityType.IsValid() == nil && (capabilityType.String() != capabilityTypeRaw); capabilityType++ {
+		}
+		if err = capabilityType.IsValid(); err != nil {
+			return fmt.Errorf("invalid capability type %v", capabilityTypeRaw)
+		}
+
+		allFiles[file] = content
+
+		structs, err := StructsFromSrc(content, rootType, capabilityType)
+		if err != nil {
+			return err
+		}
+
+		for _, helper := range helpers {
+			files, err := helper.Generate(structs)
+			if err != nil {
+				return err
+			}
+
+			for f, c := range files {
+				if _, ok := allFiles[f]; ok {
+					return fmt.Errorf("file %v is being created by more than one generator", f)
+				}
+				allFiles[f] = c
+			}
+		}
+
+		if err = printFiles(path.Dir(schemaPath), allFiles); err != nil {
+			return err
+		}
+
+		fmt.Println("Generated types for", schemaPath)
+	}
+	return nil
+}
+
 // TypesFromJSONSchema generates Go types from a JSON schema file.
-func TypesFromJSONSchema(schemaFilePath string) (outputFilePath string, outputContents []byte, err error) {
+func TypesFromJSONSchema(schemaFilePath string) (outputFilePath, outputContents, rootType, capabilityType string, err error) {
 	jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
 	if err != nil {
-		return "", []byte(""), fmt.Errorf("error reading schema file %v:\n\t- %v\n\nTIP: This can happen if the supplied JSON schema is invalid. Try using https://jsonschemalint.com/#!/version/draft-07/markup/json to validate the schema", schemaFilePath, err)
+		return "", "", "", "", errors.New(fmt.Sprintf("error reading schema file %v:\n\t- %v\n\nTIP: This can happen if the supplied JSON schema is invalid. Try using https://jsonschemalint.com/#!/version/draft-07/markup/json to validate the schema.\n", schemaFilePath, err))
 	}
 
 	capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
 	packageName := capabilityInfo[1]
-	capabilityType := capabilityInfo[2]
+	capabilityType = capabilityInfo[2]
 	outputName := strings.Replace(schemaFilePath, capabilityType+".json", capabilityType+"_generated.go", 1)
-	rootType := capitalize(packageName) + capitalize(capabilityType)
+	rootType = capitalize(packageName) + capitalize(capabilityType)
 
 	cfg := generator.Config{
 		Warner: func(message string) { fmt.Printf("Warning: %s\n", message) },
@@ -102,11 +139,11 @@ func TypesFromJSONSchema(schemaFilePath string) (outputFilePath string, outputCo
 
 	gen, err := generator.New(cfg)
 	if err != nil {
-		return "", []byte(""), err
+		return "", "", "", "", err
 	}
 
 	if err = gen.DoFile(schemaFilePath); err != nil {
-		return "", []byte(""), err
+		return "", "", "", "", err
 	}
 
 	generatedContents := gen.Sources()
@@ -114,7 +151,7 @@ func TypesFromJSONSchema(schemaFilePath string) (outputFilePath string, outputCo
 
 	content = []byte(strings.Replace(string(content), "// Code generated by github.com/atombender/go-jsonschema", "// Code generated by pkg/capabilities/cli", 1))
 
-	return outputName, content, nil
+	return outputName, string(content), rootType, capabilityType, nil
 }
 
 func capitalize(s string) string {

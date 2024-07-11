@@ -1,6 +1,7 @@
 package workflows_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -361,6 +362,15 @@ targets:
 					for adj := range v {
 						got[k][adj] = struct{}{}
 					}
+				}
+
+				if tc.name == "passthrough ref interpolation" {
+
+					fmt.Println("wf.Spec", wf.Spec)
+					fmt.Println("wf.Spec", wf.Spec.Consensus[0].Inputs)
+
+					// 	fmt.Println("got", got)
+					// 	fmt.Println("adjacencies", adjacencies)
 				}
 
 				assert.Equal(st, tc.graph, got, adjacencies)

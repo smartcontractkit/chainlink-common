@@ -6,15 +6,15 @@ import "encoding/json"
 import "fmt"
 
 // Streams Trigger
-type StreamsCapability struct {
+type StreamsTrigger struct {
 	// Config corresponds to the JSON schema field "config".
-	Config StreamsCapabilityConfig
+	Config StreamsTriggerConfig
 
 	// Outputs corresponds to the JSON schema field "outputs".
-	Outputs []StreamsCapabilityOutputsElem
+	Outputs []StreamsTriggerOutputsElem
 }
 
-type StreamsCapabilityConfig struct {
+type StreamsTriggerConfig struct {
 	// FeedIds corresponds to the JSON schema field "feedIds".
 	FeedIds []string
 
@@ -23,18 +23,18 @@ type StreamsCapabilityConfig struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *StreamsCapabilityConfig) UnmarshalJSON(b []byte) error {
+func (j *StreamsTriggerConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["feedIds"]; raw != nil && !ok {
-		return fmt.Errorf("field feedIds in StreamsCapabilityConfig: required")
+		return fmt.Errorf("field feedIds in StreamsTriggerConfig: required")
 	}
 	if _, ok := raw["maxFrequencyMs"]; raw != nil && !ok {
-		return fmt.Errorf("field maxFrequencyMs in StreamsCapabilityConfig: required")
+		return fmt.Errorf("field maxFrequencyMs in StreamsTriggerConfig: required")
 	}
-	type Plain StreamsCapabilityConfig
+	type Plain StreamsTriggerConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
@@ -42,11 +42,11 @@ func (j *StreamsCapabilityConfig) UnmarshalJSON(b []byte) error {
 	if plain.FeedIds != nil && len(plain.FeedIds) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "feedIds", 1)
 	}
-	*j = StreamsCapabilityConfig(plain)
+	*j = StreamsTriggerConfig(plain)
 	return nil
 }
 
-type StreamsCapabilityOutputsElem struct {
+type StreamsTriggerOutputsElem struct {
 	// This value is extracted from the fullReport. Benchmark price represented as
 	// bytes encoded as base64 string.
 	BenchmarkPrice string
@@ -71,30 +71,30 @@ type StreamsCapabilityOutputsElem struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *StreamsCapabilityOutputsElem) UnmarshalJSON(b []byte) error {
+func (j *StreamsTriggerOutputsElem) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["benchmarkPrice"]; raw != nil && !ok {
-		return fmt.Errorf("field benchmarkPrice in StreamsCapabilityOutputsElem: required")
+		return fmt.Errorf("field benchmarkPrice in StreamsTriggerOutputsElem: required")
 	}
 	if _, ok := raw["feedId"]; raw != nil && !ok {
-		return fmt.Errorf("field feedId in StreamsCapabilityOutputsElem: required")
+		return fmt.Errorf("field feedId in StreamsTriggerOutputsElem: required")
 	}
 	if _, ok := raw["fullReport"]; raw != nil && !ok {
-		return fmt.Errorf("field fullReport in StreamsCapabilityOutputsElem: required")
+		return fmt.Errorf("field fullReport in StreamsTriggerOutputsElem: required")
 	}
 	if _, ok := raw["observationTimestamp"]; raw != nil && !ok {
-		return fmt.Errorf("field observationTimestamp in StreamsCapabilityOutputsElem: required")
+		return fmt.Errorf("field observationTimestamp in StreamsTriggerOutputsElem: required")
 	}
 	if _, ok := raw["reportContext"]; raw != nil && !ok {
-		return fmt.Errorf("field reportContext in StreamsCapabilityOutputsElem: required")
+		return fmt.Errorf("field reportContext in StreamsTriggerOutputsElem: required")
 	}
 	if _, ok := raw["signatures"]; raw != nil && !ok {
-		return fmt.Errorf("field signatures in StreamsCapabilityOutputsElem: required")
+		return fmt.Errorf("field signatures in StreamsTriggerOutputsElem: required")
 	}
-	type Plain StreamsCapabilityOutputsElem
+	type Plain StreamsTriggerOutputsElem
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
@@ -102,24 +102,24 @@ func (j *StreamsCapabilityOutputsElem) UnmarshalJSON(b []byte) error {
 	if plain.Signatures != nil && len(plain.Signatures) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "signatures", 1)
 	}
-	*j = StreamsCapabilityOutputsElem(plain)
+	*j = StreamsTriggerOutputsElem(plain)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *StreamsCapability) UnmarshalJSON(b []byte) error {
+func (j *StreamsTrigger) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
-		return fmt.Errorf("field config in StreamsCapability: required")
+		return fmt.Errorf("field config in StreamsTrigger: required")
 	}
-	type Plain StreamsCapability
+	type Plain StreamsTrigger
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = StreamsCapability(plain)
+	*j = StreamsTrigger(plain)
 	return nil
 }

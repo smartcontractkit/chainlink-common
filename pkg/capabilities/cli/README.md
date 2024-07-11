@@ -4,8 +4,8 @@ This tool was built for generating capability Go types from the JSON schema.
 
 ## Conventions
 
-- Capability JSON schemas must end with `.capability.json`.
-- Generated types are placed next to the JSON schema with the `.generated.go` extension.
+- Capability JSON schemas must be named using this pattern `[capability_name]_[capability_type].json`.
+- Generated types are placed next to the JSON schema and named using this pattern `[capability_name]_[capability_type]_generated.go`.
 
 ## Running
 

@@ -124,8 +124,9 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `version{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "Version: {{version}} https://github.com/smartcontractkit/chainlink/commit/{{commit}} https://github.com/smartcontractkit/chainlink/tree/release/{{version}}",
+			Query:   `version{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend:  "Version: {{version}} https://github.com/smartcontractkit/chainlink/commit/{{commit}} https://github.com/smartcontractkit/chainlink/tree/release/{{version}}",
+			Instant: true,
 		},
 	))
 
@@ -160,8 +161,9 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeValueAndName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `eth_balance{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+			Query:   `eth_balance{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend:  `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+			Instant: true,
 		},
 	).Thresholds(
 		dashboard.NewThresholdsConfigBuilder().
@@ -267,8 +269,9 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 		common.BigValueTextModeName,
 		common.VizOrientationHorizontal,
 		utils.PrometheusQuery{
-			Query:  `go_info{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{version}}",
+			Query:   `go_info{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend:  "{{version}}",
+			Instant: true,
 		},
 	))
 

@@ -244,7 +244,6 @@ func TestJsonSchema(t *testing.T) {
 
 			err = jsonSchema.Validate(passingFixture1)
 			require.NoError(t, err)
-
 		})
 
 		// test ref regex

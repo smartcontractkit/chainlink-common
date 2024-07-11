@@ -15,16 +15,17 @@ install-protoc:
 
 .PHONY: mockery
 mockery: $(mockery) ## Install mockery.
-	go install github.com/vektra/mockery/v2@v2.43.0
+	go install github.com/vektra/mockery/v2@v2.43.2
 
 .PHONY: generate
 generate: mockery install-protoc
-# add our installed protoc to the head of the PATH
-# maybe there is a cleaner way to do this
-	 PATH=$$HOME/.local/bin:$$PATH go generate -x ./...
+	# add our installed protoc to the head of the PATH
+	# maybe there is a cleaner way to do this
+	PATH=$$HOME/.local/bin:$$PATH go generate -x ./...; \
+ 	mockery --config mockery.yaml
 
 .PHONY: lint-workspace lint
-GOLANGCI_LINT_VERSION := 1.55.2
+GOLANGCI_LINT_VERSION := 1.59.1
 GOLANGCI_LINT_COMMON_OPTS := --max-issues-per-linter 0 --max-same-issues 0
 GOLANGCI_LINT_DIRECTORY := ./golangci-lint
 

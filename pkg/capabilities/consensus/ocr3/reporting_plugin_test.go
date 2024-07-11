@@ -2,6 +2,7 @@ package ocr3
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/google/uuid"
@@ -181,7 +182,11 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	assert.Equal(t, fo.Id.WorkflowExecutionId, eid)
 	assert.Equal(t, fo.Id.WorkflowId, workflowTestID)
 	assert.Equal(t, o, values.FromListValueProto(fo.Observations))
-	assert.Equal(t, []string{workflowTestID, workflowTestID2}, obspb.RegisteredWorkflowIds)
+	expected := []string{workflowTestID, workflowTestID2}
+	actual := obspb.RegisteredWorkflowIds
+	sort.Slice(actual, func(i, j int) bool { return actual[i] < actual[j] })
+	sort.Slice(expected, func(i, j int) bool { return expected[i] < expected[j] })
+	assert.Equal(t, expected, actual)
 }
 
 func TestReportingPlugin_Observation_NoResults(t *testing.T) {

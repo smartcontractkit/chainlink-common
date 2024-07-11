@@ -153,17 +153,17 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 
-		countedWorkflowIds := map[string]bool{}
+		countedWorkflowIDs := map[string]bool{}
 		for _, id := range obs.RegisteredWorkflowIds {
 			// Skip if we've already counted this workflow ID. we want to avoid duplicates in the seen workflow IDs.
-			if _, ok := countedWorkflowIds[id]; ok {
+			if _, ok := countedWorkflowIDs[id]; ok {
 				continue
 			}
 
 			// Count how many times a workflow ID is seen from Observations, no need for initial value since it's 0 by default.
 			seenWorkflowIDs[id]++
 
-			countedWorkflowIds[id] = true
+			countedWorkflowIDs[id] = true
 		}
 
 		for _, rq := range obs.Observations {

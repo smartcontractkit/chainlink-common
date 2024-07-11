@@ -45,8 +45,8 @@ func (h HelperProcessCommand) New() *exec.Cmd {
 	return cmd
 }
 
-func PluginTest[I any](t *testing.T, name string, p plugin.Plugin, testFn func(*testing.T, I)) {
-	ctx, cancel := context.WithCancel(tests.Context(t))
+func PluginTest[TB testing.TB, I any](tb TB, name string, p plugin.Plugin, testFn func(TB, I)) {
+	ctx, cancel := context.WithCancel(tests.Context(tb))
 	defer cancel()
 
 	ch := make(chan *plugin.ReattachConfig, 1)
@@ -66,29 +66,29 @@ func PluginTest[I any](t *testing.T, name string, p plugin.Plugin, testFn func(*
 	select {
 	case config = <-ch:
 	case <-time.After(5 * time.Second):
-		t.Fatal("should've received reattach")
+		tb.Fatal("should've received reattach")
 	}
-	require.NotNil(t, config)
+	require.NotNil(tb, config)
 
 	c := plugin.NewClient(&plugin.ClientConfig{
 		Reattach: config,
 		Plugins:  map[string]plugin.Plugin{name: p},
 	})
-	t.Cleanup(c.Kill)
+	tb.Cleanup(c.Kill)
 	clientProtocol, err := c.Client()
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	defer clientProtocol.Close()
 	i, err := clientProtocol.Dispense(name)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 
-	testFn(t, i.(I))
+	testFn(tb, i.(I))
 
 	// stop plugin
 	cancel()
 	select {
 	case <-closeCh:
 	case <-time.After(5 * time.Second):
-		t.Fatal("should've stopped")
+		tb.Fatal("should've stopped")
 	}
-	require.Error(t, clientProtocol.Ping())
+	require.Error(tb, clientProtocol.Ping())
 }

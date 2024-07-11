@@ -47,6 +47,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+require github.com/iancoleman/strcase v0.3.0
+
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

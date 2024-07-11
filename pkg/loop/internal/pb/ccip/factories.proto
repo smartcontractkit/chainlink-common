@@ -47,7 +47,7 @@ message NewCommitFactoryRequest {
 // for the return value of [github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipcommit.NewCommitReportingPluginFactory]
 // because the underlying return value is an interface, which is modeled as a service in gRPC
 message NewCommitFactoryResponse {
-    int32 commit_factory_service_id = 1;
+    uint32 commit_factory_service_id = 1;
 }
 
 // CommitCustomHandlers is a gRPC service that services the custom

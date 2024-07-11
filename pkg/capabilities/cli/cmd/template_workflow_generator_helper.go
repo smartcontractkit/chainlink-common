@@ -48,6 +48,16 @@ func genFromTemplate(name, rawTemplate string, info GeneratedInfo) (string, erro
 			return strings.ToLower(s[:1]) + s[1:]
 		},
 		"ToSnake": strcase.ToSnake,
+		"ConvertToBaseIfFirstOutput": func(s string) string {
+			if info.RootOutput == s {
+				return info.BaseName
+			}
+			return s
+		},
+		"Repeat": strings.Repeat,
+		"InputAfterCapability": func() string {
+			return info.BaseName + "CapabilityInput"
+		},
 	}).Parse(rawTemplate)
 	if err != nil {
 		return "", err

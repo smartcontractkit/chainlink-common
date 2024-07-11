@@ -6,15 +6,62 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func New{{.BaseName}}Capability(refName string, cfg {{.Config.Name}}) {{.BaseName}}Capability {
-    return &{{.BaseName|LowerFirst}}Capability{refName: refName, cfg: cfg}
+func New{{.BaseName}}Capability(w *workflows.Workflow, ref string,{{- if .Input }} input {{InputAfterCapability}}, {{- end }} cfg {{.Config.Name}}) ({{.BaseName}}Capability, error) {
+    def := workflows.StepDefinition{
+       ID: "TODO?",
+       Ref: ref,
+       Inputs: workflows.StepInputs{
+           Mapping: map[string]any{
+{{- if .Input }}
+   {{- range $fieldName, $type := .Input.Outputs }}
+               "{{$fieldName}}": input.{{$fieldName}},
+   {{- end }}
+{{- end }}
+           },
+       },
+   }
+    step := workflows.Step[{{.RootType.Name}}]{Ref: ref, Definition: def}
+    raw, err := workflows.AddStep(w, step)
+    return &{{.BaseName|LowerFirst}}Capability{CapabilityDefinition: raw}, err
 }
 
-type {{.BaseName}}Capability interface {
-    workflows.CapabilityDefinition[{{.RootOutput}}]
+{{ range $key, $value := .Types }}
+type {{$key|ConvertToBaseIfFirstOutput}}Capability interface {
+    workflows.CapabilityDefinition[{{ $key }}]
+    {{- range $fieldName, $type := .Outputs }}
+        {{- if $type.IsPrimitive }}
+    {{$fieldName}}() workflows.CapabilityDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+        {{- else }}
+    {{$fieldName}}() {{Repeat "[]" $type.NumSlice}}{{ $type.Type }}Capability
+        {{- end }}
+    {{- end }}
+    private()
 }
 
-type {{.BaseName|LowerFirst}}Capability struct {
-    refName string
-    cfg {{.Config.Name}}
+type {{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability struct {
+    workflows.CapabilityDefinition[{{ $key }}]
 }
+
+
+func (*{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability) private() {}
+
+    {{- range $fieldName, $type := .Outputs }}
+        {{- if $type.IsPrimitive }}
+func (c *{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability) {{$fieldName}}() workflows.CapabilityDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
+    return workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapabilityDefinition, "{{$fieldName}}")
+}
+        {{- else }}
+func (c *{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability) {{$fieldName}}() {{ $type.Type }}Capability {
+     return &{{ $type.Type | LowerFirst }}Capability{ CapabilityDefinition: workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapabilityDefinition, "{{$fieldName}}")}
+}
+        {{- end }}
+    {{- end }}
+{{ end }}
+
+{{- if .Input }}
+type {{InputAfterCapability}} struct {
+{{- range $fieldName, $type := .Input.Outputs }}
+    {{$fieldName}} workflows.CapabilityDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+{{- end }}
+}
+{{- end }}

@@ -222,13 +222,13 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 
 		agg, err2 := r.r.getAggregator(weid.WorkflowId)
 		if err2 != nil {
-			r.lggr.Errorw("could not retrieve aggregator for workflow", "error", err, "workflowID", weid.WorkflowId)
+			r.lggr.Errorw("could not retrieve aggregator for workflow", "error", err2, "workflowID", weid.WorkflowId)
 			continue
 		}
 
 		outcome, err2 := agg.Aggregate(workflowOutcome, obs, r.config.F)
 		if err2 != nil {
-			r.lggr.Errorw("error aggregating outcome", "error", err, "workflowID", weid.WorkflowId)
+			r.lggr.Errorw("error aggregating outcome", "error", err2, "workflowID", weid.WorkflowId)
 			return nil, err
 		}
 

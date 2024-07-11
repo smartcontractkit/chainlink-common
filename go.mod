@@ -49,6 +49,8 @@ require (
 
 require golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 
+require github.com/iancoleman/strcase v0.3.0
+
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

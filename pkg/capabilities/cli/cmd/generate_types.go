@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -55,10 +54,8 @@ var generateTypesCmd = &cobra.Command{
 			schemaPaths = append(schemaPaths, path)
 			return nil
 		}); err != nil {
-			return errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
+			return fmt.Errorf("error walking the directory %v: %v", dir, err)
 		}
-
-		fmt.Println("Found", schemaPaths, "capability schema files")
 
 		for _, schemaPath := range schemaPaths {
 			file, content, err := TypesFromJSONSchema(schemaPath)
@@ -67,7 +64,7 @@ var generateTypesCmd = &cobra.Command{
 				return err
 			}
 
-			if err = os.WriteFile(file, content, 0644); err != nil {
+			if err = os.WriteFile(file, content, 0400); err != nil {
 				return err
 			}
 
@@ -82,7 +79,7 @@ var generateTypesCmd = &cobra.Command{
 func TypesFromJSONSchema(schemaFilePath string) (outputFilePath string, outputContents []byte, err error) {
 	jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
 	if err != nil {
-		return "", []byte(""), errors.New(fmt.Sprintf("error reading schema file %v:\n\t- %v\n\nTIP: This can happen if the supplied JSON schema is invalid. Try using https://jsonschemalint.com/#!/version/draft-07/markup/json to validate the schema.\n", schemaFilePath, err))
+		return "", []byte(""), fmt.Errorf("error reading schema file %v:\n\t- %v\n\nTIP: This can happen if the supplied JSON schema is invalid. Try using https://jsonschemalint.com/#!/version/draft-07/markup/json to validate the schema", schemaFilePath, err)
 	}
 
 	capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)

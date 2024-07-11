@@ -29,6 +29,11 @@ func TestCommitService(t *testing.T) {
 	commit := loop.NewCommitService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.CCIPCommitLOOPName, false, 0)
 	}, cciptest.CommitProvider)
+
+	t.Run("service not nil", func(t *testing.T) {
+		require.NotPanics(t, func() { commit.Name() })
+	})
+
 	hook := commit.PluginService.XXXTestHook()
 	servicetest.Run(t, commit)
 

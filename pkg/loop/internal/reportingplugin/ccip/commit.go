@@ -81,13 +81,6 @@ func (c *CommitLOOPClient) NewCommitFactory(ctx context.Context, provider types.
 	return ocr2.NewReportingPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
-/*
-func RegisterCommitProviderServices(s *grpc.Server, provider types.CCIPCommitProvider, brokerExt *net.BrokerExt) {
-	// register the handler for the custom methods of the provider eg NewOffRampReader
-	ccippb.RegisterCommitCustomHandlersServer(s, NewCommitProviderServer(provider, brokerExt))
-}
-*/
-
 // CommitLOOPServer is a server that runs the commit LOOP.
 type CommitLOOPServer struct {
 	ccippb.UnimplementedCommitFactoryGeneratorServer

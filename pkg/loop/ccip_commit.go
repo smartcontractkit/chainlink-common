@@ -78,10 +78,10 @@ func NewCommitService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cm
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "CCIPCommitService")
-	var efs CommitFactoryService
+	var cfs CommitFactoryService
 	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
-	efs.Init(CCIPCommitLOOPName, &CommitLoop{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
-	return &efs
+	cfs.Init(CCIPCommitLOOPName, &CommitLoop{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
+	return &cfs
 }
 
 func (m *CommitFactoryService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {

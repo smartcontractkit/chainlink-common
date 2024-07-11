@@ -89,6 +89,7 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 					a.lggr.Errorf("node %d contributed with an invalid report: %v", nodeID, err)
 				} else {
 					latestReportPerFeed[datastreams.FeedID(report.FeedID)] = report
+					a.lggr.Debugw("latestReportPerFeed", "report", report)
 				}
 			}
 		}
@@ -99,6 +100,7 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 	if err != nil {
 		return nil, err
 	}
+	a.lggr.Debugw("currentState", "feedInfo", currentState.FeedInfo)
 
 	reportsNeedingUpdate := []datastreams.FeedReport{}
 	allIDs := []string{}
@@ -302,10 +304,14 @@ func NewDataFeedsAggregator(config values.Map, reportCodec datastreams.ReportCod
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config (%+v): %w", config, err)
 	}
+
+	lggr = logger.Named(lggr, "DataFeedsAggregator")
+	lggr.Debugf("parsed config", "config", parsedConfig)
+
 	return &dataFeedsAggregator{
 		config:      parsedConfig,
 		reportCodec: reportCodec,
-		lggr:        logger.Named(lggr, "DataFeedsAggregator"),
+		lggr:        lggr,
 	}, nil
 }
 

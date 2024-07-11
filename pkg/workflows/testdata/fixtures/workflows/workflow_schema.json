@@ -3,22 +3,10 @@
   "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/workflows/workflow-spec-yaml",
   "$ref": "#/$defs/workflowSpecYaml",
   "$defs": {
-    "inputs": {
-      "oneOf": [
-        {
-          "type": "string",
-          "pattern": "^\\$\\([a-z0-9_-]+\\.outputs\\)$"
-        },
-        {
-          "type": "object"
-        }
-      ],
-      "title": "id"
-    },
-    "mapping": {
+    "Mapping": {
       "type": "object"
     },
-    "stepDefinitionID": {
+    "StepDefinitionID": {
       "oneOf": [
         {
           "type": "string",
@@ -51,10 +39,10 @@
       ],
       "title": "id"
     },
-    "stepDefinitionYaml": {
+    "StepDefinitionYaml": {
       "properties": {
         "id": {
-          "$ref": "#/$defs/stepDefinitionID"
+          "$ref": "#/$defs/StepDefinitionID"
         },
         "ref": {
           "type": "string",
@@ -64,7 +52,7 @@
           "$ref": "#/$defs/inputs"
         },
         "config": {
-          "$ref": "#/$defs/mapping"
+          "$ref": "#/$defs/Mapping"
         }
       },
       "additionalProperties": false,
@@ -75,17 +63,17 @@
         "config"
       ]
     },
-    "triggerDefinitionYaml": {
+    "TriggerDefinitionYaml": {
       "properties": {
         "id": {
-          "$ref": "#/$defs/stepDefinitionID"
+          "$ref": "#/$defs/StepDefinitionID"
         },
         "ref": {
           "type": "string",
           "pattern": "^[a-z0-9_-]+$"
         },
         "config": {
-          "$ref": "#/$defs/mapping"
+          "$ref": "#/$defs/Mapping"
         }
       },
       "additionalProperties": false,
@@ -94,6 +82,18 @@
         "id",
         "config"
       ]
+    },
+    "inputs": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\$\\([a-z0-9_-]+\\.outputs\\)$"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "title": "id"
     },
     "workflowSpecYaml": {
       "properties": {
@@ -108,25 +108,25 @@
         },
         "triggers": {
           "items": {
-            "$ref": "#/$defs/triggerDefinitionYaml"
+            "$ref": "#/$defs/TriggerDefinitionYaml"
           },
           "type": "array"
         },
         "actions": {
           "items": {
-            "$ref": "#/$defs/stepDefinitionYaml"
+            "$ref": "#/$defs/StepDefinitionYaml"
           },
           "type": "array"
         },
         "consensus": {
           "items": {
-            "$ref": "#/$defs/stepDefinitionYaml"
+            "$ref": "#/$defs/StepDefinitionYaml"
           },
           "type": "array"
         },
         "targets": {
           "items": {
-            "$ref": "#/$defs/stepDefinitionYaml"
+            "$ref": "#/$defs/StepDefinitionYaml"
           },
           "type": "array"
         }

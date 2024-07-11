@@ -11,9 +11,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
 const (
@@ -31,6 +33,67 @@ var info = capabilities.MustNewCapabilityInfo(
 	capabilities.CapabilityTypeConsensus,
 	"OCR3 consensus exposed as a capability.",
 )
+
+type Output = any
+
+type CapabilityConfig struct {
+	AggregationMethod string `json:"aggregationMethod" jsonschema:"required"`
+	AggregationConfig any    `json:"aggregationConfig" jsonschema:"required"`
+	Encoder           string `json:"encoder" jsonschema:"required"`
+	EncoderConfig     any    `json:"encoderConfig" jsonschema:"required"`
+	ReportID          string `json:"reportId" jsonschema:"required"`
+}
+
+type CapabilityInputs struct {
+	// This Input is coupled to the Datastreams Trigger. This was an
+	// intentional short-term trade-off that we'll fix in the future.
+	Observations workflows.CapabilityDefinition[[]datastreams.FeedReport]
+}
+
+type NewOCR3ConsensusParams struct {
+	Ref    string
+	Inputs CapabilityInputs
+	Config CapabilityConfig
+}
+
+type CapabilityDefinition struct {
+	definition workflows.StepDefinition
+	output     Output
+}
+
+func (m CapabilityDefinition) Definition() workflows.StepDefinition {
+	return m.definition
+}
+
+func (m CapabilityDefinition) Output() Output {
+	return m.output
+}
+
+func (m CapabilityDefinition) Ref() string {
+	return m.definition.Ref
+}
+
+func NewOCR3Consensus(params NewOCR3ConsensusParams) workflows.CapabilityDefinition[Output] {
+	return CapabilityDefinition{
+		definition: workflows.StepDefinition{
+			ID:  ocrCapabilityID,
+			Ref: params.Ref,
+			Inputs: workflows.StepInputs{
+				Mapping: map[string]any{
+					"observations": fmt.Sprintf("$(%s.outputs)", params.Inputs.Observations.Ref()),
+				},
+			},
+			Config: map[string]any{
+				"aggregation_method": params.Config.AggregationMethod,
+				"aggregation_config": params.Config.AggregationConfig,
+				"encoder":            params.Config.Encoder,
+				"encoder_config":     params.Config.EncoderConfig,
+				"report_id":          params.Config.ReportID,
+			},
+			CapabilityType: capabilities.CapabilityTypeConsensus,
+		},
+	}
+}
 
 type capability struct {
 	services.StateMachine

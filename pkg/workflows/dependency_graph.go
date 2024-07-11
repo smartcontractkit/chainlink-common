@@ -240,7 +240,7 @@ func DeepMap(input any, transform func(el string) (any, error)) (any, error) {
 		}
 
 		return nv, nil
-	case mapping:
+	case Mapping:
 		// coerce mapping to map[string]any
 		mp := map[string]any(tv)
 

@@ -145,6 +145,8 @@ linters-settings:
       - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Criticalw
       - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).With
 issues:
+  exclude-dirs:
+    - pkg/mod
   exclude-rules:
     - path: test
       text: "^G404:"

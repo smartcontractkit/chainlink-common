@@ -18,7 +18,8 @@ service ChainReader {
 message GetLatestValueRequest {
   string contract_name = 1;
   string method = 2;
-  VersionedBytes params = 3;
+  Confidence confidence = 3;
+  VersionedBytes params = 4;
 }
 
 // BatchGetLatestValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.BatchGetLatestValues].
@@ -95,7 +96,6 @@ message Sequence {
 message BoundContract {
   string address = 1;
   string name = 2;
-  bool pending = 3;
 }
 
 enum ComparisonOperator {

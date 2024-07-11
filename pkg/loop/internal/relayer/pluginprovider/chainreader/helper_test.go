@@ -77,7 +77,7 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 			return &LatestParams{}, nil
 		}
 		return &TestStruct{}, nil
-	case MethodReturningUint64:
+	case MethodReturningUint64, MethodReturningAlterableUint64:
 		tmp := uint64(0)
 		return &tmp, nil
 	case MethodReturningUint64Slice:

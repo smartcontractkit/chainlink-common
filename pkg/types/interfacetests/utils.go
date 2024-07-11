@@ -6,6 +6,7 @@ import (
 
 	"github.com/smartcontractkit/libocr/commontypes"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -33,6 +34,17 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 			test.test(t)
 		})
 	}
+}
+
+type ExpectedGetLatestValueArgs struct {
+	ContractName, ReadName string
+	ConfidenceLevel        primitives.ConfidenceLevel
+	Params, ReturnVal      any
+}
+
+func (e ExpectedGetLatestValueArgs) String() string {
+	return fmt.Sprintf("ContractName: %s, ReadName: %s, ConfidenceLevel: %s, Params: %v, ReturnVal: %v",
+		e.ContractName, e.ReadName, e.ConfidenceLevel, e.Params, e.ReturnVal)
 }
 
 type InnerTestStruct struct {

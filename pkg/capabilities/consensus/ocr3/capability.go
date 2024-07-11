@@ -54,7 +54,7 @@ type capability struct {
 	callbackChannelBufferSize int
 
 	registeredWorkflowsIDs map[string]bool
-	registeredWorkflowsMu  sync.RWMutex
+	mu                     sync.RWMutex
 }
 
 var _ capabilityIface = (*capability)(nil)
@@ -118,6 +118,8 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	agg, err := o.aggregatorFactory(c.AggregationMethod, *c.AggregationConfig, o.lggr)
 	if err != nil {
 		return err
@@ -129,8 +131,6 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 	o.encoders[request.Metadata.WorkflowID] = encoder
-	o.registeredWorkflowsMu.Lock()
-	defer o.registeredWorkflowsMu.Unlock()
 	o.registeredWorkflowsIDs[request.Metadata.WorkflowID] = true
 	return nil
 }
@@ -154,8 +154,8 @@ func (o *capability) getEncoder(workflowID string) (types.Encoder, error) {
 }
 
 func (o *capability) getRegisteredWorkflowsIDs() []string {
-	o.registeredWorkflowsMu.RLock()
-	defer o.registeredWorkflowsMu.RUnlock()
+	o.mu.RLock()
+	defer o.mu.RUnlock()
 
 	workflows := make([]string, 0, len(o.registeredWorkflowsIDs))
 	for wf := range o.registeredWorkflowsIDs {
@@ -165,14 +165,14 @@ func (o *capability) getRegisteredWorkflowsIDs() []string {
 }
 
 func (o *capability) unregisterWorkflowID(workflowID string) {
-	o.registeredWorkflowsMu.Lock()
-	defer o.registeredWorkflowsMu.Unlock()
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	delete(o.registeredWorkflowsIDs, workflowID)
 }
 
 func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
-	o.registeredWorkflowsMu.Lock()
-	defer o.registeredWorkflowsMu.Unlock()
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	delete(o.registeredWorkflowsIDs, request.Metadata.WorkflowID)
 	delete(o.aggregators, request.Metadata.WorkflowID)
 	delete(o.encoders, request.Metadata.WorkflowID)

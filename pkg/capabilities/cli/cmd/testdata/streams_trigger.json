@@ -10,7 +10,7 @@
           "items": {
             "type": "string",
             "pattern": "^0x[0-9a-f]{64}$",
-            "description": "The feedId of the data feed.",
+            "description": "The ID of the data feed.",
             "examples": [
               "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd"
             ]

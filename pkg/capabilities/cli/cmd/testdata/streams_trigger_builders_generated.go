@@ -6,15 +6,65 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func NewStreamsTriggerCapability(refName string, cfg StreamsTriggerConfig) StreamsTriggerCapability {
-    return &streamsTriggerCapability{refName: refName, cfg: cfg}
+func NewStreamsTriggerCapability(w *workflows.Workflow, ref string, cfg StreamsTriggerConfig) (StreamsTriggerCapability, error) {
+    def := workflows.StepDefinition{
+       ID: "TODO?",
+       Ref: ref,
+       Inputs: workflows.StepInputs{
+           Mapping: map[string]any{
+           },
+       },
+   }
+    step := workflows.Step[StreamsTriggerOutputsElem]{Ref: ref, Definition: def}
+    raw, err := workflows.AddStep(w, step)
+    return &streamsTriggerCapability{CapabilityDefinition: raw}, err
 }
 
+
+type PlainCapability interface {
+    workflows.CapabilityDefinition[Plain]
+    private()
+}
+
+type plainCapability struct {
+    workflows.CapabilityDefinition[Plain]
+}
+
+
+func (*plainCapability) private() {}
+
 type StreamsTriggerCapability interface {
-    workflows.CapabilityDefinition[[]StreamsTriggerOutputsElem]
+    workflows.CapabilityDefinition[StreamsTriggerOutputsElem]
+    BenchmarkPrice() workflows.CapabilityDefinition[string]
+    FeedId() workflows.CapabilityDefinition[string]
+    FullReport() workflows.CapabilityDefinition[string]
+    ObservationTimestamp() workflows.CapabilityDefinition[int]
+    ReportContext() workflows.CapabilityDefinition[string]
+    Signatures() workflows.CapabilityDefinition[[]string]
+    private()
 }
 
 type streamsTriggerCapability struct {
-    refName string
-    cfg StreamsTriggerConfig
+    workflows.CapabilityDefinition[StreamsTriggerOutputsElem]
+}
+
+
+func (*streamsTriggerCapability) private() {}
+func (c *streamsTriggerCapability) BenchmarkPrice() workflows.CapabilityDefinition[string] {
+    return workflows.AccessField[StreamsTriggerOutputsElem, string](c.CapabilityDefinition, "BenchmarkPrice")
+}
+func (c *streamsTriggerCapability) FeedId() workflows.CapabilityDefinition[string] {
+    return workflows.AccessField[StreamsTriggerOutputsElem, string](c.CapabilityDefinition, "FeedId")
+}
+func (c *streamsTriggerCapability) FullReport() workflows.CapabilityDefinition[string] {
+    return workflows.AccessField[StreamsTriggerOutputsElem, string](c.CapabilityDefinition, "FullReport")
+}
+func (c *streamsTriggerCapability) ObservationTimestamp() workflows.CapabilityDefinition[int] {
+    return workflows.AccessField[StreamsTriggerOutputsElem, int](c.CapabilityDefinition, "ObservationTimestamp")
+}
+func (c *streamsTriggerCapability) ReportContext() workflows.CapabilityDefinition[string] {
+    return workflows.AccessField[StreamsTriggerOutputsElem, string](c.CapabilityDefinition, "ReportContext")
+}
+func (c *streamsTriggerCapability) Signatures() workflows.CapabilityDefinition[[]string] {
+    return workflows.AccessField[StreamsTriggerOutputsElem, string](c.CapabilityDefinition, "Signatures")
 }

@@ -15,8 +15,24 @@ type Workflow struct {
 
 type CapabilityDefinition[O any] interface {
 	Ref() string
-	Definition() StepDefinition
-	Output() O
+	impl() capabilityDefinitionImpl
+}
+
+type Step[O any] struct {
+	Ref        string
+	Definition StepDefinition
+}
+
+type capabilityDefinitionImpl struct {
+	ref string
+}
+
+func (c *capabilityDefinitionImpl) Ref() string {
+	return c.ref
+}
+
+func (c *capabilityDefinitionImpl) impl() capabilityDefinitionImpl {
+	return *c
 }
 
 type NewWorkflowParams struct {
@@ -35,8 +51,9 @@ func NewWorkflow(
 	}
 }
 
-func AddStep[O any](w *Workflow, step CapabilityDefinition[O]) CapabilityDefinition[O] {
-	stepDefinition := step.Definition()
+func AddStep[O any](w *Workflow, step Step[O]) (CapabilityDefinition[O], error) {
+	// TODO should return error if the name is already used
+	stepDefinition := step.Definition
 
 	switch stepDefinition.CapabilityType {
 	case capabilities.CapabilityTypeTrigger:
@@ -49,16 +66,12 @@ func AddStep[O any](w *Workflow, step CapabilityDefinition[O]) CapabilityDefinit
 		w.spec.Targets = append(w.spec.Targets, stepDefinition)
 	}
 
-	return step
+	return &capabilityDefinitionImpl{ref: step.Ref}, nil
 }
 
-func AddTrigger[O any](w *Workflow, trigger CapabilityDefinition[O]) CapabilityDefinition[O] {
-	return trigger
-}
-
-func AddConsensus[O any](w *Workflow, consensus CapabilityDefinition[O]) CapabilityDefinition[O] {
-	w.spec.Consensus = append(w.spec.Consensus, consensus.Definition())
-	return consensus
+// AccessField is meant to be used by generated code
+func AccessField[I, O any](c CapabilityDefinition[I], fieldName string) CapabilityDefinition[O] {
+	return &capabilityDefinitionImpl{ref: c.Ref() + "." + fieldName}
 }
 
 func (w Workflow) Spec() WorkflowSpec {

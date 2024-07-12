@@ -50,11 +50,10 @@ func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (Gene
 	ast.Inspect(node, func(n ast.Node) bool {
 		if ts, ok := n.(*ast.TypeSpec); ok {
 			s := Struct{
-				Name:    ts.Name.Name,
+				Name:    strings.TrimSpace(ts.Name.Name),
 				Outputs: map[string]Field{},
 			}
 
-			nestedPlain := false
 			if structType, ok := ts.Type.(*ast.StructType); ok {
 				for _, field := range structType.Fields.List {
 					start := fset.Position(field.Type.Pos()).Offset
@@ -73,16 +72,10 @@ func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (Gene
 					f.IsPrimitive = unicode.IsLower(rune(f.Type[0]))
 					s.Outputs[field.Names[0].Name] = f
 				}
-
-			} else {
-				start := fset.Position(ts.Type.Pos()).Offset
-				end := fset.Position(ts.Type.End()).Offset
-				typeStr := src[start:end]
-				nestedPlain = typeStr == "Plain"
 			}
 
 			// artifact used for deserializing
-			if !nestedPlain {
+			if s.Name != "Plain" {
 				rawInfo[ts.Name.Name] = s
 			}
 		}

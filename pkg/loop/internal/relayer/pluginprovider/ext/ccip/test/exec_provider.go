@@ -59,6 +59,7 @@ type staticExecProviderConfig struct {
 	sourceNativeTokenResponse ccip.Address
 	tokenDataReader           TokenDataReaderEvaluator
 	tokenPoolBatchedReader    TokenPoolBatchedReaderEvaluator
+	chainWriter               ChainWriterEvaluator
 }
 
 type staticExecProvider struct {

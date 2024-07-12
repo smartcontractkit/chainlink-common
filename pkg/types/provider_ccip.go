@@ -26,6 +26,8 @@ type CCIPExecProvider interface {
 	NewPriceRegistryReader(ctx context.Context, addr ccip.Address) (ccip.PriceRegistryReader, error)
 	NewTokenDataReader(ctx context.Context, tokenAddress ccip.Address) (ccip.TokenDataReader, error)
 	NewTokenPoolBatchedReader(ctx context.Context, offRampAddress ccip.Address, sourceSelector uint64) (ccip.TokenPoolBatchedReader, error)
+	// todo: We probably need to the bytes input
+	NewChainWriter(ctx context.Context) (ChainWriter, error)
 	SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error)
 }
 

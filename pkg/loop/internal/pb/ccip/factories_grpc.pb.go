@@ -118,6 +118,7 @@ const (
 	ExecutionCustomHandlers_NewTokenDataReader_FullMethodName        = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewTokenDataReader"
 	ExecutionCustomHandlers_NewTokenPoolBatchedReader_FullMethodName = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewTokenPoolBatchedReader"
 	ExecutionCustomHandlers_SourceNativeToken_FullMethodName         = "/loop.internal.pb.ccip.ExecutionCustomHandlers/SourceNativeToken"
+	ExecutionCustomHandlers_NewChainWriter_FullMethodName            = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewChainWriter"
 	ExecutionCustomHandlers_Close_FullMethodName                     = "/loop.internal.pb.ccip.ExecutionCustomHandlers/Close"
 )
 
@@ -132,6 +133,7 @@ type ExecutionCustomHandlersClient interface {
 	NewTokenDataReader(ctx context.Context, in *NewTokenDataRequest, opts ...grpc.CallOption) (*NewTokenDataResponse, error)
 	NewTokenPoolBatchedReader(ctx context.Context, in *NewTokenPoolBatchedReaderRequest, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error)
 	SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
+	NewChainWriter(ctx context.Context, in *NewChainWriterRequest, opts ...grpc.CallOption) (*NewChainWriterResponse, error)
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -206,6 +208,15 @@ func (c *executionCustomHandlersClient) SourceNativeToken(ctx context.Context, i
 	return out, nil
 }
 
+func (c *executionCustomHandlersClient) NewChainWriter(ctx context.Context, in *NewChainWriterRequest, opts ...grpc.CallOption) (*NewChainWriterResponse, error) {
+	out := new(NewChainWriterResponse)
+	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_NewChainWriter_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *executionCustomHandlersClient) Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_Close_FullMethodName, in, out, opts...)
@@ -226,6 +237,7 @@ type ExecutionCustomHandlersServer interface {
 	NewTokenDataReader(context.Context, *NewTokenDataRequest) (*NewTokenDataResponse, error)
 	NewTokenPoolBatchedReader(context.Context, *NewTokenPoolBatchedReaderRequest) (*NewTokenPoolBatchedReaderResponse, error)
 	SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error)
+	NewChainWriter(context.Context, *NewChainWriterRequest) (*NewChainWriterResponse, error)
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedExecutionCustomHandlersServer()
 }
@@ -254,6 +266,9 @@ func (UnimplementedExecutionCustomHandlersServer) NewTokenPoolBatchedReader(cont
 }
 func (UnimplementedExecutionCustomHandlersServer) SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SourceNativeToken not implemented")
+}
+func (UnimplementedExecutionCustomHandlersServer) NewChainWriter(context.Context, *NewChainWriterRequest) (*NewChainWriterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewChainWriter not implemented")
 }
 func (UnimplementedExecutionCustomHandlersServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
@@ -398,6 +413,24 @@ func _ExecutionCustomHandlers_SourceNativeToken_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ExecutionCustomHandlers_NewChainWriter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewChainWriterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutionCustomHandlersServer).NewChainWriter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExecutionCustomHandlers_NewChainWriter_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExecutionCustomHandlersServer).NewChainWriter(ctx, req.(*NewChainWriterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ExecutionCustomHandlers_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -450,6 +483,10 @@ var ExecutionCustomHandlers_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SourceNativeToken",
 			Handler:    _ExecutionCustomHandlers_SourceNativeToken_Handler,
+		},
+		{
+			MethodName: "NewChainWriter",
+			Handler:    _ExecutionCustomHandlers_NewChainWriter_Handler,
 		},
 		{
 			MethodName: "Close",

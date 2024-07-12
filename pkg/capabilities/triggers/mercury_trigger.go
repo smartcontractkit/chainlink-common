@@ -38,8 +38,6 @@ type inputs struct {
 	TriggerID string `json:"triggerId"`
 }
 
-var mercuryTriggerValidator = capabilities.NewValidator[config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo})
-
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
 	capabilities.Validator[config, inputs, capabilities.TriggerEvent]
@@ -70,7 +68,7 @@ func NewMercuryTriggerService(tickerResolutionMs int64, lggr logger.Logger) *Mer
 		tickerResolutionMs = defaultTickerResolutionMs
 	}
 	return &MercuryTriggerService{
-		Validator:          mercuryTriggerValidator,
+		Validator:          capabilities.NewValidator[config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo}),
 		CapabilityInfo:     capInfo,
 		tickerResolutionMs: tickerResolutionMs,
 		subscribers:        make(map[string]*subscriber),

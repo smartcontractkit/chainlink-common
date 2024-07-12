@@ -33,18 +33,6 @@ type feedIdCapability struct {
 
 func (*feedIdCapability) private() {}
 
-type PlainCapability interface {
-    workflows.CapabilityDefinition[Plain]
-    private()
-}
-
-type plainCapability struct {
-    workflows.CapabilityDefinition[Plain]
-}
-
-
-func (*plainCapability) private() {}
-
 type StreamsTriggerCapability interface {
     workflows.CapabilityDefinition[StreamsTriggerOutputsElem]
     BenchmarkPrice() workflows.CapabilityDefinition[string]

@@ -74,18 +74,6 @@ type ocr3ConsensusOutputsValueUnderlyingCapability struct {
 
 func (*ocr3ConsensusOutputsValueUnderlyingCapability) private() {}
 
-type PlainCapability interface {
-    workflows.CapabilityDefinition[Plain]
-    private()
-}
-
-type plainCapability struct {
-    workflows.CapabilityDefinition[Plain]
-}
-
-
-func (*plainCapability) private() {}
-
 type Ocr3ConsensusCapabilityInput struct {
     Observations workflows.CapabilityDefinition[Ocr3ConsensusInputsObservations]
 }

@@ -3,12 +3,13 @@
 package {{.Package}}
 
 import (
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
 func New{{.BaseName}}Capability(w *workflows.Workflow, ref string,{{- if .Input }} input {{InputAfterCapability}}, {{- end }} cfg {{.Config.Name}}) ({{.BaseName}}Capability, error) {
     def := workflows.StepDefinition{
-       ID: "TODO?",
+       ID: ref,
        Ref: ref,
        Inputs: workflows.StepInputs{
            Mapping: map[string]any{
@@ -19,6 +20,12 @@ func New{{.BaseName}}Capability(w *workflows.Workflow, ref string,{{- if .Input 
 {{- end }}
            },
        },
+       Config: map[string]any{
+{{- range $fieldName, $type := .Config.Outputs }}
+           "{{$fieldName}}": cfg.{{$fieldName}},
+{{- end }}
+       },
+       CapabilityType: capabilities.CapabilityType{{.CapabilityType.String|UpperFirst}},
    }
     step := workflows.Step[{{.RootType.Name}}]{Ref: ref, Definition: def}
     raw, err := workflows.AddStep(w, step)

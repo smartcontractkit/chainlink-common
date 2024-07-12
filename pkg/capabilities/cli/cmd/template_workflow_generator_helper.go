@@ -47,6 +47,12 @@ func genFromTemplate(name, rawTemplate string, info GeneratedInfo) (string, erro
 			}
 			return strings.ToLower(s[:1]) + s[1:]
 		},
+		"UpperFirst": func(s string) string {
+			if len(s) == 0 {
+				return s
+			}
+			return strings.ToUpper(s[:1]) + s[1:]
+		},
 		"ToSnake": strcase.ToSnake,
 		"ConvertToBaseIfFirstOutput": func(s string) string {
 			if info.RootOutput == s {

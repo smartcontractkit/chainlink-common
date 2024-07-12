@@ -3,17 +3,23 @@
 package streams
 
 import (
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
 func NewStreamsTriggerCapability(w *workflows.Workflow, ref string, cfg StreamsTriggerConfig) (StreamsTriggerCapability, error) {
     def := workflows.StepDefinition{
-       ID: "TODO?",
+       ID: ref,
        Ref: ref,
        Inputs: workflows.StepInputs{
            Mapping: map[string]any{
            },
        },
+       Config: map[string]any{
+           "FeedIds": cfg.FeedIds,
+           "MaxFrequencyMs": cfg.MaxFrequencyMs,
+       },
+       CapabilityType: capabilities.CapabilityTypeTrigger,
    }
     step := workflows.Step[StreamsTriggerOutputsElem]{Ref: ref, Definition: def}
     raw, err := workflows.AddStep(w, step)

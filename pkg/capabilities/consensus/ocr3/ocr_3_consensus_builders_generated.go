@@ -3,18 +3,27 @@
 package ocr3
 
 import (
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
 func NewOcr3ConsensusCapability(w *workflows.Workflow, ref string, input Ocr3ConsensusCapabilityInput, cfg Ocr3ConsensusConfig) (Ocr3ConsensusCapability, error) {
     def := workflows.StepDefinition{
-       ID: "TODO?",
+       ID: ref,
        Ref: ref,
        Inputs: workflows.StepInputs{
            Mapping: map[string]any{
                "Observations": input.Observations,
            },
        },
+       Config: map[string]any{
+           "AggregationConfig": cfg.AggregationConfig,
+           "AggregationMethod": cfg.AggregationMethod,
+           "Encoder": cfg.Encoder,
+           "EncoderConfig": cfg.EncoderConfig,
+           "ReportId": cfg.ReportId,
+       },
+       CapabilityType: capabilities.CapabilityTypeConsensus,
    }
     step := workflows.Step[Ocr3ConsensusOutputs]{Ref: ref, Definition: def}
     raw, err := workflows.AddStep(w, step)

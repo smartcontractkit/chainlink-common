@@ -203,7 +203,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return nil, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}
-		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs)
+		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
 		var responseErr error
 		if m.Terminate {
 			o.lggr.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)

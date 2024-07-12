@@ -96,11 +96,19 @@ type compatibleTestStruct struct {
 }
 
 type LatestParams struct {
+	// I should be > 0
 	I int
 }
 
 type FilterEventParams struct {
 	Field int32
+}
+
+type BatchCallEntry map[string]ContractBatchEntry
+type ContractBatchEntry []ReadEntry
+type ReadEntry struct {
+	Name        string
+	ReturnValue any
 }
 
 func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {

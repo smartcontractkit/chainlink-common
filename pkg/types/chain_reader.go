@@ -47,12 +47,48 @@ type ChainReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	GetLatestValue(ctx context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
+	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
+	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
+	// BatchGetLatestValuesResult response is grouped by contract names, which contain read results that maintain the order from the request.
+	// Contract call errors are returned in the Err field of BatchGetLatestValuesResult.
+	BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error)
+
 	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
 	// contract is not known by the ChainReader, or if the Address is invalid
 	Bind(ctx context.Context, bindings []BoundContract) error
 
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+}
+
+// BatchGetLatestValuesRequest string is contract name.
+type BatchGetLatestValuesRequest map[string]ContractBatch
+type ContractBatch []BatchRead
+type BatchRead struct {
+	ReadName  string
+	Params    any
+	ReturnVal any
+}
+
+type BatchGetLatestValuesResult map[string]ContractBatchResults
+type ContractBatchResults []BatchReadResult
+type BatchReadResult struct {
+	ReadName    string
+	returnValue any
+	err         error
+}
+
+// GetResult returns an error if this specific read from the batch failed, otherwise returns the result in format that was provided in the request.
+func (brr *BatchReadResult) GetResult() (any, error) {
+	if brr.err != nil {
+		return brr.returnValue, brr.err
+	}
+
+	return brr.returnValue, nil
+}
+
+func (brr *BatchReadResult) SetResult(returnValue any, err error) {
+	brr.returnValue, brr.err = returnValue, err
 }
 
 type Head struct {

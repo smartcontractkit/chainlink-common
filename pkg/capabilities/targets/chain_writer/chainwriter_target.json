@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink/capabilities/ocr3_consensus@1.0.0",
+  "properties": {
+    "config": {
+      "properties": {
+        "address": {
+          "type": "string",
+          "minLength": 42,
+          "maxLength": 42,
+          "pattern": "^0x[a-fA-F0-9]{40}$"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "address"
+      ]
+    },
+    "inputs": {
+      "properties": {
+        "WorkflowExecutionID": {
+          "type": "string"
+        },
+        "Value": {
+          "properties": {
+            "Underlying": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "Underlying"
+          ]
+        },
+        "Err": true
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "WorkflowExecutionID",
+        "Value",
+        "Err"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "config",
+    "inputs"
+  ],
+  "description": "Writes to evm chain for now..."
+}

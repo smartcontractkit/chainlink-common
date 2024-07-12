@@ -7,7 +7,7 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func NewStreamsTriggerCapability(w *workflows.Workflow, ref string, cfg StreamsTriggerConfig) (StreamsTriggerCapability, error) {
+func NewStreamsTriggerCapability(w *workflows.Workflow, ref string, cfg StreamsTriggerConfig) (StreamsTriggerCapability,error) {
     def := workflows.StepDefinition{
        ID: ref,
        Ref: ref,
@@ -22,7 +22,7 @@ func NewStreamsTriggerCapability(w *workflows.Workflow, ref string, cfg StreamsT
        CapabilityType: capabilities.CapabilityTypeTrigger,
    }
     step := workflows.Step[StreamsTriggerOutputsElem]{Ref: ref, Definition: def}
-    raw, err := workflows.AddStep(w, step)
+     raw, err := workflows.AddStep(w, step)
     return &streamsTriggerCapability{CapabilityDefinition: raw}, err
 }
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
+	chainwriter "github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chain_writer"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
@@ -64,8 +65,18 @@ func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
 		return workflows.WorkflowSpec{}, err
 	}
 
-	// TODO plug into writer
-	_ = consensus
+	writerConfig := chainwriter.ChainwriterTargetConfig{Address: "0x1234567890123456789012345678901234567890"}
+	// TODO ideally some of these will have references so the type can be some interface
+	input := chainwriter.ChainwriterTargetCapabilityInput{
+		Err: consensus.Err(),
+		// I'm assuming this contains the signature...
+		Value:               consensus.Value(),
+		WorkflowExecutionID: consensus.WorkflowExecutionID(),
+	}
+
+	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, writerConfig); err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
 
 	return workflow.Spec(), nil
 }
@@ -124,6 +135,17 @@ func TestBuilder_ValidSpec(t *testing.T) {
 					},
 				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
+			},
+		},
+		Targets: []workflows.StepDefinition{
+			{
+				ID:  "",
+				Ref: "chain-writer",
+				Inputs: workflows.StepInputs{
+					Mapping: map[string]any{"Err": "$(offchain_reporting.outputs.Err)", "Value": "$(offchain_reporting.outputs.Value)", "WorkflowExecutionID": "$(offchain_reporting.outputs.WorkflowExecutionID)"},
+				},
+				Config:         map[string]any{"Address": "0x1234567890123456789012345678901234567890"},
+				CapabilityType: capabilities.CapabilityTypeTarget,
 			},
 		},
 	}

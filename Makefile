@@ -22,7 +22,7 @@ generate: mockery install-protoc
 	# add our installed protoc to the head of the PATH
 	# maybe there is a cleaner way to do this
 	PATH=$$HOME/.local/bin:$$PATH go generate -x ./...; \
- 	mockery --config mockery.yaml
+ 	mockery
 
 .PHONY: lint-workspace lint
 GOLANGCI_LINT_VERSION := 1.55.2

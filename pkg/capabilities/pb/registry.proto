@@ -5,12 +5,13 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 package loop;
 
 import "values/pb/values.proto";
+import "google/protobuf/duration.proto";
 
 message RemoteTriggerConfig {
-  uint32 registrationRefreshMs = 1;
-  uint32 registrationExpiryMs = 2;
+  google.protobuf.Duration registrationRefresh = 1;
+  google.protobuf.Duration registrationExpiry = 2;
   uint32 minResponsesToAggregate = 3;
-  uint32 messageExpiryMs = 4;
+  google.protobuf.Duration messageExpiry = 4;
 }
 
 message CapabilityConfig {

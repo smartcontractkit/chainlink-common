@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -92,10 +93,10 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 	rtc.ApplyDefaults()
 
 	if prtc := res.CapabilityConfig.GetRemoteTriggerConfig(); prtc != nil {
-		rtc.RegistrationRefreshMs = prtc.RegistrationRefreshMs
-		rtc.RegistrationExpiryMs = prtc.RegistrationExpiryMs
+		rtc.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
+		rtc.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
 		rtc.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-		rtc.MessageExpiryMs = prtc.MessageExpiryMs
+		rtc.MessageExpiry = prtc.MessageExpiry.AsDuration()
 	}
 
 	return capabilities.CapabilityConfiguration{
@@ -297,10 +298,10 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		ExecuteConfig: ecm,
 		RemoteConfig: &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
 			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
-				RegistrationRefreshMs:   cc.RemoteTriggerConfig.RegistrationRefreshMs,
-				RegistrationExpiryMs:    cc.RemoteTriggerConfig.RegistrationExpiryMs,
+				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
+				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
 				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
-				MessageExpiryMs:         cc.RemoteTriggerConfig.MessageExpiryMs,
+				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
 			},
 		},
 	}

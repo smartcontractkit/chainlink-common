@@ -369,29 +369,29 @@ outerLoop:
 }
 
 const (
-	DefaultRegistrationRefreshMs = 30_000
-	DefaultRegistrationExpiryMs  = 120_000
-	DefaultMessageExpiryMs       = 120_000
+	DefaultRegistrationRefresh = 30 * time.Second
+	DefaultRegistrationExpiry  = 2 * time.Minute
+	DefaultMessageExpiry       = 2 * time.Minute
 )
 
 type RemoteTriggerConfig struct {
-	RegistrationRefreshMs   uint32
-	RegistrationExpiryMs    uint32
+	RegistrationRefresh     time.Duration
+	RegistrationExpiry      time.Duration
 	MinResponsesToAggregate uint32
-	MessageExpiryMs         uint32
+	MessageExpiry           time.Duration
 }
 
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
-	if c.RegistrationRefreshMs == 0 {
-		c.RegistrationRefreshMs = DefaultRegistrationRefreshMs
+	if c.RegistrationRefresh == 0 {
+		c.RegistrationRefresh = DefaultRegistrationRefresh
 	}
-	if c.RegistrationExpiryMs == 0 {
-		c.RegistrationExpiryMs = DefaultRegistrationExpiryMs
+	if c.RegistrationExpiry == 0 {
+		c.RegistrationExpiry = DefaultRegistrationExpiry
 	}
-	if c.MessageExpiryMs == 0 {
-		c.MessageExpiryMs = DefaultMessageExpiryMs
+	if c.MessageExpiry == 0 {
+		c.MessageExpiry = DefaultMessageExpiry
 	}
 }
 

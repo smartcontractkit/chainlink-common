@@ -59,13 +59,12 @@ type capability struct {
 
 var _ capabilityIface = (*capability)(nil)
 var _ capabilities.ConsensusCapability = (*capability)(nil)
-var ocr3CapabilityValidator = capabilities.NewValidator[config, inputs, requests.Response](capabilities.ValidatorArgs{Info: info})
 
 func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
-		Validator:         ocr3CapabilityValidator,
+		Validator:         capabilities.NewValidator[config, inputs, requests.Response](capabilities.ValidatorArgs{Info: info}),
 		reqHandler:        requests.NewHandler(lggr, s, clock, requestTimeout),
 		clock:             clock,
 		requestTimeout:    requestTimeout,
@@ -203,7 +202,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return nil, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}
-		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs)
+		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
 		var responseErr error
 		if m.Terminate {
 			o.lggr.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)

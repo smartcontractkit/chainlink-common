@@ -325,6 +325,7 @@ func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct 
 	assert.True(t, ok)
 	fake.SetTrigger(testStruct)
 	if testStruct.Field == nil {
+		t.Errorf("test struct field must be set during TriggerEvent to represent the position of this struct in a sequence")
 		return ""
 	}
 	return fmt.Sprint(*testStruct.Field)

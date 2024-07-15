@@ -82,12 +82,18 @@ func TxHash(txHash string) Expression {
 }
 
 func And(expressions ...Expression) Expression {
+	if len(expressions) == 1 {
+		return expressions[0]
+	}
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: AND},
 	}
 }
 
 func Or(expressions ...Expression) Expression {
+	if len(expressions) == 1 {
+		return expressions[0]
+	}
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: OR},
 	}

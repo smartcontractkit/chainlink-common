@@ -192,7 +192,7 @@ func (c *Client) QueryKey(ctx context.Context, contractName string, filter query
 }
 
 func (c *Client) ReplaySequence(ctx context.Context, contractName, key string, blockID string) error {
-	_, err := c.grpc.ReplaySequence(ctx, &pb.ReplaySequenceRequest{ContractName: contractName, Key: key, BlockID: blockID})
+	_, err := c.grpc.ReplaySequence(ctx, &pb.ReplaySequenceRequest{ContractName: contractName, Key: key, BlockId: blockID})
 	return net.WrapRPCErr(err)
 }
 
@@ -311,7 +311,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 }
 
 func (c *Server) ReplaySequence(ctx context.Context, request *pb.ReplaySequenceRequest) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, c.impl.ReplaySequence(ctx, request.ContractName, request.Key, request.BlockID)
+	return &emptypb.Empty{}, c.impl.ReplaySequence(ctx, request.ContractName, request.Key, request.BlockId)
 }
 
 func getContractEncodedType(contractName, itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {

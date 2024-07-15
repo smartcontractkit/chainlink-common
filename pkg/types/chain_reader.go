@@ -22,6 +22,11 @@ type ContractReader = ChainReader
 // Deprecated: use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
 type ChainReader interface {
 	services.Service
+
+	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
+	// contract is not known by the ChainReader, or if the Address is invalid
+	Bind(ctx context.Context, bindings []BoundContract) error
+
 	// GetLatestValue gets the latest value with a certain confidence level that maps to blockchain finality....
 	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig.
 	// It must encode as an object via [json.Marshal] and [github.com/fxamacker/cbor/v2.Marshal].
@@ -53,12 +58,10 @@ type ChainReader interface {
 	// Contract call errors are returned in the Err field of BatchGetLatestValuesResult.
 	BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error)
 
-	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
-	// contract is not known by the ChainReader, or if the Address is invalid
-	Bind(ctx context.Context, bindings []BoundContract) error
-
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	// Replay makes sure that data that belongs to contractName/key pair is available for querying from blockID.
+	Replay(ctx context.Context, contractName, key string, blockID string) error
 }
 
 // BatchGetLatestValuesRequest string is contract name.

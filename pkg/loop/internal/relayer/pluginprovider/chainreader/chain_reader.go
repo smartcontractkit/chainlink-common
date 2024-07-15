@@ -130,6 +130,15 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
+func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
+	pbBindings := make([]*pb.BoundContract, len(bindings))
+	for i, b := range bindings {
+		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
+	}
+	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
+	return net.WrapRPCErr(err)
+}
+
 func (c *Client) GetLatestValue(ctx context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
 	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
@@ -182,12 +191,8 @@ func (c *Client) QueryKey(ctx context.Context, contractName string, filter query
 	return convertSequencesFromProto(reply.Sequences, sequenceDataType)
 }
 
-func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
-	pbBindings := make([]*pb.BoundContract, len(bindings))
-	for i, b := range bindings {
-		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
-	}
-	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
+func (c *Client) Replay(ctx context.Context, contractName, key string, blockID string) error {
+	_, err := c.grpc.Replay(ctx, &pb.ReplayRequest{ContractName: contractName, Key: key, BlockID: blockID})
 	return net.WrapRPCErr(err)
 }
 
@@ -218,6 +223,15 @@ func WithServerEncoding(version EncodingVersion) ServerOpt {
 	return func(server *Server) {
 		server.encodeWith = version
 	}
+}
+
+func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
+	tBindings := make([]types.BoundContract, len(bindings.Bindings))
+	for i, b := range bindings.Bindings {
+		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name}
+	}
+
+	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
@@ -296,13 +310,8 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 	return &pb.QueryKeyReply{Sequences: pbSequences}, nil
 }
 
-func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
-	tBindings := make([]types.BoundContract, len(bindings.Bindings))
-	for i, b := range bindings.Bindings {
-		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name}
-	}
-
-	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)
+func (c *Server) Replay(ctx context.Context, request *pb.ReplayRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, c.impl.Replay(ctx, request.ContractName, request.Key, request.BlockID)
 }
 
 func getContractEncodedType(contractName, itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {

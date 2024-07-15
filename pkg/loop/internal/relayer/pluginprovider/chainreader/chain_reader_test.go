@@ -340,11 +340,11 @@ type eventConfidencePair struct {
 
 type fakeChainReader struct {
 	fakeTypeProvider
-	vals     []valConfidencePair
-	triggers []eventConfidencePair
-	stored   []TestStruct
+	vals        []valConfidencePair
+	triggers    []eventConfidencePair
+	stored      []TestStruct
 	batchStored BatchCallEntry
-	lock     sync.Mutex
+	lock        sync.Mutex
 }
 
 func (f *fakeChainReader) Start(_ context.Context) error { return nil }
@@ -359,27 +359,6 @@ func (f *fakeChainReader) HealthReport() map[string]error { panic("unimplemented
 
 func (f *fakeChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
 	return nil
-}
-
-func (f *fakeChainReader) SetTestStructLatestValue(ts *TestStruct) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	f.stored = append(f.stored, *ts)
-}
-
-func (f *fakeChainReader) SetUintLatestValue(val uint64, _ ExpectedGetLatestValueArgs) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	f.vals = append(f.vals, valConfidencePair{val: val, confidenceLevel: primitives.Unconfirmed})
-}
-
-func (f *fakeChainReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	f.batchStored = make(BatchCallEntry)
-	for contractName, contractBatchEntry := range batchCallEntry {
-		f.batchStored[contractName] = contractBatchEntry
-	}
 }
 
 func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
@@ -529,6 +508,31 @@ func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.Key
 	return nil, nil
 }
 
+func (f *fakeChainReader) Replay(_ context.Context, _, _ string, _ string) error {
+	return nil
+}
+
+func (f *fakeChainReader) SetTestStructLatestValue(ts *TestStruct) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.stored = append(f.stored, *ts)
+}
+
+func (f *fakeChainReader) SetUintLatestValue(val uint64, _ ExpectedGetLatestValueArgs) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.vals = append(f.vals, valConfidencePair{val: val, confidenceLevel: primitives.Unconfirmed})
+}
+
+func (f *fakeChainReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.batchStored = make(BatchCallEntry)
+	for contractName, contractBatchEntry := range batchCallEntry {
+		f.batchStored[contractName] = contractBatchEntry
+	}
+}
+
 func (f *fakeChainReader) SetTrigger(testStruct *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -562,6 +566,10 @@ func (e *errChainReader) Name() string { panic("unimplemented") }
 
 func (e *errChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
+func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
+	return e.err
+}
+
 func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _ primitives.ConfidenceLevel, _, _ any) error {
 	return e.err
 }
@@ -570,12 +578,12 @@ func (e *errChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGe
 	return nil, e.err
 }
 
-func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
-	return e.err
-}
-
 func (e *errChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, e.err
+}
+
+func (e *errChainReader) Replay(_ context.Context, _, _ string, _ string) error {
+	return e.err
 }
 
 type protoConversionTestChainReader struct {
@@ -594,19 +602,19 @@ func (pc *protoConversionTestChainReader) Name() string { panic("unimplemented")
 
 func (pc *protoConversionTestChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
+func (pc *protoConversionTestChainReader) Bind(_ context.Context, bc []types.BoundContract) error {
+	if !reflect.DeepEqual(pc.expectedBindings, bc) {
+		return fmt.Errorf("bound contract wasn't parsed properly")
+	}
+	return nil
+}
+
 func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _ string, _ primitives.ConfidenceLevel, _, _ any) error {
 	return nil
 }
 
 func (pc *protoConversionTestChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	return nil, nil
-}
-
-func (pc *protoConversionTestChainReader) Bind(_ context.Context, bc []types.BoundContract) error {
-	if !reflect.DeepEqual(pc.expectedBindings, bc) {
-		return fmt.Errorf("bound contract wasn't parsed properly")
-	}
-	return nil
 }
 
 func (pc *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
@@ -634,4 +642,8 @@ func (pc *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, 
 	}
 
 	return nil, nil
+}
+
+func (pc *protoConversionTestChainReader) Replay(_ context.Context, _, _ string, _ string) error {
+	return nil
 }

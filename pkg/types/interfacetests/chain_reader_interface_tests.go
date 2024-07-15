@@ -540,7 +540,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				assert.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
-					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts2, sequences[0].Data) && reflect.DeepEqual(&ts1, sequences[1].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},
@@ -553,6 +553,10 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				ts1BlockID := tester.TriggerEvent(t, &ts1)
 				ts2 := CreateTestStruct[T](1, tester)
 				tester.TriggerEvent(t, &ts2)
+				// make sure that these events are long in the past so that they don't accidentally get picked up
+				tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, EventName, primitives.Finalized)
+				tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, EventName, primitives.Finalized)
+
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 				ts3 := CreateTestStruct[T](2, tester)
 				tester.TriggerEvent(t, &ts3)
@@ -563,7 +567,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				assert.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
-					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts4, sequences[0].Data) && reflect.DeepEqual(&ts3, sequences[1].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
 				require.NoError(t, cr.ReplaySequence(ctx, AnyContractName, EventName, ts1BlockID))
@@ -571,10 +575,10 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
 					return err == nil && len(sequences) == 4 &&
-						reflect.DeepEqual(&ts1, sequences[3].Data) &&
-						reflect.DeepEqual(&ts2, sequences[2].Data) &&
+						reflect.DeepEqual(&ts4, sequences[0].Data) &&
 						reflect.DeepEqual(&ts3, sequences[1].Data) &&
-						reflect.DeepEqual(&ts4, sequences[0].Data)
+						reflect.DeepEqual(&ts2, sequences[2].Data) &&
+						reflect.DeepEqual(&ts1, sequences[3].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},

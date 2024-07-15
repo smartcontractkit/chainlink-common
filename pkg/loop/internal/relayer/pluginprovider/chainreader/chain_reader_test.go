@@ -520,7 +520,11 @@ func (f *fakeChainReader) QueryKey(_ context.Context, contractName string, filte
 			return nil, fmt.Errorf("contract %s not bound", contractName)
 		}
 
-		return sequences[boundAt:], nil
+		if boundAt == 0 {
+			return sequences, nil
+		}
+
+		return sequences[:boundAt], nil
 	}
 	return nil, nil
 }

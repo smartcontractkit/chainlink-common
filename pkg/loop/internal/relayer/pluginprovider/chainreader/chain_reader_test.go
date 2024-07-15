@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"reflect"
 	"sort"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -277,6 +278,7 @@ type fakeChainReaderInterfaceTester struct {
 func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	if ok {
+		fake.contractBoundAt = make(map[string]int)
 		fake.vals = []valConfidencePair{}
 		fake.triggers = []eventConfidencePair{}
 		fake.stored = []TestStruct{}
@@ -318,10 +320,14 @@ func (it *fakeChainReaderInterfaceTester) SetBatchLatestValues(t *testing.T, bat
 	fake.SetBatchLatestValues(batchCallEntry)
 }
 
-func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
+func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) string {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.SetTrigger(testStruct)
+	if testStruct.Field == nil {
+		return ""
+	}
+	return fmt.Sprint(*testStruct.Field)
 }
 
 func (it *fakeChainReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
@@ -340,11 +346,13 @@ type eventConfidencePair struct {
 
 type fakeChainReader struct {
 	fakeTypeProvider
-	vals        []valConfidencePair
-	triggers    []eventConfidencePair
-	stored      []TestStruct
-	batchStored BatchCallEntry
-	lock        sync.Mutex
+	// contractBoundAt is used to simulate contract being bound at a certain block not having the events before that block unless Replay is called.
+	contractBoundAt map[string]int
+	vals            []valConfidencePair
+	triggers        []eventConfidencePair
+	stored          []TestStruct
+	batchStored     BatchCallEntry
+	lock            sync.Mutex
 }
 
 func (f *fakeChainReader) Start(_ context.Context) error { return nil }
@@ -357,7 +365,10 @@ func (f *fakeChainReader) Name() string { panic("unimplemented") }
 
 func (f *fakeChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
-func (f *fakeChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
+func (f *fakeChainReader) Bind(_ context.Context, boundContracts []types.BoundContract) error {
+	for _, bc := range boundContracts {
+		f.contractBoundAt[bc.Name] = len(f.triggers)
+	}
 	return nil
 }
 
@@ -481,7 +492,7 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 	return result, nil
 }
 
-func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeChainReader) QueryKey(_ context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -503,12 +514,29 @@ func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.Key
 			})
 		}
 
-		return sequences, nil
+		// simulate contract being bound at a certain block not having the events before that block unless Replay is called.
+		boundAt, ok := f.contractBoundAt[contractName]
+		if !ok {
+			return nil, fmt.Errorf("contract %s not bound", contractName)
+		}
+
+		return sequences[boundAt:], nil
 	}
 	return nil, nil
 }
 
-func (f *fakeChainReader) Replay(_ context.Context, _, _ string, _ string) error {
+func (f *fakeChainReader) Replay(_ context.Context, contractName, _ string, blockID string) error {
+	blockNumber, err := strconv.Atoi(blockID)
+	if err != nil {
+		return err
+	}
+
+	if blockNumber > len(f.triggers) {
+		return fmt.Errorf("blockID: %d requested is in the future: %d", blockNumber, len(f.triggers))
+	}
+
+	// we only have a single event type used in tests for querying, so we can ignore key and just use contract name.
+	f.contractBoundAt[contractName] = blockNumber
 	return nil
 }
 

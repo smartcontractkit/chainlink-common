@@ -27,7 +27,8 @@ type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	// forCall is used to attach value to a call, this is useful in chain specific test since in chain agnostic tests we can just use hard coded readName constants.
 	SetUintLatestValue(t T, val uint64, forCall ExpectedGetLatestValueArgs)
 	SetBatchLatestValues(t T, batchCallEntry BatchCallEntry)
-	TriggerEvent(t T, testStruct *TestStruct)
+	// TriggerEvent stores sequenceable data to blockchain.
+	TriggerEvent(t T, testStruct *TestStruct) string
 	GetBindings(t T) []types.BoundContract
 	// GenerateBlocksTillConfidenceLevel raises confidence level to the provided level for a specific read.
 	GenerateBlocksTillConfidenceLevel(t T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel)
@@ -543,7 +544,40 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},
-	}
+		{
+			name: "QueryKey works with replay and retrieves pre Bind sequence data properly",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				ts1 := CreateTestStruct[T](0, tester)
+				ts1BlockID := tester.TriggerEvent(t, &ts1)
+				ts2 := CreateTestStruct[T](1, tester)
+				tester.TriggerEvent(t, &ts2)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				ts3 := CreateTestStruct[T](2, tester)
+				tester.TriggerEvent(t, &ts3)
+				ts4 := CreateTestStruct[T](3, tester)
+				tester.TriggerEvent(t, &ts4)
 
+				ts := &TestStruct{}
+				assert.Eventually(t, func() bool {
+					// sequences from queryKey without limit and sort should be in descending order
+					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+
+				require.NoError(t, cr.Replay(ctx, AnyContractName, EventName, ts1BlockID))
+				assert.Eventually(t, func() bool {
+					// sequences from queryKey without limit and sort should be in descending order
+					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
+					return err == nil && len(sequences) == 4 &&
+						reflect.DeepEqual(&ts1, sequences[3].Data) &&
+						reflect.DeepEqual(&ts2, sequences[2].Data) &&
+						reflect.DeepEqual(&ts3, sequences[1].Data) &&
+						reflect.DeepEqual(&ts4, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+	}
 	runTests(t, tester, tests)
 }

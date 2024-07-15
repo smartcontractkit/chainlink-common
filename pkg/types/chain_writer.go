@@ -3,9 +3,13 @@ package types
 import (
 	"context"
 	"math/big"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type ChainWriter interface {
+	services.Service
+
 	// SubmitTransaction packs and broadcasts a transaction to the underlying chain.
 	//
 	// - `args` should be any object which maps a set of method param into the contract and method specific method params.

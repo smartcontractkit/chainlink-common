@@ -103,12 +103,19 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	for _, weid := range weids {
 		rq, ok := reqMap[weid]
 		if !ok {
-			r.lggr.Debugw("could not find local observations for weid requested in the query", "weid", weid)
+			r.lggr.Debugw("could not find local observations for weid requested in the query", "executionID", weid)
 			continue
 		}
+
+		lggr := logger.With(
+			r.lggr,
+			"executionID", rq.WorkflowExecutionID,
+			"workflowID", rq.WorkflowID,
+		)
+
 		listProto := values.Proto(rq.Observations).GetListValue()
 		if listProto == nil {
-			r.lggr.Errorw("observations are not a list", "weID", rq.WorkflowExecutionID)
+			lggr.Errorw("observations are not a list")
 			continue
 		}
 		newOb := &pbtypes.Observation{
@@ -204,31 +211,32 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	var allExecutionIDs []string
 
 	for _, weid := range q.Ids {
+		lggr := logger.With(r.lggr, "executionID", weid.WorkflowExecutionId, "workflowID", weid.WorkflowId)
 		obs, ok := m[weid.WorkflowExecutionId]
 		if !ok {
-			r.lggr.Debugw("could not find any observations matching weid requested in the query", "weid", weid.WorkflowExecutionId)
+			lggr.Debugw("could not find any observations matching weid requested in the query")
 			continue
 		}
 
 		workflowOutcome, ok := o.Outcomes[weid.WorkflowId]
 		if !ok {
-			r.lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one", "workflowID", weid.WorkflowId)
+			lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one")
 		}
 
 		if len(obs) < (2*r.config.F + 1) {
-			r.lggr.Debugw("insufficient observations for workflow execution id", "weid", weid.WorkflowExecutionId)
+			lggr.Debugw("insufficient observations for workflow execution id")
 			continue
 		}
 
 		agg, err2 := r.r.getAggregator(weid.WorkflowId)
 		if err2 != nil {
-			r.lggr.Errorw("could not retrieve aggregator for workflow", "error", err, "workflowID", weid.WorkflowId)
+			lggr.Errorw("could not retrieve aggregator for workflow", "error", err2)
 			continue
 		}
 
 		outcome, err2 := agg.Aggregate(workflowOutcome, obs, r.config.F)
 		if err2 != nil {
-			r.lggr.Errorw("error aggregating outcome", "error", err, "workflowID", weid.WorkflowId)
+			lggr.Errorw("error aggregating outcome", "error", err2)
 			return nil, err
 		}
 
@@ -280,6 +288,15 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 	reports := []ocr3types.ReportWithInfo[[]byte]{}
 
 	for _, report := range o.CurrentReports {
+		r.lggr.Debugw("generating reports", "len", len(o.CurrentReports), "shouldReport", report.Outcome.ShouldReport, "executionID", report.Id.WorkflowExecutionId)
+
+		lggr := logger.With(
+			r.lggr,
+			"workflowID", report.Id.WorkflowId,
+			"executionID", report.Id.WorkflowExecutionId,
+			"shouldReport", report.Outcome.ShouldReport,
+		)
+
 		outcome, id := report.Outcome, report.Id
 
 		info := &pbtypes.ReportInfo{
@@ -302,27 +319,27 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			}
 			newOutcome, err := pbtypes.AppendMetadata(outcome, meta)
 			if err != nil {
-				r.lggr.Errorw("could not append IDs")
+				lggr.Errorw("could not append IDs")
 				continue
 			}
 
 			enc, err := r.r.getEncoder(id.WorkflowId)
 			if err != nil {
-				r.lggr.Errorw("could not retrieve encoder for workflow", "error", err, "workflowID", id.WorkflowId)
+				lggr.Errorw("could not retrieve encoder for workflow", "error", err)
 				continue
 			}
 
 			mv := values.FromMapValueProto(newOutcome.EncodableOutcome)
 			report, err = enc.Encode(context.TODO(), *mv)
 			if err != nil {
-				r.lggr.Errorw("could not encode report for workflow", "error", err, "workflowID", id.WorkflowId)
+				r.lggr.Errorw("could not encode report for workflow", "error", err)
 				continue
 			}
 		}
 
 		p, err := proto.MarshalOptions{Deterministic: true}.Marshal(info)
 		if err != nil {
-			r.lggr.Errorw("could not marshal id into ReportWithInfo", "error", err, "workflowID", id.WorkflowId, "shouldReport", info.ShouldReport)
+			r.lggr.Errorw("could not marshal id into ReportWithInfo", "error", err)
 			continue
 		}
 

@@ -191,13 +191,13 @@ type Transmitter ocr3types.ContractTransmitter[ReportInfo]
 // address, i.e. the only address allowed to verify reports from this channel
 // https://smartcontract-it.atlassian.net/browse/MERC-3492
 type ChannelDefinition struct {
-	ReportFormat ReportFormat
+	ReportFormat ReportFormat `json:"reportFormat"`
 	// StreamIDs contains a list of streams to be observed for this channel.
-	StreamIDs []StreamID
+	StreamIDs []StreamID `json:"streamIDs"`
 	// Aggregators contains a list of aggregator methods used for each stream
 	// e.g. "median", "mode" or other more exotic methods.
 	// StreamIDs and Aggregators must have the same length.
-	Aggregators []Aggregator
+	Aggregators []Aggregator `json:"aggregators"`
 	// Opts contains configuration data for use in report generation
 	// for this channel, e.g. feed ID, expiry window, USD base fee etc
 	//
@@ -205,7 +205,7 @@ type ChannelDefinition struct {
 	// for a given ReportFormat
 	//
 	// May be nil
-	Opts ChannelOpts
+	Opts ChannelOpts `json:"opts"`
 }
 
 func (a ChannelDefinition) Equals(b ChannelDefinition) bool {

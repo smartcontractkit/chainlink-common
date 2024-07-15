@@ -12,30 +12,30 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 	inputJSON := `
 {
   "0": {
-    "ReportFormat": "json",
-    "StreamIDs": [
+    "reportFormat": "json",
+    "streamIDs": [
       0,
       1
     ],
-    "Aggregators": [
+    "aggregators": [
       "median",
       "mode"
     ],
-    "Opts": null
+    "opts": null
   },
   "1": {
-    "ReportFormat": "evm_premium_legacy",
-    "StreamIDs": [
+    "reportFormat": "evm_premium_legacy",
+    "streamIDs": [
       0,
       1,
       2
     ],
-    "Aggregators": [
+    "aggregators": [
       "median",
       "median",
       "quote"
     ],
-    "Opts": {
+    "opts": {
       "expirationWindow": 86400,
       "multiplier": "1000000000000000000",
       "feedId": "0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -51,7 +51,7 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 
 	assert.JSONEq(t, inputJSON, string(marshaledJSON))
 
-	assert.Equal(t, `{"0":{"ReportFormat":"json","StreamIDs":[0,1],"Aggregators":["median","mode"],"Opts":null},"1":{"ReportFormat":"evm_premium_legacy","StreamIDs":[0,1,2],"Aggregators":["median","median","quote"],"Opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
+	assert.Equal(t, `{"0":{"reportFormat":"json","streamIDs":[0,1],"aggregators":["median","mode"],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streamIDs":[0,1,2],"aggregators":["median","median","quote"],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
 }
 
 func Test_ChannelDefinition_Equals(t *testing.T) {

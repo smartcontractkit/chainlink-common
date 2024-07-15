@@ -1,6 +1,7 @@
 package llo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -205,6 +206,29 @@ type ChannelDefinition struct {
 	//
 	// May be nil
 	Opts ChannelOpts
+}
+
+func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
+	if a.ReportFormat != b.ReportFormat {
+		return false
+	}
+	if len(a.StreamIDs) != len(b.StreamIDs) {
+		return false
+	}
+	if len(a.Aggregators) != len(b.Aggregators) {
+		return false
+	}
+	for i, streamID := range a.StreamIDs {
+		if streamID != b.StreamIDs[i] {
+			return false
+		}
+	}
+	for i, aggregator := range a.Aggregators {
+		if aggregator != b.Aggregators[i] {
+			return false
+		}
+	}
+	return bytes.Equal(a.Opts, b.Opts)
 }
 
 type ChannelOpts []byte

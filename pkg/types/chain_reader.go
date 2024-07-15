@@ -60,8 +60,8 @@ type ChainReader interface {
 
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
-	// Replay makes sure that data that belongs to contractName/key pair is available for querying from blockID.
-	Replay(ctx context.Context, contractName, key string, blockID string) error
+	// ReplaySequence makes sure that sequence data that belongs to contractName/key pair is available for querying from blockID.
+	ReplaySequence(ctx context.Context, contractName, key string, blockID string) error
 }
 
 // BatchGetLatestValuesRequest string is contract name.

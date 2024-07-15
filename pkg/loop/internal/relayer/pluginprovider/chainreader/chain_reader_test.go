@@ -525,7 +525,7 @@ func (f *fakeChainReader) QueryKey(_ context.Context, contractName string, filte
 	return nil, nil
 }
 
-func (f *fakeChainReader) Replay(_ context.Context, contractName, _ string, blockID string) error {
+func (f *fakeChainReader) ReplaySequence(_ context.Context, contractName, _ string, blockID string) error {
 	blockNumber, err := strconv.Atoi(blockID)
 	if err != nil {
 		return err
@@ -610,7 +610,7 @@ func (e *errChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilter
 	return nil, e.err
 }
 
-func (e *errChainReader) Replay(_ context.Context, _, _ string, _ string) error {
+func (e *errChainReader) ReplaySequence(_ context.Context, _, _ string, _ string) error {
 	return e.err
 }
 
@@ -672,6 +672,6 @@ func (pc *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, 
 	return nil, nil
 }
 
-func (pc *protoConversionTestChainReader) Replay(_ context.Context, _, _ string, _ string) error {
+func (pc *protoConversionTestChainReader) ReplaySequence(_ context.Context, _, _ string, _ string) error {
 	return nil
 }

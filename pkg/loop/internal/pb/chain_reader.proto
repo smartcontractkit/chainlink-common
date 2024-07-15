@@ -12,7 +12,7 @@ service ChainReader {
   rpc BatchGetLatestValues (BatchGetLatestValuesRequest) returns (BatchGetLatestValuesReply) {}
   rpc QueryKey(QueryKeyRequest) returns (QueryKeyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
-  rpc Replay(ReplayRequest) returns (google.protobuf.Empty) {}
+  rpc ReplaySequence(ReplaySequenceRequest) returns (google.protobuf.Empty) {}
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.GetLatestValue].
@@ -35,8 +35,8 @@ message QueryKeyRequest {
   LimitAndSort limit_and_sort = 3;
 }
 
-// ReplayRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Replay].
-message ReplayRequest {
+// ReplaySequenceRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.ReplaySequence].
+message ReplaySequenceRequest {
   string contract_name = 1;
   string key = 2;
   string blockID = 3;

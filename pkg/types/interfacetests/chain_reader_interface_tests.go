@@ -545,7 +545,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 			},
 		},
 		{
-			name: "QueryKey works with replay and retrieves pre Bind sequence data properly",
+			name: "QueryKey works with replay sequence and retrieves pre Bind sequence data properly",
 			test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
@@ -566,7 +566,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-				require.NoError(t, cr.Replay(ctx, AnyContractName, EventName, ts1BlockID))
+				require.NoError(t, cr.ReplaySequence(ctx, AnyContractName, EventName, ts1BlockID))
 				assert.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)

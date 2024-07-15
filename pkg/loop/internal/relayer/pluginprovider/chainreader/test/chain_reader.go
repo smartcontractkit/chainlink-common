@@ -83,7 +83,7 @@ func (c staticChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilt
 	return nil, nil
 }
 
-func (c staticChainReader) Replay(_ context.Context, _, _ string, _ string) error {
+func (c staticChainReader) ReplaySequence(_ context.Context, _, _ string, _ string) error {
 	return nil
 }
 

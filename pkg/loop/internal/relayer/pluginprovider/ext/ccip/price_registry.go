@@ -312,7 +312,7 @@ func gasPriceUpdateWithTxMetaSlicePB(in []cciptypes.GasPriceUpdateWithTxMeta) []
 
 func gasPriceUpdateWithTxMetaPB(in cciptypes.GasPriceUpdateWithTxMeta) *ccippb.GasPriceUpdateWithTxMeta {
 	return &ccippb.GasPriceUpdateWithTxMeta{
-		TxMeta:         txMetaPB(in.TxMeta),
+		TxMeta:         txMetaToPB(in.TxMeta),
 		GasPriceUpdate: gasPriceUpdatePB(in.GasPriceUpdate),
 	}
 }
@@ -341,7 +341,7 @@ func tokenPriceUpdateWithTxMetaSlicePB(in []cciptypes.TokenPriceUpdateWithTxMeta
 
 func tokenPriceUpdateWithTxMetaPB(in cciptypes.TokenPriceUpdateWithTxMeta) *ccippb.TokenPriceUpdateWithTxMeta {
 	return &ccippb.TokenPriceUpdateWithTxMeta{
-		TxMeta:           txMetaPB(in.TxMeta),
+		TxMeta:           txMetaToPB(in.TxMeta),
 		TokenPriceUpdate: tokenPriceUpdatePB(in.TokenPriceUpdate),
 	}
 }

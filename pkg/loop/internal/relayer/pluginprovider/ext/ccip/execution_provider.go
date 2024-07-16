@@ -230,8 +230,8 @@ func NewExecProviderServer(impl types.CCIPExecProvider, brokerExt *net.BrokerExt
 	return &ExecProviderServer{impl: impl, BrokerExt: brokerExt}
 }
 
-func (o *ExecProviderServer) GetTransactionStatus(ctx context.Context, req *ccippb.GetTransactionStatusRequest) (*ccippb.GetTransactionStatusResponse, error) {
-	ts, err := o.impl.GetTransactionStatus(ctx, req.TransactionId)
+func (e *ExecProviderServer) GetTransactionStatus(ctx context.Context, req *ccippb.GetTransactionStatusRequest) (*ccippb.GetTransactionStatusResponse, error) {
+	ts, err := e.impl.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
 		return nil, err
 	}

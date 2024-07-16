@@ -45,6 +45,17 @@ func NewExecProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *Exe
 	}
 }
 
+// GetTransactionStatus implements types.CCIPExecProvider.
+func (e *ExecProviderClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+	// unlike the other methods, this one does not create a new resource, so we do not
+	// need the broker to serve it. we can just call the grpc method directly.
+	resp, err := e.grpcClient.GetTransactionStatus(ctx, &ccippb.GetTransactionStatusRequest{TransactionId: transactionID})
+	if err != nil {
+		return 0, err
+	}
+	return types.TransactionStatus(resp.TransactionStatus), nil
+}
+
 // NewCommitStoreReader implements types.CCIPExecProvider.
 func (e *ExecProviderClient) NewCommitStoreReader(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreReader, error) {
 	req := ccippb.NewCommitStoreReaderRequest{Address: string(addr)}
@@ -217,6 +228,14 @@ var _ ccippb.ExecutionCustomHandlersServer = (*ExecProviderServer)(nil)
 
 func NewExecProviderServer(impl types.CCIPExecProvider, brokerExt *net.BrokerExt) *ExecProviderServer {
 	return &ExecProviderServer{impl: impl, BrokerExt: brokerExt}
+}
+
+func (o *ExecProviderServer) GetTransactionStatus(ctx context.Context, req *ccippb.GetTransactionStatusRequest) (*ccippb.GetTransactionStatusResponse, error) {
+	ts, err := o.impl.GetTransactionStatus(ctx, req.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetTransactionStatusResponse{TransactionStatus: int32(ts)}, nil
 }
 
 func (e *ExecProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.NewOffRampReaderRequest) (*ccippb.NewOffRampReaderResponse, error) {

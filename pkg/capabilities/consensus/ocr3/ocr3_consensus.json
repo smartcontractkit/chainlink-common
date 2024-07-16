@@ -4,11 +4,11 @@
   "properties": {
     "config": {
       "properties": {
-        "aggregation_method": {
+        "aggregationMethod": {
           "type": "string",
           "enum": ["data_feeds"]
         },
-        "aggregation_config": {
+        "aggregationConfig": {
           "type": "array",
           "items": {
             "type": "object",
@@ -41,7 +41,7 @@
           "type": "string",
           "enum": ["EVM"]
         },
-        "encoder_config": {
+        "encoderConfig": {
           "type": "object",
           "properties": {
             "abi": {
@@ -55,7 +55,7 @@
           "additionalProperties": false,
           "required": ["abi"]
         },
-        "report_id": {
+        "reportId": {
           "type": "string",
           "pattern": "^[a-f0-9]{4}$",
           "examples": ["0x0001"]
@@ -64,11 +64,11 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "aggregation_method",
-        "aggregation_config",
+        "aggregationMethod",
+        "aggregationConfig",
         "encoder",
-        "encoder_config",
-        "report_id"
+        "encoderConfig",
+        "reportId"
       ]
     },
     "inputs": {

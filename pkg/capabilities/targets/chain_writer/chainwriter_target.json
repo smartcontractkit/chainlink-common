@@ -4,52 +4,122 @@
   "properties": {
     "config": {
       "properties": {
-        "address": {
+        "aggregation_method": {
           "type": "string",
-          "minLength": 42,
-          "maxLength": 42,
-          "pattern": "^0x[a-fA-F0-9]{40}$"
+          "enum": ["data_feeds"]
+        },
+        "aggregation_config": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "feedId": {
+                "type": "string",
+                "pattern": "^0x[0-9a-f]{64}$",
+                "description": "The ID of the data feed.",
+                "examples": [
+                  "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd"
+                ]
+              },
+              "deviation": {
+                "type": "number",
+                "maximum": 1,
+                "description": "The deviation that is required to generate a new report. Expressed as a percentage. For example, 0.01 is 1% deviation."
+              },
+              "heartbeat": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "The interval in seconds after which a new report is generated, regardless of whether any deviations have occurred. New reports reset the timer."
+              }
+            },
+            "additionalProperties": false,
+            "minItems": 1,
+            "required": ["feedId", "deviation", "heartbeat"]
+          }
+        },
+        "encoder": {
+          "type": "string",
+          "enum": ["EVM"]
+        },
+        "encoder_config": {
+          "type": "object",
+          "properties": {
+            "abi": {
+              "type": "string",
+              "description": "The ABI for report encoding.",
+              "examples": [
+                "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": ["abi"]
+        },
+        "report_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{4}$",
+          "examples": ["0x0001"]
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "address"
+        "aggregation_method",
+        "aggregation_config",
+        "encoder",
+        "encoder_config",
+        "report_id"
       ]
     },
-    "inputs": {
+    "output": {
       "properties": {
-        "WorkflowExecutionID": {
-          "type": "string"
-        },
-        "Value": {
+        "observations": {
           "properties": {
             "Underlying": {
-              "type": "object"
+              "items": true,
+              "type": "array"
             }
           },
           "additionalProperties": false,
           "type": "object",
-          "required": [
-            "Underlying"
-          ]
-        },
-        "Err": true
+          "required": ["Underlying"]
+        }
       },
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "WorkflowExecutionID",
-        "Value",
-        "Err"
-      ]
+      "required": ["observations"]
+    },
+    "inputs": {
+      "properties": {
+        "signed_report": {
+          "type": "object",
+          "properties": {
+            "WorkflowExecutionID": {
+              "type": "string"
+            },
+            "Value": {
+              "properties": {
+                "Underlying": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["Underlying"]
+            },
+            "Err": true
+          },
+          "additionalProperties": false,
+          "required": ["WorkflowExecutionID", "Value", "Err"]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["signed_report"]
     }
   },
   "additionalProperties": false,
   "type": "object",
-  "required": [
-    "config",
-    "inputs"
-  ],
+  "required": ["config", "inputs"],
   "description": "Writes to evm chain for now..."
 }

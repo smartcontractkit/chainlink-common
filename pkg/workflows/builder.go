@@ -15,7 +15,7 @@ type Workflow struct {
 
 type CapabilityDefinition[O any] interface {
 	Ref() string
-	impl() capabilityDefinitionImpl
+	impl() O
 }
 
 type Step[O any] struct {
@@ -23,16 +23,17 @@ type Step[O any] struct {
 	Definition StepDefinition
 }
 
-type capabilityDefinitionImpl struct {
+type capabilityDefinitionImpl[O any] struct {
 	ref string
 }
 
-func (c *capabilityDefinitionImpl) Ref() string {
+func (c *capabilityDefinitionImpl[O]) Ref() string {
 	return c.ref
 }
 
-func (c *capabilityDefinitionImpl) impl() capabilityDefinitionImpl {
-	return *c
+func (c *capabilityDefinitionImpl[O]) impl() O {
+	var o O
+	return o
 }
 
 type NewWorkflowParams struct {
@@ -66,12 +67,12 @@ func AddStep[O any](w *Workflow, step Step[O]) (CapabilityDefinition[O], error) 
 		w.spec.Targets = append(w.spec.Targets, stepDefinition)
 	}
 
-	return &capabilityDefinitionImpl{ref: step.Ref}, nil
+	return &capabilityDefinitionImpl[O]{ref: step.Ref}, nil
 }
 
 // AccessField is meant to be used by generated code
 func AccessField[I, O any](c CapabilityDefinition[I], fieldName string) CapabilityDefinition[O] {
-	return &capabilityDefinitionImpl{ref: c.Ref() + "." + fieldName}
+	return &capabilityDefinitionImpl[O]{ref: c.Ref() + "." + fieldName}
 }
 
 func (w Workflow) Spec() WorkflowSpec {

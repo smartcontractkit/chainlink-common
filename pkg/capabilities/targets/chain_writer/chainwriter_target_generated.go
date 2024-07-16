@@ -4,6 +4,7 @@ package chainwriter
 
 import "encoding/json"
 import "fmt"
+import "reflect"
 
 // Writes to evm chain for now...
 type ChainwriterTarget struct {
@@ -12,11 +13,142 @@ type ChainwriterTarget struct {
 
 	// Inputs corresponds to the JSON schema field "inputs".
 	Inputs ChainwriterTargetInputs
+
+	// Output corresponds to the JSON schema field "output".
+	Output *ChainwriterTargetOutput
 }
 
 type ChainwriterTargetConfig struct {
-	// Address corresponds to the JSON schema field "address".
-	Address string
+	// AggregationConfig corresponds to the JSON schema field "aggregation_config".
+	AggregationConfig []ChainwriterTargetConfigAggregationConfigElem
+
+	// AggregationMethod corresponds to the JSON schema field "aggregation_method".
+	AggregationMethod ChainwriterTargetConfigAggregationMethod
+
+	// Encoder corresponds to the JSON schema field "encoder".
+	Encoder ChainwriterTargetConfigEncoder
+
+	// EncoderConfig corresponds to the JSON schema field "encoder_config".
+	EncoderConfig ChainwriterTargetConfigEncoderConfig
+
+	// ReportId corresponds to the JSON schema field "report_id".
+	ReportId string
+}
+
+type ChainwriterTargetConfigAggregationConfigElem struct {
+	// The deviation that is required to generate a new report. Expressed as a
+	// percentage. For example, 0.01 is 1% deviation.
+	Deviation float64
+
+	// The ID of the data feed.
+	FeedId string
+
+	// The interval in seconds after which a new report is generated, regardless of
+	// whether any deviations have occurred. New reports reset the timer.
+	Heartbeat int
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChainwriterTargetConfigAggregationConfigElem) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["deviation"]; raw != nil && !ok {
+		return fmt.Errorf("field deviation in ChainwriterTargetConfigAggregationConfigElem: required")
+	}
+	if _, ok := raw["feedId"]; raw != nil && !ok {
+		return fmt.Errorf("field feedId in ChainwriterTargetConfigAggregationConfigElem: required")
+	}
+	if _, ok := raw["heartbeat"]; raw != nil && !ok {
+		return fmt.Errorf("field heartbeat in ChainwriterTargetConfigAggregationConfigElem: required")
+	}
+	type Plain ChainwriterTargetConfigAggregationConfigElem
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = ChainwriterTargetConfigAggregationConfigElem(plain)
+	return nil
+}
+
+type ChainwriterTargetConfigAggregationMethod string
+
+const ChainwriterTargetConfigAggregationMethodDataFeeds ChainwriterTargetConfigAggregationMethod = "data_feeds"
+
+var enumValues_ChainwriterTargetConfigAggregationMethod = []interface{}{
+	"data_feeds",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChainwriterTargetConfigAggregationMethod) UnmarshalJSON(b []byte) error {
+	var v string
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ChainwriterTargetConfigAggregationMethod {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ChainwriterTargetConfigAggregationMethod, v)
+	}
+	*j = ChainwriterTargetConfigAggregationMethod(v)
+	return nil
+}
+
+type ChainwriterTargetConfigEncoder string
+
+type ChainwriterTargetConfigEncoderConfig struct {
+	// The ABI for report encoding.
+	Abi string
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChainwriterTargetConfigEncoderConfig) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["abi"]; raw != nil && !ok {
+		return fmt.Errorf("field abi in ChainwriterTargetConfigEncoderConfig: required")
+	}
+	type Plain ChainwriterTargetConfigEncoderConfig
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = ChainwriterTargetConfigEncoderConfig(plain)
+	return nil
+}
+
+const ChainwriterTargetConfigEncoderEVM ChainwriterTargetConfigEncoder = "EVM"
+
+var enumValues_ChainwriterTargetConfigEncoder = []interface{}{
+	"EVM",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChainwriterTargetConfigEncoder) UnmarshalJSON(b []byte) error {
+	var v string
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ChainwriterTargetConfigEncoder {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ChainwriterTargetConfigEncoder, v)
+	}
+	*j = ChainwriterTargetConfigEncoder(v)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -25,57 +157,92 @@ func (j *ChainwriterTargetConfig) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["address"]; raw != nil && !ok {
-		return fmt.Errorf("field address in ChainwriterTargetConfig: required")
+	if _, ok := raw["aggregation_config"]; raw != nil && !ok {
+		return fmt.Errorf("field aggregation_config in ChainwriterTargetConfig: required")
+	}
+	if _, ok := raw["aggregation_method"]; raw != nil && !ok {
+		return fmt.Errorf("field aggregation_method in ChainwriterTargetConfig: required")
+	}
+	if _, ok := raw["encoder"]; raw != nil && !ok {
+		return fmt.Errorf("field encoder in ChainwriterTargetConfig: required")
+	}
+	if _, ok := raw["encoder_config"]; raw != nil && !ok {
+		return fmt.Errorf("field encoder_config in ChainwriterTargetConfig: required")
+	}
+	if _, ok := raw["report_id"]; raw != nil && !ok {
+		return fmt.Errorf("field report_id in ChainwriterTargetConfig: required")
 	}
 	type Plain ChainwriterTargetConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if len(plain.Address) < 42 {
-		return fmt.Errorf("field %s length: must be >= %d", "address", 42)
-	}
-	if len(plain.Address) > 42 {
-		return fmt.Errorf("field %s length: must be <= %d", "address", 42)
-	}
 	*j = ChainwriterTargetConfig(plain)
 	return nil
 }
 
 type ChainwriterTargetInputs struct {
+	// SignedReport corresponds to the JSON schema field "signed_report".
+	SignedReport ChainwriterTargetInputsSignedReport
+}
+
+type ChainwriterTargetInputsSignedReport struct {
 	// Err corresponds to the JSON schema field "Err".
 	Err interface{}
 
 	// Value corresponds to the JSON schema field "Value".
-	Value ChainwriterTargetInputsValue
+	Value ChainwriterTargetInputsSignedReportValue
 
 	// WorkflowExecutionID corresponds to the JSON schema field "WorkflowExecutionID".
 	WorkflowExecutionID string
 }
 
-type ChainwriterTargetInputsValue struct {
+type ChainwriterTargetInputsSignedReportValue struct {
 	// Underlying corresponds to the JSON schema field "Underlying".
-	Underlying ChainwriterTargetInputsValueUnderlying
+	Underlying ChainwriterTargetInputsSignedReportValueUnderlying
 }
 
-type ChainwriterTargetInputsValueUnderlying map[string]interface{}
+type ChainwriterTargetInputsSignedReportValueUnderlying map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ChainwriterTargetInputsValue) UnmarshalJSON(b []byte) error {
+func (j *ChainwriterTargetInputsSignedReportValue) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["Underlying"]; raw != nil && !ok {
-		return fmt.Errorf("field Underlying in ChainwriterTargetInputsValue: required")
+		return fmt.Errorf("field Underlying in ChainwriterTargetInputsSignedReportValue: required")
 	}
-	type Plain ChainwriterTargetInputsValue
+	type Plain ChainwriterTargetInputsSignedReportValue
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = ChainwriterTargetInputsValue(plain)
+	*j = ChainwriterTargetInputsSignedReportValue(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChainwriterTargetInputsSignedReport) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["Err"]; raw != nil && !ok {
+		return fmt.Errorf("field Err in ChainwriterTargetInputsSignedReport: required")
+	}
+	if _, ok := raw["Value"]; raw != nil && !ok {
+		return fmt.Errorf("field Value in ChainwriterTargetInputsSignedReport: required")
+	}
+	if _, ok := raw["WorkflowExecutionID"]; raw != nil && !ok {
+		return fmt.Errorf("field WorkflowExecutionID in ChainwriterTargetInputsSignedReport: required")
+	}
+	type Plain ChainwriterTargetInputsSignedReport
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = ChainwriterTargetInputsSignedReport(plain)
 	return nil
 }
 
@@ -85,14 +252,8 @@ func (j *ChainwriterTargetInputs) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["Err"]; raw != nil && !ok {
-		return fmt.Errorf("field Err in ChainwriterTargetInputs: required")
-	}
-	if _, ok := raw["Value"]; raw != nil && !ok {
-		return fmt.Errorf("field Value in ChainwriterTargetInputs: required")
-	}
-	if _, ok := raw["WorkflowExecutionID"]; raw != nil && !ok {
-		return fmt.Errorf("field WorkflowExecutionID in ChainwriterTargetInputs: required")
+	if _, ok := raw["signed_report"]; raw != nil && !ok {
+		return fmt.Errorf("field signed_report in ChainwriterTargetInputs: required")
 	}
 	type Plain ChainwriterTargetInputs
 	var plain Plain
@@ -100,6 +261,52 @@ func (j *ChainwriterTargetInputs) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = ChainwriterTargetInputs(plain)
+	return nil
+}
+
+type ChainwriterTargetOutput struct {
+	// Observations corresponds to the JSON schema field "observations".
+	Observations ChainwriterTargetOutputObservations
+}
+
+type ChainwriterTargetOutputObservations struct {
+	// Underlying corresponds to the JSON schema field "Underlying".
+	Underlying []interface{}
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChainwriterTargetOutputObservations) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["Underlying"]; raw != nil && !ok {
+		return fmt.Errorf("field Underlying in ChainwriterTargetOutputObservations: required")
+	}
+	type Plain ChainwriterTargetOutputObservations
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = ChainwriterTargetOutputObservations(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChainwriterTargetOutput) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["observations"]; raw != nil && !ok {
+		return fmt.Errorf("field observations in ChainwriterTargetOutput: required")
+	}
+	type Plain ChainwriterTargetOutput
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = ChainwriterTargetOutput(plain)
 	return nil
 }
 

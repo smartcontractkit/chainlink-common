@@ -42,7 +42,9 @@ func (t *TxMeta) IsFinalized() bool {
 	return t.Finalized == FinalizedStatusFinalized
 }
 
-func (t *TxMeta) UpdateFinalityStatus(finalizedBlockNumber uint64) TxMeta {
+// WithFinalityStatus accepts finalizedBlockNumber and based on that sets the Finalized status
+// It's immutable so it creates new struct instead of in-place modification of the existing one
+func (t *TxMeta) WithFinalityStatus(finalizedBlockNumber uint64) TxMeta {
 	txMeta := TxMeta{
 		BlockTimestampUnixMilli: t.BlockTimestampUnixMilli,
 		BlockNumber:             t.BlockNumber,

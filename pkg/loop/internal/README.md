@@ -1,4 +1,4 @@
-# Development and Maintenance Guide
+# Development and Maintenance Guide [![Go Reference](https://pkg.go.dev/badge/github.com/smartcontractkit/chainlink-common/pkg/loop/internal.svg)](https://pkg.go.dev/github.com/smartcontractkit/chainlink-common/pkg/loop/internal)
 
 
 ## Structure

@@ -72,5 +72,5 @@ func (c *streamsTriggerCapability) ReportContext() workflows.CapabilityDefinitio
     return workflows.AccessField[StreamsTriggerOutputsElem, string](c.CapabilityDefinition, "ReportContext")
 }
 func (c *streamsTriggerCapability) Signatures() workflows.CapabilityDefinition[[]string] {
-    return workflows.AccessField[StreamsTriggerOutputsElem, string](c.CapabilityDefinition, "Signatures")
+    return workflows.AccessField[StreamsTriggerOutputsElem, []string](c.CapabilityDefinition, "Signatures")
 }

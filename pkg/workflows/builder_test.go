@@ -1,6 +1,8 @@
 package workflows_test
 
 import (
+	_ "embed"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,59 +15,25 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
-	workflow := workflows.NewWorkflow(workflows.NewWorkflowParams{
-		Owner: "00000000000000000000000000000000000000aa",
-		Name:  "ccipethsep",
-	})
-
-	streamsConfig := streams.StreamsTriggerConfig{
-		FeedIds: []streams.FeedId{
-			"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
-			"0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d",
-			"0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12",
-		},
-		MaxFrequencyMs: 100,
-	}
-	streamsTrigger, err := streams.NewStreamsTriggerCapability(workflow, "streams", streamsConfig)
-	if err != nil {
+func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
+	conf := Config{}
+	if err := json.Unmarshal(rawConfig, &conf); err != nil {
 		return workflows.WorkflowSpec{}, err
 	}
 
-	ocr3Config := ocr3.Ocr3ConsensusConfig{
-		AggregationMethod: "data_feeds",
-		AggregationConfig: []ocr3.Ocr3ConsensusConfigAggregationConfigElem{
-			{
-				Deviation: 0.05,
-				FeedId:    "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
-				Heartbeat: 3600,
-			},
-			{
-				FeedId:    "0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d",
-				Deviation: 0.05,
-				Heartbeat: 3600,
-			},
-			{
-				FeedId:    "0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12",
-				Deviation: 0.05,
-				Heartbeat: 3600,
-			},
-		},
-		ReportId: "0001",
-		Encoder:  "EVM",
-		EncoderConfig: ocr3.Ocr3ConsensusConfigEncoderConfig{
-			Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
-		},
+	workflow := workflows.NewWorkflow(conf.Workflow)
+	streamsTrigger, err := streams.NewStreamsTriggerCapability(workflow, "streams", conf.Streams)
+	if err != nil {
+		return workflows.WorkflowSpec{}, err
 	}
 
 	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsTrigger}
 
-	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, ocr3Config)
+	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, conf.Ocr)
 	if err != nil {
 		return workflows.WorkflowSpec{}, err
 	}
 
-	writerConfig := chainwriter.ChainwriterTargetConfig{Address: "0x1234567890123456789012345678901234567890"}
 	// TODO ideally some of these will have references so the type can be some interface
 	input := chainwriter.ChainwriterTargetCapabilityInput{
 		Err: consensus.Err(),
@@ -74,15 +42,18 @@ func NewWorkflowSpec() (workflows.WorkflowSpec, error) {
 		WorkflowExecutionID: consensus.WorkflowExecutionID(),
 	}
 
-	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, writerConfig); err != nil {
+	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, conf.ChainWriter); err != nil {
 		return workflows.WorkflowSpec{}, err
 	}
 
 	return workflow.Spec(), nil
 }
 
+//go:embed testdata/fixtures/workflows/sepolia.json
+var sepolia string
+
 func TestBuilder_ValidSpec(t *testing.T) {
-	testWorkflowSpec, err := NewWorkflowSpec()
+	testWorkflowSpec, err := NewWorkflowSpec([]byte(sepolia))
 	require.NoError(t, err)
 
 	expectedSpec := workflows.WorkflowSpec{
@@ -92,6 +63,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 			{
 				ID:  "streams-trigger@1.0.0",
 				Ref: "streams",
+				Inputs: workflows.StepInputs{
+					Mapping:   map[string]any{},
+					OutputRef: "",
+				},
 				Config: map[string]interface{}{
 					"feedIds": []string{
 						"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
@@ -150,5 +125,18 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expectedSpec, testWorkflowSpec)
+	expected, err := json.Marshal(expectedSpec)
+	require.NoError(t, err)
+
+	actual, err := json.Marshal(testWorkflowSpec)
+	require.NoError(t, err)
+
+	assert.Equal(t, string(expected), string(actual))
+}
+
+type Config struct {
+	Workflow    workflows.NewWorkflowParams
+	Streams     streams.StreamsTriggerConfig
+	Ocr         ocr3.Ocr3ConsensusConfig
+	ChainWriter chainwriter.ChainwriterTargetConfig
 }

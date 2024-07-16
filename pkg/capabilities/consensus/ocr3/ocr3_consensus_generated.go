@@ -19,19 +19,19 @@ type Ocr3Consensus struct {
 }
 
 type Ocr3ConsensusConfig struct {
-	// AggregationConfig corresponds to the JSON schema field "aggregation_config".
+	// AggregationConfig corresponds to the JSON schema field "aggregationConfig".
 	AggregationConfig []Ocr3ConsensusConfigAggregationConfigElem
 
-	// AggregationMethod corresponds to the JSON schema field "aggregation_method".
+	// AggregationMethod corresponds to the JSON schema field "aggregationMethod".
 	AggregationMethod Ocr3ConsensusConfigAggregationMethod
 
 	// Encoder corresponds to the JSON schema field "encoder".
 	Encoder Ocr3ConsensusConfigEncoder
 
-	// EncoderConfig corresponds to the JSON schema field "encoder_config".
+	// EncoderConfig corresponds to the JSON schema field "encoderConfig".
 	EncoderConfig Ocr3ConsensusConfigEncoderConfig
 
-	// ReportId corresponds to the JSON schema field "report_id".
+	// ReportId corresponds to the JSON schema field "reportId".
 	ReportId string
 }
 
@@ -157,20 +157,20 @@ func (j *Ocr3ConsensusConfig) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["aggregation_config"]; raw != nil && !ok {
-		return fmt.Errorf("field aggregation_config in Ocr3ConsensusConfig: required")
+	if _, ok := raw["aggregationConfig"]; raw != nil && !ok {
+		return fmt.Errorf("field aggregationConfig in Ocr3ConsensusConfig: required")
 	}
-	if _, ok := raw["aggregation_method"]; raw != nil && !ok {
-		return fmt.Errorf("field aggregation_method in Ocr3ConsensusConfig: required")
+	if _, ok := raw["aggregationMethod"]; raw != nil && !ok {
+		return fmt.Errorf("field aggregationMethod in Ocr3ConsensusConfig: required")
 	}
 	if _, ok := raw["encoder"]; raw != nil && !ok {
 		return fmt.Errorf("field encoder in Ocr3ConsensusConfig: required")
 	}
-	if _, ok := raw["encoder_config"]; raw != nil && !ok {
-		return fmt.Errorf("field encoder_config in Ocr3ConsensusConfig: required")
+	if _, ok := raw["encoderConfig"]; raw != nil && !ok {
+		return fmt.Errorf("field encoderConfig in Ocr3ConsensusConfig: required")
 	}
-	if _, ok := raw["report_id"]; raw != nil && !ok {
-		return fmt.Errorf("field report_id in Ocr3ConsensusConfig: required")
+	if _, ok := raw["reportId"]; raw != nil && !ok {
+		return fmt.Errorf("field reportId in Ocr3ConsensusConfig: required")
 	}
 	type Plain Ocr3ConsensusConfig
 	var plain Plain

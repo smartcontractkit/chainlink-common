@@ -55,7 +55,7 @@ func (*{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability) private() {}
     {{- range $fieldName, $type := .Outputs }}
         {{- if $type.IsPrimitive }}
 func (c *{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability) {{$fieldName}}() workflows.CapabilityDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
-    return workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapabilityDefinition, "{{$fieldName}}")
+    return workflows.AccessField[{{$value.Name}}, {{Repeat "[]" $type.NumSlice}}{{$type.Type}}](c.CapabilityDefinition, "{{$fieldName}}")
 }
         {{- else }}
 func (c *{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability) {{$fieldName}}() {{ $type.Type }}Capability {

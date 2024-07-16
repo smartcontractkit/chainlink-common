@@ -18,6 +18,9 @@ import (
 // - If randomly chosen, low chance of off-by-one ids being valid
 // - Is not specific to any chain, e.g. [32]byte is not fully supported on starknet etc
 // - Avoids any possible encoding/copypasta issues e.g. UUIDs which can convert to [32]byte in multiple different ways
+//
+// It is recommended not to use 0 as a stream ID to avoid confusion with
+// uninitialized values
 type StreamID = uint32
 
 type LifeCycleStage string
@@ -177,7 +180,7 @@ func (a *Aggregator) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	return fmt.Errorf("invalid JSON value for Aggregator, expected number or string: %s", data)
+	return fmt.Errorf("invalid JSON value for Aggregator, expected number or string, got: '%s'", data)
 }
 
 type ReportInfo struct {
@@ -187,17 +190,23 @@ type ReportInfo struct {
 
 type Transmitter ocr3types.ContractTransmitter[ReportInfo]
 
-// QUESTION: Do we also want to include an (optional) designated verifier
-// address, i.e. the only address allowed to verify reports from this channel
-// https://smartcontract-it.atlassian.net/browse/MERC-3492
+type Stream struct {
+	// ID is the ID of the stream to be observed
+	StreamID StreamID `json:"streamID"`
+	// Aggregator is the method used by consensus protocol to aggregate
+	// multiple stream observations e.g. "median", "mode" or other more exotic
+	// methods
+	Aggregator Aggregator `json:"aggregator"`
+}
+
 type ChannelDefinition struct {
+	// ReportFormat controls the output format of the report. It might be a
+	// different chain target, different report format etc. Custom logic can be
+	// implemented for each report format.
 	ReportFormat ReportFormat `json:"reportFormat"`
-	// StreamIDs contains a list of streams to be observed for this channel.
-	StreamIDs []StreamID `json:"streamIDs"`
-	// Aggregators contains a list of aggregator methods used for each stream
-	// e.g. "median", "mode" or other more exotic methods.
-	// StreamIDs and Aggregators must have the same length.
-	Aggregators []Aggregator `json:"aggregators"`
+	// Streams is the list of streams to be observed and aggregated
+	// by the protocol.
+	Streams []Stream `json:"streams"`
 	// Opts contains configuration data for use in report generation
 	// for this channel, e.g. feed ID, expiry window, USD base fee etc
 	//
@@ -212,19 +221,11 @@ func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
 	if a.ReportFormat != b.ReportFormat {
 		return false
 	}
-	if len(a.StreamIDs) != len(b.StreamIDs) {
+	if len(a.Streams) != len(b.Streams) {
 		return false
 	}
-	if len(a.Aggregators) != len(b.Aggregators) {
-		return false
-	}
-	for i, streamID := range a.StreamIDs {
-		if streamID != b.StreamIDs[i] {
-			return false
-		}
-	}
-	for i, aggregator := range a.Aggregators {
-		if aggregator != b.Aggregators[i] {
+	for i, strm := range a.Streams {
+		if strm != b.Streams[i] {
 			return false
 		}
 	}
@@ -271,6 +272,8 @@ func formatJSON(input []byte) ([]byte, error) {
 
 type ChannelDefinitions map[ChannelID]ChannelDefinition
 
+// It is recommended not to use 0 as a channel ID to avoid confusion with
+// uninitialized values
 type ChannelID = uint32
 
 type ChannelDefinitionCache interface {

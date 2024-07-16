@@ -13,27 +13,18 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 {
   "0": {
     "reportFormat": "json",
-    "streamIDs": [
-      0,
-      1
-    ],
-    "aggregators": [
-      "median",
-      "mode"
+    "streams": [
+	  {"streamID": 1, "aggregator": "median"},
+	  {"streamID": 2, "aggregator": "mode"}
     ],
     "opts": null
   },
   "1": {
     "reportFormat": "evm_premium_legacy",
-    "streamIDs": [
-      0,
-      1,
-      2
-    ],
-    "aggregators": [
-      "median",
-      "median",
-      "quote"
+    "streams": [
+	  {"streamID": 1, "aggregator": "median"},
+	  {"streamID": 2, "aggregator": "median"},
+	  {"streamID": 3, "aggregator": "quote"}
     ],
     "opts": {
       "expirationWindow": 86400,
@@ -51,21 +42,19 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 
 	assert.JSONEq(t, inputJSON, string(marshaledJSON))
 
-	assert.Equal(t, `{"0":{"reportFormat":"json","streamIDs":[0,1],"aggregators":["median","mode"],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streamIDs":[0,1,2],"aggregators":["median","median","quote"],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
+	assert.Equal(t, `{"0":{"reportFormat":"json","streams":[{"streamID":1,"aggregator":"median"},{"streamID":2,"aggregator":"mode"}],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streams":[{"streamID":1,"aggregator":"median"},{"streamID":2,"aggregator":"median"},{"streamID":3,"aggregator":"quote"}],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
 }
 
 func Test_ChannelDefinition_Equals(t *testing.T) {
 	t.Run("different ReportFormat", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         nil,
 		}
 		b := ChannelDefinition{
 			ReportFormat: ReportFormatEVMPremiumLegacy,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         nil,
 		}
 		assert.False(t, a.Equals(b))
@@ -73,14 +62,12 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 	t.Run("different StreamIDs", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         nil,
 		}
 		b := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 2},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {2, AggregatorMode}},
 			Opts:         nil,
 		}
 		assert.False(t, a.Equals(b))
@@ -88,14 +75,12 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 	t.Run("different Aggregators", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         nil,
 		}
 		b := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorQuote},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorQuote}},
 			Opts:         nil,
 		}
 		assert.False(t, a.Equals(b))
@@ -103,14 +88,12 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 	t.Run("different Opts", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         nil,
 		}
 		b := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         []byte{0x01},
 		}
 		assert.False(t, a.Equals(b))
@@ -118,14 +101,12 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 	t.Run("equal", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         nil,
 		}
 		b := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
-			StreamIDs:    []StreamID{0, 1},
-			Aggregators:  []Aggregator{AggregatorMedian, AggregatorMode},
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
 			Opts:         nil,
 		}
 		assert.True(t, a.Equals(b))

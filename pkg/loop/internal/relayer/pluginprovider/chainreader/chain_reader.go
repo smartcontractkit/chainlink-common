@@ -446,6 +446,8 @@ func confidenceToProto(confidenceLevel primitives.ConfidenceLevel) (pb.Confidenc
 		return pb.Confidence_Finalized, nil
 	case primitives.Unconfirmed:
 		return pb.Confidence_Unconfirmed, nil
+	case primitives.Latest:
+		return pb.Confidence_Latest, nil
 	default:
 		return -1, fmt.Errorf("invalid confidence level %s", confidenceLevel)
 	}
@@ -643,6 +645,8 @@ func confidenceFromProto(pbConfidence pb.Confidence) (primitives.ConfidenceLevel
 		return primitives.Finalized, nil
 	case pb.Confidence_Unconfirmed:
 		return primitives.Unconfirmed, nil
+	case pb.Confidence_Latest:
+		return primitives.Latest, nil
 	default:
 		return "", fmt.Errorf("invalid pb confidence level: %d", pbConfidence)
 	}

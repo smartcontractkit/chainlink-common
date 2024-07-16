@@ -55,6 +55,7 @@ type ConfidenceLevel string
 const (
 	Finalized   ConfidenceLevel = "finalized"
 	Unconfirmed ConfidenceLevel = "unconfirmed"
+	Latest      ConfidenceLevel = "latest"
 )
 
 // Confidence is a primitive of KeyFilter that filters search to results that have a certain level of finalization.

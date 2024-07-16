@@ -61,6 +61,29 @@ func RunChainReaderInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfac
 func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {
 	tests := []testcase[T]{
 		{
+			name: "Gets the latest value using nil block number",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				firstItem := CreateTestStruct(0, tester)
+				tester.SetTestStructLatestValue(t, &firstItem)
+				secondItem := CreateTestStruct(1, tester)
+				tester.SetTestStructLatestValue(t, &secondItem)
+
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				actual := &TestStruct{}
+				params := &LatestParams{I: 1}
+				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodTakingLatestParamsReturningTestStruct, primitives.Latest, params, actual))
+				assert.Equal(t, &firstItem, actual)
+
+				params.I = 2
+				actual = &TestStruct{}
+				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodTakingLatestParamsReturningTestStruct, primitives.Latest, params, actual))
+				assert.Equal(t, &secondItem, actual)
+			},
+		},
+		{
 			name: "Gets the latest value",
 			test: func(t T) {
 				ctx := tests.Context(t)

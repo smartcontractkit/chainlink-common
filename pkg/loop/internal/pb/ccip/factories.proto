@@ -21,7 +21,6 @@ service ExecutionCustomHandlers {
     rpc NewTokenDataReader(NewTokenDataRequest) returns (NewTokenDataResponse) {}
     rpc NewTokenPoolBatchedReader(NewTokenPoolBatchedReaderRequest) returns (NewTokenPoolBatchedReaderResponse) {}
     rpc SourceNativeToken(SourceNativeTokenRequest) returns (SourceNativeTokenResponse) {}
-    rpc NewChainWriter(NewChainWriterRequest) returns (NewChainWriterResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
@@ -179,17 +178,4 @@ message NewOffRampReadersRequest {
 // [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPCommitProvider.NewOffRampReaders]
 message NewOffRampReadersResponse {
     repeated int32 offramp_readers_service_ids = 1;
-}
-
-// TODO: what is the Request object format
-// NewChainWriterRequest is a gRPC adapter for the input arguments of
-// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewChainWriter]
-message NewChainWriterRequest {
-}
-
-// TODO: what is the Response object format
-// NewChainWriterResponse is a gRPC adapter for the output arguments of
-// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewChainWriter]
-// It contains the id of the created token data reader service that was created
-message NewChainWriterResponse {
 }

@@ -159,19 +159,6 @@ func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context, offR
 	return tokenPool, nil
 }
 
-// TODO: Should we create a NewChainWriterGRPCClient and NewChainWriterGRPCServer in ccip/ or
-// use the /relayer/pluginprovider/chain_writer.go?
-func (e *ExecProviderClient) NewChainWriter(ctx context.Context) (types.ChainWriter, error) {
-	_, err := e.grpcClient.NewChainWriter(ctx, &ccippb.NewChainWriterRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	cw := NewChainWriterGRPCClient()
-
-	return cw
-}
-
 // SourceNativeToken implements types.CCIPExecProvider.
 func (e *ExecProviderClient) SourceNativeToken(ctx context.Context, addr cciptypes.Address) (cciptypes.Address, error) {
 	// unlike the other methods, this one does not create a new resource, so we do not

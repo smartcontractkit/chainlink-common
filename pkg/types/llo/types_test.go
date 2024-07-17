@@ -14,17 +14,17 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
   "0": {
     "reportFormat": "json",
     "streams": [
-	  {"streamID": 1, "aggregator": "median"},
-	  {"streamID": 2, "aggregator": "mode"}
+	  {"streamId": 1, "aggregator": "median"},
+	  {"streamId": 2, "aggregator": "mode"}
     ],
     "opts": null
   },
   "1": {
     "reportFormat": "evm_premium_legacy",
     "streams": [
-	  {"streamID": 1, "aggregator": "median"},
-	  {"streamID": 2, "aggregator": "median"},
-	  {"streamID": 3, "aggregator": "quote"}
+	  {"streamId": 1, "aggregator": "median"},
+	  {"streamId": 2, "aggregator": "median"},
+	  {"streamId": 3, "aggregator": "quote"}
     ],
     "opts": {
       "expirationWindow": 86400,
@@ -42,7 +42,7 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 
 	assert.JSONEq(t, inputJSON, string(marshaledJSON))
 
-	assert.Equal(t, `{"0":{"reportFormat":"json","streams":[{"streamID":1,"aggregator":"median"},{"streamID":2,"aggregator":"mode"}],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streams":[{"streamID":1,"aggregator":"median"},{"streamID":2,"aggregator":"median"},{"streamID":3,"aggregator":"quote"}],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
+	assert.Equal(t, `{"0":{"reportFormat":"json","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"mode"}],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"median"},{"streamId":3,"aggregator":"quote"}],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
 }
 
 func Test_ChannelDefinition_Equals(t *testing.T) {

@@ -192,7 +192,7 @@ type Transmitter ocr3types.ContractTransmitter[ReportInfo]
 
 type Stream struct {
 	// ID is the ID of the stream to be observed
-	StreamID StreamID `json:"streamID"`
+	StreamID StreamID `json:"streamId"`
 	// Aggregator is the method used by consensus protocol to aggregate
 	// multiple stream observations e.g. "median", "mode" or other more exotic
 	// methods

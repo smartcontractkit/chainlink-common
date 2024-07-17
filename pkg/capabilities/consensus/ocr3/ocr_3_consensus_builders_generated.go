@@ -58,6 +58,25 @@ func (c *ocr3ConsensusCapability) WorkflowExecutionID() workflows.CapabilityDefi
     return workflows.AccessField[SignedReport, string](c.CapabilityDefinition, "WorkflowExecutionID")
 }
 
+type simpleOcr3ConsensusCapability struct {
+    err workflows.CapabilityDefinition[bool]
+    value SignedReportValueCapability
+    workflowExecutionID workflows.CapabilityDefinition[string]
+}
+func (c *simpleOcr3ConsensusCapability) Err() workflows.CapabilityDefinition[bool] {
+    return c.err
+}
+func (c *simpleOcr3ConsensusCapability) Value() SignedReportValueCapability {
+    return c.value
+}
+func (c *simpleOcr3ConsensusCapability) WorkflowExecutionID() workflows.CapabilityDefinition[string] {
+    return c.workflowExecutionID
+}
+
+func (c *simpleOcr3ConsensusCapability) private() {}
+
+
+
 type SignedReportValueCapability interface {
     workflows.CapabilityDefinition[SignedReportValue]
     Underlying() SignedReportValueUnderlyingCapability
@@ -74,6 +93,17 @@ func (c *signedReportValueCapability) Underlying() SignedReportValueUnderlyingCa
      return &signedReportValueUnderlyingCapability{ CapabilityDefinition: workflows.AccessField[SignedReportValue, SignedReportValueUnderlying](c.CapabilityDefinition, "Underlying")}
 }
 
+type simpleSignedReportValueCapability struct {
+    underlying SignedReportValueUnderlyingCapability
+}
+func (c *simpleSignedReportValueCapability) Underlying() SignedReportValueUnderlyingCapability {
+    return c.underlying
+}
+
+func (c *simpleSignedReportValueCapability) private() {}
+
+
+
 type SignedReportValueUnderlyingCapability interface {
     workflows.CapabilityDefinition[SignedReportValueUnderlying]
     private()
@@ -85,6 +115,13 @@ type signedReportValueUnderlyingCapability struct {
 
 
 func (*signedReportValueUnderlyingCapability) private() {}
+
+type simpleSignedReportValueUnderlyingCapability struct {
+}
+
+func (c *simpleSignedReportValueUnderlyingCapability) private() {}
+
+
 
 type Ocr3ConsensusCapabilityInput struct {
     Observations workflows.CapabilityDefinition[[]streams.Feed]

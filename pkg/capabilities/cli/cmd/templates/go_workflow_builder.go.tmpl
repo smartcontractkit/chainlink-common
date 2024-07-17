@@ -69,6 +69,30 @@ func (c *{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}Capability) {{$fieldName}
 }
         {{- end }}
     {{- end }}
+
+type simple{{$key|ConvertToBaseIfFirstOutput}}Capability struct {
+    {{- range $fieldName, $type := .Outputs }}
+        {{- if $type.IsPrimitive }}
+    {{$fieldName|LowerFirst}} workflows.CapabilityDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+        {{- else }}
+    {{$fieldName|LowerFirst}} {{Repeat "[]" $type.NumSlice}}{{ $type.Type }}Capability
+        {{- end }}
+    {{- end }}
+}
+
+ {{- range $fieldName, $type := .Outputs }}
+        {{- if $type.IsPrimitive }}
+func (c *simple{{$key|ConvertToBaseIfFirstOutput}}Capability) {{$fieldName}}() workflows.CapabilityDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
+        {{- else }}
+func (c *simple{{$key|ConvertToBaseIfFirstOutput}}Capability) {{$fieldName}}() {{ $type.Type }}Capability {
+        {{- end }}
+    return c.{{$fieldName|LowerFirst}}
+}
+    {{- end }}
+
+func (c *simple{{$key|ConvertToBaseIfFirstOutput}}Capability) private() {}
+
+
 {{ end }}
 
 {{- if .Input }}

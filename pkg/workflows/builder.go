@@ -35,6 +35,12 @@ func ListOf[O any](capabilities ...CapabilityDefinition[O]) CapabilityListDefini
 	return &impl
 }
 
+func HardCodedDefinition[O any](o O) CapabilityDefinition[O] {
+	return &capabilityDefinitionImpl[O]{ref: o}
+}
+
+// ToListDefinition TODO think if this is actually broken, what if the definitions were built up, would this still work?
+// also what about hard-coded?
 func ToListDefinition[O any](c CapabilityDefinition[[]O]) CapabilityListDefinition[O] {
 	return &singleCapabilityList[O]{CapabilityDefinition: c}
 }

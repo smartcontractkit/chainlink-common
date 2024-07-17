@@ -65,6 +65,37 @@ func (c *streamsTriggerCapability) Signatures() workflows.CapabilityDefinition[[
     return workflows.AccessField[Feed, []string](c.CapabilityDefinition, "Signatures")
 }
 
+type simpleStreamsTriggerCapability struct {
+    benchmarkPrice workflows.CapabilityDefinition[string]
+    feedId FeedIdCapability
+    fullReport workflows.CapabilityDefinition[string]
+    observationTimestamp workflows.CapabilityDefinition[int]
+    reportContext workflows.CapabilityDefinition[string]
+    signatures workflows.CapabilityDefinition[[]string]
+}
+func (c *simpleStreamsTriggerCapability) BenchmarkPrice() workflows.CapabilityDefinition[string] {
+    return c.benchmarkPrice
+}
+func (c *simpleStreamsTriggerCapability) FeedId() FeedIdCapability {
+    return c.feedId
+}
+func (c *simpleStreamsTriggerCapability) FullReport() workflows.CapabilityDefinition[string] {
+    return c.fullReport
+}
+func (c *simpleStreamsTriggerCapability) ObservationTimestamp() workflows.CapabilityDefinition[int] {
+    return c.observationTimestamp
+}
+func (c *simpleStreamsTriggerCapability) ReportContext() workflows.CapabilityDefinition[string] {
+    return c.reportContext
+}
+func (c *simpleStreamsTriggerCapability) Signatures() workflows.CapabilityDefinition[[]string] {
+    return c.signatures
+}
+
+func (c *simpleStreamsTriggerCapability) private() {}
+
+
+
 type FeedIdCapability interface {
     workflows.CapabilityDefinition[FeedId]
     private()
@@ -76,3 +107,10 @@ type feedIdCapability struct {
 
 
 func (*feedIdCapability) private() {}
+
+type simpleFeedIdCapability struct {
+}
+
+func (c *simpleFeedIdCapability) private() {}
+
+

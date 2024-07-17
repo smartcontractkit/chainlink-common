@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams/streams@1.0.0",
+  "description": "Not Streams Trigger",
+  "$defs": {
+    "Feed": {
+      "type": "object",
+      "properties": {
+        "fullReport": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Full report represented as bytes encoded as base64 string."
+        },
+        "reportContext": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Report context represented as bytes encoded as base64 string. This is required to validate the signatures."
+        },
+        "signatures": {
+          "type": "array",
+          "description": "Signature over full report and report context represented as bytes encoded as base64 string.",
+          "items": {
+            "type": "string",
+            "contentEncoding": "base64"
+          },
+          "minItems": 1
+        },
+        "Price": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "This value is extracted from the fullReport. Benchmark price represented as bytes encoded as base64 string."
+        },
+        "Timestamp": {
+          "type": "integer",
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "description": "This value is extracted from the fullReport. A unix timestamp represented as an int64 value. Timestamp is captured at the time of report creation."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "fullReport",
+        "reportContext",
+        "signatures",
+        "Price",
+        "Timestamp"
+      ]
+    }
+  },
+  "properties": {
+    "config": {
+      "properties": {
+        "maxFrequencyMs": {
+          "type": "integer",
+          "description": "The interval in seconds after which a new trigger event is generated.",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["feedIds", "maxFrequencyMs"]
+    },
+    "outputs": {
+      "items": {
+        "$ref": "#/$defs/Feed"
+      },
+      "additionalProperties": false,
+      "type": "array"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	chainwriter "github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chain_writer"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
@@ -36,7 +37,36 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 		return workflows.WorkflowSpec{}, err
 	}
 
-	// TODO ideally some of these will have references so the type can be some interface
+	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
+
+	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter); err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
+	return workflow.Spec(), nil
+}
+
+func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, error) {
+	conf := NotStreamsConfig{}
+	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
+	workflow := workflows.NewWorkflow(conf.Workflow)
+	notStreamsTrigger, err := notstreams.NewNotstreamsTriggerCapability(workflow, "notstreams", *conf.Streams)
+	if err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
+	_ = notStreamsTrigger
+	notStreamsList := workflows.ListOf[streams.Feed]( /*TODO*/ )
+	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: notStreamsList}
+
+	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
+	if err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
 	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
 
 	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter); err != nil {
@@ -138,6 +168,13 @@ func TestBuilder_ValidSpec(t *testing.T) {
 type Config struct {
 	Workflow    workflows.NewWorkflowParams
 	Streams     *streams.StreamsTriggerConfig
+	Ocr         *ocr3.Ocr3ConsensusConfig
+	ChainWriter *chainwriter.ChainwriterTargetConfig
+}
+
+type NotStreamsConfig struct {
+	Workflow    workflows.NewWorkflowParams
+	Streams     *notstreams.NotstreamsTriggerConfig
 	Ocr         *ocr3.Ocr3ConsensusConfig
 	ChainWriter *chainwriter.ChainwriterTargetConfig
 }

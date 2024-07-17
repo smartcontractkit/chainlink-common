@@ -35,4 +35,33 @@ type TxMeta struct {
 	BlockNumber             uint64
 	TxHash                  string
 	LogIndex                uint64
+	Finalized               FinalizedStatus
 }
+
+func (t *TxMeta) IsFinalized() bool {
+	return t.Finalized == FinalizedStatusFinalized
+}
+
+// WithFinalityStatus accepts finalizedBlockNumber and based on that sets the Finalized status
+// It's immutable so it creates new struct instead of in-place modification of the existing one
+func (t *TxMeta) WithFinalityStatus(finalizedBlockNumber uint64) TxMeta {
+	txMeta := TxMeta{
+		BlockTimestampUnixMilli: t.BlockTimestampUnixMilli,
+		BlockNumber:             t.BlockNumber,
+		TxHash:                  t.TxHash,
+		LogIndex:                t.LogIndex,
+		Finalized:               FinalizedStatusNotFinalized,
+	}
+	if txMeta.BlockNumber <= finalizedBlockNumber {
+		txMeta.Finalized = FinalizedStatusFinalized
+	}
+	return txMeta
+}
+
+type FinalizedStatus int
+
+const (
+	FinalizedStatusUnknown FinalizedStatus = iota
+	FinalizedStatusFinalized
+	FinalizedStatusNotFinalized
+)

@@ -170,7 +170,6 @@ message ExecutionStateChangeWithTxMeta {
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/ExecutionStateChange]
 message ExecutionStateChange {
     uint64 seq_num = 1;
-    bool finalized = 2;
 }
 
 // ExecOffchainConfig is a gRPC adapter for the struct

@@ -1,4 +1,4 @@
-# LOOP Plugins
+# LOOP Plugins [![Go Reference](https://pkg.go.dev/badge/github.com/smartcontractkit/chainlink-common/pkg/loop.svg)](https://pkg.go.dev/github.com/smartcontractkit/chainlink-common/pkg/loop)
 
 Local out of process (LOOP) plugins using [github.com/hashicorp/go-plugin](https://github.com/hashicorp/go-plugin).
 

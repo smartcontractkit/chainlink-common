@@ -9,6 +9,7 @@ import (
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 var (
@@ -47,7 +48,7 @@ func (c staticChainReader) Bind(_ context.Context, _ []types.BoundContract) erro
 	return nil
 }
 
-func (c staticChainReader) GetLatestValue(_ context.Context, contractName, method string, params, returnVal any) error {
+func (c staticChainReader) GetLatestValue(_ context.Context, contractName, method string, _ primitives.ConfidenceLevel, params, returnVal any) error {
 	if !assert.ObjectsAreEqual(contractName, c.contractName) {
 		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, contractName)
 	}
@@ -74,13 +75,17 @@ func (c staticChainReader) GetLatestValue(_ context.Context, contractName, metho
 	return nil
 }
 
+func (c staticChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	return nil, nil
+}
+
 func (c staticChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
 func (c staticChainReader) Evaluate(ctx context.Context, cr types.ContractReader) error {
 	gotLatestValue := make(map[string]any)
-	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, &c.params, &gotLatestValue)
+	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, primitives.Unconfirmed, &c.params, &gotLatestValue)
 	if err != nil {
 		return fmt.Errorf("failed to call GetLatestValue(): %w", err)
 	}

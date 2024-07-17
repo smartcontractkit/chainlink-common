@@ -18,6 +18,7 @@ type GeneratedInfo struct {
 	CapabilityType capabilities.CapabilityType
 	BaseName       string
 	RootOutput     string
+	ExtraImports   []string
 }
 
 func (g GeneratedInfo) RootType() Struct {
@@ -46,7 +47,7 @@ func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (Gene
 	pkg := node.Name.Name
 
 	rawInfo := map[string]Struct{}
-
+	var extraImports []string
 	ast.Inspect(node, func(n ast.Node) bool {
 		if ts, ok := n.(*ast.TypeSpec); ok {
 			s := Struct{
@@ -78,6 +79,16 @@ func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (Gene
 			if s.Name != "Plain" {
 				rawInfo[ts.Name.Name] = s
 			}
+		} else if imp, ok := n.(*ast.ImportSpec); ok {
+			switch imp.Path.Value {
+			case `"reflect"`, `"fmt"`, `"encoding/json"`:
+			default:
+				importStr := imp.Path.Value
+				if imp.Name != nil {
+					importStr = imp.Name.Name + " " + importStr
+				}
+				extraImports = append(extraImports, importStr)
+			}
 		}
 		return true
 	})
@@ -91,9 +102,11 @@ func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (Gene
 	var input *Struct
 	if ok {
 		inputType := inputField.Type
-		inputS := rawInfo[inputType]
-		input = &inputS
-		delete(rawInfo, inputType)
+		inputS, ok := rawInfo[inputType]
+		if ok {
+			input = &inputS
+			delete(rawInfo, inputType)
+		}
 	}
 
 	for k, _ := range rawInfo {
@@ -110,5 +123,6 @@ func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (Gene
 		BaseName:       baseName,
 		CapabilityType: tpe,
 		Input:          input,
+		ExtraImports:   extraImports,
 	}, nil
 }

@@ -1,6 +1,10 @@
 package workflows
 
-import "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+import (
+	"strconv"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+)
 
 // 1. Capability defines JSON schema for inputs and outputs of a capability.
 // Trigger: triggerOutputType := workflowBuilder.addTrigger(DataStreamsTrigger.Config{})
@@ -14,26 +18,65 @@ type Workflow struct {
 }
 
 type CapabilityDefinition[O any] interface {
-	Ref() string
-	impl() O
+	Ref() any
+	self() CapabilityDefinition[O]
+}
+
+type CapabilityListDefinition[O any] interface {
+	CapabilityDefinition[[]O]
+	Index(i int) CapabilityDefinition[O]
+}
+
+func ListOf[O any](capabilities ...CapabilityDefinition[O]) CapabilityListDefinition[O] {
+	impl := multiCapabilityList[O]{refs: make([]any, len(capabilities))}
+	for i, c := range capabilities {
+		impl.refs[i] = c.Ref()
+	}
+	return &impl
+}
+
+func ToListDefinition[O any](c CapabilityDefinition[[]O]) CapabilityListDefinition[O] {
+	return &singleCapabilityList[O]{CapabilityDefinition: c}
+}
+
+type multiCapabilityList[O any] struct {
+	refs []any
+}
+
+func (c *multiCapabilityList[O]) Index(i int) CapabilityDefinition[O] {
+	return &capabilityDefinitionImpl[O]{ref: c.refs[i]}
+}
+
+func (c *multiCapabilityList[O]) Ref() any {
+	return c.refs
+}
+
+func (c *multiCapabilityList[O]) self() CapabilityDefinition[[]O] {
+	return c
+}
+
+type singleCapabilityList[O any] struct {
+	CapabilityDefinition[[]O]
+}
+
+func (s singleCapabilityList[O]) Index(i int) CapabilityDefinition[O] {
+	return &capabilityDefinitionImpl[O]{ref: s.CapabilityDefinition.Ref().(string) + "." + strconv.FormatInt(int64(i), 10)}
 }
 
 type Step[O any] struct {
-	Ref        string
 	Definition StepDefinition
 }
 
 type capabilityDefinitionImpl[O any] struct {
-	ref string
+	ref any
 }
 
-func (c *capabilityDefinitionImpl[O]) Ref() string {
+func (c *capabilityDefinitionImpl[O]) Ref() any {
 	return c.ref
 }
 
-func (c *capabilityDefinitionImpl[O]) impl() O {
-	var o O
-	return o
+func (c *capabilityDefinitionImpl[O]) self() CapabilityDefinition[O] {
+	return c
 }
 
 type NewWorkflowParams struct {
@@ -67,12 +110,12 @@ func AddStep[O any](w *Workflow, step Step[O]) (CapabilityDefinition[O], error) 
 		w.spec.Targets = append(w.spec.Targets, stepDefinition)
 	}
 
-	return &capabilityDefinitionImpl[O]{ref: step.Ref}, nil
+	return &capabilityDefinitionImpl[O]{ref: step.Definition.Ref}, nil
 }
 
 // AccessField is meant to be used by generated code
 func AccessField[I, O any](c CapabilityDefinition[I], fieldName string) CapabilityDefinition[O] {
-	return &capabilityDefinitionImpl[O]{ref: c.Ref() + "." + fieldName}
+	return &capabilityDefinitionImpl[O]{ref: c.Ref().(string) + "." + fieldName}
 }
 
 func (w Workflow) Spec() WorkflowSpec {

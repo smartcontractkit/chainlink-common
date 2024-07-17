@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chain_writer/chain_writer@1.0.0",
+  "description": "Writes to evm chain for now...",
+  "properties": {
+    "config": {
+      "properties": {
+        "address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "The address in the format 0x followed by 40 characters."
+        },
+        "deltaStage": {
+          "type": "string",
+          "pattern": "^[0-9]+[smhd]$",
+          "description": "The delta stage which must be a number followed by a time symbol (s for seconds, m for minutes, h for hours, d for days)."
+        },
+        "schedule": {
+          "type": "string",
+          "enum": ["oneAtATime"],
+          "description": "The schedule which must be the string 'oneAtATime'."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "address",
+        "deltaStage",
+        "schedule"
+      ]
+    },
+    "inputs": {
+      "properties": {
+        "signed_report": {
+          "$ref": "../../consensus/ocr3/ocr3_consensus-schema.json#/$defs/SignedReport"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["signed_report"]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config", "inputs"]
+}

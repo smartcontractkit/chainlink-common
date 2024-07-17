@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
@@ -17,39 +18,35 @@ import (
 
 func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	conf := Config{}
-	if err := json.Unmarshal(rawConfig, &conf); err != nil {
+	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
 		return workflows.WorkflowSpec{}, err
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger, err := streams.NewStreamsTriggerCapability(workflow, "streams", conf.Streams)
+	streamsTrigger, err := streams.NewStreamsTriggerCapability(workflow, "streams", *conf.Streams)
 	if err != nil {
 		return workflows.WorkflowSpec{}, err
 	}
 
-	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsTrigger}
+	streamsList := workflows.ListOf[streams.Feed](streamsTrigger)
+	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsList}
 
-	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, conf.Ocr)
+	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
 	if err != nil {
 		return workflows.WorkflowSpec{}, err
 	}
 
 	// TODO ideally some of these will have references so the type can be some interface
-	input := chainwriter.ChainwriterTargetCapabilityInput{
-		Err: consensus.Err(),
-		// I'm assuming this contains the signature...
-		Value:               consensus.Value(),
-		WorkflowExecutionID: consensus.WorkflowExecutionID(),
-	}
+	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
 
-	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, conf.ChainWriter); err != nil {
+	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter); err != nil {
 		return workflows.WorkflowSpec{}, err
 	}
 
 	return workflow.Spec(), nil
 }
 
-//go:embed testdata/fixtures/workflows/sepolia.json
+//go:embed testdata/fixtures/workflows/sepolia.yaml
 var sepolia string
 
 func TestBuilder_ValidSpec(t *testing.T) {
@@ -119,7 +116,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 				Inputs: workflows.StepInputs{
 					Mapping: map[string]any{"Err": "$(offchain_reporting.outputs.Err)", "Value": "$(offchain_reporting.outputs.Value)", "WorkflowExecutionID": "$(offchain_reporting.outputs.WorkflowExecutionID)"},
 				},
-				Config:         map[string]any{"Address": "0x1234567890123456789012345678901234567890"},
+				Config: map[string]any{
+					"Address":    "0x1234567890123456789012345678901234567890",
+					"DeltaStage": "5s",
+					"Schedule":   "oneAtATime",
+				},
 				CapabilityType: capabilities.CapabilityTypeTarget,
 			},
 		},
@@ -136,7 +137,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 
 type Config struct {
 	Workflow    workflows.NewWorkflowParams
-	Streams     streams.StreamsTriggerConfig
-	Ocr         ocr3.Ocr3ConsensusConfig
-	ChainWriter chainwriter.ChainwriterTargetConfig
+	Streams     *streams.StreamsTriggerConfig
+	Ocr         *ocr3.Ocr3ConsensusConfig
+	ChainWriter *chainwriter.ChainwriterTargetConfig
 }

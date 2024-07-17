@@ -20,7 +20,7 @@ var Dir string
 
 // CapabilitySchemaFilePattern is used to extract the package name from the file path.
 // This is used as the package name for the generated Go types.
-var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|consensus|target)\.json$`)
+var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|consensus|target)-schema\.json$`)
 
 // reg := regexp.MustCompile(`([^/]+)_(trigger|action)\.json$`)
 
@@ -68,9 +68,14 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 		return errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
 	}
 
+	cfg, err := ConfigFromSchemas(schemaPaths)
+	if err != nil {
+		return err
+	}
+
 	for _, schemaPath := range schemaPaths {
 		allFiles := map[string]string{}
-		file, content, rootType, capabilityTypeRaw, err := TypesFromJSONSchema(schemaPath)
+		file, content, rootType, capabilityTypeRaw, err := TypesFromJSONSchema(schemaPath, cfg)
 		if err != nil {
 			return err
 		}
@@ -112,30 +117,39 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 	return nil
 }
 
-// TypesFromJSONSchema generates Go types from a JSON schema file.
-func TypesFromJSONSchema(schemaFilePath string) (outputFilePath, outputContents, rootType, capabilityType string, err error) {
-	jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
-	if err != nil {
-		return "", "", "", "", errors.New(fmt.Sprintf("error reading schema file %v:\n\t- %v\n\nTIP: This can happen if the supplied JSON schema is invalid. Try using https://jsonschemalint.com/#!/version/draft-07/markup/json to validate the schema.\n", schemaFilePath, err))
-	}
+func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, error) {
+	cfg := generator.Config{Warner: func(message string) { fmt.Printf("Warning: %s\n", message) }}
+	for _, schemaFilePath := range schemaFilePaths {
+		jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
+		if err != nil {
+			return cfg, err
+		}
+		capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
+		if len(capabilityInfo) != 3 {
+			return cfg, fmt.Errorf("invalid schema file path %v", schemaFilePath)
+		}
+		packageName := capabilityInfo[1]
+		capabilityType := capabilityInfo[2]
+		outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
+		rootType := capitalize(packageName) + capitalize(capabilityType)
 
+		cfg.SchemaMappings = append(cfg.SchemaMappings, generator.SchemaMapping{
+			SchemaID:    jsonSchema.ID,
+			PackageName: path.Dir(jsonSchema.ID[8:]),
+			RootType:    rootType,
+			OutputName:  outputName,
+		})
+	}
+	return cfg, nil
+}
+
+// TypesFromJSONSchema generates Go types from a JSON schema file.
+func TypesFromJSONSchema(schemaFilePath string, cfg generator.Config) (outputFilePath, outputContents, rootType, capabilityType string, err error) {
 	capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
 	packageName := capabilityInfo[1]
 	capabilityType = capabilityInfo[2]
-	outputName := strings.Replace(schemaFilePath, capabilityType+".json", capabilityType+"_generated.go", 1)
+	outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
 	rootType = capitalize(packageName) + capitalize(capabilityType)
-
-	cfg := generator.Config{
-		Warner: func(message string) { fmt.Printf("Warning: %s\n", message) },
-		SchemaMappings: []generator.SchemaMapping{
-			{
-				SchemaID:    jsonSchema.ID,
-				PackageName: packageName,
-				RootType:    rootType,
-				OutputName:  outputName,
-			},
-		},
-	}
 
 	gen, err := generator.New(cfg)
 	if err != nil {

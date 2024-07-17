@@ -5,8 +5,68 @@ package streams
 import "encoding/json"
 import "fmt"
 
+type Feed struct {
+	// This value is extracted from the fullReport. Benchmark price represented as
+	// bytes encoded as base64 string.
+	BenchmarkPrice string
+
+	// FeedId corresponds to the JSON schema field "feedId".
+	FeedId FeedId
+
+	// Full report represented as bytes encoded as base64 string.
+	FullReport string
+
+	// This value is extracted from the fullReport. A unix timestamp represented as an
+	// int64 value. Timestamp is captured at the time of report creation.
+	ObservationTimestamp int
+
+	// Report context represented as bytes encoded as base64 string. This is required
+	// to validate the signatures.
+	ReportContext string
+
+	// Signature over full report and report context represented as bytes encoded as
+	// base64 string.
+	Signatures []string
+}
+
 // The ID of the data feed.
 type FeedId string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Feed) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["benchmarkPrice"]; raw != nil && !ok {
+		return fmt.Errorf("field benchmarkPrice in Feed: required")
+	}
+	if _, ok := raw["feedId"]; raw != nil && !ok {
+		return fmt.Errorf("field feedId in Feed: required")
+	}
+	if _, ok := raw["fullReport"]; raw != nil && !ok {
+		return fmt.Errorf("field fullReport in Feed: required")
+	}
+	if _, ok := raw["observationTimestamp"]; raw != nil && !ok {
+		return fmt.Errorf("field observationTimestamp in Feed: required")
+	}
+	if _, ok := raw["reportContext"]; raw != nil && !ok {
+		return fmt.Errorf("field reportContext in Feed: required")
+	}
+	if _, ok := raw["signatures"]; raw != nil && !ok {
+		return fmt.Errorf("field signatures in Feed: required")
+	}
+	type Plain Feed
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	if plain.Signatures != nil && len(plain.Signatures) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "signatures", 1)
+	}
+	*j = Feed(plain)
+	return nil
+}
 
 // Streams Trigger
 type StreamsTrigger struct {
@@ -14,7 +74,7 @@ type StreamsTrigger struct {
 	Config StreamsTriggerConfig
 
 	// Outputs corresponds to the JSON schema field "outputs".
-	Outputs []StreamsTriggerOutputsElem
+	Outputs []Feed
 }
 
 type StreamsTriggerConfig struct {
@@ -47,66 +107,6 @@ func (j *StreamsTriggerConfig) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("field %s length: must be >= %d", "feedIds", 1)
 	}
 	*j = StreamsTriggerConfig(plain)
-	return nil
-}
-
-type StreamsTriggerOutputsElem struct {
-	// This value is extracted from the fullReport. Benchmark price represented as
-	// bytes encoded as base64 string.
-	BenchmarkPrice string
-
-	// FeedId corresponds to the JSON schema field "feedId".
-	FeedId FeedId
-
-	// Full report represented as bytes encoded as base64 string.
-	FullReport string
-
-	// This value is extracted from the fullReport. A unix timestamp represented as an
-	// int64 value. Timestamp is captured at the time of report creation.
-	ObservationTimestamp int
-
-	// Report context represented as bytes encoded as base64 string. This is required
-	// to validate the signatures.
-	ReportContext string
-
-	// Signature over full report and report context represented as bytes encoded as
-	// base64 string.
-	Signatures []string
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *StreamsTriggerOutputsElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["benchmarkPrice"]; raw != nil && !ok {
-		return fmt.Errorf("field benchmarkPrice in StreamsTriggerOutputsElem: required")
-	}
-	if _, ok := raw["feedId"]; raw != nil && !ok {
-		return fmt.Errorf("field feedId in StreamsTriggerOutputsElem: required")
-	}
-	if _, ok := raw["fullReport"]; raw != nil && !ok {
-		return fmt.Errorf("field fullReport in StreamsTriggerOutputsElem: required")
-	}
-	if _, ok := raw["observationTimestamp"]; raw != nil && !ok {
-		return fmt.Errorf("field observationTimestamp in StreamsTriggerOutputsElem: required")
-	}
-	if _, ok := raw["reportContext"]; raw != nil && !ok {
-		return fmt.Errorf("field reportContext in StreamsTriggerOutputsElem: required")
-	}
-	if _, ok := raw["signatures"]; raw != nil && !ok {
-		return fmt.Errorf("field signatures in StreamsTriggerOutputsElem: required")
-	}
-	type Plain StreamsTriggerOutputsElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if plain.Signatures != nil && len(plain.Signatures) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "signatures", 1)
-	}
-	*j = StreamsTriggerOutputsElem(plain)
 	return nil
 }
 

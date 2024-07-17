@@ -49,6 +49,57 @@ var transformJSON = cmp.FilterValues(func(x, y []byte) bool {
 	return out
 }))
 
+func TestTemp(t *testing.T) {
+	workflow := `name: "ccipethsep"
+owner: "0x00000000000000000000000000000000000000aa"
+triggers:
+ - id: "streams-trigger@1.0.0"
+   config:
+     maxFrequencyMs: 5000
+     feedIds:
+       - "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd"
+       - "0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d"
+       - "0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12"
+
+consensus:
+ - id: "offchain_reporting@1.0.0"
+   ref: "ccip_feeds"
+   inputs:
+     observations:
+       - "$(trigger.outputs)"
+   config:
+     report_id: "0001"
+     aggregation_method: "data_feeds"
+     aggregation_config:
+       allowedPartialStaleness: "0.5"
+       feeds:
+         "0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd":
+           deviation: "0.05"
+           heartbeat: 3600
+         "0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d":
+           deviation: "0.05"
+           heartbeat: 3600
+         "0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12":
+           deviation: "0.05"
+           heartbeat: 3600
+     encoder: "EVM"
+     encoder_config:
+       abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
+
+targets:
+ - id: "write_ethereum-testnet-sepolia@1.0.0"
+   inputs:
+     signed_report: 
+   config:
+     address: "0x680084f7347baFfb5C323c2982dfC90e04F9F918"
+     deltaStage: "45s"
+     schedule: "oneAtATime"`
+	spec := workflowSpecYaml{}
+	err := yaml.Unmarshal([]byte(workflow), &spec)
+	require.NoError(t, err)
+	fmt.Println(spec)
+}
+
 func TestWorkflowSpecMarshalling(t *testing.T) {
 	t.Parallel()
 	fixtureReader := yamlFixtureReaderBytes(t, "marshalling")

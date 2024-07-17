@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"

@@ -272,6 +272,7 @@ func makeEncoder() cbor.EncMode {
 type fakeChainReaderInterfaceTester struct {
 	interfaceTesterBase
 	impl types.ContractReader
+	cw   types.ChainWriter
 }
 
 func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
@@ -285,6 +286,14 @@ func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
 
 func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.ContractReader {
 	return it.impl
+}
+
+func (it *fakeChainReaderInterfaceTester) GetChainWriter(_ *testing.T) types.ChainWriter {
+	return it.cw
+}
+
+func (it *fakeChainReaderInterfaceTester) IncNonce() {
+	return
 }
 
 func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
@@ -340,11 +349,11 @@ type eventConfidencePair struct {
 
 type fakeChainReader struct {
 	fakeTypeProvider
-	vals     []valConfidencePair
-	triggers []eventConfidencePair
-	stored   []TestStruct
+	vals        []valConfidencePair
+	triggers    []eventConfidencePair
+	stored      []TestStruct
 	batchStored BatchCallEntry
-	lock     sync.Mutex
+	lock        sync.Mutex
 }
 
 func (f *fakeChainReader) Start(_ context.Context) error { return nil }

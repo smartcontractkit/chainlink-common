@@ -17,6 +17,10 @@ import (
 type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
 	GetChainReader(t T) types.ContractReader
+	GetChainWriter(t T) types.ChainWriter
+	// NOTE: not sure if this should be in the interface, or if it should be moved
+	// to the implementation along with waitForTransactionFinalization...
+	IncNonce()
 	// SetTestStructLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
 	// The contract should take a LatestParams as the params and return the nth TestStruct set
@@ -65,9 +69,13 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 			test: func(t T) {
 				ctx := tests.Context(t)
 				firstItem := CreateTestStruct(0, tester)
-				tester.SetTestStructLatestValue(t, &firstItem)
+
+				contracts := tester.GetBindings(t)
+				submitTransactionToCW(t, tester, firstItem, contracts[0])
+
 				secondItem := CreateTestStruct(1, tester)
-				tester.SetTestStructLatestValue(t, &secondItem)
+
+				submitTransactionToCW(t, tester, secondItem, contracts[0])
 
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))

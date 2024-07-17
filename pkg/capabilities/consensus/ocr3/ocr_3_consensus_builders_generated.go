@@ -2,9 +2,12 @@
 
 package ocr3
 
+// HERE
+
 import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
+    streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
 
 func NewOcr3ConsensusCapability(w *workflows.Workflow, ref string, input Ocr3ConsensusCapabilityInput, cfg Ocr3ConsensusConfig) (Ocr3ConsensusCapability,error) {
@@ -25,64 +28,64 @@ func NewOcr3ConsensusCapability(w *workflows.Workflow, ref string, input Ocr3Con
        },
        CapabilityType: capabilities.CapabilityTypeConsensus,
    }
-    step := workflows.Step[Ocr3ConsensusOutputs]{Ref: ref, Definition: def}
+    step := workflows.Step[SignedReport]{Definition: def}
      raw, err := workflows.AddStep(w, step)
     return &ocr3ConsensusCapability{CapabilityDefinition: raw}, err
 }
 
 
 type Ocr3ConsensusCapability interface {
-    workflows.CapabilityDefinition[Ocr3ConsensusOutputs]
-    Err() workflows.CapabilityDefinition[any]
-    Value() Ocr3ConsensusOutputsValueCapability
+    workflows.CapabilityDefinition[SignedReport]
+    Err() workflows.CapabilityDefinition[bool]
+    Value() SignedReportValueCapability
     WorkflowExecutionID() workflows.CapabilityDefinition[string]
     private()
 }
 
 type ocr3ConsensusCapability struct {
-    workflows.CapabilityDefinition[Ocr3ConsensusOutputs]
+    workflows.CapabilityDefinition[SignedReport]
 }
 
 
 func (*ocr3ConsensusCapability) private() {}
-func (c *ocr3ConsensusCapability) Err() workflows.CapabilityDefinition[any] {
-    return workflows.AccessField[Ocr3ConsensusOutputs, any](c.CapabilityDefinition, "Err")
+func (c *ocr3ConsensusCapability) Err() workflows.CapabilityDefinition[bool] {
+    return workflows.AccessField[SignedReport, bool](c.CapabilityDefinition, "Err")
 }
-func (c *ocr3ConsensusCapability) Value() Ocr3ConsensusOutputsValueCapability {
-     return &ocr3ConsensusOutputsValueCapability{ CapabilityDefinition: workflows.AccessField[Ocr3ConsensusOutputs, Ocr3ConsensusOutputsValue](c.CapabilityDefinition, "Value")}
+func (c *ocr3ConsensusCapability) Value() SignedReportValueCapability {
+     return &signedReportValueCapability{ CapabilityDefinition: workflows.AccessField[SignedReport, SignedReportValue](c.CapabilityDefinition, "Value")}
 }
 func (c *ocr3ConsensusCapability) WorkflowExecutionID() workflows.CapabilityDefinition[string] {
-    return workflows.AccessField[Ocr3ConsensusOutputs, string](c.CapabilityDefinition, "WorkflowExecutionID")
+    return workflows.AccessField[SignedReport, string](c.CapabilityDefinition, "WorkflowExecutionID")
 }
 
-type Ocr3ConsensusOutputsValueCapability interface {
-    workflows.CapabilityDefinition[Ocr3ConsensusOutputsValue]
-    Underlying() Ocr3ConsensusOutputsValueUnderlyingCapability
+type SignedReportValueCapability interface {
+    workflows.CapabilityDefinition[SignedReportValue]
+    Underlying() SignedReportValueUnderlyingCapability
     private()
 }
 
-type ocr3ConsensusOutputsValueCapability struct {
-    workflows.CapabilityDefinition[Ocr3ConsensusOutputsValue]
+type signedReportValueCapability struct {
+    workflows.CapabilityDefinition[SignedReportValue]
 }
 
 
-func (*ocr3ConsensusOutputsValueCapability) private() {}
-func (c *ocr3ConsensusOutputsValueCapability) Underlying() Ocr3ConsensusOutputsValueUnderlyingCapability {
-     return &ocr3ConsensusOutputsValueUnderlyingCapability{ CapabilityDefinition: workflows.AccessField[Ocr3ConsensusOutputsValue, Ocr3ConsensusOutputsValueUnderlying](c.CapabilityDefinition, "Underlying")}
+func (*signedReportValueCapability) private() {}
+func (c *signedReportValueCapability) Underlying() SignedReportValueUnderlyingCapability {
+     return &signedReportValueUnderlyingCapability{ CapabilityDefinition: workflows.AccessField[SignedReportValue, SignedReportValueUnderlying](c.CapabilityDefinition, "Underlying")}
 }
 
-type Ocr3ConsensusOutputsValueUnderlyingCapability interface {
-    workflows.CapabilityDefinition[Ocr3ConsensusOutputsValueUnderlying]
+type SignedReportValueUnderlyingCapability interface {
+    workflows.CapabilityDefinition[SignedReportValueUnderlying]
     private()
 }
 
-type ocr3ConsensusOutputsValueUnderlyingCapability struct {
-    workflows.CapabilityDefinition[Ocr3ConsensusOutputsValueUnderlying]
+type signedReportValueUnderlyingCapability struct {
+    workflows.CapabilityDefinition[SignedReportValueUnderlying]
 }
 
 
-func (*ocr3ConsensusOutputsValueUnderlyingCapability) private() {}
+func (*signedReportValueUnderlyingCapability) private() {}
 
 type Ocr3ConsensusCapabilityInput struct {
-    Observations workflows.CapabilityDefinition[Ocr3ConsensusInputsObservations]
+    Observations workflows.CapabilityDefinition[[]streams.Feed]
 }

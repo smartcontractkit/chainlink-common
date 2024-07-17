@@ -4,6 +4,7 @@ package ocr3
 
 import "encoding/json"
 import "fmt"
+import streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 import "reflect"
 
 // OCR3 consensus exposed as a capability.
@@ -15,7 +16,7 @@ type Ocr3Consensus struct {
 	Inputs Ocr3ConsensusInputs
 
 	// Outputs corresponds to the JSON schema field "outputs".
-	Outputs Ocr3ConsensusOutputs
+	Outputs SignedReport
 }
 
 type Ocr3ConsensusConfig struct {
@@ -183,30 +184,7 @@ func (j *Ocr3ConsensusConfig) UnmarshalJSON(b []byte) error {
 
 type Ocr3ConsensusInputs struct {
 	// Observations corresponds to the JSON schema field "observations".
-	Observations Ocr3ConsensusInputsObservations
-}
-
-type Ocr3ConsensusInputsObservations struct {
-	// Underlying corresponds to the JSON schema field "Underlying".
-	Underlying []interface{}
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusInputsObservations) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["Underlying"]; raw != nil && !ok {
-		return fmt.Errorf("field Underlying in Ocr3ConsensusInputsObservations: required")
-	}
-	type Plain Ocr3ConsensusInputsObservations
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = Ocr3ConsensusInputsObservations(plain)
-	return nil
+	Observations []streams.Feed
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -224,66 +202,6 @@ func (j *Ocr3ConsensusInputs) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = Ocr3ConsensusInputs(plain)
-	return nil
-}
-
-type Ocr3ConsensusOutputs struct {
-	// Err corresponds to the JSON schema field "Err".
-	Err interface{}
-
-	// Value corresponds to the JSON schema field "Value".
-	Value Ocr3ConsensusOutputsValue
-
-	// WorkflowExecutionID corresponds to the JSON schema field "WorkflowExecutionID".
-	WorkflowExecutionID string
-}
-
-type Ocr3ConsensusOutputsValue struct {
-	// Underlying corresponds to the JSON schema field "Underlying".
-	Underlying Ocr3ConsensusOutputsValueUnderlying
-}
-
-type Ocr3ConsensusOutputsValueUnderlying map[string]interface{}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusOutputsValue) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["Underlying"]; raw != nil && !ok {
-		return fmt.Errorf("field Underlying in Ocr3ConsensusOutputsValue: required")
-	}
-	type Plain Ocr3ConsensusOutputsValue
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = Ocr3ConsensusOutputsValue(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusOutputs) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["Err"]; raw != nil && !ok {
-		return fmt.Errorf("field Err in Ocr3ConsensusOutputs: required")
-	}
-	if _, ok := raw["Value"]; raw != nil && !ok {
-		return fmt.Errorf("field Value in Ocr3ConsensusOutputs: required")
-	}
-	if _, ok := raw["WorkflowExecutionID"]; raw != nil && !ok {
-		return fmt.Errorf("field WorkflowExecutionID in Ocr3ConsensusOutputs: required")
-	}
-	type Plain Ocr3ConsensusOutputs
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = Ocr3ConsensusOutputs(plain)
 	return nil
 }
 
@@ -308,5 +226,65 @@ func (j *Ocr3Consensus) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = Ocr3Consensus(plain)
+	return nil
+}
+
+type SignedReport struct {
+	// Err corresponds to the JSON schema field "Err".
+	Err bool
+
+	// Value corresponds to the JSON schema field "Value".
+	Value SignedReportValue
+
+	// WorkflowExecutionID corresponds to the JSON schema field "WorkflowExecutionID".
+	WorkflowExecutionID string
+}
+
+type SignedReportValue struct {
+	// Underlying corresponds to the JSON schema field "Underlying".
+	Underlying SignedReportValueUnderlying
+}
+
+type SignedReportValueUnderlying map[string]interface{}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SignedReportValue) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["Underlying"]; raw != nil && !ok {
+		return fmt.Errorf("field Underlying in SignedReportValue: required")
+	}
+	type Plain SignedReportValue
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = SignedReportValue(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SignedReport) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["Err"]; raw != nil && !ok {
+		return fmt.Errorf("field Err in SignedReport: required")
+	}
+	if _, ok := raw["Value"]; raw != nil && !ok {
+		return fmt.Errorf("field Value in SignedReport: required")
+	}
+	if _, ok := raw["WorkflowExecutionID"]; raw != nil && !ok {
+		return fmt.Errorf("field WorkflowExecutionID in SignedReport: required")
+	}
+	type Plain SignedReport
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = SignedReport(plain)
 	return nil
 }

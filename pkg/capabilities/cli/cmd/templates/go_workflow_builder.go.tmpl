@@ -2,9 +2,15 @@
 
 package {{.Package}}
 
+// HERE
+
 import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
+
+    {{- range .ExtraImports }}
+    {{.}}
+    {{- end }}
 )
 
 func New{{.BaseName}}Capability(w *workflows.Workflow, ref string,{{- if .Input }} input {{InputAfterCapability}}, {{- end }} cfg {{.Config.Name}}) ({{- if ne .CapabilityType.String "target"}}{{.BaseName}}Capability, {{- end }}error) {
@@ -27,7 +33,7 @@ func New{{.BaseName}}Capability(w *workflows.Workflow, ref string,{{- if .Input 
        },
        CapabilityType: capabilities.CapabilityType{{.CapabilityType.String|UpperFirst}},
    }
-    step := workflows.Step[{{- if eq .CapabilityType.String "target"}} struct{} {{- else }}{{.RootType.Name}} {{- end}}]{Ref: ref, Definition: def}
+    step := workflows.Step[{{- if eq .CapabilityType.String "target"}} struct{} {{- else }}{{.RootType.Name}} {{- end}}]{Definition: def}
     {{if eq .CapabilityType.String "target"}} _ {{- else }} raw {{- end }}, err := workflows.AddStep(w, step)
     return {{- if ne .CapabilityType.String "target"}} &{{.BaseName|LowerFirst}}Capability{CapabilityDefinition: raw}, {{- end }} err
 }

@@ -17,6 +17,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
+type Config struct {
+	Workflow    workflows.NewWorkflowParams
+	Streams     *streams.StreamsTriggerConfig
+	Ocr         *ocr3.Ocr3ConsensusConfig
+	ChainWriter *chainwriter.ChainwriterTargetConfig
+}
+
 func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	conf := Config{}
 	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
@@ -46,6 +53,82 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	return workflow.Spec(), nil
 }
 
+// What if there were hundreds of feeds?  Like feeds that aren't for CCIP?
+
+type ModifiedConfig struct {
+	Workflow         workflows.NewWorkflowParams
+	MaxFrequencyMs   int
+	DefaultHeartbeat int
+	DefaultDeviation float64
+	FeedInfos        []FeedInfo
+	ReportId         string
+	Encoder          ocr3.Ocr3ConsensusConfigEncoder
+	EncoderConfig    ocr3.Ocr3ConsensusConfigEncoderConfig
+	ChainWriter      *chainwriter.ChainwriterTargetConfig
+}
+
+type FeedInfo struct {
+	FeedId    streams.FeedId
+	Deviation *float64
+	Heartbeat *int
+}
+
+func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
+	conf := ModifiedConfig{}
+	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
+	streamsConfig := streams.StreamsTriggerConfig{MaxFrequencyMs: conf.MaxFrequencyMs}
+	ocr3Config := ocr3.Ocr3ConsensusConfig{
+		AggregationMethod: "data_feeds",
+		Encoder:           conf.Encoder,
+		EncoderConfig:     conf.EncoderConfig,
+		ReportId:          conf.ReportId,
+	}
+	for _, elm := range conf.FeedInfos {
+		streamsConfig.FeedIds = append(streamsConfig.FeedIds, elm.FeedId)
+		aggConfig := ocr3.Ocr3ConsensusConfigAggregationConfigElem{
+			FeedId:    elm.FeedId,
+			Deviation: conf.DefaultDeviation,
+			Heartbeat: conf.DefaultHeartbeat,
+		}
+		if elm.Deviation != nil {
+			aggConfig.Deviation = *elm.Deviation
+		}
+
+		if elm.Heartbeat != nil {
+			aggConfig.Heartbeat = *elm.Heartbeat
+		}
+
+		ocr3Config.AggregationConfig = append(ocr3Config.AggregationConfig, aggConfig)
+	}
+
+	workflow := workflows.NewWorkflow(conf.Workflow)
+	streamsTrigger, err := streams.NewStreamsTriggerCapability(workflow, "streams", streamsConfig)
+	if err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
+	streamsList := workflows.ListOf[streams.Feed](streamsTrigger)
+	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsList}
+
+	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, ocr3Config)
+	if err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
+	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
+
+	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter); err != nil {
+		return workflows.WorkflowSpec{}, err
+	}
+
+	return workflow.Spec(), nil
+}
+
+// What if inputs and outputs don't match exactly?
+
 func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	conf := NotStreamsConfig{}
 	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
@@ -58,8 +141,15 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 		return workflows.WorkflowSpec{}, err
 	}
 
-	_ = notStreamsTrigger
-	notStreamsList := workflows.ListOf[streams.Feed]( /*TODO*/ )
+	feedsInput := streams.NewStreamsTriggerCapabilityFromComponents(
+		notStreamsTrigger.Price().PriceA(),
+		workflows.ConstantDefinition[streams.FeedId]("0x0000000000000000000000000000000000000000000000000000000000000000"),
+		notStreamsTrigger.FullReport(),
+		notStreamsTrigger.Timestamp(),
+		notStreamsTrigger.ReportContext(),
+		notStreamsTrigger.Signatures(),
+	)
+	notStreamsList := workflows.ListOf[streams.Feed](feedsInput)
 	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: notStreamsList}
 
 	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
@@ -163,13 +253,6 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, string(expected), string(actual))
-}
-
-type Config struct {
-	Workflow    workflows.NewWorkflowParams
-	Streams     *streams.StreamsTriggerConfig
-	Ocr         *ocr3.Ocr3ConsensusConfig
-	ChainWriter *chainwriter.ChainwriterTargetConfig
 }
 
 type NotStreamsConfig struct {

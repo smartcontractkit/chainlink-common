@@ -41,8 +41,8 @@ type Ocr3ConsensusConfigAggregationConfigElem struct {
 	// percentage. For example, 0.01 is 1% deviation.
 	Deviation float64
 
-	// The ID of the data feed.
-	FeedId string
+	// FeedId corresponds to the JSON schema field "feedId".
+	FeedId streams.FeedId
 
 	// The interval in seconds after which a new report is generated, regardless of
 	// whether any deviations have occurred. New reports reset the timer.

@@ -2,8 +2,6 @@
 
 package notstreams
 
-// HERE
-
 import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
@@ -31,7 +29,7 @@ func NewNotstreamsTriggerCapability(w *workflows.Workflow, ref string, cfg Notst
 type NotstreamsTriggerCapability interface {
     workflows.CapabilityDefinition[Feed]
     FullReport() workflows.CapabilityDefinition[string]
-    Price() workflows.CapabilityDefinition[string]
+    Price() FeedPriceCapability
     ReportContext() workflows.CapabilityDefinition[string]
     Signatures() workflows.CapabilityDefinition[[]string]
     Timestamp() workflows.CapabilityDefinition[int]
@@ -47,8 +45,8 @@ func (*notstreamsTriggerCapability) private() {}
 func (c *notstreamsTriggerCapability) FullReport() workflows.CapabilityDefinition[string] {
     return workflows.AccessField[Feed, string](c.CapabilityDefinition, "FullReport")
 }
-func (c *notstreamsTriggerCapability) Price() workflows.CapabilityDefinition[string] {
-    return workflows.AccessField[Feed, string](c.CapabilityDefinition, "Price")
+func (c *notstreamsTriggerCapability) Price() FeedPriceCapability {
+     return &feedPriceCapability{ CapabilityDefinition: workflows.AccessField[Feed, FeedPrice](c.CapabilityDefinition, "Price")}
 }
 func (c *notstreamsTriggerCapability) ReportContext() workflows.CapabilityDefinition[string] {
     return workflows.AccessField[Feed, string](c.CapabilityDefinition, "ReportContext")
@@ -60,9 +58,32 @@ func (c *notstreamsTriggerCapability) Timestamp() workflows.CapabilityDefinition
     return workflows.AccessField[Feed, int](c.CapabilityDefinition, "Timestamp")
 }
 
+func NewNotstreamsTriggerCapabilityFromComponents(
+                                                                        fullReport workflows.CapabilityDefinition[string],
+                                                                        price FeedPriceCapability,
+                                                                        reportContext workflows.CapabilityDefinition[string],
+                                                                        signatures workflows.CapabilityDefinition[[]string],
+                                                                        timestamp workflows.CapabilityDefinition[int],) NotstreamsTriggerCapability {
+    return &simpleNotstreamsTriggerCapability{
+        CapabilityDefinition: workflows.ComponentCapabilityDefinition[Feed]{
+        "fullReport": fullReport.Ref(),
+        "price": price.Ref(),
+        "reportContext": reportContext.Ref(),
+        "signatures": signatures.Ref(),
+        "timestamp": timestamp.Ref(),
+        },
+        fullReport: fullReport,
+        price: price,
+        reportContext: reportContext,
+        signatures: signatures,
+        timestamp: timestamp,
+    }
+}
+
 type simpleNotstreamsTriggerCapability struct {
+    workflows.CapabilityDefinition[Feed]
     fullReport workflows.CapabilityDefinition[string]
-    price workflows.CapabilityDefinition[string]
+    price FeedPriceCapability
     reportContext workflows.CapabilityDefinition[string]
     signatures workflows.CapabilityDefinition[[]string]
     timestamp workflows.CapabilityDefinition[int]
@@ -70,7 +91,7 @@ type simpleNotstreamsTriggerCapability struct {
 func (c *simpleNotstreamsTriggerCapability) FullReport() workflows.CapabilityDefinition[string] {
     return c.fullReport
 }
-func (c *simpleNotstreamsTriggerCapability) Price() workflows.CapabilityDefinition[string] {
+func (c *simpleNotstreamsTriggerCapability) Price() FeedPriceCapability {
     return c.price
 }
 func (c *simpleNotstreamsTriggerCapability) ReportContext() workflows.CapabilityDefinition[string] {
@@ -85,4 +106,51 @@ func (c *simpleNotstreamsTriggerCapability) Timestamp() workflows.CapabilityDefi
 
 func (c *simpleNotstreamsTriggerCapability) private() {}
 
+
+type FeedPriceCapability interface {
+    workflows.CapabilityDefinition[FeedPrice]
+    PriceA() workflows.CapabilityDefinition[string]
+    PriceB() workflows.CapabilityDefinition[string]
+    private()
+}
+
+type feedPriceCapability struct {
+    workflows.CapabilityDefinition[FeedPrice]
+}
+
+
+func (*feedPriceCapability) private() {}
+func (c *feedPriceCapability) PriceA() workflows.CapabilityDefinition[string] {
+    return workflows.AccessField[FeedPrice, string](c.CapabilityDefinition, "PriceA")
+}
+func (c *feedPriceCapability) PriceB() workflows.CapabilityDefinition[string] {
+    return workflows.AccessField[FeedPrice, string](c.CapabilityDefinition, "PriceB")
+}
+
+func NewFeedPriceCapabilityFromComponents(
+                                                                        priceA workflows.CapabilityDefinition[string],
+                                                                        priceB workflows.CapabilityDefinition[string],) FeedPriceCapability {
+    return &simpleFeedPriceCapability{
+        CapabilityDefinition: workflows.ComponentCapabilityDefinition[FeedPrice]{
+        "priceA": priceA.Ref(),
+        "priceB": priceB.Ref(),
+        },
+        priceA: priceA,
+        priceB: priceB,
+    }
+}
+
+type simpleFeedPriceCapability struct {
+    workflows.CapabilityDefinition[FeedPrice]
+    priceA workflows.CapabilityDefinition[string]
+    priceB workflows.CapabilityDefinition[string]
+}
+func (c *simpleFeedPriceCapability) PriceA() workflows.CapabilityDefinition[string] {
+    return c.priceA
+}
+func (c *simpleFeedPriceCapability) PriceB() workflows.CapabilityDefinition[string] {
+    return c.priceB
+}
+
+func (c *simpleFeedPriceCapability) private() {}
 

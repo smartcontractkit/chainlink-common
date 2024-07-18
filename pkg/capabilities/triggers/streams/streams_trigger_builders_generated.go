@@ -2,8 +2,6 @@
 
 package streams
 
-// HERE
-
 import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
@@ -50,7 +48,7 @@ func (c *streamsTriggerCapability) BenchmarkPrice() workflows.CapabilityDefiniti
     return workflows.AccessField[Feed, string](c.CapabilityDefinition, "BenchmarkPrice")
 }
 func (c *streamsTriggerCapability) FeedId() FeedIdCapability {
-     return &feedIdCapability{ CapabilityDefinition: workflows.AccessField[Feed, FeedId](c.CapabilityDefinition, "FeedId")}
+     return FeedIdCapability(workflows.AccessField[Feed, FeedId](c.CapabilityDefinition, "FeedId"))
 }
 func (c *streamsTriggerCapability) FullReport() workflows.CapabilityDefinition[string] {
     return workflows.AccessField[Feed, string](c.CapabilityDefinition, "FullReport")
@@ -65,7 +63,33 @@ func (c *streamsTriggerCapability) Signatures() workflows.CapabilityDefinition[[
     return workflows.AccessField[Feed, []string](c.CapabilityDefinition, "Signatures")
 }
 
+func NewStreamsTriggerCapabilityFromComponents(
+                                                                        benchmarkPrice workflows.CapabilityDefinition[string],
+                                                                        feedId FeedIdCapability,
+                                                                        fullReport workflows.CapabilityDefinition[string],
+                                                                        observationTimestamp workflows.CapabilityDefinition[int],
+                                                                        reportContext workflows.CapabilityDefinition[string],
+                                                                        signatures workflows.CapabilityDefinition[[]string],) StreamsTriggerCapability {
+    return &simpleStreamsTriggerCapability{
+        CapabilityDefinition: workflows.ComponentCapabilityDefinition[Feed]{
+        "benchmarkPrice": benchmarkPrice.Ref(),
+        "feedId": feedId.Ref(),
+        "fullReport": fullReport.Ref(),
+        "observationTimestamp": observationTimestamp.Ref(),
+        "reportContext": reportContext.Ref(),
+        "signatures": signatures.Ref(),
+        },
+        benchmarkPrice: benchmarkPrice,
+        feedId: feedId,
+        fullReport: fullReport,
+        observationTimestamp: observationTimestamp,
+        reportContext: reportContext,
+        signatures: signatures,
+    }
+}
+
 type simpleStreamsTriggerCapability struct {
+    workflows.CapabilityDefinition[Feed]
     benchmarkPrice workflows.CapabilityDefinition[string]
     feedId FeedIdCapability
     fullReport workflows.CapabilityDefinition[string]
@@ -95,22 +119,5 @@ func (c *simpleStreamsTriggerCapability) Signatures() workflows.CapabilityDefini
 func (c *simpleStreamsTriggerCapability) private() {}
 
 
-
-type FeedIdCapability interface {
-    workflows.CapabilityDefinition[FeedId]
-    private()
-}
-
-type feedIdCapability struct {
-    workflows.CapabilityDefinition[FeedId]
-}
-
-
-func (*feedIdCapability) private() {}
-
-type simpleFeedIdCapability struct {
-}
-
-func (c *simpleFeedIdCapability) private() {}
-
+type FeedIdCapability workflows.CapabilityDefinition[FeedId]
 

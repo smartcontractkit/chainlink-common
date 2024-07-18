@@ -2,8 +2,6 @@
 
 package ocr3
 
-// HERE
-
 import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
@@ -58,7 +56,24 @@ func (c *ocr3ConsensusCapability) WorkflowExecutionID() workflows.CapabilityDefi
     return workflows.AccessField[SignedReport, string](c.CapabilityDefinition, "WorkflowExecutionID")
 }
 
+func NewOcr3ConsensusCapabilityFromComponents(
+                                                                        err workflows.CapabilityDefinition[bool],
+                                                                        value SignedReportValueCapability,
+                                                                        workflowExecutionID workflows.CapabilityDefinition[string],) Ocr3ConsensusCapability {
+    return &simpleOcr3ConsensusCapability{
+        CapabilityDefinition: workflows.ComponentCapabilityDefinition[SignedReport]{
+        "err": err.Ref(),
+        "value": value.Ref(),
+        "workflowExecutionID": workflowExecutionID.Ref(),
+        },
+        err: err,
+        value: value,
+        workflowExecutionID: workflowExecutionID,
+    }
+}
+
 type simpleOcr3ConsensusCapability struct {
+    workflows.CapabilityDefinition[SignedReport]
     err workflows.CapabilityDefinition[bool]
     value SignedReportValueCapability
     workflowExecutionID workflows.CapabilityDefinition[string]
@@ -76,7 +91,6 @@ func (c *simpleOcr3ConsensusCapability) WorkflowExecutionID() workflows.Capabili
 func (c *simpleOcr3ConsensusCapability) private() {}
 
 
-
 type SignedReportValueCapability interface {
     workflows.CapabilityDefinition[SignedReportValue]
     Underlying() SignedReportValueUnderlyingCapability
@@ -90,10 +104,21 @@ type signedReportValueCapability struct {
 
 func (*signedReportValueCapability) private() {}
 func (c *signedReportValueCapability) Underlying() SignedReportValueUnderlyingCapability {
-     return &signedReportValueUnderlyingCapability{ CapabilityDefinition: workflows.AccessField[SignedReportValue, SignedReportValueUnderlying](c.CapabilityDefinition, "Underlying")}
+     return SignedReportValueUnderlyingCapability(workflows.AccessField[SignedReportValue, SignedReportValueUnderlying](c.CapabilityDefinition, "Underlying"))
+}
+
+func NewSignedReportValueCapabilityFromComponents(
+                                                                        underlying SignedReportValueUnderlyingCapability,) SignedReportValueCapability {
+    return &simpleSignedReportValueCapability{
+        CapabilityDefinition: workflows.ComponentCapabilityDefinition[SignedReportValue]{
+        "underlying": underlying.Ref(),
+        },
+        underlying: underlying,
+    }
 }
 
 type simpleSignedReportValueCapability struct {
+    workflows.CapabilityDefinition[SignedReportValue]
     underlying SignedReportValueUnderlyingCapability
 }
 func (c *simpleSignedReportValueCapability) Underlying() SignedReportValueUnderlyingCapability {
@@ -103,24 +128,7 @@ func (c *simpleSignedReportValueCapability) Underlying() SignedReportValueUnderl
 func (c *simpleSignedReportValueCapability) private() {}
 
 
-
-type SignedReportValueUnderlyingCapability interface {
-    workflows.CapabilityDefinition[SignedReportValueUnderlying]
-    private()
-}
-
-type signedReportValueUnderlyingCapability struct {
-    workflows.CapabilityDefinition[SignedReportValueUnderlying]
-}
-
-
-func (*signedReportValueUnderlyingCapability) private() {}
-
-type simpleSignedReportValueUnderlyingCapability struct {
-}
-
-func (c *simpleSignedReportValueUnderlyingCapability) private() {}
-
+type SignedReportValueUnderlyingCapability workflows.CapabilityDefinition[SignedReportValueUnderlying]
 
 
 type Ocr3ConsensusCapabilityInput struct {

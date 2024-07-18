@@ -26,9 +26,21 @@
           "minItems": 1
         },
         "Price": {
-          "type": "string",
-          "contentEncoding": "base64",
-          "description": "This value is extracted from the fullReport. Benchmark price represented as bytes encoded as base64 string."
+          "type": "object",
+          "properties": {
+            "PriceA": {
+              "type": "string",
+              "contentEncoding": "base64",
+              "description": "Benchmark price A represented as bytes encoded as base64 string."
+            },
+            "PriceB": {
+              "type": "string",
+              "contentEncoding": "base64",
+              "description": "Benchmark price B represented as bytes encoded as base64 string."
+            }
+          },
+          "description": "Object containing two benchmark prices extracted from the fullReport.",
+          "required": ["PriceA", "PriceB"]
         },
         "Timestamp": {
           "type": "integer",

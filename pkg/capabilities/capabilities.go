@@ -220,6 +220,10 @@ type CapabilityInfo struct {
 	DON            *DON
 }
 
+func (c CapabilityInfo) IsLocal() bool {
+	return c.DON == nil
+}
+
 // Parse out the version from the ID.
 func (c CapabilityInfo) Version() string {
 	return c.ID[strings.Index(c.ID, "@")+1:]

@@ -64,6 +64,9 @@ func genFromTemplate(name, rawTemplate string, info GeneratedInfo) (string, erro
 		"InputAfterCapability": func() string {
 			return info.BaseName + "CapabilityInput"
 		},
+		"HasOutputs": func(tpe string) bool {
+			return len(info.Types[tpe].Outputs) > 0
+		},
 	}).Parse(rawTemplate)
 	if err != nil {
 		return "", err

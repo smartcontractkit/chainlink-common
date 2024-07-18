@@ -6,9 +6,8 @@ import "encoding/json"
 import "fmt"
 
 type Feed struct {
-	// This value is extracted from the fullReport. Benchmark price represented as
-	// bytes encoded as base64 string.
-	Price string
+	// Object containing two benchmark prices extracted from the fullReport.
+	Price FeedPrice
 
 	// This value is extracted from the fullReport. A unix timestamp represented as an
 	// int64 value. Timestamp is captured at the time of report creation.
@@ -24,6 +23,36 @@ type Feed struct {
 	// Signature over full report and report context represented as bytes encoded as
 	// base64 string.
 	Signatures []string
+}
+
+// Object containing two benchmark prices extracted from the fullReport.
+type FeedPrice struct {
+	// Benchmark price A represented as bytes encoded as base64 string.
+	PriceA string
+
+	// Benchmark price B represented as bytes encoded as base64 string.
+	PriceB string
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *FeedPrice) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["PriceA"]; raw != nil && !ok {
+		return fmt.Errorf("field PriceA in FeedPrice: required")
+	}
+	if _, ok := raw["PriceB"]; raw != nil && !ok {
+		return fmt.Errorf("field PriceB in FeedPrice: required")
+	}
+	type Plain FeedPrice
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = FeedPrice(plain)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

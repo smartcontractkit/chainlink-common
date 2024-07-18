@@ -2,8 +2,6 @@
 
 package chain_writer
 
-// HERE
-
 import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"

@@ -7,7 +7,7 @@ import (
 )
 
 // 1. Capability defines JSON schema for inputs and outputs of a capability.
-// Trigger: triggerOutputType := workflowBuilder.addTrigger(DataStreamsTrigger.Config{})
+// Trigger: triggerOutputType := workflowBuilder.addTrigger(DataStreamsTrigger.ModifiedConfig{})
 // Adds metadata to the builder. Returns output type.
 // 2. Consensus: consensusOutputType := workflowBuilder.addConsensus(ConsensusConfig{
 // 	Inputs: triggerOutputType,
@@ -35,7 +35,7 @@ func ListOf[O any](capabilities ...CapabilityDefinition[O]) CapabilityListDefini
 	return &impl
 }
 
-func HardCodedDefinition[O any](o O) CapabilityDefinition[O] {
+func ConstantDefinition[O any](o O) CapabilityDefinition[O] {
 	return &capabilityDefinitionImpl[O]{ref: o}
 }
 
@@ -101,6 +101,7 @@ func NewWorkflow(
 	}
 }
 
+// AddStep is meant to be called by generated code
 func AddStep[O any](w *Workflow, step Step[O]) (CapabilityDefinition[O], error) {
 	// TODO should return error if the name is already used
 	stepDefinition := step.Definition
@@ -126,4 +127,15 @@ func AccessField[I, O any](c CapabilityDefinition[I], fieldName string) Capabili
 
 func (w Workflow) Spec() WorkflowSpec {
 	return *w.spec
+}
+
+// ComponentCapabilityDefinition is meant to be used by generated code
+type ComponentCapabilityDefinition[O any] map[string]any
+
+func (c ComponentCapabilityDefinition[O]) Ref() any {
+	return map[string]any(c)
+}
+
+func (c ComponentCapabilityDefinition[O]) self() CapabilityDefinition[O] {
+	return c
 }

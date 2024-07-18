@@ -87,7 +87,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, err
 	}
 
-	mc := values.FromMapValueProto(res.CapabilityConfig.ExecuteConfig)
+	mc := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
 
 	var rtc capabilities.RemoteTriggerConfig
 	rtc.ApplyDefaults()
@@ -100,7 +100,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 	}
 
 	return capabilities.CapabilityConfiguration{
-		ExecuteConfig:       mc,
+		DefaultConfig:       mc,
 		RemoteTriggerConfig: rtc,
 	}, nil
 }
@@ -292,10 +292,10 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		return nil, err
 	}
 
-	ecm := values.Proto(cc.ExecuteConfig).GetMapValue()
+	ecm := values.Proto(cc.DefaultConfig).GetMapValue()
 
 	ccp := &capabilitiespb.CapabilityConfig{
-		ExecuteConfig: ecm,
+		DefaultConfig: ecm,
 		RemoteConfig: &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
 			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
 				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),

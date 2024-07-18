@@ -396,6 +396,6 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 }
 
 type CapabilityConfiguration struct {
-	ExecuteConfig       *values.Map
+	DefaultConfig       *values.Map
 	RemoteTriggerConfig RemoteTriggerConfig
 }

@@ -15,7 +15,7 @@ message RemoteTriggerConfig {
 }
 
 message CapabilityConfig {
-  values.Map execute_config = 1;
+  values.Map default_config = 1;
 
   oneof remote_config {
     RemoteTriggerConfig remote_trigger_config = 2;

@@ -24,9 +24,11 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/riferrei/srclient v0.5.4
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartcontractkit/libocr v0.0.0-20240419185742-fd3cab206b2c
 	github.com/stretchr/testify v1.9.0
+	github.com/tidwall/gjson v1.17.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.52.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.28.0
@@ -71,6 +73,8 @@ require (
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.28.0 // indirect

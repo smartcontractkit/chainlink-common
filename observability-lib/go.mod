@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common/observability-lib
 
-go 1.21.4
+go 1.22.5
 
 require (
 	github.com/K-Phoen/grabana v0.22.1

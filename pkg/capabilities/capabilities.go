@@ -218,10 +218,7 @@ type CapabilityInfo struct {
 	CapabilityType CapabilityType
 	Description    string
 	DON            *DON
-}
-
-func (c CapabilityInfo) IsLocal() bool {
-	return c.DON == nil
+	IsLocal        bool
 }
 
 // Parse out the version from the ID.
@@ -254,24 +251,12 @@ const (
 	idMaxLength = 128
 )
 
-// NewCapabilityInfo returns a new CapabilityInfo.
-func NewCapabilityInfo(
-	id string,
-	capabilityType CapabilityType,
-	description string,
-) (CapabilityInfo, error) {
-	return NewRemoteCapabilityInfo(id, capabilityType, description, nil)
-}
-
-// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
-// This is largely intended for internal use by the registry syncer.
-// Capability developers should use `NewCapabilityInfo` instead as this
-// omits the requirement to pass in the DON Info.
-func NewRemoteCapabilityInfo(
+func newCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
+	isLocal bool,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
@@ -289,7 +274,30 @@ func NewRemoteCapabilityInfo(
 		CapabilityType: capabilityType,
 		Description:    description,
 		DON:            don,
+		IsLocal:        isLocal,
 	}, nil
+}
+
+// NewCapabilityInfo returns a new CapabilityInfo.
+func NewCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, nil, true)
+}
+
+// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
+// This is largely intended for internal use by the registry syncer.
+// Capability developers should use `NewCapabilityInfo` instead as this
+// omits the requirement to pass in the DON Info.
+func NewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+	don *DON,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, don, false)
 }
 
 // MustNewCapabilityInfo returns a new CapabilityInfo,

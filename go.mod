@@ -20,11 +20,11 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/riferrei/srclient v0.5.4
 	github.com/shopspring/decimal v1.3.1
+	github.com/smartcontractkit/grpc-proxy v0.0.0-20240717201340-615db53deaf6 // using fork until merged upstream: https://github.com/mwitkow/grpc-proxy/pull/69
 	github.com/smartcontractkit/libocr v0.0.0-20240419185742-fd3cab206b2c
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.52.0
@@ -92,7 +92,4 @@ replace (
 
 	// until merged upstream: https://github.com/mitchellh/mapstructure/pull/343
 	github.com/mitchellh/mapstructure v1.5.0 => github.com/nolag/mapstructure v1.5.2-0.20240625151721-90ea83a3f479
-
-	// until merged upstream: https://github.com/mwitkow/grpc-proxy/pull/69
-	github.com/mwitkow/grpc-proxy => github.com/smartcontractkit/grpc-proxy v0.0.0-20230731113816-f1be6620749f
 )

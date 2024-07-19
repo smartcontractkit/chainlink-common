@@ -140,6 +140,7 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 		Id:             info.ID,
 		CapabilityType: ct,
 		Description:    info.Description,
+		IsLocal:        info.IsLocal,
 	}
 }
 
@@ -182,6 +183,7 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		ID:             resp.Id,
 		CapabilityType: ct,
 		Description:    resp.Description,
+		IsLocal:        resp.IsLocal,
 	}, nil
 }
 

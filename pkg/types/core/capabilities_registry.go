@@ -7,7 +7,7 @@ import (
 )
 
 type CapabilitiesRegistry interface {
-	GetLocalNode(ctx context.Context) (capabilities.Node, error)
+	LocalNode(ctx context.Context) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
 
 	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)

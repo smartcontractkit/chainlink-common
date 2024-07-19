@@ -188,9 +188,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		},
 	}
 
-	reg.On("GetLocalNode", mock.Anything).Once().Return(expectedNode, nil)
+	reg.On("LocalNode", mock.Anything).Once().Return(expectedNode, nil)
 
-	actualNode, err := rc.GetLocalNode(tests.Context(t))
+	actualNode, err := rc.LocalNode(tests.Context(t))
 	require.NoError(t, err)
 	// check local node struct
 	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)
@@ -214,8 +214,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// Check zero values for empty node
 	emptyNode := capabilities.Node{}
-	reg.On("GetLocalNode", mock.Anything).Once().Return(emptyNode, nil)
-	actualNode, err = rc.GetLocalNode(tests.Context(t))
+	reg.On("LocalNode", mock.Anything).Once().Return(emptyNode, nil)
+	actualNode, err = rc.LocalNode(tests.Context(t))
 	require.NoError(t, err)
 	require.Nil(t, actualNode.PeerID)
 	require.Equal(t, capabilities.DON{

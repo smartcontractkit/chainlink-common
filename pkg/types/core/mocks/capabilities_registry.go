@@ -305,62 +305,6 @@ func (_c *CapabilitiesRegistry_GetConsensus_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-// GetLocalNode provides a mock function with given fields: ctx
-func (_m *CapabilitiesRegistry) GetLocalNode(ctx context.Context) (capabilities.Node, error) {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetLocalNode")
-	}
-
-	var r0 capabilities.Node
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (capabilities.Node, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) capabilities.Node); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Get(0).(capabilities.Node)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// CapabilitiesRegistry_GetLocalNode_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLocalNode'
-type CapabilitiesRegistry_GetLocalNode_Call struct {
-	*mock.Call
-}
-
-// GetLocalNode is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *CapabilitiesRegistry_Expecter) GetLocalNode(ctx interface{}) *CapabilitiesRegistry_GetLocalNode_Call {
-	return &CapabilitiesRegistry_GetLocalNode_Call{Call: _e.mock.On("GetLocalNode", ctx)}
-}
-
-func (_c *CapabilitiesRegistry_GetLocalNode_Call) Run(run func(ctx context.Context)) *CapabilitiesRegistry_GetLocalNode_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *CapabilitiesRegistry_GetLocalNode_Call) Return(_a0 capabilities.Node, _a1 error) *CapabilitiesRegistry_GetLocalNode_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *CapabilitiesRegistry_GetLocalNode_Call) RunAndReturn(run func(context.Context) (capabilities.Node, error)) *CapabilitiesRegistry_GetLocalNode_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetTarget provides a mock function with given fields: ctx, ID
 func (_m *CapabilitiesRegistry) GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error) {
 	ret := _m.Called(ctx, ID)
@@ -533,6 +477,62 @@ func (_c *CapabilitiesRegistry_List_Call) Return(_a0 []capabilities.BaseCapabili
 }
 
 func (_c *CapabilitiesRegistry_List_Call) RunAndReturn(run func(context.Context) ([]capabilities.BaseCapability, error)) *CapabilitiesRegistry_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LocalNode provides a mock function with given fields: ctx
+func (_m *CapabilitiesRegistry) LocalNode(ctx context.Context) (capabilities.Node, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LocalNode")
+	}
+
+	var r0 capabilities.Node
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (capabilities.Node, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) capabilities.Node); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(capabilities.Node)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CapabilitiesRegistry_LocalNode_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LocalNode'
+type CapabilitiesRegistry_LocalNode_Call struct {
+	*mock.Call
+}
+
+// LocalNode is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *CapabilitiesRegistry_Expecter) LocalNode(ctx interface{}) *CapabilitiesRegistry_LocalNode_Call {
+	return &CapabilitiesRegistry_LocalNode_Call{Call: _e.mock.On("LocalNode", ctx)}
+}
+
+func (_c *CapabilitiesRegistry_LocalNode_Call) Run(run func(ctx context.Context)) *CapabilitiesRegistry_LocalNode_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_LocalNode_Call) Return(_a0 capabilities.Node, _a1 error) *CapabilitiesRegistry_LocalNode_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_LocalNode_Call) RunAndReturn(run func(context.Context) (capabilities.Node, error)) *CapabilitiesRegistry_LocalNode_Call {
 	_c.Call.Return(run)
 	return _c
 }

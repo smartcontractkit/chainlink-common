@@ -54,8 +54,8 @@ func toPbDON(don capabilities.DON) *pb.DON {
 	}
 }
 
-func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabilities.Node, error) {
-	res, err := cr.grpc.GetLocalNode(ctx, &emptypb.Empty{})
+func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabilities.Node, error) {
+	res, err := cr.grpc.LocalNode(ctx, &emptypb.Empty{})
 	if err != nil {
 		return capabilities.Node{}, err
 	}
@@ -311,8 +311,8 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.GetLocalNodeReply, error) {
-	node, err := c.impl.GetLocalNode(ctx)
+func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.LocalNodeReply, error) {
+	node, err := c.impl.LocalNode(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +328,7 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 	if node.PeerID != nil {
 		pid = node.PeerID[:]
 	}
-	reply := &pb.GetLocalNodeReply{
+	reply := &pb.LocalNodeReply{
 		PeerID:         pid,
 		WorkflowDON:    workflowDONpb,
 		CapabilityDONs: capabilityDONsPb,

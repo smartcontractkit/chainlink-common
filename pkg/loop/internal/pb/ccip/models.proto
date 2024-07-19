@@ -9,12 +9,6 @@ import "relayer.proto";
 // This file contains message definitions for the Cross-Chain Interoperability Protocol (CCIP) that are used by
 // multiple interfaces comprising CCIP
 
-enum FinalityStatus {
-    Unknown = 0;
-    Finalized = 1;
-    NotFinalized = 2;
-}
-
 // TxMeta is a message that contains the metadata of a transaction. It is a gRPC adapter to
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.TxMeta]
 message TxMeta {
@@ -22,7 +16,6 @@ message TxMeta {
     uint64 block_number = 2;
     string tx_hash = 3;
     uint64 log_index = 4;
-    FinalityStatus finalized = 5;
 }
 
 // EVM2EVMMesssage is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.EVM2EVMMessage]
@@ -79,7 +72,7 @@ message ExecutionReport {
 }
 
 message TokenData {
-    repeated bytes data= 1;
+    repeated bytes data= 1; 
 }
 
 // TokenPrice is the price of the stated token. It is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.TokenPrice]

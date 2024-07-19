@@ -605,6 +605,7 @@ func executionStateChangedWithTxMeta(in *ccippb.ExecutionStateChangeWithTxMeta) 
 		TxMeta: txMeta(in.TxMeta),
 		ExecutionStateChanged: cciptypes.ExecutionStateChanged{
 			SequenceNumber: in.ExecutionStateChange.SeqNum,
+			Finalized:      in.ExecutionStateChange.Finalized,
 		},
 	}
 }
@@ -613,8 +614,17 @@ func executionStateChangedWithTxMetaToPB(in cciptypes.ExecutionStateChangedWithT
 	return &ccippb.ExecutionStateChangeWithTxMeta{
 		TxMeta: txMetaToPB(in.TxMeta),
 		ExecutionStateChange: &ccippb.ExecutionStateChange{
-			SeqNum: in.ExecutionStateChanged.SequenceNumber,
+			SeqNum:    in.ExecutionStateChanged.SequenceNumber,
+			Finalized: in.ExecutionStateChanged.Finalized,
 		},
+	}
+}
+func txMetaToPB(in cciptypes.TxMeta) *ccippb.TxMeta {
+	return &ccippb.TxMeta{
+		BlockTimestampUnixMilli: in.BlockTimestampUnixMilli,
+		BlockNumber:             in.BlockNumber,
+		TxHash:                  in.TxHash,
+		LogIndex:                in.LogIndex,
 	}
 }
 

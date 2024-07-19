@@ -307,7 +307,12 @@ func MustNewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 ) CapabilityInfo {
-	return MustNewRemoteCapabilityInfo(id, capabilityType, description, nil)
+	c, err := NewCapabilityInfo(id, capabilityType, description)
+	if err != nil {
+		panic(err)
+	}
+
+	return c
 }
 
 // MustNewRemoteCapabilityInfo returns a new CapabilityInfo,

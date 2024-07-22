@@ -106,10 +106,10 @@ var OffRampReader = staticOffRamp{
 						BlockNumber:             2,
 						TxHash:                  "txHash",
 						LogIndex:                3,
+						Finalized:               ccip.FinalizedStatusFinalized,
 					},
 					ExecutionStateChanged: ccip.ExecutionStateChanged{
 						SequenceNumber: 9,
-						Finalized:      true,
 					},
 				},
 			},

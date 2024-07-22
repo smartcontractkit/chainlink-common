@@ -75,6 +75,10 @@ func (c staticChainReader) GetLatestValue(_ context.Context, contractName, metho
 	return nil
 }
 
+func (c staticChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	return nil, nil
+}
+
 func (c staticChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }

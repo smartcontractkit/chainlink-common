@@ -26,6 +26,7 @@ type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	// The contract should take a uint64 as the params and returns the same.
 	// forCall is used to attach value to a call, this is useful in chain specific test since in chain agnostic tests we can just use hard coded readName constants.
 	SetUintLatestValue(t T, val uint64, forCall ExpectedGetLatestValueArgs)
+	SetBatchLatestValues(t T, batchCallEntry BatchCallEntry)
 	TriggerEvent(t T, testStruct *TestStruct)
 	GetBindings(t T) []types.BoundContract
 	// GenerateBlocksTillConfidenceLevel raises confidence level to the provided level for a specific read.
@@ -53,6 +54,7 @@ const AnyExtraValue = 3
 
 func RunChainReaderInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {
 	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runChainReaderGetLatestValueInterfaceTests(t, tester) })
+	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runChainReaderBatchGetLatestValuesInterfaceTests(t, tester) })
 	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
 }
 
@@ -274,6 +276,236 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 		},
 	}
 	runTests(t, tester, tests)
+}
+
+func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {
+	testCases := []testcase[T]{
+		{
+			name: "BatchGetLatestValues works",
+			test: func(t T) {
+				// setup test data
+				firstItem := CreateTestStruct(1, tester)
+				batchCallEntry := make(BatchCallEntry)
+				batchCallEntry[AnyContractName] = ContractBatchEntry{{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &firstItem}}
+				tester.SetBatchLatestValues(t, batchCallEntry)
+
+				// setup call data
+				params, actual := &LatestParams{I: 1}, &TestStruct{}
+				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
+				batchGetLatestValueRequest[AnyContractName] = []types.BatchRead{{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: params, ReturnVal: actual}}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				anyContractBatch := result[AnyContractName]
+				returnValue, err := anyContractBatch[0].GetResult()
+				assert.NoError(t, err)
+				assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, anyContractBatch[0].ReadName)
+				assert.Equal(t, &firstItem, returnValue)
+			},
+		},
+		{
+			name: "BatchGetLatestValues works without arguments and with primitive return",
+			test: func(t T) {
+				// setup call data
+				var primitiveReturnValue uint64
+				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
+				batchGetLatestValuesRequest[AnyContractName] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValue}}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
+				require.NoError(t, err)
+
+				anyContractBatch := result[AnyContractName]
+				returnValue, err := anyContractBatch[0].GetResult()
+				require.NoError(t, err)
+				assert.Equal(t, MethodReturningUint64, anyContractBatch[0].ReadName)
+				assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValue.(*uint64))
+			},
+		},
+		{
+			name: "BatchGetLatestValues allows multiple contract names to have the same function Name",
+			test: func(t T) {
+				var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
+				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
+				batchGetLatestValuesRequest[AnyContractName] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
+				batchGetLatestValuesRequest[AnySecondContractName] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
+				require.NoError(t, err)
+
+				anyContractBatch, anySecondContractBatch := result[AnyContractName], result[AnySecondContractName]
+				returnValueAnyContract, errAnyContract := anyContractBatch[0].GetResult()
+				returnValueAnySecondContract, errAnySecondContract := anySecondContractBatch[0].GetResult()
+				require.NoError(t, errAnyContract)
+				require.NoError(t, errAnySecondContract)
+				assert.Equal(t, MethodReturningUint64, anyContractBatch[0].ReadName)
+				assert.Equal(t, MethodReturningUint64, anySecondContractBatch[0].ReadName)
+				assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract.(*uint64))
+				assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract.(*uint64))
+			},
+		},
+		{
+			name: "BatchGetLatestValue without arguments and with slice return",
+			test: func(t T) {
+				// setup call data
+				var sliceReturnValue []uint64
+				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
+				batchGetLatestValueRequest[AnyContractName] = []types.BatchRead{{ReadName: MethodReturningUint64Slice, Params: nil, ReturnVal: &sliceReturnValue}}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				anyContractBatch := result[AnyContractName]
+				returnValue, err := anyContractBatch[0].GetResult()
+				require.NoError(t, err)
+				assert.Equal(t, MethodReturningUint64Slice, anyContractBatch[0].ReadName)
+				assert.Equal(t, AnySliceToReadWithoutAnArgument, *returnValue.(*[]uint64))
+			},
+		},
+		{
+			name: "BatchGetLatestValues wraps config with modifiers using its own mapstructure overrides",
+			test: func(t T) {
+				// setup call data
+				testStruct := CreateTestStruct(0, tester)
+				testStruct.BigField = nil
+				testStruct.Account = nil
+				actual := &TestStructWithExtraField{}
+				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
+				batchGetLatestValueRequest[AnyContractName] = []types.BatchRead{{ReadName: MethodReturningSeenStruct, Params: testStruct, ReturnVal: actual}}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				anyContractBatch := result[AnyContractName]
+				returnValue, err := anyContractBatch[0].GetResult()
+				require.NoError(t, err)
+				assert.Equal(t, MethodReturningSeenStruct, anyContractBatch[0].ReadName)
+				assert.Equal(t,
+					&TestStructWithExtraField{
+						ExtraField: AnyExtraValue,
+						TestStruct: CreateTestStruct(0, tester),
+					},
+					returnValue)
+			},
+		},
+		{
+			name: "BatchGetLatestValues supports same read with different params and results retain order from request",
+			test: func(t T) {
+				batchCallEntry := make(BatchCallEntry)
+				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
+				for i := 0; i < 10; i++ {
+					// setup test data
+					ts := CreateTestStruct(i, tester)
+					batchCallEntry[AnyContractName] = append(batchCallEntry[AnyContractName], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts})
+					// setup call data
+					batchGetLatestValueRequest[AnyContractName] = append(batchGetLatestValueRequest[AnyContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 1 + i}, ReturnVal: &TestStruct{}})
+				}
+				tester.SetBatchLatestValues(t, batchCallEntry)
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				for i := 0; i < 10; i++ {
+					resultAnyContract, testDataAnyContract := result[AnyContractName], batchCallEntry[AnyContractName]
+					returnValue, err := resultAnyContract[i].GetResult()
+					assert.NoError(t, err)
+					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
+					assert.Equal(t, testDataAnyContract[i].ReturnValue, returnValue)
+				}
+			},
+		},
+		{
+			name: "BatchGetLatestValues supports same read with different params and results retain order from request even with multiple contracts",
+			test: func(t T) {
+				batchCallEntry := make(BatchCallEntry)
+				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
+				for i := 0; i < 10; i++ {
+					// setup test data
+					ts1, ts2 := CreateTestStruct(i, tester), CreateTestStruct(i+10, tester)
+					batchCallEntry[AnyContractName] = append(batchCallEntry[AnyContractName], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts1})
+					batchCallEntry[AnySecondContractName] = append(batchCallEntry[AnySecondContractName], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts2})
+					// setup call data
+					batchGetLatestValueRequest[AnyContractName] = append(batchGetLatestValueRequest[AnyContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 1 + i}, ReturnVal: &TestStruct{}})
+					batchGetLatestValueRequest[AnySecondContractName] = append(batchGetLatestValueRequest[AnySecondContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 1 + i}, ReturnVal: &TestStruct{}})
+				}
+				tester.SetBatchLatestValues(t, batchCallEntry)
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				for i := 0; i < 10; i++ {
+					testDataAnyContract, testDataAnySecondContract := batchCallEntry[AnyContractName], batchCallEntry[AnySecondContractName]
+					resultAnyContract, resultAnySecondContract := result[AnyContractName], result[AnySecondContractName]
+					returnValueAnyContract, errAnyContract := resultAnyContract[i].GetResult()
+					returnValueAnySecondContract, errAnySecondContract := resultAnySecondContract[i].GetResult()
+					assert.NoError(t, errAnyContract)
+					assert.NoError(t, errAnySecondContract)
+					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
+					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnySecondContract[i].ReadName)
+					assert.Equal(t, testDataAnyContract[i].ReturnValue, returnValueAnyContract)
+					assert.Equal(t, testDataAnySecondContract[i].ReturnValue, returnValueAnySecondContract)
+				}
+			},
+		},
+		{
+			name: "BatchGetLatestValues sets errors properly",
+			test: func(t T) {
+				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
+				for i := 0; i < 10; i++ {
+					// setup call data and set invalid params that cause an error
+					batchGetLatestValueRequest[AnyContractName] = append(batchGetLatestValueRequest[AnyContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 0}, ReturnVal: &TestStruct{}})
+					batchGetLatestValueRequest[AnySecondContractName] = append(batchGetLatestValueRequest[AnySecondContractName], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 0}, ReturnVal: &TestStruct{}})
+				}
+
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
+				require.NoError(t, err)
+
+				for i := 0; i < 10; i++ {
+					resultAnyContract, resultAnySecondContract := result[AnyContractName], result[AnySecondContractName]
+					returnValueAnyContract, errAnyContract := resultAnyContract[i].GetResult()
+					returnValueAnySecondContract, errAnySecondContract := resultAnySecondContract[i].GetResult()
+					assert.Error(t, errAnyContract)
+					assert.Error(t, errAnySecondContract)
+					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnyContract[i].ReadName)
+					assert.Equal(t, MethodTakingLatestParamsReturningTestStruct, resultAnySecondContract[i].ReadName)
+					assert.Equal(t, &TestStruct{}, returnValueAnyContract)
+					assert.Equal(t, &TestStruct{}, returnValueAnySecondContract)
+				}
+			},
+		},
+	}
+
+	runTests(t, tester, testCases)
 }
 
 func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {

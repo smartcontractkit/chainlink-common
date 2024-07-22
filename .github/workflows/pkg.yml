@@ -72,5 +72,6 @@ jobs:
           git diff --exit-code
       - name: Ensure "make generate" has been run
         run: |
+          make rm-mocked
           make generate
           git diff --exit-code

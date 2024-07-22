@@ -50,7 +50,6 @@ type ExecutionStateChangedWithTxMeta struct {
 
 type ExecutionStateChanged struct {
 	SequenceNumber uint64
-	Finalized      bool
 }
 
 type TokenBucketRateLimit struct {

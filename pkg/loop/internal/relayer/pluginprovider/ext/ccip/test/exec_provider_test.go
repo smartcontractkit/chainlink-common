@@ -94,6 +94,12 @@ func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 		require.NoError(t, err)
 		assert.Equal(t, ExecutionProvider.sourceNativeTokenResponse, token)
 	})
+
+	t.Run("GetTransactionStatus", func(t *testing.T) {
+		status, err := client.GetTransactionStatus(tests.Context(t), "ignored")
+		require.NoError(t, err)
+		assert.Equal(t, ExecutionProvider.transactionStatusResponse, status)
+	})
 }
 
 func setupExecProviderServer(t *testing.T, server *grpc.Server, b *loopnet.BrokerExt) *ccip.ExecProviderServer {

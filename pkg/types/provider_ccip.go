@@ -20,6 +20,7 @@ type CCIPCommitProvider interface {
 type CCIPExecProvider interface {
 	PluginProvider
 
+	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)
 	NewCommitStoreReader(ctx context.Context, addr ccip.Address) (ccip.CommitStoreReader, error)
 	NewOffRampReader(ctx context.Context, addr ccip.Address) (ccip.OffRampReader, error)
 	NewOnRampReader(ctx context.Context, addr ccip.Address, sourceSelector uint64, destSelector uint64) (ccip.OnRampReader, error)

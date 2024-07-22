@@ -40,10 +40,12 @@ type OCR3CapabilityProvider interface {
 }
 
 // Relayer is like types.Relayer, but with a dynamic NewPluginProvider method.
-//
-//go:generate mockery --quiet --name Relayer --output ../../mocks/ --case=underscore
 type Relayer interface {
 	types.ChainService
+
+	// NewChainWriter returns a new ChainWriter.
+	// The format of config depends on the implementation.
+	NewChainWriter(ctx context.Context, chainWriterConfig []byte) (types.ChainWriter, error)
 
 	// NewContractReader returns a new ContractReader.
 	// The format of contractReaderConfig depends on the implementation.

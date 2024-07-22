@@ -26,6 +26,12 @@ func BuildDashboard(name string, dataSourceMetric string, platform string) (dash
 	builder.WithRow(dashboard.NewRowBuilder("General CL Cluster Info"))
 	utils.AddPanels(builder, panelsGeneralClusterInfo(props))
 
+	builder.WithRow(dashboard.NewRowBuilder("AppDBConnections"))
+	utils.AddPanels(builder, appDBConnections(props))
+
+	builder.WithRow(dashboard.NewRowBuilder("SQLQueries"))
+	utils.AddPanels(builder, sqlQueries(props))
+
 	builder.WithRow(dashboard.NewRowBuilder("LogPoller"))
 	utils.AddPanels(builder, logPoller(props))
 
@@ -43,12 +49,6 @@ func BuildDashboard(name string, dataSourceMetric string, platform string) (dash
 
 	builder.WithRow(dashboard.NewRowBuilder("HeadTracker"))
 	utils.AddPanels(builder, headTracker(props))
-
-	builder.WithRow(dashboard.NewRowBuilder("AppDBConnections"))
-	utils.AddPanels(builder, appDBConnections(props))
-
-	builder.WithRow(dashboard.NewRowBuilder("SQLQueries"))
-	utils.AddPanels(builder, sqlQueries(props))
 
 	builder.WithRow(dashboard.NewRowBuilder("LogsCounters"))
 	utils.AddPanels(builder, logsCounters(props))
@@ -100,6 +100,8 @@ func vars(p Props) []cog.Builder[dashboard.VariableModel] {
 			utils.QueryVariable(p.MetricsDataSource, "network_type", "Network Type", `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product"}, network_type)`, false))
 		variables = append(variables,
 			utils.QueryVariable(p.MetricsDataSource, "job", "Job", `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product", network_type="$network_type"}, job)`, true))
+		variables = append(variables,
+			utils.QueryVariable(p.MetricsDataSource, "pod", "Pod", `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", job="$job"}, pod)`, true))
 	} else if p.PlatformOpts.Platform == "docker" {
 		variables = append(variables,
 			utils.QueryVariable(p.MetricsDataSource, "instance", "Instance", fmt.Sprintf("label_values(%s)", p.PlatformOpts.LabelFilter), true))
@@ -258,6 +260,146 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 
 	panelsArray = append(panelsArray, utils.StatPanel(
 		p.MetricsDataSource,
+		"CPU Utilisation (from requests)",
+		"",
+		4,
+		6,
+		1,
+		"percent",
+		common.BigValueColorModeValue,
+		common.BigValueGraphModeNone,
+		common.BigValueTextModeValue,
+		common.VizOrientationHorizontal,
+		utils.PrometheusQuery{
+			Query:   `100 * sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{cluster="$cluster", namespace="$namespace", pod="$pod"}) by (container) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests{cluster="$cluster", namespace="$namespace", pod="$pod"}) by (container)`,
+			Legend:  `{{pod}}`,
+			Instant: true,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.StatPanel(
+		p.MetricsDataSource,
+		"CPU Utilisation (from limits)",
+		"",
+		4,
+		6,
+		1,
+		"percent",
+		common.BigValueColorModeValue,
+		common.BigValueGraphModeNone,
+		common.BigValueTextModeValue,
+		common.VizOrientationHorizontal,
+		utils.PrometheusQuery{
+			Query:   `100 * sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{cluster="$cluster", namespace="$namespace", pod="$pod"}) by (container) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{cluster="$cluster", namespace="$namespace", pod="$pod"}) by (container)`,
+			Legend:  `{{pod}}`,
+			Instant: true,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.StatPanel(
+		p.MetricsDataSource,
+		"Memory Utilisation (from requests)",
+		"",
+		4,
+		6,
+		2,
+		"percent",
+		common.BigValueColorModeValue,
+		common.BigValueGraphModeNone,
+		common.BigValueTextModeValue,
+		common.VizOrientationHorizontal,
+		utils.PrometheusQuery{
+			Query:   `100 * sum(container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", cluster="$cluster", namespace="$namespace", pod="$pod", image!=""}) by (container) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_requests{cluster="$cluster", namespace="$namespace", pod="$pod"}) by (container)`,
+			Legend:  `{{pod}}`,
+			Instant: true,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.StatPanel(
+		p.MetricsDataSource,
+		"Memory Utilisation (from limits)",
+		"",
+		4,
+		6,
+		1,
+		"percent",
+		common.BigValueColorModeValue,
+		common.BigValueGraphModeNone,
+		common.BigValueTextModeValue,
+		common.VizOrientationHorizontal,
+		utils.PrometheusQuery{
+			Query:   `100 * sum(container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", cluster="$cluster", namespace="$namespace", pod="$pod", container!="", image!=""}) by (container) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{cluster="$cluster", namespace="$namespace", pod="$pod"}) by (container)`,
+			Legend:  `{{pod}}`,
+			Instant: true,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+		p.MetricsDataSource,
+		"CPU Usage",
+		"",
+		6,
+		12,
+		3,
+		"",
+		common.LegendPlacementBottom,
+		utils.PrometheusQuery{
+			Query:  `sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~"$pod", namespace=~"${namespace}"}) by (pod)`,
+			Legend: "{{pod}}",
+		},
+		utils.PrometheusQuery{
+			Query:  `sum(kube_pod_container_resource_requests{job="kube-state-metrics", cluster="$cluster", namespace="$namespace", pod=~"$pod", resource="cpu"})`,
+			Legend: "Requests",
+		},
+		utils.PrometheusQuery{
+			Query:  `sum(kube_pod_container_resource_limits{job="kube-state-metrics", cluster="$cluster", namespace="$namespace", pod=~"$pod", resource="cpu"})`,
+			Legend: "Limits",
+		},
+	).ScaleDistribution(common.NewScaleDistributionConfigBuilder().Type(common.ScaleDistributionLog)))
+
+	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+		p.MetricsDataSource,
+		"Memory Usage",
+		"",
+		6,
+		12,
+		0,
+		"bytes",
+		common.LegendPlacementBottom,
+		utils.PrometheusQuery{
+			Query:  `sum(container_memory_rss{pod=~"$pod", namespace=~"${namespace}", container!=""}) by (pod)`,
+			Legend: "{{pod}}",
+		},
+		utils.PrometheusQuery{
+			Query:  `sum(kube_pod_container_resource_requests{job="kube-state-metrics", cluster="$cluster", namespace="$namespace", pod=~"$pod", resource="memory"})`,
+			Legend: "Requests",
+		},
+		utils.PrometheusQuery{
+			Query:  `sum(kube_pod_container_resource_limits{job="kube-state-metrics", cluster="$cluster", namespace="$namespace", pod=~"$pod", resource="memory"})`,
+			Legend: "Limits",
+		},
+	).ScaleDistribution(common.NewScaleDistributionConfigBuilder().Type(common.ScaleDistributionLog)))
+
+	panelsArray = append(panelsArray, utils.StatPanel(
+		p.MetricsDataSource,
+		"Open File Descriptors",
+		"",
+		4,
+		6,
+		1,
+		"",
+		common.BigValueColorModeValue,
+		common.BigValueGraphModeArea,
+		common.BigValueTextModeValue,
+		common.VizOrientationHorizontal,
+		utils.PrometheusQuery{
+			Query:  `process_open_fds{cluster="$cluster", namespace="$namespace", pod="$pod", service!~".*-preview"}`,
+			Legend: "{{pod}}",
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.StatPanel(
+		p.MetricsDataSource,
 		"Go Version",
 		"golang version",
 		4,
@@ -272,6 +414,98 @@ func panelsGeneralClusterInfo(p Props) []cog.Builder[dashboard.Panel] {
 			Query:   `go_info{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend:  "{{version}}",
 			Instant: true,
+		},
+	))
+
+	return panelsArray
+}
+
+func appDBConnections(p Props) []cog.Builder[dashboard.Panel] {
+	var panelsArray []cog.Builder[dashboard.Panel]
+
+	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+		p.MetricsDataSource,
+		"DB Connections",
+		"",
+		6,
+		24,
+		1,
+		"Conn",
+		common.LegendPlacementBottom,
+		utils.PrometheusQuery{
+			Query:  `db_conns_max{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Max`,
+		},
+		utils.PrometheusQuery{
+			Query:  `db_conns_open{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Open`,
+		},
+		utils.PrometheusQuery{
+			Query:  `db_conns_used{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Used`,
+		},
+		utils.PrometheusQuery{
+			Query:  `db_conns_wait{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Wait`,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+		p.MetricsDataSource,
+		"DB Wait Count",
+		"",
+		6,
+		12,
+		1,
+		"",
+		common.LegendPlacementBottom,
+		utils.PrometheusQuery{
+			Query:  `db_wait_count{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+		},
+	))
+
+	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+		p.MetricsDataSource,
+		"DB Wait Time",
+		"",
+		6,
+		12,
+		1,
+		"Sec",
+		common.LegendPlacementBottom,
+		utils.PrometheusQuery{
+			Query:  `db_wait_time_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+		},
+	))
+
+	return panelsArray
+}
+
+func sqlQueries(p Props) []cog.Builder[dashboard.Panel] {
+	var panelsArray []cog.Builder[dashboard.Panel]
+
+	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
+		p.MetricsDataSource,
+		"SQL Query Timeout Percent",
+		"",
+		6,
+		24,
+		1,
+		"percent",
+		common.LegendPlacementBottom,
+		utils.PrometheusQuery{
+			Query:  `histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
+			Legend: "p90",
+		},
+		utils.PrometheusQuery{
+			Query:  `histogram_quantile(0.95, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
+			Legend: "p95",
+		},
+		utils.PrometheusQuery{
+			Query:  `histogram_quantile(0.99, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
+			Legend: "p99",
 		},
 	))
 
@@ -825,98 +1059,6 @@ func headTracker(p Props) []cog.Builder[dashboard.Panel] {
 		utils.PrometheusQuery{
 			Query:  `head_tracker_connection_errors{` + p.PlatformOpts.LabelQuery + `}`,
 			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-		},
-	))
-
-	return panelsArray
-}
-
-func appDBConnections(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
-
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"DB Connections",
-		"",
-		6,
-		24,
-		1,
-		"Conn",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `db_conns_max{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Max`,
-		},
-		utils.PrometheusQuery{
-			Query:  `db_conns_open{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Open`,
-		},
-		utils.PrometheusQuery{
-			Query:  `db_conns_used{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Used`,
-		},
-		utils.PrometheusQuery{
-			Query:  `db_conns_wait{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}} - Wait`,
-		},
-	))
-
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"DB Wait Count",
-		"",
-		6,
-		12,
-		1,
-		"",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `db_wait_count{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-		},
-	))
-
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"DB Wait Time",
-		"",
-		6,
-		12,
-		1,
-		"Sec",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `db_wait_time_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-		},
-	))
-
-	return panelsArray
-}
-
-func sqlQueries(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
-
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"SQL Query Timeout Percent",
-		"",
-		6,
-		24,
-		1,
-		"percent",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
-			Legend: "p90",
-		},
-		utils.PrometheusQuery{
-			Query:  `histogram_quantile(0.95, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
-			Legend: "p95",
-		},
-		utils.PrometheusQuery{
-			Query:  `histogram_quantile(0.99, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
-			Legend: "p99",
 		},
 	))
 

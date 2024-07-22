@@ -243,7 +243,7 @@ func evm2EVMMessageWithTxMetaSlicePB(messages []cciptypes.EVM2EVMMessageWithTxMe
 	for i, m := range messages {
 		decodedMsg := evm2EVMMessagePB(m.EVM2EVMMessage)
 		res[i] = &ccippb.EVM2EVMMessageWithTxMeta{
-			TxMeta:  txMetaPB(m.TxMeta),
+			TxMeta:  txMetaToPB(m.TxMeta),
 			Message: decodedMsg,
 		}
 	}
@@ -311,24 +311,6 @@ func tokenAmountSlicePB(tokenAmounts []cciptypes.TokenAmount) []*ccippb.TokenAmo
 		}
 	}
 	return res
-}
-
-func txMeta(meta *ccippb.TxMeta) cciptypes.TxMeta {
-	return cciptypes.TxMeta{
-		BlockTimestampUnixMilli: meta.BlockTimestampUnixMilli,
-		BlockNumber:             meta.BlockNumber,
-		TxHash:                  meta.TxHash,
-		LogIndex:                meta.LogIndex,
-	}
-}
-
-func txMetaPB(meta cciptypes.TxMeta) *ccippb.TxMeta {
-	return &ccippb.TxMeta{
-		BlockTimestampUnixMilli: meta.BlockTimestampUnixMilli,
-		BlockNumber:             meta.BlockNumber,
-		TxHash:                  meta.TxHash,
-		LogIndex:                meta.LogIndex,
-	}
 }
 
 func hash(h []byte) (cciptypes.Hash, error) {

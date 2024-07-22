@@ -37,6 +37,9 @@ type SugaredLogger interface {
 // Sugared returns a new SugaredLogger wrapping the given Logger.
 // Prefer to store the SugaredLogger for reuse, instead of recreating it as needed.
 func Sugared(l Logger) SugaredLogger {
+	if sl, ok := l.(SugaredLogger); ok {
+		return sl
+	}
 	return &sugared{
 		Logger: l,
 		h:      Helper(l, 1),

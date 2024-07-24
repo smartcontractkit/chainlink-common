@@ -2,8 +2,10 @@ package ocr3
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -41,21 +43,22 @@ func extractReportInfo(data []byte) (*pbtypes.ReportInfo, error) {
 
 	im := info.AsMap()
 	ri, ok := im["reportInfo"]
-	if ok {
-		return nil, err
-	}
-
-	rib, ok := ri.([]byte)
 	if !ok {
-		return nil, err
+		return nil, errors.New("could not fetch reportInfo from structpb")
 	}
 
-	reportInfo := &pbtypes.ReportInfo{}
-	err = proto.Unmarshal(rib, reportInfo)
+	ris, ok := ri.(string)
+	if !ok {
+		return nil, errors.New("reportInfo is not bytes")
+	}
+
+	rib, err := base64.StdEncoding.DecodeString(ris)
 	if err != nil {
 		return nil, err
 	}
 
+	reportInfo := &pbtypes.ReportInfo{}
+	err = proto.Unmarshal([]byte(rib), reportInfo)
 	return reportInfo, err
 }
 

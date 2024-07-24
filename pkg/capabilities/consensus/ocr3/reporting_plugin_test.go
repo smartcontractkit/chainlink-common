@@ -320,8 +320,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	assert.Len(t, gotRep.Report, 0)
 
 	ib := gotRep.Info
-	info := &pbtypes.ReportInfo{}
-	err = proto.Unmarshal(ib, info)
+	info, err := extractReportInfo(ib)
 	require.NoError(t, err)
 
 	assert.EqualExportedValues(t, info.Id, id)
@@ -397,8 +396,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	require.Equal(t, nm, fp)
 
 	ib := gotRep.Info
-	info := &pbtypes.ReportInfo{}
-	err = proto.Unmarshal(ib, info)
+	info, err := extractReportInfo(ib)
 	require.NoError(t, err)
 
 	assert.EqualExportedValues(t, info.Id, id)

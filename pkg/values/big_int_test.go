@@ -56,7 +56,8 @@ func Test_BigInt(t *testing.T) {
 			v := NewBigInt(tc.bi)
 
 			vp := Proto(v)
-			got := FromProto(vp)
+			got, err := FromProto(vp)
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.bi, got.(*BigInt).Underlying)
 		})

@@ -23,3 +23,7 @@ func (s *String) Unwrap() (any, error) {
 func (s *String) UnwrapTo(to any) error {
 	return unwrapTo(s.Underlying, to)
 }
+
+func (s *String) Copy() Value {
+	return &String{Underlying: s.Underlying}
+}

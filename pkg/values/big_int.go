@@ -44,3 +44,9 @@ func (b *BigInt) UnwrapTo(to any) error {
 
 	return nil
 }
+
+func (b *BigInt) Copy() Value {
+	nw := new(big.Int)
+	nw.Set(b.Underlying)
+	return &BigInt{Underlying: nw}
+}

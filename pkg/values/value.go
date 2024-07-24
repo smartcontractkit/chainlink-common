@@ -19,6 +19,7 @@ type Unwrappable interface {
 type Value interface {
 	proto() *pb.Value
 
+	Copy() Value
 	Unwrappable
 }
 
@@ -134,61 +135,86 @@ func Proto(v Value) *pb.Value {
 	return v.proto()
 }
 
-func FromProto(val *pb.Value) Value {
+func ProtoMap(v *Map) *pb.Map {
+	return Proto(v).GetMapValue()
+}
+
+func FromProto(val *pb.Value) (Value, error) {
 	if val == nil {
-		return nil
+		return nil, nil
 	}
 
 	switch val.Value.(type) {
 	case nil:
-		return nil
+		return nil, nil
 	case *pb.Value_StringValue:
-		return NewString(val.GetStringValue())
+		return NewString(val.GetStringValue()), nil
 	case *pb.Value_BoolValue:
-		return NewBool(val.GetBoolValue())
+		return NewBool(val.GetBoolValue()), nil
 	case *pb.Value_DecimalValue:
-		return fromDecimalValueProto(val.GetDecimalValue())
+		return fromDecimalValueProto(val.GetDecimalValue()), nil
 	case *pb.Value_Int64Value:
-		return NewInt64(val.GetInt64Value())
+		return NewInt64(val.GetInt64Value()), nil
 	case *pb.Value_BytesValue:
-		return NewBytes(val.GetBytesValue())
+		return NewBytes(val.GetBytesValue()), nil
 	case *pb.Value_ListValue:
 		return FromListValueProto(val.GetListValue())
 	case *pb.Value_MapValue:
 		return FromMapValueProto(val.GetMapValue())
 	case *pb.Value_BigintValue:
-		return fromBigIntValueProto(val.GetBigintValue())
+		return fromBigIntValueProto(val.GetBigintValue()), nil
 	}
 
-	panic(fmt.Errorf("unsupported type %T: %+v", val, val))
+	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)
 }
 
-func FromMapValueProto(mv *pb.Map) *Map {
+func FromMapValueProto(mv *pb.Map) (*Map, error) {
+	if mv == nil {
+		return nil, nil
+	}
+
 	nm := map[string]Value{}
 	for k, v := range mv.Fields {
-		nm[k] = FromProto(v)
+		inner, err := FromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		nm[k] = inner
 	}
-	return &Map{Underlying: nm}
+	return &Map{Underlying: nm}, nil
 }
 
-func FromListValueProto(lv *pb.List) *List {
+func FromListValueProto(lv *pb.List) (*List, error) {
+	if lv == nil {
+		return nil, nil
+	}
+
 	nl := []Value{}
 	for _, el := range lv.Fields {
-		nl = append(nl, FromProto(el))
+		inner, err := FromProto(el)
+		if err != nil {
+			return nil, err
+		}
+
+		nl = append(nl, inner)
 	}
-	return &List{Underlying: nl}
+	return &List{Underlying: nl}, nil
 }
 
-func fromDecimalValueProto(decStr string) *Decimal {
-	dec, err := decimal.NewFromString(decStr)
-	if err != nil {
-		panic(err)
+func fromDecimalValueProto(dec *pb.Decimal) *Decimal {
+	if dec == nil {
+		return nil
 	}
 
-	return NewDecimal(dec)
+	dc := decimal.NewFromBigInt(protoToBigInt(dec.Coefficient), dec.Exponent)
+	return NewDecimal(dc)
 }
 
-func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
+func protoToBigInt(biv *pb.BigInt) *big.Int {
+	if biv == nil {
+		return nil
+	}
+
 	av := &big.Int{}
 	av = av.SetBytes(biv.AbsVal)
 
@@ -196,7 +222,11 @@ func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
 		av.Neg(av)
 	}
 
-	return NewBigInt(av)
+	return av
+}
+
+func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
+	return NewBigInt(protoToBigInt(biv))
 }
 
 func createMapFromStruct(v any) (Value, error) {

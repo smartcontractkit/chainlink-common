@@ -67,7 +67,16 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 
 // Test returns a new test Logger for tb.
 func Test(tb testing.TB) Logger {
-	return &logger{zaptest.NewLogger(tb).Sugar()}
+	cfg := zap.NewDevelopmentEncoderConfig()
+	cfg.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05.000000000")
+	lggr := zap.New(
+		zapcore.NewCore(
+			zapcore.NewConsoleEncoder(cfg),
+			zaptest.NewTestingWriter(tb),
+			zapcore.DebugLevel,
+		),
+	)
+	return &logger{lggr.Sugar()}
 }
 
 // TestSugared returns a new test SugaredLogger.

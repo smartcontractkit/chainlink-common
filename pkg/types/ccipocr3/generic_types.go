@@ -10,26 +10,26 @@ import (
 )
 
 type TokenPrice struct {
-	TokenID types.Account `json:"tokenID"`
-	Price   BigInt        `json:"price"`
+	SourceToken types.Account
+	UsdPerToken BigInt
 }
 
 func NewTokenPrice(tokenID types.Account, price *big.Int) TokenPrice {
 	return TokenPrice{
-		TokenID: tokenID,
-		Price:   BigInt{price},
+		SourceToken: tokenID,
+		UsdPerToken: BigInt{price},
 	}
 }
 
 type GasPriceChain struct {
-	GasPrice BigInt        `json:"gasPrice"`
-	ChainSel ChainSelector `json:"chainSel"`
+	UsdPerUnitGas     BigInt
+	DestChainSelector ChainSelector
 }
 
 func NewGasPriceChain(gasPrice *big.Int, chainSel ChainSelector) GasPriceChain {
 	return GasPriceChain{
-		GasPrice: NewBigInt(gasPrice),
-		ChainSel: chainSel,
+		UsdPerUnitGas:     NewBigInt(gasPrice),
+		DestChainSelector: chainSel,
 	}
 }
 
@@ -44,22 +44,25 @@ func NewSeqNumRange(start, end SeqNum) SeqNumRange {
 }
 
 // SeqNumRange defines an inclusive range of sequence numbers.
-type SeqNumRange [2]SeqNum
+type SeqNumRange struct {
+	Min SeqNum
+	Max SeqNum
+}
 
 func (s SeqNumRange) Start() SeqNum {
-	return s[0]
+	return s.Min
 }
 
 func (s SeqNumRange) End() SeqNum {
-	return s[1]
+	return s.Max
 }
 
 func (s *SeqNumRange) SetStart(v SeqNum) {
-	s[0] = v
+	s.Min = v
 }
 
 func (s *SeqNumRange) SetEnd(v SeqNum) {
-	s[1] = v
+	s.Max = v
 }
 
 // Overlaps returns true if the two ranges overlap.
@@ -73,7 +76,7 @@ func (s SeqNumRange) Contains(seq SeqNum) bool {
 }
 
 func (s SeqNumRange) String() string {
-	return fmt.Sprintf("[%d -> %d]", s[0], s[1])
+	return fmt.Sprintf("[%d -> %d]", s.Min, s.Max)
 }
 
 type ChainSelector uint64

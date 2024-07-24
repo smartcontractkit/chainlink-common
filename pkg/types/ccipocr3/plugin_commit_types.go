@@ -20,9 +20,9 @@ func (r CommitPluginReport) IsEmpty() bool {
 }
 
 type MerkleRootChain struct {
-	ChainSel     ChainSelector `json:"chain"`
-	SeqNumsRange SeqNumRange   `json:"seqNumsRange"`
-	MerkleRoot   Bytes32       `json:"merkleRoot"`
+	SourceChainSelector ChainSelector
+	Interval            SeqNumRange
+	MerkleRoot          Bytes32
 }
 
 func NewMerkleRootChain(
@@ -31,9 +31,9 @@ func NewMerkleRootChain(
 	merkleRoot Bytes32,
 ) MerkleRootChain {
 	return MerkleRootChain{
-		ChainSel:     chainSel,
-		SeqNumsRange: seqNumsRange,
-		MerkleRoot:   merkleRoot,
+		SourceChainSelector: chainSel,
+		Interval:            seqNumsRange,
+		MerkleRoot:          merkleRoot,
 	}
 }
 

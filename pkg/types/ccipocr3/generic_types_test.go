@@ -144,16 +144,16 @@ func TestCCIPMsg_String(t *testing.T) {
 func TestNewTokenPrice(t *testing.T) {
 	t.Run("base", func(t *testing.T) {
 		tp := NewTokenPrice("link", big.NewInt(1000))
-		assert.Equal(t, "link", string(tp.TokenID))
-		assert.Equal(t, uint64(1000), tp.Price.Int.Uint64())
+		assert.Equal(t, "link", string(tp.SourceToken))
+		assert.Equal(t, uint64(1000), tp.UsdPerToken.Int.Uint64())
 	})
 }
 
 func TestNewGasPriceChain(t *testing.T) {
 	t.Run("base", func(t *testing.T) {
 		gpc := NewGasPriceChain(big.NewInt(1000), ChainSelector(1))
-		assert.Equal(t, uint64(1000), (gpc.GasPrice).Uint64())
-		assert.Equal(t, ChainSelector(1), gpc.ChainSel)
+		assert.Equal(t, uint64(1000), (gpc.UsdPerUnitGas).Uint64())
+		assert.Equal(t, ChainSelector(1), gpc.DestChainSelector)
 	})
 }
 

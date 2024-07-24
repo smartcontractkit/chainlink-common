@@ -218,6 +218,7 @@ type CapabilityInfo struct {
 	CapabilityType CapabilityType
 	Description    string
 	DON            *DON
+	IsLocal        bool
 }
 
 // Parse out the version from the ID.
@@ -250,24 +251,12 @@ const (
 	idMaxLength = 128
 )
 
-// NewCapabilityInfo returns a new CapabilityInfo.
-func NewCapabilityInfo(
-	id string,
-	capabilityType CapabilityType,
-	description string,
-) (CapabilityInfo, error) {
-	return NewRemoteCapabilityInfo(id, capabilityType, description, nil)
-}
-
-// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
-// This is largely intended for internal use by the registry syncer.
-// Capability developers should use `NewCapabilityInfo` instead as this
-// omits the requirement to pass in the DON Info.
-func NewRemoteCapabilityInfo(
+func newCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
+	isLocal bool,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
@@ -285,7 +274,30 @@ func NewRemoteCapabilityInfo(
 		CapabilityType: capabilityType,
 		Description:    description,
 		DON:            don,
+		IsLocal:        isLocal,
 	}, nil
+}
+
+// NewCapabilityInfo returns a new CapabilityInfo.
+func NewCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, nil, true)
+}
+
+// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
+// This is largely intended for internal use by the registry syncer.
+// Capability developers should use `NewCapabilityInfo` instead as this
+// omits the requirement to pass in the DON Info.
+func NewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+	don *DON,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, don, false)
 }
 
 // MustNewCapabilityInfo returns a new CapabilityInfo,
@@ -295,7 +307,12 @@ func MustNewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 ) CapabilityInfo {
-	return MustNewRemoteCapabilityInfo(id, capabilityType, description, nil)
+	c, err := NewCapabilityInfo(id, capabilityType, description)
+	if err != nil {
+		panic(err)
+	}
+
+	return c
 }
 
 // MustNewRemoteCapabilityInfo returns a new CapabilityInfo,
@@ -366,4 +383,36 @@ outerLoop:
 	}
 
 	return &values.List{Underlying: vs}, nil
+}
+
+const (
+	DefaultRegistrationRefresh = 30 * time.Second
+	DefaultRegistrationExpiry  = 2 * time.Minute
+	DefaultMessageExpiry       = 2 * time.Minute
+)
+
+type RemoteTriggerConfig struct {
+	RegistrationRefresh     time.Duration
+	RegistrationExpiry      time.Duration
+	MinResponsesToAggregate uint32
+	MessageExpiry           time.Duration
+}
+
+// NOTE: consider splitting this config into values stored in Registry (KS-118)
+// and values defined locally by Capability owners.
+func (c *RemoteTriggerConfig) ApplyDefaults() {
+	if c.RegistrationRefresh == 0 {
+		c.RegistrationRefresh = DefaultRegistrationRefresh
+	}
+	if c.RegistrationExpiry == 0 {
+		c.RegistrationExpiry = DefaultRegistrationExpiry
+	}
+	if c.MessageExpiry == 0 {
+		c.MessageExpiry = DefaultMessageExpiry
+	}
+}
+
+type CapabilityConfiguration struct {
+	DefaultConfig       *values.Map
+	RemoteTriggerConfig RemoteTriggerConfig
 }

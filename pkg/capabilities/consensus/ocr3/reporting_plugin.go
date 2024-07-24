@@ -282,14 +282,14 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	return rawOutcome, err
 }
 
-func marshalReportInfo(info *pbtypes.ReportInfo, keyId string) ([]byte, error) {
+func marshalReportInfo(info *pbtypes.ReportInfo, keyID string) ([]byte, error) {
 	p, err := proto.MarshalOptions{Deterministic: true}.Marshal(info)
 	if err != nil {
 		return nil, err
 	}
 
 	infos, err := structpb.NewStruct(map[string]any{
-		"keyBundleName": keyId,
+		"keyBundleName": keyID,
 		"reportInfo":    p,
 	})
 	if err != nil {

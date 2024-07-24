@@ -58,7 +58,7 @@ func extractReportInfo(data []byte) (*pbtypes.ReportInfo, error) {
 	}
 
 	reportInfo := &pbtypes.ReportInfo{}
-	err = proto.Unmarshal([]byte(rib), reportInfo)
+	err = proto.Unmarshal(rib, reportInfo)
 	return reportInfo, err
 }
 

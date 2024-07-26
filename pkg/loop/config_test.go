@@ -269,7 +269,7 @@ func TestManagedGRPCClientConfig(t *testing.T) {
 			},
 		}
 
-		clientConfig := ManagedGRPCClientConfig(&plugin.ClientConfig{}, brokerConfig)
+		clientConfig := ManagedGRPCClientConfig(&plugin.ClientConfig{AutoMTLS: true}, brokerConfig)
 
 		assert.NotNil(t, clientConfig.Logger)
 		assert.Equal(t, []plugin.Protocol{plugin.ProtocolGRPC}, clientConfig.AllowedProtocols)

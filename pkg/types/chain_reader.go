@@ -20,7 +20,7 @@ const (
 // ContractStateReader is a subset of ContractReader and does not support querying events
 type ContractStateReader interface {
 	services.Service
-	GetLatestValue(ctx context.Context, contractName, method string, params, returnVal any) error
+	GetLatestValue(ctx context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 	Bind(ctx context.Context, bindings []BoundContract) error
 }
 

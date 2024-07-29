@@ -79,7 +79,7 @@ func TestTransmitter(t *testing.T) {
 		},
 		ShouldReport: true,
 	}
-	infob, err := proto.Marshal(info)
+	infob, err := marshalReportInfo(info, "evm")
 	require.NoError(t, err)
 
 	sp := values.Proto(values.NewString("hello"))
@@ -162,7 +162,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 		},
 		ShouldReport: false,
 	}
-	infob, err := proto.Marshal(info)
+	infob, err := marshalReportInfo(info, "evm")
 	require.NoError(t, err)
 
 	sp := values.Proto(values.NewString("hello"))

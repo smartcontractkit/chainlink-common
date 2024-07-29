@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -12,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
@@ -52,8 +54,8 @@ func toPbDON(don capabilities.DON) *pb.DON {
 	}
 }
 
-func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabilities.Node, error) {
-	res, err := cr.grpc.GetLocalNode(ctx, &emptypb.Empty{})
+func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabilities.Node, error) {
+	res, err := cr.grpc.LocalNode(ctx, &emptypb.Empty{})
 	if err != nil {
 		return capabilities.Node{}, err
 	}
@@ -73,6 +75,33 @@ func (cr *capabilitiesRegistryClient) GetLocalNode(ctx context.Context) (capabil
 		PeerID:         pid,
 		WorkflowDON:    toDON(res.WorkflowDON),
 		CapabilityDONs: cDONs,
+	}, nil
+}
+
+func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+	res, err := cr.grpc.ConfigForCapability(ctx, &pb.ConfigForCapabilityRequest{
+		CapabilityID: capabilityID,
+		DonID:        donID,
+	})
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, err
+	}
+
+	mc := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
+
+	var rtc capabilities.RemoteTriggerConfig
+	rtc.ApplyDefaults()
+
+	if prtc := res.CapabilityConfig.GetRemoteTriggerConfig(); prtc != nil {
+		rtc.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
+		rtc.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+		rtc.MinResponsesToAggregate = prtc.MinResponsesToAggregate
+		rtc.MessageExpiry = prtc.MessageExpiry.AsDuration()
+	}
+
+	return capabilities.CapabilityConfiguration{
+		DefaultConfig:       mc,
+		RemoteTriggerConfig: rtc,
 	}, nil
 }
 
@@ -257,8 +286,33 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.GetLocalNodeReply, error) {
-	node, err := c.impl.GetLocalNode(ctx)
+func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, req *pb.ConfigForCapabilityRequest) (*pb.ConfigForCapabilityReply, error) {
+	cc, err := c.impl.ConfigForCapability(ctx, req.CapabilityID, req.DonID)
+	if err != nil {
+		return nil, err
+	}
+
+	ecm := values.Proto(cc.DefaultConfig).GetMapValue()
+
+	ccp := &capabilitiespb.CapabilityConfig{
+		DefaultConfig: ecm,
+		RemoteConfig: &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
+			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
+				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
+				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
+				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
+				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
+			},
+		},
+	}
+
+	return &pb.ConfigForCapabilityReply{
+		CapabilityConfig: ccp,
+	}, nil
+}
+
+func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.LocalNodeReply, error) {
+	node, err := c.impl.LocalNode(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +328,7 @@ func (c *capabilitiesRegistryServer) GetLocalNode(ctx context.Context, _ *emptyp
 	if node.PeerID != nil {
 		pid = node.PeerID[:]
 	}
-	reply := &pb.GetLocalNodeReply{
+	reply := &pb.LocalNodeReply{
 		PeerID:         pid,
 		WorkflowDON:    workflowDONpb,
 		CapabilityDONs: capabilityDONsPb,

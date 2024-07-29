@@ -437,7 +437,6 @@ func (r *relayerServer) NewContractStateReader(ctx context.Context, request *pb.
 	return &pb.NewContractStateReaderReply{ContractStateReaderID: id}, nil
 }
 
-
 func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewConfigProviderRequest) (*pb.NewConfigProviderReply, error) {
 	exJobID, err := uuid.FromBytes(request.RelayArgs.ExternalJobID)
 	if err != nil {

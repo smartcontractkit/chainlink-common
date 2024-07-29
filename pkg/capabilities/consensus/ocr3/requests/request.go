@@ -24,6 +24,8 @@ type Request struct {
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
 	ReportID                 string
+
+	KeyID string
 }
 
 type Response struct {

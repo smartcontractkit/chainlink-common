@@ -24,6 +24,7 @@ message CapabilityInfoReply {
   CapabilityType capability_type = 2;
   string description = 3;
   string version = 4;
+  bool isLocal = 5;
 }
 
 message RequestMetadata {

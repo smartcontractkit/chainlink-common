@@ -2,8 +2,10 @@ package ocr3
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -15,6 +17,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 var _ (ocr3types.ContractTransmitter[[]byte]) = (*ContractTransmitter)(nil)
@@ -30,9 +34,36 @@ type ContractTransmitter struct {
 	fromAccount string
 }
 
+func extractReportInfo(data []byte) (*pbtypes.ReportInfo, error) {
+	info := &structpb.Struct{}
+	err := proto.Unmarshal(data, info)
+	if err != nil {
+		return nil, err
+	}
+
+	im := info.AsMap()
+	ri, ok := im["reportInfo"]
+	if !ok {
+		return nil, errors.New("could not fetch reportInfo from structpb")
+	}
+
+	ris, ok := ri.(string)
+	if !ok {
+		return nil, errors.New("reportInfo is not bytes")
+	}
+
+	rib, err := base64.StdEncoding.DecodeString(ris)
+	if err != nil {
+		return nil, err
+	}
+
+	reportInfo := &pbtypes.ReportInfo{}
+	err = proto.Unmarshal(rib, reportInfo)
+	return reportInfo, err
+}
+
 func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.ConfigDigest, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte], signatures []types.AttributedOnchainSignature) error {
-	info := &pbtypes.ReportInfo{}
-	err := proto.Unmarshal(rwi.Info, info)
+	info, err := extractReportInfo(rwi.Info)
 	if err != nil {
 		c.lggr.Error("could not unmarshal info")
 		return err

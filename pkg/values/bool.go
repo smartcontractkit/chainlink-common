@@ -23,3 +23,7 @@ func (b *Bool) Unwrap() (any, error) {
 func (b *Bool) UnwrapTo(to any) error {
 	return unwrapTo[bool](b.Underlying, to)
 }
+
+func (b *Bool) Copy() Value {
+	return &Bool{Underlying: b.Underlying}
+}

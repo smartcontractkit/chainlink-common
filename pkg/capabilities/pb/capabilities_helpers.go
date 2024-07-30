@@ -30,7 +30,7 @@ func UnmarshalCapabilityRequest(raw []byte) (capabilities.CapabilityRequest, err
 	if err := proto.Unmarshal(raw, &cr); err != nil {
 		return capabilities.CapabilityRequest{}, err
 	}
-	return CapabilityRequestFromProto(&cr), nil
+	return CapabilityRequestFromProto(&cr)
 }
 
 func UnmarshalCapabilityResponse(raw []byte) (capabilities.CapabilityResponse, error) {
@@ -38,7 +38,7 @@ func UnmarshalCapabilityResponse(raw []byte) (capabilities.CapabilityResponse, e
 	if err := proto.Unmarshal(raw, &cr); err != nil {
 		return capabilities.CapabilityResponse{}, err
 	}
-	return CapabilityResponseFromProto(&cr), nil
+	return CapabilityResponseFromProto(&cr)
 }
 
 func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityRequest {
@@ -59,8 +59,8 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			WorkflowDonId:            req.Metadata.WorkflowDonID,
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 		},
-		Inputs: values.Proto(inputs),
-		Config: values.Proto(config),
+		Inputs: values.ProtoMap(inputs),
+		Config: values.ProtoMap(config),
 	}
 }
 
@@ -72,14 +72,21 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 
 	return &CapabilityResponse{
 		Error: errStr,
-		Value: values.Proto(resp.Value),
+		Value: values.ProtoMap(resp.Value),
 	}
 }
 
-func CapabilityRequestFromProto(pr *CapabilityRequest) capabilities.CapabilityRequest {
+func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityRequest, error) {
 	md := pr.Metadata
-	config := values.FromProto(pr.Config)
-	inputs := values.FromProto(pr.Inputs)
+	config, err := values.FromMapValueProto(pr.Config)
+	if err != nil {
+		return capabilities.CapabilityRequest{}, err
+	}
+
+	inputs, err := values.FromMapValueProto(pr.Inputs)
+	if err != nil {
+		return capabilities.CapabilityRequest{}, err
+	}
 
 	return capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
@@ -90,25 +97,25 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) capabilities.CapabilityRe
 			WorkflowDonID:            md.WorkflowDonId,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 		},
-		Config: config.(*values.Map),
-		Inputs: inputs.(*values.Map),
-	}
+		Config: config,
+		Inputs: inputs,
+	}, nil
 }
 
-func CapabilityResponseFromProto(pr *CapabilityResponse) capabilities.CapabilityResponse {
-	val := values.FromProto(pr.Value)
+func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.CapabilityResponse, error) {
+	val, err := values.FromMapValueProto(pr.Value)
+	if err != nil {
+		return capabilities.CapabilityResponse{}, err
+	}
 
-	var err error
 	if pr.Error != "" {
 		err = errors.New(pr.Error)
 	}
 
 	resp := capabilities.CapabilityResponse{
-		Err: err,
-	}
-	if mval, ok := val.(*values.Map); ok {
-		resp.Value = mval
+		Err:   err,
+		Value: val,
 	}
 
-	return resp
+	return resp, nil
 }

@@ -39,8 +39,8 @@ message RequestMetadata {
 
 message CapabilityRequest {
   RequestMetadata metadata = 1;
-  values.Value config = 2;
-  values.Value inputs = 3;
+  values.Map config = 2;
+  values.Map inputs = 3;
 }
 
 service TriggerExecutable {
@@ -56,7 +56,7 @@ message ResponseMessage {
 }
 
 message CapabilityResponse {
-  values.Value value = 1;
+  values.Map value = 1;
   string error = 2;
 }
 
@@ -66,12 +66,12 @@ message RegistrationMetadata {
 
 message RegisterToWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Value config = 2;
+  values.Map config = 2;
 }
 
 message UnregisterFromWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Value config = 2;
+  values.Map config = 2;
 }
 
 service CallbackExecutable {

@@ -52,11 +52,12 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	}
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
-			WorkflowId:          req.Metadata.WorkflowID,
-			WorkflowExecutionId: req.Metadata.WorkflowExecutionID,
-			WorkflowOwner:       req.Metadata.WorkflowOwner,
-			WorkflowName:        req.Metadata.WorkflowName,
-			WorkflowDonId:       req.Metadata.WorkflowDonID,
+			WorkflowId:               req.Metadata.WorkflowID,
+			WorkflowExecutionId:      req.Metadata.WorkflowExecutionID,
+			WorkflowOwner:            req.Metadata.WorkflowOwner,
+			WorkflowName:             req.Metadata.WorkflowName,
+			WorkflowDonId:            req.Metadata.WorkflowDonID,
+			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 		},
 		Inputs: values.Proto(inputs),
 		Config: values.Proto(config),
@@ -82,11 +83,12 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) capabilities.CapabilityRe
 
 	return capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
-			WorkflowID:          md.WorkflowId,
-			WorkflowExecutionID: md.WorkflowExecutionId,
-			WorkflowOwner:       md.WorkflowOwner,
-			WorkflowName:        md.WorkflowName,
-			WorkflowDonID:       md.WorkflowDonId,
+			WorkflowID:               md.WorkflowId,
+			WorkflowExecutionID:      md.WorkflowExecutionId,
+			WorkflowOwner:            md.WorkflowOwner,
+			WorkflowName:             md.WorkflowName,
+			WorkflowDonID:            md.WorkflowDonId,
+			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 		},
 		Config: config.(*values.Map),
 		Inputs: inputs.(*values.Map),

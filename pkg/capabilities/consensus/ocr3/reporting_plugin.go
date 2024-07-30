@@ -180,9 +180,9 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		for _, rq := range obs.Observations {
 			weid := rq.Id.WorkflowExecutionId
 
-			obsList := values.FromListValueProto(rq.Observations)
-			if obsList == nil {
-				r.lggr.Errorw("observations are not a list", "weID", weid, "oracleID", o.Observer)
+			obsList, innerErr := values.FromListValueProto(rq.Observations)
+			if obsList == nil || innerErr != nil {
+				r.lggr.Errorw("observations are not a list", "weID", weid, "oracleID", o.Observer, "err", innerErr)
 				continue
 			}
 
@@ -355,7 +355,12 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 				continue
 			}
 
-			mv := values.FromMapValueProto(newOutcome.EncodableOutcome)
+			mv, err := values.FromMapValueProto(newOutcome.EncodableOutcome)
+			if err != nil {
+				r.lggr.Errorw("could not decode map from map value proto", "error", err)
+				continue
+			}
+
 			report, err = enc.Encode(context.TODO(), *mv)
 			if err != nil {
 				r.lggr.Errorw("could not encode report for workflow", "error", err)

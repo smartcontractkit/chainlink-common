@@ -23,7 +23,13 @@ func NewBytesValue(b []byte) *Value {
 func NewDecimalValue(d decimal.Decimal) *Value {
 	return &Value{
 		Value: &Value_DecimalValue{
-			DecimalValue: d.String(),
+			DecimalValue: &Decimal{
+				Coefficient: &BigInt{
+					AbsVal: d.Coefficient().Bytes(),
+					Sign:   int64(d.Coefficient().Sign()),
+				},
+				Exponent: d.Exponent(),
+			},
 		},
 	}
 }

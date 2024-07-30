@@ -23,6 +23,10 @@ func (i *Int64) Unwrap() (any, error) {
 	return i.Underlying, nil
 }
 
+func (i *Int64) Copy() Value {
+	return &Int64{Underlying: i.Underlying}
+}
+
 func (i *Int64) UnwrapTo(to any) error {
 	if to == nil {
 		return fmt.Errorf("cannot unwrap to nil pointer: %+v", to)

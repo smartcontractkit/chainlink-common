@@ -87,7 +87,10 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, err
 	}
 
-	mc := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
+	mc, err := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
+	}
 
 	var rtc capabilities.RemoteTriggerConfig
 	rtc.ApplyDefaults()

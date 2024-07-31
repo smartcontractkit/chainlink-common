@@ -87,6 +87,32 @@ func (d *Dashboard) Deploy() error {
 	return nil
 }
 
+func (d *Dashboard) Delete() error {
+	ctx := context.Background()
+	client := grabana.NewClient(
+		&http.Client{},
+		d.url,
+		grabana.WithAPIToken(d.token),
+	)
+
+	db, err := client.GetDashboardByTitle(ctx, d.name)
+	if err != nil {
+		return err
+	}
+
+	errDelete := client.DeleteDashboard(ctx, db.UID)
+	if errDelete != nil {
+		return errDelete
+	}
+
+	utils.Logger.Info().
+		Str("Name", d.name).
+		Str("URL", d.url).
+		Msg("Dashboard deleted")
+
+	return nil
+}
+
 func (d *Dashboard) GetJSON() ([]byte, error) {
 	newDashboard := d.builder
 	dashboardJSON, err := json.MarshalIndent(newDashboard, "", "  ")

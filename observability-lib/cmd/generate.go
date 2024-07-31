@@ -6,6 +6,8 @@ import (
 
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 
+	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/nop-ocr"
+
 	"github.com/spf13/cobra"
 
 	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
@@ -45,6 +47,10 @@ var GenerateCmd = &cobra.Command{
 			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
 		case "ocr3":
 			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
+		case "nop-ocr2":
+			builder, err = nopocr.BuildDashboard(name, dataSourcesType.Metrics, platform, "ocr2")
+		case "nop-ocr3":
+			builder, err = nopocr.BuildDashboard(name, dataSourcesType.Metrics, platform, "ocr3")
 		default:
 			return errors.New("invalid dashboard type")
 		}

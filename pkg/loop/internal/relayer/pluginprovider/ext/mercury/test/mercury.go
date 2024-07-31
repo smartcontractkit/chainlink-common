@@ -14,12 +14,14 @@ import (
 	mercuryv1test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1/test"
 	mercuryv2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2/test"
 	mercuryv3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3/test"
+	mercuryv4test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v4/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
 	mercuryv1types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercuryv2types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	mercuryv3types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
+	mercuryv4types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v4"
 )
 
 func PluginMercury(t *testing.T, p types.PluginMercury) {
@@ -31,6 +33,15 @@ type PluginMercuryTest struct {
 }
 
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
+	t.Run("PluginMercuryV4", func(t *testing.T) {
+		ctx := tests.Context(t)
+		factory, err := p.NewMercuryV4Factory(ctx, m.MercuryProvider, mercuryv4test.DataSource)
+		require.NoError(t, err)
+		require.NotNil(t, factory)
+
+		MercuryPluginFactory(t, factory)
+	})
+
 	t.Run("PluginMercuryV3", func(t *testing.T) {
 		ctx := tests.Context(t)
 		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercuryv3test.DataSource)
@@ -64,6 +75,7 @@ var FactoryServer = staticMercuryServer{
 	dataSourceV1: mercuryv1test.DataSource,
 	dataSourceV2: mercuryv2test.DataSource,
 	dataSourceV3: mercuryv3test.DataSource,
+	dataSourceV4: mercuryv4test.DataSource,
 }
 
 var _ types.PluginMercury = staticMercuryServer{}
@@ -73,6 +85,7 @@ type staticMercuryServer struct {
 	dataSourceV1 mercuryv1test.DataSourceEvaluator
 	dataSourceV2 mercuryv2test.DataSourceEvaluator
 	dataSourceV3 mercuryv3test.DataSourceEvaluator
+	dataSourceV4 mercuryv4test.DataSourceEvaluator
 }
 
 var _ types.PluginMercury = staticMercuryServer{}
@@ -102,6 +115,32 @@ func (s staticMercuryServer) commonValidation(ctx context.Context, provider type
 		return fmt.Errorf("failed to evaluate onchainConfigCodec: %w", err)
 	}
 	return nil
+}
+
+func (s staticMercuryServer) NewMercuryV4Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercuryv4types.DataSource) (types.MercuryPluginFactory, error) {
+	var err error
+	defer func() {
+		if err != nil {
+			panic(fmt.Sprintf("provider %v, %T: %s", provider, provider, err))
+		}
+	}()
+	err = s.commonValidation(ctx, provider)
+	if err != nil {
+		return nil, fmt.Errorf("failed commonValidation: %w", err)
+	}
+
+	rc := provider.ReportCodecV4()
+	err = s.provider.reportCodecV4.Evaluate(ctx, rc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate reportCodecV4: %w", err)
+	}
+
+	err = s.dataSourceV4.Evaluate(ctx, dataSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
+	}
+
+	return staticMercuryPluginFactory{}, nil
 }
 
 func (s staticMercuryServer) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercuryv3types.DataSource) (types.MercuryPluginFactory, error) {

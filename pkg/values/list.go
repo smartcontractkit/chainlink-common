@@ -37,6 +37,14 @@ func (l *List) Unwrap() (any, error) {
 	return nl, l.UnwrapTo(&nl)
 }
 
+func (l *List) Copy() Value {
+	dest := []Value{}
+	for _, el := range l.Underlying {
+		dest = append(dest, el.Copy())
+	}
+	return &List{Underlying: dest}
+}
+
 func (l *List) UnwrapTo(to any) error {
 	val := reflect.ValueOf(to)
 	if val.Kind() != reflect.Pointer {

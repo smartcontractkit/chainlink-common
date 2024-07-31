@@ -23,7 +23,12 @@ const (
 func TestMarshalUnmarshalRequest(t *testing.T) {
 	req := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
-			WorkflowExecutionID: testWorkflowID,
+			WorkflowID:               "test-workflow-id",
+			WorkflowExecutionID:      testWorkflowID,
+			WorkflowOwner:            "0xaa",
+			WorkflowName:             "test-workflow-name",
+			WorkflowDonID:            1,
+			WorkflowDonConfigVersion: 1,
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},

@@ -25,3 +25,7 @@ func (d *Decimal) Unwrap() (any, error) {
 func (d *Decimal) UnwrapTo(to any) error {
 	return unwrapTo(d.Underlying, to)
 }
+
+func (d *Decimal) Copy() Value {
+	return &Decimal{Underlying: d.Underlying.Copy()}
+}

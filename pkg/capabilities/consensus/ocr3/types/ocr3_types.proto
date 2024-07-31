@@ -28,6 +28,7 @@ message Id {
   string reportId = 6;
   uint32 workflowDonId = 7;
   uint32 workflowDonConfigVersion = 8;
+  string keyId = 9;
 }
 
 message Observation {

@@ -181,7 +181,9 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	fo := obspb.Observations[0]
 	assert.Equal(t, fo.Id.WorkflowExecutionId, eid)
 	assert.Equal(t, fo.Id.WorkflowId, workflowTestID)
-	assert.Equal(t, o, values.FromListValueProto(fo.Observations))
+	lvp, err := values.FromListValueProto(fo.Observations)
+	require.NoError(t, err)
+	assert.Equal(t, o, lvp)
 	expected := []string{workflowTestID, workflowTestID2}
 	actual := obspb.RegisteredWorkflowIds
 	sort.Slice(actual, func(i, j int) bool { return actual[i] < actual[j] })
@@ -320,8 +322,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	assert.Len(t, gotRep.Report, 0)
 
 	ib := gotRep.Info
-	info := &pbtypes.ReportInfo{}
-	err = proto.Unmarshal(ib, info)
+	info, err := extractReportInfo(ib)
 	require.NoError(t, err)
 
 	assert.EqualExportedValues(t, info.Id, id)
@@ -393,12 +394,12 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 		"ReportID":         reportTestId,
 	})
 	require.NoError(t, err)
-	fp := values.FromProto(rep)
+	fp, err := values.FromProto(rep)
+	require.NoError(t, err)
 	require.Equal(t, nm, fp)
 
 	ib := gotRep.Info
-	info := &pbtypes.ReportInfo{}
-	err = proto.Unmarshal(ib, info)
+	info, err := extractReportInfo(ib)
 	require.NoError(t, err)
 
 	assert.EqualExportedValues(t, info.Id, id)

@@ -23,3 +23,9 @@ func (b *Bytes) Unwrap() (any, error) {
 func (b *Bytes) UnwrapTo(to any) error {
 	return unwrapTo(b.Underlying, to)
 }
+
+func (b *Bytes) Copy() Value {
+	dest := make([]byte, len(b.Underlying))
+	copy(dest, b.Underlying)
+	return &Bytes{Underlying: dest}
+}

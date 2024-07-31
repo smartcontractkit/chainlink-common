@@ -278,6 +278,14 @@ func (c *ChannelDefinitions) Scan(value interface{}) error {
 	if !ok {
 		return fmt.Errorf("failed to scan Data: value is not []byte")
 	}
+	if bytes == nil {
+		*c = nil
+		return nil
+	}
+	if len(bytes) == 0 {
+		*c = ChannelDefinitions{}
+		return nil
+	}
 
 	return json.Unmarshal(bytes, c)
 }

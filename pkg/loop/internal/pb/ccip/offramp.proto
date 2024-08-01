@@ -18,6 +18,7 @@ service OffRampReader {
     rpc GasPriceEstimator(google.protobuf.Empty) returns (GasPriceEstimatorResponse) {}
     rpc GetExecutionState(GetExecutionStateRequest) returns (GetExecutionStateResponse) {}
     rpc GetExecutionStateChanges(GetExecutionStateChangesRequest) returns (GetExecutionStateChangesResponse) {}
+    rpc GetExecutionStateChangesForSeqNums(GetExecutionStateChangesForSeqNumsRequest) returns (GetExecutionStateChangesForSeqNumsResponse) {}
     rpc GetRouter(google.protobuf.Empty) returns (GetRouterResponse) {}
     rpc GetSourceToDestTokensMapping(google.protobuf.Empty) returns (GetSourceToDestTokensMappingResponse) {}
     rpc GetStaticConfig(google.protobuf.Empty) returns (GetStaticConfigResponse) {}
@@ -50,6 +51,15 @@ message DecodeExecutionReportRequest {
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader.DecodeExecutionReport]
 message DecodeExecutionReportResponse {
     ExecutionReport report = 1;
+}
+
+message GetExecutionStateChangesForSeqNumsRequest {
+    repeated SequenceNumberRange seq_nums = 1;
+    int64 confirmations = 2;
+}
+
+message GetExecutionStateChangesForSeqNumsResponse {
+    repeated ExecutionStateChangeWithTxMeta execution_state_changes = 1;
 }
 
 // GetExecutionStateChangesRequest is a gRPC adapter for the input arguments of

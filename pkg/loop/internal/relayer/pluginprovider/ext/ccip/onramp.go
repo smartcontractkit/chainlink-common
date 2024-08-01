@@ -64,6 +64,21 @@ func (o *OnRampReaderGRPCClient) GetSendRequestsBetweenSeqNums(ctx context.Conte
 	return evm2EVMMessageWithTxMetaSlice(resp.SendRequests)
 }
 
+func (o *OnRampReaderGRPCClient) GetSendRequestsForSeqNums(ctx context.Context, seqNums []cciptypes.SequenceNumberRange, finalized bool) ([]cciptypes.EVM2EVMMessageWithTxMeta, error) {
+	req, err := sequenceNumbersToPB(seqNums)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := o.grpc.GetSendRequestsForSeqNums(ctx, &ccippb.GetSendRequestsForSeqNumsRequest{
+		SeqNums:   req,
+		Finalized: finalized,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return evm2EVMMessageWithTxMetaSlice(resp.SendRequests)
+}
+
 // IsSourceChainHealthy returns true if the source chain is healthy.
 func (o *OnRampReaderGRPCClient) IsSourceChainHealthy(ctx context.Context) (bool, error) {
 	resp, err := o.grpc.IsSourceChainHealthy(ctx, &emptypb.Empty{})
@@ -155,6 +170,22 @@ func (o *OnRampReaderGRPCServer) GetSendRequestsBetweenSeqNums(ctx context.Conte
 		return nil, err
 	}
 	return &ccippb.GetSendRequestsBetweenSeqNumsResponse{SendRequests: sendRequestsPB}, nil
+}
+
+func (o *OnRampReaderGRPCServer) GetSendRequestsForSeqNums(ctx context.Context, req *ccippb.GetSendRequestsForSeqNumsRequest) (*ccippb.GetSendRequestsForSeqNumsResponse, error) {
+	seqNums, err := sequenceNumbersPBToSlice(req.SeqNums)
+	if err != nil {
+		return nil, err
+	}
+	sendRequests, err := o.impl.GetSendRequestsForSeqNums(ctx, seqNums, req.Finalized)
+	if err != nil {
+		return nil, err
+	}
+	sendRequestsPB, err := evm2EVMMessageWithTxMetaSlicePB(sendRequests)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetSendRequestsForSeqNumsResponse{SendRequests: sendRequestsPB}, nil
 }
 
 // IsSourceChainHealthy implements ccippb.OnRampReaderServer.

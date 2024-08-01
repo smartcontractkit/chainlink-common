@@ -194,6 +194,21 @@ func (o *OffRampReaderGRPCClient) GetExecutionStateChangesBetweenSeqNums(ctx con
 	return executionStateChangedWithTxMetaSlice(resp.ExecutionStateChanges), nil
 }
 
+func (o *OffRampReaderGRPCClient) GetExecutionStateChangesForSeqNums(ctx context.Context, seqNums []cciptypes.SequenceNumberRange, confirmations int) ([]cciptypes.ExecutionStateChangedWithTxMeta, error) {
+	req, err := sequenceNumbersToPB(seqNums)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := o.client.GetExecutionStateChangesForSeqNums(ctx, &ccippb.GetExecutionStateChangesForSeqNumsRequest{
+		SeqNums:       req,
+		Confirmations: int64(confirmations),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return executionStateChangedWithTxMetaSlice(resp.ExecutionStateChanges), nil
+}
+
 // GetSendersNonce i[github.com/smartcontractkit/chainlink-common/pkg/types/ccip.OffRampReader]
 func (o *OffRampReaderGRPCClient) ListSenderNonces(ctx context.Context, senders []cciptypes.Address) (map[cciptypes.Address]uint64, error) {
 	stringSenders := make([]string, len(senders))
@@ -356,6 +371,18 @@ func (o *OffRampReaderGRPCServer) GetExecutionStateChanges(ctx context.Context, 
 		return nil, err
 	}
 	return &ccippb.GetExecutionStateChangesResponse{ExecutionStateChanges: executionStateChangedWithTxMetaSliceToPB(changes)}, nil
+}
+
+func (o *OffRampReaderGRPCServer) GetExecutionStateChangesForSeqNums(ctx context.Context, req *ccippb.GetExecutionStateChangesForSeqNumsRequest) (*ccippb.GetExecutionStateChangesForSeqNumsResponse, error) {
+	seqNums, err := sequenceNumbersPBToSlice(req.SeqNums)
+	if err != nil {
+		return nil, err
+	}
+	changes, err := o.impl.GetExecutionStateChangesForSeqNums(ctx, seqNums, int(req.Confirmations))
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetExecutionStateChangesForSeqNumsResponse{ExecutionStateChanges: executionStateChangedWithTxMetaSliceToPB(changes)}, nil
 }
 
 // GetSendersNonce implements ccippb.OffRampReaderServer.

@@ -109,6 +109,14 @@ func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
 		}
 	})
 
+	t.Run("GetExecutionStateChangesForSeqNums", func(t *testing.T) {
+		state, err := client.GetExecutionStateChangesForSeqNums(tests.Context(t), OffRampReader.getExecutionStateChangesForSeqNumsRequest.seqNums, OffRampReader.getExecutionStateChangesForSeqNumsRequest.confirmations)
+		require.NoError(t, err)
+		if !reflect.DeepEqual(OffRampReader.getExecutionStateChangesForSeqNumsResponse.executionStateChangedWithTxMeta, state) {
+			t.Errorf("expected %v, got %v", OffRampReader.getExecutionStateChangesForSeqNumsResponse, state)
+		}
+	})
+
 	t.Run("ListSenderNonces", func(t *testing.T) {
 		nonce, err := client.ListSenderNonces(tests.Context(t), OffRampReader.listSenderNoncesRequest)
 		require.NoError(t, err)

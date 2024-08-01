@@ -28,6 +28,28 @@ func shutdownGRPCServer(ctx context.Context, rc GRPCResourceCloser) error {
 	return err
 }
 
+func sequenceNumbersToPB(seqNums []cciptypes.SequenceNumberRange) ([]*ccippb.SequenceNumberRange, error) {
+	res := make([]*ccippb.SequenceNumberRange, len(seqNums))
+	for i, seqNum := range seqNums {
+		res[i] = &ccippb.SequenceNumberRange{
+			Min: seqNum.Min,
+			Max: seqNum.Max,
+		}
+	}
+	return res, nil
+}
+
+func sequenceNumbersPBToSlice(seqNums []*ccippb.SequenceNumberRange) ([]cciptypes.SequenceNumberRange, error) {
+	res := make([]cciptypes.SequenceNumberRange, len(seqNums))
+	for i, seqNum := range seqNums {
+		res[i] = cciptypes.SequenceNumberRange{
+			Min: seqNum.Min,
+			Max: seqNum.Max,
+		}
+	}
+	return res, nil
+}
+
 func txMetaToPB(in cciptypes.TxMeta) *ccippb.TxMeta {
 	return &ccippb.TxMeta{
 		BlockTimestampUnixMilli: in.BlockTimestampUnixMilli,

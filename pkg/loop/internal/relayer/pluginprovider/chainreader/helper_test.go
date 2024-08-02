@@ -106,7 +106,7 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 
 	primitiveExpressions := []query.Expression{query.TxHash("txHash")}
 	for _, op := range operatorValues {
-		primitiveExpressions = append(primitiveExpressions, query.Block(123, op))
+		primitiveExpressions = append(primitiveExpressions, query.Block("123", op))
 		primitiveExpressions = append(primitiveExpressions, query.Timestamp(123, op))
 
 		var valueComparators []primitives.ValueComparator

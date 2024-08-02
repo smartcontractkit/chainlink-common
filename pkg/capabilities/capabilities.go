@@ -75,12 +75,14 @@ type CapabilityResponse struct {
 }
 
 type RequestMetadata struct {
-	WorkflowID               string
-	WorkflowOwner            string
-	WorkflowExecutionID      string
-	WorkflowName             string
-	WorkflowDonID            uint32
-	WorkflowDonConfigVersion uint32
+	WorkflowID                 string
+	WorkflowOwner              string
+	WorkflowExecutionID        string
+	WorkflowName               string
+	WorkflowDonID              uint32
+	WorkflowDonConfigVersion   uint32
+	CapabilityDonID            uint32
+	CapabilityDonConfigVersion uint32
 }
 
 type RegistrationMetadata struct {
@@ -187,6 +189,11 @@ type DON struct {
 	AcceptsWorkflows bool
 }
 
+type CapabilityDON struct {
+	DON
+	CapabilityConfigurations map[string]CapabilityConfiguration
+}
+
 // Node contains the node's peer ID and the DONs it is part of.
 //
 // Note the following relationships between the workflow and capability DONs and this node.
@@ -204,7 +211,7 @@ type DON struct {
 type Node struct {
 	PeerID         *p2ptypes.PeerID
 	WorkflowDON    DON
-	CapabilityDONs []DON
+	CapabilityDONs []CapabilityDON
 }
 
 // CapabilityInfo is a struct for the info of a capability.

@@ -105,7 +105,7 @@ func TestBind(t *testing.T) {
 				es.err = errorType
 				t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := tests.Context(t)
-					err := chainReader.Bind(ctx, []types.BoundContract{{Contract: "Contract", Address: "address"}})
+					err := chainReader.Bind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
 					assert.True(t, errors.Is(err, errorType))
 				})
 			}
@@ -208,7 +208,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 					ctx,
 					types.BatchGetLatestValuesRequest{
 						"contract": {
-							{ReadName: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}},
+							{ReadIdentifier: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}},
 						},
 					},
 				)
@@ -298,8 +298,8 @@ func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.Con
 
 func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{
-		{Contract: AnyContractName, Address: AnyContractName},
-		{Contract: AnySecondContractName, Address: AnySecondContractName},
+		{Name: AnyContractName, Address: AnyContractName},
+		{Name: AnySecondContractName, Address: AnySecondContractName},
 	}
 }
 
@@ -315,10 +315,10 @@ func (it *fakeChainReaderInterfaceTester) SetUintLatestValue(t *testing.T, val u
 	fake.SetUintLatestValue(val, forCall)
 }
 
-func (it *fakeChainReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel) {
+func (it *fakeChainReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readIdentifier string, confidenceLevel primitives.ConfidenceLevel) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
-	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readName, confidenceLevel)
+	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readIdentifier, confidenceLevel)
 }
 
 func (it *fakeChainReaderInterfaceTester) SetBatchLatestValues(t *testing.T, batchCallEntry BatchCallEntry) {
@@ -395,8 +395,8 @@ func (f *fakeChainReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
 	}
 }
 
-func (f *fakeChainReader) GetLatestValue(_ context.Context, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
-	if strings.HasSuffix(readName, MethodReturningAlterableUint64) {
+func (f *fakeChainReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
 		r := returnVal.(*uint64)
 		for i := len(f.vals) - 1; i >= 0; i-- {
 			if f.vals[i].confidenceLevel == confidenceLevel {
@@ -405,10 +405,10 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, readName string, con
 			}
 		}
 		return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
-	} else if strings.HasSuffix(readName, MethodReturningUint64) {
+	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64) {
 		r := returnVal.(*uint64)
 
-		_, contractName, _, err := splitReadName(readName)
+		_, contractName, _, err := splitReadIdentifier(readIdentifier)
 		if err != nil {
 			return err
 		}
@@ -420,11 +420,11 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, readName string, con
 		}
 
 		return nil
-	} else if strings.HasSuffix(readName, MethodReturningUint64Slice) {
+	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
 		r := returnVal.(*[]uint64)
 		*r = AnySliceToReadWithoutAnArgument
 		return nil
-	} else if strings.HasSuffix(readName, MethodReturningSeenStruct) {
+	} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
 		pv := params.(*TestStruct)
 		rv := returnVal.(*TestStructWithExtraField)
 		rv.TestStruct = *pv
@@ -432,7 +432,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, readName string, con
 		rv.Account = anyAccountBytes
 		rv.BigField = big.NewInt(2)
 		return nil
-	} else if strings.HasSuffix(readName, EventName) {
+	} else if strings.HasSuffix(readIdentifier, EventName) {
 		f.lock.Lock()
 		defer f.lock.Unlock()
 
@@ -448,7 +448,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, readName string, con
 		}
 
 		return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
-	} else if strings.HasSuffix(readName, EventWithFilterName) {
+	} else if strings.HasSuffix(readIdentifier, EventWithFilterName) {
 		f.lock.Lock()
 		defer f.lock.Unlock()
 		param := params.(*FilterEventParams)
@@ -459,8 +459,8 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, readName string, con
 			}
 		}
 		return types.ErrNotFound
-	} else if !strings.HasSuffix(readName, MethodTakingLatestParamsReturningTestStruct) {
-		_, _, methodName, err := splitReadName(readName)
+	} else if !strings.HasSuffix(readIdentifier, MethodTakingLatestParamsReturningTestStruct) {
+		_, _, methodName, err := splitReadIdentifier(readIdentifier)
 		if err != nil {
 			return err
 		}
@@ -491,17 +491,17 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 
 			req := requestContractBatch[i]
 
-			if strings.HasSuffix(req.ReadName, MethodReturningUint64) {
+			if strings.HasSuffix(req.ReadIdentifier, MethodReturningUint64) {
 				returnVal = req.ReturnVal.(*uint64)
 				if requestContractName == AnyContractName {
 					*returnVal.(*uint64) = AnyValueToReadWithoutAnArgument
 				} else {
 					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
 				}
-			} else if strings.HasSuffix(req.ReadName, MethodReturningUint64Slice) {
+			} else if strings.HasSuffix(req.ReadIdentifier, MethodReturningUint64Slice) {
 				returnVal = req.ReturnVal.(*[]uint64)
 				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
-			} else if strings.HasSuffix(req.ReadName, MethodReturningSeenStruct) {
+			} else if strings.HasSuffix(req.ReadIdentifier, MethodReturningSeenStruct) {
 				ts := *req.Params.(*TestStruct)
 				ts.Account = anyAccountBytes
 				ts.BigField = big.NewInt(2)
@@ -509,7 +509,7 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 					TestStruct: ts,
 					ExtraField: AnyExtraValue,
 				}
-			} else if strings.HasSuffix(req.ReadName, MethodTakingLatestParamsReturningTestStruct) {
+			} else if strings.HasSuffix(req.ReadIdentifier, MethodTakingLatestParamsReturningTestStruct) {
 				latestParams := requestContractBatch[i].Params.(*LatestParams)
 				if latestParams.I <= 0 {
 					returnVal = &LatestParams{}
@@ -518,7 +518,7 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 					returnVal = storedContractBatch[latestParams.I-1].ReturnValue
 				}
 			} else {
-				_, _, method, err := splitReadName(req.ReadName)
+				_, _, method, err := splitReadIdentifier(req.ReadIdentifier)
 				if err != nil {
 					return nil, err
 				}
@@ -526,7 +526,7 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 				return nil, errors.New("unknown read " + method)
 			}
 
-			brr := types.BatchReadResult{ReadName: req.ReadName}
+			brr := types.BatchReadResult{ReadIdentifier: req.ReadIdentifier}
 			brr.SetResult(returnVal, err)
 			contractBatchResults = append(contractBatchResults, brr)
 		}
@@ -680,8 +680,8 @@ func (pc *protoConversionTestChainReader) QueryKey(_ context.Context, _ types.Bo
 	return nil, nil
 }
 
-func splitReadName(readName string) (string, string, string, error) {
-	parts := strings.Split(readName, "-")
+func splitReadIdentifier(readIdentifier string) (string, string, string, error) {
+	parts := strings.Split(readIdentifier, "-")
 
 	if len(parts) != 3 {
 		return "", "", "", errors.New("invalid read name")

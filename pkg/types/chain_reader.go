@@ -46,7 +46,7 @@ type ContractReader interface {
 	// Note that implementations should ignore extra fields in params that are not expected in the call to allow easier
 	// use across chains and contract versions.
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
-	GetLatestValue(ctx context.Context, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
+	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
@@ -69,17 +69,17 @@ type ContractReader interface {
 type BatchGetLatestValuesRequest map[string]ContractBatch
 type ContractBatch []BatchRead
 type BatchRead struct {
-	ReadName  string
-	Params    any
-	ReturnVal any
+	ReadIdentifier string
+	Params         any
+	ReturnVal      any
 }
 
 type BatchGetLatestValuesResult map[string]ContractBatchResults
 type ContractBatchResults []BatchReadResult
 type BatchReadResult struct {
-	ReadName    string
-	returnValue any
-	err         error
+	ReadIdentifier string
+	returnValue    any
+	err            error
 }
 
 // GetResult returns an error if this specific read from the batch failed, otherwise returns the result in format that was provided in the request.
@@ -109,10 +109,10 @@ type Sequence struct {
 }
 
 type BoundContract struct {
-	Address  string
-	Contract string
+	Address string
+	Name    string
 }
 
-func (bc BoundContract) ReadKey(method string) string {
-	return bc.Address + "-" + bc.Contract + "-" + method
+func (bc BoundContract) ReadIdentifier(method string) string {
+	return bc.Address + "-" + bc.Name + "-" + method
 }

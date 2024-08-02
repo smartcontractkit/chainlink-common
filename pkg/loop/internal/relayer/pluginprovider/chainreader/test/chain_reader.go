@@ -56,9 +56,9 @@ func (c staticChainReader) Unbind(_ context.Context, _ []types.BoundContract) er
 
 func (c staticChainReader) GetLatestValue(_ context.Context, readName string, _ primitives.ConfidenceLevel, params, returnVal any) error {
 	comp := types.BoundContract{
-		Address:  c.address,
-		Contract: c.contractName,
-	}.ReadKey(c.contractMethod)
+		Address: c.address,
+		Name:    c.contractName,
+	}.ReadIdentifier(c.contractMethod)
 
 	if !assert.ObjectsAreEqual(readName, comp) {
 		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, comp, readName)
@@ -98,9 +98,9 @@ func (c staticChainReader) Evaluate(ctx context.Context, cr types.ContractReader
 	if err := cr.GetLatestValue(
 		ctx,
 		types.BoundContract{
-			Address:  c.address,
-			Contract: c.contractName,
-		}.ReadKey(c.contractMethod),
+			Address: c.address,
+			Name:    c.contractName,
+		}.ReadIdentifier(c.contractMethod),
 		primitives.Unconfirmed,
 		&c.params,
 		&gotLatestValue,

@@ -345,8 +345,8 @@ func ExecuteSync(ctx context.Context, c CallbackExecutable, request CapabilityRe
 }
 
 // ExecuteSyncWithTimeout allows explicitly passing in a timeout to customise the desired duration.
-func ExecuteSyncWithTimeout(ctx context.Context, c CallbackExecutable, request CapabilityRequest, timeout time.Duration) (*values.List, error) {
-	ctxWithT, cancel := context.WithTimeout(ctx, timeout)
+func ExecuteSyncWithTimeout(parentCtx context.Context, c CallbackExecutable, request CapabilityRequest, timeout time.Duration) (*values.List, error) {
+	ctxWithT, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	responseCh, err := c.Execute(ctxWithT, request)
@@ -370,6 +370,8 @@ outerLoop:
 			}
 
 			vs = append(vs, response.Value)
+		case <-parentCtx.Done():
+			return nil, fmt.Errorf("parent context cancelled: %w", parentCtx.Err())
 		// Timeout when a capability exceeds maximum permitted execution time or the caller cancels the context and does not close the channel.
 		case <-ctxWithT.Done():
 			return nil, fmt.Errorf("context timed out after %f seconds", maximumExecuteTimeout.Seconds())

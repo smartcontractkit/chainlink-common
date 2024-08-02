@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -175,8 +176,24 @@ func Test_ExecuteSyncCapabilitySetupErrors(t *testing.T) {
 }
 
 func Test_ExecuteSyncTimeout(t *testing.T) {
-	ctxWithTimeout := tests.Context(t)
-	ctxWithTimeout, cancel := context.WithCancel(ctxWithTimeout)
+	ctx := tests.Context(t)
+
+	mcwe := &mockCapabilityWithExecute{
+		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
+			ch := make(chan CapabilityResponse, 10)
+			return ch, nil
+		},
+	}
+	req := CapabilityRequest{}
+	val, err := ExecuteSyncWithTimeout(ctx, mcwe, req, 10*time.Millisecond)
+
+	assert.ErrorContains(t, err, "context timed out after")
+	assert.Nil(t, val)
+}
+
+func Test_ExecuteSyncCancelParentCtx(t *testing.T) {
+	ctx := tests.Context(t)
+	ctx, cancel := context.WithCancel(ctx)
 	cancel()
 
 	mcwe := &mockCapabilityWithExecute{
@@ -186,9 +203,9 @@ func Test_ExecuteSyncTimeout(t *testing.T) {
 		},
 	}
 	req := CapabilityRequest{}
-	val, err := ExecuteSync(ctxWithTimeout, mcwe, req)
+	val, err := ExecuteSync(ctx, mcwe, req)
 
-	assert.ErrorContains(t, err, "context timed out after")
+	assert.ErrorContains(t, err, "parent context cancelled")
 	assert.Nil(t, val)
 }
 

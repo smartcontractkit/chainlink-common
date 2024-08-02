@@ -15,3 +15,4 @@
 /pkg/timeutil/ @jmank88
 /pkg/values/ @smartcontractkit/keystone
 /pkg/workflows/ @smartcontractkit/keystone
+/pkg/beholder/ @smartcontractkit/realtime

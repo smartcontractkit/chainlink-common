@@ -439,6 +439,94 @@ func (_m *Relayer) NewContractReader(ctx context.Context, contractReaderConfig [
 	return r0, r1
 }
 
+// Relayer_NewContractReader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewContractReader'
+type Relayer_NewContractReader_Call struct {
+	*mock.Call
+}
+
+// NewContractReader is a helper method to define mock.On call
+//   - ctx context.Context
+//   - contractReaderConfig []byte
+func (_e *Relayer_Expecter) NewContractReader(ctx interface{}, contractReaderConfig interface{}) *Relayer_NewContractReader_Call {
+	return &Relayer_NewContractReader_Call{Call: _e.mock.On("NewContractReader", ctx, contractReaderConfig)}
+}
+
+func (_c *Relayer_NewContractReader_Call) Run(run func(ctx context.Context, contractReaderConfig []byte)) *Relayer_NewContractReader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewContractReader_Call) Return(_a0 types.ChainReader, _a1 error) *Relayer_NewContractReader_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewContractReader_Call) RunAndReturn(run func(context.Context, []byte) (types.ChainReader, error)) *Relayer_NewContractReader_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// NewContractStateReader provides a mock function with given fields: ctx, config
+func (_m *Relayer) NewContractStateReader(ctx context.Context, config []byte) (types.ContractStateReader, error) {
+	ret := _m.Called(ctx, config)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewContractStateReader")
+	}
+
+	var r0 types.ContractStateReader
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ContractStateReader, error)); ok {
+		return rf(ctx, config)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ContractStateReader); ok {
+		r0 = rf(ctx, config)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.ContractStateReader)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
+		r1 = rf(ctx, config)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_NewContractStateReader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewContractStateReader'
+type Relayer_NewContractStateReader_Call struct {
+	*mock.Call
+}
+
+// NewContractStateReader is a helper method to define mock.On call
+//   - ctx context.Context
+//   - config []byte
+func (_e *Relayer_Expecter) NewContractStateReader(ctx interface{}, config interface{}) *Relayer_NewContractStateReader_Call {
+	return &Relayer_NewContractStateReader_Call{Call: _e.mock.On("NewContractStateReader", ctx, config)}
+}
+
+func (_c *Relayer_NewContractStateReader_Call) Run(run func(ctx context.Context, config []byte)) *Relayer_NewContractStateReader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewContractStateReader_Call) Return(_a0 types.ContractStateReader, _a1 error) *Relayer_NewContractStateReader_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewContractStateReader_Call) RunAndReturn(run func(context.Context, []byte) (types.ContractStateReader, error)) *Relayer_NewContractStateReader_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewLLOProvider provides a mock function with given fields: _a0, _a1, _a2
 func (_m *Relayer) NewLLOProvider(_a0 context.Context, _a1 types.RelayArgs, _a2 types.PluginArgs) (types.LLOProvider, error) {
 	ret := _m.Called(_a0, _a1, _a2)

@@ -8,7 +8,7 @@ import (
     streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
 
-func NewOcr3ConsensusCapability(w *workflows.Workflow, ref string, input Ocr3ConsensusCapabilityInput, cfg Ocr3ConsensusConfig) (Ocr3ConsensusCapability,error) {
+func NewOcr3ConsensusCapability(w *workflows.Workflow, ref string, input Ocr3ConsensusCapabilityInput, cfg Ocr3ConsensusConfig)Ocr3ConsensusCapability {
     def := workflows.StepDefinition{
        ID: ref,
        Ref: ref,
@@ -27,8 +27,8 @@ func NewOcr3ConsensusCapability(w *workflows.Workflow, ref string, input Ocr3Con
        CapabilityType: capabilities.CapabilityTypeConsensus,
    }
     step := workflows.Step[SignedReport]{Definition: def}
-     raw, err := workflows.AddStep(w, step)
-    return &ocr3ConsensusCapability{CapabilityDefinition: raw}, err
+     raw := workflows.AddStep(w, step)
+    return &ocr3ConsensusCapability{CapabilityDefinition: raw}
 }
 
 

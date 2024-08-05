@@ -102,8 +102,7 @@ func NewWorkflow(
 }
 
 // AddStep is meant to be called by generated code
-func AddStep[O any](w *Workflow, step Step[O]) (CapabilityDefinition[O], error) {
-	// TODO should return error if the name is already used
+func AddStep[O any](w *Workflow, step Step[O]) CapabilityDefinition[O] {
 	stepDefinition := step.Definition
 
 	switch stepDefinition.CapabilityType {
@@ -117,7 +116,7 @@ func AddStep[O any](w *Workflow, step Step[O]) (CapabilityDefinition[O], error) 
 		w.spec.Targets = append(w.spec.Targets, stepDefinition)
 	}
 
-	return &capabilityDefinitionImpl[O]{ref: step.Definition.Ref}, nil
+	return &capabilityDefinitionImpl[O]{ref: step.Definition.Ref}
 }
 
 // AccessField is meant to be used by generated code
@@ -125,8 +124,9 @@ func AccessField[I, O any](c CapabilityDefinition[I], fieldName string) Capabili
 	return &capabilityDefinitionImpl[O]{ref: c.Ref().(string) + "." + fieldName}
 }
 
-func (w Workflow) Spec() WorkflowSpec {
-	return *w.spec
+func (w Workflow) Spec() (WorkflowSpec, error) {
+	// TODO verify name of step isn't reused
+	return *w.spec, nil
 }
 
 // ComponentCapabilityDefinition is meant to be used by generated code

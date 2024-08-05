@@ -213,7 +213,8 @@ func Test_Value(t *testing.T) {
 
 			pb := Proto(wrapped)
 
-			rehydratedValue := FromProto(pb)
+			rehydratedValue, err := FromProto(pb)
+			require.NoError(t, err)
 			assert.Equal(st, wrapped, rehydratedValue)
 
 			unwrapped, err := Unwrap(rehydratedValue)
@@ -237,4 +238,57 @@ func Test_WrapMap(t *testing.T) {
 
 	_, err = WrapMap("foo")
 	require.ErrorContains(t, err, "could not wrap")
+}
+
+func Test_Copy(t *testing.T) {
+	dec, err := decimal.NewFromString("1.01")
+	require.NoError(t, err)
+
+	list, err := NewList([]any{"hello", int64(1.00)})
+	require.NoError(t, err)
+
+	mp, err := NewMap(map[string]any{
+		"hello": 1,
+		"world": map[string]any{
+			"a": "b",
+			"c": 10,
+		},
+		"foo": big.NewInt(100),
+		"bar": decimal.NewFromFloat(1.00),
+	})
+	require.NoError(t, err)
+
+	tcs := []struct {
+		value Value
+	}{
+		{
+			value: NewString("hello"),
+		},
+		{
+			value: NewBytes([]byte("hello")),
+		},
+		{
+			value: NewInt64(int64(100)),
+		},
+		{
+			value: NewDecimal(dec),
+		},
+		{
+			value: NewBigInt(big.NewInt(101)),
+		},
+		{
+			value: NewBool(true),
+		},
+		{
+			value: list,
+		},
+		{
+			value: mp,
+		},
+	}
+
+	for _, tc := range tcs {
+		copied := tc.value.Copy()
+		assert.Equal(t, tc.value, copied)
+	}
 }

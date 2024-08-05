@@ -21,6 +21,7 @@ jobs:
         run: GORACE="log_path=$PWD/race" go test -race ./... -coverpkg=./... -coverprofile=pkg_coverage.out
 
       - name: Print Races
+        if: failure()
         id: print-races
         run: |
           find race.* | xargs cat > race.txt

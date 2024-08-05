@@ -43,6 +43,9 @@
         },
         "request_timeout_ms": {
           "type": "integer"
+        },
+        "key_id": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -53,7 +56,8 @@
         "encoder",
         "encoder_config",
         "report_id",
-        "request_timeout_ms"
+        "request_timeout_ms",
+        "key_id"
       ]
     },
     "inputs": {

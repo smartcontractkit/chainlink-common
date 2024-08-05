@@ -52,6 +52,19 @@ func (m *Map) Unwrap() (any, error) {
 	return nm, m.UnwrapTo(&nm)
 }
 
+func (m *Map) Copy() Value {
+	return m.CopyMap()
+}
+
+func (m *Map) CopyMap() *Map {
+	dest := map[string]Value{}
+	for k, v := range m.Underlying {
+		dest[k] = v.Copy()
+	}
+
+	return &Map{Underlying: dest}
+}
+
 func (m *Map) UnwrapTo(to any) error {
 	c := &mapstructure.DecoderConfig{
 		Result: to,

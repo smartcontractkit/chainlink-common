@@ -430,7 +430,7 @@ func TestCapabilitiesRegistry_ConfigForCapabilities(t *testing.T) {
 	rtc.ApplyDefaults()
 	expectedCapConfig := capabilities.CapabilityConfiguration{
 		DefaultConfig:       wm,
-		RemoteTriggerConfig: rtc,
+		RemoteTriggerConfig: &rtc,
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 

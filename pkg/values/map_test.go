@@ -246,3 +246,35 @@ func TestMap_UnwrapTo_OtherMapTypes(t *testing.T) {
 		})
 	}
 }
+
+func Test_DeleteAtPath(t *testing.T) {
+	im := map[string]any{
+		"foo": map[string]any{"bar": map[string]any{"baz": "caz"}},
+		"roo": map[string]any{"rar": map[string]any{"raz": "taz"}},
+	}
+	wrappedMap, err := NewMap(im)
+	require.NoError(t, err)
+	assert.NotNil(t, wrappedMap.Underlying["foo"].(*Map).Underlying["bar"])
+
+	deleted := wrappedMap.DeleteAtPath("")
+	assert.Falsef(t, deleted, "expected to not delete empty path")
+
+	deleted = wrappedMap.DeleteAtPath("foo.bah")
+	assert.Falsef(t, deleted, "expected to not delete key foo.bah")
+	assert.NotNil(t, wrappedMap.Underlying["foo"].(*Map).Underlying["bar"])
+
+	deleted = wrappedMap.DeleteAtPath("foo.bar.baz")
+	assert.Truef(t, deleted, "expected to delete key foo.bar.baz")
+
+	assert.NotNil(t, wrappedMap.Underlying["foo"])
+	assert.NotNil(t, wrappedMap.Underlying["foo"].(*Map).Underlying["bar"])
+	assert.Nil(t, wrappedMap.Underlying["foo"].(*Map).Underlying["bar"].(*Map).Underlying["bar"])
+
+	deleted = wrappedMap.DeleteAtPath("foo.bar.baz")
+	assert.Falsef(t, deleted, "expected to not delete key foo.bar.baz")
+
+	deleted = wrappedMap.DeleteAtPath("foo.bar")
+	assert.Truef(t, deleted, "expected to delete key foo.bar")
+	assert.Nil(t, wrappedMap.Underlying["foo"].(*Map).Underlying["bar"])
+
+}

@@ -3,6 +3,7 @@ package values
 import (
 	"errors"
 	"reflect"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -89,6 +90,33 @@ func (m *Map) UnwrapTo(to any) error {
 	}
 
 	return d.Decode(m.Underlying)
+}
+
+// DeleteAtPath deletes a value from a map at a given dot separated path.  Returns true if an element at the given
+// path was found and deleted, false otherwise.
+func (m *Map) DeleteAtPath(path string) bool {
+	pathSegments := strings.Split(path, ".")
+	underlying := m.Underlying
+	for segmentIdx, pathSegment := range pathSegments {
+		if segmentIdx == len(pathSegments)-1 {
+			_, ok := underlying[pathSegment]
+			if !ok {
+				return false
+			}
+
+			delete(underlying, pathSegment)
+			return true
+		}
+
+		value := underlying[pathSegment]
+		mv, ok := value.(*Map)
+		if !ok {
+			return false
+		}
+		underlying = mv.Underlying
+	}
+
+	return false
 }
 
 func mapValueToMap(f reflect.Type, t reflect.Type, data any) (any, error) {

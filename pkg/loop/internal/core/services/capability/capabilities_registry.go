@@ -92,19 +92,27 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
 	}
 
-	var rtc capabilities.RemoteTriggerConfig
-	rtc.ApplyDefaults()
+	var remoteTriggerConfig *capabilities.RemoteTriggerConfig
+	var remoteTargetConfig *capabilities.RemoteTargetConfig
 
-	if prtc := res.CapabilityConfig.GetRemoteTriggerConfig(); prtc != nil {
-		rtc.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
-		rtc.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
-		rtc.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-		rtc.MessageExpiry = prtc.MessageExpiry.AsDuration()
+	switch res.CapabilityConfig.RemoteConfig.(type) {
+	case *capabilitiespb.CapabilityConfig_RemoteTriggerConfig:
+		prtc := res.CapabilityConfig.GetRemoteTriggerConfig()
+		remoteTriggerConfig = &capabilities.RemoteTriggerConfig{}
+		remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
+		remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+		remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
+		remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
+	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
+		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
+		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
+		remoteTargetConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
 	}
 
 	return capabilities.CapabilityConfiguration{
 		DefaultConfig:       mc,
-		RemoteTriggerConfig: rtc,
+		RemoteTriggerConfig: remoteTriggerConfig,
+		RemoteTargetConfig:  remoteTargetConfig,
 	}, nil
 }
 
@@ -299,14 +307,25 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 
 	ccp := &capabilitiespb.CapabilityConfig{
 		DefaultConfig: ecm,
-		RemoteConfig: &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
+	}
+
+	if cc.RemoteTriggerConfig != nil {
+		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
 			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
 				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
 				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
 				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
 				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
 			},
-		},
+		}
+	}
+
+	if cc.RemoteTargetConfig != nil {
+		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTargetConfig{
+			RemoteTargetConfig: &capabilitiespb.RemoteTargetConfig{
+				RequestHashExcludedAttributes: cc.RemoteTargetConfig.RequestHashExcludedAttributes,
+			},
+		}
 	}
 
 	return &pb.ConfigForCapabilityReply{

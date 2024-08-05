@@ -398,6 +398,10 @@ type RemoteTriggerConfig struct {
 	MessageExpiry           time.Duration
 }
 
+type RemoteTargetConfig struct {
+	RequestHashExcludedAttributes []string
+}
+
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
@@ -414,5 +418,6 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 
 type CapabilityConfiguration struct {
 	DefaultConfig       *values.Map
-	RemoteTriggerConfig RemoteTriggerConfig
+	RemoteTriggerConfig *RemoteTriggerConfig
+	RemoteTargetConfig  *RemoteTargetConfig
 }

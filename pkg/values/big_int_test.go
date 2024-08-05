@@ -34,6 +34,10 @@ func Test_BigIntUnwrapTo(t *testing.T) {
 	nilVal := (*BigInt)(nil)
 	_, err = nilVal.Unwrap()
 	assert.ErrorContains(t, err, "could not unwrap nil")
+
+	bi := &BigInt{}
+	_, err = bi.Unwrap()
+	assert.ErrorContains(t, err, "could not unwrap nil")
 }
 
 func Test_BigInt(t *testing.T) {

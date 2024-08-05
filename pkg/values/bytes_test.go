@@ -37,4 +37,9 @@ func Test_BytesUnwrapTo(t *testing.T) {
 	var bp []byte
 	err = bn.UnwrapTo(bp)
 	assert.ErrorContains(t, err, "cannot unwrap nil")
+
+	bn = &Bytes{}
+	err = bn.UnwrapTo(&bp)
+	require.NoError(t, err)
+	assert.Nil(t, bp)
 }

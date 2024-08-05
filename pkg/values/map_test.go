@@ -42,6 +42,14 @@ func TestMap_UnwrapTo_Nil(t *testing.T) {
 	mv := map[string]any{}
 	err = m.UnwrapTo(mv)
 	assert.ErrorContains(t, err, "cannot unwrap nil")
+
+	m = &Map{}
+	_, err = m.Unwrap()
+	assert.NoError(t, err)
+
+	m = &Map{}
+	err = m.UnwrapTo(&mv)
+	assert.NoError(t, err)
 }
 
 func TestMap_UnwrapTo(t *testing.T) {

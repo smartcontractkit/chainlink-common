@@ -29,7 +29,7 @@ func (b *BigInt) Unwrap() (any, error) {
 }
 
 func (b *BigInt) UnwrapTo(to any) error {
-	if b == nil {
+	if b == nil || b.Underlying == nil {
 		return errors.New("could not unwrap nil values.BigInt")
 	}
 

@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -23,10 +24,15 @@ func (b *BigInt) proto() *pb.Value {
 }
 
 func (b *BigInt) Unwrap() (any, error) {
-	return b.Underlying, nil
+	bi := &big.Int{}
+	return bi, b.UnwrapTo(bi)
 }
 
 func (b *BigInt) UnwrapTo(to any) error {
+	if b == nil {
+		return errors.New("could not unwrap nil values.BigInt")
+	}
+
 	switch tb := to.(type) {
 	case *big.Int:
 		if tb == nil {
@@ -46,6 +52,10 @@ func (b *BigInt) UnwrapTo(to any) error {
 }
 
 func (b *BigInt) Copy() Value {
+	if b == nil {
+		return nil
+	}
+
 	nw := new(big.Int)
 	nw.Set(b.Underlying)
 	return &BigInt{Underlying: nw}

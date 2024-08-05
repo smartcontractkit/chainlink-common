@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
@@ -57,6 +58,10 @@ func (m *Map) Copy() Value {
 }
 
 func (m *Map) CopyMap() *Map {
+	if m == nil {
+		return nil
+	}
+
 	dest := map[string]Value{}
 	for k, v := range m.Underlying {
 		dest[k] = v.Copy()
@@ -66,6 +71,10 @@ func (m *Map) CopyMap() *Map {
 }
 
 func (m *Map) UnwrapTo(to any) error {
+	if m == nil {
+		return errors.New("cannot unwrap nil values.Map")
+	}
+
 	c := &mapstructure.DecoderConfig{
 		Result: to,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(

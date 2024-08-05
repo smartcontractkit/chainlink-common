@@ -8,7 +8,7 @@ import (
     ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 )
 
-func NewChainwriterTargetCapability(w *workflows.Workflow, ref string, input ChainwriterTargetCapabilityInput, cfg ChainwriterTargetConfig) (error) {
+func NewChainwriterTargetCapability(w *workflows.Workflow, ref string, input ChainwriterTargetCapabilityInput, cfg ChainwriterTargetConfig) {
     def := workflows.StepDefinition{
        ID: ref,
        Ref: ref,
@@ -25,8 +25,8 @@ func NewChainwriterTargetCapability(w *workflows.Workflow, ref string, input Cha
        CapabilityType: capabilities.CapabilityTypeTarget,
    }
     step := workflows.Step[ struct{}]{Definition: def}
-     _, err := workflows.AddStep(w, step)
-    return err
+     workflows.AddStep(w, step)
+    return
 }
 
 

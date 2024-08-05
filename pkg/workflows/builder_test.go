@@ -31,26 +31,18 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger, err := streams.NewStreamsTriggerCapability(workflow, "streams", *conf.Streams)
-	if err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	streamsTrigger := streams.NewStreamsTriggerCapability(workflow, "streams", *conf.Streams)
 
 	streamsList := workflows.ListOf[streams.Feed](streamsTrigger)
 	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsList}
 
-	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
-	if err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	consensus := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
 
 	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
 
-	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter); err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter)
 
-	return workflow.Spec(), nil
+	return workflow.Spec()
 }
 
 // What if there were hundreds of feeds?  Like feeds that aren't for CCIP?
@@ -105,26 +97,18 @@ func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger, err := streams.NewStreamsTriggerCapability(workflow, "streams", streamsConfig)
-	if err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	streamsTrigger := streams.NewStreamsTriggerCapability(workflow, "streams", streamsConfig)
 
 	streamsList := workflows.ListOf[streams.Feed](streamsTrigger)
 	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsList}
 
-	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, ocr3Config)
-	if err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	consensus := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, ocr3Config)
 
 	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
 
-	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter); err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter)
 
-	return workflow.Spec(), nil
+	return workflow.Spec()
 }
 
 // What if inputs and outputs don't match exactly?
@@ -136,10 +120,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	notStreamsTrigger, err := notstreams.NewNotstreamsTriggerCapability(workflow, "notstreams", *conf.Streams)
-	if err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	notStreamsTrigger := notstreams.NewNotstreamsTriggerCapability(workflow, "notstreams", *conf.Streams)
 
 	feedsInput := streams.NewStreamsTriggerCapabilityFromComponents(
 		notStreamsTrigger.Price().PriceA(),
@@ -152,18 +133,13 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 	notStreamsList := workflows.ListOf[streams.Feed](feedsInput)
 	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: notStreamsList}
 
-	consensus, err := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
-	if err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	consensus := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
 
 	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
 
-	if err = chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter); err != nil {
-		return workflows.WorkflowSpec{}, err
-	}
+	chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter)
 
-	return workflow.Spec(), nil
+	return workflow.Spec()
 }
 
 //go:embed testdata/fixtures/workflows/sepolia.yaml

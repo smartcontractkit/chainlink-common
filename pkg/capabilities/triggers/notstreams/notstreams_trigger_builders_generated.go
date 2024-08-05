@@ -7,7 +7,7 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func NewNotstreamsTriggerCapability(w *workflows.Workflow, ref string, cfg NotstreamsTriggerConfig) (NotstreamsTriggerCapability,error) {
+func NewNotstreamsTriggerCapability(w *workflows.Workflow, ref string, cfg NotstreamsTriggerConfig)NotstreamsTriggerCapability {
     def := workflows.StepDefinition{
        ID: ref,
        Ref: ref,
@@ -21,8 +21,8 @@ func NewNotstreamsTriggerCapability(w *workflows.Workflow, ref string, cfg Notst
        CapabilityType: capabilities.CapabilityTypeTrigger,
    }
     step := workflows.Step[Feed]{Definition: def}
-     raw, err := workflows.AddStep(w, step)
-    return &notstreamsTriggerCapability{CapabilityDefinition: raw}, err
+     raw := workflows.AddStep(w, step)
+    return &notstreamsTriggerCapability{CapabilityDefinition: raw}
 }
 
 

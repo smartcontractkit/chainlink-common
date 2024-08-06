@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -38,6 +39,10 @@ func (l *List) Unwrap() (any, error) {
 }
 
 func (l *List) Copy() Value {
+	if l == nil {
+		return nil
+	}
+
 	dest := []Value{}
 	for _, el := range l.Underlying {
 		dest = append(dest, el.Copy())
@@ -46,6 +51,10 @@ func (l *List) Copy() Value {
 }
 
 func (l *List) UnwrapTo(to any) error {
+	if l == nil {
+		return errors.New("cannot unwrap nil values.List")
+	}
+
 	val := reflect.ValueOf(to)
 	if val.Kind() != reflect.Pointer {
 		return fmt.Errorf("cannot unwrap to non-pointer type %T", to)

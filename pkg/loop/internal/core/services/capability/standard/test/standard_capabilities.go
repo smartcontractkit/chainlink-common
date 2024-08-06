@@ -16,13 +16,11 @@ func (t StandardCapabilitiesService) Infos(ctx context.Context) ([]capabilities.
 			ID:             "1",
 			CapabilityType: capabilities.CapabilityTypeAction,
 			Description:    "",
-			DON:            nil,
 		},
 		{
 			ID:             "2",
 			CapabilityType: capabilities.CapabilityTypeTarget,
 			Description:    "",
-			DON:            nil,
 		},
 	}, nil
 }

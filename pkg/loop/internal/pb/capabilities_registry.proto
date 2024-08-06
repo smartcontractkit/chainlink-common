@@ -34,11 +34,16 @@ message DON {
   uint32 configVersion  = 4;
 }
 
+message CapabilityDON {
+  DON don = 1;
+  map<string, loop.CapabilityConfig> capabilityConfigurations = 2;
+}
+
 // LocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.LocalNode].
 message LocalNodeReply {
   bytes peerID = 1; // [32]byte
   DON workflowDON = 2;
-  repeated DON CapabilityDONs = 3;
+  repeated CapabilityDON CapabilityDONs = 3;
 }
 
 // Get has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get].

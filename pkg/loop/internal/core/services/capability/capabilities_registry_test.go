@@ -168,22 +168,26 @@ func TestCapabilitiesRegistry(t *testing.T) {
 			F:             2,
 			ConfigVersion: 1,
 		},
-		CapabilityDONs: []capabilities.DON{
+		CapabilityDONs: []capabilities.CapabilityDON{
 			{
-				ID:            22,
-				Members:       []p2ptypes.PeerID{},
-				F:             1,
-				ConfigVersion: 2,
+				DON: capabilities.DON{
+					ID:            22,
+					Members:       []p2ptypes.PeerID{},
+					F:             1,
+					ConfigVersion: 2,
+				},
 			},
 			{
-				ID: 33,
-				Members: []p2ptypes.PeerID{
-					[32]byte{0: 4},
-					[32]byte{0: 5},
-					[32]byte{0: 6},
+				DON: capabilities.DON{
+					ID: 33,
+					Members: []p2ptypes.PeerID{
+						[32]byte{0: 4},
+						[32]byte{0: 5},
+						[32]byte{0: 6},
+					},
+					F:             3,
+					ConfigVersion: 3,
 				},
-				F:             3,
-				ConfigVersion: 3,
 			},
 		},
 	}

@@ -39,6 +39,43 @@ func toDON(don *pb.DON) capabilities.DON {
 	}
 }
 
+func toCapabilityDON(cdon *pb.CapabilityDON) (capabilities.CapabilityDON, error) {
+	ccs := map[string]capabilities.CapabilityConfiguration{}
+	for id, ccpb := range cdon.CapabilityConfigurations {
+		cc, err := toCapabilityConfiguration(ccpb)
+		if err != nil {
+			return capabilities.CapabilityDON{}, err
+		}
+		ccs[id] = cc
+	}
+	return capabilities.CapabilityDON{
+		DON:                      toDON(cdon.Don),
+		CapabilityConfigurations: ccs,
+	}, nil
+}
+
+func toCapabilityConfiguration(cc *capabilitiespb.CapabilityConfig) (capabilities.CapabilityConfiguration, error) {
+	dc, err := values.FromMapValueProto(cc.DefaultConfig)
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, err
+	}
+
+	var rtc capabilities.RemoteTriggerConfig
+	rtc.ApplyDefaults()
+
+	if prtc := cc.GetRemoteTriggerConfig(); prtc != nil {
+		rtc.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
+		rtc.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+		rtc.MinResponsesToAggregate = prtc.MinResponsesToAggregate
+		rtc.MessageExpiry = prtc.MessageExpiry.AsDuration()
+	}
+
+	return capabilities.CapabilityConfiguration{
+		DefaultConfig:       dc,
+		RemoteTriggerConfig: rtc,
+	}, nil
+}
+
 func toPbDON(don capabilities.DON) *pb.DON {
 	membersBytes := make([][]byte, len(don.Members))
 	for j, m := range don.Members {
@@ -54,6 +91,31 @@ func toPbDON(don capabilities.DON) *pb.DON {
 	}
 }
 
+func toPbCapabilityConfiguration(cc capabilities.CapabilityConfiguration) *capabilitiespb.CapabilityConfig {
+	return &capabilitiespb.CapabilityConfig{
+		DefaultConfig: values.Proto(cc.DefaultConfig).GetMapValue(),
+		RemoteConfig: &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
+			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
+				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
+				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
+				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
+				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
+			},
+		},
+	}
+}
+
+func toPbCapabilityDON(don capabilities.CapabilityDON) *pb.CapabilityDON {
+	ccs := map[string]*capabilitiespb.CapabilityConfig{}
+	for id, cc := range don.CapabilityConfigurations {
+		ccs[id] = toPbCapabilityConfiguration(cc)
+	}
+	return &pb.CapabilityDON{
+		Don:                      toPbDON(don.DON),
+		CapabilityConfigurations: ccs,
+	}
+}
+
 func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabilities.Node, error) {
 	res, err := cr.grpc.LocalNode(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -66,9 +128,14 @@ func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabiliti
 		pid = &p
 	}
 
-	cDONs := make([]capabilities.DON, len(res.CapabilityDONs))
+	cDONs := make([]capabilities.CapabilityDON, len(res.CapabilityDONs))
 	for i, don := range res.CapabilityDONs {
-		cDONs[i] = toDON(don)
+		cdon, err := toCapabilityDON(don)
+		if err != nil {
+			return capabilities.Node{}, err
+		}
+
+		cDONs[i] = cdon
 	}
 
 	return capabilities.Node{
@@ -87,25 +154,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, err
 	}
 
-	mc, err := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
-	if err != nil {
-		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
-	}
-
-	var rtc capabilities.RemoteTriggerConfig
-	rtc.ApplyDefaults()
-
-	if prtc := res.CapabilityConfig.GetRemoteTriggerConfig(); prtc != nil {
-		rtc.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
-		rtc.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
-		rtc.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-		rtc.MessageExpiry = prtc.MessageExpiry.AsDuration()
-	}
-
-	return capabilities.CapabilityConfiguration{
-		DefaultConfig:       mc,
-		RemoteTriggerConfig: rtc,
-	}, nil
+	return toCapabilityConfiguration(res.CapabilityConfig)
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
@@ -295,22 +344,8 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		return nil, err
 	}
 
-	ecm := values.Proto(cc.DefaultConfig).GetMapValue()
-
-	ccp := &capabilitiespb.CapabilityConfig{
-		DefaultConfig: ecm,
-		RemoteConfig: &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
-			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
-				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
-				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
-				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
-				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
-			},
-		},
-	}
-
 	return &pb.ConfigForCapabilityReply{
-		CapabilityConfig: ccp,
+		CapabilityConfig: toPbCapabilityConfiguration(cc),
 	}, nil
 }
 
@@ -322,9 +357,9 @@ func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.E
 
 	workflowDONpb := toPbDON(node.WorkflowDON)
 
-	capabilityDONsPb := make([]*pb.DON, len(node.CapabilityDONs))
+	capabilityDONsPb := make([]*pb.CapabilityDON, len(node.CapabilityDONs))
 	for i, don := range node.CapabilityDONs {
-		capabilityDONsPb[i] = toPbDON(don)
+		capabilityDONsPb[i] = toPbCapabilityDON(don)
 	}
 
 	var pid []byte

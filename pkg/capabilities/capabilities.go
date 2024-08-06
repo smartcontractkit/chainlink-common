@@ -189,6 +189,12 @@ type DON struct {
 	AcceptsWorkflows bool
 }
 
+func (d DON) IsZero() bool {
+	// In the remote capabilities registry, the DON ID can never be 0,
+	// so we check this to determine whether the DON info has been set.
+	return d.ID == 0
+}
+
 type CapabilityDON struct {
 	DON
 	CapabilityConfigurations map[string]CapabilityConfiguration
@@ -224,7 +230,7 @@ type CapabilityInfo struct {
 	ID             string
 	CapabilityType CapabilityType
 	Description    string
-	DON            *DON
+	DON            DON
 	IsLocal        bool
 }
 
@@ -262,7 +268,7 @@ func newCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
-	don *DON,
+	don DON,
 	isLocal bool,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
@@ -291,7 +297,7 @@ func NewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 ) (CapabilityInfo, error) {
-	return newCapabilityInfo(id, capabilityType, description, nil, true)
+	return newCapabilityInfo(id, capabilityType, description, DON{}, true)
 }
 
 // NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
@@ -302,7 +308,7 @@ func NewRemoteCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
-	don *DON,
+	don DON,
 ) (CapabilityInfo, error) {
 	return newCapabilityInfo(id, capabilityType, description, don, false)
 }
@@ -328,7 +334,7 @@ func MustNewRemoteCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
-	don *DON,
+	don DON,
 ) CapabilityInfo {
 	c, err := NewRemoteCapabilityInfo(id, capabilityType, description, don)
 	if err != nil {

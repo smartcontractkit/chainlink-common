@@ -41,21 +41,21 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
-func submitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract) {
+func submitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) {
 	txID := uuid.New().String()
 	cw := tester.GetChainWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	tester.IncNonce()
 	require.NoError(t, err)
 
-	waitForTransactionFinalization(t, tester, txID)
+	waitForTransactionStatus(t, tester, txID, status)
 }
 
-func waitForTransactionFinalization[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string) error {
+func waitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string, status types.TransactionStatus) error {
 	ctx, cancel := context.WithTimeout(tests.Context(t), 5*time.Minute)
 	defer cancel()
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -63,20 +63,18 @@ func waitForTransactionFinalization[T TestingT[T]](t T, tester ChainReaderInterf
 		case <-ctx.Done():
 			return fmt.Errorf("transaction %s not finalized within timeout period", txID)
 		case <-ticker.C:
-			status, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
+			current, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
 			if err != nil {
 				return fmt.Errorf("failed to get transaction status: %w", err)
 			}
 
-			switch status {
-			case types.Finalized:
-				fmt.Println("Found successful Transaction")
-				return nil
-			case types.Failed, types.Fatal:
+			if current == types.Failed || current == types.Fatal {
 				return fmt.Errorf("transaction %s has failed or is fatal", txID)
-			case types.Unknown, types.Unconfirmed:
+			} else if current >= status {
+				fmt.Printf("Transaction %s reached status: %d\n", txID, status)
+				return nil
+			} else {
 				fmt.Printf("Transaction %s is still %d\n", txID, status)
-				// Continue polling for these statuses
 			}
 		}
 	}

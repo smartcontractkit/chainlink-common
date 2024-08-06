@@ -41,10 +41,10 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
-func submitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], args any, contract types.BoundContract) {
+func submitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract) {
 	txID := uuid.New().String()
 	cw := tester.GetChainWriter(t)
-	err := cw.SubmitTransaction(tests.Context(t), contract.Name, "addTestStruct", args, txID, contract.Address, nil, big.NewInt(0))
+	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	tester.IncNonce()
 	require.NoError(t, err)
 
@@ -86,6 +86,10 @@ type ExpectedGetLatestValueArgs struct {
 	ContractName, ReadName string
 	ConfidenceLevel        primitives.ConfidenceLevel
 	Params, ReturnVal      any
+}
+
+type PrimitiveArgs struct {
+	Value uint64
 }
 
 func (e ExpectedGetLatestValueArgs) String() string {

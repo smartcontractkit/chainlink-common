@@ -70,9 +70,9 @@ jobs:
       - name: Ensure "make gomodtidy" has been run
         run: |
           make gomodtidy
-          git diff --exit-code
+          git diff --minimal --exit-code
       - name: Ensure "make generate" has been run
         run: |
           make rm-mocked
           make generate
-          git diff --exit-code
+          git diff --stat --exit-code

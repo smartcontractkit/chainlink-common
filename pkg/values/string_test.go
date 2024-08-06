@@ -25,4 +25,12 @@ func Test_StringUnwrapTo(t *testing.T) {
 	err = v.UnwrapTo(&varAny)
 	require.NoError(t, err)
 	assert.Equal(t, expected, varAny)
+
+	sn := (*String)(nil)
+	_, err = sn.Unwrap()
+	assert.ErrorContains(t, err, "cannot unwrap nil")
+
+	var s string
+	err = sn.UnwrapTo(&s)
+	assert.ErrorContains(t, err, "cannot unwrap nil")
 }

@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -20,14 +21,22 @@ func (i *Int64) proto() *pb.Value {
 }
 
 func (i *Int64) Unwrap() (any, error) {
-	return i.Underlying, nil
+	var u int64
+	return u, i.UnwrapTo(&u)
 }
 
 func (i *Int64) Copy() Value {
+	if i == nil {
+		return nil
+	}
 	return &Int64{Underlying: i.Underlying}
 }
 
 func (i *Int64) UnwrapTo(to any) error {
+	if i == nil {
+		return errors.New("cannot unwrap nil values.Int64")
+	}
+
 	if to == nil {
 		return fmt.Errorf("cannot unwrap to nil pointer: %+v", to)
 	}

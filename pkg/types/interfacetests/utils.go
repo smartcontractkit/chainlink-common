@@ -45,7 +45,6 @@ func submitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester
 	txID := uuid.New().String()
 	cw := tester.GetChainWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
-	tester.IncNonce()
 	require.NoError(t, err)
 
 	waitForTransactionStatus(t, tester, txID, status)
@@ -71,10 +70,10 @@ func waitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTes
 			if current == types.Failed || current == types.Fatal {
 				return fmt.Errorf("transaction %s has failed or is fatal", txID)
 			} else if current >= status {
-				fmt.Printf("Transaction %s reached status: %d\n", txID, status)
+				fmt.Printf("Transaction %s reached status: %d\n", txID, current)
 				return nil
 			} else {
-				fmt.Printf("Transaction %s is still %d\n", txID, status)
+				fmt.Printf("Transaction %s is still %d\n", txID, current)
 			}
 		}
 	}

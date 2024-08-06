@@ -35,6 +35,7 @@ const (
 	CommitStoreReader_IsDown_FullMethodName                                = "/loop.internal.pb.ccip.CommitStoreReader/IsDown"
 	CommitStoreReader_VerifyExecutionReport_FullMethodName                 = "/loop.internal.pb.ccip.CommitStoreReader/VerifyExecutionReport"
 	CommitStoreReader_Close_FullMethodName                                 = "/loop.internal.pb.ccip.CommitStoreReader/Close"
+	CommitStoreReader_GetCommitReport_FullMethodName                       = "/loop.internal.pb.ccip.CommitStoreReader/GetCommitReport"
 )
 
 // CommitStoreReaderClient is the client API for CommitStoreReader service.
@@ -56,6 +57,7 @@ type CommitStoreReaderClient interface {
 	IsDown(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsDownResponse, error)
 	VerifyExecutionReport(ctx context.Context, in *VerifyExecutionReportRequest, opts ...grpc.CallOption) (*VerifyExecutionReportResponse, error)
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetCommitReport(ctx context.Context, in *GetCommitReportRequest, opts ...grpc.CallOption) (*GetCommitStoreResponse, error)
 }
 
 type commitStoreReaderClient struct {
@@ -201,6 +203,15 @@ func (c *commitStoreReaderClient) Close(ctx context.Context, in *emptypb.Empty, 
 	return out, nil
 }
 
+func (c *commitStoreReaderClient) GetCommitReport(ctx context.Context, in *GetCommitReportRequest, opts ...grpc.CallOption) (*GetCommitStoreResponse, error) {
+	out := new(GetCommitStoreResponse)
+	err := c.cc.Invoke(ctx, CommitStoreReader_GetCommitReport_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommitStoreReaderServer is the server API for CommitStoreReader service.
 // All implementations must embed UnimplementedCommitStoreReaderServer
 // for forward compatibility
@@ -220,6 +231,7 @@ type CommitStoreReaderServer interface {
 	IsDown(context.Context, *emptypb.Empty) (*IsDownResponse, error)
 	VerifyExecutionReport(context.Context, *VerifyExecutionReportRequest) (*VerifyExecutionReportResponse, error)
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	GetCommitReport(context.Context, *GetCommitReportRequest) (*GetCommitStoreResponse, error)
 	mustEmbedUnimplementedCommitStoreReaderServer()
 }
 
@@ -271,6 +283,9 @@ func (UnimplementedCommitStoreReaderServer) VerifyExecutionReport(context.Contex
 }
 func (UnimplementedCommitStoreReaderServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
+func (UnimplementedCommitStoreReaderServer) GetCommitReport(context.Context, *GetCommitReportRequest) (*GetCommitStoreResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCommitReport not implemented")
 }
 func (UnimplementedCommitStoreReaderServer) mustEmbedUnimplementedCommitStoreReaderServer() {}
 
@@ -555,6 +570,24 @@ func _CommitStoreReader_Close_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommitStoreReader_GetCommitReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCommitReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommitStoreReaderServer).GetCommitReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommitStoreReader_GetCommitReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommitStoreReaderServer).GetCommitReport(ctx, req.(*GetCommitReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CommitStoreReader_ServiceDesc is the grpc.ServiceDesc for CommitStoreReader service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -621,6 +654,10 @@ var CommitStoreReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Close",
 			Handler:    _CommitStoreReader_Close_Handler,
+		},
+		{
+			MethodName: "GetCommitReport",
+			Handler:    _CommitStoreReader_GetCommitReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

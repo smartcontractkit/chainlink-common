@@ -18,6 +18,7 @@ type CommitStoreReader interface {
 	GetAcceptedCommitReportsGteTimestamp(ctx context.Context, ts time.Time, confirmations int) ([]CommitStoreReportWithTxMeta, error)
 	// GetCommitReportMatchingSeqNum returns accepted commit report that satisfies Interval.Min <= seqNum <= Interval.Max. Returned slice should be empty or have exactly one element
 	GetCommitReportMatchingSeqNum(ctx context.Context, seqNum uint64, confirmations int) ([]CommitStoreReportWithTxMeta, error)
+	GetCommitReport(ctx context.Context, root [32]byte) (CommitStoreReportWithTxMeta, error)
 	GetCommitStoreStaticConfig(ctx context.Context) (CommitStoreStaticConfig, error)
 	GetExpectedNextSequenceNumber(ctx context.Context) (uint64, error)
 	GetLatestPriceEpochAndRound(ctx context.Context) (uint64, error)

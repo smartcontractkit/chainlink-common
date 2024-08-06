@@ -167,6 +167,14 @@ func (c *CommitStoreGRPCClient) GetCommitReportMatchingSeqNum(ctx context.Contex
 	return commitStoreReportWithTxMetaSlice(resp.Reports)
 }
 
+func (c *CommitStoreGRPCClient) GetCommitReport(ctx context.Context, root [32]byte) (ccip.CommitStoreReportWithTxMeta, error) {
+	resp, err := c.client.GetCommitReport(ctx, &ccippb.GetCommitReportRequest{Root: root[:]})
+	if err != nil {
+		return ccip.CommitStoreReportWithTxMeta{}, err
+	}
+	return commitStoreReportWithTxMeta(resp.Report)
+}
+
 // GetCommitStoreStaticConfig implements ccip.CommitStoreReader.
 func (c *CommitStoreGRPCClient) GetCommitStoreStaticConfig(ctx context.Context) (ccip.CommitStoreStaticConfig, error) {
 	resp, err := c.client.GetCommitStoreStaticConfig(ctx, &emptypb.Empty{})
@@ -369,6 +377,18 @@ func (c *CommitStoreGRPCServer) GetCommitReportMatchingSequenceNumber(ctx contex
 		return nil, err
 	}
 	return &ccippb.GetCommitReportMatchingSequenceNumberResponse{Reports: pbReports}, nil
+}
+
+func (c *CommitStoreGRPCServer) GetCommitReport(ctx context.Context, req *ccippb.GetCommitReportRequest) (*ccippb.GetCommitStoreResponse, error) {
+	r, err := c.impl.GetCommitReport(ctx, [32]byte(req.Root))
+	if err != nil {
+		return nil, err
+	}
+	pb, err := commitStoreReportWithTxMetaPB(r)
+	if err != nil {
+		return nil, err
+	}
+	return &ccippb.GetCommitStoreResponse{Report: pb}, nil
 }
 
 // IsBlessed implements ccippb.CommitStoreReaderServer.

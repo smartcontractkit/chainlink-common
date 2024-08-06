@@ -26,6 +26,16 @@ service CommitStoreReader {
     rpc IsDown(google.protobuf.Empty) returns (IsDownResponse);
     rpc VerifyExecutionReport(VerifyExecutionReportRequest) returns (VerifyExecutionReportResponse);
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc GetCommitReport(GetCommitReportRequest) returns (GetCommitStoreResponse);
+
+}
+
+message GetCommitReportRequest {
+    bytes root = 1; // [32]byte
+}
+
+message GetCommitStoreResponse {
+    CommitStoreReportWithTxMeta report = 1;
 }
 
 // GetExpectedNextSequenceNumberResponse returns the expected next sequence number. It is a gRPC adapter to the return values of

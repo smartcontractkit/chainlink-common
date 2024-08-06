@@ -484,6 +484,10 @@ func (s staticCommitStoreReader) VerifyExecutionReport(ctx context.Context, repo
 	return s.verifyExecutionReportResponse, nil
 }
 
+func (s staticCommitStoreReader) GetCommitReport(ctx context.Context, root [32]byte) (ccip.CommitStoreReportWithTxMeta, error) {
+	return ccip.CommitStoreReportWithTxMeta{}, nil
+}
+
 var _ CommitStoreReaderEvaluator = staticCommitStoreReader{}
 
 type staticCommitStoreReaderConfig struct {

@@ -34,6 +34,24 @@ type testStruct struct {
 	MapValue *Map
 }
 
+func TestMap_UnwrapTo_Nil(t *testing.T) {
+	m := (*Map)(nil)
+	_, err := m.Unwrap()
+	assert.ErrorContains(t, err, "cannot unwrap nil")
+
+	mv := map[string]any{}
+	err = m.UnwrapTo(mv)
+	assert.ErrorContains(t, err, "cannot unwrap nil")
+
+	m = &Map{}
+	_, err = m.Unwrap()
+	assert.NoError(t, err)
+
+	m = &Map{}
+	err = m.UnwrapTo(&mv)
+	assert.NoError(t, err)
+}
+
 func TestMap_UnwrapTo(t *testing.T) {
 	im := map[string]any{
 		"foo": "bar",

@@ -1,6 +1,8 @@
 package logger_test
 
 import (
+	"errors"
+	"io/fs"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/logger"
@@ -20,5 +22,8 @@ func TestLoggerExample(t *testing.T) {
 	log.Warnw("This is a structured warning log", "key", "value")
 	log.Errorw("This is a structured error log", "key", "value")
 	log.Debugw("This is a structured debug log", "key", "value")
-	log.Sync()
+	var pathErr *fs.PathError
+	if err := log.Sync(); err != nil && !errors.As(err, &pathErr) {
+		t.Fatal(err)
+	}
 }

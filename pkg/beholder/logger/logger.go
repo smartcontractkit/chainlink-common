@@ -9,8 +9,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// TODO(gg): use or remove this package
-
 //go:generate mockery --name Logger --output ./mocks/ --case=underscore
 type Logger interface {
 	Info(args ...interface{})

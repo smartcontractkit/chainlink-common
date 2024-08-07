@@ -252,8 +252,5 @@ func (e Message) Validate() error {
 		return fmt.Errorf("message attributes are required")
 	}
 	metadata := NewMetadata(e.Attrs)
-	if err := metadata.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return metadata.Validate()
 }

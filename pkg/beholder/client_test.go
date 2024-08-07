@@ -148,7 +148,6 @@ func TestClient(t *testing.T) {
 							return true
 						})
 						for key := range customAttributes {
-
 							if slices.Contains(tc.skipAttributes, key) {
 								// NOTE: skipping these attributes is necessary due to a limitation in sdklog.Record
 								// see INFOPLAT-811

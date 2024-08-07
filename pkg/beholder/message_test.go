@@ -15,18 +15,18 @@ func ExampleMessage() {
 	e1 := beholder.NewMessage([]byte{1}, beholder.Attributes{"key_string": "value"})
 	fmt.Println("#1", e1)
 	// Create attributes
-	additional_attributes := beholder.Attributes{
+	additionalAttributes := beholder.Attributes{
 		"key_string": "new value",
 		"key_int32":  int32(1),
 	}
 	// Add more attributes
-	additional_attributes.Add(
+	additionalAttributes.Add(
 		"key_string", "updated value", // this will overrider previous value
 		"key_int32", int32(2),
 		"key3", true,
 	)
 	// Add attributes to message
-	e1.AddAttributes(additional_attributes)
+	e1.AddAttributes(additionalAttributes)
 	fmt.Println("#2", e1)
 	// Create empty message struct
 	e2 := beholder.Message{}
@@ -100,7 +100,7 @@ func ExampleMetadata() {
 	// map[beholder_data_schema:/schemas/ids/test_schema capability_contract_address:test_contract_address capability_id:test_capability_id capability_name:test_capability_name capability_version:test_capability_version don_id:test_don_id network_chain_id:test_chain_id network_name:[test_network] node_csa_key:test_key node_csa_signature:test_signature node_version:v1.0.0 workflow_execution_id:test_execution_id workflow_id:test_workflow_id workflow_name:test_workflow_name workflow_owner_address:test_owner_address workflow_spec_id:test_spec_id]
 }
 
-func ExampleMetadataValidate() {
+func ExampleValidate() {
 	validate := validator.New()
 
 	metadata := beholder.Metadata{}

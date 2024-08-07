@@ -32,7 +32,8 @@ func TestGlobal(t *testing.T) {
 	assert.NotSame(t, noopClient, global.GetClient())
 
 	// Set global client so it will be accessible from anywhere through beholder/global functions
-	global.SetClient(noopClient)
+	var client beholder.Client = noopClient
+	global.SetClient(&client)
 	assert.Same(t, noopClient, global.GetClient())
 
 	// After that use global functions to get logger, tracer, meter, messageEmitter
@@ -50,5 +51,8 @@ func TestGlobal(t *testing.T) {
 	counter.Add(context.Background(), 1)
 
 	// Emit custom message
-	messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{"key": "value"})
+	err := messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{"key": "value"})
+	if err != nil {
+		t.Fatalf("Error emitting message: %v", err)
+	}
 }

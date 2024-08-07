@@ -17,7 +17,7 @@ import (
 )
 
 // Default client to fallback when is is not initialized properly
-func NewNoopClient() *BeholderClient {
+func NewNoopClient() Client {
 	cfg := DefaultBeholderConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
@@ -43,7 +43,7 @@ func NewNoopClient() *BeholderClient {
 // NewStdoutClient creates a new BeholderClient with stdout exporters
 // Use for testing and debugging
 // Also this client is used as a noop client when otel exporter is not initialized properly
-func NewStdoutClient() *BeholderClient {
+func NewStdoutClient() Client {
 	cfg := DefaultBeholderConfig()
 	// Logger
 	loggerExporter, _ := stdoutlog.New(stdoutlog.WithoutTimestamps()) // stdoutlog.New() never returns an error

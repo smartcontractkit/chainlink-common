@@ -23,9 +23,9 @@ import (
 )
 
 type Emitter interface {
-	// Sends custom message with bytes and attributes to OTel Collector
+	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrs map[string]any) error
-	// Sends custom message to OTel Collector
+	// Sends message to OTel Collector
 	EmitMessage(ctx context.Context, m Message) error
 }
 type Client interface {
@@ -36,7 +36,7 @@ type Client interface {
 	Close() error
 }
 
-var _ Client = (*BeholderClient)(nil)
+var _ Client = (*beholderClient)(nil)
 
 type messageEmitter struct {
 	exporter      sdklog.Exporter
@@ -45,7 +45,7 @@ type messageEmitter struct {
 	retryDelay    time.Duration
 }
 
-type BeholderClient struct {
+type beholderClient struct {
 	config Config
 	// Logger
 	logger otellog.Logger
@@ -55,7 +55,6 @@ type BeholderClient struct {
 	meter otelmetric.Meter
 	// MessageEmitter
 	messageEmitter Emitter
-
 	// Graceful shutdown for tracer, meter, logger providers
 	closeFunc func() error
 }
@@ -67,8 +66,8 @@ func NewClient(
 	meter otelmetric.Meter,
 	messageEmitter Emitter,
 	onClose func() error,
-) *BeholderClient {
-	return &BeholderClient{
+) Client {
+	return &beholderClient{
 		config:         config,
 		logger:         logger,
 		tracer:         tracer,
@@ -78,9 +77,8 @@ func NewClient(
 	}
 }
 
-// NewOtelClient creates a new BeholderClient with OpenTelemetry otlploggrpc Exporter
-
-func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (*BeholderClient, error) {
+// NewOtelClient creates a new BeholderClient with OTel exporter
+func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
 	}
@@ -90,7 +88,7 @@ func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (*BeholderClient, 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (*BeholderClient, error) {
+func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (Client, error) {
 	ctx := context.Background()
 	baseResource, err := newOtelResource()
 	if err != nil {
@@ -236,22 +234,22 @@ func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error 
 	return nil
 }
 
-func (b *BeholderClient) Logger() otellog.Logger {
+func (b *beholderClient) Logger() otellog.Logger {
 	return b.logger
 }
 
-func (b *BeholderClient) Tracer() oteltrace.Tracer {
+func (b *beholderClient) Tracer() oteltrace.Tracer {
 	return b.tracer
 }
 
-func (b *BeholderClient) Meter() otelmetric.Meter {
+func (b *beholderClient) Meter() otelmetric.Meter {
 	return b.meter
 }
-func (b *BeholderClient) Emitter() Emitter {
+func (b *beholderClient) Emitter() Emitter {
 	return b.messageEmitter
 }
 
-func (b *BeholderClient) Close() error {
+func (b *beholderClient) Close() error {
 	if b.closeFunc != nil {
 		return b.closeFunc()
 	}

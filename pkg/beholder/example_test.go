@@ -92,15 +92,17 @@ func asseetNoError(err error) {
 	}
 }
 
-func ExampleGlobalClient() {
+func ExampleEmitter() {
 	ctx := context.Background()
 	// Initialize beholder client
-	client, err := beholder.NewOtelClient(beholder.DefaultBeholderConfig(), asseetNoError)
+	c, err := beholder.NewOtelClient(beholder.DefaultBeholderConfig(), asseetNoError)
 	if err != nil {
 		log.Fatalf("Error creating beholder client: %v", err)
 	}
+	var client beholder.Client = c
+
 	// Set global client so it will be accessible from anywhere through beholder/global functions
-	global.SetClient(client)
+	global.SetClient(&client)
 	// After that you can use global functions to get logger, tracer, meter, messageEmitter
 	logger, tracer, meter, messageEmitter := global.Logger(), global.Tracer(), global.Meter(), global.Emitter()
 
@@ -116,8 +118,13 @@ func ExampleGlobalClient() {
 	counter.Add(ctx, 1)
 
 	fmt.Println("Emit custom message")
-	messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{"key": "value"})
-
+	err = messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{
+		"key":                  "value",
+		"beholder_data_schema": "/test/versions/1",
+	})
+	if err != nil {
+		log.Fatalf("Error emitting message: %v", err)
+	}
 	// Output:
 	// Emit otel log record
 	// Create trace span

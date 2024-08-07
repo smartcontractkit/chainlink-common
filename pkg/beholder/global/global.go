@@ -15,19 +15,19 @@ import (
 
 var log = logger.New()
 
-// Pointer to the global BeholderClient
+// Pointer to the global Beholder Client
 var globalBeholderClient = defaultBeholderClient()
 
-// SetClient sets the global BeholderClient
-func SetClient(client *beholder.BeholderClient) {
+// SetClient sets the global Beholder Client
+func SetClient(client *beholder.Client) {
 	globalBeholderClient.Store(client)
 }
 
-// Returns the global BeholderClient
-// This allows to access the BeholderClient from anywhere in the code
-// Its thread-safe and can be used in concurrent environment
-func GetClient() *beholder.BeholderClient {
-	return globalBeholderClient.Load()
+// Returns the global Beholder Client
+// Its thread-safe and can be used concurrently
+func GetClient() beholder.Client {
+	ptr := globalBeholderClient.Load()
+	return *ptr
 }
 
 func Logger() otellog.Logger {
@@ -50,32 +50,32 @@ func SpanFromContext(ctx context.Context) oteltrace.Span {
 	return oteltrace.SpanFromContext(ctx)
 }
 
-func defaultBeholderClient() *atomic.Pointer[beholder.BeholderClient] {
-	ptr := &atomic.Pointer[beholder.BeholderClient]{}
-	ptr.Store(beholder.NewNoopClient())
+func defaultBeholderClient() *atomic.Pointer[beholder.Client] {
+	ptr := &atomic.Pointer[beholder.Client]{}
+	client := beholder.NewNoopClient()
+	ptr.Store(&client)
 	return ptr
 }
 
-// TODO: rename to EmitMessage
 func EmitMessage(ctx context.Context, message beholder.Message) error {
 	return Emitter().EmitMessage(ctx, message)
 }
 
-// TODO: rename to EmitMessage
 func Emit(ctx context.Context, body []byte, attrs beholder.Attributes) error {
 	return Emitter().Emit(ctx, body, attrs)
 }
 
 func Bootstrap(cfg beholder.Config) error {
 	// Initialize beholder client
-	client, err := beholder.NewOtelClient(cfg, func(err error) {
+	c, err := beholder.NewOtelClient(cfg, func(err error) {
 		log.Infof("OTel error %s", err)
 	})
 	if err != nil {
 		return err
 	}
+	var client beholder.Client = c
 	// Set global client so it will be accessible from anywhere through beholder/global functions
-	SetClient(client)
+	SetClient(&client)
 	return nil
 }
 

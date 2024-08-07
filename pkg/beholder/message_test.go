@@ -76,19 +76,19 @@ func testMetadata() beholder.Metadata {
 		NodeVersion:               "v1.0.0",
 		NodeCsaKey:                "test_key",
 		NodeCsaSignature:          "test_signature",
-		DonId:                     "test_don_id",
+		DonID:                     "test_don_id",
 		NetworkName:               []string{"test_network"},
-		WorkflowId:                "test_workflow_id",
+		WorkflowID:                "test_workflow_id",
 		WorkflowName:              "test_workflow_name",
 		WorkflowOwnerAddress:      "test_owner_address",
-		WorkflowSpecId:            "test_spec_id",
-		WorkflowExecutionId:       "test_execution_id",
+		WorkflowSpecID:            "test_spec_id",
+		WorkflowExecutionID:       "test_execution_id",
 		BeholderDataSchema:        "/schemas/ids/test_schema", // required field, URI
 		CapabilityContractAddress: "test_contract_address",
-		CapabilityId:              "test_capability_id",
+		CapabilityID:              "test_capability_id",
 		CapabilityVersion:         "test_capability_version",
 		CapabilityName:            "test_capability_name",
-		NetworkChainId:            "test_chain_id",
+		NetworkChainID:            "test_chain_id",
 	}
 }
 func ExampleMetadata() {

@@ -27,22 +27,22 @@ type Metadata struct {
 	NodeCsaKey string
 	// Signature from CSA private key.
 	NodeCsaSignature string
-	DonId            string
+	DonID            string
 	// The RDD network name the CL node is operating with.
 	NetworkName          []string
-	WorkflowId           string
+	WorkflowID           string
 	WorkflowName         string
 	WorkflowOwnerAddress string
 	// Hash of the workflow spec.
-	WorkflowSpecId string
+	WorkflowSpecID string
 	// The unique execution of a workflow.
-	WorkflowExecutionId string
+	WorkflowExecutionID string
 	// The address for the contract.
 	CapabilityContractAddress string
-	CapabilityId              string
+	CapabilityID              string
 	CapabilityVersion         string
 	CapabilityName            string
-	NetworkChainId            string
+	NetworkChainID            string
 }
 
 func (m Metadata) Attributes() Attributes {
@@ -50,19 +50,19 @@ func (m Metadata) Attributes() Attributes {
 	attrs["node_version"] = m.NodeVersion
 	attrs["node_csa_key"] = m.NodeCsaKey
 	attrs["node_csa_signature"] = m.NodeCsaSignature
-	attrs["don_id"] = m.DonId
+	attrs["don_id"] = m.DonID
 	attrs["network_name"] = m.NetworkName
-	attrs["workflow_id"] = m.WorkflowId
+	attrs["workflow_id"] = m.WorkflowID
 	attrs["workflow_name"] = m.WorkflowName
 	attrs["workflow_owner_address"] = m.WorkflowOwnerAddress
-	attrs["workflow_spec_id"] = m.WorkflowSpecId
-	attrs["workflow_execution_id"] = m.WorkflowExecutionId
+	attrs["workflow_spec_id"] = m.WorkflowSpecID
+	attrs["workflow_execution_id"] = m.WorkflowExecutionID
 	attrs["beholder_data_schema"] = m.BeholderDataSchema
 	attrs["capability_contract_address"] = m.CapabilityContractAddress
-	attrs["capability_id"] = m.CapabilityId
+	attrs["capability_id"] = m.CapabilityID
 	attrs["capability_version"] = m.CapabilityVersion
 	attrs["capability_name"] = m.CapabilityName
-	attrs["network_chain_id"] = m.NetworkChainId
+	attrs["network_chain_id"] = m.NetworkChainID
 	return attrs
 }
 
@@ -203,31 +203,31 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 		case "node_csa_signature":
 			m.NodeCsaSignature = v.(string)
 		case "don_id":
-			m.DonId = v.(string)
+			m.DonID = v.(string)
 		case "network_name":
 			m.NetworkName = v.([]string)
 		case "workflow_id":
-			m.WorkflowId = v.(string)
+			m.WorkflowID = v.(string)
 		case "workflow_name":
 			m.WorkflowName = v.(string)
 		case "workflow_owner_address":
 			m.WorkflowOwnerAddress = v.(string)
 		case "workflow_spec_id":
-			m.WorkflowSpecId = v.(string)
+			m.WorkflowSpecID = v.(string)
 		case "workflow_execution_id":
-			m.WorkflowExecutionId = v.(string)
+			m.WorkflowExecutionID = v.(string)
 		case "beholder_data_schema":
 			m.BeholderDataSchema = v.(string)
 		case "capability_contract_address":
 			m.CapabilityContractAddress = v.(string)
 		case "capability_id":
-			m.CapabilityId = v.(string)
+			m.CapabilityID = v.(string)
 		case "capability_version":
 			m.CapabilityVersion = v.(string)
 		case "capability_name":
 			m.CapabilityName = v.(string)
 		case "network_chain_id":
-			m.NetworkChainId = v.(string)
+			m.NetworkChainID = v.(string)
 		}
 	}
 	return m

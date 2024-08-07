@@ -47,9 +47,9 @@ func ExampleClient() {
 		go func(i int) {
 			// Create message metadata
 			metadata := beholder.Metadata{
-				DonId:              "test_don_id",
+				DonID:              "test_don_id",
 				NetworkName:        []string{"test_network"},
-				NetworkChainId:     "test_chain_id",
+				NetworkChainID:     "test_chain_id",
 				BeholderDataSchema: "/custom-message/versions/1",
 			}
 			// Create custom message

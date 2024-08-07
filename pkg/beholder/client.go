@@ -188,7 +188,6 @@ func newOtelResource() (resource *sdkresource.Resource, err error) {
 	extraResources, err := sdkresource.New(
 		context.Background(),
 		sdkresource.WithOS(),
-		sdkresource.WithProcess(),
 		sdkresource.WithContainer(),
 		sdkresource.WithHost(),
 	)

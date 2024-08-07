@@ -30,12 +30,12 @@ func NewNoopClient() *BeholderClient {
 	meterProvider := otelmetricnoop.NewMeterProvider()
 	meter := meterProvider.Meter(cfg.PackageName)
 
-	// EventEmitter
-	eventEmitter := noopEventEmitter{}
+	// MessageEmitter
+	messageEmitter := noopMessageEmitter{}
 
 	onClose := func() error { return nil }
 
-	client := NewClient(cfg, logger, tracer, meter, eventEmitter, onClose)
+	client := NewClient(cfg, logger, tracer, meter, messageEmitter, onClose)
 
 	return client
 }
@@ -50,7 +50,7 @@ func NewStdoutClient() *BeholderClient {
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
 	logger := loggerProvider.Logger(cfg.PackageName)
 	setOtelErrorHandler(func(err error) {
-		fmt.Printf("otel error %s", err)
+		fmt.Printf("OTel error %s", err)
 	})
 
 	// Tracer
@@ -71,25 +71,21 @@ func NewStdoutClient() *BeholderClient {
 	)
 	meter := meterProvider.Meter(cfg.PackageName)
 
-	// EventEmitter
-	eventEmitter := newEventEmitter(loggerExporter, logger, cfg)
+	// MessageEmitter
+	messageEmitter := newMessageEmitter(loggerExporter, logger, cfg)
 
 	onClose := closeFunc(context.Background(), loggerProvider, tracerProvider, meterProvider)
 
-	client := NewClient(cfg, logger, tracer, meter, eventEmitter, onClose)
+	client := NewClient(cfg, logger, tracer, meter, messageEmitter, onClose)
 
 	return client
 }
 
-type noopEventEmitter struct{}
+type noopMessageEmitter struct{}
 
-func (noopEventEmitter) Emit(ctx context.Context, body []byte, attrs map[string]any) error {
+func (noopMessageEmitter) Emit(ctx context.Context, body []byte, attrs map[string]any) error {
 	return nil
 }
-func (noopEventEmitter) EmitEvent(ctx context.Context, event Event) error {
+func (noopMessageEmitter) EmitMessage(ctx context.Context, message Message) error {
 	return nil
 }
-func (noopEventEmitter) Send(ctx context.Context, body []byte, attrs map[string]any) error {
-	return nil
-}
-func (noopEventEmitter) SendEvent(ctx context.Context, event Event) error { return nil }

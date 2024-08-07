@@ -1,9 +1,10 @@
 module github.com/smartcontractkit/chainlink-common
 
-go 1.21
+go 1.22
+
+toolchain go1.22.6
 
 require (
-	github.com/avast/retry-go/v4 v4.5.1
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0

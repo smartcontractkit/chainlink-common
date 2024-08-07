@@ -10,9 +10,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
-func ExampleEvent() {
-	// Create event with body and attributes
-	e1 := beholder.NewEvent([]byte{1}, beholder.Attributes{"key_string": "value"})
+func ExampleMessage() {
+	// Create message with body and attributes
+	e1 := beholder.NewMessage([]byte{1}, beholder.Attributes{"key_string": "value"})
 	fmt.Println("#1", e1)
 	// Create attributes
 	additional_attributes := beholder.Attributes{
@@ -25,19 +25,19 @@ func ExampleEvent() {
 		"key_int32", int32(2),
 		"key3", true,
 	)
-	// Add attributes to event
+	// Add attributes to message
 	e1.AddAttributes(additional_attributes)
 	fmt.Println("#2", e1)
-	// Create empty event struct
-	e2 := beholder.Event{}
+	// Create empty message struct
+	e2 := beholder.Message{}
 	fmt.Println("#3", e2)
-	// Add attributes to event
+	// Add attributes to message
 	e2.AddAttributes(beholder.Attributes{"key_int": 1})
 	fmt.Println("#4", e2)
 	// Update attribute key_int
 	e2.AddAttributes(beholder.Attributes{"key_int": 2})
 	fmt.Println("#5", e2)
-	// Set event body
+	// Set message body
 	e2.Body = []byte("0123")
 	fmt.Println("#6", e2)
 	// Reset attributes
@@ -46,8 +46,8 @@ func ExampleEvent() {
 	// Reset body
 	e2.Body = nil
 	fmt.Println("#8", e2)
-	// Shalow copy of event
-	e3 := beholder.NewEvent(e1.Body, e1.Attrs)
+	// Shalow copy of message
+	e3 := beholder.NewMessage(e1.Body, e1.Attrs)
 	fmt.Println("#9", e3)
 	e1.Body[0] = byte(2) // Wil mutate e3
 	fmt.Println("#10", e3)
@@ -57,18 +57,18 @@ func ExampleEvent() {
 	e1.Body[0] = byte(3) // Should not mutate e4
 	fmt.Println("#12", e4)
 	// Output:
-	// #1 Event{Attrs: map[key_string:value], Body: [1]}
-	// #2 Event{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
-	// #3 Event{Attrs: map[], Body: []}
-	// #4 Event{Attrs: map[key_int:1], Body: []}
-	// #5 Event{Attrs: map[key_int:2], Body: []}
-	// #6 Event{Attrs: map[key_int:2], Body: [48 49 50 51]}
-	// #7 Event{Attrs: map[], Body: [48 49 50 51]}
-	// #8 Event{Attrs: map[], Body: []}
-	// #9 Event{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
-	// #10 Event{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
-	// #11 Event{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
-	// #12 Event{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
+	// #1 Message{Attrs: map[key_string:value], Body: [1]}
+	// #2 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
+	// #3 Message{Attrs: map[], Body: []}
+	// #4 Message{Attrs: map[key_int:1], Body: []}
+	// #5 Message{Attrs: map[key_int:2], Body: []}
+	// #6 Message{Attrs: map[key_int:2], Body: [48 49 50 51]}
+	// #7 Message{Attrs: map[], Body: [48 49 50 51]}
+	// #8 Message{Attrs: map[], Body: []}
+	// #9 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
+	// #10 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
+	// #11 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
+	// #12 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
 }
 
 func testMetadata() beholder.Metadata {

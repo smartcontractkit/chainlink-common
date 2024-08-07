@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/avast/retry-go/v4"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -21,35 +20,29 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
-
-	beholderLogger "github.com/smartcontractkit/chainlink-common/pkg/beholder/logger"
 )
 
-var logger = beholderLogger.New()
-
-type EventEmitter interface {
-	// Send log record with body and attributes asynchronously, errors are handled separately by otel.ErrorHandler
+type Emitter interface {
+	// Sends custom message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrs map[string]any) error
-	EmitEvent(ctx context.Context, event Event) error
-	// Send log record with body and attributes synchronously and returns error if any
-	Send(ctx context.Context, body []byte, attrs map[string]any) error
-	SendEvent(ctx context.Context, event Event) error
+	// Sends custom message to OTel Collector
+	EmitMessage(ctx context.Context, m Message) error
 }
 type Client interface {
 	Logger() otellog.Logger
 	Tracer() oteltrace.Tracer
 	Meter() otelmetric.Meter
-	EventEmitter() EventEmitter
+	Emitter() Emitter
 	Close() error
 }
 
 var _ Client = (*BeholderClient)(nil)
 
-type eventEmitter struct {
-	exporter    sdklog.Exporter
-	eventLogger otellog.Logger
-	retryCount  uint
-	retryDelay  time.Duration
+type messageEmitter struct {
+	exporter      sdklog.Exporter
+	messageLogger otellog.Logger
+	retryCount    uint
+	retryDelay    time.Duration
 }
 
 type BeholderClient struct {
@@ -60,8 +53,8 @@ type BeholderClient struct {
 	tracer oteltrace.Tracer
 	// Meter
 	meter otelmetric.Meter
-	// EventEmitter
-	eventEmitter EventEmitter
+	// MessageEmitter
+	messageEmitter Emitter
 
 	// Graceful shutdown for tracer, meter, logger providers
 	closeFunc func() error
@@ -72,16 +65,16 @@ func NewClient(
 	logger otellog.Logger,
 	tracer oteltrace.Tracer,
 	meter otelmetric.Meter,
-	eventEmitter EventEmitter,
+	messageEmitter Emitter,
 	onClose func() error,
 ) *BeholderClient {
 	return &BeholderClient{
-		config:       config,
-		logger:       logger,
-		tracer:       tracer,
-		meter:        meter,
-		eventEmitter: eventEmitter,
-		closeFunc:    onClose,
+		config:         config,
+		logger:         logger,
+		tracer:         tracer,
+		meter:          meter,
+		messageEmitter: messageEmitter,
+		closeFunc:      onClose,
 	}
 }
 
@@ -153,33 +146,33 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	meter := meterProvider.Meter(cfg.PackageName)
 	otel.SetMeterProvider(meterProvider)
 
-	// EventEmitter
-	eventLogProcessor := sdklog.NewBatchProcessor(
+	// MessageEmitter
+	messageLogProcessor := sdklog.NewBatchProcessor(
 		sharedLogExporter,
 		sdklog.WithExportTimeout(1*time.Second), // Default is 30s
 	)
-	eventAttributes := []attribute.KeyValue{
-		attribute.String("beholder_data_type", "custom_event"),
+	messageAttributes := []attribute.KeyValue{
+		attribute.String("beholder_data_type", "custom_message"),
 	}
-	eventLoggerResource, err := sdkresource.Merge(
-		sdkresource.NewSchemaless(eventAttributes...),
+	messageLoggerResource, err := sdkresource.Merge(
+		sdkresource.NewSchemaless(messageAttributes...),
 		baseResource,
 	)
 	if err != nil {
 		return nil, err
 	}
-	eventLoggerProvider := sdklog.NewLoggerProvider(
-		sdklog.WithResource(eventLoggerResource),
-		sdklog.WithProcessor(eventLogProcessor),
+	messageLoggerProvider := sdklog.NewLoggerProvider(
+		sdklog.WithResource(messageLoggerResource),
+		sdklog.WithProcessor(messageLogProcessor),
 	)
-	eventLogger := eventLoggerProvider.Logger(cfg.PackageName)
-	eventEmitter := newEventEmitter(sharedLogExporter, eventLogger, cfg)
+	messageLogger := messageLoggerProvider.Logger(cfg.PackageName)
+	messageEmitter := newMessageEmitter(sharedLogExporter, messageLogger, cfg)
 
 	setOtelErrorHandler(errorHandler)
 
-	onClose := closeFunc(ctx, loggerProvider, eventLoggerProvider, tracerProvider, meterProvider)
+	onClose := closeFunc(ctx, loggerProvider, messageLoggerProvider, tracerProvider, meterProvider)
 
-	client := NewClient(cfg, logger, tracer, meter, eventEmitter, onClose)
+	client := NewClient(cfg, logger, tracer, meter, messageEmitter, onClose)
 
 	return client, nil
 }
@@ -212,71 +205,36 @@ func newOtelResource() (resource *sdkresource.Resource, err error) {
 	return
 }
 
-func newEventEmitter(
+func newMessageEmitter(
 	exporter sdklog.Exporter,
-	eventLogger otellog.Logger,
+	messageLogger otellog.Logger,
 	config Config,
-) EventEmitter {
-	return eventEmitter{
-		exporter:    exporter,
-		eventLogger: eventLogger,
-		retryCount:  config.EventEmitterRetryCount,
-		retryDelay:  config.EventEmitterRetryDelay,
+) Emitter {
+	return messageEmitter{
+		exporter:      exporter,
+		messageLogger: messageLogger,
+		retryCount:    config.MessageEmitterRetryCount,
+		retryDelay:    config.MessageEmitterRetryDelay,
 	}
 }
 
-// Emits logs the event, but does not wait for the event to be processed.
+// Emits logs the message, but does not wait for the message to be processed.
 // Open question: what are pros/cons for using use map[]any vs use otellog.KeyValue
-func (e eventEmitter) Emit(ctx context.Context, body []byte, attrs map[string]any) error {
-	event := NewEvent(body, attrs)
-	if err := event.Validate(); err != nil {
+func (e messageEmitter) Emit(ctx context.Context, body []byte, attrs map[string]any) error {
+	message := NewMessage(body, attrs)
+	if err := message.Validate(); err != nil {
 		return err
 	}
-	e.eventLogger.Emit(ctx, event.OtelRecord())
+	e.messageLogger.Emit(ctx, message.OtelRecord())
 	return nil
 }
 
-func (e eventEmitter) EmitEvent(ctx context.Context, event Event) error {
-	if err := event.Validate(); err != nil {
+func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error {
+	if err := message.Validate(); err != nil {
 		return err
 	}
-	e.eventLogger.Emit(ctx, event.OtelRecord())
+	e.messageLogger.Emit(ctx, message.OtelRecord())
 	return nil
-}
-
-// Sends log record with body and attributes synchronously and returns error if any
-func (e eventEmitter) Send(ctx context.Context, body []byte, attrs map[string]any) error {
-	event := NewEvent(body, attrs)
-	if err := event.Validate(); err != nil {
-		return err
-	}
-	// NOTE: String attributes will be dropped due to a limitation in sdklog.Record
-	// Will be fixed as part of INFOPLAT-811
-	logger.Warn("Use Emit instead of Send. See INFOPLAT-811")
-	return retry.Do(
-		func() error {
-			return e.exporter.Export(ctx, []sdklog.Record{event.SdkOtelRecord()})
-		},
-		retry.Attempts(e.retryCount),
-		retry.Delay(e.retryDelay),
-	)
-}
-
-// Sends log record synchronously and returns error if any
-func (e eventEmitter) SendEvent(ctx context.Context, event Event) error {
-	if err := event.Validate(); err != nil {
-		return err
-	}
-	// NOTE: String attributes will be dropped due to a limitation in sdklog.Record
-	// Will be fixed as part of INFOPLAT-811
-	logger.Warn("Use EmitEvent instead of SendEvent. See INFOPLAT-811")
-	return retry.Do(
-		func() error {
-			return e.exporter.Export(ctx, []sdklog.Record{event.SdkOtelRecord()})
-		},
-		retry.Attempts(e.retryCount),
-		retry.Delay(e.retryDelay),
-	)
 }
 
 func (b *BeholderClient) Logger() otellog.Logger {
@@ -290,8 +248,8 @@ func (b *BeholderClient) Tracer() oteltrace.Tracer {
 func (b *BeholderClient) Meter() otelmetric.Meter {
 	return b.meter
 }
-func (b *BeholderClient) EventEmitter() EventEmitter {
-	return b.eventEmitter
+func (b *BeholderClient) Emitter() Emitter {
+	return b.messageEmitter
 }
 
 func (b *BeholderClient) Close() error {

@@ -18,15 +18,15 @@ import (
 )
 
 func TestGlobal(t *testing.T) {
-	// Get global logger, tracer, meter, eventEmitter
+	// Get global logger, tracer, meter, messageEmitter
 	// If not initialized with global.SetClient will return noop client
-	logger, tracer, meter, eventEmitter := global.Logger(), global.Tracer(), global.Meter(), global.EventEmitter()
+	logger, tracer, meter, messageEmitter := global.Logger(), global.Tracer(), global.Meter(), global.Emitter()
 	noopClient := beholder.NewNoopClient()
 	assert.IsType(t, otellognoop.Logger{}, logger)
 	assert.IsType(t, oteltracenoop.Tracer{}, tracer)
 	assert.IsType(t, otelmetricnoop.Meter{}, meter)
-	expectedEventEmitter := beholder.NewNoopClient().EventEmitter()
-	assert.IsType(t, expectedEventEmitter, eventEmitter)
+	expectedMessageEmitter := beholder.NewNoopClient().Emitter()
+	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
 	assert.IsType(t, noopClient, global.GetClient())
 	assert.NotSame(t, noopClient, global.GetClient())
@@ -35,8 +35,8 @@ func TestGlobal(t *testing.T) {
 	global.SetClient(noopClient)
 	assert.Same(t, noopClient, global.GetClient())
 
-	// After that use global functions to get logger, tracer, meter, eventEmitter
-	logger, tracer, meter, eventEmitter = global.Logger(), global.Tracer(), global.Meter(), global.EventEmitter()
+	// After that use global functions to get logger, tracer, meter, messageEmitter
+	logger, tracer, meter, messageEmitter = global.Logger(), global.Tracer(), global.Meter(), global.Emitter()
 
 	// Emit otel log record
 	logger.Emit(context.Background(), otellog.Record{})
@@ -49,6 +49,6 @@ func TestGlobal(t *testing.T) {
 	counter, _ := meter.Int64Counter("global_counter")
 	counter.Add(context.Background(), 1)
 
-	// Emit custom event
-	eventEmitter.Emit(ctx, []byte("test"), beholder.Attributes{"key": "value"})
+	// Emit custom message
+	messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{"key": "value"})
 }

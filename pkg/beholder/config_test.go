@@ -13,5 +13,5 @@ func ExampleConfig() {
 	}
 	fmt.Printf("%+v", config)
 	// Output:
-	// {OtelExporterGRPCEndpoint:localhost:4317 PackageName:beholder EventEmitterRetryCount:0 EventEmitterRetryDelay:0s}
+	// {OtelExporterGRPCEndpoint:localhost:4317 PackageName:beholder MessageEmitterRetryCount:0 MessageEmitterRetryDelay:0s}
 }

@@ -10,7 +10,7 @@ import (
 	otelsdklog "go.opentelemetry.io/otel/sdk/log"
 )
 
-type Event struct {
+type Message struct {
 	Attrs map[string]any
 	Body  []byte
 }
@@ -84,14 +84,14 @@ func (a Attributes) Add(args ...any) Attributes {
 	return a
 }
 
-func NewEvent(body []byte, attrs Attributes) Event {
-	return Event{
+func NewMessage(body []byte, attrs Attributes) Message {
+	return Message{
 		Body:  body,
 		Attrs: attrs,
 	}
 }
 
-func (e *Event) AddAttributes(attrs Attributes) {
+func (e *Message) AddAttributes(attrs Attributes) {
 	if e.Attrs == nil {
 		e.Attrs = make(map[string]any, len(attrs))
 	}
@@ -100,7 +100,7 @@ func (e *Event) AddAttributes(attrs Attributes) {
 	}
 }
 
-func (e *Event) AddOtelAttributes(attrs ...attribute.KeyValue) {
+func (e *Message) AddOtelAttributes(attrs ...attribute.KeyValue) {
 	if e.Attrs == nil {
 		e.Attrs = make(map[string]any, len(attrs))
 	}
@@ -109,20 +109,20 @@ func (e *Event) AddOtelAttributes(attrs ...attribute.KeyValue) {
 	}
 }
 
-func (e *Event) OtelRecord() otellog.Record {
+func (e *Message) OtelRecord() otellog.Record {
 	return newRecord(e.Body, e.Attrs)
 }
 
-func (e *Event) SdkOtelRecord() otelsdklog.Record {
+func (e *Message) SdkOtelRecord() otelsdklog.Record {
 	return newSdkRecord(e.Body, e.Attrs)
 }
 
-func (e *Event) Copy() Event {
+func (e *Message) Copy() Message {
 	attrs := make(Attributes, len(e.Attrs))
 	for k, v := range e.Attrs {
 		attrs[k] = v
 	}
-	c := Event{
+	c := Message{
 		Attrs: attrs,
 	}
 	if e.Body != nil {
@@ -188,8 +188,8 @@ func OtelAttr(key string, value any) otellog.KeyValue {
 	}
 }
 
-func (e Event) String() string {
-	return fmt.Sprintf("Event{Attrs: %v, Body: %v}", e.Attrs, e.Body)
+func (e Message) String() string {
+	return fmt.Sprintf("Message{Attrs: %v, Body: %v}", e.Attrs, e.Body)
 }
 
 // Sets metadata fields from  attributes
@@ -244,12 +244,12 @@ func (m *Metadata) Validate() error {
 	return validate.Struct(m)
 }
 
-func (e Event) Validate() error {
+func (e Message) Validate() error {
 	if e.Body == nil {
-		return fmt.Errorf("event body is required")
+		return fmt.Errorf("message body is required")
 	}
 	if len(e.Attrs) == 0 {
-		return fmt.Errorf("event attributes are required")
+		return fmt.Errorf("message attributes are required")
 	}
 	metadata := NewMetadata(e.Attrs)
 	if err := metadata.Validate(); err != nil {

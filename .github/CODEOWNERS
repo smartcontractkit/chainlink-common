@@ -15,5 +15,4 @@
 /pkg/timeutil/ @jmank88
 /pkg/values/ @smartcontractkit/keystone
 /pkg/workflows/ @smartcontractkit/keystone
-
-# TODO(gg): update to incorporate beholder
+/pkg/beholder/ @smartcontractkit/realtime

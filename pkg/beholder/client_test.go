@@ -52,7 +52,7 @@ func TestClient(t *testing.T) {
 			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
 		}
 	}
-	defaultEventBody := []byte("body bytes")
+	defaultMessageBody := []byte("body bytes")
 
 	tests := []struct {
 		name                 string
@@ -60,66 +60,35 @@ func TestClient(t *testing.T) {
 		// NOTE: skipping these attributes is necessary due to a limitation in sdklog.Record
 		// see INFOPLAT-811
 		skipAttributes         []string
-		eventBody              []byte
-		eventCount             int
+		messageBody            []byte
+		messageCount           int
 		exporterMockErrorCount int
 		exporterOutputExpected bool
-		eventGenerator         func(client *BeholderClient, eventBody []byte, customAttributes map[string]any)
+		messageGenerator       func(client *BeholderClient, messageBody []byte, customAttributes map[string]any)
 	}{
 		{
 			name:                   "Test Emit",
 			makeCustomAttributes:   defaultCustomAttributes,
 			skipAttributes:         []string{},
-			eventBody:              defaultEventBody,
-			eventCount:             10,
+			messageBody:            defaultMessageBody,
+			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			eventGenerator: func(client *BeholderClient, eventBody []byte, customAttributes map[string]any) {
-				err := client.EventEmitter().Emit(context.Background(), eventBody, customAttributes)
+			messageGenerator: func(client *BeholderClient, messageBody []byte, customAttributes map[string]any) {
+				err := client.Emitter().Emit(context.Background(), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
 		}, {
-			name:                   "Test EmitEvent",
+			name:                   "Test EmitMessage",
 			makeCustomAttributes:   defaultCustomAttributes,
 			skipAttributes:         []string{},
-			eventBody:              defaultEventBody,
-			eventCount:             10,
+			messageBody:            defaultMessageBody,
+			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			eventGenerator: func(client *BeholderClient, eventBody []byte, customAttributes map[string]any) {
-				event := NewEvent(eventBody, customAttributes)
-				err := client.EventEmitter().EmitEvent(context.Background(), event)
-				assert.NoError(t, err)
-			},
-		},
-		{
-			name:                 "Test Send",
-			makeCustomAttributes: defaultCustomAttributes,
-			// NOTE: removing these attributes is necessary due to a limitation in sdklog.Record
-			// see INFOPLAT-811
-			skipAttributes:         []string{"str_key_1", "str_slice_key_1", "int32_key_1", "beholder_data_schema"},
-			eventBody:              defaultEventBody,
-			eventCount:             1,
-			exporterMockErrorCount: 1, // Simulate exporter error to test for retries
-			exporterOutputExpected: true,
-			eventGenerator: func(client *BeholderClient, eventBody []byte, customAttributes map[string]any) {
-				err := client.EventEmitter().Send(context.Background(), eventBody, customAttributes)
-				assert.NoError(t, err)
-			},
-		},
-		{
-			name:                 "Test SendEvent",
-			makeCustomAttributes: defaultCustomAttributes,
-			// NOTE: removing these attributes is necessary due to a limitation in sdklog.Record
-			// see INFOPLAT-811
-			skipAttributes:         []string{"str_key_1", "str_slice_key_1", "int32_key_1", "beholder_data_schema"},
-			eventBody:              defaultEventBody,
-			eventCount:             1,
-			exporterMockErrorCount: 1, // Simulate exporter error to test for retries
-			exporterOutputExpected: true,
-			eventGenerator: func(client *BeholderClient, eventBody []byte, customAttributes map[string]any) {
-				event := NewEvent(eventBody, customAttributes)
-				err := client.EventEmitter().SendEvent(context.Background(), event)
+			messageGenerator: func(client *BeholderClient, messageBody []byte, customAttributes map[string]any) {
+				message := NewMessage(messageBody, customAttributes)
+				err := client.Emitter().EmitMessage(context.Background(), message)
 				assert.NoError(t, err)
 			},
 		},
@@ -131,7 +100,7 @@ func TestClient(t *testing.T) {
 			defer exporterMock.AssertExpectations(t)
 
 			otelErrorHandler := func(err error) {
-				t.Fatalf("otel error: %v", err)
+				t.Fatalf("OTel error: %v", err)
 			}
 			// Override exporter factory which is used by BeholderClient
 			exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
@@ -141,7 +110,7 @@ func TestClient(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error creating beholder client: %v", err)
 			}
-			// Number of events to emit
+			// Number of messages to emit
 			done := make(chan struct{}, 1)
 
 			// Simulate exporter error if configured
@@ -156,9 +125,9 @@ func TestClient(t *testing.T) {
 					Run(func(args mock.Arguments) {
 						assert.IsType(t, args.Get(1), []sdklog.Record{}, "Record type mismatch")
 						records := args.Get(1).([]sdklog.Record)
-						assert.Equal(t, tc.eventCount, len(records), "Record count mismatch")
+						assert.Equal(t, tc.messageCount, len(records), "Record count mismatch")
 						record := records[0]
-						assert.Equal(t, tc.eventBody, record.Body().AsBytes(), "Record body mismatch")
+						assert.Equal(t, tc.messageBody, record.Body().AsBytes(), "Record body mismatch")
 						actualAttributeKeys := map[string]struct{}{}
 						record.WalkAttributes(func(kv otellog.KeyValue) bool {
 							key := kv.Key
@@ -193,21 +162,21 @@ func TestClient(t *testing.T) {
 						done <- struct{}{}
 					})
 			}
-			for i := 0; i < tc.eventCount; i++ {
-				go tc.eventGenerator(client, tc.eventBody, customAttributes)
+			for i := 0; i < tc.messageCount; i++ {
+				go tc.messageGenerator(client, tc.messageBody, customAttributes)
 			}
 
 			select {
 			case <-done:
 			case <-time.After(10 * time.Second):
-				t.Fatalf("Timed out waiting for events to be emitted")
+				t.Fatalf("Timed out waiting for messages to be emitted")
 			}
 		})
 	}
 }
 
-func TestEmitterEventValidation(t *testing.T) {
-	getEmitter := func(exporterMock *mocks.OTLPExporter) EventEmitter {
+func TestEmitterMessageValidation(t *testing.T) {
+	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
 		client, err := newOtelClient(
 			DefaultBeholderConfig(),
 			func(err error) { t.Fatalf("otel error: %v", err) },
@@ -217,7 +186,7 @@ func TestEmitterEventValidation(t *testing.T) {
 			},
 		)
 		assert.NoError(t, err)
-		return client.EventEmitter()
+		return client.Emitter()
 	}
 
 	for _, tc := range []struct {
@@ -284,15 +253,15 @@ func TestEmitterEventValidation(t *testing.T) {
 					select {
 					case <-done:
 					case <-time.After(10 * time.Second):
-						t.Fatalf("Timed out waiting for events to be emitted")
+						t.Fatalf("Timed out waiting for messages to be emitted")
 					}
 				}
 			}
 
-			setupTest := func() (emitter EventEmitter, event Event, assertExpectations func(err error)) {
+			setupTest := func() (emitter Emitter, message Message, assertExpectations func(err error)) {
 				exporterMock, done := setupMock(mocks.NewOTLPExporter(t))
 				emitter = getEmitter(exporterMock)
-				event = NewEvent([]byte("test"), tc.attrs)
+				message = NewMessage([]byte("test"), tc.attrs)
 
 				assertExpectations = func(err error) {
 					assertError(err, tc.expectedError)
@@ -304,34 +273,18 @@ func TestEmitterEventValidation(t *testing.T) {
 				return
 			}
 
-			t.Run("Emitter.SendEvent", func(t *testing.T) {
-				emitter, event, assertExpectations := setupTest()
+			t.Run("Emitter.EmitMessage", func(t *testing.T) {
+				emitter, message, assertExpectations := setupTest()
 
-				err := emitter.SendEvent(context.Background(), event)
-
-				assertExpectations(err)
-			})
-
-			t.Run("Emitter.Send", func(t *testing.T) {
-				emitter, event, assertExpectations := setupTest()
-
-				err := emitter.Send(context.Background(), event.Body, tc.attrs)
-
-				assertExpectations(err)
-			})
-
-			t.Run("Emitter.EmitEvent", func(t *testing.T) {
-				emitter, event, assertExpectations := setupTest()
-
-				err := emitter.EmitEvent(context.Background(), event)
+				err := emitter.EmitMessage(context.Background(), message)
 
 				assertExpectations(err)
 			})
 
 			t.Run("Emitter.Emit", func(t *testing.T) {
-				emitter, event, assertExpectations := setupTest()
+				emitter, message, assertExpectations := setupTest()
 
-				err := emitter.Emit(context.Background(), event.Body, tc.attrs)
+				err := emitter.Emit(context.Background(), message.Body, tc.attrs)
 
 				assertExpectations(err)
 			})

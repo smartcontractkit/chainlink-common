@@ -42,7 +42,7 @@ func New() Logger {
 	return newZapLogger().Sugar()
 }
 
-// NewOtelzapLogger records Zap log messages as events on the existing span that must be passed in a context.Context as a first argument.
+// NewOtelzapLogger records Zap log messages as messages on the existing span that must be passed in a context.Context as a first argument.
 // It does not record anything if the context does not contain a span.
 // See more details [here](https://github.com/uptrace/opentelemetry-go-extra/tree/main/otelzap)
 func NewOtelzapLogger() *otelzap.Logger {

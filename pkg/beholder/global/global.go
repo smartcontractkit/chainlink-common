@@ -10,10 +10,10 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	beholderLogger "github.com/smartcontractkit/chainlink-common/pkg/beholder/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/logger"
 )
 
-var log = beholderLogger.New()
+var log = logger.New()
 
 // Pointer to the global BeholderClient
 var globalBeholderClient = defaultBeholderClient()
@@ -42,8 +42,8 @@ func Meter() otelmetric.Meter {
 	return GetClient().Meter()
 }
 
-func EventEmitter() beholder.EventEmitter {
-	return GetClient().EventEmitter()
+func Emitter() beholder.Emitter {
+	return GetClient().Emitter()
 }
 
 func SpanFromContext(ctx context.Context) oteltrace.Span {
@@ -57,27 +57,19 @@ func defaultBeholderClient() *atomic.Pointer[beholder.BeholderClient] {
 }
 
 // TODO: rename to EmitMessage
-func EmitEvent(ctx context.Context, event beholder.Event) error {
-	return EventEmitter().EmitEvent(ctx, event)
+func EmitMessage(ctx context.Context, message beholder.Message) error {
+	return Emitter().EmitMessage(ctx, message)
 }
 
 // TODO: rename to EmitMessage
 func Emit(ctx context.Context, body []byte, attrs beholder.Attributes) error {
-	return EventEmitter().Emit(ctx, body, attrs)
-}
-
-func SendMessage(ctx context.Context, event beholder.Event) error {
-	return EventEmitter().SendEvent(ctx, event)
-}
-
-func Send(ctx context.Context, body []byte, attrs beholder.Attributes) error {
-	return EventEmitter().Send(ctx, body, attrs)
+	return Emitter().Emit(ctx, body, attrs)
 }
 
 func Bootstrap(cfg beholder.Config) error {
 	// Initialize beholder client
 	client, err := beholder.NewOtelClient(cfg, func(err error) {
-		log.Infof("otel error %s", err)
+		log.Infof("OTel error %s", err)
 	})
 	if err != nil {
 		return err
@@ -92,12 +84,12 @@ func NewConfig() beholder.Config {
 }
 
 // Creates logger based on zap logger which writes to stdout
-func NewSimpleLogger() beholderLogger.Logger {
-	return beholderLogger.New()
+func NewSimpleLogger() logger.Logger {
+	return logger.New()
 }
 
 // Returns a new logger based on otelzap logger
 // The logger is able to write to stdout and send logs to otel collector
 func NewLogger() *otelzap.Logger {
-	return beholderLogger.NewOtelzapLogger()
+	return logger.NewOtelzapLogger()
 }

@@ -7,16 +7,16 @@ import (
 type Config struct {
 	OtelExporterGRPCEndpoint string
 	PackageName              string
-	EventEmitterRetryCount   uint
-	EventEmitterRetryDelay   time.Duration
+	MessageEmitterRetryCount uint
+	MessageEmitterRetryDelay time.Duration
 }
 
 func DefaultBeholderConfig() Config {
 	return Config{
 		OtelExporterGRPCEndpoint: "localhost:4317",
 		PackageName:              "beholder",
-		EventEmitterRetryCount:   3,
-		EventEmitterRetryDelay:   100 * time.Millisecond,
+		MessageEmitterRetryCount: 3,
+		MessageEmitterRetryDelay: 100 * time.Millisecond,
 	}
 }
 

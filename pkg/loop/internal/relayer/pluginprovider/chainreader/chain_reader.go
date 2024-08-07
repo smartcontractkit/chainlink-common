@@ -130,7 +130,7 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	return nil
 }
 
-func (c *Client) GetLatestValue(ctx context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, retVal any) error {
 	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
@@ -141,12 +141,19 @@ func (c *Client) GetLatestValue(ctx context.Context, contractName, method string
 		return err
 	}
 
-	reply, err := c.grpc.GetLatestValue(ctx, &pb.GetLatestValueRequest{ContractName: contractName, Method: method, Params: versionedParams, Confidence: pbConfidence})
+	reply, err := c.grpc.GetLatestValue(
+		ctx,
+		&pb.GetLatestValueRequest{
+			ReadIdentifier: readIdentifier,
+			Confidence:     pbConfidence,
+			Params:         versionedParams,
+		},
+	)
 	if err != nil {
 		return net.WrapRPCErr(err)
 	}
 
-	return DecodeVersionedBytes(returnVal, reply.RetVal)
+	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -163,7 +170,7 @@ func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGe
 	return parseBatchGetLatestValuesReply(request, reply)
 }
 
-func (c *Client) QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
 	pbQueryFilter, err := convertQueryFilterToProto(filter)
 	if err != nil {
 		return nil, err
@@ -174,7 +181,17 @@ func (c *Client) QueryKey(ctx context.Context, contractName string, filter query
 		return nil, err
 	}
 
-	reply, err := c.grpc.QueryKey(ctx, &pb.QueryKeyRequest{ContractName: contractName, Filter: pbQueryFilter, LimitAndSort: pbLimitAndSort})
+	reply, err := c.grpc.QueryKey(
+		ctx,
+		&pb.QueryKeyRequest{
+			Contract: &pb.BoundContract{
+				Address: contract.Address,
+				Name:    contract.Name,
+			},
+			Filter:       pbQueryFilter,
+			LimitAndSort: pbLimitAndSort,
+		},
+	)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -185,9 +202,27 @@ func (c *Client) QueryKey(ctx context.Context, contractName string, filter query
 func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
-		pbBindings[i] = &pb.BoundContract{Address: b.Address, Name: b.Name}
+		pbBindings[i] = &pb.BoundContract{
+			Address: b.Address,
+			Name:    b.Name,
+		}
 	}
+
 	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
+	return net.WrapRPCErr(err)
+}
+
+func (c *Client) Unbind(ctx context.Context, bindings []types.BoundContract) error {
+	pbBindings := make([]*pb.BoundContract, len(bindings))
+	for i, b := range bindings {
+		pbBindings[i] = &pb.BoundContract{
+			Address: b.Address,
+			Name:    b.Name,
+		}
+	}
+
+	_, err := c.grpc.Unbind(ctx, &pb.UnbindRequest{Bindings: pbBindings})
+
 	return net.WrapRPCErr(err)
 }
 
@@ -221,7 +256,7 @@ func WithServerEncoding(version EncodingVersion) ServerOpt {
 }
 
 func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	params, err := getContractEncodedType(request.ContractName, request.Method, c.impl, true)
+	params, err := getContractEncodedType(request.ReadIdentifier, c.impl, true)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +265,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	returnVal, err := getContractEncodedType(request.ContractName, request.Method, c.impl, false)
+	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
@@ -240,12 +275,12 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	err = c.impl.GetLatestValue(ctx, request.ContractName, request.Method, confidenceLevel, params, returnVal)
+	err = c.impl.GetLatestValue(ctx, request.ReadIdentifier, confidenceLevel, params, retVal)
 	if err != nil {
 		return nil, err
 	}
 
-	encodedRetVal, err := EncodeVersionedBytes(returnVal, EncodingVersion(request.Params.Version))
+	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +308,9 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	sequenceDataType, err := getContractEncodedType(request.ContractName, queryFilter.Key, c.impl, false)
+	contract := convertBoundContractFromProto(request.Contract)
+
+	sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +320,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	sequences, err := c.impl.QueryKey(ctx, request.ContractName, queryFilter, limitAndSort, sequenceDataType)
+	sequences, err := c.impl.QueryKey(ctx, contract, queryFilter, limitAndSort, sequenceDataType)
 	if err != nil {
 		return nil, err
 	}
@@ -299,15 +336,30 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
 	tBindings := make([]types.BoundContract, len(bindings.Bindings))
 	for i, b := range bindings.Bindings {
-		tBindings[i] = types.BoundContract{Address: b.Address, Name: b.Name}
+		tBindings[i] = types.BoundContract{
+			Address: b.Address,
+			Name:    b.Name,
+		}
 	}
 
 	return &emptypb.Empty{}, c.impl.Bind(ctx, tBindings)
 }
 
-func getContractEncodedType(contractName, itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {
+func (c *Server) Unbind(ctx context.Context, bindings *pb.UnbindRequest) (*emptypb.Empty, error) {
+	tBindings := make([]types.BoundContract, len(bindings.Bindings))
+	for i, b := range bindings.Bindings {
+		tBindings[i] = types.BoundContract{
+			Address: b.Address,
+			Name:    b.Name,
+		}
+	}
+
+	return &emptypb.Empty{}, c.impl.Unbind(ctx, tBindings)
+}
+
+func getContractEncodedType(readIdentifier string, possibleTypeProvider any, forEncoding bool) (any, error) {
 	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
-		return ctp.CreateContractType(contractName, itemType, forEncoding)
+		return ctp.CreateContractType(readIdentifier, forEncoding)
 	}
 
 	return &map[string]any{}, nil
@@ -329,7 +381,12 @@ func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, enc
 				return nil, err
 			}
 
-			pbBatchReadResult := &pb.BatchReadResult{ReadName: batchCall.ReadName, ReturnVal: encodedRetVal, Error: replyErr}
+			pbBatchReadResult := &pb.BatchReadResult{
+				ReadIdentifier: batchCall.ReadIdentifier,
+				ReturnVal:      encodedRetVal,
+				Error:          replyErr,
+			}
+
 			pbBatchGetLatestValuesReply.Results[contractName].Results = append(pbBatchGetLatestValuesReply.Results[contractName].Results, pbBatchReadResult)
 		}
 	}
@@ -353,8 +410,8 @@ func convertBatchGetLatestValuesRequestToProto(request types.BatchGetLatestValue
 			pbRequest.Requests[contractName].Reads = append(
 				pbRequest.Requests[contractName].Reads,
 				&pb.BatchRead{
-					ReadName: batchCall.ReadName,
-					Params:   versionedParams,
+					ReadIdentifier: batchCall.ReadIdentifier,
+					Params:         versionedParams,
 				},
 			)
 		}
@@ -542,7 +599,7 @@ func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, r
 				err = fmt.Errorf(res.Error)
 			}
 
-			brr := types.BatchReadResult{ReadName: res.ReadName}
+			brr := types.BatchReadResult{ReadIdentifier: res.ReadIdentifier}
 			brr.SetResult(req.ReturnVal, err)
 			result[contractName][i] = brr
 		}
@@ -562,8 +619,8 @@ func convertBatchGetLatestValuesRequestFromProto(pbRequest *pb.BatchGetLatestVal
 		}
 
 		for _, pbCall := range pbContractBatch.Reads {
-			call := types.BatchRead{ReadName: pbCall.ReadName}
-			params, err := getContractEncodedType(pbContractName, pbCall.ReadName, impl, true)
+			call := types.BatchRead{ReadIdentifier: pbCall.ReadIdentifier}
+			params, err := getContractEncodedType(pbCall.ReadIdentifier, impl, true)
 			if err != nil {
 				return nil, err
 			}
@@ -572,7 +629,7 @@ func convertBatchGetLatestValuesRequestFromProto(pbRequest *pb.BatchGetLatestVal
 				return nil, err
 			}
 
-			retVal, err := getContractEncodedType(pbContractName, call.ReadName, impl, false)
+			retVal, err := getContractEncodedType(call.ReadIdentifier, impl, false)
 			if err != nil {
 				return nil, err
 			}
@@ -583,6 +640,13 @@ func convertBatchGetLatestValuesRequestFromProto(pbRequest *pb.BatchGetLatestVal
 		}
 	}
 	return request, nil
+}
+
+func convertBoundContractFromProto(contract *pb.BoundContract) types.BoundContract {
+	return types.BoundContract{
+		Address: contract.Address,
+		Name:    contract.Name,
+	}
 }
 
 func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryKeyFilter) (query.KeyFilter, error) {

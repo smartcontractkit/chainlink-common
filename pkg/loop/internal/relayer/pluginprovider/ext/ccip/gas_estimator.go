@@ -53,8 +53,8 @@ func (c *CommitGasEstimatorGRPCClient) Close() error {
 }
 
 // DenoteInUSD implements ccip.GasPriceEstimatorCommit.
-func (c *CommitGasEstimatorGRPCClient) DenoteInUSD(p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
-	resp, err := c.client.DenoteInUSD(context.Background(), &ccippb.DenoteInUSDRequest{
+func (c *CommitGasEstimatorGRPCClient) DenoteInUSD(ctx context.Context, p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
+	resp, err := c.client.DenoteInUSD(ctx, &ccippb.DenoteInUSDRequest{
 		P:                  pb.NewBigIntFromInt(p),
 		WrappedNativePrice: pb.NewBigIntFromInt(wrappedNativePrice),
 	})
@@ -65,8 +65,8 @@ func (c *CommitGasEstimatorGRPCClient) DenoteInUSD(p *big.Int, wrappedNativePric
 }
 
 // Deviates implements ccip.GasPriceEstimatorCommit.
-func (c *CommitGasEstimatorGRPCClient) Deviates(p1 *big.Int, p2 *big.Int) (bool, error) {
-	resp, err := c.client.Deviates(context.Background(), &ccippb.DeviatesRequest{
+func (c *CommitGasEstimatorGRPCClient) Deviates(ctx context.Context, p1 *big.Int, p2 *big.Int) (bool, error) {
+	resp, err := c.client.Deviates(ctx, &ccippb.DeviatesRequest{
 		P1: pb.NewBigIntFromInt(p1),
 		P2: pb.NewBigIntFromInt(p2),
 	})
@@ -86,8 +86,8 @@ func (c *CommitGasEstimatorGRPCClient) GetGasPrice(ctx context.Context) (*big.In
 }
 
 // Median implements ccip.GasPriceEstimatorCommit.
-func (c *CommitGasEstimatorGRPCClient) Median(gasPrices []*big.Int) (*big.Int, error) {
-	resp, err := c.client.Median(context.Background(), &ccippb.MedianRequest{
+func (c *CommitGasEstimatorGRPCClient) Median(ctx context.Context, gasPrices []*big.Int) (*big.Int, error) {
+	resp, err := c.client.Median(ctx, &ccippb.MedianRequest{
 		GasPrices: bigIntSlicePB(gasPrices),
 	})
 	if err != nil {
@@ -100,7 +100,7 @@ func (c *CommitGasEstimatorGRPCClient) Median(gasPrices []*big.Int) (*big.Int, e
 
 // DenoteInUSD implements ccippb.GasPriceEstimatorCommitServer.
 func (c *CommitGasEstimatorGRPCServer) DenoteInUSD(ctx context.Context, req *ccippb.DenoteInUSDRequest) (*ccippb.DenoteInUSDResponse, error) {
-	usd, err := c.impl.DenoteInUSD(req.P.Int(), req.WrappedNativePrice.Int())
+	usd, err := c.impl.DenoteInUSD(ctx, req.P.Int(), req.WrappedNativePrice.Int())
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (c *CommitGasEstimatorGRPCServer) DenoteInUSD(ctx context.Context, req *cci
 
 // Deviates implements ccippb.GasPriceEstimatorCommitServer.
 func (c *CommitGasEstimatorGRPCServer) Deviates(ctx context.Context, req *ccippb.DeviatesRequest) (*ccippb.DeviatesResponse, error) {
-	deviates, err := c.impl.Deviates(req.P1.Int(), req.P2.Int())
+	deviates, err := c.impl.Deviates(ctx, req.P1.Int(), req.P2.Int())
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (c *CommitGasEstimatorGRPCServer) GetGasPrice(ctx context.Context, req *emp
 
 // Median implements ccippb.GasPriceEstimatorCommitServer.
 func (c *CommitGasEstimatorGRPCServer) Median(ctx context.Context, req *ccippb.MedianRequest) (*ccippb.MedianResponse, error) {
-	gasPrice, err := c.impl.Median(bigIntSlice(req.GasPrices))
+	gasPrice, err := c.impl.Median(ctx, bigIntSlice(req.GasPrices))
 	if err != nil {
 		return nil, err
 	}
@@ -174,8 +174,8 @@ func (e *ExecGasEstimatorGRPCClient) Close() error {
 }
 
 // DenoteInUSD implements ccip.GasPriceEstimatorExec.
-func (e *ExecGasEstimatorGRPCClient) DenoteInUSD(p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
-	resp, err := e.client.DenoteInUSD(context.Background(), &ccippb.DenoteInUSDRequest{
+func (e *ExecGasEstimatorGRPCClient) DenoteInUSD(ctx context.Context, p *big.Int, wrappedNativePrice *big.Int) (*big.Int, error) {
+	resp, err := e.client.DenoteInUSD(ctx, &ccippb.DenoteInUSDRequest{
 		P:                  pb.NewBigIntFromInt(p),
 		WrappedNativePrice: pb.NewBigIntFromInt(wrappedNativePrice),
 	})
@@ -186,9 +186,9 @@ func (e *ExecGasEstimatorGRPCClient) DenoteInUSD(p *big.Int, wrappedNativePrice 
 }
 
 // EstimateMsgCostUSD implements ccip.GasPriceEstimatorExec.
-func (e *ExecGasEstimatorGRPCClient) EstimateMsgCostUSD(p *big.Int, wrappedNativePrice *big.Int, msg cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta) (*big.Int, error) {
+func (e *ExecGasEstimatorGRPCClient) EstimateMsgCostUSD(ctx context.Context, p *big.Int, wrappedNativePrice *big.Int, msg cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta) (*big.Int, error) {
 	msgPB := evm2EVMOnRampCCIPSendRequestedWithMeta(&msg)
-	resp, err := e.client.EstimateMsgCostUSD(context.Background(), &ccippb.EstimateMsgCostUSDRequest{
+	resp, err := e.client.EstimateMsgCostUSD(ctx, &ccippb.EstimateMsgCostUSDRequest{
 		P:                  pb.NewBigIntFromInt(p),
 		WrappedNativePrice: pb.NewBigIntFromInt(wrappedNativePrice),
 		Msg:                msgPB,
@@ -209,8 +209,8 @@ func (e *ExecGasEstimatorGRPCClient) GetGasPrice(ctx context.Context) (*big.Int,
 }
 
 // Median implements ccip.GasPriceEstimatorExec.
-func (e *ExecGasEstimatorGRPCClient) Median(gasPrices []*big.Int) (*big.Int, error) {
-	resp, err := e.client.Median(context.Background(), &ccippb.MedianRequest{
+func (e *ExecGasEstimatorGRPCClient) Median(ctx context.Context, gasPrices []*big.Int) (*big.Int, error) {
+	resp, err := e.client.Median(ctx, &ccippb.MedianRequest{
 		GasPrices: bigIntSlicePB(gasPrices),
 	})
 	if err != nil {
@@ -221,7 +221,7 @@ func (e *ExecGasEstimatorGRPCClient) Median(gasPrices []*big.Int) (*big.Int, err
 
 // DenoteInUSD implements ccippb.GasPriceEstimatorExecServer.
 func (e *ExecGasEstimatorGRPCServer) DenoteInUSD(ctx context.Context, req *ccippb.DenoteInUSDRequest) (*ccippb.DenoteInUSDResponse, error) {
-	usd, err := e.impl.DenoteInUSD(req.P.Int(), req.WrappedNativePrice.Int())
+	usd, err := e.impl.DenoteInUSD(ctx, req.P.Int(), req.WrappedNativePrice.Int())
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (e *ExecGasEstimatorGRPCServer) EstimateMsgCostUSD(ctx context.Context, req
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert evm2evm msg: %w", err)
 	}
-	cost, err := e.impl.EstimateMsgCostUSD(req.P.Int(), req.WrappedNativePrice.Int(), *msg)
+	cost, err := e.impl.EstimateMsgCostUSD(ctx, req.P.Int(), req.WrappedNativePrice.Int(), *msg)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func (e *ExecGasEstimatorGRPCServer) GetGasPrice(ctx context.Context, req *empty
 
 // Median implements ccippb.GasPriceEstimatorExecServer.
 func (e *ExecGasEstimatorGRPCServer) Median(ctx context.Context, req *ccippb.MedianRequest) (*ccippb.MedianResponse, error) {
-	median, err := e.impl.Median(bigIntSlice(req.GasPrices))
+	median, err := e.impl.Median(ctx, bigIntSlice(req.GasPrices))
 	if err != nil {
 		return nil, err
 	}

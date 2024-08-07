@@ -203,12 +203,12 @@ func (e *ExecProviderServer) Close(context.Context, *emptypb.Empty) (*emptypb.Em
 
 // NewCommitStoreReader implements ccippb.ExecutionCustomHandlersServer.
 func (e *ExecProviderServer) NewCommitStoreReader(ctx context.Context, req *ccippb.NewCommitStoreReaderRequest) (*ccippb.NewCommitStoreReaderResponse, error) {
-	reader, err := e.impl.NewCommitStoreReader(context.Background(), ccip.Address(req.Address))
+	reader, err := e.impl.NewCommitStoreReader(ctx, ccip.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	commitStoreHandler, err := NewCommitStoreReaderGRPCServer(reader, e.BrokerExt)
+	commitStoreHandler, err := NewCommitStoreReaderGRPCServer(ctx, reader, e.BrokerExt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create offramp reader grpc server: %w", err)
 	}
@@ -244,7 +244,7 @@ func (e *ExecProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 		return nil, err
 	}
 	// wrap the reader in a grpc server and serve it
-	offRampHandler, err := NewOffRampReaderGRPCServer(reader, e.BrokerExt)
+	offRampHandler, err := NewOffRampReaderGRPCServer(ctx, reader, e.BrokerExt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create offramp reader grpc server: %w", err)
 	}

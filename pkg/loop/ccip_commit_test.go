@@ -1,7 +1,6 @@
 package loop_test
 
 import (
-	"context"
 	"os/exec"
 	"sync/atomic"
 	"testing"
@@ -21,6 +20,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestCommitService(t *testing.T) {
@@ -110,7 +110,7 @@ func TestCommitLOOP(t *testing.T) {
 }
 
 func newCommitProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPCommitProvider, error) {
-	ctx := context.Background()
+	ctx := tests.Context(t)
 	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)

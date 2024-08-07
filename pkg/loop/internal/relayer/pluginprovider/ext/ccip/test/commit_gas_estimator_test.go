@@ -47,25 +47,22 @@ func roundTripGasPriceEstimatorCommitTests(t *testing.T, client *ccip.CommitGasE
 	})
 
 	t.Run("DenoteInUSD", func(t *testing.T) {
-		usd, err := client.DenoteInUSD(
-			GasPriceEstimatorCommit.denoteInUSDRequest.p,
-			GasPriceEstimatorCommit.denoteInUSDRequest.wrappedNativePrice,
-		)
+		ctx := tests.Context(t)
+		usd, err := client.DenoteInUSD(ctx, GasPriceEstimatorCommit.denoteInUSDRequest.p, GasPriceEstimatorCommit.denoteInUSDRequest.wrappedNativePrice)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.denoteInUSDResponse.result, usd)
 	})
 
 	t.Run("Deviates", func(t *testing.T) {
-		isDeviant, err := client.Deviates(
-			GasPriceEstimatorCommit.deviatesRequest.p1,
-			GasPriceEstimatorCommit.deviatesRequest.p2,
-		)
+		ctx := tests.Context(t)
+		isDeviant, err := client.Deviates(ctx, GasPriceEstimatorCommit.deviatesRequest.p1, GasPriceEstimatorCommit.deviatesRequest.p2)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.deviatesResponse, isDeviant)
 	})
 
 	t.Run("Median", func(t *testing.T) {
-		median, err := client.Median(GasPriceEstimatorCommit.medianRequest.gasPrices)
+		ctx := tests.Context(t)
+		median, err := client.Median(ctx, GasPriceEstimatorCommit.medianRequest.gasPrices)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.medianResponse, median)
 	})

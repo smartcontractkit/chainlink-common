@@ -34,8 +34,8 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	return relayer.WrapProviderClientConnection(rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
 }
 
-func (r *relayerClient) Start(context.Context) error {
-	return r.relayerSetClient.StartRelayer(context.Background(), r.relayerID)
+func (r *relayerClient) Start(ctx context.Context) error {
+	return r.relayerSetClient.StartRelayer(ctx, r.relayerID)
 }
 
 func (r *relayerClient) Close() error {

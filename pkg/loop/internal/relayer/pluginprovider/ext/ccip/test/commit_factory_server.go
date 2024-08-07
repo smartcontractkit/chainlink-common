@@ -69,12 +69,13 @@ func runCommitReportingPluginFactory(t *testing.T, factory types.ReportingPlugin
 	}
 
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
+		ctx := tests.Context(t)
 		// we expect the static implementation to be used under the covers
 		// we can't compare the types directly because the returned reporting plugin may be a grpc client
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(reportingplugintest.Factory.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(ctx, reportingplugintest.Factory.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })

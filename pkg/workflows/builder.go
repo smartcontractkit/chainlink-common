@@ -1,7 +1,9 @@
 package workflows
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
@@ -14,7 +16,9 @@ import (
 // })
 
 type Workflow struct {
-	spec *WorkflowSpec
+	spec           *WorkflowSpec
+	names          map[string]bool
+	duplicateNames map[string]bool
 }
 
 type CapabilityDefinition[O any] interface {
@@ -98,12 +102,19 @@ func NewWorkflow(
 			Owner: params.Owner,
 			Name:  params.Name,
 		},
+		names:          map[string]bool{},
+		duplicateNames: map[string]bool{},
 	}
 }
 
 // AddStep is meant to be called by generated code
 func AddStep[O any](w *Workflow, step Step[O]) CapabilityDefinition[O] {
 	stepDefinition := step.Definition
+	if w.names[stepDefinition.ID] {
+		w.duplicateNames[stepDefinition.ID] = true
+	}
+
+	w.names[stepDefinition.ID] = true
 
 	switch stepDefinition.CapabilityType {
 	case capabilities.CapabilityTypeTrigger:
@@ -125,7 +136,14 @@ func AccessField[I, O any](c CapabilityDefinition[I], fieldName string) Capabili
 }
 
 func (w Workflow) Spec() (WorkflowSpec, error) {
-	// TODO verify name of step isn't reused
+	if len(w.duplicateNames) > 0 {
+		duplicates := make([]string, 0, len(w.duplicateNames))
+		for k := range w.duplicateNames {
+			duplicates = append(duplicates, k)
+		}
+		return WorkflowSpec{}, fmt.Errorf("duplicte step ids %v", strings.Join(duplicates, ", "))
+	}
+
 	return *w.spec, nil
 }
 

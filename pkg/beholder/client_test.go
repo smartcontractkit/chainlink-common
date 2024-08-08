@@ -14,7 +14,7 @@ import (
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
 )
 
 type MockExporter struct {

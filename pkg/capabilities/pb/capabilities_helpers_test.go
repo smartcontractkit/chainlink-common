@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -19,6 +20,50 @@ const (
 	testInputsValue = "input-value"
 	testError       = "test-error"
 )
+
+func TestCapabilityRequestFromProto(t *testing.T) {
+	_, err := pb.CapabilityRequestFromProto(nil)
+	assert.ErrorContains(t, err, "could not convert nil proto")
+
+	pr := pb.CapabilityRequest{
+		Metadata: nil,
+		Inputs:   values.ProtoMap(values.EmptyMap()),
+		Config:   values.ProtoMap(values.EmptyMap()),
+	}
+	_, err = pb.CapabilityRequestFromProto(&pr)
+	assert.ErrorContains(t, err, "could not convert nil metadata")
+
+	inputs, err := values.NewMap(map[string]any{
+		"hello": "world",
+	})
+	require.NoError(t, err)
+
+	config, err := values.NewMap(map[string]any{
+		"aConfigVersion": true,
+	})
+	require.NoError(t, err)
+	pr = pb.CapabilityRequest{
+		Metadata: &pb.RequestMetadata{
+			WorkflowId: "<workflow-id>",
+		},
+		Inputs: values.ProtoMap(inputs),
+		Config: values.ProtoMap(config),
+	}
+	_, err = pb.CapabilityRequestFromProto(&pr)
+	require.NoError(t, err)
+}
+
+func TestCapabilityResponseFromProto(t *testing.T) {
+	_, err := pb.CapabilityResponseFromProto(nil)
+	assert.ErrorContains(t, err, "could not convert nil proto")
+
+	pr := pb.CapabilityResponse{
+		Value: values.ProtoMap(values.EmptyMap()),
+		Error: "error: bang!",
+	}
+	_, err = pb.CapabilityResponseFromProto(&pr)
+	require.NoError(t, err)
+}
 
 func TestMarshalUnmarshalRequest(t *testing.T) {
 	req := capabilities.CapabilityRequest{

@@ -30,6 +30,14 @@ func Test_BigIntUnwrapTo(t *testing.T) {
 	var varStr string
 	err = v.UnwrapTo(&varStr)
 	assert.ErrorContains(t, err, "cannot unwrap to value of type: *string")
+
+	nilVal := (*BigInt)(nil)
+	_, err = nilVal.Unwrap()
+	assert.ErrorContains(t, err, "could not unwrap nil")
+
+	bi := &BigInt{}
+	_, err = bi.Unwrap()
+	assert.ErrorContains(t, err, "could not unwrap nil")
 }
 
 func Test_BigInt(t *testing.T) {

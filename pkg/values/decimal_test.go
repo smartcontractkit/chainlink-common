@@ -30,4 +30,12 @@ func Test_DecimalUnwrapTo(t *testing.T) {
 	err = tr.UnwrapTo(&varAny)
 	require.NoError(t, err)
 	assert.Equal(t, dv, varAny)
+
+	dn := (*Decimal)(nil)
+	_, err = dn.Unwrap()
+	assert.ErrorContains(t, err, "could not unwrap nil")
+
+	dec = decimal.Decimal{}
+	err = dn.UnwrapTo(&dec)
+	assert.ErrorContains(t, err, "could not unwrap nil")
 }

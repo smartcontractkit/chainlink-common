@@ -77,7 +77,15 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 }
 
 func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityRequest, error) {
+	if pr == nil {
+		return capabilities.CapabilityRequest{}, errors.New("could not convert nil proto to CapabilityRequest")
+	}
+
 	md := pr.Metadata
+	if md == nil {
+		return capabilities.CapabilityRequest{}, errors.New("could not convert nil metadata to RequestMetadata")
+	}
+
 	config, err := values.FromMapValueProto(pr.Config)
 	if err != nil {
 		return capabilities.CapabilityRequest{}, err
@@ -103,6 +111,10 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 }
 
 func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.CapabilityResponse, error) {
+	if pr == nil {
+		return capabilities.CapabilityResponse{}, errors.New("could not convert nil proto to CapabilityResponse")
+	}
+
 	val, err := values.FromMapValueProto(pr.Value)
 	if err != nil {
 		return capabilities.CapabilityResponse{}, err

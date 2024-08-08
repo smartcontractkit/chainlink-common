@@ -27,4 +27,12 @@ func Test_IntUnwrapTo(t *testing.T) {
 	err = v.UnwrapTo(&varAny)
 	require.NoError(t, err)
 	assert.Equal(t, expected, varAny)
+
+	in := (*Int64)(nil)
+	_, err = in.Unwrap()
+	assert.ErrorContains(t, err, "cannot unwrap nil")
+
+	var i int64
+	err = in.UnwrapTo(&i)
+	assert.ErrorContains(t, err, "cannot unwrap nil")
 }

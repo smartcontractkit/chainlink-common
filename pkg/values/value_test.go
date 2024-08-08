@@ -260,6 +260,7 @@ func Test_Copy(t *testing.T) {
 
 	tcs := []struct {
 		value Value
+		isNil bool
 	}{
 		{
 			value: NewString("hello"),
@@ -285,10 +286,42 @@ func Test_Copy(t *testing.T) {
 		{
 			value: mp,
 		},
+		{
+			value: (*String)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Bytes)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Int64)(nil),
+			isNil: true,
+		},
+		{
+			value: (*BigInt)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Bool)(nil),
+			isNil: true,
+		},
+		{
+			value: (*List)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Map)(nil),
+			isNil: true,
+		},
 	}
 
 	for _, tc := range tcs {
 		copied := tc.value.Copy()
-		assert.Equal(t, tc.value, copied)
+		if tc.isNil {
+			assert.Nil(t, tc.value.Copy())
+		} else {
+			assert.Equal(t, tc.value, copied)
+		}
 	}
 }

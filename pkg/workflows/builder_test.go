@@ -11,17 +11,20 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
-	chainwriter "github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chain_writer"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritercap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams/streamscap"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
 type Config struct {
 	Workflow    workflows.NewWorkflowParams
-	Streams     *streams.StreamsTriggerConfig
-	Ocr         *ocr3.Ocr3ConsensusConfig
-	ChainWriter *chainwriter.ChainwriterTargetConfig
+	Streams     *streams.TriggerConfig
+	Ocr         *ocr3.ConsensusConfig
+	ChainWriter *chainwriter.TargetConfig
 }
 
 func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
@@ -31,16 +34,13 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger := streams.NewStreamsTriggerCapability(workflow, "streams", *conf.Streams)
+	streamsTrigger := streamscap.NewTrigger(workflow, "streams", *conf.Streams)
 
-	streamsList := workflows.ListOf[streams.Feed](streamsTrigger)
-	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsList}
+	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
+	consensus := ocr3cap.NewConsensus(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
 
-	consensus := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
-
-	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
-
-	chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter)
+	input := chainwritercap.TargetInput{SignedReport: consensus}
+	chainwritercap.NewTarget(workflow, "chain-writer", input, *conf.ChainWriter)
 
 	return workflow.Spec()
 }
@@ -54,9 +54,9 @@ type ModifiedConfig struct {
 	DefaultDeviation float64
 	FeedInfos        []FeedInfo
 	ReportId         string
-	Encoder          ocr3.Ocr3ConsensusConfigEncoder
-	EncoderConfig    ocr3.Ocr3ConsensusConfigEncoderConfig
-	ChainWriter      *chainwriter.ChainwriterTargetConfig
+	Encoder          ocr3.ConsensusConfigEncoder
+	EncoderConfig    ocr3.ConsensusConfigEncoderConfig
+	ChainWriter      *chainwriter.TargetConfig
 }
 
 type FeedInfo struct {
@@ -71,8 +71,8 @@ func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 		return workflows.WorkflowSpec{}, err
 	}
 
-	streamsConfig := streams.StreamsTriggerConfig{MaxFrequencyMs: conf.MaxFrequencyMs}
-	ocr3Config := ocr3.Ocr3ConsensusConfig{
+	streamsConfig := streams.TriggerConfig{MaxFrequencyMs: conf.MaxFrequencyMs}
+	ocr3Config := ocr3.ConsensusConfig{
 		AggregationMethod: "data_feeds",
 		Encoder:           conf.Encoder,
 		EncoderConfig:     conf.EncoderConfig,
@@ -80,7 +80,7 @@ func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 	for _, elm := range conf.FeedInfos {
 		streamsConfig.FeedIds = append(streamsConfig.FeedIds, elm.FeedId)
-		aggConfig := ocr3.Ocr3ConsensusConfigAggregationConfigElem{
+		aggConfig := ocr3.ConsensusConfigAggregationConfigElem{
 			FeedId:    elm.FeedId,
 			Deviation: conf.DefaultDeviation,
 			Heartbeat: conf.DefaultHeartbeat,
@@ -97,16 +97,13 @@ func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger := streams.NewStreamsTriggerCapability(workflow, "streams", streamsConfig)
+	streamsTrigger := streamscap.NewTrigger(workflow, "streams", streamsConfig)
 
-	streamsList := workflows.ListOf[streams.Feed](streamsTrigger)
-	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: streamsList}
+	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
+	consensus := ocr3cap.NewConsensus(workflow, "data-feeds-report", ocrInput, ocr3Config)
 
-	consensus := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, ocr3Config)
-
-	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
-
-	chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter)
+	input := chainwritercap.TargetInput{SignedReport: consensus}
+	chainwritercap.NewTarget(workflow, "chain-writer", input, *conf.ChainWriter)
 
 	return workflow.Spec()
 }
@@ -122,7 +119,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 	workflow := workflows.NewWorkflow(conf.Workflow)
 	notStreamsTrigger := notstreams.NewNotstreamsTriggerCapability(workflow, "notstreams", *conf.Streams)
 
-	feedsInput := streams.NewStreamsTriggerCapabilityFromComponents(
+	feedsInput := streamscap.NewTriggerFromFields(
 		notStreamsTrigger.Price().PriceA(),
 		workflows.ConstantDefinition[streams.FeedId]("0x0000000000000000000000000000000000000000000000000000000000000000"),
 		notStreamsTrigger.FullReport(),
@@ -130,14 +127,12 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 		notStreamsTrigger.ReportContext(),
 		notStreamsTrigger.Signatures(),
 	)
-	notStreamsList := workflows.ListOf[streams.Feed](feedsInput)
-	ocrInput := ocr3.Ocr3ConsensusCapabilityInput{Observations: notStreamsList}
 
-	consensus := ocr3.NewOcr3ConsensusCapability(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
+	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](feedsInput)}
+	consensus := ocr3cap.NewConsensus(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
 
-	input := chainwriter.ChainwriterTargetCapabilityInput{SignedReport: consensus}
-
-	chainwriter.NewChainwriterTargetCapability(workflow, "chain-writer", input, *conf.ChainWriter)
+	input := chainwritercap.TargetInput{SignedReport: consensus}
+	chainwritercap.NewTarget(workflow, "chain-writer", input, *conf.ChainWriter)
 
 	return workflow.Spec()
 }
@@ -233,7 +228,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 
 type NotStreamsConfig struct {
 	Workflow    workflows.NewWorkflowParams
-	Streams     *notstreams.NotstreamsTriggerConfig
-	Ocr         *ocr3.Ocr3ConsensusConfig
-	ChainWriter *chainwriter.ChainwriterTargetConfig
+	Streams     *notstreams.TriggerConfig
+	Ocr         *ocr3.ConsensusConfig
+	ChainWriter *chainwriter.TargetConfig
 }

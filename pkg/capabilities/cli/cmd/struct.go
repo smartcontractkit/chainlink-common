@@ -12,6 +12,7 @@ import (
 
 type GeneratedInfo struct {
 	Package        string
+	FullPackage    string
 	Config         Struct
 	Input          *Struct
 	Types          map[string]Struct
@@ -36,7 +37,7 @@ type Field struct {
 	IsPrimitive bool
 }
 
-func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (GeneratedInfo, error) {
+func StructsFromSrc(dir, src, baseName string, tpe capabilities.CapabilityType) (GeneratedInfo, error) {
 	fset := token.NewFileSet()
 
 	// Parse the source code string
@@ -117,6 +118,7 @@ func StructsFromSrc(src, baseName string, tpe capabilities.CapabilityType) (Gene
 
 	return GeneratedInfo{
 		Package:        pkg,
+		FullPackage:    dir[strings.Index(dir, "github.com"):],
 		Config:         config,
 		Types:          rawInfo,
 		RootOutput:     root.Outputs["Outputs"].Type,

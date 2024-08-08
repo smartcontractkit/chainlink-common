@@ -69,15 +69,15 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 }
 
 // Streams Trigger
-type StreamsTrigger struct {
+type Trigger struct {
 	// Config corresponds to the JSON schema field "config".
-	Config StreamsTriggerConfig
+	Config TriggerConfig
 
 	// Outputs corresponds to the JSON schema field "outputs".
 	Outputs []Feed
 }
 
-type StreamsTriggerConfig struct {
+type TriggerConfig struct {
 	// The IDs of the data feeds that will have their reports included in the trigger
 	// event.
 	FeedIds []FeedId
@@ -87,18 +87,18 @@ type StreamsTriggerConfig struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *StreamsTriggerConfig) UnmarshalJSON(b []byte) error {
+func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["feedIds"]; raw != nil && !ok {
-		return fmt.Errorf("field feedIds in StreamsTriggerConfig: required")
+		return fmt.Errorf("field feedIds in TriggerConfig: required")
 	}
 	if _, ok := raw["maxFrequencyMs"]; raw != nil && !ok {
-		return fmt.Errorf("field maxFrequencyMs in StreamsTriggerConfig: required")
+		return fmt.Errorf("field maxFrequencyMs in TriggerConfig: required")
 	}
-	type Plain StreamsTriggerConfig
+	type Plain TriggerConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
@@ -106,24 +106,24 @@ func (j *StreamsTriggerConfig) UnmarshalJSON(b []byte) error {
 	if plain.FeedIds != nil && len(plain.FeedIds) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "feedIds", 1)
 	}
-	*j = StreamsTriggerConfig(plain)
+	*j = TriggerConfig(plain)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *StreamsTrigger) UnmarshalJSON(b []byte) error {
+func (j *Trigger) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
-		return fmt.Errorf("field config in StreamsTrigger: required")
+		return fmt.Errorf("field config in Trigger: required")
 	}
-	type Plain StreamsTrigger
+	type Plain Trigger
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = StreamsTrigger(plain)
+	*j = Trigger(plain)
 	return nil
 }

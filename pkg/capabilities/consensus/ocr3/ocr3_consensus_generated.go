@@ -8,35 +8,35 @@ import streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/tr
 import "reflect"
 
 // OCR3 consensus exposed as a capability.
-type Ocr3Consensus struct {
+type Consensus struct {
 	// Config corresponds to the JSON schema field "config".
-	Config Ocr3ConsensusConfig
+	Config ConsensusConfig
 
 	// Inputs corresponds to the JSON schema field "inputs".
-	Inputs Ocr3ConsensusInputs
+	Inputs ConsensusInputs
 
 	// Outputs corresponds to the JSON schema field "outputs".
 	Outputs SignedReport
 }
 
-type Ocr3ConsensusConfig struct {
+type ConsensusConfig struct {
 	// AggregationConfig corresponds to the JSON schema field "aggregationConfig".
-	AggregationConfig []Ocr3ConsensusConfigAggregationConfigElem
+	AggregationConfig []ConsensusConfigAggregationConfigElem
 
 	// AggregationMethod corresponds to the JSON schema field "aggregationMethod".
-	AggregationMethod Ocr3ConsensusConfigAggregationMethod
+	AggregationMethod ConsensusConfigAggregationMethod
 
 	// Encoder corresponds to the JSON schema field "encoder".
-	Encoder Ocr3ConsensusConfigEncoder
+	Encoder ConsensusConfigEncoder
 
 	// EncoderConfig corresponds to the JSON schema field "encoderConfig".
-	EncoderConfig Ocr3ConsensusConfigEncoderConfig
+	EncoderConfig ConsensusConfigEncoderConfig
 
 	// ReportId corresponds to the JSON schema field "reportId".
 	ReportId string
 }
 
-type Ocr3ConsensusConfigAggregationConfigElem struct {
+type ConsensusConfigAggregationConfigElem struct {
 	// The deviation that is required to generate a new report. Expressed as a
 	// percentage. For example, 0.01 is 1% deviation.
 	Deviation float64
@@ -50,182 +50,182 @@ type Ocr3ConsensusConfigAggregationConfigElem struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusConfigAggregationConfigElem) UnmarshalJSON(b []byte) error {
+func (j *ConsensusConfigAggregationConfigElem) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["deviation"]; raw != nil && !ok {
-		return fmt.Errorf("field deviation in Ocr3ConsensusConfigAggregationConfigElem: required")
+		return fmt.Errorf("field deviation in ConsensusConfigAggregationConfigElem: required")
 	}
 	if _, ok := raw["feedId"]; raw != nil && !ok {
-		return fmt.Errorf("field feedId in Ocr3ConsensusConfigAggregationConfigElem: required")
+		return fmt.Errorf("field feedId in ConsensusConfigAggregationConfigElem: required")
 	}
 	if _, ok := raw["heartbeat"]; raw != nil && !ok {
-		return fmt.Errorf("field heartbeat in Ocr3ConsensusConfigAggregationConfigElem: required")
+		return fmt.Errorf("field heartbeat in ConsensusConfigAggregationConfigElem: required")
 	}
-	type Plain Ocr3ConsensusConfigAggregationConfigElem
+	type Plain ConsensusConfigAggregationConfigElem
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = Ocr3ConsensusConfigAggregationConfigElem(plain)
+	*j = ConsensusConfigAggregationConfigElem(plain)
 	return nil
 }
 
-type Ocr3ConsensusConfigAggregationMethod string
+type ConsensusConfigAggregationMethod string
 
-const Ocr3ConsensusConfigAggregationMethodDataFeeds Ocr3ConsensusConfigAggregationMethod = "data_feeds"
+const ConsensusConfigAggregationMethodDataFeeds ConsensusConfigAggregationMethod = "data_feeds"
 
-var enumValues_Ocr3ConsensusConfigAggregationMethod = []interface{}{
+var enumValues_ConsensusConfigAggregationMethod = []interface{}{
 	"data_feeds",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusConfigAggregationMethod) UnmarshalJSON(b []byte) error {
+func (j *ConsensusConfigAggregationMethod) UnmarshalJSON(b []byte) error {
 	var v string
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_Ocr3ConsensusConfigAggregationMethod {
+	for _, expected := range enumValues_ConsensusConfigAggregationMethod {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Ocr3ConsensusConfigAggregationMethod, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConsensusConfigAggregationMethod, v)
 	}
-	*j = Ocr3ConsensusConfigAggregationMethod(v)
+	*j = ConsensusConfigAggregationMethod(v)
 	return nil
 }
 
-type Ocr3ConsensusConfigEncoder string
+type ConsensusConfigEncoder string
 
-type Ocr3ConsensusConfigEncoderConfig struct {
+type ConsensusConfigEncoderConfig struct {
 	// The ABI for report encoding.
 	Abi string
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusConfigEncoderConfig) UnmarshalJSON(b []byte) error {
+func (j *ConsensusConfigEncoderConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["abi"]; raw != nil && !ok {
-		return fmt.Errorf("field abi in Ocr3ConsensusConfigEncoderConfig: required")
+		return fmt.Errorf("field abi in ConsensusConfigEncoderConfig: required")
 	}
-	type Plain Ocr3ConsensusConfigEncoderConfig
+	type Plain ConsensusConfigEncoderConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = Ocr3ConsensusConfigEncoderConfig(plain)
+	*j = ConsensusConfigEncoderConfig(plain)
 	return nil
 }
 
-const Ocr3ConsensusConfigEncoderEVM Ocr3ConsensusConfigEncoder = "EVM"
+const ConsensusConfigEncoderEVM ConsensusConfigEncoder = "EVM"
 
-var enumValues_Ocr3ConsensusConfigEncoder = []interface{}{
+var enumValues_ConsensusConfigEncoder = []interface{}{
 	"EVM",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusConfigEncoder) UnmarshalJSON(b []byte) error {
+func (j *ConsensusConfigEncoder) UnmarshalJSON(b []byte) error {
 	var v string
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_Ocr3ConsensusConfigEncoder {
+	for _, expected := range enumValues_ConsensusConfigEncoder {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Ocr3ConsensusConfigEncoder, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConsensusConfigEncoder, v)
 	}
-	*j = Ocr3ConsensusConfigEncoder(v)
+	*j = ConsensusConfigEncoder(v)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusConfig) UnmarshalJSON(b []byte) error {
+func (j *ConsensusConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["aggregationConfig"]; raw != nil && !ok {
-		return fmt.Errorf("field aggregationConfig in Ocr3ConsensusConfig: required")
+		return fmt.Errorf("field aggregationConfig in ConsensusConfig: required")
 	}
 	if _, ok := raw["aggregationMethod"]; raw != nil && !ok {
-		return fmt.Errorf("field aggregationMethod in Ocr3ConsensusConfig: required")
+		return fmt.Errorf("field aggregationMethod in ConsensusConfig: required")
 	}
 	if _, ok := raw["encoder"]; raw != nil && !ok {
-		return fmt.Errorf("field encoder in Ocr3ConsensusConfig: required")
+		return fmt.Errorf("field encoder in ConsensusConfig: required")
 	}
 	if _, ok := raw["encoderConfig"]; raw != nil && !ok {
-		return fmt.Errorf("field encoderConfig in Ocr3ConsensusConfig: required")
+		return fmt.Errorf("field encoderConfig in ConsensusConfig: required")
 	}
 	if _, ok := raw["reportId"]; raw != nil && !ok {
-		return fmt.Errorf("field reportId in Ocr3ConsensusConfig: required")
+		return fmt.Errorf("field reportId in ConsensusConfig: required")
 	}
-	type Plain Ocr3ConsensusConfig
+	type Plain ConsensusConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = Ocr3ConsensusConfig(plain)
+	*j = ConsensusConfig(plain)
 	return nil
 }
 
-type Ocr3ConsensusInputs struct {
+type ConsensusInputs struct {
 	// Observations corresponds to the JSON schema field "observations".
 	Observations []streams.Feed
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3ConsensusInputs) UnmarshalJSON(b []byte) error {
+func (j *ConsensusInputs) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["observations"]; raw != nil && !ok {
-		return fmt.Errorf("field observations in Ocr3ConsensusInputs: required")
+		return fmt.Errorf("field observations in ConsensusInputs: required")
 	}
-	type Plain Ocr3ConsensusInputs
+	type Plain ConsensusInputs
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = Ocr3ConsensusInputs(plain)
+	*j = ConsensusInputs(plain)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Ocr3Consensus) UnmarshalJSON(b []byte) error {
+func (j *Consensus) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
-		return fmt.Errorf("field config in Ocr3Consensus: required")
+		return fmt.Errorf("field config in Consensus: required")
 	}
 	if _, ok := raw["inputs"]; raw != nil && !ok {
-		return fmt.Errorf("field inputs in Ocr3Consensus: required")
+		return fmt.Errorf("field inputs in Consensus: required")
 	}
 	if _, ok := raw["outputs"]; raw != nil && !ok {
-		return fmt.Errorf("field outputs in Ocr3Consensus: required")
+		return fmt.Errorf("field outputs in Consensus: required")
 	}
-	type Plain Ocr3Consensus
+	type Plain Consensus
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = Ocr3Consensus(plain)
+	*j = Consensus(plain)
 	return nil
 }
 

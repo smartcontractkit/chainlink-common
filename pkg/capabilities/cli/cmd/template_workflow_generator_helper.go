@@ -54,6 +54,9 @@ func genFromTemplate(name, rawTemplate string, info GeneratedInfo) (string, erro
 			return strings.ToUpper(s[:1]) + s[1:]
 		},
 		"ToSnake": strcase.ToSnake,
+		"PkgToCapPkg": func(pkg string) string {
+			return pkg + "cap"
+		},
 		"ConvertToBaseIfFirstOutput": func(s string) string {
 			if info.RootOutput == s {
 				return info.BaseName
@@ -62,7 +65,13 @@ func genFromTemplate(name, rawTemplate string, info GeneratedInfo) (string, erro
 		},
 		"Repeat": strings.Repeat,
 		"InputAfterCapability": func() string {
-			return info.BaseName + "CapabilityInput"
+			return info.BaseName + "Input"
+		},
+		"PkgIfNeeded": func(tpe string) string {
+			if strings.Contains(tpe, ".") || strings.ToLower(tpe) == tpe {
+				return tpe
+			}
+			return info.Package + "." + tpe
 		},
 		"HasOutputs": func(tpe string) bool {
 			return len(info.Types[tpe].Outputs) > 0

@@ -8,7 +8,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
-// 1. Capability defines JSON schema for inputs and outputs of a capability.
+// 1. Cap defines JSON schema for inputs and outputs of a cap.
 // Trigger: triggerOutputType := workflowBuilder.addTrigger(DataStreamsTrigger.ModifiedConfig{})
 // Adds metadata to the builder. Returns output type.
 // 2. Consensus: consensusOutputType := workflowBuilder.addConsensus(ConsensusConfig{
@@ -21,71 +21,71 @@ type Workflow struct {
 	duplicateNames map[string]bool
 }
 
-type CapabilityDefinition[O any] interface {
+type CapDefinition[O any] interface {
 	Ref() any
-	self() CapabilityDefinition[O]
+	self() CapDefinition[O]
 }
 
-type CapabilityListDefinition[O any] interface {
-	CapabilityDefinition[[]O]
-	Index(i int) CapabilityDefinition[O]
+type CapListDefinition[O any] interface {
+	CapDefinition[[]O]
+	Index(i int) CapDefinition[O]
 }
 
-func ListOf[O any](capabilities ...CapabilityDefinition[O]) CapabilityListDefinition[O] {
-	impl := multiCapabilityList[O]{refs: make([]any, len(capabilities))}
+func ListOf[O any](capabilities ...CapDefinition[O]) CapListDefinition[O] {
+	impl := multiCapList[O]{refs: make([]any, len(capabilities))}
 	for i, c := range capabilities {
 		impl.refs[i] = c.Ref()
 	}
 	return &impl
 }
 
-func ConstantDefinition[O any](o O) CapabilityDefinition[O] {
-	return &capabilityDefinitionImpl[O]{ref: o}
+func ConstantDefinition[O any](o O) CapDefinition[O] {
+	return &capDefinitionImpl[O]{ref: o}
 }
 
 // ToListDefinition TODO think if this is actually broken, what if the definitions were built up, would this still work?
 // also what about hard-coded?
-func ToListDefinition[O any](c CapabilityDefinition[[]O]) CapabilityListDefinition[O] {
-	return &singleCapabilityList[O]{CapabilityDefinition: c}
+func ToListDefinition[O any](c CapDefinition[[]O]) CapListDefinition[O] {
+	return &singleCapList[O]{CapDefinition: c}
 }
 
-type multiCapabilityList[O any] struct {
+type multiCapList[O any] struct {
 	refs []any
 }
 
-func (c *multiCapabilityList[O]) Index(i int) CapabilityDefinition[O] {
-	return &capabilityDefinitionImpl[O]{ref: c.refs[i]}
+func (c *multiCapList[O]) Index(i int) CapDefinition[O] {
+	return &capDefinitionImpl[O]{ref: c.refs[i]}
 }
 
-func (c *multiCapabilityList[O]) Ref() any {
+func (c *multiCapList[O]) Ref() any {
 	return c.refs
 }
 
-func (c *multiCapabilityList[O]) self() CapabilityDefinition[[]O] {
+func (c *multiCapList[O]) self() CapDefinition[[]O] {
 	return c
 }
 
-type singleCapabilityList[O any] struct {
-	CapabilityDefinition[[]O]
+type singleCapList[O any] struct {
+	CapDefinition[[]O]
 }
 
-func (s singleCapabilityList[O]) Index(i int) CapabilityDefinition[O] {
-	return &capabilityDefinitionImpl[O]{ref: s.CapabilityDefinition.Ref().(string) + "." + strconv.FormatInt(int64(i), 10)}
+func (s singleCapList[O]) Index(i int) CapDefinition[O] {
+	return &capDefinitionImpl[O]{ref: s.CapDefinition.Ref().(string) + "." + strconv.FormatInt(int64(i), 10)}
 }
 
 type Step[O any] struct {
 	Definition StepDefinition
 }
 
-type capabilityDefinitionImpl[O any] struct {
+type capDefinitionImpl[O any] struct {
 	ref any
 }
 
-func (c *capabilityDefinitionImpl[O]) Ref() any {
+func (c *capDefinitionImpl[O]) Ref() any {
 	return c.ref
 }
 
-func (c *capabilityDefinitionImpl[O]) self() CapabilityDefinition[O] {
+func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 	return c
 }
 
@@ -108,7 +108,7 @@ func NewWorkflow(
 }
 
 // AddStep is meant to be called by generated code
-func AddStep[O any](w *Workflow, step Step[O]) CapabilityDefinition[O] {
+func AddStep[O any](w *Workflow, step Step[O]) CapDefinition[O] {
 	stepDefinition := step.Definition
 	if w.names[stepDefinition.ID] {
 		w.duplicateNames[stepDefinition.ID] = true
@@ -127,12 +127,12 @@ func AddStep[O any](w *Workflow, step Step[O]) CapabilityDefinition[O] {
 		w.spec.Targets = append(w.spec.Targets, stepDefinition)
 	}
 
-	return &capabilityDefinitionImpl[O]{ref: step.Definition.Ref}
+	return &capDefinitionImpl[O]{ref: step.Definition.Ref}
 }
 
 // AccessField is meant to be used by generated code
-func AccessField[I, O any](c CapabilityDefinition[I], fieldName string) CapabilityDefinition[O] {
-	return &capabilityDefinitionImpl[O]{ref: c.Ref().(string) + "." + fieldName}
+func AccessField[I, O any](c CapDefinition[I], fieldName string) CapDefinition[O] {
+	return &capDefinitionImpl[O]{ref: c.Ref().(string) + "." + fieldName}
 }
 
 func (w Workflow) Spec() (WorkflowSpec, error) {
@@ -147,13 +147,13 @@ func (w Workflow) Spec() (WorkflowSpec, error) {
 	return *w.spec, nil
 }
 
-// ComponentCapabilityDefinition is meant to be used by generated code
-type ComponentCapabilityDefinition[O any] map[string]any
+// ComponentCapDefinition is meant to be used by generated code
+type ComponentCapDefinition[O any] map[string]any
 
-func (c ComponentCapabilityDefinition[O]) Ref() any {
+func (c ComponentCapDefinition[O]) Ref() any {
 	return map[string]any(c)
 }
 
-func (c ComponentCapabilityDefinition[O]) self() CapabilityDefinition[O] {
+func (c ComponentCapDefinition[O]) self() CapDefinition[O] {
 	return c
 }

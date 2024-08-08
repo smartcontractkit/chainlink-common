@@ -89,51 +89,51 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 }
 
 // Not Streams Trigger
-type NotstreamsTrigger struct {
+type Trigger struct {
 	// Config corresponds to the JSON schema field "config".
-	Config NotstreamsTriggerConfig
+	Config TriggerConfig
 
 	// Outputs corresponds to the JSON schema field "outputs".
 	Outputs []Feed
 }
 
-type NotstreamsTriggerConfig struct {
+type TriggerConfig struct {
 	// The interval in seconds after which a new trigger event is generated.
 	MaxFrequencyMs int
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *NotstreamsTriggerConfig) UnmarshalJSON(b []byte) error {
+func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["maxFrequencyMs"]; raw != nil && !ok {
-		return fmt.Errorf("field maxFrequencyMs in NotstreamsTriggerConfig: required")
+		return fmt.Errorf("field maxFrequencyMs in TriggerConfig: required")
 	}
-	type Plain NotstreamsTriggerConfig
+	type Plain TriggerConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = NotstreamsTriggerConfig(plain)
+	*j = TriggerConfig(plain)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *NotstreamsTrigger) UnmarshalJSON(b []byte) error {
+func (j *Trigger) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
-		return fmt.Errorf("field config in NotstreamsTrigger: required")
+		return fmt.Errorf("field config in Trigger: required")
 	}
-	type Plain NotstreamsTrigger
+	type Plain Trigger
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = NotstreamsTrigger(plain)
+	*j = Trigger(plain)
 	return nil
 }

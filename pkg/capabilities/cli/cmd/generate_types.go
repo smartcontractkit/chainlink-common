@@ -43,7 +43,7 @@ var generateTypesCmd = &cobra.Command{
 		dir := cmd.Flag("dir").Value.String()
 		return GenerateTypes(dir, []WorkflowHelperGenerator{
 			&TemplateWorkflowGeneratorHelper{
-				Templates: map[string]string{"{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},
+				Templates: map[string]string{"{{.Package|PkgToCapPkg}}/{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},
 			},
 		})
 	},
@@ -89,7 +89,12 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 
 		allFiles[file] = content
 
-		structs, err := StructsFromSrc(content, rootType, capabilityType)
+		abs, err := filepath.Abs(schemaPath)
+		if err != nil {
+			return err
+		}
+
+		structs, err := StructsFromSrc(path.Dir(abs), content, rootType, capabilityType)
 		if err != nil {
 			return err
 		}
@@ -128,10 +133,9 @@ func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, error) {
 		if len(capabilityInfo) != 3 {
 			return cfg, fmt.Errorf("invalid schema file path %v", schemaFilePath)
 		}
-		packageName := capabilityInfo[1]
 		capabilityType := capabilityInfo[2]
 		outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
-		rootType := capitalize(packageName) + capitalize(capabilityType)
+		rootType := capitalize(capabilityType)
 
 		cfg.SchemaMappings = append(cfg.SchemaMappings, generator.SchemaMapping{
 			SchemaID:    jsonSchema.ID,
@@ -146,10 +150,9 @@ func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, error) {
 // TypesFromJSONSchema generates Go types from a JSON schema file.
 func TypesFromJSONSchema(schemaFilePath string, cfg generator.Config) (outputFilePath, outputContents, rootType, capabilityType string, err error) {
 	capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
-	packageName := capabilityInfo[1]
 	capabilityType = capabilityInfo[2]
 	outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
-	rootType = capitalize(packageName) + capitalize(capabilityType)
+	rootType = capitalize(capabilityType)
 
 	gen, err := generator.New(cfg)
 	if err != nil {

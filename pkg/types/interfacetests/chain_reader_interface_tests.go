@@ -17,17 +17,10 @@ import (
 type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
 	GetChainReader(t T) types.ContractReader
-	// SetTestStructLatestValue is expected to return the same bound contract and method in the same test
-	// Any setup required for this should be done in Setup.
-	// The contract should take a LatestParams as the params and return the nth TestStruct set
-	SetTestStructLatestValue(t T, testStruct *TestStruct)
-	// SetUintLatestValue is expected to return the same bound contract and method in the same test
-	// Any setup required for this should be done in Setup.
-	// The contract should take a uint64 as the params and returns the same.
-	// forCall is used to attach value to a call, this is useful in chain specific test since in chain agnostic tests we can just use hard coded readName constants.
-	SetUintLatestValue(t T, val uint64, forCall ExpectedGetLatestValueArgs)
+	GetChainWriter(t T) types.ChainWriter
+	// NOTE: not sure if this should be in the interface, or if it should be moved
+	// to the implementation along with waitForTransactionFinalization...
 	SetBatchLatestValues(t T, batchCallEntry BatchCallEntry)
-	TriggerEvent(t T, testStruct *TestStruct)
 	GetBindings(t T) []types.BoundContract
 	// GenerateBlocksTillConfidenceLevel raises confidence level to the provided level for a specific read.
 	GenerateBlocksTillConfidenceLevel(t T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel)
@@ -65,9 +58,13 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 			test: func(t T) {
 				ctx := tests.Context(t)
 				firstItem := CreateTestStruct(0, tester)
-				tester.SetTestStructLatestValue(t, &firstItem)
+
+				contracts := tester.GetBindings(t)
+				submitTransactionToCW(t, tester, "addTestStruct", firstItem, contracts[0], types.Finalized)
+
 				secondItem := CreateTestStruct(1, tester)
-				tester.SetTestStructLatestValue(t, &secondItem)
+
+				submitTransactionToCW(t, tester, "addTestStruct", secondItem, contracts[0], types.Finalized)
 
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
@@ -112,25 +109,20 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 					ReturnVal:       &returnVal1,
 				}
 
+				contracts := tester.GetBindings(t)
+
+				submitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 10}, contracts[0], types.Unknown)
+
 				var prim1 uint64
-				tester.SetUintLatestValue(t, 10, callArgs)
 				require.Error(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, primitives.Finalized, callArgs.Params, &prim1))
 
 				tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized)
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
 				assert.Equal(t, uint64(10), prim1)
 
-				var returnVal2 uint64
-				callArgs2 := ExpectedGetLatestValueArgs{
-					ContractName:    AnyContractName,
-					ReadName:        MethodReturningAlterableUint64,
-					ConfidenceLevel: primitives.Unconfirmed,
-					Params:          nil,
-					ReturnVal:       returnVal2,
-				}
+				submitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 20}, contracts[0], types.Unconfirmed)
 
 				var prim2 uint64
-				tester.SetUintLatestValue(t, 20, callArgs2)
 				require.NoError(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, callArgs.ConfidenceLevel, callArgs.Params, &prim2))
 				assert.Equal(t, uint64(20), prim2)
 			},
@@ -195,10 +187,13 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				contracts := tester.GetBindings(t)
+
 				ts := CreateTestStruct[T](0, tester)
-				tester.TriggerEvent(t, &ts)
+				submitTransactionToCW(t, tester, "triggerEvent", ts, contracts[0], types.Unconfirmed)
+
 				ts = CreateTestStruct[T](1, tester)
-				tester.TriggerEvent(t, &ts)
+				submitTransactionToCW(t, tester, "triggerEvent", ts, contracts[0], types.Unconfirmed)
 
 				result := &TestStruct{}
 				assert.Eventually(t, func() bool {
@@ -213,8 +208,10 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				contracts := tester.GetBindings(t)
 				ts1 := CreateTestStruct[T](2, tester)
-				tester.TriggerEvent(t, &ts1)
+
+				submitTransactionToCW(t, tester, "triggerEvent", ts1, contracts[0], types.Unconfirmed)
 
 				result := &TestStruct{}
 				assert.Eventually(t, func() bool {
@@ -223,8 +220,9 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
 				tester.GenerateBlocksTillConfidenceLevel(t, AnyContractName, EventName, primitives.Finalized)
+
 				ts2 := CreateTestStruct[T](3, tester)
-				tester.TriggerEvent(t, &ts2)
+				submitTransactionToCW(t, tester, "triggerEvent", ts2, contracts[0], types.Unconfirmed)
 
 				assert.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Finalized, nil, &result)
@@ -256,9 +254,11 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 				ts0 := CreateTestStruct(0, tester)
-				tester.TriggerEvent(t, &ts0)
+
+				contracts := tester.GetBindings(t)
+				submitTransactionToCW(t, tester, "triggerEvent", ts0, contracts[0], types.Unconfirmed)
 				ts1 := CreateTestStruct(1, tester)
-				tester.TriggerEvent(t, &ts1)
+				submitTransactionToCW(t, tester, "triggerEvent", ts1, contracts[0], types.Unconfirmed)
 
 				filterParams := &FilterEventParams{Field: *ts0.Field}
 				assert.Never(t, func() bool {
@@ -530,10 +530,11 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				contracts := tester.GetBindings(t)
 				ts1 := CreateTestStruct[T](0, tester)
-				tester.TriggerEvent(t, &ts1)
+				submitTransactionToCW(t, tester, "triggerEvent", ts1, contracts[0], types.Unconfirmed)
 				ts2 := CreateTestStruct[T](1, tester)
-				tester.TriggerEvent(t, &ts2)
+				submitTransactionToCW(t, tester, "triggerEvent", ts1, contracts[0], types.Unconfirmed)
 
 				ts := &TestStruct{}
 				assert.Eventually(t, func() bool {

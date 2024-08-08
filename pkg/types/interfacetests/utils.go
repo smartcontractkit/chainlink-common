@@ -1,11 +1,16 @@
 package interfacetests
 
 import (
+	"context"
 	"fmt"
 	"math/big"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/smartcontractkit/libocr/commontypes"
+	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -36,10 +41,52 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
+func submitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) {
+	txID := uuid.New().String()
+	cw := tester.GetChainWriter(t)
+	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
+	require.NoError(t, err)
+
+	waitForTransactionStatus(t, tester, txID, status)
+}
+
+func waitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string, status types.TransactionStatus) error {
+	ctx, cancel := context.WithTimeout(tests.Context(t), 5*time.Minute)
+	defer cancel()
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("transaction %s not finalized within timeout period", txID)
+		case <-ticker.C:
+			current, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
+			if err != nil {
+				return fmt.Errorf("failed to get transaction status: %w", err)
+			}
+
+			if current == types.Failed || current == types.Fatal {
+				return fmt.Errorf("transaction %s has failed or is fatal", txID)
+			} else if current >= status {
+				fmt.Printf("Transaction %s reached status: %d\n", txID, current)
+				return nil
+			} else {
+				fmt.Printf("Transaction %s is still %d\n", txID, current)
+			}
+		}
+	}
+}
+
 type ExpectedGetLatestValueArgs struct {
 	ContractName, ReadName string
 	ConfidenceLevel        primitives.ConfidenceLevel
 	Params, ReturnVal      any
+}
+
+type PrimitiveArgs struct {
+	Value uint64
 }
 
 func (e ExpectedGetLatestValueArgs) String() string {

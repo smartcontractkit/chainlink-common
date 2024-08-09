@@ -32,3 +32,6 @@ packages:
     interfaces:
       CapabilitiesRegistry:
       Relayer:
+  github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:
+    interfaces:
+      OTLPExporter:

@@ -94,7 +94,7 @@ targets:
      address: "0x680084f7347baFfb5C323c2982dfC90e04F9F918"
      deltaStage: "45s"
      schedule: "oneAtATime"`
-	spec := workflowSpecYaml{}
+	spec := WorkflowSpecYaml{}
 	err := yaml.Unmarshal([]byte(workflow), &spec)
 	require.NoError(t, err)
 	fmt.Println(spec)
@@ -107,7 +107,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 	t.Run("Type coercion", func(t *testing.T) {
 		workflowBytes := fixtureReader("workflow_1")
 
-		spec := workflowSpecYaml{}
+		spec := WorkflowSpecYaml{}
 		err := yaml.Unmarshal(workflowBytes, &spec)
 		require.NoError(t, err)
 
@@ -168,7 +168,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 	t.Run("Table and string capability id", func(t *testing.T) {
 		workflowBytes := fixtureReader("workflow_2")
 
-		spec := workflowSpecYaml{}
+		spec := WorkflowSpecYaml{}
 		err := yaml.Unmarshal(workflowBytes, &spec)
 		require.NoError(t, err)
 

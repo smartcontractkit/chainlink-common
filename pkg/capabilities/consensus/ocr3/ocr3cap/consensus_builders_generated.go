@@ -10,21 +10,20 @@ import (
     streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
 
-func NewConsensus(w *workflows.Workflow, ref string, input ConsensusInput, cfg ocr3.ConsensusConfig)Consensus {
+func NewConsensus(w *workflows.Workflow,ref string, input ConsensusInput, cfg ocr3.ConsensusConfig)Consensus {
     def := workflows.StepDefinition{
-       ID: ref,
-       Ref: ref,
+       ID: "offchain_reporting@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{
            Mapping: map[string]any{
                "Observations": input.Observations,
            },
        },
        Config: map[string]any{
-           "AggregationConfig": cfg.AggregationConfig,
-           "AggregationMethod": cfg.AggregationMethod,
-           "Encoder": cfg.Encoder,
-           "EncoderConfig": cfg.EncoderConfig,
-           "ReportId": cfg.ReportId,
+           "aggregation_config": cfg.AggregationConfig,
+           "aggregation_method": cfg.AggregationMethod,
+           "encoder": cfg.Encoder,
+           "encoder_config": cfg.EncoderConfig,
+           "report_id": cfg.ReportId,
        },
        CapabilityType: capabilities.CapabilityTypeConsensus,
    }

@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"reflect"
 	"strings"
 	"unicode"
 
@@ -20,6 +21,7 @@ type GeneratedInfo struct {
 	BaseName       string
 	RootOutput     string
 	ExtraImports   []string
+	Id             *string
 }
 
 func (g GeneratedInfo) RootType() Struct {
@@ -35,9 +37,10 @@ type Field struct {
 	Type        string
 	NumSlice    int
 	IsPrimitive bool
+	ConfigName  string
 }
 
-func StructsFromSrc(dir, src, baseName string, tpe capabilities.CapabilityType) (GeneratedInfo, error) {
+func StructsFromSrc(dir, src, baseName string, capId *string, tpe capabilities.CapabilityType) (GeneratedInfo, error) {
 	fset := token.NewFileSet()
 
 	// Parse the source code string
@@ -66,7 +69,19 @@ func StructsFromSrc(dir, src, baseName string, tpe capabilities.CapabilityType) 
 					}
 					f := Field{}
 
+					if field.Tag != nil {
+						tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1])
+						jsonTag := tag.Get("json")
+						if jsonTag != "" {
+							f.ConfigName = jsonTag
+						}
+					}
+
 					f.Type = typeStr
+					if f.ConfigName == "" {
+						f.ConfigName = field.Names[0].Name
+					}
+
 					for strings.HasPrefix(f.Type, "[]") {
 						f.NumSlice++
 						f.Type = f.Type[2:]
@@ -126,5 +141,6 @@ func StructsFromSrc(dir, src, baseName string, tpe capabilities.CapabilityType) 
 		CapabilityType: tpe,
 		Input:          input,
 		ExtraImports:   extraImports,
+		Id:             capId,
 	}, nil
 }

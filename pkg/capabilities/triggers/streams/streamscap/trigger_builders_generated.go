@@ -9,17 +9,14 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
 
-func NewTrigger(w *workflows.Workflow, ref string, cfg streams.TriggerConfig)Trigger {
+func NewTrigger(w *workflows.Workflow,ref string, cfg streams.TriggerConfig)Trigger {
     def := workflows.StepDefinition{
-       ID: ref,
-       Ref: ref,
+       ID: "streams-trigger@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{
-           Mapping: map[string]any{
-           },
        },
        Config: map[string]any{
-           "FeedIds": cfg.FeedIds,
-           "MaxFrequencyMs": cfg.MaxFrequencyMs,
+           "feedIds": cfg.FeedIds,
+           "maxFrequencyMs": cfg.MaxFrequencyMs,
        },
        CapabilityType: capabilities.CapabilityTypeTrigger,
    }

@@ -10,19 +10,18 @@ import (
     ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 )
 
-func NewTarget(w *workflows.Workflow, ref string, input TargetInput, cfg chainwriter.TargetConfig) {
+func NewTarget(w *workflows.Workflow,id string, input TargetInput, cfg chainwriter.TargetConfig) {
     def := workflows.StepDefinition{
-       ID: ref,
-       Ref: ref,
+       ID: id,
        Inputs: workflows.StepInputs{
            Mapping: map[string]any{
                "SignedReport": input.SignedReport,
            },
        },
        Config: map[string]any{
-           "Address": cfg.Address,
-           "DeltaStage": cfg.DeltaStage,
-           "Schedule": cfg.Schedule,
+           "address": cfg.Address,
+           "deltaStage": cfg.DeltaStage,
+           "schedule": cfg.Schedule,
        },
        CapabilityType: capabilities.CapabilityTypeTarget,
    }

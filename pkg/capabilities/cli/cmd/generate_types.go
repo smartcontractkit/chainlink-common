@@ -68,7 +68,7 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 		return errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
 	}
 
-	cfg, err := ConfigFromSchemas(schemaPaths)
+	cfg, ids, err := ConfigFromSchemas(schemaPaths)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,14 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 			return err
 		}
 
-		structs, err := StructsFromSrc(path.Dir(abs), content, rootType, capabilityType)
+		id := ids[schemaPath]
+		idParts := strings.Split(id, "/")
+		id = idParts[len(idParts)-1]
+		var capId *string
+		if strings.Contains(id, "@") {
+			capId = &id
+		}
+		structs, err := StructsFromSrc(path.Dir(abs), content, rootType, capId, capabilityType)
 		if err != nil {
 			return err
 		}
@@ -122,20 +129,25 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 	return nil
 }
 
-func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, error) {
-	cfg := generator.Config{Warner: func(message string) { fmt.Printf("Warning: %s\n", message) }}
+func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, map[string]string, error) {
+	cfg := generator.Config{
+		Tags:   []string{"json", "yaml", "mapstructure"},
+		Warner: func(message string) { fmt.Printf("Warning: %s\n", message) },
+	}
+	ids := map[string]string{}
 	for _, schemaFilePath := range schemaFilePaths {
 		jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
 		if err != nil {
-			return cfg, err
+			return cfg, nil, err
 		}
 		capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
 		if len(capabilityInfo) != 3 {
-			return cfg, fmt.Errorf("invalid schema file path %v", schemaFilePath)
+			return cfg, nil, fmt.Errorf("invalid schema file path %v", schemaFilePath)
 		}
 		capabilityType := capabilityInfo[2]
 		outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
 		rootType := capitalize(capabilityType)
+		ids[schemaFilePath] = jsonSchema.ID
 
 		cfg.SchemaMappings = append(cfg.SchemaMappings, generator.SchemaMapping{
 			SchemaID:    jsonSchema.ID,
@@ -144,7 +156,7 @@ func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, error) {
 			OutputName:  outputName,
 		})
 	}
-	return cfg, nil
+	return cfg, ids, nil
 }
 
 // TypesFromJSONSchema generates Go types from a JSON schema file.

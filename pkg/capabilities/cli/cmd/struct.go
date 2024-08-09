@@ -86,7 +86,13 @@ func StructsFromSrc(dir, src, baseName string, capId *string, tpe capabilities.C
 						f.NumSlice++
 						f.Type = f.Type[2:]
 					}
-					f.IsPrimitive = unicode.IsLower(rune(f.Type[0]))
+
+					t := f.Type
+					for t[0] == '*' {
+						t = t[1:]
+					}
+
+					f.IsPrimitive = unicode.IsLower(rune(t[0]))
 					s.Outputs[field.Names[0].Name] = f
 				}
 			}

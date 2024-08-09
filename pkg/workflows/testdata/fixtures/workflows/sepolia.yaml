@@ -20,8 +20,8 @@ ocr:
     allowedPartialStaleness: '0.5'
     feeds:
       '0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd':
-        deviation: '0.05'
-        heartbeat: 3600
+        deviation: '0.07'
+        heartbeat: 4600
         remappedID: '0x666666666666'
       '0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d':
         deviation: '0.05'

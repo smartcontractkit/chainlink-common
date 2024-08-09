@@ -24,6 +24,26 @@
       },
       "additionalProperties": false,
       "required": ["WorkflowExecutionID", "Value", "Err"]
+    },
+    "FeedValue": {
+      "type": "object",
+      "properties": {
+        "deviation": {
+          "type": "string",
+          "description": "The deviation that is required to generate a new report. Expressed as a percentage. For example, 0.01 is 1% deviation."
+        },
+        "heartbeat": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The interval in seconds after which a new report is generated, regardless of whether any deviations have occurred. New reports reset the timer."
+        },
+        "remappedID": {
+          "type": ["string", "null"],
+          "description": "An optional remapped ID for the feed."
+        }
+      },
+      "additionalProperties": false,
+      "required": ["deviation", "heartbeat"]
     }
   },
   "properties": {
@@ -42,25 +62,11 @@
             },
             "feeds": {
               "type": "object",
+              "propertyNames": {
+                "$ref": "../../triggers/streams/streams_trigger-schema.json#/$defs/feedId"
+              },
               "additionalProperties": {
-                "type": "object",
-                "properties": {
-                  "deviation": {
-                    "type": "string",
-                    "description": "The deviation that is required to generate a new report. Expressed as a percentage. For example, 0.01 is 1% deviation."
-                  },
-                  "heartbeat": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "description": "The interval in seconds after which a new report is generated, regardless of whether any deviations have occurred. New reports reset the timer."
-                  },
-                  "remappedID": {
-                    "type": ["string", "null"],
-                    "description": "An optional remapped ID for the feed."
-                  }
-                },
-                "additionalProperties": false,
-                "required": ["deviation", "heartbeat"]
+                "$ref": "#/$defs/FeedValue"
               }
             }
           },

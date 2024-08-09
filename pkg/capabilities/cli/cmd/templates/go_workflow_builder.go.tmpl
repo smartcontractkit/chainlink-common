@@ -13,7 +13,8 @@ import (
     {{- end }}
 )
 
-func New{{.BaseName}}(w *workflows.Workflow, {{- if not .Id }}id string,{{- end }} {{- if ne .CapabilityType.String "target"}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}, {{- end }} cfg {{.Package}}.{{.Config.Name}}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}{{- end }} {
+func New{{.BaseName}}(w *workflows.Workflow, {{- if not .Id }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}, {{- end }} cfg {{.Package}}.{{.Config.Name}}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}{{- end }} {
+    {{- if eq .CapabilityType.String "trigger" }} ref := "trigger" {{- end }}
     def := workflows.StepDefinition{
        ID: {{- if .Id }} "{{.Id}}" {{- else }} id {{- end }},
        {{- if ne .CapabilityType.String "target"}}Ref: ref, {{- end }}

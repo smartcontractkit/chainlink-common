@@ -9,7 +9,7 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
 
-func NewTrigger(w *workflows.Workflow,ref string, cfg streams.TriggerConfig)Trigger {
+func NewTrigger(w *workflows.Workflow, cfg streams.TriggerConfig)Trigger { ref := "trigger"
     def := workflows.StepDefinition{
        ID: "streams-trigger@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{

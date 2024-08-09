@@ -80,7 +80,7 @@ func Bootstrap(cfg beholder.Config) error {
 }
 
 func NewConfig() beholder.Config {
-	return beholder.DefaultBeholderConfig()
+	return beholder.DefaultConfig()
 }
 
 // Creates logger based on zap logger which writes to stdout

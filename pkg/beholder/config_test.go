@@ -2,16 +2,36 @@ package beholder_test
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	beholder "github.com/smartcontractkit/chainlink-common/pkg/beholder"
+)
+
+const (
+	packageName = "beholder"
 )
 
 func ExampleConfig() {
 	config := beholder.Config{
+		Enabled:                  true,
 		OtelExporterGRPCEndpoint: "localhost:4317",
-		PackageName:              "beholder",
+		PackageName:              packageName,
+		// Resource
+		ResourceAttributes: map[string]string{
+			"package_name": packageName,
+			"sender":       "beholdeclient",
+		},
+		// EventEmitter
+		EmitterExportTimeout: 1 * time.Second,
+		// Trace
+		TraceSampleRate:   1,
+		TraceBatchTimeout: 1 * time.Second,
+		// Metric
+		MetricReaderInterval: 1 * time.Second,
+		// Log
+		LogExportTimeout: 1 * time.Second,
 	}
 	fmt.Printf("%+v", config)
 	// Output:
-	// {OtelExporterGRPCEndpoint:localhost:4317 PackageName:beholder MessageEmitterRetryCount:0 MessageEmitterRetryDelay:0s}
+	// {Enabled:true OtelExporterGRPCEndpoint:localhost:4317 PackageName:beholder ResourceAttributes:map[package_name:beholder sender:beholdeclient] EmitterExportTimeout:1s TraceSampleRate:1 TraceBatchTimeout:1s MetricReaderInterval:1s LogExportTimeout:1s}
 }

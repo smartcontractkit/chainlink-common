@@ -18,7 +18,7 @@ import (
 
 // Default client to fallback when is is not initialized properly
 func NewNoopClient() Client {
-	cfg := DefaultBeholderConfig()
+	cfg := DefaultConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
 	logger := loggerProvider.Logger(cfg.PackageName)
@@ -44,7 +44,7 @@ func NewNoopClient() Client {
 // Use for testing and debugging
 // Also this client is used as a noop client when otel exporter is not initialized properly
 func NewStdoutClient() Client {
-	cfg := DefaultBeholderConfig()
+	cfg := DefaultConfig()
 	// Logger
 	loggerExporter, _ := stdoutlog.New(stdoutlog.WithoutTimestamps()) // stdoutlog.New() never returns an error
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
@@ -72,7 +72,7 @@ func NewStdoutClient() Client {
 	meter := meterProvider.Meter(cfg.PackageName)
 
 	// MessageEmitter
-	messageEmitter := newMessageEmitter(loggerExporter, logger, cfg)
+	messageEmitter := newMessageEmitter(loggerExporter, logger)
 
 	onClose := closeFunc(context.Background(), loggerProvider, tracerProvider, meterProvider)
 

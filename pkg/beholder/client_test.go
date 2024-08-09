@@ -3,13 +3,11 @@ package beholder
 import (
 	"context"
 	"fmt"
-	"slices"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -55,11 +53,8 @@ func TestClient(t *testing.T) {
 	defaultMessageBody := []byte("body bytes")
 
 	tests := []struct {
-		name                 string
-		makeCustomAttributes func() map[string]any
-		// NOTE: skipping these attributes is necessary due to a limitation in sdklog.Record
-		// see INFOPLAT-811
-		skipAttributes         []string
+		name                   string
+		makeCustomAttributes   func() map[string]any
 		messageBody            []byte
 		messageCount           int
 		exporterMockErrorCount int
@@ -69,7 +64,6 @@ func TestClient(t *testing.T) {
 		{
 			name:                   "Test Emit",
 			makeCustomAttributes:   defaultCustomAttributes,
-			skipAttributes:         []string{},
 			messageBody:            defaultMessageBody,
 			messageCount:           10,
 			exporterMockErrorCount: 0,
@@ -81,7 +75,6 @@ func TestClient(t *testing.T) {
 		}, {
 			name:                   "Test EmitMessage",
 			makeCustomAttributes:   defaultCustomAttributes,
-			skipAttributes:         []string{},
 			messageBody:            defaultMessageBody,
 			messageCount:           10,
 			exporterMockErrorCount: 0,
@@ -100,13 +93,13 @@ func TestClient(t *testing.T) {
 			defer exporterMock.AssertExpectations(t)
 
 			otelErrorHandler := func(err error) {
-				t.Fatalf("OTel error: %v", err)
+				t.Fatalf("otel error: %v", err)
 			}
 			// Override exporter factory which is used by BeholderClient
 			exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			}
-			client, err := newOtelClient(DefaultBeholderConfig(), otelErrorHandler, exporterFactory)
+			client, err := newOtelClient(DefaultConfig(), otelErrorHandler, exporterFactory)
 			if err != nil {
 				t.Fatalf("Error creating beholder client: %v", err)
 			}
@@ -131,12 +124,6 @@ func TestClient(t *testing.T) {
 						actualAttributeKeys := map[string]struct{}{}
 						record.WalkAttributes(func(kv otellog.KeyValue) bool {
 							key := kv.Key
-							if slices.Contains(tc.skipAttributes, key) {
-								// NOTE: skipping these attributes is necessary due to a limitation in sdklog.Record
-								// see INFOPLAT-811
-								t.Logf("Skipping attribute key: %s. See INFOPLAT-811", key)
-								return true
-							}
 							actualAttributeKeys[key] = struct{}{}
 							expectedValue, ok := customAttributes[key]
 							if !ok {
@@ -148,12 +135,6 @@ func TestClient(t *testing.T) {
 							return true
 						})
 						for key := range customAttributes {
-							if slices.Contains(tc.skipAttributes, key) {
-								// NOTE: skipping these attributes is necessary due to a limitation in sdklog.Record
-								// see INFOPLAT-811
-								t.Logf("Skipping attribute key: %s. See INFOPLAT-811", key)
-								continue
-							}
 							if _, ok := actualAttributeKeys[key]; !ok {
 								t.Fatalf("Record attribute key not found: %s", key)
 							}
@@ -177,7 +158,7 @@ func TestClient(t *testing.T) {
 func TestEmitterMessageValidation(t *testing.T) {
 	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
 		client, err := newOtelClient(
-			DefaultBeholderConfig(),
+			DefaultConfig(),
 			func(err error) { t.Fatalf("otel error: %v", err) },
 			// Override exporter factory which is used by BeholderClient
 			func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
@@ -205,7 +186,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 		{
 			name: "Invalid URI",
 			attrs: Attributes{
-				"beholder_data_schema": "beholder/pb/example.proto",
+				"beholder_data_schema": "example-schema",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
@@ -214,7 +195,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 			name:                "Valid URI",
 			exporterCalledTimes: 1,
 			attrs: Attributes{
-				"beholder_data_schema": "https://example.com/example.proto",
+				"beholder_data_schema": "/example-schema/versions/1",
 			},
 			expectedError: "",
 		},
@@ -248,7 +229,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 			}
 
 			waitUntilSent := func(done <-chan struct{}) {
-				for i := 0; i < tc.exporterCalledTimes; i++ {
+				for range tc.exporterCalledTimes {
 					select {
 					case <-done:
 					case <-time.After(10 * time.Second):

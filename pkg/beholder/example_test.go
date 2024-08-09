@@ -36,7 +36,7 @@ func ExampleClient() {
 		return customMessageBytes
 	}
 
-	client, err := beholder.NewOtelClient(beholder.DefaultBeholderConfig(), errorHandler)
+	client, err := beholder.NewOtelClient(beholder.DefaultConfig(), errorHandler)
 	if err != nil {
 		log.Fatalf("Error creating beholder client: %v", err)
 	}
@@ -95,7 +95,7 @@ func asseetNoError(err error) {
 func ExampleEmitter() {
 	ctx := context.Background()
 	// Initialize beholder client
-	c, err := beholder.NewOtelClient(beholder.DefaultBeholderConfig(), asseetNoError)
+	c, err := beholder.NewOtelClient(beholder.DefaultConfig(), asseetNoError)
 	if err != nil {
 		log.Fatalf("Error creating beholder client: %v", err)
 	}

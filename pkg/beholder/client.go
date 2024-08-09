@@ -3,7 +3,6 @@ package beholder
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -41,8 +40,6 @@ var _ Client = (*beholderClient)(nil)
 type messageEmitter struct {
 	exporter      sdklog.Exporter
 	messageLogger otellog.Logger
-	retryCount    uint
-	retryDelay    time.Duration
 }
 
 type beholderClient struct {
@@ -53,8 +50,8 @@ type beholderClient struct {
 	tracer oteltrace.Tracer
 	// Meter
 	meter otelmetric.Meter
-	// MessageEmitter
-	messageEmitter Emitter
+	// Message Emitter
+	emitter Emitter
 	// Graceful shutdown for tracer, meter, logger providers
 	closeFunc func() error
 }
@@ -64,16 +61,16 @@ func NewClient(
 	logger otellog.Logger,
 	tracer oteltrace.Tracer,
 	meter otelmetric.Meter,
-	messageEmitter Emitter,
+	emitter Emitter,
 	onClose func() error,
 ) Client {
 	return &beholderClient{
-		config:         config,
-		logger:         logger,
-		tracer:         tracer,
-		meter:          meter,
-		messageEmitter: messageEmitter,
-		closeFunc:      onClose,
+		config:    config,
+		logger:    logger,
+		tracer:    tracer,
+		meter:     meter,
+		emitter:   emitter,
+		closeFunc: onClose,
 	}
 }
 
@@ -90,7 +87,7 @@ type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option)
 
 func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (Client, error) {
 	ctx := context.Background()
-	baseResource, err := newOtelResource()
+	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +103,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	// Logger
 	loggerProcessor := sdklog.NewBatchProcessor(
 		sharedLogExporter,
-		sdklog.WithExportTimeout(1*time.Second), // Default is 30s
+		sdklog.WithExportTimeout(cfg.LogExportTimeout), // Default is 30s
 	)
 	loggerAttributes := []attribute.KeyValue{
 		attribute.String("beholder_data_type", "zap_log_message"),
@@ -144,10 +141,10 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	meter := meterProvider.Meter(cfg.PackageName)
 	otel.SetMeterProvider(meterProvider)
 
-	// MessageEmitter
+	// Message Emitter
 	messageLogProcessor := sdklog.NewBatchProcessor(
 		sharedLogExporter,
-		sdklog.WithExportTimeout(1*time.Second), // Default is 30s
+		sdklog.WithExportTimeout(cfg.EmitterExportTimeout), // Default is 30s
 	)
 	messageAttributes := []attribute.KeyValue{
 		attribute.String("beholder_data_type", "custom_message"),
@@ -164,7 +161,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		sdklog.WithProcessor(messageLogProcessor),
 	)
 	messageLogger := messageLoggerProvider.Logger(cfg.PackageName)
-	messageEmitter := newMessageEmitter(sharedLogExporter, messageLogger, cfg)
+	messageEmitter := newMessageEmitter(sharedLogExporter, messageLogger)
 
 	setOtelErrorHandler(errorHandler)
 
@@ -182,7 +179,7 @@ func setOtelErrorHandler(h errorHandlerFunc) {
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(h))
 }
 
-func newOtelResource() (resource *sdkresource.Resource, err error) {
+func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 	extraResources, err := sdkresource.New(
 		context.Background(),
 		sdkresource.WithOS(),
@@ -199,19 +196,28 @@ func newOtelResource() (resource *sdkresource.Resource, err error) {
 	if err != nil {
 		return nil, err
 	}
+	// Add custom resource attributes
+	attrs := make([]attribute.KeyValue, 0, len(cfg.ResourceAttributes))
+	for k, v := range cfg.ResourceAttributes {
+		attrs = append(attrs, attribute.String(k, v))
+	}
+	resource, err = sdkresource.Merge(
+		sdkresource.NewSchemaless(attrs...),
+		resource,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return
 }
 
 func newMessageEmitter(
 	exporter sdklog.Exporter,
 	messageLogger otellog.Logger,
-	config Config,
 ) Emitter {
 	return messageEmitter{
 		exporter:      exporter,
 		messageLogger: messageLogger,
-		retryCount:    config.MessageEmitterRetryCount,
-		retryDelay:    config.MessageEmitterRetryDelay,
 	}
 }
 
@@ -246,7 +252,7 @@ func (b *beholderClient) Meter() otelmetric.Meter {
 	return b.meter
 }
 func (b *beholderClient) Emitter() Emitter {
-	return b.messageEmitter
+	return b.emitter
 }
 
 func (b *beholderClient) Close() error {
@@ -282,8 +288,13 @@ func newTracerProvider(config Config, resource *sdkresource.Resource) (*sdktrace
 	}
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter,
-			trace.WithBatchTimeout(time.Second)), // Default is 5s
+			trace.WithBatchTimeout(config.TraceBatchTimeout)), // Default is 5s
 		sdktrace.WithResource(resource),
+		sdktrace.WithSampler(
+			sdktrace.ParentBased(
+				sdktrace.TraceIDRatioBased(config.TraceSampleRate),
+			),
+		),
 	)
 	return tp, nil
 }
@@ -304,7 +315,7 @@ func newMeterProvider(config Config, resource *sdkresource.Resource) (*sdkmetric
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				exporter,
-				sdkmetric.WithInterval(time.Second), // Default is 10s
+				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
 			)),
 		sdkmetric.WithResource(resource),
 	)

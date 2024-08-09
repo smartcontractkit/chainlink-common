@@ -33,6 +33,65 @@ func NewConsensus(w *workflows.Workflow,ref string, input ConsensusInput, cfg oc
 }
 
 
+type FeedValue interface {
+    workflows.CapDefinition[ocr3.FeedValue]
+    Deviation() workflows.CapDefinition[string]
+    Heartbeat() workflows.CapDefinition[int]
+    RemappedID() workflows.CapDefinition[*string]
+    private()
+}
+
+type feedValue struct {
+    workflows.CapDefinition[ocr3.FeedValue]
+}
+
+
+func (*feedValue) private() {}
+func (c *feedValue) Deviation() workflows.CapDefinition[string] {
+    return workflows.AccessField[ocr3.FeedValue, string](c.CapDefinition, "Deviation")
+}
+func (c *feedValue) Heartbeat() workflows.CapDefinition[int] {
+    return workflows.AccessField[ocr3.FeedValue, int](c.CapDefinition, "Heartbeat")
+}
+func (c *feedValue) RemappedID() workflows.CapDefinition[*string] {
+    return workflows.AccessField[ocr3.FeedValue, *string](c.CapDefinition, "RemappedID")
+}
+
+func NewFeedValueFromFields(
+                                                                        deviation workflows.CapDefinition[string],
+                                                                        heartbeat workflows.CapDefinition[int],
+                                                                        remappedID workflows.CapDefinition[*string],) FeedValue {
+    return &simpleFeedValue{
+        CapDefinition: workflows.ComponentCapDefinition[ocr3.FeedValue]{
+        "deviation": deviation.Ref(),
+        "heartbeat": heartbeat.Ref(),
+        "remappedID": remappedID.Ref(),
+        },
+        deviation: deviation,
+        heartbeat: heartbeat,
+        remappedID: remappedID,
+    }
+}
+
+type simpleFeedValue struct {
+    workflows.CapDefinition[ocr3.FeedValue]
+    deviation workflows.CapDefinition[string]
+    heartbeat workflows.CapDefinition[int]
+    remappedID workflows.CapDefinition[*string]
+}
+func (c *simpleFeedValue) Deviation() workflows.CapDefinition[string] {
+    return c.deviation
+}
+func (c *simpleFeedValue) Heartbeat() workflows.CapDefinition[int] {
+    return c.heartbeat
+}
+func (c *simpleFeedValue) RemappedID() workflows.CapDefinition[*string] {
+    return c.remappedID
+}
+
+func (c *simpleFeedValue) private() {}
+
+
 type Consensus interface {
     workflows.CapDefinition[ocr3.SignedReport]
     Err() workflows.CapDefinition[bool]

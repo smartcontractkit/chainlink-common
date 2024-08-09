@@ -44,18 +44,7 @@ type ConsensusConfigAggregationConfig struct {
 	Feeds ConsensusConfigAggregationConfigFeeds `json:"feeds" yaml:"feeds" mapstructure:"feeds"`
 }
 
-type ConsensusConfigAggregationConfigFeeds map[string]struct {
-	// The deviation that is required to generate a new report. Expressed as a
-	// percentage. For example, 0.01 is 1% deviation.
-	Deviation string `json:"deviation" yaml:"deviation" mapstructure:"deviation"`
-
-	// The interval in seconds after which a new report is generated, regardless of
-	// whether any deviations have occurred. New reports reset the timer.
-	Heartbeat int `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
-
-	// An optional remapped ID for the feed.
-	RemappedID *string `json:"remappedID,omitempty" yaml:"remappedID,omitempty" mapstructure:"remappedID,omitempty"`
-}
+type ConsensusConfigAggregationConfigFeeds map[string]FeedValue
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ConsensusConfigAggregationConfig) UnmarshalJSON(b []byte) error {
@@ -231,6 +220,40 @@ func (j *Consensus) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = Consensus(plain)
+	return nil
+}
+
+type FeedValue struct {
+	// The deviation that is required to generate a new report. Expressed as a
+	// percentage. For example, 0.01 is 1% deviation.
+	Deviation string `json:"deviation" yaml:"deviation" mapstructure:"deviation"`
+
+	// The interval in seconds after which a new report is generated, regardless of
+	// whether any deviations have occurred. New reports reset the timer.
+	Heartbeat int `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
+
+	// An optional remapped ID for the feed.
+	RemappedID *string `json:"remappedID,omitempty" yaml:"remappedID,omitempty" mapstructure:"remappedID,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *FeedValue) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["deviation"]; raw != nil && !ok {
+		return fmt.Errorf("field deviation in FeedValue: required")
+	}
+	if _, ok := raw["heartbeat"]; raw != nil && !ok {
+		return fmt.Errorf("field heartbeat in FeedValue: required")
+	}
+	type Plain FeedValue
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = FeedValue(plain)
 	return nil
 }
 

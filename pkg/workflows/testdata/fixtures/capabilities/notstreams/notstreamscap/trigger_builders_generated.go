@@ -6,10 +6,10 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 
-    "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams"
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams"
 )
 
-func NewTrigger(w *workflows.Workflow,ref string, cfg notstreams.TriggerConfig)Trigger {
+func NewTrigger(w *workflows.Workflow, cfg notstreams.TriggerConfig)Trigger { ref := "trigger"
     def := workflows.StepDefinition{
        ID: "streams@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{

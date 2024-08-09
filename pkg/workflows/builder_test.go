@@ -14,11 +14,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritercap"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams/notstreamscap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams/streamscap"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams/notstreamscap"
 )
 
 type Config struct {
@@ -36,7 +36,7 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger := streamscap.NewTrigger(workflow, "trigger", *conf.Streams)
+	streamsTrigger := streamscap.NewTrigger(workflow, *conf.Streams)
 
 	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
 	consensus := ocr3cap.NewConsensus(workflow, "ccip_feeds", ocrInput, *conf.Ocr)
@@ -50,25 +50,27 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 // What if there were hundreds of feeds?  Like feeds that aren't for CCIP?
 
 type ModifiedConfig struct {
-	Workflow         workflows.NewWorkflowParams
-	MaxFrequencyMs   int
-	DefaultHeartbeat int
-	DefaultDeviation float64
-	FeedInfos        []FeedInfo
-	ReportId         string
-	Encoder          ocr3.ConsensusConfigEncoder
-	EncoderConfig    ocr3.ConsensusConfigEncoderConfig
-	ChainWriter      *chainwriter.TargetConfig
-	TargetChain      string
+	Workflow                workflows.NewWorkflowParams
+	AllowedPartialStaleness string
+	MaxFrequencyMs          int
+	DefaultHeartbeat        int        `yaml:"default_heartbeat" json:"default_heartbeat"`
+	DefaultDeviation        string     `yaml:"default_deviation" json:"default_deviation"`
+	FeedInfo                []FeedInfo `yaml:"feed_info" json:"feed_info"`
+	ReportId                string     `yaml:"report_id" json:"report_id"`
+	Encoder                 ocr3.ConsensusConfigEncoder
+	EncoderConfig           ocr3.ConsensusConfigEncoderConfig `yaml:"encoder_config" json:"encoder_config"`
+	ChainWriter             *chainwriter.TargetConfig
+	TargetChain             string
 }
 
 type FeedInfo struct {
-	FeedId    streams.FeedId
-	Deviation *float64
-	Heartbeat *int
+	FeedId     streams.FeedId
+	Deviation  *string
+	Heartbeat  *int
+	RemappedId *string
 }
 
-/*func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
+func NewWorkflowRemapped(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	conf := ModifiedConfig{}
 	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
 		return workflows.WorkflowSpec{}, err
@@ -80,36 +82,42 @@ type FeedInfo struct {
 		Encoder:           conf.Encoder,
 		EncoderConfig:     conf.EncoderConfig,
 		ReportId:          conf.ReportId,
+		AggregationConfig: ocr3.ConsensusConfigAggregationConfig{
+			AllowedPartialStaleness: conf.AllowedPartialStaleness,
+		},
 	}
-	for _, elm := range conf.FeedInfos {
+
+	feeds := ocr3.ConsensusConfigAggregationConfigFeeds{}
+	for _, elm := range conf.FeedInfo {
 		streamsConfig.FeedIds = append(streamsConfig.FeedIds, elm.FeedId)
-		aggConfig := ocr3.ConsenssConfigAggregationConfigElem{
-			FeedId:    elm.FeedId,
-			Deviation: conf.DefaultDeviation,
-			Heartbeat: conf.DefaultHeartbeat,
+		feed := ocr3.FeedValue{
+			Deviation:  conf.DefaultDeviation,
+			Heartbeat:  conf.DefaultHeartbeat,
+			RemappedID: elm.RemappedId,
 		}
 		if elm.Deviation != nil {
-			aggConfig.Deviation = *elm.Deviation
+			feed.Deviation = *elm.Deviation
 		}
 
 		if elm.Heartbeat != nil {
-			aggConfig.Heartbeat = *elm.Heartbeat
+			feed.Heartbeat = *elm.Heartbeat
 		}
 
-		ocr3Config.AggregationConfig = append(ocr3Config.AggregationConfig, aggConfig)
+		feeds[string(elm.FeedId)] = feed
 	}
+	ocr3Config.AggregationConfig.Feeds = feeds
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger := streamscap.NewTrigger(workflow, "streams", streamsConfig)
+	streamsTrigger := streamscap.NewTrigger(workflow, streamsConfig)
 
 	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
-	consensus := ocr3cap.NewConsensus(workflow, "consensus", ocrInput, ocr3Config)
+	consensus := ocr3cap.NewConsensus(workflow, "ccip_feeds", ocrInput, ocr3Config)
 
 	input := chainwritercap.TargetInput{SignedReport: consensus}
-	chainwritercap.NewTarget(workflow, conf.TargetChain, "write to chain", input, *conf.ChainWriter)
+	chainwritercap.NewTarget(workflow, conf.TargetChain, input, *conf.ChainWriter)
 
 	return workflow.Spec()
-}*/
+}
 
 // What if inputs and outputs don't match exactly?
 
@@ -120,7 +128,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	notStreamsTrigger := notstreamscap.NewTrigger(workflow, "notstreams", *conf.Streams)
+	notStreamsTrigger := notstreamscap.NewTrigger(workflow, *conf.Streams)
 
 	feedsInput := streamscap.NewTriggerFromFields(
 		notStreamsTrigger.Price().PriceA(),
@@ -143,11 +151,24 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 //go:embed testdata/fixtures/workflows/sepolia.yaml
 var sepoliaConfig []byte
 
+//go:embed testdata/fixtures/workflows/sepolia_defaults.yaml
+var sepoliaDefaultConfig []byte
+
 //go:embed testdata/fixtures/workflows/expected_sepolia.yaml
 var expectedSepolia []byte
 
 func TestBuilder_ValidSpec(t *testing.T) {
-	testWorkflowSpec, err := NewWorkflowSpec(sepoliaConfig)
+	t.Run("basic config", func(t *testing.T) {
+		runSepoliaStagingTest(t, sepoliaConfig, NewWorkflowSpec)
+	})
+
+	t.Run("remapping config", func(t *testing.T) {
+		runSepoliaStagingTest(t, sepoliaDefaultConfig, NewWorkflowRemapped)
+	})
+}
+
+func runSepoliaStagingTest(t *testing.T, config []byte, gen func([]byte) (workflows.WorkflowSpec, error)) {
+	testWorkflowSpec, err := gen(config)
 	require.NoError(t, err)
 
 	expectedSpecYaml := workflows.WorkflowSpecYaml{}
@@ -160,10 +181,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	actual, err := json.Marshal(testWorkflowSpec)
 	require.NoError(t, err)
 
-	// TODO rtinianov NOW remove this
+	// TODO rtinianov REMOVE BEFORE COMMIT
 	if string(expected) != string(actual) {
-		os.WriteFile("/Volumes/RAM/expected.txt", expected, 0644)
-		os.WriteFile("/Volumes/RAM/actual.txt", actual, 0644)
+		os.WriteFile("/Volumes/RAM/expected.json", expected, 0644)
+		os.WriteFile("/Volumes/RAM/actual.json", actual, 0644)
 	}
 
 	assert.Equal(t, string(expected), string(actual))

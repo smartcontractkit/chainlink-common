@@ -15,7 +15,7 @@ func NewConsensus(w *workflows.Workflow,ref string, input ConsensusInput, cfg oc
        ID: "offchain_reporting@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{
            Mapping: map[string]any{
-               "Observations": input.Observations,
+               "observations": input.Observations.Ref(),
            },
        },
        Config: map[string]any{

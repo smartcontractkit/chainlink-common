@@ -7,9 +7,11 @@ import (
 )
 
 type Config struct {
-	Enabled                  bool
+	InsecureConnection       bool
+	TLSCertFile              string
 	OtelExporterGRPCEndpoint string
-	PackageName              string
+
+	PackageName string
 	// OTel Resource
 	ResourceAttributes map[string]string
 	// EventEmitter
@@ -29,7 +31,8 @@ var defaultOtelAttributes = map[string]string{
 
 func DefaultConfig() Config {
 	return Config{
-		Enabled:                  true,
+		InsecureConnection:       true,
+		TLSCertFile:              "",
 		OtelExporterGRPCEndpoint: "localhost:4317",
 		PackageName:              "beholder",
 		// Resource

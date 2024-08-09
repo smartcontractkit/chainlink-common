@@ -19,6 +19,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Emitter interface {
@@ -91,9 +93,17 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	if err != nil {
 		return nil, err
 	}
+	var creds credentials.TransportCredentials
+	creds = insecure.NewCredentials()
+	if !cfg.InsecureConnection && cfg.TLSCertFile != "" {
+		creds, err = credentials.NewClientTLSFromFile(cfg.TLSCertFile, "")
+		if err != nil {
+			return nil, err
+		}
+	}
 	sharedLogExporter, err := otlploggrpcNew(
 		ctx,
-		otlploggrpc.WithInsecure(),
+		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	)
 	if err != nil {
@@ -125,7 +135,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	otelglobal.SetLoggerProvider(loggerProvider)
 
 	// Tracer
-	tracerProvider, err := newTracerProvider(cfg, baseResource)
+	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +144,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	// Meter
-	meterProvider, err := newMeterProvider(cfg, baseResource)
+	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -276,11 +286,11 @@ func closeFunc(ctx context.Context, providers ...otelProvider) func() error {
 	}
 }
 
-func newTracerProvider(config Config, resource *sdkresource.Resource) (*sdktrace.TracerProvider, error) {
+func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
 	exporter, err := otlptracegrpc.New(ctx,
-		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 	)
 	if err != nil {
@@ -299,12 +309,12 @@ func newTracerProvider(config Config, resource *sdkresource.Resource) (*sdktrace
 	return tp, nil
 }
 
-func newMeterProvider(config Config, resource *sdkresource.Resource) (*sdkmetric.MeterProvider, error) {
+func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
 
 	exporter, err := otlpmetricgrpc.New(
 		ctx,
-		otlpmetricgrpc.WithInsecure(),
+		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 	)
 	if err != nil {

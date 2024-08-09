@@ -138,12 +138,13 @@ func AddStep[O any](w *Workflow, step Step[O]) CapDefinition[O] {
 		w.spec.Targets = append(w.spec.Targets, stepDefinition)
 	}
 
-	return &capDefinitionImpl[O]{ref: step.Definition.Ref}
+	return &capDefinitionImpl[O]{ref: fmt.Sprintf("$(%s.outputs)", step.Definition.Ref)}
 }
 
 // AccessField is meant to be used by generated code
 func AccessField[I, O any](c CapDefinition[I], fieldName string) CapDefinition[O] {
-	return &capDefinitionImpl[O]{ref: c.Ref().(string) + "." + fieldName}
+	originalRef := c.Ref().(string)
+	return &capDefinitionImpl[O]{ref: originalRef[:len(originalRef)-1] + "." + fieldName + ")"}
 }
 
 func (w Workflow) Spec() (WorkflowSpec, error) {

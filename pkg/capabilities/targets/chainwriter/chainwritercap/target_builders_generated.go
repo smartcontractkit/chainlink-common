@@ -15,7 +15,7 @@ func NewTarget(w *workflows.Workflow,id string, input TargetInput, cfg chainwrit
        ID: id,
        Inputs: workflows.StepInputs{
            Mapping: map[string]any{
-               "SignedReport": input.SignedReport,
+               "signed_report": input.SignedReport.Ref(),
            },
        },
        Config: map[string]any{

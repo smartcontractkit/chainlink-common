@@ -1,14 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwriter@1.0.0",
-  "description": "Writes to evm chain for now...",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/interface",
+  "description": "Writes to a blockchain",
   "properties": {
     "config": {
       "properties": {
         "address": {
           "type": "string",
-          "pattern": "^0x[0-9a-fA-F]{40}$",
-          "description": "The address in the format 0x followed by 40 characters."
+          "description": "The address to write to."
         },
         "deltaStage": {
           "type": "string",

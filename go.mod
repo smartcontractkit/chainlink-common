@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.5
 
 require (
-	github.com/atombender/go-jsonschema v0.16.0
+	github.com/atombender/go-jsonschema v0.16.1-0.20240808181525-7f5717483254
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0
@@ -40,7 +40,7 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.24.0
-	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
+	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	gonum.org/v1/gonum v0.14.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
@@ -59,7 +59,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/goccy/go-yaml v1.11.3 // indirect
+	github.com/goccy/go-yaml v1.12.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect; indirec
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0 // indirect
@@ -89,7 +89,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect

@@ -19,6 +19,7 @@ type Workflow struct {
 	spec           *WorkflowSpec
 	names          map[string]bool
 	duplicateNames map[string]bool
+	emptyNames     bool
 }
 
 type CapDefinition[O any] interface {
@@ -99,19 +100,29 @@ func NewWorkflow(
 ) *Workflow {
 	return &Workflow{
 		spec: &WorkflowSpec{
-			Owner: params.Owner,
-			Name:  params.Name,
+			Owner:     params.Owner,
+			Name:      params.Name,
+			Triggers:  make([]StepDefinition, 0),
+			Actions:   make([]StepDefinition, 0),
+			Consensus: make([]StepDefinition, 0),
+			Targets:   make([]StepDefinition, 0),
 		},
 		names:          map[string]bool{},
 		duplicateNames: map[string]bool{},
+		emptyNames:     false,
 	}
 }
 
 // AddStep is meant to be called by generated code
 func AddStep[O any](w *Workflow, step Step[O]) CapDefinition[O] {
 	stepDefinition := step.Definition
-	if w.names[stepDefinition.ID] {
-		w.duplicateNames[stepDefinition.ID] = true
+	stepId := stepDefinition.ID
+	if w.names[stepId] {
+		w.duplicateNames[stepId] = true
+	}
+
+	if stepId == "" && stepDefinition.CapabilityType != capabilities.CapabilityTypeTarget {
+		w.emptyNames = true
 	}
 
 	w.names[stepDefinition.ID] = true
@@ -142,6 +153,10 @@ func (w Workflow) Spec() (WorkflowSpec, error) {
 			duplicates = append(duplicates, k)
 		}
 		return WorkflowSpec{}, fmt.Errorf("duplicte step ids %v", strings.Join(duplicates, ", "))
+	}
+
+	if w.emptyNames {
+		return WorkflowSpec{}, fmt.Errorf("empty step references are not allowed")
 	}
 
 	return *w.spec, nil

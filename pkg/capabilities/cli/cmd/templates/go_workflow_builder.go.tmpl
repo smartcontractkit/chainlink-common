@@ -13,22 +13,22 @@ import (
     {{- end }}
 )
 
-func New{{.BaseName}}(w *workflows.Workflow, ref string,{{- if .Input }} input {{InputAfterCapability}}, {{- end }} cfg {{.Package}}.{{.Config.Name}}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}{{- end }} {
+func New{{.BaseName}}(w *workflows.Workflow, {{- if not .Id }}id string,{{- end }} {{- if ne .CapabilityType.String "target"}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}, {{- end }} cfg {{.Package}}.{{.Config.Name}}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}{{- end }} {
     def := workflows.StepDefinition{
-       ID: ref,
-       Ref: ref,
+       ID: {{- if .Id }} "{{.Id}}" {{- else }} id {{- end }},
+       {{- if ne .CapabilityType.String "target"}}Ref: ref, {{- end }}
        Inputs: workflows.StepInputs{
-           Mapping: map[string]any{
 {{- if .Input }}
+           Mapping: map[string]any{
    {{- range $fieldName, $type := .Input.Outputs }}
                "{{$fieldName}}": input.{{$fieldName}},
    {{- end }}
-{{- end }}
            },
+{{- end }}
        },
        Config: map[string]any{
 {{- range $fieldName, $type := .Config.Outputs }}
-           "{{$fieldName}}": cfg.{{$fieldName}},
+           "{{$type.ConfigName}}": cfg.{{$fieldName}},
 {{- end }}
        },
        CapabilityType: capabilities.CapabilityType{{.CapabilityType.String|UpperFirst}},

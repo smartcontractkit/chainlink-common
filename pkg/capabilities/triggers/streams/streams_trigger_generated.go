@@ -8,25 +8,25 @@ import "fmt"
 type Feed struct {
 	// This value is extracted from the fullReport. Benchmark price represented as
 	// bytes encoded as base64 string.
-	BenchmarkPrice string
+	BenchmarkPrice string `json:"benchmarkPrice" yaml:"benchmarkPrice" mapstructure:"benchmarkPrice"`
 
 	// FeedId corresponds to the JSON schema field "feedId".
-	FeedId FeedId
+	FeedId FeedId `json:"feedId" yaml:"feedId" mapstructure:"feedId"`
 
 	// Full report represented as bytes encoded as base64 string.
-	FullReport string
+	FullReport string `json:"fullReport" yaml:"fullReport" mapstructure:"fullReport"`
 
 	// This value is extracted from the fullReport. A unix timestamp represented as an
 	// int64 value. Timestamp is captured at the time of report creation.
-	ObservationTimestamp int
+	ObservationTimestamp int `json:"observationTimestamp" yaml:"observationTimestamp" mapstructure:"observationTimestamp"`
 
 	// Report context represented as bytes encoded as base64 string. This is required
 	// to validate the signatures.
-	ReportContext string
+	ReportContext string `json:"reportContext" yaml:"reportContext" mapstructure:"reportContext"`
 
 	// Signature over full report and report context represented as bytes encoded as
 	// base64 string.
-	Signatures []string
+	Signatures []string `json:"signatures" yaml:"signatures" mapstructure:"signatures"`
 }
 
 // The ID of the data feed.
@@ -71,19 +71,19 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 // Streams Trigger
 type Trigger struct {
 	// Config corresponds to the JSON schema field "config".
-	Config TriggerConfig
+	Config TriggerConfig `json:"config" yaml:"config" mapstructure:"config"`
 
 	// Outputs corresponds to the JSON schema field "outputs".
-	Outputs []Feed
+	Outputs []Feed `json:"outputs,omitempty" yaml:"outputs,omitempty" mapstructure:"outputs,omitempty"`
 }
 
 type TriggerConfig struct {
 	// The IDs of the data feeds that will have their reports included in the trigger
 	// event.
-	FeedIds []FeedId
+	FeedIds []FeedId `json:"feedIds" yaml:"feedIds" mapstructure:"feedIds"`
 
 	// The interval in seconds after which a new trigger event is generated.
-	MaxFrequencyMs int
+	MaxFrequencyMs int `json:"maxFrequencyMs" yaml:"maxFrequencyMs" mapstructure:"maxFrequencyMs"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

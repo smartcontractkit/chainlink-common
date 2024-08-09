@@ -19,14 +19,14 @@ import (
 )
 
 func GenerateJSONSchema() ([]byte, error) {
-	schema := jsonschema.Reflect(&workflowSpecYaml{})
+	schema := jsonschema.Reflect(&WorkflowSpecYaml{})
 
 	return json.MarshalIndent(schema, "", "  ")
 }
 
 func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
 	var url = "https://github.com/smartcontractkit/chainlink/"
-	w := workflowSpecYaml{}
+	w := WorkflowSpecYaml{}
 	err := yaml.Unmarshal([]byte(data), &w)
 	if err != nil {
 		return WorkflowSpec{}, err
@@ -57,14 +57,14 @@ func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
 	w.cid = fmt.Sprintf("%x", sha256Hash.Sum(nil))
 	w.yaml = data
 
-	return w.toWorkflowSpec(), nil
+	return w.ToWorkflowSpec(), nil
 }
 
-// workflowSpecYaml is the YAML representation of a workflow spec.
+// WorkflowSpecYaml is the YAML representation of a workflow spec.
 //
 // It allows for multiple ways of defining a workflow spec, which we later
 // convert to a single representation, `WorkflowSpec`.
-type workflowSpecYaml struct {
+type WorkflowSpecYaml struct {
 	// NOTE: Name and Owner are constrained the onchain representation in [github.com/smartcontractkit/chainlink-common/blob/main/pkg/capabilities/consensus/ocr3/types/Metadata]
 
 	Name string `json:"name,omitempty" jsonschema:"pattern=^[0-9A-Za-z_\\-]+$,maxLength=10"` // plain text string exactly 10 characters long, or  empty name allowed for anonymous workflows
@@ -84,11 +84,11 @@ type workflowSpecYaml struct {
 	yaml string // original yaml spec
 }
 
-// toWorkflowSpec converts a workflowSpecYaml to a WorkflowSpec.
+// ToWorkflowSpec converts a WorkflowSpecYaml to a WorkflowSpec.
 //
 // We support multiple ways of defining a workflow spec yaml,
 // but internally we want to work with a single representation.
-func (w workflowSpecYaml) toWorkflowSpec() WorkflowSpec {
+func (w WorkflowSpecYaml) ToWorkflowSpec() WorkflowSpec {
 	triggers := make([]StepDefinition, 0, len(w.Triggers))
 	for _, t := range w.Triggers {
 		sd := t.toStepDefinition()

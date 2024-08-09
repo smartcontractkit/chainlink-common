@@ -3,18 +3,19 @@ package workflows_test
 import (
 	_ "embed"
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritercap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams/notstreamscap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams/streamscap"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
@@ -25,6 +26,7 @@ type Config struct {
 	Streams     *streams.TriggerConfig
 	Ocr         *ocr3.ConsensusConfig
 	ChainWriter *chainwriter.TargetConfig
+	TargetChain string
 }
 
 func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
@@ -34,13 +36,13 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger := streamscap.NewTrigger(workflow, "streams", *conf.Streams)
+	streamsTrigger := streamscap.NewTrigger(workflow, "trigger", *conf.Streams)
 
 	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
-	consensus := ocr3cap.NewConsensus(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
+	consensus := ocr3cap.NewConsensus(workflow, "ccip_feeds", ocrInput, *conf.Ocr)
 
 	input := chainwritercap.TargetInput{SignedReport: consensus}
-	chainwritercap.NewTarget(workflow, "chain-writer", input, *conf.ChainWriter)
+	chainwritercap.NewTarget(workflow, conf.TargetChain, input, *conf.ChainWriter)
 
 	return workflow.Spec()
 }
@@ -57,6 +59,7 @@ type ModifiedConfig struct {
 	Encoder          ocr3.ConsensusConfigEncoder
 	EncoderConfig    ocr3.ConsensusConfigEncoderConfig
 	ChainWriter      *chainwriter.TargetConfig
+	TargetChain      string
 }
 
 type FeedInfo struct {
@@ -65,7 +68,7 @@ type FeedInfo struct {
 	Heartbeat *int
 }
 
-func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
+/*func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	conf := ModifiedConfig{}
 	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
 		return workflows.WorkflowSpec{}, err
@@ -80,7 +83,7 @@ func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 	for _, elm := range conf.FeedInfos {
 		streamsConfig.FeedIds = append(streamsConfig.FeedIds, elm.FeedId)
-		aggConfig := ocr3.ConsensusConfigAggregationConfigElem{
+		aggConfig := ocr3.ConsenssConfigAggregationConfigElem{
 			FeedId:    elm.FeedId,
 			Deviation: conf.DefaultDeviation,
 			Heartbeat: conf.DefaultHeartbeat,
@@ -100,13 +103,13 @@ func NewModifiedWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	streamsTrigger := streamscap.NewTrigger(workflow, "streams", streamsConfig)
 
 	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
-	consensus := ocr3cap.NewConsensus(workflow, "data-feeds-report", ocrInput, ocr3Config)
+	consensus := ocr3cap.NewConsensus(workflow, "consensus", ocrInput, ocr3Config)
 
 	input := chainwritercap.TargetInput{SignedReport: consensus}
-	chainwritercap.NewTarget(workflow, "chain-writer", input, *conf.ChainWriter)
+	chainwritercap.NewTarget(workflow, conf.TargetChain, "write to chain", input, *conf.ChainWriter)
 
 	return workflow.Spec()
-}
+}*/
 
 // What if inputs and outputs don't match exactly?
 
@@ -117,7 +120,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	notStreamsTrigger := notstreams.NewNotstreamsTriggerCapability(workflow, "notstreams", *conf.Streams)
+	notStreamsTrigger := notstreamscap.NewTrigger(workflow, "notstreams", *conf.Streams)
 
 	feedsInput := streamscap.NewTriggerFromFields(
 		notStreamsTrigger.Price().PriceA(),
@@ -132,96 +135,36 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 	consensus := ocr3cap.NewConsensus(workflow, "data-feeds-report", ocrInput, *conf.Ocr)
 
 	input := chainwritercap.TargetInput{SignedReport: consensus}
-	chainwritercap.NewTarget(workflow, "chain-writer", input, *conf.ChainWriter)
+	chainwritercap.NewTarget(workflow, conf.TargetChain, input, *conf.ChainWriter)
 
 	return workflow.Spec()
 }
 
 //go:embed testdata/fixtures/workflows/sepolia.yaml
-var sepolia string
+var sepoliaConfig []byte
+
+//go:embed testdata/fixtures/workflows/expected_sepolia.yaml
+var expectedSepolia []byte
 
 func TestBuilder_ValidSpec(t *testing.T) {
-	testWorkflowSpec, err := NewWorkflowSpec([]byte(sepolia))
+	testWorkflowSpec, err := NewWorkflowSpec(sepoliaConfig)
 	require.NoError(t, err)
 
-	expectedSpec := workflows.WorkflowSpec{
-		Name:  "ccipethsep",
-		Owner: "00000000000000000000000000000000000000aa",
-		Triggers: []workflows.StepDefinition{
-			{
-				ID:  "streams-trigger@1.0.0",
-				Ref: "streams",
-				Inputs: workflows.StepInputs{
-					Mapping:   map[string]any{},
-					OutputRef: "",
-				},
-				Config: map[string]interface{}{
-					"feedIds": []string{
-						"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd",
-						"0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d",
-						"0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12",
-					},
-					"maxFrequencyMs": 100,
-				},
-				CapabilityType: capabilities.CapabilityTypeTrigger,
-			},
-		},
-		Consensus: []workflows.StepDefinition{
-			{
-				ID:  "offchain_reporting@1.0.0",
-				Ref: "data-feeds-report",
-				Inputs: workflows.StepInputs{
-					Mapping: map[string]any{
-						"observations": "$(streams.outputs)",
-					},
-				},
-				Config: map[string]interface{}{
-					"report_id":          "0001",
-					"aggregation_method": "data_feeds",
-					"aggregation_config": map[string]interface{}{
-						"0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd": map[string]interface{}{
-							"deviation": "0.05",
-							"heartbeat": 3600,
-						},
-						"0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d": map[string]interface{}{
-							"deviation": "0.05",
-							"heartbeat": 3600,
-						},
-						"0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12": map[string]interface{}{
-							"deviation": "0.05",
-							"heartbeat": 3600,
-						},
-					},
-					"encoder": "EVM",
-					"encoder_config": map[string]interface{}{
-						"abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
-					},
-				},
-				CapabilityType: capabilities.CapabilityTypeConsensus,
-			},
-		},
-		Targets: []workflows.StepDefinition{
-			{
-				ID:  "",
-				Ref: "chain-writer",
-				Inputs: workflows.StepInputs{
-					Mapping: map[string]any{"Err": "$(offchain_reporting.outputs.Err)", "Value": "$(offchain_reporting.outputs.Value)", "WorkflowExecutionID": "$(offchain_reporting.outputs.WorkflowExecutionID)"},
-				},
-				Config: map[string]any{
-					"Address":    "0x1234567890123456789012345678901234567890",
-					"DeltaStage": "5s",
-					"Schedule":   "oneAtATime",
-				},
-				CapabilityType: capabilities.CapabilityTypeTarget,
-			},
-		},
-	}
+	expectedSpecYaml := workflows.WorkflowSpecYaml{}
+	require.NoError(t, yaml.Unmarshal(expectedSepolia, &expectedSpecYaml))
+	expectedSpec := expectedSpecYaml.ToWorkflowSpec()
 
 	expected, err := json.Marshal(expectedSpec)
 	require.NoError(t, err)
 
 	actual, err := json.Marshal(testWorkflowSpec)
 	require.NoError(t, err)
+
+	// TODO rtinianov NOW remove this
+	if string(expected) != string(actual) {
+		os.WriteFile("/Volumes/RAM/expected.txt", expected, 0644)
+		os.WriteFile("/Volumes/RAM/actual.txt", actual, 0644)
+	}
 
 	assert.Equal(t, string(expected), string(actual))
 }
@@ -231,4 +174,5 @@ type NotStreamsConfig struct {
 	Streams     *notstreams.TriggerConfig
 	Ocr         *ocr3.ConsensusConfig
 	ChainWriter *chainwriter.TargetConfig
+	TargetChain string
 }

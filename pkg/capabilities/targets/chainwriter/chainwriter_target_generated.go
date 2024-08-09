@@ -7,25 +7,25 @@ import "fmt"
 import ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 import "reflect"
 
-// Writes to evm chain for now...
+// Writes to a blockchain
 type Target struct {
 	// Config corresponds to the JSON schema field "config".
-	Config TargetConfig
+	Config TargetConfig `json:"config" yaml:"config" mapstructure:"config"`
 
 	// Inputs corresponds to the JSON schema field "inputs".
-	Inputs TargetInputs
+	Inputs TargetInputs `json:"inputs" yaml:"inputs" mapstructure:"inputs"`
 }
 
 type TargetConfig struct {
-	// The address in the format 0x followed by 40 characters.
-	Address string
+	// The address to write to.
+	Address string `json:"address" yaml:"address" mapstructure:"address"`
 
 	// The delta stage which must be a number followed by a time symbol (s for
 	// seconds, m for minutes, h for hours, d for days).
-	DeltaStage string
+	DeltaStage string `json:"deltaStage" yaml:"deltaStage" mapstructure:"deltaStage"`
 
 	// The schedule which must be the string 'oneAtATime'.
-	Schedule TargetConfigSchedule
+	Schedule TargetConfigSchedule `json:"schedule" yaml:"schedule" mapstructure:"schedule"`
 }
 
 type TargetConfigSchedule string
@@ -82,7 +82,7 @@ func (j *TargetConfig) UnmarshalJSON(b []byte) error {
 
 type TargetInputs struct {
 	// SignedReport corresponds to the JSON schema field "signed_report".
-	SignedReport ocr3.SignedReport
+	SignedReport ocr3.SignedReport `json:"signed_report" yaml:"signed_report" mapstructure:"signed_report"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

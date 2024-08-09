@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams/streams@1.0.0",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams/notstreams@1.0.0",
   "description": "Not Streams Trigger",
   "$defs": {
     "Feed": {

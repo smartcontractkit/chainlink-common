@@ -11,7 +11,7 @@ import (
 
 func NewTrigger(w *workflows.Workflow, cfg notstreams.TriggerConfig)Trigger { ref := "trigger"
     def := workflows.StepDefinition{
-       ID: "streams@1.0.0",Ref: ref,
+       ID: "notstreams@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{
        },
        Config: map[string]any{

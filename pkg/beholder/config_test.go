@@ -14,7 +14,7 @@ const (
 func ExampleConfig() {
 	config := beholder.Config{
 		InsecureConnection:       true,
-		TLSCertFile:              "",
+		CACertFile:               "",
 		OtelExporterGRPCEndpoint: "localhost:4317",
 		PackageName:              packageName,
 		// Resource
@@ -34,5 +34,5 @@ func ExampleConfig() {
 	}
 	fmt.Printf("%+v", config)
 	// Output:
-	// {InsecureConnection:true TLSCertFile: OtelExporterGRPCEndpoint:localhost:4317 PackageName:beholder ResourceAttributes:map[package_name:beholder sender:beholdeclient] EmitterExportTimeout:1s TraceSampleRate:1 TraceBatchTimeout:1s MetricReaderInterval:1s LogExportTimeout:1s}
+	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 PackageName:beholder ResourceAttributes:map[package_name:beholder sender:beholdeclient] EmitterExportTimeout:1s TraceSampleRate:1 TraceBatchTimeout:1s MetricReaderInterval:1s LogExportTimeout:1s}
 }

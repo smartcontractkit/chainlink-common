@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	InsecureConnection       bool
-	TLSCertFile              string
+	CACertFile               string
 	OtelExporterGRPCEndpoint string
 
 	PackageName string
@@ -32,7 +32,7 @@ var defaultOtelAttributes = map[string]string{
 func DefaultConfig() Config {
 	return Config{
 		InsecureConnection:       true,
-		TLSCertFile:              "",
+		CACertFile:               "",
 		OtelExporterGRPCEndpoint: "localhost:4317",
 		PackageName:              "beholder",
 		// Resource

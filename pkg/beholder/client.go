@@ -93,10 +93,9 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	if err != nil {
 		return nil, err
 	}
-	var creds credentials.TransportCredentials
-	creds = insecure.NewCredentials()
-	if !cfg.InsecureConnection && cfg.TLSCertFile != "" {
-		creds, err = credentials.NewClientTLSFromFile(cfg.TLSCertFile, "")
+	creds := insecure.NewCredentials()
+	if !cfg.InsecureConnection && cfg.CACertFile != "" {
+		creds, err = credentials.NewClientTLSFromFile(cfg.CACertFile, "")
 		if err != nil {
 			return nil, err
 		}

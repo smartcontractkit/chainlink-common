@@ -148,7 +148,7 @@ message Or {
 }
 
 message ValueComparator  {
-  string  value = 1;
+  VersionedBytes value = 1;
   ComparisonOperator operator = 2;
 }
 

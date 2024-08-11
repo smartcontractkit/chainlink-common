@@ -26,7 +26,7 @@ const (
 )
 
 type ValueComparator struct {
-	Value    string
+	Value    any
 	Operator ComparisonOperator
 }
 

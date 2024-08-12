@@ -47,7 +47,7 @@ func genFromTemplate(name, rawTemplate string, info GeneratedInfo) (string, erro
 			}
 			return strings.ToLower(s[:1]) + s[1:]
 		},
-		"UpperFirst": capitalize,
+		"Capitalize": capitalize,
 		"ToSnake":    strcase.ToSnake,
 		"PkgToCapPkg": func(pkg string) string {
 			return pkg + "cap"

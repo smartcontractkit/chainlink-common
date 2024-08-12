@@ -92,6 +92,10 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 
 	weids := []string{}
 	for _, q := range queryReq.Ids {
+		if q == nil {
+			r.lggr.Debugw("skipping nil id for query", "query", queryReq)
+			continue
+		}
 		weids = append(weids, q.WorkflowExecutionId)
 	}
 
@@ -178,6 +182,16 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		}
 
 		for _, rq := range obs.Observations {
+			if rq == nil {
+				r.lggr.Debugw("skipping nil request in observations", "observations", obs.Observations)
+				continue
+			}
+
+			if rq.Id == nil {
+				r.lggr.Debugw("skipping nil id in request", "request", rq)
+				continue
+			}
+
 			weid := rq.Id.WorkflowExecutionId
 
 			obsList, innerErr := values.FromListValueProto(rq.Observations)
@@ -215,6 +229,10 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	var allExecutionIDs []string
 
 	for _, weid := range q.Ids {
+		if weid == nil {
+			r.lggr.Debugw("skipping nil id in query", "query", q)
+			continue
+		}
 		lggr := logger.With(r.lggr, "executionID", weid.WorkflowExecutionId, "workflowID", weid.WorkflowId)
 		obs, ok := m[weid.WorkflowExecutionId]
 		if !ok {
@@ -314,6 +332,21 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 	reports := []ocr3types.ReportWithInfo[[]byte]{}
 
 	for _, report := range o.CurrentReports {
+		if report == nil {
+			r.lggr.Debugw("skipping nil report in outcome", "outcome", o)
+			continue
+		}
+
+		if report.Id == nil {
+			r.lggr.Debugw("skipping report with nil id in outcome", "report", report)
+			continue
+		}
+
+		if report.Outcome == nil {
+			r.lggr.Debugw("skipping report with nil outcome", "report", report)
+			continue
+		}
+
 		r.lggr.Debugw("generating reports", "len", len(o.CurrentReports), "shouldReport", report.Outcome.ShouldReport, "executionID", report.Id.WorkflowExecutionId)
 
 		lggr := logger.With(

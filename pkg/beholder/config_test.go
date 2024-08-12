@@ -22,7 +22,7 @@ func ExampleConfig() {
 			"package_name": packageName,
 			"sender":       "beholdeclient",
 		},
-		// EventEmitter
+		// Message Emitter
 		EmitterExportTimeout: 1 * time.Second,
 		// Trace
 		TraceSampleRate:   1,

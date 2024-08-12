@@ -14,7 +14,7 @@ type Config struct {
 	PackageName string
 	// OTel Resource
 	ResourceAttributes map[string]string
-	// EventEmitter
+	// Message Emitter
 	EmitterExportTimeout time.Duration
 	// OTel Trace
 	TraceSampleRate   float64
@@ -37,7 +37,7 @@ func DefaultConfig() Config {
 		PackageName:              "beholder",
 		// Resource
 		ResourceAttributes: defaultOtelAttributes,
-		// EventEmitter
+		// Message Emitter
 		EmitterExportTimeout: 1 * time.Second,
 		// Trace
 		TraceSampleRate:   1,

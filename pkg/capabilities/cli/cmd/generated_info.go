@@ -14,7 +14,6 @@ import (
 
 type GeneratedInfo struct {
 	Package        string
-	FullPackage    string
 	Config         Struct
 	Input          *Struct
 	Types          map[string]Struct
@@ -55,7 +54,6 @@ func generatedInfoFromSrc(dir, src string, capId *string, typeInfo TypeInfo) (Ge
 
 	return GeneratedInfo{
 		Package:        pkg,
-		FullPackage:    dir[strings.Index(dir, "github.com"):],
 		Config:         config,
 		Types:          generatedStructs,
 		RootOutput:     root.Outputs["Outputs"].Type,

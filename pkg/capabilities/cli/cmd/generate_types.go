@@ -50,7 +50,7 @@ var generateTypesCmd = &cobra.Command{
 
 		return GenerateTypes(dir, []WorkflowHelperGenerator{
 			&TemplateWorkflowGeneratorHelper{
-				Templates: map[string]string{"{{.Package|PkgToCapPkg}}/{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},
+				Templates: map[string]string{"{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},
 			},
 		})
 	},

@@ -11,14 +11,10 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritercap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams/streamscap"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams/notstreamscap"
 )
 
 // Note that the set of tests in this file cover the conversion from existing YAM -> code
@@ -40,13 +36,13 @@ func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger := streamscap.NewTrigger(workflow, *conf.Streams)
+	streamsTrigger := conf.Streams.New(workflow)
 
-	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
-	consensus := ocr3cap.NewConsensus(workflow, "ccip_feeds", ocrInput, *conf.Ocr)
+	ocrInput := ocr3.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
+	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocrInput)
 
-	input := chainwritercap.TargetInput{SignedReport: consensus}
-	chainwritercap.NewTarget(workflow, conf.TargetChain, input, *conf.ChainWriter)
+	input := chainwriter.TargetInput{SignedReport: consensus}
+	conf.ChainWriter.New(workflow, conf.TargetChain, input)
 
 	return workflow.Spec()
 }
@@ -112,13 +108,13 @@ func NewWorkflowRemapped(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	ocr3Config.AggregationConfig.Feeds = feeds
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	streamsTrigger := streamscap.NewTrigger(workflow, streamsConfig)
+	streamsTrigger := streamsConfig.New(workflow)
 
-	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
-	consensus := ocr3cap.NewConsensus(workflow, "ccip_feeds", ocrInput, ocr3Config)
+	ocrInput := ocr3.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
+	consensus := ocr3Config.New(workflow, "ccip_feeds", ocrInput)
 
-	input := chainwritercap.TargetInput{SignedReport: consensus}
-	chainwritercap.NewTarget(workflow, conf.TargetChain, input, *conf.ChainWriter)
+	input := chainwriter.TargetInput{SignedReport: consensus}
+	conf.ChainWriter.New(workflow, conf.TargetChain, input)
 
 	return workflow.Spec()
 }
@@ -132,9 +128,9 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
-	notStreamsTrigger := notstreamscap.NewTrigger(workflow, *conf.NotStream)
+	notStreamsTrigger := conf.NotStream.New(workflow)
 
-	feedsInput := streamscap.NewTriggerFromFields(
+	feedsInput := streams.NewTriggerFromFields(
 		notStreamsTrigger.Price().PriceA(),
 		workflows.ConstantDefinition[streams.FeedId](anyFakeFeedId),
 		notStreamsTrigger.FullReport(),
@@ -158,11 +154,11 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 		ReportId:          conf.Ocr.ReportId,
 	}
 
-	ocrInput := ocr3cap.ConsensusInput{Observations: workflows.ListOf[streams.Feed](feedsInput)}
-	consensus := ocr3cap.NewConsensus(workflow, "data-feeds-report", ocrInput, ocrConfig)
+	ocrInput := ocr3.ConsensusInput{Observations: workflows.ListOf[streams.Feed](feedsInput)}
+	consensus := ocrConfig.New(workflow, "data-feeds-report", ocrInput)
 
-	input := chainwritercap.TargetInput{SignedReport: consensus}
-	chainwritercap.NewTarget(workflow, conf.TargetChain, input, *conf.ChainWriter)
+	input := chainwriter.TargetInput{SignedReport: consensus}
+	conf.ChainWriter.New(workflow, conf.TargetChain, input)
 
 	return workflow.Spec()
 }

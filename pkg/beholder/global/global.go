@@ -42,6 +42,10 @@ func Emitter() beholder.Emitter {
 	return GetClient().Emitter()
 }
 
+func Close() error {
+	return GetClient().Close()
+}
+
 func SpanFromContext(ctx context.Context) oteltrace.Span {
 	return oteltrace.SpanFromContext(ctx)
 }

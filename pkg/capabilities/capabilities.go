@@ -14,7 +14,7 @@ import (
 )
 
 // CapabilityType is an enum for the type of capability.
-type CapabilityType int
+type CapabilityType string
 
 var ErrStopExecution = &errStopExecution{}
 
@@ -32,28 +32,12 @@ func (e errStopExecution) Is(err error) bool {
 
 // CapabilityType enum values.
 const (
-	CapabilityTypeTrigger CapabilityType = iota
-	CapabilityTypeAction
-	CapabilityTypeConsensus
-	CapabilityTypeTarget
+	CapabilityTypeUnknown   CapabilityType = "unknown"
+	CapabilityTypeTrigger   CapabilityType = "trigger"
+	CapabilityTypeAction    CapabilityType = "action"
+	CapabilityTypeConsensus CapabilityType = "consensus"
+	CapabilityTypeTarget    CapabilityType = "target"
 )
-
-// String returns a string representation of CapabilityType
-func (c CapabilityType) String() string {
-	switch c {
-	case CapabilityTypeTrigger:
-		return "trigger"
-	case CapabilityTypeAction:
-		return "action"
-	case CapabilityTypeConsensus:
-		return "consensus"
-	case CapabilityTypeTarget:
-		return "target"
-	}
-
-	// Panic as this should be unreachable.
-	panic("unknown capability type")
-}
 
 // IsValid checks if the capability type is valid.
 func (c CapabilityType) IsValid() error {
@@ -63,6 +47,8 @@ func (c CapabilityType) IsValid() error {
 		CapabilityTypeConsensus,
 		CapabilityTypeTarget:
 		return nil
+	case CapabilityTypeUnknown:
+		return fmt.Errorf("invalid capability type: %s", c)
 	}
 
 	return fmt.Errorf("invalid capability type: %s", c)

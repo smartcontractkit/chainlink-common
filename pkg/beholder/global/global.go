@@ -15,31 +15,30 @@ import (
 var globalClient = defaultClient()
 
 // SetClient sets the global Beholder Client
-func SetClient(client *beholder.Client) {
+func SetClient(client *beholder.OtelClient) {
 	globalClient.Store(client)
 }
 
 // Returns the global Beholder Client
 // Its thread-safe and can be used concurrently
-func GetClient() beholder.Client {
-	ptr := globalClient.Load()
-	return *ptr
+func GetClient() *beholder.OtelClient {
+	return globalClient.Load()
 }
 
 func Logger() otellog.Logger {
-	return GetClient().Logger()
+	return GetClient().Logger
 }
 
 func Tracer() oteltrace.Tracer {
-	return GetClient().Tracer()
+	return GetClient().Tracer
 }
 
 func Meter() otelmetric.Meter {
-	return GetClient().Meter()
+	return GetClient().Meter
 }
 
 func Emitter() beholder.Emitter {
-	return GetClient().Emitter()
+	return GetClient().Emitter
 }
 
 func Close() error {
@@ -50,8 +49,8 @@ func SpanFromContext(ctx context.Context) oteltrace.Span {
 	return oteltrace.SpanFromContext(ctx)
 }
 
-func defaultClient() *atomic.Pointer[beholder.Client] {
-	ptr := &atomic.Pointer[beholder.Client]{}
+func defaultClient() *atomic.Pointer[beholder.OtelClient] {
+	ptr := &atomic.Pointer[beholder.OtelClient]{}
 	client := beholder.NewNoopClient()
 	ptr.Store(&client)
 	return ptr
@@ -71,9 +70,8 @@ func Bootstrap(cfg beholder.Config, errorHandler func(error)) error {
 	if err != nil {
 		return err
 	}
-	var client beholder.Client = c
 	// Set global client so it will be accessible from anywhere through beholder/global functions
-	SetClient(&client)
+	SetClient(&c)
 	return nil
 }
 

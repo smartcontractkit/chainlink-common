@@ -30,54 +30,30 @@ type Emitter interface {
 	EmitMessage(ctx context.Context, m Message) error
 }
 type Client interface {
-	Logger() otellog.Logger
-	Tracer() oteltrace.Tracer
-	Meter() otelmetric.Meter
-	Emitter() Emitter
 	Close() error
 }
-
-var _ Client = (*otelClient)(nil)
 
 type messageEmitter struct {
 	exporter      sdklog.Exporter
 	messageLogger otellog.Logger
 }
 
-type otelClient struct {
-	config Config
+type OtelClient struct {
+	Config Config
 	// Logger
-	logger otellog.Logger
+	Logger otellog.Logger
 	// Tracer
-	tracer oteltrace.Tracer
+	Tracer oteltrace.Tracer
 	// Meter
-	meter otelmetric.Meter
+	Meter otelmetric.Meter
 	// Message Emitter
-	emitter Emitter
+	Emitter Emitter
 	// Graceful shutdown for tracer, meter, logger providers
-	closeFunc func() error
-}
-
-func NewClient(
-	config Config,
-	logger otellog.Logger,
-	tracer oteltrace.Tracer,
-	meter otelmetric.Meter,
-	emitter Emitter,
-	onClose func() error,
-) Client {
-	return &otelClient{
-		config:    config,
-		logger:    logger,
-		tracer:    tracer,
-		meter:     meter,
-		emitter:   emitter,
-		closeFunc: onClose,
-	}
+	CloseFunc func() error
 }
 
 // NewOtelClient creates a new Client with OTel exporter
-func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (Client, error) {
+func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (OtelClient, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
 	}
@@ -87,17 +63,18 @@ func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (Client, error) {
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (Client, error) {
+func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (OtelClient, error) {
 	ctx := context.Background()
 	baseResource, err := newOtelResource(cfg)
+	noop := NewNoopClient()
 	if err != nil {
-		return nil, err
+		return noop, err
 	}
 	creds := insecure.NewCredentials()
 	if !cfg.InsecureConnection && cfg.CACertFile != "" {
 		creds, err = credentials.NewClientTLSFromFile(cfg.CACertFile, "")
 		if err != nil {
-			return nil, err
+			return noop, err
 		}
 	}
 	sharedLogExporter, err := otlploggrpcNew(
@@ -106,7 +83,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	)
 	if err != nil {
-		return nil, err
+		return noop, err
 	}
 
 	// Logger
@@ -122,7 +99,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		baseResource,
 	)
 	if err != nil {
-		return nil, err
+		return noop, err
 	}
 	loggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(loggerResource),
@@ -136,7 +113,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
 	if err != nil {
-		return nil, err
+		return noop, err
 	}
 	tracer := tracerProvider.Tracer(cfg.PackageName)
 	otel.SetTracerProvider(tracerProvider)
@@ -145,7 +122,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	// Meter
 	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
 	if err != nil {
-		return nil, err
+		return noop, err
 	}
 	meter := meterProvider.Meter(cfg.PackageName)
 	otel.SetMeterProvider(meterProvider)
@@ -163,7 +140,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		baseResource,
 	)
 	if err != nil {
-		return nil, err
+		return noop, err
 	}
 	messageLoggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(messageLoggerResource),
@@ -176,7 +153,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 
 	onClose := closeFunc(ctx, loggerProvider, messageLoggerProvider, tracerProvider, meterProvider)
 
-	client := NewClient(cfg, logger, tracer, meter, messageEmitter, onClose)
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, onClose}
 
 	return client, nil
 }
@@ -249,24 +226,9 @@ func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error 
 	return nil
 }
 
-func (b *otelClient) Logger() otellog.Logger {
-	return b.logger
-}
-
-func (b *otelClient) Tracer() oteltrace.Tracer {
-	return b.tracer
-}
-
-func (b *otelClient) Meter() otelmetric.Meter {
-	return b.meter
-}
-func (b *otelClient) Emitter() Emitter {
-	return b.emitter
-}
-
-func (b *otelClient) Close() error {
-	if b.closeFunc != nil {
-		return b.closeFunc()
+func (b OtelClient) Close() error {
+	if b.CloseFunc != nil {
+		return b.CloseFunc()
 	}
 	return nil
 }

@@ -47,10 +47,8 @@ func ExampleClient() {
 					"sender", "example-client",
 				),
 			}
-			// Get message emitter
-			em := client.Emitter()
 			// Emit custom message
-			err := em.EmitMessage(ctx, customMessage)
+			err := client.Emitter.EmitMessage(ctx, customMessage)
 			if err != nil {
 				log.Fatalf("Error emitting message: %v", err)
 			}
@@ -95,12 +93,10 @@ func asseetNoError(err error) {
 func ExampleEmitter() {
 	ctx := context.Background()
 	// Initialize beholder client
-	c, err := beholder.NewOtelClient(beholder.DefaultConfig(), asseetNoError)
+	client, err := beholder.NewOtelClient(beholder.DefaultConfig(), asseetNoError)
 	if err != nil {
 		log.Fatalf("Error creating beholder client: %v", err)
 	}
-	var client beholder.Client = c
-
 	// Set global client so it will be accessible from anywhere through beholder/global functions
 	global.SetClient(&client)
 	// After that you can use global functions to get logger, tracer, meter, messageEmitter

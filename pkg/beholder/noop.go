@@ -17,7 +17,7 @@ import (
 )
 
 // Default client to fallback when is is not initialized properly
-func NewNoopClient() Client {
+func NewNoopClient() OtelClient {
 	cfg := DefaultConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
@@ -35,7 +35,7 @@ func NewNoopClient() Client {
 
 	onClose := func() error { return nil }
 
-	client := NewClient(cfg, logger, tracer, meter, messageEmitter, onClose)
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, onClose}
 
 	return client
 }
@@ -43,7 +43,7 @@ func NewNoopClient() Client {
 // NewStdoutClient creates a new Client with stdout exporters
 // Use for testing and debugging
 // Also this client is used as a noop client when otel exporter is not initialized properly
-func NewStdoutClient() Client {
+func NewStdoutClient() OtelClient {
 	cfg := DefaultConfig()
 	// Logger
 	loggerExporter, _ := stdoutlog.New(stdoutlog.WithoutTimestamps()) // stdoutlog.New() never returns an error
@@ -76,7 +76,7 @@ func NewStdoutClient() Client {
 
 	onClose := closeFunc(context.Background(), loggerProvider, tracerProvider, meterProvider)
 
-	client := NewClient(cfg, logger, tracer, meter, messageEmitter, onClose)
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, onClose}
 
 	return client
 }

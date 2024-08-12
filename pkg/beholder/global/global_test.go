@@ -25,16 +25,16 @@ func TestGlobal(t *testing.T) {
 	assert.IsType(t, otellognoop.Logger{}, logger)
 	assert.IsType(t, oteltracenoop.Tracer{}, tracer)
 	assert.IsType(t, otelmetricnoop.Meter{}, meter)
-	expectedMessageEmitter := beholder.NewNoopClient().Emitter()
+	expectedMessageEmitter := beholder.NewNoopClient().Emitter
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
-	assert.IsType(t, noopClient, global.GetClient())
-	assert.NotSame(t, noopClient, global.GetClient())
+	var noopClientPtr *beholder.OtelClient = &noopClient
+	assert.IsType(t, noopClientPtr, global.GetClient())
+	assert.NotSame(t, noopClientPtr, global.GetClient())
 
 	// Set global client so it will be accessible from anywhere through beholder/global functions
-	var client beholder.Client = noopClient
-	global.SetClient(&client)
-	assert.Same(t, noopClient, global.GetClient())
+	global.SetClient(noopClientPtr)
+	assert.Same(t, noopClientPtr, global.GetClient())
 
 	// After that use global functions to get logger, tracer, meter, messageEmitter
 	logger, tracer, meter, messageEmitter = global.Logger(), global.Tracer(), global.Meter(), global.Emitter()

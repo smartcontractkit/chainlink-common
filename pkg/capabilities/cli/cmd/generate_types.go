@@ -48,6 +48,69 @@ var generateTypesCmd = &cobra.Command{
 }
 
 func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
+	schemaPaths, err := schemaFilesFromDir(dir)
+	if err != nil {
+		return err
+	}
+
+	cfgInfo, err := ConfigFromSchemas(schemaPaths)
+	if err != nil {
+		return err
+	}
+
+	for _, schemaPath := range schemaPaths {
+		if err = generateFromSchema(schemaPath, cfgInfo, helpers); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []WorkflowHelperGenerator) error {
+	allFiles := map[string]string{}
+	file, content, err := TypesFromJSONSchema(schemaPath, cfgInfo)
+	if err != nil {
+		return err
+	}
+
+	capabilityTypeRaw := cfgInfo.SchemaToTypeInfo[schemaPath].CapabilityTypeRaw
+	capabilityType := capabilityTypeFromString(capabilityTypeRaw)
+	if err = capabilityType.IsValid(); err != nil {
+		return fmt.Errorf("invalid capability type %v", capabilityTypeRaw)
+	}
+
+	allFiles[file] = content
+
+	typeInfo := cfgInfo.SchemaToTypeInfo[schemaPath]
+	structs, err := generatedInfoFromSrc(path.Dir(abs), content, getCapId(typeInfo), typeInfo)
+	if err != nil {
+		return err
+	}
+
+	if err = generateHelpers(helpers, structs, allFiles); err != nil {
+		return err
+	}
+
+	if err = printFiles(path.Dir(schemaPath), allFiles); err != nil {
+		return err
+	}
+
+	fmt.Println("Generated types for", schemaPath)
+	return nil
+}
+
+func getCapId(typeInfo TypeInfo) *string {
+	id := typeInfo.SchemaId
+	idParts := strings.Split(id, "/")
+	id = idParts[len(idParts)-1]
+	var capId *string
+	if strings.Contains(id, "@") {
+		capId = &id
+	}
+	return capId
+}
+
+func schemaFilesFromDir(dir string) ([]string, error) {
 	var schemaPaths []string
 
 	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -63,66 +126,24 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 		schemaPaths = append(schemaPaths, path)
 		return nil
 	}); err != nil {
-		return errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
+		return nil, errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
 	}
+	return schemaPaths, nil
+}
 
-	cfgInfo, err := ConfigFromSchemas(schemaPaths)
-	if err != nil {
-		return err
-	}
-
-	for _, schemaPath := range schemaPaths {
-		allFiles := map[string]string{}
-		file, content, capabilityTypeRaw, err := TypesFromJSONSchema(schemaPath, cfgInfo)
+func generateHelpers(helpers []WorkflowHelperGenerator, structs GeneratedInfo, allFiles map[string]string) error {
+	for _, helper := range helpers {
+		files, err := helper.Generate(structs)
 		if err != nil {
 			return err
 		}
 
-		capabilityType := capabilityTypeFromString(capabilityTypeRaw)
-		if err = capabilityType.IsValid(); err != nil {
-			return fmt.Errorf("invalid capability type %v", capabilityTypeRaw)
-		}
-
-		allFiles[file] = content
-
-		abs, err := filepath.Abs(schemaPath)
-		if err != nil {
-			return err
-		}
-
-		typeInfo := cfgInfo.SchemaToTypeInfo[schemaPath]
-		id := typeInfo.SchemaId
-		idParts := strings.Split(id, "/")
-		id = idParts[len(idParts)-1]
-		var capId *string
-		if strings.Contains(id, "@") {
-			capId = &id
-		}
-
-		structs, err := StructsFromSrc(path.Dir(abs), content, capId, typeInfo)
-		if err != nil {
-			return err
-		}
-
-		for _, helper := range helpers {
-			files, err := helper.Generate(structs)
-			if err != nil {
-				return err
+		for f, c := range files {
+			if _, ok := allFiles[f]; ok {
+				return fmt.Errorf("file %v is being created by more than one generator", f)
 			}
-
-			for f, c := range files {
-				if _, ok := allFiles[f]; ok {
-					return fmt.Errorf("file %v is being created by more than one generator", f)
-				}
-				allFiles[f] = c
-			}
+			allFiles[f] = c
 		}
-
-		if err = printFiles(path.Dir(schemaPath), allFiles); err != nil {
-			return err
-		}
-
-		fmt.Println("Generated types for", schemaPath)
 	}
 	return nil
 }
@@ -167,18 +188,18 @@ func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 }
 
 // TypesFromJSONSchema generates Go types from a JSON schema file.
-func TypesFromJSONSchema(schemaFilePath string, cfgInfo ConfigInfo) (outputFilePath, outputContents, capabilityType string, err error) {
+func TypesFromJSONSchema(schemaFilePath string, cfgInfo ConfigInfo) (outputFilePath, outputContents string, err error) {
 	typeInfo := cfgInfo.SchemaToTypeInfo[schemaFilePath]
-	capabilityType = typeInfo.CapabilityTypeRaw
+	capabilityType := typeInfo.CapabilityTypeRaw
 	outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
 
 	gen, err := generator.New(cfgInfo.Config)
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	if err = gen.DoFile(schemaFilePath); err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	generatedContents := gen.Sources()
@@ -186,9 +207,5 @@ func TypesFromJSONSchema(schemaFilePath string, cfgInfo ConfigInfo) (outputFileP
 
 	content = []byte(strings.Replace(string(content), "// Code generated by github.com/atombender/go-jsonschema", "// Code generated by pkg/capabilities/cli", 1))
 
-	return outputName, string(content), capabilityType, nil
-}
-
-func capitalize(s string) string {
-	return strings.ToUpper(string(s[0])) + s[1:]
+	return outputName, string(content), nil
 }

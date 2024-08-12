@@ -40,7 +40,7 @@ func Test_TypesFromJSONSchema(t *testing.T) {
 	expectedOutputFileContents, err := os.ReadFile(expectedOutputFilePath)
 	assert.NoError(t, err)
 
-	generatedFilepath, generatedContents, rootType, capabilityType, err := cmd.TypesFromJSONSchema(schemaFilePath)
+	generatedFilepath, generatedContents, capabilityType := cmd.TypesFromJSONSchema(schemaFilePath)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedOutputFilePath, generatedFilepath, "Generated file path does not match expected file path")

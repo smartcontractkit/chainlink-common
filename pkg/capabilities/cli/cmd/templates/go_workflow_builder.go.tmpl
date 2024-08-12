@@ -32,7 +32,7 @@ func New{{.BaseName}}(w *workflows.Workflow, {{- if not .Id }}id string,{{- end 
            "{{$type.ConfigName}}": cfg.{{$fieldName}},
 {{- end }}
        },
-       CapabilityType: capabilities.CapabilityType{{.CapabilityType.String|UpperFirst}},
+       CapabilityType: capabilities.CapabilityType{{.CapabilityType.String|Capitalize}},
    }
     step := workflows.Step[{{- if eq .CapabilityType.String "target"}}struct{}{{- else }}{{.RootType.Name|PkgIfNeeded}} {{- end}}]{Definition: def}
     {{if ne .CapabilityType.String "target"}} raw := {{- end }} workflows.AddStep(w, step)

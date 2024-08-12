@@ -12,8 +12,6 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/generator"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 	"github.com/spf13/cobra"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
 var Dir string
@@ -68,21 +66,19 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 		return errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
 	}
 
-	cfg, ids, err := ConfigFromSchemas(schemaPaths)
+	cfgInfo, err := ConfigFromSchemas(schemaPaths)
 	if err != nil {
 		return err
 	}
 
 	for _, schemaPath := range schemaPaths {
 		allFiles := map[string]string{}
-		file, content, rootType, capabilityTypeRaw, err := TypesFromJSONSchema(schemaPath, cfg)
+		file, content, capabilityTypeRaw, err := TypesFromJSONSchema(schemaPath, cfgInfo)
 		if err != nil {
 			return err
 		}
 
-		var capabilityType capabilities.CapabilityType
-		for ; capabilityType.IsValid() == nil && (capabilityType.String() != capabilityTypeRaw); capabilityType++ {
-		}
+		capabilityType := capabilityTypeFromString(capabilityTypeRaw)
 		if err = capabilityType.IsValid(); err != nil {
 			return fmt.Errorf("invalid capability type %v", capabilityTypeRaw)
 		}
@@ -94,14 +90,16 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 			return err
 		}
 
-		id := ids[schemaPath]
+		typeInfo := cfgInfo.SchemaToTypeInfo[schemaPath]
+		id := typeInfo.SchemaId
 		idParts := strings.Split(id, "/")
 		id = idParts[len(idParts)-1]
 		var capId *string
 		if strings.Contains(id, "@") {
 			capId = &id
 		}
-		structs, err := StructsFromSrc(path.Dir(abs), content, rootType, capId, capabilityType)
+
+		structs, err := StructsFromSrc(path.Dir(abs), content, capId, typeInfo)
 		if err != nil {
 			return err
 		}
@@ -129,50 +127,58 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 	return nil
 }
 
-func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, map[string]string, error) {
-	cfg := generator.Config{
-		Tags:   []string{"json", "yaml", "mapstructure"},
-		Warner: func(message string) { fmt.Printf("Warning: %s\n", message) },
+func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
+	configInfo := ConfigInfo{
+		Config: generator.Config{
+			Tags:   []string{"json", "yaml", "mapstructure"},
+			Warner: func(message string) { fmt.Printf("Warning: %s\n", message) },
+		},
+		SchemaToTypeInfo: map[string]TypeInfo{},
 	}
-	ids := map[string]string{}
+
 	for _, schemaFilePath := range schemaFilePaths {
 		jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
 		if err != nil {
-			return cfg, nil, err
+			return configInfo, err
 		}
+
 		capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
 		if len(capabilityInfo) != 3 {
-			return cfg, nil, fmt.Errorf("invalid schema file path %v", schemaFilePath)
+			return configInfo, fmt.Errorf("invalid schema file path %v", schemaFilePath)
 		}
-		capabilityType := capabilityInfo[2]
-		outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
-		rootType := capitalize(capabilityType)
-		ids[schemaFilePath] = jsonSchema.ID
 
-		cfg.SchemaMappings = append(cfg.SchemaMappings, generator.SchemaMapping{
+		capabilityTypeRaw := capabilityInfo[2]
+		outputName := strings.Replace(schemaFilePath, capabilityTypeRaw+"-schema.json", capabilityTypeRaw+"_generated.go", 1)
+		rootType := capitalize(capabilityInfo[2])
+		configInfo.SchemaToTypeInfo[schemaFilePath] = TypeInfo{
+			CapabilityTypeRaw: capabilityTypeRaw,
+			RootType:          rootType,
+			SchemaId:          jsonSchema.ID,
+		}
+
+		configInfo.Config.SchemaMappings = append(configInfo.Config.SchemaMappings, generator.SchemaMapping{
 			SchemaID:    jsonSchema.ID,
 			PackageName: path.Dir(jsonSchema.ID[8:]),
 			RootType:    rootType,
 			OutputName:  outputName,
 		})
 	}
-	return cfg, ids, nil
+	return configInfo, nil
 }
 
 // TypesFromJSONSchema generates Go types from a JSON schema file.
-func TypesFromJSONSchema(schemaFilePath string, cfg generator.Config) (outputFilePath, outputContents, rootType, capabilityType string, err error) {
-	capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
-	capabilityType = capabilityInfo[2]
+func TypesFromJSONSchema(schemaFilePath string, cfgInfo ConfigInfo) (outputFilePath, outputContents, capabilityType string, err error) {
+	typeInfo := cfgInfo.SchemaToTypeInfo[schemaFilePath]
+	capabilityType = typeInfo.CapabilityTypeRaw
 	outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
-	rootType = capitalize(capabilityType)
 
-	gen, err := generator.New(cfg)
+	gen, err := generator.New(cfgInfo.Config)
 	if err != nil {
-		return "", "", "", "", err
+		return "", "", "", err
 	}
 
 	if err = gen.DoFile(schemaFilePath); err != nil {
-		return "", "", "", "", err
+		return "", "", "", err
 	}
 
 	generatedContents := gen.Sources()
@@ -180,7 +186,7 @@ func TypesFromJSONSchema(schemaFilePath string, cfg generator.Config) (outputFil
 
 	content = []byte(strings.Replace(string(content), "// Code generated by github.com/atombender/go-jsonschema", "// Code generated by pkg/capabilities/cli", 1))
 
-	return outputName, string(content), rootType, capabilityType, nil
+	return outputName, string(content), capabilityType, nil
 }
 
 func capitalize(s string) string {

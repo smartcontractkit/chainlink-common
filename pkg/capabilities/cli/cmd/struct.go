@@ -40,7 +40,7 @@ type Field struct {
 	ConfigName  string
 }
 
-func StructsFromSrc(dir, src, baseName string, capId *string, tpe capabilities.CapabilityType) (GeneratedInfo, error) {
+func StructsFromSrc(dir, src string, capId *string, typeInfo TypeInfo) (GeneratedInfo, error) {
 	fset := token.NewFileSet()
 
 	// Parse the source code string
@@ -115,8 +115,8 @@ func StructsFromSrc(dir, src, baseName string, capId *string, tpe capabilities.C
 		return true
 	})
 
-	root := rawInfo[baseName]
-	delete(rawInfo, baseName)
+	root := rawInfo[typeInfo.RootType]
+	delete(rawInfo, typeInfo.RootType)
 	configType := root.Outputs["Config"].Type
 	config := rawInfo[configType]
 	delete(rawInfo, configType)
@@ -131,7 +131,7 @@ func StructsFromSrc(dir, src, baseName string, capId *string, tpe capabilities.C
 		}
 	}
 
-	for k, _ := range rawInfo {
+	for k := range rawInfo {
 		if strings.HasPrefix(k, configType) || (input != nil && strings.HasPrefix(k, input.Name)) {
 			delete(rawInfo, k)
 		}
@@ -143,8 +143,8 @@ func StructsFromSrc(dir, src, baseName string, capId *string, tpe capabilities.C
 		Config:         config,
 		Types:          rawInfo,
 		RootOutput:     root.Outputs["Outputs"].Type,
-		BaseName:       baseName,
-		CapabilityType: tpe,
+		BaseName:       typeInfo.RootType,
+		CapabilityType: capabilityTypeFromString(typeInfo.CapabilityTypeRaw),
 		Input:          input,
 		ExtraImports:   extraImports,
 		Id:             capId,

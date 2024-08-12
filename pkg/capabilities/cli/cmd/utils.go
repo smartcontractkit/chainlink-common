@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
 func printFiles(dir string, files map[string]string) error {
@@ -22,4 +24,15 @@ func printFiles(dir string, files map[string]string) error {
 	}
 
 	return nil
+}
+
+func capabilityTypeFromString(capabilityTypeRaw string) capabilities.CapabilityType {
+	var capabilityType capabilities.CapabilityType
+	for ; capabilityType.IsValid() == nil; capabilityType++ {
+		if capabilityType.String() == capabilityTypeRaw {
+			return capabilityType
+		}
+	}
+
+	return capabilityType
 }

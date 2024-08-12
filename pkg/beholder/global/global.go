@@ -4,16 +4,12 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	otellog "go.opentelemetry.io/otel/log"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/logger"
 )
-
-var log = logger.New()
 
 // Pointer to the global Beholder Client
 var globalBeholderClient = defaultBeholderClient()
@@ -65,11 +61,9 @@ func Emit(ctx context.Context, body []byte, attrs beholder.Attributes) error {
 	return Emitter().Emit(ctx, body, attrs)
 }
 
-func Bootstrap(cfg beholder.Config) error {
+func Bootstrap(cfg beholder.Config, errorHandler func(error)) error {
 	// Initialize beholder client
-	c, err := beholder.NewOtelClient(cfg, func(err error) {
-		log.Infof("OTel error %s", err)
-	})
+	c, err := beholder.NewOtelClient(cfg, errorHandler)
 	if err != nil {
 		return err
 	}
@@ -81,15 +75,4 @@ func Bootstrap(cfg beholder.Config) error {
 
 func NewConfig() beholder.Config {
 	return beholder.DefaultConfig()
-}
-
-// Creates logger based on zap logger which writes to stdout
-func NewSimpleLogger() logger.Logger {
-	return logger.New()
-}
-
-// Returns a new logger based on otelzap logger
-// The logger is able to write to stdout and send logs to otel collector
-func NewLogger() *otelzap.Logger {
-	return logger.NewOtelzapLogger()
 }

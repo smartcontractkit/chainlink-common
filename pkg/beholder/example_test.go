@@ -20,22 +20,6 @@ import (
 func ExampleClient() {
 	ctx := context.Background()
 
-	newMessageBytes := func(i int) []byte {
-		// Create protobuf message
-		customMessagePb := &pb.CustomMessage{}
-		customMessagePb.BoolVal = true
-		customMessagePb.IntVal = int64(i)
-		customMessagePb.FloatVal = float32(i)
-		customMessagePb.StringVal = fmt.Sprintf("string-value-%d", i)
-		customMessagePb.BytesVal = []byte{byte(i)}
-		// Encode protobuf message
-		customMessageBytes, err := proto.Marshal(customMessagePb)
-		if err != nil {
-			log.Fatalf("Error encoding message: %v", err)
-		}
-		return customMessageBytes
-	}
-
 	client, err := beholder.NewOtelClient(beholder.DefaultConfig(), errorHandler)
 	if err != nil {
 		log.Fatalf("Error creating beholder client: %v", err)
@@ -78,6 +62,22 @@ func ExampleClient() {
 	// Emitting message 0
 	// Emitting message 1
 	// Emitting message 2
+}
+
+func newMessageBytes(i int) []byte {
+	// Create protobuf message
+	customMessagePb := &pb.CustomMessage{}
+	customMessagePb.BoolVal = true
+	customMessagePb.IntVal = int64(i)
+	customMessagePb.FloatVal = float32(i)
+	customMessagePb.StringVal = fmt.Sprintf("string-value-%d", i)
+	customMessagePb.BytesVal = []byte{byte(i)}
+	// Encode protobuf message
+	customMessageBytes, err := proto.Marshal(customMessagePb)
+	if err != nil {
+		log.Fatalf("Error encoding message: %v", err)
+	}
+	return customMessageBytes
 }
 
 func errorHandler(e error) {
@@ -130,4 +130,28 @@ func ExampleEmitter() {
 	// Create trace span
 	// Create metric counter
 	// Emit custom message
+}
+
+func ExampleBootstrap() {
+	beholderConfig := beholder.DefaultConfig()
+
+	// Bootstrap Beholder Client
+	err := global.Bootstrap(beholderConfig, errorHandler)
+	if err != nil {
+		log.Fatalf("Error bootstrapping Beholder: %v", err)
+	}
+
+	payloadBytes := newMessageBytes(0)
+
+	// Emit custom message
+	for range 3 {
+		err := global.Emit(context.Background(), payloadBytes, beholder.Attributes{
+			"beholder_data_type": "custom_message",
+			"foo":                "bar",
+		})
+		if err != nil {
+			log.Printf("Error emitting message: %v", err)
+		}
+	}
+	// Output:
 }

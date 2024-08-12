@@ -37,14 +37,14 @@ type Client interface {
 	Close() error
 }
 
-var _ Client = (*beholderClient)(nil)
+var _ Client = (*otelClient)(nil)
 
 type messageEmitter struct {
 	exporter      sdklog.Exporter
 	messageLogger otellog.Logger
 }
 
-type beholderClient struct {
+type otelClient struct {
 	config Config
 	// Logger
 	logger otellog.Logger
@@ -66,7 +66,7 @@ func NewClient(
 	emitter Emitter,
 	onClose func() error,
 ) Client {
-	return &beholderClient{
+	return &otelClient{
 		config:    config,
 		logger:    logger,
 		tracer:    tracer,
@@ -249,22 +249,22 @@ func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error 
 	return nil
 }
 
-func (b *beholderClient) Logger() otellog.Logger {
+func (b *otelClient) Logger() otellog.Logger {
 	return b.logger
 }
 
-func (b *beholderClient) Tracer() oteltrace.Tracer {
+func (b *otelClient) Tracer() oteltrace.Tracer {
 	return b.tracer
 }
 
-func (b *beholderClient) Meter() otelmetric.Meter {
+func (b *otelClient) Meter() otelmetric.Meter {
 	return b.meter
 }
-func (b *beholderClient) Emitter() Emitter {
+func (b *otelClient) Emitter() Emitter {
 	return b.emitter
 }
 
-func (b *beholderClient) Close() error {
+func (b *otelClient) Close() error {
 	if b.closeFunc != nil {
 		return b.closeFunc()
 	}

@@ -80,14 +80,8 @@ func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []Workflo
 	}
 
 	allFiles[file] = content
-
-	abs, err := filepath.Abs(schemaPath)
-	if err != nil {
-		return err
-	}
-
 	typeInfo := cfgInfo.SchemaToTypeInfo[schemaPath]
-	structs, err := generatedInfoFromSrc(path.Dir(abs), content, getCapId(typeInfo), typeInfo)
+	structs, err := generatedInfoFromSrc(filepath.Dir(file), content, getCapId(typeInfo), typeInfo)
 	if err != nil {
 		return err
 	}

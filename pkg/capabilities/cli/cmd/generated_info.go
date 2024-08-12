@@ -47,7 +47,7 @@ func generatedInfoFromSrc(dir, src string, capId *string, typeInfo TypeInfo) (Ge
 	generatedStructs := map[string]Struct{}
 	var extraImports []string
 	ast.Inspect(node, func(n ast.Node) bool {
-		return inspectNode(n, fset, src, generatedStructs, extraImports)
+		return inspectNode(n, fset, src, generatedStructs, &extraImports)
 	})
 
 	root := generatedStructs[typeInfo.RootType]
@@ -70,7 +70,6 @@ func generatedInfoFromSrc(dir, src string, capId *string, typeInfo TypeInfo) (Ge
 func extractInputAndConfig(generatedStructs map[string]Struct, typeInfo TypeInfo, root Struct) (*Struct, Struct) {
 	delete(generatedStructs, typeInfo.RootType)
 	configType := root.Outputs["Config"].Type
-	delete(generatedStructs, configType)
 	inputField, ok := root.Outputs["Inputs"]
 	var input *Struct
 	if ok {
@@ -90,7 +89,7 @@ func extractInputAndConfig(generatedStructs map[string]Struct, typeInfo TypeInfo
 	return input, config
 }
 
-func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string]Struct, extraImports []string) bool {
+func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string]Struct, extraImports *[]string) bool {
 	if ts, ok := n.(*ast.TypeSpec); ok {
 		s := Struct{
 			Name:    strings.TrimSpace(ts.Name.Name),
@@ -147,7 +146,7 @@ func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string
 			if imp.Name != nil {
 				importStr = imp.Name.Name + " " + importStr
 			}
-			extraImports = append(extraImports, importStr)
+			*extraImports = append(*extraImports, importStr)
 		}
 	}
 	return true

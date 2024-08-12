@@ -23,7 +23,7 @@ var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|co
 // reg := regexp.MustCompile(`([^/]+)_(trigger|action)\.json$`)
 
 func init() {
-	generateTypesCmd.Flags().StringVar(&Dir, "dir", ".", fmt.Sprintf("Directory to search for %s files", CapabilitySchemaFilePattern.String()))
+	generateTypesCmd.Flags().StringVar(&Dir, "dir", ".", fmt.Sprintf("Directory to search for %s files, if a file is provided, the directory it is in will be used", CapabilitySchemaFilePattern.String()))
 	if err := generateTypesCmd.MarkFlagDirname("dir"); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -39,6 +39,15 @@ var generateTypesCmd = &cobra.Command{
 	Short: "Generate Go types from JSON schema capability definitions",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := cmd.Flag("dir").Value.String()
+		// To allow go generate to work with $GO_FILE
+		stat, err := os.Stat(dir)
+		if err != nil {
+			return err
+		}
+		if !stat.IsDir() {
+			dir = path.Dir(dir)
+		}
+
 		return GenerateTypes(dir, []WorkflowHelperGenerator{
 			&TemplateWorkflowGeneratorHelper{
 				Templates: map[string]string{"{{.Package|PkgToCapPkg}}/{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},

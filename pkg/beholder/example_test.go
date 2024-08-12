@@ -39,7 +39,7 @@ func ExampleClient() {
 			// Create custom message
 			customMessage := beholder.Message{
 				// Set protobuf message bytes as body
-				Body: newMessageBytes(i),
+				Body: newTestMessageBytes(i),
 				// Set metadata attributes
 				Attrs: metadata.Attributes().Add(
 					// Add custom attributes
@@ -62,9 +62,9 @@ func ExampleClient() {
 	// Emitting message 2
 }
 
-func newMessageBytes(i int) []byte {
+func newTestMessageBytes(i int) []byte {
 	// Create protobuf message
-	customMessagePb := &pb.CustomMessage{}
+	customMessagePb := &pb.TestCustomMessage{}
 	customMessagePb.BoolVal = true
 	customMessagePb.IntVal = int64(i)
 	customMessagePb.FloatVal = float32(i)
@@ -137,7 +137,7 @@ func ExampleBootstrap() {
 		log.Fatalf("Error bootstrapping Beholder: %v", err)
 	}
 
-	payloadBytes := newMessageBytes(0)
+	payloadBytes := newTestMessageBytes(0)
 
 	// Emit custom message
 	for range 3 {

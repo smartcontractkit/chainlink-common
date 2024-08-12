@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/beholder/p
 package pb;
 
 // Used for testing 
-message CustomMessage {
+message TestCustomMessage {
   bool bool_val=1;
   int64 int_val=2;
   float float_val=3;

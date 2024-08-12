@@ -95,7 +95,7 @@ func TestClient(t *testing.T) {
 			otelErrorHandler := func(err error) {
 				t.Fatalf("otel error: %v", err)
 			}
-			// Override exporter factory which is used by BeholderClient
+			// Override exporter factory which is used by Client
 			exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			}
@@ -160,7 +160,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 		client, err := newOtelClient(
 			DefaultConfig(),
 			func(err error) { t.Fatalf("otel error: %v", err) },
-			// Override exporter factory which is used by BeholderClient
+			// Override exporter factory which is used by Client
 			func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			},

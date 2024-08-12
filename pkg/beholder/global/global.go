@@ -12,17 +12,17 @@ import (
 )
 
 // Pointer to the global Beholder Client
-var globalBeholderClient = defaultBeholderClient()
+var globalClient = defaultClient()
 
 // SetClient sets the global Beholder Client
 func SetClient(client *beholder.Client) {
-	globalBeholderClient.Store(client)
+	globalClient.Store(client)
 }
 
 // Returns the global Beholder Client
 // Its thread-safe and can be used concurrently
 func GetClient() beholder.Client {
-	ptr := globalBeholderClient.Load()
+	ptr := globalClient.Load()
 	return *ptr
 }
 
@@ -46,7 +46,7 @@ func SpanFromContext(ctx context.Context) oteltrace.Span {
 	return oteltrace.SpanFromContext(ctx)
 }
 
-func defaultBeholderClient() *atomic.Pointer[beholder.Client] {
+func defaultClient() *atomic.Pointer[beholder.Client] {
 	ptr := &atomic.Pointer[beholder.Client]{}
 	client := beholder.NewNoopClient()
 	ptr.Store(&client)

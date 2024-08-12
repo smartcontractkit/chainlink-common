@@ -40,7 +40,7 @@ func NewNoopClient() Client {
 	return client
 }
 
-// NewStdoutClient creates a new BeholderClient with stdout exporters
+// NewStdoutClient creates a new Client with stdout exporters
 // Use for testing and debugging
 // Also this client is used as a noop client when otel exporter is not initialized properly
 func NewStdoutClient() Client {

@@ -76,7 +76,7 @@ func NewClient(
 	}
 }
 
-// NewOtelClient creates a new BeholderClient with OTel exporter
+// NewOtelClient creates a new Client with OTel exporter
 func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)

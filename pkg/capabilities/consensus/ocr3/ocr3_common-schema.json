@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/common",
+  "$defs": {
+    "SignedReport": {
+      "type": "object",
+      "properties": {
+        "WorkflowExecutionID": {
+          "type": "string"
+        },
+        "Value": {
+          "type": "object",
+          "properties": {
+            "Underlying": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "required": ["Underlying"]
+        },
+        "Err": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["WorkflowExecutionID", "Value", "Err"]
+    }
+  }
+}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -20,7 +21,7 @@ var Dir string
 
 // CapabilitySchemaFilePattern is used to extract the package name from the file path.
 // This is used as the package name for the generated Go types.
-var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|consensus|target)-schema\.json$`)
+var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|consensus|target|common)-schema\.json$`)
 
 // reg := regexp.MustCompile(`([^/]+)_(trigger|action)\.json$`)
 
@@ -81,50 +82,58 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 		}
 
 		var capabilityType capabilities.CapabilityType
+
 		for ; capabilityType.IsValid() == nil && (capabilityType.String() != capabilityTypeRaw); capabilityType++ {
 		}
-		if err = capabilityType.IsValid(); err != nil {
+		if err = capabilityType.IsValid(); err != nil && capabilityTypeRaw != "common" {
 			return fmt.Errorf("invalid capability type %v", capabilityTypeRaw)
 		}
 
 		allFiles[file] = content
 
-		abs, err := filepath.Abs(schemaPath)
-		if err != nil {
-			return err
-		}
-
-		id := ids[schemaPath]
-		idParts := strings.Split(id, "/")
-		id = idParts[len(idParts)-1]
-		var capId *string
-		if strings.Contains(id, "@") {
-			capId = &id
-		}
-		structs, err := StructsFromSrc(path.Dir(abs), content, rootType, capId, capabilityType)
-		if err != nil {
-			return err
-		}
-
-		for _, helper := range helpers {
-			files, err := helper.Generate(structs)
-			if err != nil {
+		if capabilityTypeRaw != "common" {
+			if err = genHelpers(schemaPath, ids, content, rootType, capabilityType, helpers, allFiles); err != nil {
 				return err
-			}
-
-			for f, c := range files {
-				if _, ok := allFiles[f]; ok {
-					return fmt.Errorf("file %v is being created by more than one generator", f)
-				}
-				allFiles[f] = c
 			}
 		}
 
 		if err = printFiles(path.Dir(schemaPath), allFiles); err != nil {
 			return err
 		}
+	}
+	return nil
+}
 
-		fmt.Println("Generated types for", schemaPath)
+func genHelpers(schemaPath string, ids map[string]string, content string, rootType string, capabilityType capabilities.CapabilityType, helpers []WorkflowHelperGenerator, allFiles map[string]string) error {
+	abs, err := filepath.Abs(schemaPath)
+	if err != nil {
+		return err
+	}
+
+	id := ids[schemaPath]
+	idParts := strings.Split(id, "/")
+	id = idParts[len(idParts)-1]
+	var capId *string
+	if strings.Contains(id, "@") {
+		capId = &id
+	}
+	structs, err := StructsFromSrc(path.Dir(abs), content, rootType, capId, capabilityType)
+	if err != nil {
+		return err
+	}
+
+	for _, helper := range helpers {
+		files, err := helper.Generate(structs)
+		if err != nil {
+			return err
+		}
+
+		for f, c := range files {
+			if _, ok := allFiles[f]; ok {
+				return fmt.Errorf("file %v is being created by more than one generator", f)
+			}
+			allFiles[f] = c
+		}
 	}
 	return nil
 }
@@ -146,7 +155,8 @@ func ConfigFromSchemas(schemaFilePaths []string) (generator.Config, map[string]s
 		}
 		capabilityType := capabilityInfo[2]
 		outputName := strings.Replace(schemaFilePath, capabilityType+"-schema.json", capabilityType+"_generated.go", 1)
-		rootType := capitalize(capabilityType)
+		functionName := strcase.ToCamel(strings.Join(strings.Split(capabilityInfo[1], "_")[1:], ")"))
+		rootType := functionName + capitalize(capabilityType)
 		ids[schemaFilePath] = jsonSchema.ID
 
 		cfg.SchemaMappings = append(cfg.SchemaMappings, generator.SchemaMapping{
@@ -185,4 +195,9 @@ func TypesFromJSONSchema(schemaFilePath string, cfg generator.Config) (outputFil
 
 func capitalize(s string) string {
 	return strings.ToUpper(string(s[0])) + s[1:]
+}
+
+type schemaPathAndGenExtra struct {
+	schemaPath string
+	genExtra   bool
 }

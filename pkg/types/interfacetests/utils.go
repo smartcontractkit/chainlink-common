@@ -41,7 +41,27 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
-func submitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) {
+func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], batchCallEntry BatchCallEntry) {
+	nameToAddress := make(map[string]string)
+	boundContracts := tester.GetBindings(t)
+	for _, bc := range boundContracts {
+		nameToAddress[bc.Name] = bc.Address
+	}
+
+	for contractName, contractBatch := range batchCallEntry {
+		require.Contains(t, nameToAddress, contractName)
+		for _, readEntry := range contractBatch {
+			val, isOk := readEntry.ReturnValue.(*TestStruct)
+			if !isOk {
+				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contractName, readEntry.Name, readEntry.ReturnValue)
+			}
+			// it.sendTxWithTestStruct(t, nameToAddress[contractName], val, (*chain_reader_tester.ChainReaderTesterTransactor).AddTestStruct)
+			SubmitTransactionToCW(t, tester, "addTestStruct", val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
+		}
+	}
+}
+
+func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) {
 	txID := uuid.New().String()
 	cw := tester.GetChainWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))

@@ -9,6 +9,7 @@ import (
 )
 
 func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory,ref string, input ConsensusInput)ConsensusCap {
+    
     def := workflows.StepDefinition{
        ID: "offchain_reporting@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{
@@ -27,7 +28,7 @@ func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory,ref string, inpu
    }
     step := workflows.Step[SignedReport]{Definition: def}
      raw := step.AddTo(w)
-    return &consensus{CapDefinition: raw}
+     return &consensus{CapDefinition: raw}
 }
 
 
@@ -42,7 +43,6 @@ type FeedValueCap interface {
 type feedValue struct {
     workflows.CapDefinition[FeedValue]
 }
-
 
 func (*feedValue) private() {}
 func (c *feedValue) Deviation() workflows.CapDefinition[string] {
@@ -102,7 +102,6 @@ type consensus struct {
     workflows.CapDefinition[SignedReport]
 }
 
-
 func (*consensus) private() {}
 func (c *consensus) Err() workflows.CapDefinition[bool] {
     return workflows.AccessField[SignedReport, bool](c.CapDefinition, "Err")
@@ -158,7 +157,6 @@ type SignedReportValueCap interface {
 type signedReportValue struct {
     workflows.CapDefinition[SignedReportValue]
 }
-
 
 func (*signedReportValue) private() {}
 func (c *signedReportValue) Underlying() SignedReportValueUnderlyingCap {

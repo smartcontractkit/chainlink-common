@@ -7,7 +7,8 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory,)TriggerCap { ref := "trigger"
+func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory,)workflows.CapDefinition[[]Feed] {
+     ref := "trigger"
     def := workflows.StepDefinition{
        ID: "streams-trigger@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{
@@ -18,9 +19,9 @@ func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory,)TriggerCap { ref 
        },
        CapabilityType: capabilities.CapabilityTypeTrigger,
    }
-    step := workflows.Step[Feed]{Definition: def}
+    step := workflows.Step[[]Feed]{Definition: def}
      raw := step.AddTo(w)
-    return &trigger{CapDefinition: raw}
+     return raw
 }
 
 
@@ -38,7 +39,6 @@ type TriggerCap interface {
 type trigger struct {
     workflows.CapDefinition[Feed]
 }
-
 
 func (*trigger) private() {}
 func (c *trigger) BenchmarkPrice() workflows.CapDefinition[string] {

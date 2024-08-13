@@ -11,8 +11,8 @@ import (
     {{- end }}
 )
 
-func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}Cap{{- end }} {
-    {{- if eq .CapabilityType.String "trigger" }} ref := "trigger" {{- end }}
+func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{- if eq .RootNumSlice 0}}{{.BaseName}}Cap{{- else }}workflows.CapDefinition[{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}}]{{- end }}{{- end }} {
+    {{ if eq .CapabilityType.String "trigger" }} ref := "trigger" {{- end }}
     def := workflows.StepDefinition{
        ID: {{- if .ID }} "{{.ID}}" {{- else }} id {{- end }},
        {{- if ne .CapabilityType.String "target"}}Ref: ref, {{- end }}
@@ -32,9 +32,9 @@ func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID
        },
        CapabilityType: capabilities.CapabilityType{{.CapabilityType.String|Capitalize}},
    }
-    step := workflows.Step[{{- if eq .CapabilityType.String "target"}}struct{}{{- else }}{{.RootType.Name}} {{- end}}]{Definition: def}
+    step := workflows.Step[{{- if eq .CapabilityType.String "target"}}struct{}{{- else }}{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}} {{- end}}]{Definition: def}
     {{if ne .CapabilityType.String "target"}} raw := {{- end }} step.AddTo(w)
-    return {{- if ne .CapabilityType.String "target"}} &{{.BaseName|LowerFirst}}{CapDefinition: raw} {{- end }}
+    {{if ne .CapabilityType.String "target"}} return {{- if eq 0 .RootNumSlice }} &{{.BaseName|LowerFirst}}{CapDefinition: raw} {{- else }} raw {{- end }} {{- end }}
 }
 
 {{ range $key, $value := .Types }}
@@ -54,7 +54,6 @@ type {{$key|ConvertToBaseIfFirstOutput}}Cap interface {
 type {{$key|ConvertToBaseIfFirstOutput|LowerFirst}} struct {
     workflows.CapDefinition[{{ $key }}]
 }
-
 
 func (*{{$key|ConvertToBaseIfFirstOutput|LowerFirst}}) private() {}
 

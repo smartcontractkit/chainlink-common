@@ -19,6 +19,7 @@ type GeneratedInfo struct {
 	CapabilityType capabilities.CapabilityType
 	BaseName       string
 	RootOutput     string
+	RootNumSlice   int
 	ExtraImports   []string
 	ID             *string
 }
@@ -46,11 +47,14 @@ func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (Generat
 	root := generatedStructs[typeInfo.RootType]
 	input, config := extractInputAndConfig(generatedStructs, typeInfo, root)
 
+	output := root.Outputs["Outputs"]
+
 	return GeneratedInfo{
 		Package:        pkg,
 		Config:         config,
 		Types:          generatedStructs,
-		RootOutput:     root.Outputs["Outputs"].Type,
+		RootOutput:     output.Type,
+		RootNumSlice:   output.NumSlice,
 		BaseName:       typeInfo.RootType,
 		CapabilityType: capabilityTypeFromString(typeInfo.CapabilityTypeRaw),
 		Input:          input,

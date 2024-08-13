@@ -9,6 +9,7 @@ import (
 )
 
 func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string, input TargetInput) {
+    
     def := workflows.StepDefinition{
        ID: id,
        Inputs: workflows.StepInputs{
@@ -25,7 +26,7 @@ func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string, input Ta
    }
     step := workflows.Step[struct{}]{Definition: def}
      step.AddTo(w)
-    return
+    
 }
 
 

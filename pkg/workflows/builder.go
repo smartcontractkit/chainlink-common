@@ -62,11 +62,11 @@ func (c *multiCapList[O]) Ref() any {
 	return c.refs
 }
 
+// self is required to implement CapDefinition, complication fails without it, false positive.
+// nolint
 func (c *multiCapList[O]) self() CapDefinition[[]O] {
 	return c
 }
-
-var _ CapListDefinition[[]string] = &multiCapList[[]string]{}
 
 type singleCapList[O any] struct {
 	CapDefinition[[]O]
@@ -88,11 +88,11 @@ func (c *capDefinitionImpl[O]) Ref() any {
 	return c.ref
 }
 
+// self is required to implement CapDefinition, complication fails without it, false positive.
+// nolint
 func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 	return c
 }
-
-var _ CapDefinition[string] = &capDefinitionImpl[string]{}
 
 type NewWorkflowParams struct {
 	Owner string
@@ -174,8 +174,8 @@ func (c ComponentCapDefinition[O]) Ref() any {
 	return map[string]any(c)
 }
 
+// self is required to implement CapDefinition, complication fails without it, false positive.
+// nolint
 func (c ComponentCapDefinition[O]) self() CapDefinition[O] {
 	return c
 }
-
-var _ CapDefinition[string] = ComponentCapDefinition[string]{}

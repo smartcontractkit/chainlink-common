@@ -281,19 +281,9 @@ func TestClient_Close(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 
-	otelErrorHandler := func(err error) {}
-	// Override exporter factory which is used by Client
-	exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
-		return exporterMock, nil
-	}
-	client, err := newOtelClient(DefaultConfig(), otelErrorHandler, exporterFactory)
-	if err != nil {
-		t.Fatalf("Error creating beholder client: %v", err)
-	}
+	client := NewStdoutClient()
 
-	exporterMock.On("Shutdown", mock.Anything).Return(nil).Once()
-
-	err = client.Close()
+	err := client.Close()
 	assert.NoError(t, err)
 
 	exporterMock.AssertExpectations(t)

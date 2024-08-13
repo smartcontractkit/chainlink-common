@@ -7,6 +7,9 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/maps"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -154,10 +157,13 @@ func (c Config) NewService(lggr logger.Logger) Service {
 	return c.new(logger.Sugared(lggr))
 }
 
+const scopeName = "github.com/smartcontractkit/chainlink-common/pkg/services"
+
 func (c Config) new(lggr logger.SugaredLogger) *service {
 	lggr = lggr.Named(c.Name)
 	s := &service{
-		cfg: c,
+		tracer: otel.GetTracerProvider().Tracer(scopeName),
+		cfg:    c,
 		eng: Engine{
 			StopChan:      make(StopChan),
 			SugaredLogger: lggr,
@@ -173,9 +179,10 @@ func (c Config) new(lggr logger.SugaredLogger) *service {
 
 type service struct {
 	StateMachine
-	cfg  Config
-	eng  Engine
-	subs []Service
+	tracer trace.Tracer
+	cfg    Config
+	eng    Engine
+	subs   []Service
 }
 
 // Ready implements [HealthReporter.Ready] and overrides and extends [utils.StartStopOnce.Ready()] to include [Config.SubServices]
@@ -210,6 +217,13 @@ func (s *service) Name() string { return s.eng.SugaredLogger.Name() }
 
 func (s *service) Start(ctx context.Context) error {
 	return s.StartOnce(s.cfg.Name, func() error {
+		var span trace.Span
+		ctx, span = s.tracer.Start(ctx, "Start", trace.WithAttributes(
+			attribute.String("service.name", s.cfg.Name),
+			attribute.String("service.instance", s.Name()), // full name from logger
+		))
+		defer span.End()
+
 		s.eng.Info("Starting")
 		if len(s.subs) > 0 {
 			var ms MultiStart

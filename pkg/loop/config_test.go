@@ -112,13 +112,21 @@ func TestEnvConfig_parse(t *testing.T) {
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	envCfg := EnvConfig{
-		DatabaseURL:            &url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"},
-		PrometheusPort:         9090,
+		DatabaseURL:    &url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"},
+		PrometheusPort: 9090,
+
 		TracingEnabled:         true,
 		TracingCollectorTarget: "http://localhost:9000",
 		TracingSamplingRatio:   0.1,
 		TracingTLSCertPath:     "some/path",
 		TracingAttributes:      map[string]string{"key": "value"},
+
+		TelemetryEnabled:            true,
+		TelemetryEndpoint:           "example.com/beholder",
+		TelemetryInsecureConnection: true,
+		TelemetryCACertFile:         "foo/bar",
+		TelemetryAttributes:         OtelAttributes{"foo": "bar", "baz": "42"},
+		TelemetryTraceSampleRatio:   0.42,
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -129,11 +137,20 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 
 	assert.Equal(t, "postgres://user:password@localhost:5432/db", got[envDatabaseURL])
 	assert.Equal(t, strconv.Itoa(9090), got[envPromPort])
+
 	assert.Equal(t, "true", got[envTracingEnabled])
 	assert.Equal(t, "http://localhost:9000", got[envTracingCollectorTarget])
 	assert.Equal(t, "0.1", got[envTracingSamplingRatio])
 	assert.Equal(t, "some/path", got[envTracingTLSCertPath])
 	assert.Equal(t, "value", got[envTracingAttribute+"key"])
+
+	assert.Equal(t, "true", got[envTelemetryEnabled])
+	assert.Equal(t, "example.com/beholder", got[envTelemetryEndpoint])
+	assert.Equal(t, "true", got[envTelemetryInsecureConn])
+	assert.Equal(t, "foo/bar", got[envTelemetryCACertFile])
+	assert.Equal(t, "0.42", got[envTelemetryTraceSampleRatio])
+	assert.Equal(t, "bar", got[envTelemetryAttribute+"foo"])
+	assert.Equal(t, "42", got[envTelemetryAttribute+"baz"])
 }
 
 func TestManagedGRPCClientConfig(t *testing.T) {

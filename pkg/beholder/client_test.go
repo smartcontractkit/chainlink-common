@@ -82,18 +82,15 @@ func TestClient(t *testing.T) {
 			exporterMock := mocks.NewOTLPExporter(t)
 			defer exporterMock.AssertExpectations(t)
 
-			otelErrorHandler := func(err error) {
-				t.Fatalf("otel error: %v", err)
-			}
 			// Override exporter factory which is used by Client
-			exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			exporterFactory := func(...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			}
-			client, err := newClient(tests.Context(t), TestDefaultConfig(), exporterFactory)
+			client, err := newClient(TestDefaultConfig(), exporterFactory)
 			if err != nil {
 				t.Fatalf("Error creating beholder client: %v", err)
 			}
-			otel.SetErrorHandler(otel.ErrorHandlerFunc(otelErrorHandler))
+			otel.SetErrorHandler(otelMustNotErr(t))
 			// Number of exported messages
 			exportedMessageCount := 0
 
@@ -142,14 +139,13 @@ func TestClient(t *testing.T) {
 func TestEmitterMessageValidation(t *testing.T) {
 	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
 		client, err := newClient(
-			tests.Context(t),
 			TestDefaultConfig(),
 			// Override exporter factory which is used by Client
-			func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			func(...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			},
 		)
-		otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { t.Fatalf("otel error: %v", err) }))
+		otel.SetErrorHandler(otelMustNotErr(t))
 		assert.NoError(t, err)
 		return client.Emitter
 	}
@@ -251,4 +247,8 @@ func TestClient_ForPackage(t *testing.T) {
 	clientForTest.Close()
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testMetric")
+}
+
+func otelMustNotErr(t *testing.T) otel.ErrorHandlerFunc {
+	return func(err error) { t.Fatalf("otel error: %v", err) }
 }

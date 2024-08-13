@@ -52,17 +52,18 @@ type Client struct {
 
 // NewClient creates a new Client with initialized OpenTelemetry components
 // To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler)
-func NewClient(ctx context.Context, cfg Config) (*Client, error) {
-	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
-		return otlploggrpc.New(ctx, options...)
+func NewClient(cfg Config) (*Client, error) {
+	factory := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+		// note: context is unused internally
+		return otlploggrpc.New(context.Background(), options...) //nolint
 	}
-	return newClient(ctx, cfg, factory)
+	return newClient(cfg, factory)
 }
 
 // Used for testing to override the default exporter
-type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
+type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newClient(ctx context.Context, cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
+func newClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
 	if err != nil {
@@ -76,7 +77,6 @@ func newClient(ctx context.Context, cfg Config, otlploggrpcNew otlploggrpcFactor
 		}
 	}
 	sharedLogExporter, err := otlploggrpcNew(
-		ctx,
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	)
@@ -162,9 +162,7 @@ func newClient(ctx context.Context, cfg Config, otlploggrpcNew otlploggrpcFactor
 		}
 		return
 	}
-	client := Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
-
-	return &client, nil
+	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes
@@ -256,17 +254,20 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	if err != nil {
 		return nil, err
 	}
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter,
-			trace.WithBatchTimeout(config.TraceBatchTimeout)), // Default is 5s
+
+	opts := []sdktrace.TracerProviderOption{
+		sdktrace.WithBatcher(exporter, trace.WithBatchTimeout(config.TraceBatchTimeout)), // Default is 5s
 		sdktrace.WithResource(resource),
 		sdktrace.WithSampler(
 			sdktrace.ParentBased(
 				sdktrace.TraceIDRatioBased(config.TraceSampleRatio),
 			),
 		),
-	)
-	return tp, nil
+	}
+	if config.TraceSpanExporter != nil {
+		opts = append(opts, sdktrace.WithBatcher(config.TraceSpanExporter))
+	}
+	return sdktrace.NewTracerProvider(opts...), nil
 }
 
 func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {

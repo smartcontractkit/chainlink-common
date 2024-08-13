@@ -251,7 +251,13 @@ func unwrapTo[T any](underlying T, to any) error {
 		}
 		*tb = underlying
 	default:
-		return fmt.Errorf("cannot unwrap to value of type: %T", to)
+		rTo := reflect.ValueOf(to)
+		rUnderlying := reflect.ValueOf(underlying)
+		underlyingPtr := reflect.PointerTo(rUnderlying.Type())
+		if rTo.Kind() != reflect.Pointer || !rTo.CanConvert(underlyingPtr) {
+			return fmt.Errorf("cannot unwrap to value of type: %T", to)
+		}
+		reflect.Indirect(rTo.Convert(underlyingPtr)).Set(rUnderlying)
 	}
 
 	return nil

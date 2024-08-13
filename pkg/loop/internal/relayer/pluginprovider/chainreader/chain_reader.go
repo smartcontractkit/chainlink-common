@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -539,7 +540,7 @@ func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, r
 			}
 			var err error
 			if res.Error != "" {
-				err = fmt.Errorf(res.Error)
+				err = errors.New(res.Error)
 			}
 
 			brr := types.BatchReadResult{ReadName: res.ReadName}

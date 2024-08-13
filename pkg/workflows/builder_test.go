@@ -17,6 +17,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams"
 )
 
+//go:generate go run github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli generate-types --dir $GOFILE
+
 // Note that the set of tests in this file cover the conversion from existing YAM -> code
 // along with testing the structure of what is generated from the builders.
 // This implicitly tests the code generators functionally, as the generated code is used in the tests.

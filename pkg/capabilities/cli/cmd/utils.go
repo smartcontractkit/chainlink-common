@@ -14,7 +14,7 @@ func printFiles(dir string, files map[string]string) error {
 			file = dir + "/" + file
 		}
 
-		if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
+		if err := os.MkdirAll(path.Dir(file), 0644); err != nil {
 			return err
 		}
 

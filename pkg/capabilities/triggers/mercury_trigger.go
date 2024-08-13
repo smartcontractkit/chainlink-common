@@ -38,8 +38,6 @@ type inputs struct {
 	TriggerID string `json:"triggerId"`
 }
 
-var mercuryTriggerValidator = capabilities.NewValidator[Config, inputs, capabilities.TriggerEvent](capabilities.ValidatorArgs{Info: capInfo})
-
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
 	capabilities.Validator[Config, inputs, capabilities.TriggerEvent]

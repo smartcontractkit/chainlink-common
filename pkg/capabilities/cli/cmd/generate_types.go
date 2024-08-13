@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -90,7 +89,7 @@ func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []Workflo
 
 	allFiles[file] = content
 	typeInfo := cfgInfo.SchemaToTypeInfo[schemaPath]
-	structs, err := generatedInfoFromSrc(filepath.Dir(file), content, getCapId(typeInfo), typeInfo)
+	structs, err := generatedInfoFromSrc(filepath.Dir(file), content, getCapID(typeInfo), typeInfo)
 	if err != nil {
 		return err
 	}
@@ -107,15 +106,15 @@ func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []Workflo
 	return nil
 }
 
-func getCapId(typeInfo TypeInfo) *string {
-	id := typeInfo.SchemaId
+func getCapID(typeInfo TypeInfo) *string {
+	id := typeInfo.SchemaID
 	idParts := strings.Split(id, "/")
 	id = idParts[len(idParts)-1]
-	var capId *string
+	var capID *string
 	if strings.Contains(id, "@") {
-		capId = &id
+		capID = &id
 	}
-	return capId
+	return capID
 }
 
 func schemaFilesFromDir(dir string) ([]string, error) {
@@ -134,7 +133,7 @@ func schemaFilesFromDir(dir string) ([]string, error) {
 		schemaPaths = append(schemaPaths, path)
 		return nil
 	}); err != nil {
-		return nil, errors.New(fmt.Sprintf("error walking the directory %v: %v\n", dir, err))
+		return nil, fmt.Errorf("error walking the directory %v: %v\n", dir, err)
 	}
 	return schemaPaths, nil
 }
@@ -182,7 +181,7 @@ func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 		configInfo.SchemaToTypeInfo[schemaFilePath] = TypeInfo{
 			CapabilityTypeRaw: capabilityTypeRaw,
 			RootType:          rootType,
-			SchemaId:          jsonSchema.ID,
+			SchemaID:          jsonSchema.ID,
 		}
 
 		configInfo.Config.SchemaMappings = append(configInfo.Config.SchemaMappings, generator.SchemaMapping{

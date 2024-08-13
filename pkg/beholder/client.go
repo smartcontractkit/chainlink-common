@@ -144,7 +144,10 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		sdklog.WithProcessor(messageLogProcessor),
 	)
 	messageLogger := messageLoggerProvider.Logger(cfg.PackageName)
-	messageEmitter := newMessageEmitter(sharedLogExporter, messageLogger)
+
+	messageEmitter := &messageEmitter{
+		messageLogger: messageLogger,
+	}
 
 	setOtelErrorHandler(errorHandler)
 
@@ -207,16 +210,6 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 		return nil, err
 	}
 	return
-}
-
-func newMessageEmitter(
-	exporter sdklog.Exporter,
-	messageLogger otellog.Logger,
-) Emitter {
-	return messageEmitter{
-		exporter:      exporter,
-		messageLogger: messageLogger,
-	}
 }
 
 // Emits logs the message, but does not wait for the message to be processed.

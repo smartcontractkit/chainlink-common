@@ -53,6 +53,9 @@ type OtelClient struct {
 	LoggerProvider otellog.LoggerProvider
 	TracerProvider oteltrace.TracerProvider
 	MeterProvider  otelmetric.MeterProvider
+
+	// OnClose
+	onClose func() error
 }
 
 // NewOtelClient creates a new Client with OTel exporter
@@ -151,11 +154,25 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 
 	setOtelErrorHandler(errorHandler)
 
-	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider}
+	onClose := func() (err error) {
+		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider} {
+			err = errors.Join(err, provider.Shutdown(context.Background()))
+		}
+		return
+	}
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, onClose}
 
 	return client, nil
 }
 
+// Sets the global OTel logger, tracer, meter providers.
+// Makes them accessible from anywhere in the code via global otel getters:
+// - otelglobal.GetLoggerProvider()
+// - otel.GetTracerProvider()
+// - otel.GetTextMapPropagator()
+// - otel.GetMeterProvider()
+// Any package that relies on go.opentelemetry.io will be able to pick up configured global providers
+// e.g [otelgrpc](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc#example-NewServerHandler)
 func (c OtelClient) SetGlobals() {
 	// Logger
 	otelglobal.SetLoggerProvider(c.LoggerProvider)
@@ -166,13 +183,10 @@ func (c OtelClient) SetGlobals() {
 	otel.SetMeterProvider(c.MeterProvider)
 }
 
+// Closes all providers, flushes all data and stops all background processes
 func (c OtelClient) Close() (err error) {
-	for _, provider := range []any{c.LoggerProvider, c.TracerProvider, c.MeterProvider} {
-		if p, ok := provider.(otelProvider); ok {
-			err = errors.Join(err, p.Shutdown(context.Background()))
-		} else {
-			err = errors.Join(err, errors.New("provider does not implement Shutdown method"))
-		}
+	if c.onClose != nil {
+		return c.onClose()
 	}
 	return
 }
@@ -231,7 +245,7 @@ func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error 
 	return nil
 }
 
-type otelProvider interface {
+type shutdowner interface {
 	Shutdown(ctx context.Context) error
 }
 

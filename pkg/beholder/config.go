@@ -13,7 +13,7 @@ type Config struct {
 
 	PackageName string
 	// OTel Resource
-	ResourceAttributes map[string]string
+	ResourceAttributes []otelattr.KeyValue
 	// Message Emitter
 	EmitterExportTimeout time.Duration
 	// OTel Trace
@@ -25,8 +25,8 @@ type Config struct {
 	LogExportTimeout time.Duration
 }
 
-var defaultOtelAttributes = map[string]string{
-	"package_name": "beholder",
+var defaultOtelAttributes = []otelattr.KeyValue{
+	otelattr.String("package_name", "beholder"),
 }
 
 func DefaultConfig() Config {
@@ -47,12 +47,4 @@ func DefaultConfig() Config {
 		// Log
 		LogExportTimeout: 1 * time.Second,
 	}
-}
-
-func (c Config) Attributes() []otelattr.KeyValue {
-	attrs := make([]otelattr.KeyValue, 0, len(c.ResourceAttributes))
-	for k, v := range c.ResourceAttributes {
-		attrs = append(attrs, otelattr.String(k, v))
-	}
-	return attrs
 }

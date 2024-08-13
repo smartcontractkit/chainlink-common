@@ -199,12 +199,8 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 		return nil, err
 	}
 	// Add custom resource attributes
-	attrs := make([]attribute.KeyValue, 0, len(cfg.ResourceAttributes))
-	for k, v := range cfg.ResourceAttributes {
-		attrs = append(attrs, attribute.String(k, v))
-	}
 	resource, err = sdkresource.Merge(
-		sdkresource.NewSchemaless(attrs...),
+		sdkresource.NewSchemaless(cfg.ResourceAttributes...),
 		resource,
 	)
 	if err != nil {

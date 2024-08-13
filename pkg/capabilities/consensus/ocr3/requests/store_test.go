@@ -37,11 +37,9 @@ func TestOCR3Store(t *testing.T) {
 		assert.True(t, wasPresent)
 		assert.Len(t, s.requests, 0)
 
-		// evicting doesn't remove from the list of requestIDs
-		assert.Len(t, s.requestIDs, 1)
 	})
 
-	t.Run("firstN, evicts removed items", func(t *testing.T) {
+	t.Run("firstN", func(t *testing.T) {
 		r, err := s.FirstN(ctx, 1)
 		assert.NoError(t, err)
 		assert.Len(t, r, 0)
@@ -62,11 +60,38 @@ func TestOCR3Store(t *testing.T) {
 		assert.Len(t, items, 10)
 	})
 
-	t.Run("getN", func(t *testing.T) {
+	t.Run("getByIDs", func(t *testing.T) {
 		rid2 := uuid.New().String()
 		err := s.Add(req)
 		require.NoError(t, err)
-		reqs := s.GetN(ctx, []string{rid, rid2})
+		reqs := s.GetByIDs(ctx, []string{rid, rid2})
 		require.Equal(t, 1, len(reqs))
 	})
+}
+
+func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
+	s := NewStore()
+	rid := uuid.New().String()
+	req := &Request{
+		WorkflowExecutionID: rid,
+	}
+
+	err := s.Add(req)
+	require.NoError(t, err)
+	assert.Len(t, s.requests, 1)
+	assert.Len(t, s.requestIDs, 1)
+
+	s.GetByIDs(tests.Context(t), []string{rid})
+	assert.Len(t, s.requests, 1)
+	assert.Len(t, s.requestIDs, 1)
+
+	_, ok := s.evict(rid)
+	assert.True(t, ok)
+	assert.Len(t, s.requests, 0)
+	assert.Len(t, s.requestIDs, 0)
+
+	err = s.Add(req)
+	require.NoError(t, err)
+	assert.Len(t, s.requests, 1)
+	assert.Len(t, s.requestIDs, 1)
 }

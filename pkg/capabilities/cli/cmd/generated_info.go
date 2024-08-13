@@ -4,7 +4,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"unicode"
@@ -21,19 +20,14 @@ type GeneratedInfo struct {
 	BaseName       string
 	RootOutput     string
 	ExtraImports   []string
-	Id             *string
+	ID             *string
 }
 
 func (g GeneratedInfo) RootType() Struct {
 	return g.Types[g.RootOutput]
 }
 
-func generatedInfoFromSrc(dir, src string, capId *string, typeInfo TypeInfo) (GeneratedInfo, error) {
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		return GeneratedInfo{}, err
-	}
-
+func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (GeneratedInfo, error) {
 	fset := token.NewFileSet()
 
 	// Parse the source code string
@@ -61,7 +55,7 @@ func generatedInfoFromSrc(dir, src string, capId *string, typeInfo TypeInfo) (Ge
 		CapabilityType: capabilityTypeFromString(typeInfo.CapabilityTypeRaw),
 		Input:          input,
 		ExtraImports:   extraImports,
-		Id:             capId,
+		ID:             capID,
 	}, nil
 }
 

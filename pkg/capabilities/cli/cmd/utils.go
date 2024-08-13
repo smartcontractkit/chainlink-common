@@ -14,11 +14,11 @@ func printFiles(dir string, files map[string]string) error {
 			file = dir + "/" + file
 		}
 
-		if err := os.MkdirAll(path.Dir(file), 0644); err != nil {
+		if err := os.MkdirAll(path.Dir(file), 0600); err != nil {
 			return err
 		}
 
-		if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(file, []byte(content), 0600); err != nil {
 			return err
 		}
 	}

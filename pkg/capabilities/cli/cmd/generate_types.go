@@ -89,7 +89,7 @@ func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []Workflo
 
 	allFiles[file] = content
 	typeInfo := cfgInfo.SchemaToTypeInfo[schemaPath]
-	structs, err := generatedInfoFromSrc(filepath.Dir(file), content, getCapID(typeInfo), typeInfo)
+	structs, err := generatedInfoFromSrc(content, getCapID(typeInfo), typeInfo)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func schemaFilesFromDir(dir string) ([]string, error) {
 		schemaPaths = append(schemaPaths, path)
 		return nil
 	}); err != nil {
-		return nil, fmt.Errorf("error walking the directory %v: %v\n", dir, err)
+		return nil, fmt.Errorf("error walking the directory %v: %v", dir, err)
 	}
 	return schemaPaths, nil
 }

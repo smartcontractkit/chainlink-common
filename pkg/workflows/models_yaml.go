@@ -451,13 +451,13 @@ func (inputs) JSONSchema() *jsonschema.Schema {
 
 // StepDefinitionID represents both the string and table representations of the "id" field in a StepDefinition.
 type StepDefinitionID struct {
-	IdStr   string
+	IDStr   string
 	idTable *stepDefinitionTableID
 }
 
 func (s StepDefinitionID) String() string {
-	if s.IdStr != "" {
-		return s.IdStr
+	if s.IDStr != "" {
+		return s.IDStr
 	}
 
 	return s.idTable.String()
@@ -468,7 +468,7 @@ func (s *StepDefinitionID) UnmarshalJSON(data []byte) error {
 	var m string
 	err := json.Unmarshal(data, &m)
 	if err == nil {
-		s.IdStr = m
+		s.IDStr = m
 		return nil
 	}
 
@@ -483,8 +483,8 @@ func (s *StepDefinitionID) UnmarshalJSON(data []byte) error {
 }
 
 func (s *StepDefinitionID) MarshalJSON() ([]byte, error) {
-	if s.IdStr != "" {
-		return json.Marshal(s.IdStr)
+	if s.IDStr != "" {
+		return json.Marshal(s.IDStr)
 	}
 
 	return json.Marshal(s.idTable)

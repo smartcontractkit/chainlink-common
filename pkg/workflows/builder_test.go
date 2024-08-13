@@ -37,7 +37,7 @@ func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
 		return nil, err
 	}
 
-	workflow := workflows.NewWorkflow(conf.Workflow)
+	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	streamsTrigger := conf.Streams.New(workflow)
 	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
 		Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
@@ -108,7 +108,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*workflows.WorkflowSpecFactory, erro
 	}
 	ocr3Config.AggregationConfig.Feeds = feeds
 
-	workflow := workflows.NewWorkflow(conf.Workflow)
+	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	streamsTrigger := streamsConfig.New(workflow)
 
 	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
@@ -128,7 +128,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 		return nil, err
 	}
 
-	workflow := workflows.NewWorkflow(conf.Workflow)
+	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	notStreamsTrigger := conf.NotStream.New(workflow)
 
 	feedsInput := streams.NewTriggerFromFields(

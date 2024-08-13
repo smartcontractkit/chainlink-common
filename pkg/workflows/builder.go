@@ -66,6 +66,8 @@ func (c *multiCapList[O]) self() CapDefinition[[]O] {
 	return c
 }
 
+var _ CapListDefinition[[]string] = &multiCapList[[]string]{}
+
 type singleCapList[O any] struct {
 	CapDefinition[[]O]
 }
@@ -90,12 +92,14 @@ func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 	return c
 }
 
+var _ CapDefinition[string] = &capDefinitionImpl[string]{}
+
 type NewWorkflowParams struct {
 	Owner string
 	Name  string
 }
 
-func NewWorkflow(
+func NewWorkflowSpecFactory(
 	params NewWorkflowParams,
 ) *WorkflowSpecFactory {
 	return &WorkflowSpecFactory{
@@ -116,12 +120,12 @@ func NewWorkflow(
 // AddTo is meant to be called by generated code
 func (step *Step[O]) AddTo(w *WorkflowSpecFactory) CapDefinition[O] {
 	stepDefinition := step.Definition
-	stepId := stepDefinition.ID
-	if w.names[stepId] {
-		w.duplicateNames[stepId] = true
+	stepID := stepDefinition.ID
+	if w.names[stepID] {
+		w.duplicateNames[stepID] = true
 	}
 
-	if stepId == "" && stepDefinition.CapabilityType != capabilities.CapabilityTypeTarget {
+	if stepID == "" && stepDefinition.CapabilityType != capabilities.CapabilityTypeTarget {
 		w.emptyNames = true
 	}
 
@@ -173,3 +177,5 @@ func (c ComponentCapDefinition[O]) Ref() any {
 func (c ComponentCapDefinition[O]) self() CapDefinition[O] {
 	return c
 }
+
+var _ CapDefinition[string] = ComponentCapDefinition[string]{}

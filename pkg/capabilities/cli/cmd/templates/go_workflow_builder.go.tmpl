@@ -11,10 +11,10 @@ import (
     {{- end }}
 )
 
-func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .Id }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}Cap{{- end }} {
+func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}Cap{{- end }} {
     {{- if eq .CapabilityType.String "trigger" }} ref := "trigger" {{- end }}
     def := workflows.StepDefinition{
-       ID: {{- if .Id }} "{{.Id}}" {{- else }} id {{- end }},
+       ID: {{- if .ID }} "{{.ID}}" {{- else }} id {{- end }},
        {{- if ne .CapabilityType.String "target"}}Ref: ref, {{- end }}
        Inputs: workflows.StepInputs{
 {{- if .Input }}

@@ -18,6 +18,7 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type MockExporter struct {
@@ -74,7 +75,7 @@ func TestClient(t *testing.T) {
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
 			messageGenerator: func(client OtelClient, messageBody []byte, customAttributes map[string]any) {
-				err := client.Emitter.Emit(context.Background(), messageBody, customAttributes)
+				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
 		}, {
@@ -86,7 +87,7 @@ func TestClient(t *testing.T) {
 			exporterOutputExpected: true,
 			messageGenerator: func(client OtelClient, messageBody []byte, customAttributes map[string]any) {
 				message := NewMessage(messageBody, customAttributes)
-				err := client.Emitter.EmitMessage(context.Background(), message)
+				err := client.Emitter.EmitMessage(tests.Context(t), message)
 				assert.NoError(t, err)
 			},
 		},
@@ -261,7 +262,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 			t.Run("Emitter.EmitMessage", func(t *testing.T) {
 				emitter, message, assertExpectations := setupTest()
 
-				err := emitter.EmitMessage(context.Background(), message)
+				err := emitter.EmitMessage(tests.Context(t), message)
 
 				assertExpectations(err)
 			})
@@ -269,7 +270,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 			t.Run("Emitter.Emit", func(t *testing.T) {
 				emitter, message, assertExpectations := setupTest()
 
-				err := emitter.Emit(context.Background(), message.Body, tc.attrs)
+				err := emitter.Emit(tests.Context(t), message.Body, tc.attrs)
 
 				assertExpectations(err)
 			})

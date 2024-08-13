@@ -1,7 +1,6 @@
 package global_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/global"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestGlobal(t *testing.T) {
@@ -40,15 +40,15 @@ func TestGlobal(t *testing.T) {
 	logger, tracer, meter, messageEmitter = global.Logger(), global.Tracer(), global.Meter(), global.Emitter()
 
 	// Emit otel log record
-	logger.Emit(context.Background(), otellog.Record{})
+	logger.Emit(tests.Context(t), otellog.Record{})
 
 	// Create trace span
-	ctx, span := tracer.Start(context.Background(), "ExampleGlobalClient", oteltrace.WithAttributes(otelattribute.String("key", "value")))
+	ctx, span := tracer.Start(tests.Context(t), "ExampleGlobalClient", oteltrace.WithAttributes(otelattribute.String("key", "value")))
 	defer span.End()
 
 	// Create metric counter
 	counter, _ := meter.Int64Counter("global_counter")
-	counter.Add(context.Background(), 1)
+	counter.Add(tests.Context(t), 1)
 
 	// Emit custom message
 	err := messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{"key": "value"})

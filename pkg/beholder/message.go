@@ -202,7 +202,7 @@ func OtelAttr(key string, value any) otellog.KeyValue {
 	case attribute.Value:
 		return OtelAttr(key, v.AsInterface())
 	default:
-		return otellog.String(key, fmt.Sprintf("<unhandled beholder attribute value type: %T>", v))
+		return otellog.String(key, fmt.Sprintf("<unhandled beholder attribute value type: %T, value:%v>", v, v))
 	}
 }
 

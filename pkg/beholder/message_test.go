@@ -2,10 +2,13 @@ package beholder_test
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
+	otellog "go.opentelemetry.io/otel/log"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
@@ -149,4 +152,30 @@ func TestAttributesConversion(t *testing.T) {
 	attrs := expected.Attributes()
 	actual := beholder.NewMetadata(attrs)
 	assert.Equal(t, expected, *actual)
+}
+
+func TestMessage_OtelAttributes(t *testing.T) {
+	type notSupportedType struct {
+		value string
+	}
+	m := beholder.NewMessage([]byte{1}, beholder.Attributes{
+		"key_string":         "value",
+		"key_int":            1,
+		"not_supported_type": notSupportedType{"not supported type"},
+	})
+	otelAttrs := make([]otellog.KeyValue, 0, len(m.Attrs))
+	for k, v := range m.Attrs {
+		otelAttrs = append(otelAttrs, beholder.OtelAttr(k, v))
+	}
+	slices.SortFunc(otelAttrs, func(a, b otellog.KeyValue) int {
+		return strings.Compare(a.Key, b.Key)
+	})
+
+	assert.Equal(t, 3, len(otelAttrs))
+	assert.Equal(t, "key_int", otelAttrs[0].Key)
+	assert.Equal(t, int64(1), otelAttrs[0].Value.AsInt64())
+	assert.Equal(t, "key_string", otelAttrs[1].Key)
+	assert.Equal(t, "value", otelAttrs[1].Value.AsString())
+	assert.Equal(t, "not_supported_type", otelAttrs[2].Key)
+	assert.Equal(t, "<unhandled beholder attribute value type: beholder_test.notSupportedType, value:{not supported type}>", otelAttrs[2].Value.AsString())
 }

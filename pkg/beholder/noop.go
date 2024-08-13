@@ -79,7 +79,7 @@ func NewStdoutClient() OtelClient {
 
 type noopMessageEmitter struct{}
 
-func (noopMessageEmitter) Emit(ctx context.Context, body []byte, attrs map[string]any) error {
+func (noopMessageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return nil
 }
 func (noopMessageEmitter) EmitMessage(ctx context.Context, message Message) error {

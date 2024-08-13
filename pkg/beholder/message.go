@@ -11,7 +11,7 @@ import (
 )
 
 type Message struct {
-	Attrs map[string]any
+	Attrs Attributes
 	Body  []byte
 }
 
@@ -68,26 +68,45 @@ func (m Metadata) Attributes() Attributes {
 
 type Attributes map[string]any
 
-func NewAttributes(args ...any) Attributes {
-	attrs := make(Attributes, len(args)/2)
-	attrs.Add(args...)
+func NewAttributes(attrKVs ...any) Attributes {
+	attrs := make(Attributes, len(attrKVs)/2)
+	attrs.Add(attrKVs...)
 	return attrs
 }
 
-func (a Attributes) Add(args ...any) Attributes {
-	for i := 1; i < len(args); i += 2 {
-		if key, ok := args[i-1].(string); ok {
-			val := args[i]
-			a[key] = val
+func (a Attributes) Add(attrKVs ...any) Attributes {
+	l := len(attrKVs)
+	for i := 0; i < l; {
+		switch t := attrKVs[i].(type) {
+		case map[string]any:
+			for k, v := range t {
+				a[k] = v
+			}
+			i++
+		case Attributes:
+			for k, v := range t {
+				a[k] = v
+			}
+			i++
+		case string:
+			if i+1 >= l {
+				break
+			}
+			val := attrKVs[i+1]
+			a[t] = val
+			i += 2
+		default:
+			// Unexpected type
+			return a
 		}
 	}
 	return a
 }
 
-func NewMessage(body []byte, attrs Attributes) Message {
+func NewMessage(body []byte, attrKVs ...any) Message {
 	return Message{
 		Body:  body,
-		Attrs: attrs,
+		Attrs: NewAttributes(attrKVs...),
 	}
 }
 

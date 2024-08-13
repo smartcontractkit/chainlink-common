@@ -12,8 +12,8 @@ import (
 
 func ExampleMessage() {
 	// Create message with body and attributes
-	e1 := beholder.NewMessage([]byte{1}, beholder.Attributes{"key_string": "value"})
-	fmt.Println("#1", e1)
+	m1 := beholder.NewMessage([]byte{1}, beholder.Attributes{"key_string": "value"})
+	fmt.Println("#1", m1)
 	// Create attributes
 	additionalAttributes := beholder.Attributes{
 		"key_string": "new value",
@@ -26,36 +26,56 @@ func ExampleMessage() {
 		"key3", true,
 	)
 	// Add attributes to message
-	e1.AddAttributes(additionalAttributes)
-	fmt.Println("#2", e1)
-	// Create empty message struct
-	e2 := beholder.Message{}
-	fmt.Println("#3", e2)
+	m1.AddAttributes(additionalAttributes)
+	fmt.Println("#2", m1)
+	// Create mmpty message struct
+	m2 := beholder.Message{}
+	fmt.Println("#3", m2)
 	// Add attributes to message
-	e2.AddAttributes(beholder.Attributes{"key_int": 1})
-	fmt.Println("#4", e2)
+	m2.AddAttributes(beholder.Attributes{"key_int": 1})
+	fmt.Println("#4", m2)
 	// Update attribute key_int
-	e2.AddAttributes(beholder.Attributes{"key_int": 2})
-	fmt.Println("#5", e2)
+	m2.AddAttributes(beholder.Attributes{"key_int": 2})
+	fmt.Println("#5", m2)
 	// Set message body
-	e2.Body = []byte("0123")
-	fmt.Println("#6", e2)
+	m2.Body = []byte("0123")
+	fmt.Println("#6", m2)
 	// Reset attributes
-	e2.Attrs = beholder.Attributes{}
-	fmt.Println("#7", e2)
+	m2.Attrs = beholder.Attributes{}
+	fmt.Println("#7", m2)
 	// Reset body
-	e2.Body = nil
-	fmt.Println("#8", e2)
+	m2.Body = nil
+	fmt.Println("#8", m2)
 	// Shalow copy of message
-	e3 := beholder.NewMessage(e1.Body, e1.Attrs)
-	fmt.Println("#9", e3)
-	e1.Body[0] = byte(2) // Wil mutate e3
-	fmt.Println("#10", e3)
+	m3 := beholder.NewMessage(m1.Body, m1.Attrs)
+	fmt.Println("#9", m3)
+	m1.Body[0] = byte(2) // Wil mutate m3
+	fmt.Println("#10", m3)
 	// Deep copy
-	e4 := e1.Copy()
-	fmt.Println("#11", e4)
-	e1.Body[0] = byte(3) // Should not mutate e4
-	fmt.Println("#12", e4)
+	m4 := m1.Copy()
+	fmt.Println("#11", m4)
+	m1.Body[0] = byte(3) // Should not mutate m4
+	fmt.Println("#12", m4)
+	// Create message with mixed attributes: kv pairs and maps
+	m5 := beholder.NewMessage([]byte{1},
+		// Add attributes from the map
+		map[string]any{
+			"key1": "value1",
+		},
+		// Add attributes from KV pair
+		"key2", "value2",
+		// Add attributes from Attributes map
+		beholder.Attributes{"key3": "value3"},
+		// Add attributes from KV pair
+		"key4", "value4",
+		// Modify key1
+		"key1", "value5",
+		// Modify key2
+		map[string]any{
+			"key2": "value6",
+		},
+	)
+	fmt.Println("#13", m5)
 	// Output:
 	// #1 Message{Attrs: map[key_string:value], Body: [1]}
 	// #2 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
@@ -69,6 +89,7 @@ func ExampleMessage() {
 	// #10 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
 	// #11 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
 	// #12 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
+	// #13 Message{Attrs: map[key1:value5 key2:value6 key3:value3 key4:value4], Body: [1]}
 }
 
 func testMetadata() beholder.Metadata {

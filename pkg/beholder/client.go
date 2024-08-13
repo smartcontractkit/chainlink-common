@@ -24,10 +24,10 @@ import (
 )
 
 type Emitter interface {
-	// Sends message with bytes and attributes to OTel Collector
-	Emit(ctx context.Context, body []byte, attrs map[string]any) error
 	// Sends message to OTel Collector
 	EmitMessage(ctx context.Context, m Message) error
+	// Sends message with bytes and attributes to OTel Collector
+	Emit(ctx context.Context, body []byte, attrKVs ...any) error
 }
 type Client interface {
 	Close() error
@@ -225,8 +225,8 @@ func newMessageEmitter(
 
 // Emits logs the message, but does not wait for the message to be processed.
 // Open question: what are pros/cons for using use map[]any vs use otellog.KeyValue
-func (e messageEmitter) Emit(ctx context.Context, body []byte, attrs map[string]any) error {
-	message := NewMessage(body, attrs)
+func (e messageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	message := NewMessage(body, attrKVs...)
 	if err := message.Validate(); err != nil {
 		return err
 	}

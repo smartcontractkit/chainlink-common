@@ -8,7 +8,7 @@ import (
     streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
 
-func (cfg ConsensusConfig) New(w *workflows.Workflow,ref string, input ConsensusInput)ConsensusCap {
+func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory,ref string, input ConsensusInput)ConsensusCap {
     def := workflows.StepDefinition{
        ID: "offchain_reporting@1.0.0",Ref: ref,
        Inputs: workflows.StepInputs{
@@ -26,7 +26,7 @@ func (cfg ConsensusConfig) New(w *workflows.Workflow,ref string, input Consensus
        CapabilityType: capabilities.CapabilityTypeConsensus,
    }
     step := workflows.Step[SignedReport]{Definition: def}
-     raw := workflows.AddStep(w, step)
+     raw := step.AddTo(w)
     return &consensus{CapDefinition: raw}
 }
 

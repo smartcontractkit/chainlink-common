@@ -16,6 +16,7 @@ require (
 	github.com/hashicorp/consul/sdk v0.16.0
 	github.com/hashicorp/go-hclog v1.5.0
 	github.com/hashicorp/go-plugin v1.6.0
+	github.com/iancoleman/strcase v0.3.0
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/jonboulle/clockwork v0.4.0
@@ -55,8 +56,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 )
-
-require github.com/iancoleman/strcase v0.3.0
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect

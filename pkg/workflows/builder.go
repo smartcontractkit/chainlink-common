@@ -15,7 +15,7 @@ import (
 // 	Inputs: triggerOutputType,
 // })
 
-type Workflow struct {
+type WorkflowSpecFactory struct {
 	spec           *WorkflowSpec
 	names          map[string]bool
 	duplicateNames map[string]bool
@@ -97,8 +97,8 @@ type NewWorkflowParams struct {
 
 func NewWorkflow(
 	params NewWorkflowParams,
-) *Workflow {
-	return &Workflow{
+) *WorkflowSpecFactory {
+	return &WorkflowSpecFactory{
 		spec: &WorkflowSpec{
 			Owner:     params.Owner,
 			Name:      params.Name,
@@ -113,8 +113,8 @@ func NewWorkflow(
 	}
 }
 
-// AddStep is meant to be called by generated code
-func AddStep[O any](w *Workflow, step Step[O]) CapDefinition[O] {
+// AddTo is meant to be called by generated code
+func (step *Step[O]) AddTo(w *WorkflowSpecFactory) CapDefinition[O] {
 	stepDefinition := step.Definition
 	stepId := stepDefinition.ID
 	if w.names[stepId] {
@@ -147,7 +147,7 @@ func AccessField[I, O any](c CapDefinition[I], fieldName string) CapDefinition[O
 	return &capDefinitionImpl[O]{ref: originalRef[:len(originalRef)-1] + "." + fieldName + ")"}
 }
 
-func (w Workflow) Spec() (WorkflowSpec, error) {
+func (w *WorkflowSpecFactory) Spec() (WorkflowSpec, error) {
 	if len(w.duplicateNames) > 0 {
 		duplicates := make([]string, 0, len(w.duplicateNames))
 		for k := range w.duplicateNames {

@@ -11,7 +11,7 @@ import (
     {{- end }}
 )
 
-func (cfg {{.Config.Name}}) New(w *workflows.Workflow, {{- if not .Id }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}Cap{{- end }} {
+func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .Id }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{.BaseName}}Cap{{- end }} {
     {{- if eq .CapabilityType.String "trigger" }} ref := "trigger" {{- end }}
     def := workflows.StepDefinition{
        ID: {{- if .Id }} "{{.Id}}" {{- else }} id {{- end }},
@@ -33,7 +33,7 @@ func (cfg {{.Config.Name}}) New(w *workflows.Workflow, {{- if not .Id }}id strin
        CapabilityType: capabilities.CapabilityType{{.CapabilityType.String|Capitalize}},
    }
     step := workflows.Step[{{- if eq .CapabilityType.String "target"}}struct{}{{- else }}{{.RootType.Name}} {{- end}}]{Definition: def}
-    {{if ne .CapabilityType.String "target"}} raw := {{- end }} workflows.AddStep(w, step)
+    {{if ne .CapabilityType.String "target"}} raw := {{- end }} step.AddTo(w)
     return {{- if ne .CapabilityType.String "target"}} &{{.BaseName|LowerFirst}}{CapDefinition: raw} {{- end }}
 }
 

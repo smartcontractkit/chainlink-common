@@ -29,22 +29,21 @@ type Config struct {
 	TargetChain string
 }
 
-func NewWorkflowSpec(rawConfig []byte) (workflows.WorkflowSpec, error) {
-	conf := Config{}
-	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
-		return workflows.WorkflowSpec{}, err
+func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
+	conf, err := UnmarshalYaml[Config](rawConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
 	streamsTrigger := conf.Streams.New(workflow)
+	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
+		Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
+	)
 
-	ocrInput := ocr3.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
-	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocrInput)
+	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
 
-	input := chainwriter.TargetInput{SignedReport: consensus}
-	conf.ChainWriter.New(workflow, conf.TargetChain, input)
-
-	return workflow.Spec()
+	return workflow, nil
 }
 
 // What if there were hundreds of feeds?  Like feeds that aren't for CCIP?
@@ -70,10 +69,10 @@ type FeedInfo struct {
 	RemappedId *string
 }
 
-func NewWorkflowRemapped(rawConfig []byte) (workflows.WorkflowSpec, error) {
-	conf := ModifiedConfig{}
-	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
-		return workflows.WorkflowSpec{}, err
+func NewWorkflowRemapped(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
+	conf, err := UnmarshalYaml[ModifiedConfig](rawConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	streamsConfig := streams.TriggerConfig{MaxFrequencyMs: conf.MaxFrequencyMs}
@@ -110,21 +109,21 @@ func NewWorkflowRemapped(rawConfig []byte) (workflows.WorkflowSpec, error) {
 	workflow := workflows.NewWorkflow(conf.Workflow)
 	streamsTrigger := streamsConfig.New(workflow)
 
-	ocrInput := ocr3.ConsensusInput{Observations: workflows.ListOf[streams.Feed](streamsTrigger)}
-	consensus := ocr3Config.New(workflow, "ccip_feeds", ocrInput)
+	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
+		Observations: workflows.ListOf[streams.Feed](streamsTrigger),
+	})
 
-	input := chainwriter.TargetInput{SignedReport: consensus}
-	conf.ChainWriter.New(workflow, conf.TargetChain, input)
+	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
 
-	return workflow.Spec()
+	return workflow, nil
 }
 
 const anyFakeFeedId = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
-func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, error) {
-	conf := NotStreamsConfig{}
-	if err := yaml.Unmarshal(rawConfig, &conf); err != nil {
-		return workflows.WorkflowSpec{}, err
+func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
+	conf, err := UnmarshalYaml[NotStreamsConfig](rawConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	workflow := workflows.NewWorkflow(conf.Workflow)
@@ -154,13 +153,13 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (workflows.WorkflowSpec, er
 		ReportId:          conf.Ocr.ReportId,
 	}
 
-	ocrInput := ocr3.ConsensusInput{Observations: workflows.ListOf[streams.Feed](feedsInput)}
-	consensus := ocrConfig.New(workflow, "data-feeds-report", ocrInput)
+	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.ConsensusInput{
+		Observations: workflows.ListOf[streams.Feed](feedsInput),
+	})
 
-	input := chainwriter.TargetInput{SignedReport: consensus}
-	conf.ChainWriter.New(workflow, conf.TargetChain, input)
+	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
 
-	return workflow.Spec()
+	return workflow, nil
 }
 
 //go:embed testdata/fixtures/workflows/sepolia.yaml
@@ -185,7 +184,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 
 	t.Run("maping different types without compute", func(t *testing.T) {
-		actual, err := NewWorkflowSpecFromPrimitives(notStreamSepoliaConfig)
+		factory, err := NewWorkflowSpecFromPrimitives(notStreamSepoliaConfig)
+		require.NoError(t, err)
+
+		actual, err := factory.Spec()
 		require.NoError(t, err)
 
 		expected := workflows.WorkflowSpec{
@@ -257,12 +259,15 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 }
 
-func runSepoliaStagingTest(t *testing.T, config []byte, gen func([]byte) (workflows.WorkflowSpec, error)) {
-	testWorkflowSpec, err := gen(config)
+func runSepoliaStagingTest(t *testing.T, config []byte, gen func([]byte) (*workflows.WorkflowSpecFactory, error)) {
+	testFactory, err := gen(config)
 	require.NoError(t, err)
 
-	expectedSpecYaml := workflows.WorkflowSpecYaml{}
-	require.NoError(t, yaml.Unmarshal(expectedSepolia, &expectedSpecYaml))
+	testWorkflowSpec, err := testFactory.Spec()
+	require.NoError(t, err)
+
+	expectedSpecYaml, err := UnmarshalYaml[workflows.WorkflowSpecYaml](expectedSepolia)
+	require.NoError(t, err)
 	expectedSpec := expectedSpecYaml.ToWorkflowSpec()
 	assertWorkflowSpec(t, expectedSpec, testWorkflowSpec)
 }
@@ -293,4 +298,10 @@ type ModifiedConsensusConfig struct {
 	Encoder                 ocr3.ConsensusConfigEncoder           `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
 	EncoderConfig           ocr3.ConsensusConfigEncoderConfig     `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
 	ReportId                string                                `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+}
+
+func UnmarshalYaml[T any](raw []byte) (*T, error) {
+	var v T
+	err := yaml.Unmarshal(raw, &v)
+	return &v, err
 }

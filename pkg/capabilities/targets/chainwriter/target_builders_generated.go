@@ -8,7 +8,7 @@ import (
     ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 )
 
-func (cfg TargetConfig) New(w *workflows.Workflow,id string, input TargetInput) {
+func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string, input TargetInput) {
     def := workflows.StepDefinition{
        ID: id,
        Inputs: workflows.StepInputs{
@@ -24,7 +24,7 @@ func (cfg TargetConfig) New(w *workflows.Workflow,id string, input TargetInput) 
        CapabilityType: capabilities.CapabilityTypeTarget,
    }
     step := workflows.Step[struct{}]{Definition: def}
-     workflows.AddStep(w, step)
+     step.AddTo(w)
     return
 }
 

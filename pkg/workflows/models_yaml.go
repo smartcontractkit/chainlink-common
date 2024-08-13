@@ -247,7 +247,7 @@ type TriggerDefinitionYaml struct {
 	// [semver regex]: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 	ID StepDefinitionID `json:"id" jsonschema:"required"`
 
-	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
+	// Actions and Consensus capabilities have a required “ref” property that must be unique within a WorkflowSpecFactory file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
 	//
 	// The “ref” supports [a-z0-9_] characters.
 	//
@@ -324,7 +324,7 @@ type StepDefinitionYaml struct {
 	// [semver regex]: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 	ID StepDefinitionID `json:"id" jsonschema:"required"`
 
-	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
+	// Actions and Consensus capabilities have a required “ref” property that must be unique within a WorkflowSpecFactory file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
 	//
 	// The “ref” supports [a-z0-9_] characters.
 	//

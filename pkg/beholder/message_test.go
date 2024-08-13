@@ -114,10 +114,10 @@ func testMetadata() beholder.Metadata {
 }
 func ExampleMetadata() {
 	m := testMetadata()
-	fmt.Println(m)
+	fmt.Printf("%#v\n", m)
 	fmt.Println(m.Attributes())
 	// Output:
-	// {/schemas/ids/test_schema v1.0.0 test_key test_signature test_don_id [test_network] test_workflow_id test_workflow_name test_owner_address test_spec_id test_execution_id test_contract_address test_capability_id test_capability_version test_capability_name test_chain_id}
+	// beholder.Metadata{BeholderDataSchema:"/schemas/ids/test_schema", NodeVersion:"v1.0.0", NodeCsaKey:"test_key", NodeCsaSignature:"test_signature", DonID:"test_don_id", NetworkName:[]string{"test_network"}, WorkflowID:"test_workflow_id", WorkflowName:"test_workflow_name", WorkflowOwnerAddress:"test_owner_address", WorkflowSpecID:"test_spec_id", WorkflowExecutionID:"test_execution_id", CapabilityContractAddress:"test_contract_address", CapabilityID:"test_capability_id", CapabilityVersion:"test_capability_version", CapabilityName:"test_capability_name", NetworkChainID:"test_chain_id"}
 	// map[beholder_data_schema:/schemas/ids/test_schema capability_contract_address:test_contract_address capability_id:test_capability_id capability_name:test_capability_name capability_version:test_capability_version don_id:test_don_id network_chain_id:test_chain_id network_name:[test_network] node_csa_key:test_key node_csa_signature:test_signature node_version:v1.0.0 workflow_execution_id:test_execution_id workflow_id:test_workflow_id workflow_name:test_workflow_name workflow_owner_address:test_owner_address workflow_spec_id:test_spec_id]
 }
 

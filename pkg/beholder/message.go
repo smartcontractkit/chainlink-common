@@ -2,7 +2,6 @@ package beholder
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
@@ -46,24 +45,24 @@ type Metadata struct {
 }
 
 func (m Metadata) Attributes() Attributes {
-	attrs := make(Attributes, reflect.ValueOf(m).NumField())
-	attrs["node_version"] = m.NodeVersion
-	attrs["node_csa_key"] = m.NodeCsaKey
-	attrs["node_csa_signature"] = m.NodeCsaSignature
-	attrs["don_id"] = m.DonID
-	attrs["network_name"] = m.NetworkName
-	attrs["workflow_id"] = m.WorkflowID
-	attrs["workflow_name"] = m.WorkflowName
-	attrs["workflow_owner_address"] = m.WorkflowOwnerAddress
-	attrs["workflow_spec_id"] = m.WorkflowSpecID
-	attrs["workflow_execution_id"] = m.WorkflowExecutionID
-	attrs["beholder_data_schema"] = m.BeholderDataSchema
-	attrs["capability_contract_address"] = m.CapabilityContractAddress
-	attrs["capability_id"] = m.CapabilityID
-	attrs["capability_version"] = m.CapabilityVersion
-	attrs["capability_name"] = m.CapabilityName
-	attrs["network_chain_id"] = m.NetworkChainID
-	return attrs
+	return Attributes{
+		"node_version":                m.NodeVersion,
+		"node_csa_key":                m.NodeCsaKey,
+		"node_csa_signature":          m.NodeCsaSignature,
+		"don_id":                      m.DonID,
+		"network_name":                m.NetworkName,
+		"workflow_id":                 m.WorkflowID,
+		"workflow_name":               m.WorkflowName,
+		"workflow_owner_address":      m.WorkflowOwnerAddress,
+		"workflow_spec_id":            m.WorkflowSpecID,
+		"workflow_execution_id":       m.WorkflowExecutionID,
+		"beholder_data_schema":        m.BeholderDataSchema,
+		"capability_contract_address": m.CapabilityContractAddress,
+		"capability_id":               m.CapabilityID,
+		"capability_version":          m.CapabilityVersion,
+		"capability_name":             m.CapabilityName,
+		"network_chain_id":            m.NetworkChainID,
+	}
 }
 
 type Attributes map[string]any

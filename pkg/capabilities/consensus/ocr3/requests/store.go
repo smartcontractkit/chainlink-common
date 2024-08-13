@@ -21,8 +21,8 @@ func NewStore() *Store {
 	}
 }
 
-// GetN is best-effort, doesn't return requests that are not in store
-func (s *Store) GetN(ctx context.Context, requestIDs []string) []*Request {
+// GetByIDs is best-effort, doesn't return requests that are not in store
+func (s *Store) GetByIDs(ctx context.Context, requestIDs []string) []*Request {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -48,24 +48,18 @@ func (s *Store) FirstN(ctx context.Context, batchSize int) ([]*Request, error) {
 		return got, nil
 	}
 
-	newRequestIDs := []string{}
-	lastIdx := 0
-	for idx, r := range s.requestIDs {
+	for _, r := range s.requestIDs {
 		gr, ok := s.requests[r]
 		if !ok {
 			continue
 		}
 
 		got = append(got, gr)
-		newRequestIDs = append(newRequestIDs, r)
-		lastIdx = idx
 		if len(got) == batchSize {
 			break
 		}
 	}
 
-	// remove the ones that didn't have corresponding requests
-	s.requestIDs = append(newRequestIDs, s.requestIDs[lastIdx+1:]...)
 	return got, nil
 }
 
@@ -91,12 +85,23 @@ func (s *Store) evict(requestID string) (*Request, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	var found bool
+
 	r, ok := s.requests[requestID]
-	if !ok {
-		return nil, false
+	if ok {
+		found = true
+		delete(s.requests, requestID)
 	}
 
-	delete(s.requests, requestID)
+	newRequestIDs := []string{}
+	for _, rid := range s.requestIDs {
+		if rid != requestID {
+			newRequestIDs = append(newRequestIDs, rid)
+		} else {
+			found = true
+		}
+	}
 
-	return r, true
+	s.requestIDs = newRequestIDs
+	return r, found
 }

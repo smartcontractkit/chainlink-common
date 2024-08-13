@@ -112,7 +112,10 @@
         "observations": {
           "type": "array",
           "items": {
-            "$ref": "../../triggers/streams/streams_trigger-schema.json#/$defs/Feed"
+            "type": "array",
+            "items": {
+              "$ref": "../../triggers/streams/streams_trigger-schema.json#/$defs/Feed"
+            }
           }
         }
       },

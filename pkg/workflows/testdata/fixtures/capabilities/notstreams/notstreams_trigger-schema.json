@@ -73,11 +73,7 @@
       "required": ["feedIds", "maxFrequencyMs"]
     },
     "outputs": {
-      "items": {
-        "$ref": "#/$defs/Feed"
-      },
-      "additionalProperties": false,
-      "type": "array"
+      "$ref": "#/$defs/Feed"
     }
   },
   "additionalProperties": false,

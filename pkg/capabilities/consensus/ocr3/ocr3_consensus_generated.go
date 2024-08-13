@@ -178,7 +178,7 @@ func (j *ConsensusConfig) UnmarshalJSON(b []byte) error {
 
 type ConsensusInputs struct {
 	// Observations corresponds to the JSON schema field "observations".
-	Observations []streams.Feed `json:"observations" yaml:"observations" mapstructure:"observations"`
+	Observations [][]streams.Feed `json:"observations" yaml:"observations" mapstructure:"observations"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

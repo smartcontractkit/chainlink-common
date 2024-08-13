@@ -40,7 +40,7 @@ func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
 	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	streamsTrigger := conf.Streams.New(workflow)
 	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
-		Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
+		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
 	)
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -112,7 +112,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*workflows.WorkflowSpecFactory, erro
 	streamsTrigger := streamsConfig.New(workflow)
 
 	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
-		Observations: workflows.ListOf[streams.Feed](streamsTrigger),
+		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger),
 	})
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -156,7 +156,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 	}
 
 	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.ConsensusInput{
-		Observations: workflows.ListOf[streams.Feed](feedsInput),
+		Observations: workflows.ListOf[[]streams.Feed](workflows.ListOf[streams.Feed](feedsInput)),
 	})
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -210,14 +210,16 @@ func TestBuilder_ValidSpec(t *testing.T) {
 					ID:  "offchain_reporting@1.0.0",
 					Ref: "data-feeds-report",
 					Inputs: workflows.StepInputs{
-						Mapping: map[string]any{"observations": []map[string]any{
+						Mapping: map[string]any{"observations": [][]map[string]any{
 							{
-								"benchmarkPrice":       "$(trigger.outputs.Price.PriceA)",
-								"feedId":               anyFakeFeedId,
-								"fullReport":           "$(trigger.outputs.FullReport)",
-								"observationTimestamp": "$(trigger.outputs.Timestamp)",
-								"reportContext":        "$(trigger.outputs.ReportContext)",
-								"signatures":           "$(trigger.outputs.Signatures)",
+								{
+									"benchmarkPrice":       "$(trigger.outputs.Price.PriceA)",
+									"feedId":               anyFakeFeedId,
+									"fullReport":           "$(trigger.outputs.FullReport)",
+									"observationTimestamp": "$(trigger.outputs.Timestamp)",
+									"reportContext":        "$(trigger.outputs.ReportContext)",
+									"signatures":           "$(trigger.outputs.Signatures)",
+								},
 							},
 						}},
 					},

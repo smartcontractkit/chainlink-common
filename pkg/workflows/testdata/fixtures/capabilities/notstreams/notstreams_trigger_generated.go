@@ -94,7 +94,7 @@ type Trigger struct {
 	Config TriggerConfig `json:"config" yaml:"config" mapstructure:"config"`
 
 	// Outputs corresponds to the JSON schema field "outputs".
-	Outputs []Feed `json:"outputs,omitempty" yaml:"outputs,omitempty" mapstructure:"outputs,omitempty"`
+	Outputs *Feed `json:"outputs,omitempty" yaml:"outputs,omitempty" mapstructure:"outputs,omitempty"`
 }
 
 type TriggerConfig struct {

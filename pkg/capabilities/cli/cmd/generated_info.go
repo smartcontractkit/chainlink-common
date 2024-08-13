@@ -120,6 +120,10 @@ func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string
 					f.Type = f.Type[2:]
 				}
 
+				if strings.HasPrefix(f.Type, "*") {
+					f.Type = f.Type[1:]
+				}
+
 				t := f.Type
 				for t[0] == '*' {
 					t = t[1:]

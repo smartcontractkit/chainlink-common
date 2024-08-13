@@ -36,7 +36,7 @@ type FeedValueCap interface {
     workflows.CapDefinition[FeedValue]
     Deviation() workflows.CapDefinition[string]
     Heartbeat() workflows.CapDefinition[int]
-    RemappedID() workflows.CapDefinition[*string]
+    RemappedID() workflows.CapDefinition[string]
     private()
 }
 
@@ -51,14 +51,14 @@ func (c *feedValue) Deviation() workflows.CapDefinition[string] {
 func (c *feedValue) Heartbeat() workflows.CapDefinition[int] {
     return workflows.AccessField[FeedValue, int](c.CapDefinition, "Heartbeat")
 }
-func (c *feedValue) RemappedID() workflows.CapDefinition[*string] {
-    return workflows.AccessField[FeedValue, *string](c.CapDefinition, "RemappedID")
+func (c *feedValue) RemappedID() workflows.CapDefinition[string] {
+    return workflows.AccessField[FeedValue, string](c.CapDefinition, "RemappedID")
 }
 
 func NewFeedValueFromFields(
                                                                         deviation workflows.CapDefinition[string],
                                                                         heartbeat workflows.CapDefinition[int],
-                                                                        remappedID workflows.CapDefinition[*string],) FeedValueCap {
+                                                                        remappedID workflows.CapDefinition[string],) FeedValueCap {
     return &simpleFeedValue{
         CapDefinition: workflows.ComponentCapDefinition[FeedValue]{
         "deviation": deviation.Ref(),
@@ -75,7 +75,7 @@ type simpleFeedValue struct {
     workflows.CapDefinition[FeedValue]
     deviation workflows.CapDefinition[string]
     heartbeat workflows.CapDefinition[int]
-    remappedID workflows.CapDefinition[*string]
+    remappedID workflows.CapDefinition[string]
 }
 func (c *simpleFeedValue) Deviation() workflows.CapDefinition[string] {
     return c.deviation
@@ -83,7 +83,7 @@ func (c *simpleFeedValue) Deviation() workflows.CapDefinition[string] {
 func (c *simpleFeedValue) Heartbeat() workflows.CapDefinition[int] {
     return c.heartbeat
 }
-func (c *simpleFeedValue) RemappedID() workflows.CapDefinition[*string] {
+func (c *simpleFeedValue) RemappedID() workflows.CapDefinition[string] {
     return c.remappedID
 }
 
@@ -188,5 +188,5 @@ type SignedReportValueUnderlyingCap workflows.CapDefinition[SignedReportValueUnd
 
 
 type ConsensusInput struct {
-    Observations workflows.CapDefinition[[]streams.Feed]
+    Observations workflows.CapDefinition[[][]streams.Feed]
 }

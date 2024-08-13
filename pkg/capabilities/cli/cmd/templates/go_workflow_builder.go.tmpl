@@ -11,7 +11,7 @@ import (
     {{- end }}
 )
 
-func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{- if eq .RootNumSlice 0}}{{.BaseName}}Cap{{- else }}workflows.CapDefinition[{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}}]{{- end }}{{- end }} {
+func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType.String "target") (ne .CapabilityType.String "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType.String "target"}}{{- if eq .RootNumSlice 0}}{{.RootType.Name|ConvertToBaseIfFirstOutput}}Cap{{- else }}workflows.CapDefinition[{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}}]{{- end }}{{- end }} {
     {{ if eq .CapabilityType.String "trigger" }} ref := "trigger" {{- end }}
     def := workflows.StepDefinition{
        ID: {{- if .ID }} "{{.ID}}" {{- else }} id {{- end }},

@@ -7,7 +7,7 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory,)workflows.CapDefinition[[]Feed] {
+func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory,)TriggerCap {
      ref := "trigger"
     def := workflows.StepDefinition{
        ID: "notstreams@1.0.0",Ref: ref,
@@ -18,9 +18,9 @@ func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory,)workflows.CapDefi
        },
        CapabilityType: capabilities.CapabilityTypeTrigger,
    }
-    step := workflows.Step[[]Feed]{Definition: def}
+    step := workflows.Step[Feed]{Definition: def}
      raw := step.AddTo(w)
-     return raw
+     return &trigger{CapDefinition: raw}
 }
 
 

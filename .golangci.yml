@@ -150,3 +150,7 @@ issues:
       text: "^G404:"
       linters:
         - gosec
+  exclude-dirs:
+    - third_party
+    # third_party didn't work, excluding where the mods are located as well...
+    - ../../../go/pkg/mod

@@ -48,8 +48,11 @@ type OtelClient struct {
 	Meter otelmetric.Meter
 	// Message Emitter
 	Emitter Emitter
-	// Graceful shutdown for tracer, meter, logger providers
-	CloseFunc func() error
+
+	// Providers
+	LoggerProvider otellog.LoggerProvider
+	TracerProvider oteltrace.TracerProvider
+	MeterProvider  otelmetric.MeterProvider
 }
 
 // NewOtelClient creates a new Client with OTel exporter
@@ -107,17 +110,12 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	)
 	logger := loggerProvider.Logger(cfg.PackageName)
 
-	// Set global logger provider
-	otelglobal.SetLoggerProvider(loggerProvider)
-
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
 	if err != nil {
 		return noop, err
 	}
 	tracer := tracerProvider.Tracer(cfg.PackageName)
-	otel.SetTracerProvider(tracerProvider)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	// Meter
 	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
@@ -125,7 +123,6 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		return noop, err
 	}
 	meter := meterProvider.Meter(cfg.PackageName)
-	otel.SetMeterProvider(meterProvider)
 
 	// Message Emitter
 	messageLogProcessor := sdklog.NewBatchProcessor(
@@ -151,11 +148,30 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 
 	setOtelErrorHandler(errorHandler)
 
-	onClose := closeFunc(ctx, loggerProvider, messageLoggerProvider, tracerProvider, meterProvider)
-
-	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, onClose}
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider}
 
 	return client, nil
+}
+
+func (c OtelClient) SetGlobals() {
+	// Logger
+	otelglobal.SetLoggerProvider(c.LoggerProvider)
+	// Tracer
+	otel.SetTracerProvider(c.TracerProvider)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	// Meter
+	otel.SetMeterProvider(c.MeterProvider)
+}
+
+func (c OtelClient) Close() (err error) {
+	for _, provider := range []any{c.LoggerProvider, c.TracerProvider, c.MeterProvider} {
+		if p, ok := provider.(otelProvider); ok {
+			err = errors.Join(err, p.Shutdown(context.Background()))
+		} else {
+			err = errors.Join(err, errors.New("provider does not implement Shutdown method"))
+		}
+	}
+	return
 }
 
 type errorHandlerFunc func(err error)
@@ -226,25 +242,8 @@ func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error 
 	return nil
 }
 
-func (b OtelClient) Close() error {
-	if b.CloseFunc != nil {
-		return b.CloseFunc()
-	}
-	return nil
-}
-
 type otelProvider interface {
 	Shutdown(ctx context.Context) error
-}
-
-// Returns function that finalizes all providers
-func closeFunc(ctx context.Context, providers ...otelProvider) func() error {
-	return func() (err error) {
-		for _, provider := range providers {
-			err = errors.Join(err, provider.Shutdown(ctx))
-		}
-		return
-	}
 }
 
 func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {

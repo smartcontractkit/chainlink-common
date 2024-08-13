@@ -33,9 +33,7 @@ func NewNoopClient() OtelClient {
 	// MessageEmitter
 	messageEmitter := noopMessageEmitter{}
 
-	onClose := func() error { return nil }
-
-	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, onClose}
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider}
 
 	return client
 }
@@ -72,11 +70,9 @@ func NewStdoutClient() OtelClient {
 	meter := meterProvider.Meter(cfg.PackageName)
 
 	// MessageEmitter
-	messageEmitter := newMessageEmitter(loggerExporter, logger)
+	emitter := messageEmitter{loggerExporter, logger}
 
-	onClose := closeFunc(context.Background(), loggerProvider, tracerProvider, meterProvider)
-
-	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, onClose}
+	client := OtelClient{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider}
 
 	return client
 }

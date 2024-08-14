@@ -78,3 +78,7 @@ func Bootstrap(cfg beholder.Config, errorHandler func(error)) error {
 func NewConfig() beholder.Config {
 	return beholder.DefaultConfig()
 }
+
+func NewMessage(body []byte, attrKVs ...any) beholder.Message {
+	return beholder.NewMessage(body, attrKVs...)
+}

@@ -1,44 +1,24 @@
-package nopocr
+package nopocr_test
 
 import (
 	"testing"
 
-	"github.com/grafana/grafana-foundation-sdk/go/cog"
-	"github.com/grafana/grafana-foundation-sdk/go/common"
-	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
-
-	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/nop-ocr"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestBuildDashboard(t *testing.T) {
-	t.Run("BuildDashboard creates a dashboard", func(t *testing.T) {
-		builder := dashboard.NewDashboardBuilder("test")
-		utils.AddPanels(builder, []cog.Builder[dashboard.Panel]{
-			utils.StatPanel(
-				"Prometheus",
-				"Test",
-				"Test",
-				1,
-				1,
-				1,
-				"",
-				common.BigValueColorModeNone,
-				common.BigValueGraphModeNone,
-				common.BigValueTextModeName,
-				common.VizOrientationHorizontal,
-				utils.PrometheusQuery{
-					Query:  `test`,
-					Legend: "{{test}}",
-				}),
-		})
-
-		testBuild, err := builder.Build()
-		if err != nil {
-			t.Errorf("Error building dashboard: %v", err)
+func TestNewDashboard(t *testing.T) {
+	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
+		options := grafana.DashboardOptions{
+			Name:              "NOP OCR Dashboard",
+			MetricsDataSource: grafana.NewDataSource("Prometheus", ""),
 		}
-
-		require.IsType(t, dashboard.Dashboard{}, testBuild)
+		testDashboard, err := nopocr.NewDashboard(&options)
+		if err != nil {
+			t.Errorf("Error creating dashboard: %v", err)
+		}
+		require.IsType(t, grafana.Dashboard{}, *testDashboard)
 	})
 }

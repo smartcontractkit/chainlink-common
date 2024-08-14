@@ -544,6 +544,8 @@ func validateCapability(impl capabilities.BaseCapability, t capabilities.Capabil
 		if !ok {
 			return fmt.Errorf("expected TargetCapability but got %T", impl)
 		}
+	case capabilities.CapabilityTypeUnknown:
+		return fmt.Errorf("unknown capability type")
 	}
 	return nil
 }
@@ -581,6 +583,8 @@ func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.Ba
 			impl:        i,
 			cancelFuncs: map[string]func(){},
 		})
+	case capabilities.CapabilityTypeUnknown:
+		// Only register the base capability server
 	}
 	capabilitiespb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(impl))
 }

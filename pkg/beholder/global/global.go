@@ -60,8 +60,8 @@ func EmitMessage(ctx context.Context, message beholder.Message) error {
 	return Emitter().EmitMessage(ctx, message)
 }
 
-func Emit(ctx context.Context, body []byte, attrs beholder.Attributes) error {
-	return Emitter().Emit(ctx, body, attrs)
+func Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	return Emitter().Emit(ctx, body, attrKVs...)
 }
 
 func Bootstrap(cfg beholder.Config, errorHandler func(error)) error {

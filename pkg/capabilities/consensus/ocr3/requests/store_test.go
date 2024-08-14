@@ -15,7 +15,6 @@ import (
 )
 
 func TestOCR3Store(t *testing.T) {
-	ctx := tests.Context(t)
 	n := time.Now()
 
 	s := NewStore()
@@ -43,13 +42,13 @@ func TestOCR3Store(t *testing.T) {
 	})
 
 	t.Run("firstN", func(t *testing.T) {
-		r, err := s.FirstN(ctx, 1)
+		r, err := s.FirstN(1)
 		assert.NoError(t, err)
 		assert.Len(t, r, 0)
 	})
 
 	t.Run("firstN, zero batch size", func(t *testing.T) {
-		_, err := s.FirstN(ctx, 0)
+		_, err := s.FirstN(0)
 		assert.ErrorContains(t, err, "batchsize cannot be 0")
 	})
 
@@ -58,7 +57,7 @@ func TestOCR3Store(t *testing.T) {
 			err := s.Add(&Request{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)
 		}
-		items, err := s.FirstN(ctx, 100)
+		items, err := s.FirstN(100)
 		require.NoError(t, err)
 		assert.Len(t, items, 10)
 	})
@@ -67,7 +66,7 @@ func TestOCR3Store(t *testing.T) {
 		rid2 := uuid.New().String()
 		err := s.Add(req)
 		require.NoError(t, err)
-		reqs := s.GetByIDs(ctx, []string{rid, rid2})
+		reqs := s.GetByIDs([]string{rid, rid2})
 		require.Equal(t, 1, len(reqs))
 	})
 }
@@ -84,7 +83,7 @@ func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
 	assert.Len(t, s.requests, 1)
 	assert.Len(t, s.requestIDs, 1)
 
-	s.GetByIDs(tests.Context(t), []string{rid})
+	s.GetByIDs([]string{rid})
 	assert.Len(t, s.requests, 1)
 	assert.Len(t, s.requestIDs, 1)
 
@@ -130,7 +129,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		{
 			name: "firstN",
 			get: func(ctx context.Context, rid string) *Request {
-				rs, err := s.FirstN(ctx, 1)
+				rs, err := s.FirstN(1)
 				require.NoError(t, err)
 				assert.Len(t, rs, 1)
 				return rs[0]
@@ -139,7 +138,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		{
 			name: "getByIDs",
 			get: func(ctx context.Context, rid string) *Request {
-				rs := s.GetByIDs(ctx, []string{rid})
+				rs := s.GetByIDs([]string{rid})
 				assert.Len(t, rs, 1)
 				return rs[0]
 			},

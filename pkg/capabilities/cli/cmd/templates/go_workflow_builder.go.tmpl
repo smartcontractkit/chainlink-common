@@ -3,14 +3,16 @@
 package {{.Package}}
 
 import (
+{{- if not (.CapabilityType|IsCommon) }}
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+{{- end }}
     "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 
     {{- range .ExtraImports }}
     {{.}}
     {{- end }}
 )
-
+{{ if not (.CapabilityType|IsCommon) }}
 func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType "target") (ne .CapabilityType "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType "target"}}{{- if eq .RootNumSlice 0}}{{.RootType.Name|ConvertToBaseIfFirstOutput}}Cap{{- else }}workflows.CapDefinition[{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}}]{{- end }}{{- end }} {
     {{ if eq .CapabilityType "trigger" }} ref := "trigger" {{- end }}
     def := workflows.StepDefinition{
@@ -36,6 +38,7 @@ func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID
     {{if ne .CapabilityType "target"}} raw := {{- end }} step.AddTo(w)
     {{if ne .CapabilityType "target"}} return {{- if eq 0 .RootNumSlice }} &{{.BaseName|LowerFirst}}{CapDefinition: raw} {{- else }} raw {{- end }} {{- end }}
 }
+{{- end }}
 
 {{ range $key, $value := .Types }}
 {{- if .Outputs }}

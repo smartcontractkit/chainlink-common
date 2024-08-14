@@ -8,14 +8,11 @@ import (
     ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 )
 
-func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string, input TargetInput) {
+func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string,) {
     
     def := workflows.StepDefinition{
        ID: id,
        Inputs: workflows.StepInputs{
-           Mapping: map[string]any{
-               "signed_report": input.SignedReport.Ref(),
-           },
        },
        Config: map[string]any{
            "address": cfg.Address,
@@ -30,6 +27,85 @@ func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string, input Ta
 }
 
 
-type TargetInput struct {
-    SignedReport workflows.CapDefinition[ocr3.SignedReport]
+type TargetCap interface {
+    workflows.CapDefinition[Target]
+    Config() TargetConfigCap
+    Inputs() TargetInputsCap
+    private()
 }
+
+type target struct {
+    workflows.CapDefinition[Target]
+}
+
+func (*target) private() {}
+func (c *target) Config() TargetConfigCap {
+     return TargetConfigCap(workflows.AccessField[Target, TargetConfig](c.CapDefinition, "Config"))
+}
+func (c *target) Inputs() TargetInputsCap {
+     return &targetInputs{ CapDefinition: workflows.AccessField[Target, TargetInputs](c.CapDefinition, "Inputs")}
+}
+
+func NewTargetFromFields(
+                                                                        config TargetConfigCap,
+                                                                        inputs TargetInputsCap,) TargetCap {
+    return &simpleTarget{
+        CapDefinition: workflows.ComponentCapDefinition[Target]{
+        "config": config.Ref(),
+        "inputs": inputs.Ref(),
+        },
+        config: config,
+        inputs: inputs,
+    }
+}
+
+type simpleTarget struct {
+    workflows.CapDefinition[Target]
+    config TargetConfigCap
+    inputs TargetInputsCap
+}
+func (c *simpleTarget) Config() TargetConfigCap {
+    return c.config
+}
+func (c *simpleTarget) Inputs() TargetInputsCap {
+    return c.inputs
+}
+
+func (c *simpleTarget) private() {}
+
+
+type TargetInputsCap interface {
+    workflows.CapDefinition[TargetInputs]
+    SignedReport() workflows.CapDefinition[ocr3.SignedReport]
+    private()
+}
+
+type targetInputs struct {
+    workflows.CapDefinition[TargetInputs]
+}
+
+func (*targetInputs) private() {}
+func (c *targetInputs) SignedReport() workflows.CapDefinition[ocr3.SignedReport] {
+    return workflows.AccessField[TargetInputs, ocr3.SignedReport](c.CapDefinition, "SignedReport")
+}
+
+func NewTargetInputsFromFields(
+                                                                        signedReport workflows.CapDefinition[ocr3.SignedReport],) TargetInputsCap {
+    return &simpleTargetInputs{
+        CapDefinition: workflows.ComponentCapDefinition[TargetInputs]{
+        "signedReport": signedReport.Ref(),
+        },
+        signedReport: signedReport,
+    }
+}
+
+type simpleTargetInputs struct {
+    workflows.CapDefinition[TargetInputs]
+    signedReport workflows.CapDefinition[ocr3.SignedReport]
+}
+func (c *simpleTargetInputs) SignedReport() workflows.CapDefinition[ocr3.SignedReport] {
+    return c.signedReport
+}
+
+func (c *simpleTargetInputs) private() {}
+

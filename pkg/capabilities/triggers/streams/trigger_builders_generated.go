@@ -118,3 +118,50 @@ func (c *simpleTrigger) private() {}
 
 type FeedIdCap workflows.CapDefinition[FeedId]
 
+
+type TriggerCap interface {
+    workflows.CapDefinition[Trigger]
+    Config() TriggerConfigCap
+    Outputs() []FeedCap
+    private()
+}
+
+type trigger struct {
+    workflows.CapDefinition[Trigger]
+}
+
+func (*trigger) private() {}
+func (c *trigger) Config() TriggerConfigCap {
+     return TriggerConfigCap(workflows.AccessField[Trigger, TriggerConfig](c.CapDefinition, "Config"))
+}
+func (c *trigger) Outputs() FeedCap {
+     return &feed{ CapDefinition: workflows.AccessField[Trigger, Feed](c.CapDefinition, "Outputs")}
+}
+
+func NewTriggerFromFields(
+                                                                        config TriggerConfigCap,
+                                                                        outputs []FeedCap,) TriggerCap {
+    return &simpleTrigger{
+        CapDefinition: workflows.ComponentCapDefinition[Trigger]{
+        "config": config.Ref(),
+        "outputs": outputs.Ref(),
+        },
+        config: config,
+        outputs: outputs,
+    }
+}
+
+type simpleTrigger struct {
+    workflows.CapDefinition[Trigger]
+    config TriggerConfigCap
+    outputs []FeedCap
+}
+func (c *simpleTrigger) Config() TriggerConfigCap {
+    return c.config
+}
+func (c *simpleTrigger) Outputs() FeedCap {
+    return c.outputs
+}
+
+func (c *simpleTrigger) private() {}
+

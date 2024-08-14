@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -13,7 +14,7 @@ import (
 
 type GeneratedInfo struct {
 	Package        string
-	Config         Struct
+	Config         *Struct
 	Input          *Struct
 	Types          map[string]Struct
 	CapabilityType capabilities.CapabilityType
@@ -46,8 +47,10 @@ func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (Generat
 
 	root := generatedStructs[typeInfo.RootType]
 	input, config := extractInputAndConfig(generatedStructs, typeInfo, root)
-
 	output := root.Outputs["Outputs"]
+	if config == nil && typeInfo.CapabilityType.IsValid() == nil {
+		return GeneratedInfo{}, errors.New("missing Config struct")
+	}
 
 	return GeneratedInfo{
 		Package:        pkg,
@@ -63,26 +66,28 @@ func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (Generat
 	}, nil
 }
 
-func extractInputAndConfig(generatedStructs map[string]Struct, typeInfo TypeInfo, root Struct) (*Struct, Struct) {
+func extractInputAndConfig(generatedStructs map[string]Struct, typeInfo TypeInfo, root Struct) (*Struct, *Struct) {
 	delete(generatedStructs, typeInfo.RootType)
+
 	configType := root.Outputs["Config"].Type
-	inputField, ok := root.Outputs["Inputs"]
-	var input *Struct
-	if ok {
-		inputType := inputField.Type
-		inputS, ok := generatedStructs[inputType]
-		if ok {
-			input = &inputS
-			delete(generatedStructs, inputType)
-		}
-	}
-	config := generatedStructs[configType]
+	input := structIfPresent(generatedStructs, "Input")
+	config := structIfPresent(generatedStructs, configType)
 	for k := range generatedStructs {
-		if strings.HasPrefix(k, configType) || (input != nil && strings.HasPrefix(k, input.Name)) {
+		if (config != nil && strings.HasPrefix(k, configType)) || (input != nil && strings.HasPrefix(k, input.Name)) {
 			delete(generatedStructs, k)
 		}
 	}
 	return input, config
+}
+
+func structIfPresent(generatedStructs map[string]Struct, name string) *Struct {
+	strctRaw, ok := generatedStructs[name]
+	var strct *Struct
+	if ok {
+		strct = &strctRaw
+		delete(generatedStructs, name)
+	}
+	return strct
 }
 
 func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string]Struct, extraImports *[]string) bool {

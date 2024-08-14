@@ -42,6 +42,11 @@ const (
 	MethodSettingUint64                         = "setAlterablePrimitiveValue"
 	MethodTriggeringEvent                       = "triggerEvent"
 	EventName                                   = "SomeEvent"
+	EventNameField                              = EventName + ".Field"
+	EventNameNestedField                        = EventName + ".NestedStruct.FixedBytes"
+	ProtoTest                                   = "ProtoTest"
+	ProtoTestIntComparator                      = ProtoTest + ".IntComparator"
+	ProtoTestStringComparator                   = ProtoTest + ".StringComparator"
 	EventWithFilterName                         = "SomeEventToFilter"
 	AnyContractName                             = "TestContract"
 	AnySecondContractName                       = "Not" + AnyContractName
@@ -628,6 +633,65 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, bound, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
 					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+		{
+			name: "QueryKey can filter data with value comparator",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				ts1 := CreateTestStruct[T](0, tester)
+				tester.TriggerEvent(t, &ts1)
+				ts2 := CreateTestStruct[T](15, tester)
+				tester.TriggerEvent(t, &ts2)
+				ts3 := CreateTestStruct[T](35, tester)
+				tester.TriggerEvent(t, &ts3)
+
+				ts := &TestStruct{}
+				assert.Eventually(t, func() bool {
+					// sequences from queryKey without limit and sort should be in descending order
+					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+						query.Comparator("Field",
+							primitives.ValueComparator{
+								Value:    int32(15),
+								Operator: primitives.Gte,
+							},
+							primitives.ValueComparator{
+								Value:    int32(35),
+								Operator: primitives.Lte,
+							}),
+					},
+					}, query.LimitAndSort{}, ts)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts2, sequences[1].Data) && reflect.DeepEqual(&ts3, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+		{
+			name: "QueryKey can filter on nested non dynamic data with value comparator",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				ts1 := CreateTestStruct[T](0, tester)
+				tester.TriggerEvent(t, &ts1)
+				ts2 := CreateTestStruct[T](15, tester)
+				tester.TriggerEvent(t, &ts2)
+				ts3 := CreateTestStruct[T](35, tester)
+				tester.TriggerEvent(t, &ts3)
+
+				ts := &TestStruct{}
+				assert.Eventually(t, func() bool {
+					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+						query.Comparator("NestedStruct.FixedBytes",
+							primitives.ValueComparator{
+								Value:    [2]byte{15, 16},
+								Operator: primitives.Eq,
+							}),
+					},
+					}, query.LimitAndSort{}, ts)
+					return err == nil && len(sequences) == 1 && reflect.DeepEqual(&ts2, sequences[0].Data)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},

@@ -143,13 +143,13 @@ type MidLevelTestStruct struct {
 
 type TestStruct struct {
 	Field          *int32
+	NestedStruct   MidLevelTestStruct
 	DifferentField string
 	OracleID       commontypes.OracleID
 	OracleIDs      [32]commontypes.OracleID
 	Account        []byte
 	Accounts       [][]byte
 	BigField       *big.Int
-	NestedStruct   MidLevelTestStruct
 }
 
 type TestStructWithExtraField struct {
@@ -199,13 +199,7 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	s := fmt.Sprintf("field%v", i)
 	fv := int32(i)
 	return TestStruct{
-		Field:          &fv,
-		DifferentField: s,
-		OracleID:       commontypes.OracleID(i + 1),
-		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
-		Account:        tester.GetAccountBytes(i + 3),
-		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
-		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
+		Field: &fv,
 		NestedStruct: MidLevelTestStruct{
 			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
 			Inner: InnerTestStruct{
@@ -213,5 +207,29 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 				S: s,
 			},
 		},
+		DifferentField: s,
+		OracleID:       commontypes.OracleID(i + 1),
+		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
+		Account:        tester.GetAccountBytes(i + 3),
+		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
+		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
 	}
+}
+
+func Compare[T int32](a, b T, op primitives.ComparisonOperator) bool {
+	switch op {
+	case primitives.Eq:
+		return a == b
+	case primitives.Neq:
+		return a != b
+	case primitives.Gt:
+		return a > b
+	case primitives.Lt:
+		return a < b
+	case primitives.Gte:
+		return a >= b
+	case primitives.Lte:
+		return a <= b
+	}
+	return false
 }

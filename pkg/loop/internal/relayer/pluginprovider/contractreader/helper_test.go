@@ -94,8 +94,47 @@ func (fakeTypeProvider) CreateContractType(readName string, isEncode bool) (any,
 			return &FilterEventParams{}, nil
 		}
 		return &TestStruct{}, nil
+	case EventNameField:
+		if isEncode {
+			var typ int32
+			return &typ, nil
+		}
+		return 0, errors.New("comparator types should only be encoded")
+	case EventNameNestedField:
+		if isEncode {
+			var typ [2]byte
+			return &typ, nil
+		}
+		return 0, errors.New("comparator types should only be encoded")
 	}
+	return nil, types.ErrInvalidType
+}
 
+type testProtoConversionTypeProvider struct{}
+
+func (f testProtoConversionTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
+	return f.CreateContractType("", itemType, isEncode)
+}
+
+var _ types.ContractTypeProvider = (*testProtoConversionTypeProvider)(nil)
+
+func (testProtoConversionTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
+	switch itemType {
+	case ProtoTest:
+		return &map[string]any{}, nil
+	case ProtoTestIntComparator:
+		if isEncode {
+			var typ int
+			return &typ, nil
+		}
+		return 0, errors.New("comparator types should only be encoded")
+	case ProtoTestStringComparator:
+		if isEncode {
+			var typ string
+			return &typ, nil
+		}
+		return 0, errors.New("comparator types should only be encoded")
+	}
 	return nil, types.ErrInvalidType
 }
 
@@ -103,28 +142,24 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	var queryFilters []query.KeyFilter
 	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
 	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
-	comparableValues := []string{"", " ", "number", "123"}
 
 	primitiveExpressions := []query.Expression{query.TxHash("txHash")}
 	for _, op := range operatorValues {
 		primitiveExpressions = append(primitiveExpressions, query.Block("123", op))
 		primitiveExpressions = append(primitiveExpressions, query.Timestamp(123, op))
 
-		var valueComparators []primitives.ValueComparator
-		for _, comparableValue := range comparableValues {
-			valueComparators = append(valueComparators, primitives.ValueComparator{
-				Value:    comparableValue,
-				Operator: op,
-			})
-		}
-		primitiveExpressions = append(primitiveExpressions, query.Comparator("someName", valueComparators...))
+		a, b, c, d := 1, 2, "123", "321"
+		valueComparatorsInt := []primitives.ValueComparator{{Value: &a, Operator: op}, {Value: &b, Operator: op}}
+		valueComparatorsString := []primitives.ValueComparator{{Value: &c, Operator: op}, {Value: &d, Operator: op}}
+		primitiveExpressions = append(primitiveExpressions, query.Comparator("IntComparator", valueComparatorsInt...))
+		primitiveExpressions = append(primitiveExpressions, query.Comparator("StringComparator", valueComparatorsString...))
 	}
 
 	for _, conf := range confirmationsValues {
 		primitiveExpressions = append(primitiveExpressions, query.Confidence(conf))
 	}
 
-	qf, err := query.Where("primitives", primitiveExpressions...)
+	qf, err := query.Where(ProtoTest, primitiveExpressions...)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
@@ -139,15 +174,18 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	)
 	require.NoError(t, err)
 
-	qf, err = query.Where("andOverPrimitivesBoolExpr", andOverPrimitivesBoolExpr)
+	// andOverPrimitivesBoolExpr
+	qf, err = query.Where(ProtoTest, andOverPrimitivesBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	qf, err = query.Where("orOverPrimitivesBoolExpr", orOverPrimitivesBoolExpr)
+	// orOverPrimitivesBoolExpr
+	qf, err = query.Where(ProtoTest, orOverPrimitivesBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	qf, err = query.Where("nestedBoolExpr", nestedBoolExpr)
+	// nestedBoolExpr
+	qf, err = query.Where(ProtoTest, nestedBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 

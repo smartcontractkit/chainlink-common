@@ -570,7 +570,28 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 
 		var sequences []types.Sequence
 		for _, trigger := range f.triggers {
-			sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
+			doAppend := true
+			for _, expr := range filter.Expressions {
+				if primitive, ok := expr.Primitive.(*primitives.Comparator); ok {
+					if len(primitive.ValueComparators) == 0 {
+						return nil, fmt.Errorf("value comparator for %s should not be empty", primitive.Name)
+					}
+					if primitive.Name == "Field" {
+						for _, valComp := range primitive.ValueComparators {
+							doAppend = doAppend && Compare(*trigger.testStruct.Field, *valComp.Value.(*int32), valComp.Operator)
+						}
+					} else if primitive.Name == "NestedStruct.FixedBytes" {
+						// in practice, we won't throw error if there are multiple value comparators for un-comparable types, but such query wouldn't ever return results
+						if len(primitive.ValueComparators) > 1 || primitive.ValueComparators[0].Operator != primitives.Eq {
+							return nil, fmt.Errorf("value comparator for FixedBytes should only be filtered by equality and does not support %s operator", primitive.ValueComparators[0].Operator)
+						}
+						doAppend = reflect.DeepEqual(*primitive.ValueComparators[0].Value.(*[2]byte), trigger.testStruct.NestedStruct.FixedBytes)
+					}
+				}
+			}
+			if len(filter.Expressions) == 0 || doAppend {
+				sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
+			}
 		}
 
 		if !limitAndSort.HasSequenceSort() {
@@ -642,6 +663,7 @@ func (e *errContractReader) QueryKey(_ context.Context, _ types.BoundContract, _
 
 type protoConversionTestContractReader struct {
 	types.UnimplementedContractReader
+	testProtoConversionTypeProvider
 	expectedBindings     types.BoundContract
 	expectedQueryFilter  query.KeyFilter
 	expectedLimitAndSort query.LimitAndSort

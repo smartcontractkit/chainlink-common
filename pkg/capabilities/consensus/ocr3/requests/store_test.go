@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -8,7 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 func TestOCR3Store(t *testing.T) {
@@ -94,4 +97,78 @@ func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, s.requests, 1)
 	assert.Len(t, s.requestIDs, 1)
+}
+
+func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
+	s := NewStore()
+	rid := uuid.New().String()
+	cb := make(chan capabilities.CapabilityResponse, 1)
+	stopCh := make(chan struct{}, 1)
+	obs, err := values.NewList(
+		[]any{"hello", 1},
+	)
+	require.NoError(t, err)
+	req := &Request{
+		WorkflowExecutionID: rid,
+		CallbackCh:          cb,
+		StopCh:              stopCh,
+		Observations:        obs,
+	}
+
+	require.NoError(t, s.Add(req))
+
+	testCases := []struct {
+		name string
+		get  func(ctx context.Context, rid string) *Request
+	}{
+		{
+			name: "get",
+			get: func(ctx context.Context, rid string) *Request {
+				return s.Get(rid)
+			},
+		},
+		{
+			name: "firstN",
+			get: func(ctx context.Context, rid string) *Request {
+				rs, err := s.FirstN(ctx, 1)
+				require.NoError(t, err)
+				assert.Len(t, rs, 1)
+				return rs[0]
+			},
+		},
+		{
+			name: "getByIDs",
+			get: func(ctx context.Context, rid string) *Request {
+				rs := s.GetByIDs(ctx, []string{rid})
+				assert.Len(t, rs, 1)
+				return rs[0]
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			st.Parallel()
+
+			gr := tc.get(tests.Context(st), rid)
+			require.NoError(t, err)
+
+			// Mutating the received observations doesn't mutate the store
+			assert.Len(t, gr.Observations.Underlying, 2)
+			gr.Observations.Underlying = append(gr.Observations.Underlying, values.NewString("world"))
+			gr.WorkflowExecutionID = "incorrect mutation"
+			assert.Len(t, gr.Observations.Underlying, 3)
+
+			gr2 := tc.get(tests.Context(st), rid)
+			assert.Len(t, gr2.Observations.Underlying, 2)
+			assert.Equal(t, gr2.WorkflowExecutionID, rid)
+
+			gr.StopCh <- struct{}{}
+			<-stopCh
+
+			gr.CallbackCh <- capabilities.CapabilityResponse{}
+			<-cb
+		})
+	}
+
 }

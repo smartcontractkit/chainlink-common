@@ -15,7 +15,6 @@ import (
 
 const (
 	eventID    = "ev_id_1"
-	timestamp  = 1000
 	rawReport1 = "abcd"
 	rawReport2 = "efgh"
 )
@@ -74,14 +73,8 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 		Signatures:           signatures,
 	}
 
-	node1Resp, err := wrapReports([]datastreams.FeedReport{feed1Old, feed2New}, eventID, 400, datastreams.SignersMetadata{})
-	require.NoError(t, err)
-	rawNode1Resp, err := pb.MarshalCapabilityResponse(node1Resp)
-	require.NoError(t, err)
-	node2Resp, err := wrapReports([]datastreams.FeedReport{feed1New, feed2Old}, eventID, 300, datastreams.SignersMetadata{})
-	require.NoError(t, err)
-	rawNode2Resp, err := pb.MarshalCapabilityResponse(node2Resp)
-	require.NoError(t, err)
+	rawNode1Resp := getRawResponse(t, []datastreams.FeedReport{feed1Old, feed2New}, 400)
+	rawNode2Resp := getRawResponse(t, []datastreams.FeedReport{feed1New, feed2Old}, 300)
 
 	// aggregator should return latest value for each feedID
 	aggResponse, err := agg.Aggregate(eventID, [][]byte{rawNode1Resp, rawNode2Resp})
@@ -94,4 +87,25 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 	require.Len(t, decodedReports, 2)
 	require.Equal(t, feed1New, decodedReports[0])
 	require.Equal(t, feed2New, decodedReports[1])
+
+	// never roll back to an older report
+	rawNode3Resp := getRawResponse(t, []datastreams.FeedReport{feed1Old, feed2Old}, 400)
+	aggResponse, err = agg.Aggregate(eventID, [][]byte{rawNode3Resp})
+	require.NoError(t, err)
+	aggEvent = capabilities.TriggerEvent{}
+	require.NoError(t, aggResponse.Value.UnwrapTo(&aggEvent))
+	decodedReports, err = testMercuryCodec{}.Unwrap(aggEvent.Payload)
+	require.NoError(t, err)
+
+	require.Len(t, decodedReports, 2)
+	require.Equal(t, feed1New, decodedReports[0])
+	require.Equal(t, feed2New, decodedReports[1])
+}
+
+func getRawResponse(t *testing.T, reports []datastreams.FeedReport, timestamp int64) []byte {
+	resp, err := wrapReports(reports, eventID, timestamp, datastreams.SignersMetadata{})
+	require.NoError(t, err)
+	rawResp, err := pb.MarshalCapabilityResponse(resp)
+	require.NoError(t, err)
+	return rawResp
 }

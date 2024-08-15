@@ -48,7 +48,6 @@ const (
 	AnySecondContractName                       = "Not" + AnyContractName
 )
 
-var ErrServiceNotStarted = errors.New("service not started")
 var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 
 const AnyExtraValue = 3

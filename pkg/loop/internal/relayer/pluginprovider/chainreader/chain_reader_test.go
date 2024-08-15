@@ -287,6 +287,8 @@ func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.Con
 	return it.impl
 }
 
+func (it *fakeChainReaderInterfaceTester) StartChainReader(_ *testing.T) {}
+
 func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{
 		{Name: AnyContractName, Address: AnyContractName},
@@ -340,11 +342,11 @@ type eventConfidencePair struct {
 
 type fakeChainReader struct {
 	fakeTypeProvider
-	vals     []valConfidencePair
-	triggers []eventConfidencePair
-	stored   []TestStruct
+	vals        []valConfidencePair
+	triggers    []eventConfidencePair
+	stored      []TestStruct
 	batchStored BatchCallEntry
-	lock     sync.Mutex
+	lock        sync.Mutex
 }
 
 func (f *fakeChainReader) Start(_ context.Context) error { return nil }

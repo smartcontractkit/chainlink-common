@@ -16,6 +16,7 @@ import (
 
 type ChainReaderInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
+	StartChainReader(t T)
 	GetChainReader(t T) types.ContractReader
 	// SetTestStructLatestValue is expected to return the same bound contract and method in the same test
 	// Any setup required for this should be done in Setup.
@@ -71,7 +72,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				actual := &TestStruct{}
 				params := &LatestParams{I: 1}
@@ -90,7 +91,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				var prim uint64
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningUint64, primitives.Unconfirmed, nil, &prim))
@@ -103,7 +104,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				var returnVal1 uint64
 				callArgs := ExpectedGetLatestValueArgs{
@@ -154,7 +155,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 					seenAddrs[binding.Address] = true
 				}
 				require.NoError(t, cr.Bind(ctx, bindings))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				var prim uint64
 				require.NoError(t, cr.GetLatestValue(ctx, AnySecondContractName, MethodReturningUint64, primitives.Unconfirmed, nil, &prim))
@@ -167,7 +168,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				var slice []uint64
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningUint64Slice, primitives.Unconfirmed, nil, &slice))
@@ -183,7 +184,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				testStruct.Account = nil
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				actual := &TestStructWithExtraField{}
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningSeenStruct, primitives.Unconfirmed, testStruct, actual))
@@ -200,7 +201,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				ts := CreateTestStruct[T](0, tester)
 				tester.TriggerEvent(t, &ts)
@@ -220,7 +221,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				// Trigger the first event
 				ts1 := CreateTestStruct[T](2, tester)
@@ -259,7 +260,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result := &TestStruct{}
 				err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Unconfirmed, nil, &result)
@@ -272,7 +273,7 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				ts0 := CreateTestStruct(0, tester)
 				tester.TriggerEvent(t, &ts0)
@@ -320,7 +321,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -343,7 +344,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
 				require.NoError(t, err)
@@ -366,7 +367,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
 				require.NoError(t, err)
@@ -393,7 +394,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -419,7 +420,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -453,7 +454,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -486,7 +487,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -518,7 +519,7 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -549,7 +550,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				logs, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &TestStruct{})
 
@@ -563,7 +564,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-				require.NoError(t, cr.Start(ctx))
+				tester.StartChainReader(t)
 
 				ts1 := CreateTestStruct[T](0, tester)
 				tester.TriggerEvent(t, &ts1)

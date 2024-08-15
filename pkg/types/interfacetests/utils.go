@@ -74,7 +74,7 @@ func waitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTes
 	ctx, cancel := context.WithTimeout(tests.Context(t), 5*time.Minute)
 	defer cancel()
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
 	for {

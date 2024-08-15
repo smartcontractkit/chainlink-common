@@ -59,11 +59,11 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				firstItem := CreateTestStruct(0, tester)
 
 				contracts := tester.GetBindings(t)
-				SubmitTransactionToCW(t, tester, "addTestStruct", firstItem, contracts[0], types.Finalized)
+				SubmitTransactionToCW(t, tester, "addTestStruct", firstItem, contracts[0], types.Unconfirmed)
 
 				secondItem := CreateTestStruct(1, tester)
 
-				SubmitTransactionToCW(t, tester, "addTestStruct", secondItem, contracts[0], types.Finalized)
+				SubmitTransactionToCW(t, tester, "addTestStruct", secondItem, contracts[0], types.Unconfirmed)
 
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))

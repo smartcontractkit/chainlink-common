@@ -62,6 +62,15 @@ func RunChainReaderInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfac
 func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T]) {
 	tests := []testcase[T]{
 		{
+			name: "Get latest value without starting service returns error",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				require.Error(t, cr.GetLatestValue(ctx, AnyContractName, MethodTakingLatestParamsReturningTestStruct, primitives.Unconfirmed, nil, nil))
+			},
+		},
+		{
 			name: "Gets the latest value",
 			test: func(t T) {
 				ctx := tests.Context(t)
@@ -334,6 +343,19 @@ func runChainReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester
 			},
 		},
 		{
+			name: "BatchGetLatestValues without starting service returns error",
+			test: func(t T) {
+				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
+				batchGetLatestValueRequest[AnyContractName] = []types.BatchRead{{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: nil, ReturnVal: nil}}
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				_, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
+				require.Error(t, err)
+			},
+		},
+		{
 			name: "BatchGetLatestValues works without arguments and with primitive return",
 			test: func(t T) {
 				// setup call data
@@ -556,6 +578,17 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainReaderInterfaceTe
 
 				require.NoError(t, err)
 				assert.Len(t, logs, 0)
+			},
+		},
+		{
+			name: "QueryKey without starting service returns error",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				_, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &TestStruct{})
+				require.Error(t, err)
 			},
 		},
 		{

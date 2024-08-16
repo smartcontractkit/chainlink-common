@@ -121,6 +121,9 @@ func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string
 				f := Field{}
 
 				if field.Tag != nil {
+					// This is safe because the generator used to create the structs from jsonschema
+					// will always have json tag if there's tags on the field, per configuration.
+					// The substring removes the quotes around that tag.
 					tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1])
 					jsonTag := tag.Get("json")
 					if jsonTag != "" {

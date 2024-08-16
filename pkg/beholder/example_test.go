@@ -2,152 +2,91 @@ package beholder_test
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"sync"
-	"time"
+	"math/rand"
 
-	otelattribute "go.opentelemetry.io/otel/attribute"
-	otellog "go.opentelemetry.io/otel/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/global"
+	// chainlink-common
+	beholder "github.com/smartcontractkit/chainlink-common/pkg/beholder/global"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 )
 
-func ExampleClient() {
-	ctx := context.Background()
-
-	client, err := beholder.NewOtelClient(beholder.DefaultConfig(), errorHandler)
-	if err != nil {
-		log.Fatalf("Error creating beholder client: %v", err)
-	}
-	var wg sync.WaitGroup
-	for i := range 3 {
-		wg.Add(1)
-		fmt.Printf("Emitting message %d\n", i)
-		go func(i int) {
-			// Create message metadata
-			metadata := beholder.Metadata{
-				DonID:              "test_don_id",
-				NetworkName:        []string{"test_network"},
-				NetworkChainID:     "test_chain_id",
-				BeholderDataSchema: "/custom-message/versions/1",
-			}
-			// Create custom message
-			customMessage := beholder.Message{
-				// Set protobuf message bytes as body
-				Body: newTestMessageBytes(i),
-				// Set metadata attributes
-				Attrs: metadata.Attributes().Add(
-					// Add custom attributes
-					"timestamp", time.Now().Unix(),
-					"sender", "example-client",
-				),
-			}
-			// Emit custom message
-			err := client.Emitter.EmitMessage(ctx, customMessage)
-			if err != nil {
-				log.Fatalf("Error emitting message: %v", err)
-			}
-			wg.Done()
-		}(i)
-	}
-	wg.Wait()
-	// Output:
-	// Emitting message 0
-	// Emitting message 1
-	// Emitting message 2
-}
-
-func newTestMessageBytes(i int) []byte {
-	// Create protobuf message
-	customMessagePb := &pb.TestCustomMessage{}
-	customMessagePb.BoolVal = true
-	customMessagePb.IntVal = int64(i)
-	customMessagePb.FloatVal = float32(i)
-	customMessagePb.StringVal = fmt.Sprintf("string-value-%d", i)
-	customMessagePb.BytesVal = []byte{byte(i)}
-	// Encode protobuf message
-	customMessageBytes, err := proto.Marshal(customMessagePb)
-	if err != nil {
-		log.Fatalf("Error encoding message: %v", err)
-	}
-	return customMessageBytes
-}
-
-func errorHandler(e error) {
-	if e != nil {
-		log.Fatalf("otel error: %v", e)
-	}
-}
-
-func asseetNoError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func ExampleEmitter() {
-	ctx := context.Background()
-	// Initialize beholder client
-	client, err := beholder.NewOtelClient(beholder.DefaultConfig(), asseetNoError)
-	if err != nil {
-		log.Fatalf("Error creating beholder client: %v", err)
-	}
-	// Set global client so it will be accessible from anywhere through beholder/global functions
-	global.SetClient(&client)
-	// After that you can use global functions to get logger, tracer, meter, messageEmitter
-	logger, tracer, meter, messageEmitter := global.Logger(), global.Tracer(), global.Meter(), global.Emitter()
-
-	fmt.Println("Emit otel log record")
-	logger.Emit(ctx, otellog.Record{})
-
-	fmt.Println("Create trace span")
-	ctx, span := tracer.Start(ctx, "ExampleGlobalClient", oteltrace.WithAttributes(otelattribute.String("key", "value")))
-	defer span.End()
-
-	fmt.Println("Create metric counter")
-	counter, _ := meter.Int64Counter("global_counter")
-	counter.Add(ctx, 1)
-
-	fmt.Println("Emit custom message")
-	err = messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{
-		"key":                  "value",
-		"beholder_data_schema": "/test/versions/1",
-	})
-	if err != nil {
-		log.Fatalf("Error emitting message: %v", err)
-	}
-	// Output:
-	// Emit otel log record
-	// Create trace span
-	// Create metric counter
-	// Emit custom message
-}
-
-func ExampleBootstrap() {
-	beholderConfig := beholder.DefaultConfig()
+func ExampleBeholderCustomMessage() {
+	beholderConfig := beholder.NewConfig()
 
 	// Bootstrap Beholder Client
-	err := global.Bootstrap(beholderConfig, errorHandler)
+	err := beholder.Bootstrap(beholderConfig, errorHandler)
 	if err != nil {
 		log.Fatalf("Error bootstrapping Beholder: %v", err)
 	}
 
-	payloadBytes := newTestMessageBytes(0)
+	// Define a custom protobuf payload to emit
+	payload := &pb.TestCustomMessage{
+		BoolVal:   true,
+		IntVal:    42,
+		FloatVal:  3.14,
+		StringVal: "Hello, World!",
+	}
+	payloadBytes, err := proto.Marshal(payload)
+	if err != nil {
+		log.Fatalf("Failed to marshal protobuf")
+	}
 
-	// Emit custom message
-	for range 3 {
-		err := global.Emit(context.Background(), payloadBytes, beholder.Attributes{
-			"beholder_data_type": "custom_message",
-			"foo":                "bar",
-		})
+	// Initialise custom message to wrap the payload
+	customMessage := beholder.NewMessage(payloadBytes,
+		"beholder_data_schema", "/custom-message/versions/1", // required
+		"beholder_data_type", "custom_message",
+		"foo", "bar",
+	)
+
+	// Emit the custom message anywhere from application logic
+	for range 10 {
+		err := beholder.EmitMessage(context.Background(), customMessage)
 		if err != nil {
 			log.Printf("Error emitting message: %v", err)
 		}
 	}
 	// Output:
+}
+
+func ExampleBeholderMetricTraces() {
+	beholderConfig := beholder.NewConfig()
+
+	// Bootstrap Beholder Client
+	err := beholder.Bootstrap(beholderConfig, errorHandler)
+	if err != nil {
+		log.Fatalf("Error bootstrapping Beholder: %v", err)
+	}
+
+	// Define a new counter
+	counter, err := beholder.Meter().Int64Counter("custom_message.count")
+	if err != nil {
+		log.Fatalf("failed to create new counter")
+	}
+
+	// Define a new gauge
+	gauge, err := beholder.Meter().Int64Gauge("custom_message.gauge")
+	if err != nil {
+		log.Fatalf("failed to create new gauge")
+	}
+
+	// Use the counter and gauge for metrics within application logic
+	counter.Add(context.Background(), 1)
+	gauge.Record(context.Background(), rand.Int63n(101))
+
+	// Create a new trace span
+	_, rootSpan := beholder.Tracer().Start(context.Background(), "foo", trace.WithAttributes(
+		attribute.String("app_name", "beholderdemo"),
+	))
+	defer rootSpan.End()
+	// Output:
+}
+
+func errorHandler(e error) {
+	if e != nil {
+		log.Printf("otel error: %v", e)
+	}
 }

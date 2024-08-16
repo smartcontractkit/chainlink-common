@@ -3,6 +3,7 @@ package workflows_test
 import (
 	_ "embed"
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -369,6 +370,11 @@ func assertWorkflowSpec(t *testing.T, expectedSpec, testWorkflowSpec workflows.W
 
 	actual, err := json.Marshal(testWorkflowSpec)
 	require.NoError(t, err)
+
+	if string(actual) != string(expected) {
+		os.WriteFile("/Volumes/RAM/actual.json", actual, 0644)
+		os.WriteFile("/Volumes/RAM/expected.json", expected, 0644)
+	}
 
 	assert.Equal(t, string(expected), string(actual))
 }

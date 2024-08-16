@@ -21,8 +21,6 @@ var Dir string
 // This is used as the package name for the generated Go types.
 var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|consensus|target)-schema\.json$`)
 
-// reg := regexp.MustCompile(`([^/]+)_(trigger|action)\.json$`)
-
 func init() {
 	generateTypesCmd.Flags().StringVar(&Dir, "dir", ".", fmt.Sprintf("Directory to search for %s files, if a file is provided, the directory it is in will be used", CapabilitySchemaFilePattern.String()))
 	if err := generateTypesCmd.MarkFlagDirname("dir"); err != nil {

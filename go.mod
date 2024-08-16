@@ -98,7 +98,7 @@ require (
 )
 
 replace (
-	// until merged upstream:
+	// until merged upstream: https://github.com/omissis/go-jsonschema/pull/264
 	github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-rtinianov
 
 	// until merged upstream: https://github.com/hashicorp/go-plugin/pull/257

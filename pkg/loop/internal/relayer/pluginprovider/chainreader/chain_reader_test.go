@@ -293,6 +293,12 @@ func (it *fakeChainReaderInterfaceTester) StartChainReader(t *testing.T) {
 	require.NoError(t, fake.Start(context.Background()))
 }
 
+func (it *fakeChainReaderInterfaceTester) CloseChainReader(t *testing.T) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	require.NoError(t, fake.Close())
+}
+
 func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{
 		{Name: AnyContractName, Address: AnyContractName},

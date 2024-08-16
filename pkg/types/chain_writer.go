@@ -34,6 +34,7 @@ type TransactionStatus int
 
 const (
 	Unknown TransactionStatus = iota
+	Pending
 	Unconfirmed
 	Finalized
 	Failed

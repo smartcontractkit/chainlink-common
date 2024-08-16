@@ -10,7 +10,7 @@
         "Mapping": null
       },
       "Config": {},
-      "CapabilityType": 0
+      "CapabilityType": "trigger"
     }
   ],
   "Actions": [],
@@ -27,7 +27,7 @@
         }
       },
       "Config": {},
-      "CapabilityType": 2
+      "CapabilityType": "consensus"
     }
   ],
   "Targets": [
@@ -43,7 +43,7 @@
         }
       },
       "Config": {},
-      "CapabilityType": 3
+      "CapabilityType": "target"
     }
   ]
 }

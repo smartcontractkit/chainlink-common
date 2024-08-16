@@ -56,10 +56,6 @@ func defaultClient() *atomic.Pointer[beholder.OtelClient] {
 	return ptr
 }
 
-func EmitMessage(ctx context.Context, message beholder.Message) error {
-	return Emitter().EmitMessage(ctx, message)
-}
-
 func Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return Emitter().Emit(ctx, body, attrKVs...)
 }

@@ -24,8 +24,6 @@ import (
 )
 
 type Emitter interface {
-	// Sends message to OTel Collector
-	EmitMessage(ctx context.Context, m Message) error
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
 }

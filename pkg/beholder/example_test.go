@@ -35,16 +35,13 @@ func ExampleBeholderCustomMessage() {
 		log.Fatalf("Failed to marshal protobuf")
 	}
 
-	// Initialise custom message to wrap the payload
-	customMessage := beholder.NewMessage(payloadBytes,
-		"beholder_data_schema", "/custom-message/versions/1", // required
-		"beholder_data_type", "custom_message",
-		"foo", "bar",
-	)
-
 	// Emit the custom message anywhere from application logic
 	for range 10 {
-		err := beholder.EmitMessage(context.Background(), customMessage)
+		err := beholder.Emit(context.Background(), payloadBytes,
+			"beholder_data_schema", "/custom-message/versions/1", // required
+			"beholder_data_type", "custom_message",
+			"foo", "bar",
+		)
 		if err != nil {
 			log.Printf("Error emitting message: %v", err)
 		}

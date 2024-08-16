@@ -79,18 +79,6 @@ func TestClient(t *testing.T) {
 				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
-		}, {
-			name:                   "Test EmitMessage",
-			makeCustomAttributes:   defaultCustomAttributes,
-			messageBody:            defaultMessageBody,
-			messageCount:           10,
-			exporterMockErrorCount: 0,
-			exporterOutputExpected: true,
-			messageGenerator: func(client OtelClient, messageBody []byte, customAttributes map[string]any) {
-				message := NewMessage(messageBody, customAttributes)
-				err := client.Emitter.EmitMessage(tests.Context(t), message)
-				assert.NoError(t, err)
-			},
 		},
 	}
 
@@ -259,15 +247,6 @@ func TestEmitterMessageValidation(t *testing.T) {
 				}
 				return
 			}
-
-			t.Run("Emitter.EmitMessage", func(t *testing.T) {
-				emitter, message, assertExpectations := setupTest()
-
-				err := emitter.EmitMessage(tests.Context(t), message)
-
-				assertExpectations(err)
-			})
-
 			t.Run("Emitter.Emit", func(t *testing.T) {
 				emitter, message, assertExpectations := setupTest()
 

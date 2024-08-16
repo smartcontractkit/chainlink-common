@@ -76,12 +76,6 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if 9223372036854775807 < plain.ObservationTimestamp {
-		return fmt.Errorf("field %s: must be <= %v", "observationTimestamp", 9.223372036854776e+18)
-	}
-	if 0 > plain.ObservationTimestamp {
-		return fmt.Errorf("field %s: must be >= %v", "observationTimestamp", 0)
-	}
 	if plain.Signatures != nil && len(plain.Signatures) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "signatures", 1)
 	}

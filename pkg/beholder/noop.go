@@ -2,7 +2,9 @@ package beholder
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
@@ -21,19 +23,19 @@ func NewNoopClient() OtelClient {
 	cfg := DefaultConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
-	logger := loggerProvider.Logger(cfg.PackageName)
+	logger := loggerProvider.Logger(defaultPackageName)
 	// Tracer
 	tracerProvider := oteltracenoop.NewTracerProvider()
-	tracer := tracerProvider.Tracer(cfg.PackageName)
+	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
 	meterProvider := otelmetricnoop.NewMeterProvider()
-	meter := meterProvider.Meter(cfg.PackageName)
+	meter := meterProvider.Meter(defaultPackageName)
 
 	// MessageEmitter
 	messageEmitter := noopMessageEmitter{}
 
-	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, noopOnClose}
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, noopOnClose}
 
 	return client
 }
@@ -41,38 +43,51 @@ func NewNoopClient() OtelClient {
 // NewStdoutClient creates a new Client with stdout exporters
 // Use for testing and debugging
 // Also this client is used as a noop client when otel exporter is not initialized properly
-func NewStdoutClient() OtelClient {
-	cfg := DefaultConfig()
+func NewStdoutClient(opts ...StddutClientOption) OtelClient {
+	cfg := DefaultStdoutClientConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 	// Logger
-	loggerExporter, _ := stdoutlog.New(stdoutlog.WithoutTimestamps()) // stdoutlog.New() never returns an error
+	loggerExporter, _ := stdoutlog.New(
+		append([]stdoutlog.Option{stdoutlog.WithoutTimestamps()}, cfg.LogOptions...)...,
+	) // stdoutlog.New() never returns an error
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
-	logger := loggerProvider.Logger(cfg.PackageName)
+	logger := loggerProvider.Logger(defaultPackageName)
 	setOtelErrorHandler(func(err error) {
 		fmt.Printf("OTel error %s", err)
 	})
 
 	// Tracer
-	traceExporter, _ := stdouttrace.New() // stdouttrace.New() never returns an error
+	traceExporter, _ := stdouttrace.New(cfg.TraceOptions...) // stdouttrace.New() never returns an error
+
 	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(
 		sdktrace.NewSimpleSpanProcessor(traceExporter),
 	))
-	tracer := tracerProvider.Tracer(cfg.PackageName)
+	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	metricExporter, _ := stdoutmetric.New() // stdoutmetric.New() never returns an error
+	metricExporter, _ := stdoutmetric.New(cfg.MetricOptions...) // stdoutmetric.New() never returns an error
 	meterProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				metricExporter,
-				sdkmetric.WithInterval(time.Second), // Default is 10s
+				sdkmetric.WithInterval(100*time.Millisecond), // Default is 10s
 			)),
 	)
-	meter := meterProvider.Meter(cfg.PackageName)
+	meter := meterProvider.Meter(defaultPackageName)
 
 	// MessageEmitter
-	emitter := messageEmitter{loggerExporter, logger}
+	emitter := messageEmitter{messageLogger: logger}
 
-	client := OtelClient{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, noopOnClose}
+	onClose := func() (err error) {
+		for _, provider := range []shutdowner{loggerProvider, tracerProvider, meterProvider} {
+			err = errors.Join(err, provider.Shutdown(context.Background()))
+		}
+		return
+	}
+
+	client := OtelClient{cfg.Config, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, onClose}
 
 	return client
 }
@@ -88,4 +103,27 @@ func (noopMessageEmitter) EmitMessage(ctx context.Context, message Message) erro
 
 func noopOnClose() error {
 	return nil
+}
+
+type StddutClientOption func(*StdoutClientConfig)
+
+type StdoutClientConfig struct {
+	Config
+	LogOptions    []stdoutlog.Option
+	TraceOptions  []stdouttrace.Option
+	MetricOptions []stdoutmetric.Option
+}
+
+func DefaultStdoutClientConfig() StdoutClientConfig {
+	return StdoutClientConfig{
+		Config: DefaultConfig(),
+	}
+}
+
+func WithWriter(w io.Writer) StddutClientOption {
+	return func(cfg *StdoutClientConfig) {
+		cfg.LogOptions = append(cfg.LogOptions, stdoutlog.WithWriter(w))
+		cfg.TraceOptions = append(cfg.TraceOptions, stdouttrace.WithWriter(w))
+		cfg.MetricOptions = append(cfg.MetricOptions, stdoutmetric.WithWriter(w))
+	}
 }

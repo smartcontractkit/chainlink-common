@@ -34,7 +34,6 @@ type Client interface {
 }
 
 type messageEmitter struct {
-	exporter      sdklog.Exporter
 	messageLogger otellog.Logger
 }
 
@@ -50,12 +49,13 @@ type OtelClient struct {
 	Emitter Emitter
 
 	// Providers
-	LoggerProvider otellog.LoggerProvider
-	TracerProvider oteltrace.TracerProvider
-	MeterProvider  otelmetric.MeterProvider
+	LoggerProvider        otellog.LoggerProvider
+	TracerProvider        oteltrace.TracerProvider
+	MeterProvider         otelmetric.MeterProvider
+	MessageLoggerProvider otellog.LoggerProvider
 
 	// OnClose
-	onClose func() error
+	OnClose func() error
 }
 
 // NewOtelClient creates a new Client with OTel exporter
@@ -111,21 +111,21 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		sdklog.WithResource(loggerResource),
 		sdklog.WithProcessor(loggerProcessor),
 	)
-	logger := loggerProvider.Logger(cfg.PackageName)
+	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
 	if err != nil {
 		return noop, err
 	}
-	tracer := tracerProvider.Tracer(cfg.PackageName)
+	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
 	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
 	if err != nil {
 		return noop, err
 	}
-	meter := meterProvider.Meter(cfg.PackageName)
+	meter := meterProvider.Meter(defaultPackageName)
 
 	// Message Emitter
 	messageLogProcessor := sdklog.NewBatchProcessor(
@@ -146,7 +146,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		sdklog.WithResource(messageLoggerResource),
 		sdklog.WithProcessor(messageLogProcessor),
 	)
-	messageLogger := messageLoggerProvider.Logger(cfg.PackageName)
+	messageLogger := messageLoggerProvider.Logger(defaultPackageName)
 
 	messageEmitter := &messageEmitter{
 		messageLogger: messageLogger,
@@ -155,12 +155,12 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	setOtelErrorHandler(errorHandler)
 
 	onClose := func() (err error) {
-		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider} {
+		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}
 		return
 	}
-	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, onClose}
+	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
 
 	return client, nil
 }
@@ -185,10 +185,30 @@ func (c OtelClient) SetGlobals() {
 
 // Closes all providers, flushes all data and stops all background processes
 func (c OtelClient) Close() (err error) {
-	if c.onClose != nil {
-		return c.onClose()
+	if c.OnClose != nil {
+		return c.OnClose()
 	}
 	return
+}
+
+// Returns a new OtelClient with the same configuration but with a different package name
+func (c OtelClient) ForPackage(name string) OtelClient {
+	// Logger
+	logger := c.LoggerProvider.Logger(name)
+	// Tracer
+	tracer := c.TracerProvider.Tracer(name)
+	// Meter
+	meter := c.MeterProvider.Meter(name)
+	// Message Emitter
+	messageLogger := c.MessageLoggerProvider.Logger(name)
+	messageEmitter := &messageEmitter{messageLogger: messageLogger}
+
+	newClient := c // copy
+	newClient.Logger = logger
+	newClient.Tracer = tracer
+	newClient.Meter = meter
+	newClient.Emitter = messageEmitter
+	return newClient
 }
 
 type errorHandlerFunc func(err error)

@@ -18,7 +18,6 @@ func ExampleConfig() {
 		InsecureConnection:       true,
 		CACertFile:               "",
 		OtelExporterGRPCEndpoint: "localhost:4317",
-		PackageName:              packageName,
 		// Resource
 		ResourceAttributes: []otelattr.KeyValue{
 			otelattr.String("package_name", packageName),
@@ -36,5 +35,5 @@ func ExampleConfig() {
 	}
 	fmt.Printf("%+v", config)
 	// Output:
-	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 PackageName:beholder ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholdeclient slice:<nil>}}] EmitterExportTimeout:1s TraceSampleRate:1 TraceBatchTimeout:1s MetricReaderInterval:1s LogExportTimeout:1s}
+	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholdeclient slice:<nil>}}] EmitterExportTimeout:1s TraceSampleRate:1 TraceBatchTimeout:1s MetricReaderInterval:1s LogExportTimeout:1s}
 }

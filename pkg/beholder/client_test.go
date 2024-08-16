@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -343,4 +344,31 @@ func restoreGlobas(t *testing.T, g globals) {
 	assert.Equal(t, g.tracerProvider, otel.GetTracerProvider())
 	assert.Equal(t, g.textMapPropagator, otel.GetTextMapPropagator())
 	assert.Equal(t, g.meterProvider, otel.GetMeterProvider())
+}
+
+func TestClient_ForPackage(t *testing.T) {
+	exporterMock := mocks.NewOTLPExporter(t)
+	defer exporterMock.AssertExpectations(t)
+	var b strings.Builder
+	client := NewStdoutClient(WithWriter(&b))
+	clientForTest := client.ForPackage("TestClient_ForPackage")
+
+	// Log
+	clientForTest.Logger.Emit(tests.Context(t), otellog.Record{})
+	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
+	b.Reset()
+
+	// Trace
+	_, span := clientForTest.Tracer.Start(tests.Context(t), "testSpan")
+	span.End()
+	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
+	assert.Contains(t, b.String(), "testSpan")
+	b.Reset()
+
+	// Meter
+	counter, _ := clientForTest.Meter.Int64Counter("testMetric")
+	counter.Add(tests.Context(t), 1)
+	clientForTest.Close()
+	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
+	assert.Contains(t, b.String(), "testMetric")
 }

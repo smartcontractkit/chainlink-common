@@ -11,7 +11,6 @@ type Config struct {
 	CACertFile               string
 	OtelExporterGRPCEndpoint string
 
-	PackageName string
 	// OTel Resource
 	ResourceAttributes []otelattr.KeyValue
 	// Message Emitter
@@ -25,6 +24,10 @@ type Config struct {
 	LogExportTimeout time.Duration
 }
 
+const (
+	defaultPackageName = "beholder"
+)
+
 var defaultOtelAttributes = []otelattr.KeyValue{
 	otelattr.String("package_name", "beholder"),
 }
@@ -34,7 +37,6 @@ func DefaultConfig() Config {
 		InsecureConnection:       true,
 		CACertFile:               "",
 		OtelExporterGRPCEndpoint: "localhost:4317",
-		PackageName:              "beholder",
 		// Resource
 		ResourceAttributes: defaultOtelAttributes,
 		// Message Emitter

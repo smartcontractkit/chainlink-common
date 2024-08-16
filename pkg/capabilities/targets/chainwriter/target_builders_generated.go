@@ -9,7 +9,6 @@ import (
 )
 
 
-
 func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string, input TargetInput) {
     
     def := workflows.StepDefinition{

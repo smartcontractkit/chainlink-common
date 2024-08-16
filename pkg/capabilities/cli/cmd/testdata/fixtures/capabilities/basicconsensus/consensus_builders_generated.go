@@ -8,7 +8,6 @@ import (
 )
 
 
-
 func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory,ref string, input ConsensusInput)ConsensusOutputsCap {
     
     def := workflows.StepDefinition{

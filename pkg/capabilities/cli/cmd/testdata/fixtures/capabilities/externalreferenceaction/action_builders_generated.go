@@ -9,7 +9,6 @@ import (
 )
 
 type SomeConfig referenceaction.SomeConfig 
-
 func (cfg SomeConfig) New(w *workflows.WorkflowSpecFactory,ref string, input ActionInput)referenceaction.SomeOutputsCap {
     
     def := workflows.StepDefinition{

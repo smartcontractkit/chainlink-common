@@ -8,7 +8,6 @@ import (
 )
 
 
-
 func (cfg ActionConfig) New(w *workflows.WorkflowSpecFactory,ref string, input ActionInput)workflows.CapDefinition[[]ActionOutputsElem] {
     
     def := workflows.StepDefinition{

@@ -8,7 +8,6 @@ import (
 )
 
 
-
 func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory,)FeedCap {
      ref := "trigger"
     def := workflows.StepDefinition{

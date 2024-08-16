@@ -55,14 +55,14 @@ func (s *Server) Get(ctx context.Context, req *relayerset.GetRelayerRequest) (*r
 
 	relayers, err := s.impl.List(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error getting all relayers: %v", err) //nolint
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error getting all relayers: %v", err))
 	}
 
 	if _, ok := relayers[id]; ok {
 		return &relayerset.GetRelayerResponse{Id: req.Id}, nil
 	}
 
-	return nil, status.Errorf(codes.NotFound, "relayer not found for id %s", id) //nolint
+	return nil, status.Errorf(codes.NotFound, fmt.Sprintf("relayer not found for id %s", id))
 }
 
 func (s *Server) List(ctx context.Context, req *relayerset.ListAllRelayersRequest) (*relayerset.ListAllRelayersResponse, error) {
@@ -73,7 +73,7 @@ func (s *Server) List(ctx context.Context, req *relayerset.ListAllRelayersReques
 
 	relayers, err := s.impl.List(ctx, relayIDs...)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error getting all relayers: %v", err) //nolint
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error getting all relayers: %v", err))
 	}
 
 	ids := make([]*relayerset.RelayerId, len(relayers))

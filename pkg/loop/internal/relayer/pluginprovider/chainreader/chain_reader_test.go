@@ -287,7 +287,11 @@ func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.Con
 	return it.impl
 }
 
-func (it *fakeChainReaderInterfaceTester) StartChainReader(_ *testing.T) {}
+func (it *fakeChainReaderInterfaceTester) StartChainReader(t *testing.T) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	require.NoError(t, fake.Start(context.Background()))
+}
 
 func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{
@@ -347,11 +351,20 @@ type fakeChainReader struct {
 	stored      []TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
+	isStarted   bool
 }
 
-func (f *fakeChainReader) Start(_ context.Context) error { return nil }
+var errServiceNotStarted = errors.New("ContractReader service not started")
 
-func (f *fakeChainReader) Close() error { return nil }
+func (f *fakeChainReader) Start(_ context.Context) error {
+	f.isStarted = true
+	return nil
+}
+
+func (f *fakeChainReader) Close() error {
+	f.isStarted = false
+	return nil
+}
 
 func (f *fakeChainReader) Ready() error { panic("unimplemented") }
 
@@ -385,6 +398,10 @@ func (f *fakeChainReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
 }
 
 func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	if !f.isStarted {
+		return errServiceNotStarted
+	}
+
 	if method == MethodReturningAlterableUint64 {
 		r := returnVal.(*uint64)
 		for i := len(f.vals) - 1; i >= 0; i-- {
@@ -457,6 +474,10 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 }
 
 func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	if !f.isStarted {
+		return nil, errServiceNotStarted
+	}
+
 	result := make(types.BatchGetLatestValuesResult)
 	for requestContractName, requestContractBatch := range request {
 		storedContractBatch := f.batchStored[requestContractName]
@@ -505,6 +526,10 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 }
 
 func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+	if !f.isStarted {
+		return nil, errServiceNotStarted
+	}
+
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()

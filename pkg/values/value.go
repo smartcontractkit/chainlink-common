@@ -251,6 +251,8 @@ func unwrapTo[T any](underlying T, to any) error {
 		}
 		*tb = underlying
 	default:
+		// Don't break for custom types that are the same underlying type
+		// eg: type FeedId string allows verification of FeedId's shape while unmarshalling
 		rTo := reflect.ValueOf(to)
 		rUnderlying := reflect.ValueOf(underlying)
 		underlyingPtr := reflect.PointerTo(rUnderlying.Type())

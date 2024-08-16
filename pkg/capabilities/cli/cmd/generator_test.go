@@ -22,13 +22,12 @@ import (
 //	Since the builder isn't implemented yet, the types added aren't tested yet.
 //	They will be tested here and in the tests for the builder as well.
 func TestTypeGeneration(t *testing.T) {
-
 	t.Run("Basic trigger", func(t *testing.T) {
 		onlyVerifySyntax(func() {
 			factory := &workflows.WorkflowSpecFactory{}
 
 			// assure the right type of trigger
-			var trigger basictrigger.TriggerOutputsCap
+			var trigger basictrigger.TriggerOutputsCap //nolint
 			trigger = basictrigger.TriggerConfig{
 				Name:   "anything",
 				Number: 123,
@@ -38,7 +37,7 @@ func TestTypeGeneration(t *testing.T) {
 			var _ workflows.CapDefinition[basictrigger.TriggerOutputs] = trigger
 
 			// verify the type is correct
-			var expectedOutput workflows.CapDefinition[string]
+			var expectedOutput workflows.CapDefinition[string] //nolint
 			expectedOutput = trigger.CoolOutput()
 			_ = expectedOutput
 		})
@@ -49,7 +48,7 @@ func TestTypeGeneration(t *testing.T) {
 			factory := &workflows.WorkflowSpecFactory{}
 
 			// assure the right type of action
-			var action basicaction.ActionOutputsCap
+			var action basicaction.ActionOutputsCap //nolint
 			action = basicaction.ActionConfig{
 				Name:   "anything",
 				Number: 123,
@@ -61,7 +60,7 @@ func TestTypeGeneration(t *testing.T) {
 			var _ workflows.CapDefinition[basicaction.ActionOutputs] = action
 
 			// verify the type is correct
-			var expectedOutput workflows.CapDefinition[string]
+			var expectedOutput workflows.CapDefinition[string] //nolint
 			expectedOutput = action.AdaptedThing()
 			_ = expectedOutput
 		})
@@ -72,7 +71,7 @@ func TestTypeGeneration(t *testing.T) {
 			factory := &workflows.WorkflowSpecFactory{}
 
 			// assure the right type of trigger
-			var consensus basicconsensus.ConsensusOutputsCap
+			var consensus basicconsensus.ConsensusOutputsCap //nolint
 			consensus = basicconsensus.ConsensusConfig{
 				Name:   "anything",
 				Number: 123,
@@ -84,11 +83,11 @@ func TestTypeGeneration(t *testing.T) {
 			var _ workflows.CapDefinition[basicconsensus.ConsensusOutputs] = consensus
 
 			// verify the type is correct
-			var expectedConsensusField workflows.CapDefinition[[]string]
+			var expectedConsensusField workflows.CapDefinition[[]string] //nolint
 			expectedConsensusField = consensus.Consensus()
 			_ = expectedConsensusField
 
-			var expectedSigsField workflows.CapDefinition[[]string]
+			var expectedSigsField workflows.CapDefinition[[]string] //nolint
 			expectedSigsField = consensus.Sigs()
 			_ = expectedSigsField
 		})
@@ -102,7 +101,7 @@ func TestTypeGeneration(t *testing.T) {
 			}
 
 			// verify no output type
-			var verifyCreationType func(w *workflows.WorkflowSpecFactory, input basictarget.TargetInput)
+			var verifyCreationType func(w *workflows.WorkflowSpecFactory, input basictarget.TargetInput) //nolint
 			verifyCreationType = config.New
 			var _ = verifyCreationType
 		})
@@ -112,7 +111,7 @@ func TestTypeGeneration(t *testing.T) {
 			factory := &workflows.WorkflowSpecFactory{}
 
 			// assure the right type of action
-			var action referenceaction.SomeOutputsCap
+			var action referenceaction.SomeOutputsCap //nolint
 			action = referenceaction.SomeConfig{
 				Name:   "anything",
 				Number: 123,
@@ -124,7 +123,7 @@ func TestTypeGeneration(t *testing.T) {
 			var _ workflows.CapDefinition[referenceaction.SomeOutputs] = action
 
 			// verify the type is correct
-			var expectedOutput workflows.CapDefinition[string]
+			var expectedOutput workflows.CapDefinition[string] //nolint
 			expectedOutput = action.AdaptedThing()
 			_ = expectedOutput
 		})
@@ -156,7 +155,7 @@ func TestTypeGeneration(t *testing.T) {
 			factory := &workflows.WorkflowSpecFactory{}
 
 			// assure the right type of action
-			var action nestedaction.ActionOutputsCap
+			var action nestedaction.ActionOutputsCap //nolint
 			action = nestedaction.ActionConfig{
 				Details: nestedaction.ActionConfigDetails{
 					Name:   "anything",
@@ -176,7 +175,7 @@ func TestTypeGeneration(t *testing.T) {
 			expectedOutputRaw = expectedOutput
 			_ = expectedOutputRaw
 
-			var expectedUnderlyingFieldType workflows.CapDefinition[string]
+			var expectedUnderlyingFieldType workflows.CapDefinition[string] //nolint
 			expectedUnderlyingFieldType = expectedOutput.AdaptedThing()
 			_ = expectedUnderlyingFieldType
 		})
@@ -187,7 +186,7 @@ func TestTypeGeneration(t *testing.T) {
 			factory := &workflows.WorkflowSpecFactory{}
 
 			// assure the right type of action
-			var action workflows.CapDefinition[[]arrayaction.ActionOutputsElem]
+			var action workflows.CapDefinition[[]arrayaction.ActionOutputsElem] //nolint
 			action = arrayaction.ActionConfig{
 				Details: arrayaction.ActionConfigDetails{
 					Name:   "name",
@@ -203,7 +202,7 @@ func TestTypeGeneration(t *testing.T) {
 	t.Run("Creating a type from fields works", func(t *testing.T) {
 		onlyVerifySyntax(func() {
 			factory := &workflows.WorkflowSpecFactory{}
-			var action referenceaction.SomeOutputsCap
+			var action referenceaction.SomeOutputsCap //nolint
 			action = referenceaction.SomeConfig{
 				Name:   "anything",
 				Number: 123,
@@ -212,7 +211,7 @@ func TestTypeGeneration(t *testing.T) {
 			})
 
 			// verify the type is correct
-			var adapted basicaction.ActionOutputsCap
+			var adapted basicaction.ActionOutputsCap //nolint
 			adapted = basicaction.NewActionOutputsFromFields(action.AdaptedThing())
 			_ = adapted
 		})
@@ -223,7 +222,7 @@ func TestTypeGeneration(t *testing.T) {
 // The fact that the code compiles, verifies that the generated code works for typing.
 func onlyVerifySyntax(run func()) {
 	defer func() {
-		recover()
+		_ = recover()
 	}()
 	run()
 }

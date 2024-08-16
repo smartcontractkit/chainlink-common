@@ -166,14 +166,15 @@ func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 	}
 
 	for _, schemaFilePath := range schemaFilePaths {
+		capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
+		if len(capabilityInfo) != 3 {
+			return configInfo, fmt.Errorf(
+				"invalid schema file path %v, does not match pattern %s", schemaFilePath, CapabilitySchemaFilePattern)
+		}
+
 		jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
 		if err != nil {
 			return configInfo, err
-		}
-
-		capabilityInfo := CapabilitySchemaFilePattern.FindStringSubmatch(schemaFilePath)
-		if len(capabilityInfo) != 3 {
-			return configInfo, fmt.Errorf("invalid schema file path %v", schemaFilePath)
 		}
 
 		capabilityTypeRaw := capabilityInfo[2]
@@ -197,7 +198,11 @@ func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 
 // TypesFromJSONSchema generates Go types from a JSON schema file.
 func TypesFromJSONSchema(schemaFilePath string, cfgInfo ConfigInfo) (outputFilePath, outputContents string, err error) {
-	typeInfo := cfgInfo.SchemaToTypeInfo[schemaFilePath]
+	typeInfo, ok := cfgInfo.SchemaToTypeInfo[schemaFilePath]
+	if !ok {
+		return "", "", fmt.Errorf("missing type info for %s", schemaFilePath)
+	}
+
 	capabilityType := typeInfo.CapabilityType
 	outputName := strings.Replace(schemaFilePath, string(capabilityType)+"-schema.json", string(capabilityType)+"_generated.go", 1)
 

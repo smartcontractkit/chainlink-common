@@ -19,7 +19,7 @@ jobs:
       
       # go.work makes it necessary to run linter manually
       - name: Run golangci-lint
-        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --new-from-rev=origin/main --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s --out-format checkstyle:golangci-lint-report.xml \;
+        run: find . -name "go.mod" -execdir $(go env GOPATH)/bin/golangci-lint run --new-from-rev=main --enable=gofmt --tests=false --exclude-use-default --timeout=5m0s --out-format checkstyle:golangci-lint-report.xml \;
       
       - name: Check golangci-lint report for errors
         run: find . -name "golangci-lint-report.xml" -exec grep "error" {} + && exit 1 || true

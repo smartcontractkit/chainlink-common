@@ -283,7 +283,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 		sdktrace.WithResource(resource),
 		sdktrace.WithSampler(
 			sdktrace.ParentBased(
-				sdktrace.TraceIDRatioBased(config.TraceSampleRate),
+				sdktrace.TraceIDRatioBased(config.TraceSampleRatio),
 			),
 		),
 	)

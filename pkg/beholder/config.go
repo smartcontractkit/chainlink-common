@@ -16,7 +16,7 @@ type Config struct {
 	// Message Emitter
 	EmitterExportTimeout time.Duration
 	// OTel Trace
-	TraceSampleRate   float64
+	TraceSampleRatio  float64
 	TraceBatchTimeout time.Duration
 	// OTel Metric
 	MetricReaderInterval time.Duration
@@ -42,7 +42,7 @@ func DefaultConfig() Config {
 		// Message Emitter
 		EmitterExportTimeout: 1 * time.Second,
 		// Trace
-		TraceSampleRate:   1,
+		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
 		// Metric
 		MetricReaderInterval: 1 * time.Second,

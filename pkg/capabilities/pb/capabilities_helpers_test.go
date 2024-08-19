@@ -53,8 +53,7 @@ func TestCapabilityRequestFromProto(t *testing.T) {
 	_, err = pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
 
-	ref := anyReferenceId
-	pr.Metadata.ReferenceId = &ref
+	pr.Metadata.ReferenceId = anyReferenceId
 	_, err = pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
 }

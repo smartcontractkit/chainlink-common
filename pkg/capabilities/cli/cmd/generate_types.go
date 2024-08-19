@@ -10,50 +10,13 @@ import (
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
-	"github.com/spf13/cobra"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
-var Dir string
-
 // CapabilitySchemaFilePattern is used to extract the package name from the file path.
 // This is used as the package name for the generated Go types.
 var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|consensus|target)-schema\.json$`)
-
-func init() {
-	generateTypesCmd.Flags().StringVar(&Dir, "dir", ".", fmt.Sprintf("Directory to search for %s files, if a file is provided, the directory it is in will be used", CapabilitySchemaFilePattern.String()))
-	if err := generateTypesCmd.MarkFlagDirname("dir"); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	rootCmd.AddCommand(generateTypesCmd)
-}
-
-// Finds all files that match CapabilitySchemaFilePattern in the provided directory and generates Go
-// types for each.
-var generateTypesCmd = &cobra.Command{
-	Use:   "generate-types",
-	Short: "Generate Go types from JSON schema capability definitions",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		dir := cmd.Flag("dir").Value.String()
-		// To allow go generate to work with $GO_FILE
-		stat, err := os.Stat(dir)
-		if err != nil {
-			return err
-		}
-		if !stat.IsDir() {
-			dir = path.Dir(dir)
-		}
-
-		return GenerateTypes(dir, []WorkflowHelperGenerator{
-			&TemplateWorkflowGeneratorHelper{
-				Templates: map[string]string{"{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},
-			},
-		})
-	},
-}
 
 func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 	schemaPaths, err := schemaFilesFromDir(dir)

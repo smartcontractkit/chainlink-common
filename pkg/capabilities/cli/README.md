@@ -14,11 +14,11 @@ _All commands run from the root of the repo._
 Help:
 
 ```bash
-go run ./pkg/capabilities/cli/...
+go run ./pkg/capabilities/cli/cmd/generate --help
 ```
 
 Generate types:
 
 ```bash
-go run ./pkg/capabilities/cli/... generate-types
+go run ./pkg/capabilities/cli/cmd/generate-types
 ```

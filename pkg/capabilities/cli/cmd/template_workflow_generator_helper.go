@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	_ "embed"
 	"strings"
 	"text/template"
 
@@ -10,9 +9,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
-
-//go:embed templates/go_workflow_builder.go.tmpl
-var goWorkflowTemplate string
 
 type TemplateWorkflowGeneratorHelper struct {
 	Templates map[string]string

@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-//go:generate go run github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli generate-types --dir $GOFILE
+//go:generate go run github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/generate-types --dir $GOFILE
 
 // Notes:
 //

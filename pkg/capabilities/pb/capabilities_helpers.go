@@ -50,6 +50,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	if req.Config != nil {
 		config = req.Config
 	}
+	ref := req.Metadata.ReferenceID
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
 			WorkflowId:               req.Metadata.WorkflowID,
@@ -58,6 +59,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			WorkflowName:             req.Metadata.WorkflowName,
 			WorkflowDonId:            req.Metadata.WorkflowDonID,
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
+			ReferenceId:              &ref,
 		},
 		Inputs: values.ProtoMap(inputs),
 		Config: values.ProtoMap(config),
@@ -96,7 +98,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		return capabilities.CapabilityRequest{}, err
 	}
 
-	return capabilities.CapabilityRequest{
+	req := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:               md.WorkflowId,
 			WorkflowExecutionID:      md.WorkflowExecutionId,
@@ -107,7 +109,13 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		},
 		Config: config,
 		Inputs: inputs,
-	}, nil
+	}
+
+	if md.ReferenceId != nil {
+		req.Metadata.ReferenceID = *md.ReferenceId
+	}
+
+	return req, nil
 }
 
 func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.CapabilityResponse, error) {

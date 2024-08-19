@@ -36,7 +36,6 @@ func TestOCR3Store(t *testing.T) {
 		_, wasPresent := s.evict(rid)
 		assert.True(t, wasPresent)
 		assert.Len(t, s.requests, 0)
-
 	})
 
 	t.Run("firstN", func(t *testing.T) {

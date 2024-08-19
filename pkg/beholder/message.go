@@ -6,7 +6,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
-	otelsdklog "go.opentelemetry.io/otel/sdk/log"
 )
 
 type Message struct {
@@ -131,10 +130,6 @@ func (e *Message) OtelRecord() otellog.Record {
 	return newRecord(e.Body, e.Attrs)
 }
 
-func (e *Message) SdkOtelRecord() otelsdklog.Record {
-	return newSdkRecord(e.Body, e.Attrs)
-}
-
 func (e *Message) Copy() Message {
 	attrs := make(Attributes, len(e.Attrs))
 	for k, v := range e.Attrs {
@@ -160,19 +155,6 @@ func newRecord(body []byte, attrs map[string]any) otellog.Record {
 		otelRecord.AddAttributes(OtelAttr(k, v))
 	}
 	return otelRecord
-}
-
-// Creates otelsdklog.Record from body and attributes
-// NOTE: internal function otelsdklog.newRecord returns value not pointer
-func newSdkRecord(body []byte, attrs map[string]any) otelsdklog.Record {
-	sdkRecord := otelsdklog.Record{}
-	if body != nil {
-		sdkRecord.SetBody(otellog.BytesValue(body))
-	}
-	for k, v := range attrs {
-		sdkRecord.AddAttributes(OtelAttr(k, v))
-	}
-	return sdkRecord
 }
 
 func OtelAttr(key string, value any) otellog.KeyValue {

@@ -128,8 +128,8 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		{
 			name: "firstN",
 			get: func(ctx context.Context, rid string) *Request {
-				rs, err := s.FirstN(1)
-				require.NoError(t, err)
+				rs, err2 := s.FirstN(1)
+				require.NoError(t, err2)
 				assert.Len(t, rs, 1)
 				return rs[0]
 			},
@@ -168,5 +168,4 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 			<-cb
 		})
 	}
-
 }

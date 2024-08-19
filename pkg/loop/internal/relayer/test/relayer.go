@@ -526,7 +526,7 @@ type fuzzerKeystore struct {
 
 func (k fuzzerKeystore) Accounts(ctx context.Context) ([]string, error) {
 	if k.acctErr {
-		err := fmt.Errorf(k.errStr)
+		err := errors.New(k.errStr)
 
 		if k.valuesWithErr {
 			return k.accounts, err

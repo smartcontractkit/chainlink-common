@@ -210,7 +210,7 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 	})
 	require.NoError(t, err)
 
-	oIds, err := encodings.NewArray(32, builder.OracleID())
+	oIDs, err := encodings.NewArray(32, builder.OracleID())
 	require.NoError(t, err)
 
 	size, err := builder.Int(1)
@@ -228,7 +228,7 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 		{Name: "Field", Codec: &encodings.NotNilPointer{Elm: builder.Int32()}},
 		{Name: "DifferentField", Codec: sCodec},
 		{Name: "OracleID", Codec: builder.OracleID()},
-		{Name: "OracleIDs", Codec: oIds},
+		{Name: "OracleIDs", Codec: oIDs},
 		{Name: "Account", Codec: acc},
 		{Name: "Accounts", Codec: accs},
 		{Name: "BigField", Codec: bi},

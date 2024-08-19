@@ -19,7 +19,7 @@ jobs:
         with:
           version: v1.60.1
           # only-new-issues is only applicable to PRs, otherwise it is always set to false
-          only-new-issues: false # disabled for PRs due to unreliability
+          only-new-issues: true
           args: --out-format colored-line-number,checkstyle:golangci-lint-report.xml
       - name: Print lint report artifact
         if: failure()

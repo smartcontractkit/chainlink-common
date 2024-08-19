@@ -22,6 +22,7 @@ import (
 func Test_OnchainConfig(t *testing.T) {
 	t.Parallel()
 
+	// lint doesn't like that a proto is copied because it has a mutex
 	tests := []struct {
 		name          string
 		onchainConfig ccip.ExecOnchainConfig   // nolint
@@ -57,6 +58,7 @@ func Test_OnchainConfig(t *testing.T) {
 		},
 	}
 
+	// lint doesn't like that a proto is copied because it has a mutex
 	for _, tt := range tests { // nolint
 		tt := tt // nolint
 		t.Run(tt.name, func(t *testing.T) {
@@ -89,6 +91,7 @@ func Test_OffchainConfig(t *testing.T) {
 	duration2, _ := config.NewDuration(222 * time.Second)
 	duration3, _ := config.NewDuration(333 * time.Second)
 
+	// lint doesn't like that a proto is copied because it has a mutex
 	tests := []struct {
 		name           string
 		offchainConfig ccip.ExecOffchainConfig   // nolint
@@ -126,7 +129,8 @@ func Test_OffchainConfig(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests { // // nolint
+	// lint doesn't like that a proto is copied because it has a mutex
+	for _, tt := range tests { // nolint
 		tt := tt // nolint
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()

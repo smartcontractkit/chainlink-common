@@ -61,16 +61,17 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], b
 	}
 }
 
-func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) {
+func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	txID := uuid.New().String()
 	cw := tester.GetChainWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	require.NoError(t, err)
 
-	waitForTransactionStatus(t, tester, txID, status)
+	WaitForTransactionStatus(t, tester, txID, status)
+	return txID
 }
 
-func waitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string, status types.TransactionStatus) error {
+func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string, status types.TransactionStatus) error {
 	ctx, cancel := context.WithTimeout(tests.Context(t), 5*time.Minute)
 	defer cancel()
 

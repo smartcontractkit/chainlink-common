@@ -39,6 +39,10 @@ func (l *List) Unwrap() (any, error) {
 }
 
 func (l *List) Copy() Value {
+	return l.CopyList()
+}
+
+func (l *List) CopyList() *List {
 	if l == nil {
 		return nil
 	}

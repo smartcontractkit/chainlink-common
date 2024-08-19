@@ -1,12 +1,16 @@
 package requests
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync"
 )
 
+// Store stores ongoing consensus requests in an
+// in-memory map.
+// Note: this object is intended to be thread-safe,
+// so any read requests should first deep-copy the returned
+// request object via request.Copy().
 type Store struct {
 	requestIDs []string
 	requests   map[string]*Request
@@ -22,7 +26,8 @@ func NewStore() *Store {
 }
 
 // GetByIDs is best-effort, doesn't return requests that are not in store
-func (s *Store) GetByIDs(ctx context.Context, requestIDs []string) []*Request {
+// The method deep-copies requests before returning them.
+func (s *Store) GetByIDs(requestIDs []string) []*Request {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -30,16 +35,18 @@ func (s *Store) GetByIDs(ctx context.Context, requestIDs []string) []*Request {
 	for _, r := range requestIDs {
 		gr, ok := s.requests[r]
 		if ok {
-			o = append(o, gr)
+			o = append(o, gr.Copy())
 		}
 	}
 
 	return o
 }
 
-func (s *Store) FirstN(ctx context.Context, batchSize int) ([]*Request, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+// FirstN returns up to `bathSize` requests.
+// The method deep-copies requests before returning them.
+func (s *Store) FirstN(batchSize int) ([]*Request, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	if batchSize == 0 {
 		return nil, errors.New("batchsize cannot be 0")
 	}
@@ -54,7 +61,7 @@ func (s *Store) FirstN(ctx context.Context, batchSize int) ([]*Request, error) {
 			continue
 		}
 
-		got = append(got, gr)
+		got = append(got, gr.Copy())
 		if len(got) == batchSize {
 			break
 		}
@@ -75,10 +82,16 @@ func (s *Store) Add(req *Request) error {
 	return nil
 }
 
+// Get returns the request corresponding to request ID.
+// The method deep-copies requests before returning them.
 func (s *Store) Get(requestID string) *Request {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.requests[requestID]
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	rid, ok := s.requests[requestID]
+	if ok {
+		return rid.Copy()
+	}
+	return nil
 }
 
 func (s *Store) evict(requestID string) (*Request, bool) {

@@ -270,7 +270,7 @@ func TestClient_Close(t *testing.T) {
 	exporterMock.AssertExpectations(t)
 }
 
-func TestClient_SetGlobas(t *testing.T) {
+func TestClient_SetGlobals(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 
@@ -288,7 +288,7 @@ func TestClient_SetGlobas(t *testing.T) {
 	assert.NoError(t, err)
 
 	globals := getGlobals()
-	defer restoreGlobas(t, globals)
+	defer restoreGlobals(t, globals)
 
 	client.SetGlobals()
 
@@ -313,7 +313,7 @@ func getGlobals() globals {
 	}
 }
 
-func restoreGlobas(t *testing.T, g globals) {
+func restoreGlobals(t *testing.T, g globals) {
 	otelglobal.SetLoggerProvider(g.loggerProvider)
 	otel.SetTracerProvider(g.tracerProvider)
 	otel.SetTextMapPropagator(g.textMapPropagator)

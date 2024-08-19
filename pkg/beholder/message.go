@@ -108,7 +108,8 @@ func NewMessage(body []byte, attrKVs ...any) Message {
 	}
 }
 
-func (e *Message) AddAttributes(attrs Attributes) {
+func (e *Message) AddAttributes(attrKVs ...any) {
+	attrs := NewAttributes(attrKVs...)
 	if e.Attrs == nil {
 		e.Attrs = make(map[string]any, len(attrs))
 	}

@@ -79,6 +79,14 @@ func ExampleMessage() {
 		},
 	)
 	fmt.Println("#13", m5)
+	// Create message with no attributes
+	m6 := beholder.NewMessage([]byte{1}, beholder.Attributes{})
+	// Add attributes using AddAttributes
+	m6.AddAttributes(
+		"key1", "value1",
+		"key2", "value2",
+	)
+	fmt.Println("#14", m6)
 	// Output:
 	// #1 Message{Attrs: map[key_string:value], Body: [1]}
 	// #2 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
@@ -93,6 +101,7 @@ func ExampleMessage() {
 	// #11 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
 	// #12 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
 	// #13 Message{Attrs: map[key1:value5 key2:value6 key3:value3 key4:value4], Body: [1]}
+	// #14 Message{Attrs: map[key1:value1 key2:value2], Body: [1]}
 }
 
 func testMetadata() beholder.Metadata {

@@ -2,7 +2,6 @@ package workflows
 
 import (
 	"encoding/json"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )

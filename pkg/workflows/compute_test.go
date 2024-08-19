@@ -14,6 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
 )
 
 func TestCompute(t *testing.T) {
@@ -68,7 +69,7 @@ func TestCompute(t *testing.T) {
 						"aggregation_config": ocr3.DataFeedsConsensusConfigAggregationConfig{
 							AllowedPartialStaleness: "false",
 							Feeds: map[string]ocr3.FeedValue{
-								anyFakeFeedId: {
+								anyFakeFeedID: {
 									Deviation: "0.5",
 									Heartbeat: 3600,
 								},
@@ -76,7 +77,7 @@ func TestCompute(t *testing.T) {
 						},
 						"aggregation_method": "data_feeds",
 						"encoder":            "EVM",
-						"encoder_config": ocr3.DataFeedsConsensusConfigEncoderConfig{
+						"encoder_config": ocr3.EncoderConfig{
 							Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 						},
 						"report_id": "0001",
@@ -100,7 +101,7 @@ func TestCompute(t *testing.T) {
 			},
 		}
 
-		assertWorkflowSpec(t, expectedSpec, spec)
+		testutils.AssertWorkflowSpec(t, expectedSpec, spec)
 	})
 
 	t.Run("compute runs the function and returns the value", func(t *testing.T) {
@@ -117,7 +118,7 @@ func TestCompute(t *testing.T) {
 			{
 				{
 					BenchmarkPrice:       "12.3",
-					FeedId:               anyFakeFeedId,
+					FeedId:               anyFakeFeedID,
 					FullReport:           "report",
 					ObservationTimestamp: 123,
 					ReportContext:        "context",
@@ -163,7 +164,7 @@ func createWorkflow(fn func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]str
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
 			AllowedPartialStaleness: "false",
 			Feeds: map[string]ocr3.FeedValue{
-				anyFakeFeedId: {
+				anyFakeFeedID: {
 					Deviation: "0.5",
 					Heartbeat: 3600,
 				},
@@ -171,7 +172,7 @@ func createWorkflow(fn func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]str
 		},
 		AggregationMethod: "data_feeds",
 		Encoder:           "EVM",
-		EncoderConfig: ocr3.DataFeedsConsensusConfigEncoderConfig{
+		EncoderConfig: ocr3.EncoderConfig{
 			Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 		},
 		ReportId: "0001",
@@ -193,7 +194,7 @@ func convertFeed(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]streams.Feed, 
 		{
 			{
 				BenchmarkPrice:       inputFeed.Price.PriceA,
-				FeedId:               anyFakeFeedId,
+				FeedId:               anyFakeFeedID,
 				FullReport:           inputFeed.FullReport,
 				ObservationTimestamp: inputFeed.Timestamp,
 				ReportContext:        inputFeed.ReportContext,

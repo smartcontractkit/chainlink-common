@@ -27,6 +27,24 @@
       },
       "additionalProperties": false,
       "required": ["Report", "Context", "Signature", "ID"]
+    },
+    "encoder": {
+      "type": "string",
+      "enum": ["EVM"]
+    },
+    "encoder_config": {
+      "type": "object",
+      "properties": {
+        "abi": {
+          "type": "string",
+          "description": "The ABI for report encoding.",
+          "examples": [
+            "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": ["abi"]
     }
   }
 }

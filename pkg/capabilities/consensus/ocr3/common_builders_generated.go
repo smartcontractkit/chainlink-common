@@ -6,6 +6,50 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
+type EncoderCap workflows.CapDefinition[Encoder]
+
+type EncoderConfigCap interface {
+	workflows.CapDefinition[EncoderConfig]
+	Abi() workflows.CapDefinition[string]
+	private()
+}
+
+// EncoderConfigCapFromStep should only be called from generated code to assure type safety
+func EncoderConfigCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[EncoderConfig]) EncoderConfigCap {
+	raw := step.AddTo(w)
+	return &encoderConfig{CapDefinition: raw}
+}
+
+type encoderConfig struct {
+	workflows.CapDefinition[EncoderConfig]
+}
+
+func (*encoderConfig) private() {}
+func (c *encoderConfig) Abi() workflows.CapDefinition[string] {
+	return workflows.AccessField[EncoderConfig, string](c.CapDefinition, "Abi")
+}
+
+func NewEncoderConfigFromFields(
+	abi workflows.CapDefinition[string]) EncoderConfigCap {
+	return &simpleEncoderConfig{
+		CapDefinition: workflows.ComponentCapDefinition[EncoderConfig]{
+			"abi": abi.Ref(),
+		},
+		abi: abi,
+	}
+}
+
+type simpleEncoderConfig struct {
+	workflows.CapDefinition[EncoderConfig]
+	abi workflows.CapDefinition[string]
+}
+
+func (c *simpleEncoderConfig) Abi() workflows.CapDefinition[string] {
+	return c.abi
+}
+
+func (c *simpleEncoderConfig) private() {}
+
 type SignedReportCap interface {
 	workflows.CapDefinition[SignedReport]
 	Context() workflows.CapDefinition[string]

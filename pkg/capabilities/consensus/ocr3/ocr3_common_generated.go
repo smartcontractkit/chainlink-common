@@ -5,7 +5,59 @@ package ocr3
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 )
+
+type Encoder string
+
+type EncoderConfig struct {
+	// The ABI for report encoding.
+	Abi string `json:"abi" yaml:"abi" mapstructure:"abi"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *EncoderConfig) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["abi"]; raw != nil && !ok {
+		return fmt.Errorf("field abi in EncoderConfig: required")
+	}
+	type Plain EncoderConfig
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = EncoderConfig(plain)
+	return nil
+}
+
+const EncoderEVM Encoder = "EVM"
+
+var enumValues_Encoder = []interface{}{
+	"EVM",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Encoder) UnmarshalJSON(b []byte) error {
+	var v string
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_Encoder {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Encoder, v)
+	}
+	*j = Encoder(v)
+	return nil
+}
 
 type SignedReport struct {
 	// Context corresponds to the JSON schema field "Context".

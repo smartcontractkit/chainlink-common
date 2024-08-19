@@ -58,6 +58,8 @@ func ExampleBeholderMetricTraces() {
 		log.Fatalf("Error bootstrapping Beholder: %v", err)
 	}
 
+	ctx := context.Background()
+
 	// Define a new counter
 	counter, err := beholder.Meter().Int64Counter("custom_message.count")
 	if err != nil {
@@ -71,11 +73,11 @@ func ExampleBeholderMetricTraces() {
 	}
 
 	// Use the counter and gauge for metrics within application logic
-	counter.Add(context.Background(), 1)
-	gauge.Record(context.Background(), rand.Int63n(101))
+	counter.Add(ctx, 1)
+	gauge.Record(ctx, rand.Int63n(101))
 
 	// Create a new trace span
-	_, rootSpan := beholder.Tracer().Start(context.Background(), "foo", trace.WithAttributes(
+	_, rootSpan := beholder.Tracer().Start(ctx, "foo", trace.WithAttributes(
 		attribute.String("app_name", "beholderdemo"),
 	))
 	defer rootSpan.End()

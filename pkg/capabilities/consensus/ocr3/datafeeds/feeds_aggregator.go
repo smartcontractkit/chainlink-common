@@ -13,7 +13,6 @@ import (
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -233,16 +232,12 @@ func (a *dataFeedsAggregator) extractSignersAndPayloads(observations map[ocrcomm
 			a.lggr.Warnf("node %d contributed with more than one observation", nodeID)
 			continue
 		}
-		triggerEvent := &capabilities.TriggerEvent{}
+		triggerEvent := &datastreams.StreamsTriggerPayload{}
 		if err := nodeObservations[0].UnwrapTo(triggerEvent); err != nil {
 			a.lggr.Warnf("could not parse observations from node %d: %v", nodeID, err)
 			continue
 		}
-		meta := &datastreams.SignersMetadata{}
-		if err := triggerEvent.Metadata.UnwrapTo(meta); err != nil {
-			a.lggr.Warnf("could not parse trigger metadata from node %d: %v", nodeID, err)
-			continue
-		}
+		meta := triggerEvent.Metadata
 		currentNodeSigners, err := extractUniqueSigners(meta.Signers)
 		if err != nil {
 			a.lggr.Warnf("could not extract signers from node %d: %v", nodeID, err)
@@ -252,7 +247,7 @@ func (a *dataFeedsAggregator) extractSignersAndPayloads(observations map[ocrcomm
 			signers[signer]++
 		}
 		mins[meta.MinRequiredSignatures]++
-		payloads[nodeID] = triggerEvent.Payload
+		payloads[nodeID] = nodeObservations[0]
 	}
 	// Agree on signers list and min-required. It's technically possible to have F+1 valid values from one trigger DON and F+1 from another trigger DON.
 	// In that case both values are legitimate and signers list will contain nodes from both DONs. However, min-required value will be the higher one (if different).

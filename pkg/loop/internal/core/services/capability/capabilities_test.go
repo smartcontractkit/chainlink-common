@@ -514,7 +514,7 @@ func (m *synchronousCallback) Execute(ctx context.Context, request capabilities.
 func mustSynchronousCallback(t *testing.T, _type capabilities.CapabilityType) *synchronousCallback {
 	return &synchronousCallback{
 		BaseCapability: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback-%s@1.0.0", _type), _type, fmt.Sprintf("a mock %s", _type)),
-		callback:       make(chan capabilities.CapabilityResponse, 0),
+		callback:       make(chan capabilities.CapabilityResponse),
 		executeCalled:  false,
 	}
 }

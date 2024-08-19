@@ -276,5 +276,4 @@ func Test_DeleteAtPath(t *testing.T) {
 	deleted = wrappedMap.DeleteAtPath("foo.bar")
 	assert.Truef(t, deleted, "expected to delete key foo.bar")
 	assert.Nil(t, wrappedMap.Underlying["foo"].(*Map).Underlying["bar"])
-
 }

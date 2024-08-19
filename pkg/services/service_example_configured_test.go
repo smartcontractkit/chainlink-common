@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	. "github.com/smartcontractkit/chainlink-common/pkg/internal/example"
+	. "github.com/smartcontractkit/chainlink-common/pkg/internal/example" // nolint
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )

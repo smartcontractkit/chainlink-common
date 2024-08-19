@@ -146,7 +146,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	)
 	messageLogger := messageLoggerProvider.Logger(defaultPackageName)
 
-	messageEmitter := &messageEmitter{
+	emitter := messageEmitter{
 		messageLogger: messageLogger,
 	}
 
@@ -158,7 +158,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 		}
 		return
 	}
-	client := OtelClient{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
+	client := OtelClient{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
 
 	return client, nil
 }

@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pb";
+
+package loop.internal.pb.ccipocr3;
+
+// RampMessageHeader is the family-agnostic header for OnRamp and OffRamp messages.
+// The MessageID is not expected to match MsgHash, since it may originate from a different
+// ramp family.
+message RampMessageHeader {
+  // MessageID is a unique identifier for the message, it should be unique across all chains.
+	// It is generated on the chain that the CCIP send is requested (i.e. the source chain of a message).
+  repeated bytes message_id = 1;
+  // SourceChainSelector is the chain selector of the chain that the message originated from.
+  uint64 source_chain_selector = 2;
+  // DestChainSelector is the chain selector of the chain that the message is destined for.
+  uint64 dest_chain_selector = 3;
+  // SequenceNumber is an auto-incrementing sequence number for the message.
+	// Not unique across lanes.
+  uint64 sequence_number = 4;
+  // Nonce is the nonce for this lane for this sender, not unique across senders/lanes
+  uint64 nonce = 5;
+  // MsgHash is the hash of all the message fields.
+  repeated bytes message_hash = 6;
+  // OnRamp is the address of the onramp that sent the message.
+  repeated bytes on_ramp = 7;
+}
+
+// RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.
+message RampTokenAmount {
+  // SourcePoolAddress is the source pool address, abi encoded. This value is trusted
+	// as it was obtained through the onRamp. It can be relied upon by the destination
+	// pool to validate the source pool.
+  repeated bytes source_pool_address = 1;
+  // DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains
+	// This value is UNTRUSTED as any pool owner can return whatever value they want.
+  repeated bytes dest_token_address = 2;
+  // ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at
+	// CCIP_LOCK_OR_BURN_V1_RET_BYTES bytes. If more data is required, the TokenTransferFeeConfig.destBytesOverhead
+	// has to be set for the specific token.
+  repeated bytes extra_data = 3;
+  // Amount is the amount of tokens to be transferred.
+  BigInt amount = 4;
+}
+
+// Message is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.Message].
+message Message {
+  // Header is the family-agnostic header for OnRamp and OffRamp messages.
+	// This is always set on all CCIP messages.
+  RampMessageHeader header = 1;
+  // Sender address on the source chain.
+	// This is an EVM address, so len(Sender) == 20.
+  repeated bytes sender = 2;
+  // Data is the arbitrary data payload supplied by the message sender.
+  repeated bytes data = 3;
+  // Receiver is the receiver address on the destination chain.
+	// This is encoded in the destination chain family specific encoding.
+	// i.e if the destination is EVM, this is abi.encode(receiver).
+  repeated bytes receiver = 4;
+  // ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
+  repeated bytes extra_args = 5;
+  // FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
+  repeated bytes fee_token = 6;
+  // FeeTokenAmount is the amount of fee tokens paid.
+  BigInt fee_token_amount = 7;
+  // TokenAmounts is the array of tokens and amounts to transfer.
+  repeated RampTokenAmount token_amounts = 8;
+}
+
+// BigInt represents a [big.Int].
+message BigInt {
+  bytes value = 1;
+}
+
+// TokenAmount is a helper type that defines a token and an amount.
+message TokenAmount {
+  string token = 1; // Token address
+  BigInt amount = 2;
+}
+
+
+// CommitPluginReport is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CommitPluginReport].
+message CommitPluginReport {
+  PriceUpdates price_updates = 1;
+  repeated MerkleRootChain merkle_roots = 2;
+}
+
+// PriceUpdates is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.PriceUpdates].
+message PriceUpdates {
+  repeated TokenAmount token_price_updates = 1;
+  repeated GasPriceChain gas_price_updates = 2;
+}
+
+// GasPriceChain is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.GasPriceChain].
+message GasPriceChain {
+  uint64 chain_selector = 1;
+  BigInt price = 2;
+}
+
+// MerkleRootChain is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.MerkleRootChain].
+message MerkleRootChain {
+  uint64 chain_selector = 1;
+  bytes merkle_root = 2;
+  SeqNumRange seq_num_range = 3;
+}
+
+// SeqNumRange defines an inclusive range of sequence numbers.
+message SeqNumRange {
+  uint64 start = 1;
+  uint64 end = 2;
+}

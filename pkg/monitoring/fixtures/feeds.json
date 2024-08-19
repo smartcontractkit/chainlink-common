@@ -1,0 +1,63 @@
+[
+  {
+    "name": "SOL / USD",
+    "path": "sol-usd",
+    "symbol": "",
+    "heartbeat": 0,
+    "contract_type": "numerical_median_feed",
+    "status": "dead",
+    "contract_address_encoded": "HW3ipKzeeduJq6f1NqRCw4doknMeWkfrM4WxobtG3o5a",
+    "multiply": "100000000"
+  },
+  {
+    "name": "ETH / USD",
+    "path": "eth-usd",
+    "symbol": "",
+    "heartbeat": 0,
+    "contract_type": "numerical_median_feed",
+    "status": "dead",
+    "contract_address_encoded": "HW3ipKzeeduJq6f1NqRCw4doknMeWkfrM4WxobtG3o5b",
+    "multiply": "100000000"
+  },
+  {
+    "name": "BTC / USD",
+    "path": "btc-usd",
+    "symbol": "",
+    "heartbeat": 0,
+    "contract_type": "numerical_median_feed",
+    "status": "live",
+    "contract_address_encoded": "HW3ipKzeeduJq6f1NqRCw4doknMeWkfrM4WxobtG3o5c",
+    "multiply": "100000000"
+  },
+  {
+    "name": "LINK / USD",
+    "path": "link-usd",
+    "symbol": "",
+    "heartbeat": 0,
+    "contract_type": "numerical_median_feed",
+    "status": "live",
+    "contract_address_encoded": "HW3ipKzeeduJq6f1NqRCw4doknMeWkfrM4WxobtG3o5d",
+    "multiply": "100000000"
+  },
+  {
+    "name": "USDT / USD",
+    "path": "usdt-usd",
+    "symbol": "",
+    "heartbeat": 0,
+    "contract_type": "numerical_median_feed",
+    "status": "live",
+    "contract_address_encoded": "HW3ipKzeeduJq6f1NqRCw4doknMeWkfrM4WxobtG3o5e",
+    "multiply": "100000000"
+  },
+  {
+    "name": "USDC / USD",
+    "path": "usdc-usd",
+    "symbol": "",
+    "heartbeat": 0,
+    "contract_type": "numerical_median_feed",
+    "status": "live",
+    "contract_address_encoded": "HW3ipKzeeduJq6f1NqRCw4doknMeWkfrM4WxobtG3o5f",
+    "multiply": "100000000"
+  }
+]
+

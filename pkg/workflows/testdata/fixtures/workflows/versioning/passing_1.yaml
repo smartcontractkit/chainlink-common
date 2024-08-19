@@ -1,0 +1,26 @@
+ name: length_ten # exactly 10 characters
+ owner: 0x0123456789abcdef0123456789abcdef01234567
+ triggers:
+  - id: trigger_test@1.0.0
+    config: {}
+  
+ consensus:
+   - id: offchain_reporting@1.0.0-beta.1
+     ref: offchain_reporting_1
+     inputs: $(trigger.outputs)
+     config: {}
+   - id:
+      version: "1.0.0" 
+      name: asdfas
+      labels:
+        key: value
+     ref: offchain_reporting_1
+     inputs: $(trigger.outputs)
+     config: {}
+ targets:
+   - id: write_polygon_mainnet@1.0.0-alpha+sha246er3
+     ref: write_polygon_mainnet_1 
+     inputs: $(offchain_reporting_1.outputs)
+     config: {}
+
+# yaml-language-server: $schema=../workflow_schema.json

@@ -1,0 +1,49 @@
+{
+  "Name": "length_ten",
+  "Owner": "0x0123456789abcdef0123456789abcdef01234567",
+  "Triggers": [
+    {
+      "ID": "on_mercury_report@1.0.0",
+      "Ref": "report_data",
+      "Inputs": {
+        "OutputRef": "",
+        "Mapping": null
+      },
+      "Config": {},
+      "CapabilityType": "trigger"
+    }
+  ],
+  "Actions": [],
+  "Consensus": [
+    {
+      "ID": "trigger_test:aaShouldBeFirst_true:chain_ethereum:network_mainnet@2.0.0",
+      "Ref": "",
+      "Inputs": {
+        "OutputRef": "",
+        "Mapping": {
+          "observations": [
+            "triggers.report_data.outputs"
+          ]
+        }
+      },
+      "Config": {},
+      "CapabilityType": "consensus"
+    }
+  ],
+  "Targets": [
+    {
+      "ID": "write_polygon_mainnet@1.0.0",
+      "Ref": "",
+      "Inputs": {
+        "OutputRef": "",
+        "Mapping": {
+          "report": [
+            "consensus.evm_median.outputs.report"
+          ]
+        }
+      },
+      "Config": {},
+      "CapabilityType": "target"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+slack: |-
+  {{ define "slack.chainlink.text" }}
+    {{- $root := . -}}
+    {{ range .Alerts }}
+      *Alert Status:* `{{ .Status }}`
+      *Alert Name:* ```{{ .Labels.alertname}}```
+      *Summary:* ```{{ .Annotations.summary }}```
+      {{ if gt (len .Annotations.description) 0 }}*Description:* ```{{ .Annotations.description }}```{{ end }}
+      {{ printf "\n" }}
+    {{ end }}
+  {{ end }}
+  
+  {{ define "slack.chainlink.color" }}
+    {{- if and (gt (len .Alerts.Firing) 0) (eq (len .Alerts.Resolved) 0) -}}
+    danger
+    {{- else if and (gt (len .Alerts.Firing) 0) (gt (len .Alerts.Resolved) 0) -}}
+    warning
+    {{- else -}}
+    good
+    {{- end -}}
+  {{ end }}
+  
+  {{ define "slack.chainlink.title" }}
+    [{{ .Status | toUpper }}{{ if eq .Status "firing" }}: {{ .Alerts.Firing | len }}{{ end }}]
+  {{ end }}

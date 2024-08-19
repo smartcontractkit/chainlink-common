@@ -335,8 +335,8 @@ func headlines(p *Props) []*grafana.Panel {
 			AlertOptions: &grafana.AlertOptions{
 				Group:       p.Name,
 				FolderUID:   p.FolderUID,
-				Summary:     "ETH Balance critically low",
-				Description: "Balance is at {{$value}}%",
+				Summary:     `ETH Balance critically low on {{index $value.A.Labels "instance"}}`,
+				Description: `Balance is at {{$value}}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 				For:         "15m",
 				Tags: map[string]string{
@@ -356,7 +356,7 @@ func headlines(p *Props) []*grafana.Panel {
 						Expression: "A",
 						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
 							{
-								Params: []float64{1, 0},
+								Params: []float64{2, 0},
 								Type:   expr.TypeThresholdTypeLt,
 							},
 						},

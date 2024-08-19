@@ -31,7 +31,7 @@ func (c *Client) GetNotificationPolicy() (GetNotificationPolicyResponse, *resty.
 
 type DeleteNotificationPolicyResponse struct{}
 
-// DeleteNotificationPolicy  Clears the notification policy tree
+// DeleteNotificationPolicy Clears the notification policy tree
 func (c *Client) DeleteNotificationPolicy() (DeleteNotificationPolicyResponse, *resty.Response, error) {
 	var grafanaResp DeleteNotificationPolicyResponse
 
@@ -53,7 +53,7 @@ func (c *Client) DeleteNotificationPolicy() (DeleteNotificationPolicyResponse, *
 
 type PutNotificationPolicyResponse struct{}
 
-// PutNotificationPolicy  Sets the notification policy tree
+// PutNotificationPolicy Sets the notification policy tree
 func (c *Client) PutNotificationPolicy(notificationPolicy alerting.NotificationPolicy) (PutNotificationPolicyResponse, *resty.Response, error) {
 	var grafanaResp PutNotificationPolicyResponse
 

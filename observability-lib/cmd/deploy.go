@@ -24,6 +24,7 @@ var DeployCmd = &cobra.Command{
 			LogsDataSourceName:    cmd.Flag("logs-datasource").Value.String(),
 			EnableAlerts:          cmd.Flag("enable-alerts").Value.String() == "true",
 			AlertsTags:            alertsTags,
+			NotificationTemplates: cmd.Flag("notification-templates").Value.String(),
 		})
 
 		if err != nil {
@@ -63,4 +64,5 @@ func init() {
 	DeployCmd.Flags().StringToString("alerts-tags", map[string]string{
 		"team": "chainlink-team",
 	}, "Alerts tags")
+	DeployCmd.Flags().String("notification-templates", "", "Filepath in yaml format, will create notification templates depending on key-value pairs in the yaml file")
 }

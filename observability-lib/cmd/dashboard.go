@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
-
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
@@ -21,6 +20,7 @@ type CommandOptions struct {
 	LogsDataSourceName    string
 	EnableAlerts          bool
 	AlertsTags            map[string]string
+	NotificationTemplates string
 }
 
 func NewDashboard(options *CommandOptions) error {
@@ -76,6 +76,7 @@ func NewDashboard(options *CommandOptions) error {
 		Str("Folder", options.FolderName).
 		Msg("Dashboard deployed")
 
+	// Create alerts for the dashboard
 	if options.EnableAlerts && build.Alerts != nil && len(build.Alerts) > 0 {
 		// Get alert rules for the dashboard
 		alertsRule, errGetAlertRules := grafanaClient.GetAlertRulesByDashboardUID(*db.UID)
@@ -107,6 +108,27 @@ func NewDashboard(options *CommandOptions) error {
 				Msg("Alert created")
 		}
 	}
+
+	// Create notification templates for the alerts
+	if options.NotificationTemplates != "" {
+		notificationTemplates, errNotificationTemplate := grafana.NewNotificationTemplatesFromFile(
+			options.NotificationTemplates,
+		)
+		if errNotificationTemplate != nil {
+			return errNotificationTemplate
+		}
+		for _, notificationTemplate := range notificationTemplates {
+			_, _, errPostNotificationTemplate := grafanaClient.PutNotificationTemplate(notificationTemplate)
+			if errPostNotificationTemplate != nil {
+				return errPostNotificationTemplate
+			}
+			Logger.Info().
+				Str("Name", *notificationTemplate.Name).
+				Str("URL", options.GrafanaURL).
+				Msg("Notification template created")
+		}
+	}
+
 	return nil
 }
 

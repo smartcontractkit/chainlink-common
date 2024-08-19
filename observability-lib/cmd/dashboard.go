@@ -21,6 +21,9 @@ type CommandOptions struct {
 	EnableAlerts          bool
 	AlertsTags            map[string]string
 	NotificationTemplates string
+	SlackWebhookURL       string
+	SlackToken            string
+	SlackChannel          string
 }
 
 func NewDashboard(options *CommandOptions) error {
@@ -46,6 +49,9 @@ func NewDashboard(options *CommandOptions) error {
 		TypeDashboard:     TypeDashboard(options.TypeDashboard),
 		MetricsDataSource: grafana.NewDataSource(metricsDataSource.Name, metricsDataSource.UID),
 		AlertsTags:        options.AlertsTags,
+		SlackWebhookURL:   options.SlackWebhookURL,
+		SlackToken:        options.SlackToken,
+		SlackChannel:      options.SlackChannel,
 	}
 
 	if options.LogsDataSourceName != "" {
@@ -126,6 +132,16 @@ func NewDashboard(options *CommandOptions) error {
 				Str("Name", *notificationTemplate.Name).
 				Str("URL", options.GrafanaURL).
 				Msg("Notification template created")
+		}
+	}
+
+	// Create contact points for the alerts
+	if build.ContactPoints != nil && len(build.ContactPoints) > 0 {
+		for _, contactPoint := range build.ContactPoints {
+			errCreateOrUpdateContactPoint := grafanaClient.CreateOrUpdateContactPoint(contactPoint)
+			if errCreateOrUpdateContactPoint != nil {
+				return errCreateOrUpdateContactPoint
+			}
 		}
 	}
 

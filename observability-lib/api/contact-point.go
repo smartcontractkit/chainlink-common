@@ -7,6 +7,42 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 )
 
+// CreateOrUpdateContactPoint create or update a contact point
+func (c *Client) CreateOrUpdateContactPoint(contactPoint alerting.ContactPoint) error {
+	cPoint, err := c.GetContactPointByName(*contactPoint.Name)
+	if err != nil {
+		return fmt.Errorf("could not create or update contact point: %w", err)
+	}
+	if cPoint == nil {
+		_, _, err = c.PostContactPoint(contactPoint)
+		if err != nil {
+			return fmt.Errorf("could not create or update contact point: %w", err)
+		}
+	} else {
+		_, _, err = c.PutContactPoint(*cPoint.Uid, contactPoint)
+		if err != nil {
+			return fmt.Errorf("could not create or update contact point: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// GetContactPointByName Get a contact point by name
+func (c *Client) GetContactPointByName(name string) (*alerting.ContactPoint, error) {
+	contactPoints, _, err := c.GetContactPoints()
+	if err != nil {
+		return nil, err
+	}
+	for _, contactPoint := range contactPoints {
+		if *contactPoint.Name == name {
+			return &contactPoint, nil
+		}
+	}
+
+	return nil, nil
+}
+
 type GetContactPointsResponse []alerting.ContactPoint
 
 // GetContactPoints Get all the contact points

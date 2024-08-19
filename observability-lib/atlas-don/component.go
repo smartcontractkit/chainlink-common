@@ -44,15 +44,7 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 	builder.AddRow("OCR Contract Config Delta")
 	builder.AddPanel(ocrContractConfigDelta(props)...)
 
-	db, alerts, err := builder.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return &grafana.Dashboard{
-		Dashboard: db,
-		Alerts:    alerts,
-	}, nil
+	return builder.Build()
 }
 
 func vars(p *Props) []cog.Builder[dashboard.VariableModel] {

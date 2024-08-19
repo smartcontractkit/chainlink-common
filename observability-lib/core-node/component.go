@@ -26,6 +26,21 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 		TimeTo:   "now",
 	})
 
+	if options.SlackChannel != "" && options.SlackWebhookURL != "" {
+		builder.AddContactPoint(grafana.NewContactPoint(&grafana.ContactPointOptions{
+			Name: "chainlink-slack",
+			Type: "slack",
+			Settings: map[string]interface{}{
+				"url":       options.SlackWebhookURL,
+				"recipient": options.SlackChannel,
+				"username":  "Chainlink Alerts",
+				"title":     `{{ template "slack.chainlink.title" . }}`,
+				"text":      `{{ template "slack.chainlink.text" . }}`,
+				"color":     `{{ template "slack.chainlink.color" . }}`,
+			},
+		}))
+	}
+
 	builder.AddVars(vars(props)...)
 
 	builder.AddRow("Headlines")
@@ -85,15 +100,7 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 	builder.AddRow("Go Metrics")
 	builder.AddPanel(goMetrics(props)...)
 
-	db, alerts, err := builder.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return &grafana.Dashboard{
-		Dashboard: db,
-		Alerts:    alerts,
-	}, nil
+	return builder.Build()
 }
 
 func vars(p *Props) []cog.Builder[dashboard.VariableModel] {

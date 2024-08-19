@@ -10,10 +10,11 @@ import (
 )
 
 type Builder struct {
-	dashboardBuilder *dashboard.DashboardBuilder
-	alertsBuilder    []*alerting.RuleBuilder
-	panelCounter     uint32
-	alertsTags       map[string]string
+	dashboardBuilder     *dashboard.DashboardBuilder
+	alertsBuilder        []*alerting.RuleBuilder
+	contactPointsBuilder []*alerting.ContactPointBuilder
+	panelCounter         uint32
+	alertsTags           map[string]string
 }
 
 type BuilderOptions struct {
@@ -80,17 +81,21 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 	}
 }
 
-func (b *Builder) Build() (*dashboard.Dashboard, []alerting.Rule, error) {
+func (b *Builder) AddContactPoint(contactPoints ...*alerting.ContactPointBuilder) {
+	b.contactPointsBuilder = append(b.contactPointsBuilder, contactPoints...)
+}
+
+func (b *Builder) Build() (*Dashboard, error) {
 	db, errBuildDashboard := b.dashboardBuilder.Build()
 	if errBuildDashboard != nil {
-		return nil, nil, errBuildDashboard
+		return nil, errBuildDashboard
 	}
 
 	var alerts []alerting.Rule
 	for _, alertBuilder := range b.alertsBuilder {
 		alert, errBuildAlert := alertBuilder.Build()
 		if errBuildAlert != nil {
-			return nil, nil, errBuildAlert
+			return nil, errBuildAlert
 		}
 
 		// Add common tags to alerts
@@ -101,7 +106,7 @@ func (b *Builder) Build() (*dashboard.Dashboard, []alerting.Rule, error) {
 			alertBuildWithTags := alertBuilder.Labels(tags)
 			alertWithTags, errBuildAlertWithTags := alertBuildWithTags.Build()
 			if errBuildAlertWithTags != nil {
-				return nil, nil, errBuildAlertWithTags
+				return nil, errBuildAlertWithTags
 			}
 			alerts = append(alerts, alertWithTags)
 		} else {
@@ -109,5 +114,18 @@ func (b *Builder) Build() (*dashboard.Dashboard, []alerting.Rule, error) {
 		}
 	}
 
-	return &db, alerts, nil
+	var contactPoints []alerting.ContactPoint
+	for _, contactPointBuilder := range b.contactPointsBuilder {
+		contactPoint, errBuildContactPoint := contactPointBuilder.Build()
+		if errBuildContactPoint != nil {
+			return nil, errBuildContactPoint
+		}
+		contactPoints = append(contactPoints, contactPoint)
+	}
+
+	return &Dashboard{
+		Dashboard:     &db,
+		Alerts:        alerts,
+		ContactPoints: contactPoints,
+	}, nil
 }

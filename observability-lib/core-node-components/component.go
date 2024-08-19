@@ -28,15 +28,7 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 	builder.AddVars(vars(props)...)
 	builder.AddPanel(panelsGeneralInfo(props)...)
 
-	db, alerts, err := builder.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return &grafana.Dashboard{
-		Dashboard: db,
-		Alerts:    alerts,
-	}, nil
+	return builder.Build()
 }
 
 func vars(p *Props) []cog.Builder[dashboard.VariableModel] {

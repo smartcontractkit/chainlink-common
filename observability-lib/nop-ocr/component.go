@@ -38,14 +38,7 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 	builder.AddRow("Per NOP")
 	builder.AddPanel(perNOP(props)...)
 
-	db, _, err := builder.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return &grafana.Dashboard{
-		Dashboard: db,
-	}, nil
+	return builder.Build()
 }
 
 func vars(p *Props) []cog.Builder[dashboard.VariableModel] {

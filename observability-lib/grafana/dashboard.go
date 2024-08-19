@@ -20,9 +20,13 @@ type DashboardOptions struct {
 	MetricsDataSource *DataSource
 	LogsDataSource    *DataSource
 	AlertsTags        map[string]string
+	SlackWebhookURL   string
+	SlackToken        string
+	SlackChannel      string
 }
 
 type Dashboard struct {
-	Dashboard *dashboard.Dashboard
-	Alerts    []alerting.Rule
+	Dashboard     *dashboard.Dashboard
+	Alerts        []alerting.Rule
+	ContactPoints []alerting.ContactPoint
 }

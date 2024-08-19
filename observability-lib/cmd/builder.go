@@ -41,6 +41,9 @@ type BuildOptions struct {
 	MetricsDataSource *grafana.DataSource
 	LogsDataSource    *grafana.DataSource
 	AlertsTags        map[string]string
+	SlackWebhookURL   string
+	SlackToken        string
+	SlackChannel      string
 }
 
 func Build(options *BuildOptions) (*grafana.Dashboard, error) {
@@ -53,6 +56,9 @@ func Build(options *BuildOptions) (*grafana.Dashboard, error) {
 		FolderUID:         options.FolderUID,
 		Platform:          options.Platform,
 		AlertsTags:        options.AlertsTags,
+		SlackWebhookURL:   options.SlackWebhookURL,
+		SlackToken:        options.SlackToken,
+		SlackChannel:      options.SlackChannel,
 	}
 
 	switch options.TypeDashboard {

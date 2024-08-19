@@ -25,6 +25,9 @@ var DeployCmd = &cobra.Command{
 			EnableAlerts:          cmd.Flag("enable-alerts").Value.String() == "true",
 			AlertsTags:            alertsTags,
 			NotificationTemplates: cmd.Flag("notification-templates").Value.String(),
+			SlackChannel:          cmd.Flag("slack-channel").Value.String(),
+			SlackWebhookURL:       cmd.Flag("slack-webhook").Value.String(),
+			SlackToken:            cmd.Flag("slack-token").Value.String(),
 		})
 
 		if err != nil {
@@ -65,4 +68,7 @@ func init() {
 		"team": "chainlink-team",
 	}, "Alerts tags")
 	DeployCmd.Flags().String("notification-templates", "", "Filepath in yaml format, will create notification templates depending on key-value pairs in the yaml file")
+	DeployCmd.Flags().String("slack-channel", "", "Slack channel, required when setting up slack contact points")
+	DeployCmd.Flags().String("slack-webhook", "", "Slack webhook URL, required when setting up slack contact points")
+	DeployCmd.Flags().String("slack-token", "", "Slack token, required when setting up slack contact points and slack webhook is not provided")
 }

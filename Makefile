@@ -31,7 +31,7 @@ generate: mockery install-protoc gomods
 	mockery
 
 .PHONY: lint-workspace lint
-GOLANGCI_LINT_VERSION := 1.55.2
+GOLANGCI_LINT_VERSION := 1.60.1
 GOLANGCI_LINT_COMMON_OPTS := --max-issues-per-linter 0 --max-same-issues 0
 GOLANGCI_LINT_DIRECTORY := ./golangci-lint
 

@@ -226,7 +226,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	resp := <-callback
 	assert.ErrorContains(t, resp.Err, "timeout exceeded: could not process request before expiry")
 
-	reqs := s.GetByIDs(ctx, []string{rid})
+	reqs := s.GetByIDs([]string{rid})
 
 	assert.Equal(t, 0, len(reqs))
 }

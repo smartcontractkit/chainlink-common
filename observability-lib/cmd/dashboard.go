@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
@@ -142,6 +143,23 @@ func NewDashboard(options *CommandOptions) error {
 			if errCreateOrUpdateContactPoint != nil {
 				return errCreateOrUpdateContactPoint
 			}
+			Logger.Info().
+				Str("Name", *contactPoint.Name).
+				Str("URL", options.GrafanaURL).
+				Msg("Contact Point created")
+		}
+	}
+
+	if build.NotificationPolicies != nil && len(build.NotificationPolicies) > 0 {
+		for _, notificationPolicy := range build.NotificationPolicies {
+			errAddNestedPolicy := grafanaClient.AddNestedPolicy(notificationPolicy)
+			if errAddNestedPolicy != nil {
+				return errAddNestedPolicy
+			}
+			Logger.Info().
+				Str("Receiver", *notificationPolicy.Receiver).
+				Str("URL", options.GrafanaURL).
+				Msg("Notification Policy created")
 		}
 	}
 

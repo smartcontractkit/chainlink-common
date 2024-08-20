@@ -26,7 +26,8 @@ type DashboardOptions struct {
 }
 
 type Dashboard struct {
-	Dashboard     *dashboard.Dashboard
-	Alerts        []alerting.Rule
-	ContactPoints []alerting.ContactPoint
+	Dashboard            *dashboard.Dashboard
+	Alerts               []alerting.Rule
+	ContactPoints        []alerting.ContactPoint
+	NotificationPolicies []alerting.NotificationPolicy
 }

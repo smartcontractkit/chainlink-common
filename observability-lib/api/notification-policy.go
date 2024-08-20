@@ -2,10 +2,39 @@ package api
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 )
+
+// AddNestedPolicy Add Nested Policy to Notification Policy Tree
+func (c *Client) AddNestedPolicy(newNotificationPolicy alerting.NotificationPolicy) error {
+	notificationPolicyTree, _, err := c.GetNotificationPolicy()
+	if err != nil {
+		return err
+	}
+	updatedNotificationPolicy := notificationPolicyTree
+	tagsEqual := false
+	for key, notificationPolicy := range updatedNotificationPolicy.Routes {
+		if notificationPolicy.ObjectMatchers != nil {
+			tagsEqual = reflect.DeepEqual(notificationPolicy.ObjectMatchers, newNotificationPolicy.ObjectMatchers)
+			if tagsEqual {
+				updatedNotificationPolicy.Routes[key] = newNotificationPolicy
+			}
+		}
+	}
+	if !tagsEqual {
+		updatedNotificationPolicy.Routes = append(updatedNotificationPolicy.Routes, newNotificationPolicy)
+	}
+
+	_, _, errPutNotificationPolicy := c.PutNotificationPolicy(alerting.NotificationPolicy(updatedNotificationPolicy))
+	if errPutNotificationPolicy != nil {
+		return errPutNotificationPolicy
+	}
+
+	return nil
+}
 
 type GetNotificationPolicyResponse alerting.NotificationPolicy
 
@@ -59,6 +88,7 @@ func (c *Client) PutNotificationPolicy(notificationPolicy alerting.NotificationP
 
 	resp, err := c.resty.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("X-Disable-Provenance", "true").
 		SetBody(notificationPolicy).
 		SetResult(&grafanaResp).
 		Put("/api/v1/provisioning/policies")

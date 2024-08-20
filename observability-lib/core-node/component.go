@@ -3,6 +3,7 @@ package corenode
 import (
 	"fmt"
 
+	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -40,6 +41,15 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 			},
 		}))
 	}
+
+	notificationPolicyOptions := &grafana.NotificationPolicyOptions{
+		Receiver: "chainlink-slack",
+	}
+	for name, value := range options.AlertsTags {
+		notificationPolicyOptions.ObjectMatchers = append(notificationPolicyOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
+	}
+
+	builder.AddNotificationPolicy(grafana.NewNotificationPolicy(notificationPolicyOptions))
 
 	builder.AddVars(vars(props)...)
 
@@ -347,7 +357,7 @@ func headlines(p *Props) []*grafana.Panel {
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 				For:         "15m",
 				Tags: map[string]string{
-					"severity": "info",
+					"severity": "warning",
 				},
 				Query: []grafana.RuleQuery{
 					{

@@ -10,11 +10,12 @@ import (
 )
 
 type Builder struct {
-	dashboardBuilder     *dashboard.DashboardBuilder
-	alertsBuilder        []*alerting.RuleBuilder
-	contactPointsBuilder []*alerting.ContactPointBuilder
-	panelCounter         uint32
-	alertsTags           map[string]string
+	dashboardBuilder            *dashboard.DashboardBuilder
+	alertsBuilder               []*alerting.RuleBuilder
+	contactPointsBuilder        []*alerting.ContactPointBuilder
+	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
+	panelCounter                uint32
+	alertsTags                  map[string]string
 }
 
 type BuilderOptions struct {
@@ -85,6 +86,10 @@ func (b *Builder) AddContactPoint(contactPoints ...*alerting.ContactPointBuilder
 	b.contactPointsBuilder = append(b.contactPointsBuilder, contactPoints...)
 }
 
+func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.NotificationPolicyBuilder) {
+	b.notificationPoliciesBuilder = append(b.notificationPoliciesBuilder, notificationPolicies...)
+}
+
 func (b *Builder) Build() (*Dashboard, error) {
 	db, errBuildDashboard := b.dashboardBuilder.Build()
 	if errBuildDashboard != nil {
@@ -123,9 +128,19 @@ func (b *Builder) Build() (*Dashboard, error) {
 		contactPoints = append(contactPoints, contactPoint)
 	}
 
+	var notificationPolicies []alerting.NotificationPolicy
+	for _, notificationPolicyBuilder := range b.notificationPoliciesBuilder {
+		notificationPolicy, errBuildNotificationPolicy := notificationPolicyBuilder.Build()
+		if errBuildNotificationPolicy != nil {
+			return nil, errBuildNotificationPolicy
+		}
+		notificationPolicies = append(notificationPolicies, notificationPolicy)
+	}
+
 	return &Dashboard{
-		Dashboard:     &db,
-		Alerts:        alerts,
-		ContactPoints: contactPoints,
+		Dashboard:            &db,
+		Alerts:               alerts,
+		ContactPoints:        contactPoints,
+		NotificationPolicies: notificationPolicies,
 	}, nil
 }

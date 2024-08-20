@@ -22,12 +22,12 @@ func TestNewBuilder(t *testing.T) {
 			TimeZone: "UTC",
 		})
 
-		db, _, err := builder.Build()
+		db, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error building dashboard: %v", err)
 		}
 
-		require.IsType(t, dashboard.Dashboard{}, *db)
+		require.IsType(t, dashboard.Dashboard{}, *db.Dashboard)
 	})
 }
 
@@ -47,11 +47,11 @@ func TestBuilder_AddVars(t *testing.T) {
 		})
 
 		builder.AddVars(variable)
-		db, _, err := builder.Build()
+		db, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error building dashboard: %v", err)
 		}
-		require.IsType(t, dashboard.Dashboard{}, *db)
+		require.IsType(t, dashboard.Dashboard{}, *db.Dashboard)
 	})
 }
 
@@ -62,11 +62,11 @@ func TestBuilder_AddRow(t *testing.T) {
 		}, &grafana.BuilderOptions{})
 
 		builder.AddRow("Row Title")
-		db, _, err := builder.Build()
+		db, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error building dashboard: %v", err)
 		}
-		require.IsType(t, dashboard.Dashboard{}, *db)
+		require.IsType(t, dashboard.Dashboard{}, *db.Dashboard)
 	})
 }
 
@@ -83,10 +83,10 @@ func TestBuilder_AddPanel(t *testing.T) {
 		})
 
 		builder.AddPanel(panel)
-		db, _, err := builder.Build()
+		db, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error building dashboard: %v", err)
 		}
-		require.IsType(t, dashboard.Dashboard{}, *db)
+		require.IsType(t, dashboard.Dashboard{}, *db.Dashboard)
 	})
 }

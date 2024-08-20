@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -143,6 +144,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflowsIDs()
+	obs.Timestamp = uint64(time.Now().Unix())
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -160,6 +162,9 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// execution ID -> oracle ID -> list of observations
 	m := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
+	timestampFreq := make(map[uint64]int)
+	var finalTimestamp uint64
+	maxFreq := 1
 	for _, o := range aos {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(o.Observation, obs)
@@ -179,6 +184,13 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			seenWorkflowIDs[id]++
 
 			countedWorkflowIDs[id] = true
+		}
+
+		// Count the frequency of timestamps in the observations.
+		timestampFreq[obs.Timestamp]++
+		if timestampFreq[obs.Timestamp] > maxFreq {
+			maxFreq = timestampFreq[obs.Timestamp]
+			finalTimestamp = obs.Timestamp
 		}
 
 		for _, rq := range obs.Observations {
@@ -268,6 +280,8 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		if workflowOutcome != nil {
 			outcome.LastSeenAt = workflowOutcome.LastSeenAt
 		}
+
+		outcome.Timestamp = finalTimestamp
 
 		report := &pbtypes.Report{
 			Outcome: outcome,
@@ -368,7 +382,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			meta := &pbtypes.Metadata{
 				Version:          1,
 				ExecutionID:      id.WorkflowExecutionId,
-				Timestamp:        0, // TODO include timestamp in consensus phase
+				Timestamp:        outcome.Timestamp,
 				DONID:            id.WorkflowDonId,
 				DONConfigVersion: id.WorkflowDonConfigVersion,
 				WorkflowID:       id.WorkflowId,

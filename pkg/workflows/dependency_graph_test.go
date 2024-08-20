@@ -339,6 +339,27 @@ targets:
 				"a-target": {},
 			},
 		},
+		{
+			name: "workflow without consensus",
+			yaml: `
+name: length_ten # exactly 10 characters
+owner: 0x0123456789abcdef0123456789abcdef01234567
+triggers:
+  - id: "a-trigger@1.0.0"
+    config: {}
+targets:
+  - id: "a-target@1.0.0"
+    ref: "a-target"
+    config: {}
+    inputs: $(trigger.outputs)
+`,
+			graph: map[string]map[string]struct{}{
+				workflows.KeywordTrigger: {
+					"a-target": struct{}{},
+				},
+				"a-target": {},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

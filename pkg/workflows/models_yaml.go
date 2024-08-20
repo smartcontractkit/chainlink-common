@@ -75,7 +75,7 @@ type workflowSpecYaml struct {
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
 	Actions []stepDefinitionYaml `json:"actions,omitempty"`
 	// Consensus encapsulates the logic for aggregating and validating the results from various nodes.
-	Consensus []stepDefinitionYaml `json:"consensus" jsonschema:"required"`
+	Consensus []stepDefinitionYaml `json:"consensus,omitempty"`
 	// Targets represents the final step of the workflow, delivering the processed data to a specified location.
 	Targets []stepDefinitionYaml `json:"targets" jsonschema:"required"`
 

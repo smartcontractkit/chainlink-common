@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,15 +49,37 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], b
 		nameToAddress[bc.Name] = bc.Address
 	}
 
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(batchCallEntry))
+
 	for contractName, contractBatch := range batchCallEntry {
 		require.Contains(t, nameToAddress, contractName)
 		for _, readEntry := range contractBatch {
-			val, isOk := readEntry.ReturnValue.(*TestStruct)
-			if !isOk {
-				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contractName, readEntry.Name, readEntry.ReturnValue)
-			}
-			// it.sendTxWithTestStruct(t, nameToAddress[contractName], val, (*chain_reader_tester.ChainReaderTesterTransactor).AddTestStruct)
-			SubmitTransactionToCW(t, tester, "addTestStruct", val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
+			wg.Add(1)
+
+			go func(contractName string, val *TestStruct) {
+				defer wg.Done()
+
+				val, isOk := readEntry.ReturnValue.(*TestStruct)
+				if !isOk {
+					errCh <- fmt.Errorf("expected *TestStruct for contract: %s read: %s, but received %T", contractName, readEntry.Name, readEntry.ReturnValue)
+				}
+
+				txID := SubmitTransactionToCW(t, tester, "addTestStruct", val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
+
+				if err := WaitForTransactionStatus(t, tester, txID, types.Unconfirmed); err != nil {
+					errCh <- err
+				}
+			}(contractName, readEntry.ReturnValue.(*TestStruct))
+		}
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		if err != nil {
+			require.NoError(t, err)
 		}
 	}
 }
@@ -78,6 +101,7 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTes
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
+	fmt.Println("Waiting for transaction", txID, "to reach status", status)
 	for {
 		select {
 		case <-ctx.Done():
@@ -94,7 +118,7 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTes
 				fmt.Printf("Transaction %s reached status: %d\n", txID, current)
 				return nil
 			} else {
-				fmt.Printf("Transaction %s is still %d\n", txID, current)
+				continue
 			}
 		}
 	}

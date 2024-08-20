@@ -135,7 +135,6 @@
       "type": "object",
       "required": [
         "triggers",
-        "consensus",
         "targets"
       ]
     }

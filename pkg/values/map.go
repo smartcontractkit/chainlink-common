@@ -123,7 +123,6 @@ func mapValueToMap(f reflect.Type, t reflect.Type, data any) (any, error) {
 	if f != reflect.TypeOf(map[string]Value{}) {
 		return data, nil
 	}
-
 	switch t {
 	// If the destination type is `map[string]any` or `any`,
 	// fully unwrap the values.Map.
@@ -143,6 +142,7 @@ func mapValueToMap(f reflect.Type, t reflect.Type, data any) (any, error) {
 
 		return d, nil
 	}
+
 	return data, nil
 }
 
@@ -185,7 +185,9 @@ func unwrapsValues(f reflect.Type, t reflect.Type, data any) (any, error) {
 		n := reflect.New(t).Interface()
 		err := dv.UnwrapTo(n)
 		if err != nil {
-			return nil, err
+			// Do not return the error to allow mapstructure to retry with different types
+			// Eg: mapstructure will attempt **big.Int before *big.Int if the field is a *big.Int.
+			return data, nil
 		}
 
 		if reflect.TypeOf(n).Elem() == t {

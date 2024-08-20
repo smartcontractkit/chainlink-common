@@ -67,6 +67,7 @@ type RequestMetadata struct {
 	WorkflowName             string
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
+	ReferenceID              string
 }
 
 type RegistrationMetadata struct {

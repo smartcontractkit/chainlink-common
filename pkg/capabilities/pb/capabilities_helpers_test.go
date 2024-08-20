@@ -19,6 +19,7 @@ const (
 	testInputsKey   = "input-key"
 	testInputsValue = "input-value"
 	testError       = "test-error"
+	anyReferenceId  = "anything"
 )
 
 func TestCapabilityRequestFromProto(t *testing.T) {
@@ -49,6 +50,10 @@ func TestCapabilityRequestFromProto(t *testing.T) {
 		Inputs: values.ProtoMap(inputs),
 		Config: values.ProtoMap(config),
 	}
+	_, err = pb.CapabilityRequestFromProto(&pr)
+	require.NoError(t, err)
+
+	pr.Metadata.ReferenceId = anyReferenceId
 	_, err = pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
 }
@@ -86,6 +91,13 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	unmarshaled, err := pb.UnmarshalCapabilityRequest(raw)
+	require.NoError(t, err)
+
+	req.Metadata.ReferenceID = anyReferenceId
+	raw, err = pb.MarshalCapabilityRequest(req)
+	require.NoError(t, err)
+
+	unmarshaled, err = pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
 	require.Equal(t, req, unmarshaled)

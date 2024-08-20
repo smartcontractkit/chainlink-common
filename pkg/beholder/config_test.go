@@ -24,16 +24,18 @@ func ExampleConfig() {
 			otelattr.String("sender", "beholderclient"),
 		},
 		// Message Emitter
-		EmitterExportTimeout: 1 * time.Second,
+		EmitterExportTimeout:  1 * time.Second,
+		EmitterBatchProcessor: true,
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
 		// Log
-		LogExportTimeout: 1 * time.Second,
+		LogExportTimeout:  1 * time.Second,
+		LogBatchProcessor: true,
 	}
 	fmt.Printf("%+v", config)
 	// Output:
-	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholderclient slice:<nil>}}] EmitterExportTimeout:1s TraceSampleRatio:1 TraceBatchTimeout:1s MetricReaderInterval:1s LogExportTimeout:1s}
+	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholderclient slice:<nil>}}] EmitterExportTimeout:1s EmitterBatchProcessor:true TraceSampleRatio:1 TraceBatchTimeout:1s MetricReaderInterval:1s LogExportTimeout:1s LogBatchProcessor:true}
 }

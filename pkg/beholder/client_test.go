@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -94,26 +93,24 @@ func TestClient(t *testing.T) {
 			exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			}
-			client, err := newOtelClient(DefaultConfig(), otelErrorHandler, exporterFactory)
+			client, err := newOtelClient(TestDefaultConfig(), otelErrorHandler, exporterFactory)
 			if err != nil {
 				t.Fatalf("Error creating beholder client: %v", err)
 			}
-			// Number of messages to emit
-			done := make(chan struct{}, 1)
+			// Number of exported messages
+			exportedMessageCount := 0
 
 			// Simulate exporter error if configured
 			if tc.exporterMockErrorCount > 0 {
 				exporterMock.On("Export", mock.Anything, mock.Anything).Return(fmt.Errorf("an error occurred")).Times(tc.exporterMockErrorCount)
 			}
-
 			customAttributes := tc.makeCustomAttributes()
-
 			if tc.exporterOutputExpected {
-				exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Once().
+				exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Times(tc.messageCount).
 					Run(func(args mock.Arguments) {
 						assert.IsType(t, args.Get(1), []sdklog.Record{}, "Record type mismatch")
 						records := args.Get(1).([]sdklog.Record)
-						assert.Equal(t, tc.messageCount, len(records), "Record count mismatch")
+						assert.Equal(t, 1, len(records), "batching is disabled, expecte 1 record")
 						record := records[0]
 						assert.Equal(t, tc.messageBody, record.Body().AsBytes(), "Record body mismatch")
 						actualAttributeKeys := map[string]struct{}{}
@@ -134,18 +131,13 @@ func TestClient(t *testing.T) {
 								t.Fatalf("Record attribute key not found: %s", key)
 							}
 						}
-						done <- struct{}{}
+						exportedMessageCount += len(records)
 					})
 			}
 			for i := 0; i < tc.messageCount; i++ {
-				go tc.messageGenerator(client, tc.messageBody, customAttributes)
+				tc.messageGenerator(client, tc.messageBody, customAttributes)
 			}
-
-			select {
-			case <-done:
-			case <-time.After(10 * time.Second):
-				t.Fatalf("Timed out waiting for messages to be emitted")
-			}
+			assert.Equal(t, tc.messageCount, exportedMessageCount, "Expect all emitted messages to be exported")
 		})
 	}
 }
@@ -153,7 +145,7 @@ func TestClient(t *testing.T) {
 func TestEmitterMessageValidation(t *testing.T) {
 	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
 		client, err := newOtelClient(
-			DefaultConfig(),
+			TestDefaultConfig(),
 			func(err error) { t.Fatalf("otel error: %v", err) },
 			// Override exporter factory which is used by Client
 			func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
@@ -196,63 +188,27 @@ func TestEmitterMessageValidation(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			setupMock := func(exporterMock *mocks.OTLPExporter) (*mocks.OTLPExporter, <-chan struct{}) {
-				done := make(chan struct{}, tc.exporterCalledTimes)
+			t.Run("Emitter.Emit", func(t *testing.T) {
+				// Setup
+				exporterMock := mocks.NewOTLPExporter(t)
 				if tc.exporterCalledTimes > 0 {
-					exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Times(tc.exporterCalledTimes).
-						Run(func(args mock.Arguments) {
-							done <- struct{}{}
-						})
+					exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Times(tc.exporterCalledTimes)
 				}
-				return exporterMock, done
-			}
-
-			assertError := func(err error, expected string) {
+				emitter := getEmitter(exporterMock)
+				message := NewMessage([]byte("test"), tc.attrs)
+				// Emit
+				err := emitter.Emit(tests.Context(t), message.Body, tc.attrs)
+				// Assert expectations
 				if tc.expectedError != "" {
-					assert.ErrorContains(t, err, expected)
+					assert.ErrorContains(t, err, tc.expectedError)
 				} else {
 					assert.NoError(t, err)
 				}
-			}
-
-			assertMock := func(exporterMock *mocks.OTLPExporter) {
 				if tc.exporterCalledTimes > 0 {
 					exporterMock.AssertExpectations(t)
 				} else {
 					exporterMock.AssertNotCalled(t, "Export")
 				}
-			}
-
-			waitUntilSent := func(done <-chan struct{}) {
-				for range tc.exporterCalledTimes {
-					select {
-					case <-done:
-					case <-time.After(10 * time.Second):
-						t.Fatalf("Timed out waiting for messages to be emitted")
-					}
-				}
-			}
-
-			setupTest := func() (emitter Emitter, message Message, assertExpectations func(err error)) {
-				exporterMock, done := setupMock(mocks.NewOTLPExporter(t))
-				emitter = getEmitter(exporterMock)
-				message = NewMessage([]byte("test"), tc.attrs)
-
-				assertExpectations = func(err error) {
-					assertError(err, tc.expectedError)
-					if err == nil {
-						waitUntilSent(done)
-					}
-					assertMock(exporterMock)
-				}
-				return
-			}
-			t.Run("Emitter.Emit", func(t *testing.T) {
-				emitter, message, assertExpectations := setupTest()
-
-				err := emitter.Emit(tests.Context(t), message.Body, tc.attrs)
-
-				assertExpectations(err)
 			})
 		})
 	}

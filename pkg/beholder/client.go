@@ -91,10 +91,15 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	}
 
 	// Logger
-	loggerProcessor := sdklog.NewBatchProcessor(
-		sharedLogExporter,
-		sdklog.WithExportTimeout(cfg.LogExportTimeout), // Default is 30s
-	)
+	var loggerProcessor sdklog.Processor
+	if cfg.LogBatchProcessor {
+		loggerProcessor = sdklog.NewBatchProcessor(
+			sharedLogExporter,
+			sdklog.WithExportTimeout(cfg.LogExportTimeout), // Default is 30s
+		)
+	} else {
+		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
+	}
 	loggerAttributes := []attribute.KeyValue{
 		attribute.String("beholder_data_type", "zap_log_message"),
 	}
@@ -126,10 +131,16 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	meter := meterProvider.Meter(defaultPackageName)
 
 	// Message Emitter
-	messageLogProcessor := sdklog.NewBatchProcessor(
-		sharedLogExporter,
-		sdklog.WithExportTimeout(cfg.EmitterExportTimeout), // Default is 30s
-	)
+	var messageLogProcessor sdklog.Processor
+	if cfg.EmitterBatchProcessor {
+		messageLogProcessor = sdklog.NewBatchProcessor(
+			sharedLogExporter,
+			sdklog.WithExportTimeout(cfg.EmitterExportTimeout), // Default is 30s
+		)
+	} else {
+		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
+	}
+
 	messageAttributes := []attribute.KeyValue{
 		attribute.String("beholder_data_type", "custom_message"),
 	}
@@ -140,6 +151,7 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	if err != nil {
 		return noop, err
 	}
+
 	messageLoggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(messageLoggerResource),
 		sdklog.WithProcessor(messageLogProcessor),

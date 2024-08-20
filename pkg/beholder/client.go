@@ -10,9 +10,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	otellog "go.opentelemetry.io/otel/log"
-	otelglobal "go.opentelemetry.io/otel/log/global"
 	otelmetric "go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
@@ -173,24 +171,6 @@ func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otl
 	client := OtelClient{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
 
 	return client, nil
-}
-
-// Sets the global OTel logger, tracer, meter providers.
-// Makes them accessible from anywhere in the code via global otel getters:
-// - otelglobal.GetLoggerProvider()
-// - otel.GetTracerProvider()
-// - otel.GetTextMapPropagator()
-// - otel.GetMeterProvider()
-// Any package that relies on go.opentelemetry.io will be able to pick up configured global providers
-// e.g [otelgrpc](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc#example-NewServerHandler)
-func (c OtelClient) SetGlobals() {
-	// Logger
-	otelglobal.SetLoggerProvider(c.LoggerProvider)
-	// Tracer
-	otel.SetTracerProvider(c.TracerProvider)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	// Meter
-	otel.SetMeterProvider(c.MeterProvider)
 }
 
 // Closes all providers, flushes all data and stops all background processes

@@ -8,14 +8,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	otellog "go.opentelemetry.io/otel/log"
-	otelglobal "go.opentelemetry.io/otel/log/global"
-	otelmetric "go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -224,61 +219,6 @@ func TestClient_Close(t *testing.T) {
 	assert.NoError(t, err)
 
 	exporterMock.AssertExpectations(t)
-}
-
-func TestClient_SetGlobals(t *testing.T) {
-	exporterMock := mocks.NewOTLPExporter(t)
-	defer exporterMock.AssertExpectations(t)
-
-	otelErrorHandler := func(err error) {
-		t.Fatalf("otel error: %v", err)
-	}
-	// Override exporter factory which is used by Client
-	exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
-		return exporterMock, nil
-	}
-	client, err := newOtelClient(DefaultConfig(), otelErrorHandler, exporterFactory)
-	if err != nil {
-		t.Fatalf("Error creating beholder client: %v", err)
-	}
-	assert.NoError(t, err)
-
-	globals := getGlobals()
-	defer restoreGlobals(t, globals)
-
-	client.SetGlobals()
-
-	assert.Equal(t, client.LoggerProvider, otelglobal.GetLoggerProvider())
-	assert.Equal(t, client.TracerProvider, otel.GetTracerProvider())
-	assert.Equal(t, client.MeterProvider, otel.GetMeterProvider())
-}
-
-type globals struct {
-	loggerProvider    otellog.LoggerProvider
-	tracerProvider    oteltrace.TracerProvider
-	textMapPropagator propagation.TextMapPropagator
-	meterProvider     otelmetric.MeterProvider
-}
-
-func getGlobals() globals {
-	return globals{
-		otelglobal.GetLoggerProvider(),
-		otel.GetTracerProvider(),
-		otel.GetTextMapPropagator(),
-		otel.GetMeterProvider(),
-	}
-}
-
-func restoreGlobals(t *testing.T, g globals) {
-	otelglobal.SetLoggerProvider(g.loggerProvider)
-	otel.SetTracerProvider(g.tracerProvider)
-	otel.SetTextMapPropagator(g.textMapPropagator)
-	otel.SetMeterProvider(g.meterProvider)
-
-	assert.Equal(t, g.loggerProvider, otelglobal.GetLoggerProvider())
-	assert.Equal(t, g.tracerProvider, otel.GetTracerProvider())
-	assert.Equal(t, g.textMapPropagator, otel.GetTextMapPropagator())
-	assert.Equal(t, g.meterProvider, otel.GetMeterProvider())
 }
 
 func TestClient_ForPackage(t *testing.T) {

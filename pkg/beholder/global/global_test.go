@@ -1,19 +1,25 @@
 package global_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"go.opentelemetry.io/otel"
 	otelattribute "go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
+	otellogglobal "go.opentelemetry.io/otel/log/global"
 	otellognoop "go.opentelemetry.io/otel/log/noop"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	otelmetricnoop "go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/propagation"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/global"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -55,4 +61,48 @@ func TestGlobal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error emitting message: %v", err)
 	}
+}
+
+func TestClient_SetGlobalOtelProviders(t *testing.T) {
+	exporterMock := mocks.NewOTLPExporter(t)
+	defer exporterMock.AssertExpectations(t)
+
+	// Restore global providers after test
+	defer restoreProviders(t, providers{
+		otellogglobal.GetLoggerProvider(),
+		otel.GetTracerProvider(),
+		otel.GetTextMapPropagator(),
+		otel.GetMeterProvider(),
+	})
+
+	var b strings.Builder
+	client := beholder.NewStdoutClient(beholder.WithWriter(&b))
+	// Set global Otel Client
+	global.SetClient(&client)
+
+	// Set global otel tracer, meter, logger providers from global client
+	global.SetGlobalOtelProviders()
+
+	assert.Equal(t, client.LoggerProvider, otellogglobal.GetLoggerProvider())
+	assert.Equal(t, client.TracerProvider, otel.GetTracerProvider())
+	assert.Equal(t, client.MeterProvider, otel.GetMeterProvider())
+}
+
+type providers struct {
+	loggerProvider    otellog.LoggerProvider
+	tracerProvider    oteltrace.TracerProvider
+	textMapPropagator propagation.TextMapPropagator
+	meterProvider     otelmetric.MeterProvider
+}
+
+func restoreProviders(t *testing.T, p providers) {
+	otellogglobal.SetLoggerProvider(p.loggerProvider)
+	otel.SetTracerProvider(p.tracerProvider)
+	otel.SetTextMapPropagator(p.textMapPropagator)
+	otel.SetMeterProvider(p.meterProvider)
+
+	assert.Equal(t, p.loggerProvider, otellogglobal.GetLoggerProvider())
+	assert.Equal(t, p.tracerProvider, otel.GetTracerProvider())
+	assert.Equal(t, p.textMapPropagator, otel.GetTextMapPropagator())
+	assert.Equal(t, p.meterProvider, otel.GetMeterProvider())
 }

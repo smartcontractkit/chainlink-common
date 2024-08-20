@@ -9,15 +9,15 @@ import (
 )
 
 type Decimal struct {
-	Underlying *decimal.Decimal
+	Underlying decimal.Decimal
 }
 
 func NewDecimal(d decimal.Decimal) *Decimal {
-	return &Decimal{Underlying: &d}
+	return &Decimal{Underlying: d}
 }
 
 func (d *Decimal) proto() *pb.Value {
-	return pb.NewDecimalValue(*d.Underlying)
+	return pb.NewDecimalValue(d.Underlying)
 }
 
 func (d *Decimal) Unwrap() (any, error) {
@@ -29,13 +29,12 @@ func (d *Decimal) UnwrapTo(to any) error {
 	if d == nil {
 		return errors.New("could not unwrap nil values.Decimal")
 	}
-	return unwrapTo(*d.Underlying, to)
+	return unwrapTo(d.Underlying, to)
 }
 
 func (d *Decimal) Copy() Value {
 	if d == nil {
 		return nil
 	}
-	cpy := d.Underlying.Copy()
-	return &Decimal{Underlying: &cpy}
+	return &Decimal{Underlying: d.Underlying.Copy()}
 }

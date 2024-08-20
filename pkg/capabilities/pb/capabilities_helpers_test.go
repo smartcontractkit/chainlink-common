@@ -79,6 +79,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowName:             "test-workflow-name",
 			WorkflowDonID:            1,
 			WorkflowDonConfigVersion: 1,
+			ReferenceID:              anyReferenceID,
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},

@@ -70,6 +70,13 @@ func Wrap(v any) (Value, error) {
 
 	// Handle slices, structs, and pointers to structs
 	val := reflect.ValueOf(v)
+
+	if val.CanConvert(reflect.TypeOf(decimal.Decimal{})) {
+		return Wrap(val.Convert(reflect.TypeOf(decimal.Decimal{})).Interface())
+	} else if val.CanConvert(reflect.TypeOf(new(big.Int))) {
+		return Wrap(val.Convert(reflect.TypeOf(new(big.Int))).Interface())
+	}
+
 	// nolint
 	switch val.Kind() {
 	// Better complex type support for maps
@@ -95,11 +102,17 @@ func Wrap(v any) (Value, error) {
 		}
 		return NewList(s)
 	case reflect.Struct:
-		return createMapFromStruct(v)
+		return CreateMapFromStruct(v)
 	case reflect.Pointer:
 		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
-			return createMapFromStruct(reflect.Indirect(reflect.ValueOf(v)).Interface())
+			return CreateMapFromStruct(reflect.Indirect(reflect.ValueOf(v)).Interface())
 		}
+	case reflect.String:
+		return Wrap(val.Convert(reflect.TypeOf("")).Interface())
+	case reflect.Bool:
+		return Wrap(val.Convert(reflect.TypeOf(true)).Interface())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return Wrap(val.Convert(reflect.TypeOf(int64(0))).Interface())
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
@@ -229,8 +242,9 @@ func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
 	return NewBigInt(protoToBigInt(biv))
 }
 
-func createMapFromStruct(v any) (Value, error) {
+func CreateMapFromStruct(v any) (*Map, error) {
 	var resultMap map[string]interface{}
+
 	err := mapstructure.Decode(v, &resultMap)
 	if err != nil {
 		return nil, err
@@ -251,7 +265,15 @@ func unwrapTo[T any](underlying T, to any) error {
 		}
 		*tb = underlying
 	default:
-		return fmt.Errorf("cannot unwrap to value of type: %T", to)
+		// Don't break for custom types that are the same underlying type
+		// eg: type FeedId string allows verification of FeedId's shape while unmarshalling
+		rTo := reflect.ValueOf(to)
+		rUnderlying := reflect.ValueOf(underlying)
+		underlyingPtr := reflect.PointerTo(rUnderlying.Type())
+		if rTo.Kind() != reflect.Pointer || !rTo.CanConvert(underlyingPtr) {
+			return fmt.Errorf("cannot unwrap to value of type: %T", to)
+		}
+		reflect.Indirect(rTo.Convert(underlyingPtr)).Set(rUnderlying)
 	}
 
 	return nil

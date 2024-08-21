@@ -44,6 +44,7 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 
 	notificationPolicyOptions := &grafana.NotificationPolicyOptions{
 		Receiver: "chainlink-slack",
+		GroupBy:  []string{"grafana_folder", "alertname"},
 	}
 	for name, value := range options.AlertsTags {
 		notificationPolicyOptions.ObjectMatchers = append(notificationPolicyOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
@@ -252,7 +253,7 @@ func headlines(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "ETH Balance",
+			Title:      "ETH Balance Summary",
 			Span:       12,
 			Height:     4,
 			Decimals:   2,
@@ -280,7 +281,7 @@ func headlines(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Solana Balance",
+			Title:      "Solana Balance Summary",
 			Span:       12,
 			Height:     4,
 			Decimals:   2,
@@ -339,7 +340,7 @@ func headlines(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "ETH Balance Graph",
+			Title:      "ETH Balance",
 			Span:       12,
 			Height:     6,
 			Decimals:   2,
@@ -352,10 +353,10 @@ func headlines(p *Props) []*grafana.Panel {
 			AlertOptions: &grafana.AlertOptions{
 				Group:       p.Name,
 				FolderUID:   p.FolderUID,
-				Summary:     `ETH Balance critically low on {{index $value.A.Labels "instance"}}`,
-				Description: `Balance is at {{$value}}`,
+				Summary:     `ETH Balance is lower than threshold`,
+				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.PlatformOpts.LegendString + `" }}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
+				For:         "1m",
 				Tags: map[string]string{
 					"severity": "warning",
 				},
@@ -386,7 +387,7 @@ func headlines(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "SOL Balance Graph",
+			Title:      "SOL Balance",
 			Span:       12,
 			Height:     6,
 			Decimals:   2,

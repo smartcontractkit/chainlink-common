@@ -25,7 +25,7 @@ func (c *Client) PutNotificationTemplate(notificationTemplate alerting.Notificat
 
 	statusCode := resp.StatusCode()
 	if statusCode != 202 {
-		return PutNotificationPolicyResponse{}, resp, fmt.Errorf("error creatimg/updating notification template, received unexpected status code %d: %s", statusCode, resp.String())
+		return PutNotificationPolicyResponse{}, resp, fmt.Errorf("error creating/updating notification template, received unexpected status code %d: %s", statusCode, resp.String())
 	}
 
 	return grafanaResp, resp, nil

@@ -1,25 +1,52 @@
 slack: |-
   {{ define "slack.chainlink.text" }}
-    {{- $root := . -}}
-    {{ range .Alerts }}
-      *Alert Status:* `{{ .Status }}`
-      *Alert Name:* ```{{ .Labels.alertname}}```
-      *Summary:* ```{{ .Annotations.summary }}```
-      {{ if gt (len .Annotations.description) 0 }}*Description:* ```{{ .Annotations.description }}```{{ end }}
-      {{ printf "\n" }}
-    {{ end }}
+  {{- $root := . -}}
+  {{ range .Alerts }}
+  *Summary:* ```{{ .Annotations.summary }}```
+  {{ if gt (len .Annotations.description) 0 }}*Description:* ```{{ .Annotations.description }}```{{ end }}
+  *Labels:* ```{{- range .Labels.SortedPairs }}
+  {{- if and (ne .Name "alertname") (ne .Name "grafana_folder") (ne .Name "severity") }}
+  • {{ .Name }}: {{ .Value }}
+  {{- end }}
+  {{- end }}```
+  {{- if gt (len .GeneratorURL ) 0 }} 
+  <{{ .GeneratorURL }}|:grafana: Grafana Alert URL>
+  {{- end }}
+  {{- if gt (len .DashboardURL ) 0 }}
+  <{{ .DashboardURL }}|:desktop_computer: Dashboard URL>
+  {{- end }}
+  {{- if gt (len .PanelURL ) 0 }}
+  <{{ .PanelURL }}|:bar_chart: Panel URL>
+  {{- end }}
+  {{- if gt (len .SilenceURL ) 0 }}
+  <{{ .SilenceURL }}|:no_bell: Silence alert>
+  {{- end }}
+  {{- if gt (len .Annotations.runbook_url ) 0 }}
+  <{{ .Annotations.runbook_url }}|:spiral_note_pad: Runbook>
+  {{- end }}
+  {{ end }}
   {{ end }}
   
   {{ define "slack.chainlink.color" }}
-    {{- if and (gt (len .Alerts.Firing) 0) (eq (len .Alerts.Resolved) 0) -}}
-    danger
-    {{- else if and (gt (len .Alerts.Firing) 0) (gt (len .Alerts.Resolved) 0) -}}
-    warning
-    {{- else -}}
+    {{- if ne .Status "firing" -}}
     good
+    {{- else if eq .CommonLabels.severity "critical" -}}
+    danger
+    {{- else if eq .CommonLabels.severity "warning" -}}
+    warning
     {{- end -}}
   {{ end }}
   
+  {{ define "alert_severity_prefix_emoji" -}}
+    {{- if ne .Status "firing" -}}
+    :white_check_mark:
+    {{- else if eq .CommonLabels.severity "critical" -}}
+    :red_circle:
+    {{- else if eq .CommonLabels.severity "warning" -}}
+    :warning:
+    {{- end -}}
+  {{- end -}}
+  
   {{ define "slack.chainlink.title" }}
-    [{{ .Status | toUpper }}{{ if eq .Status "firing" }}: {{ .Alerts.Firing | len }}{{ end }}]
+    {{ template "alert_severity_prefix_emoji" . }} [{{- if gt (len .Alerts.Resolved) 0}}{{ .Status | toUpper }}{{- else }}{{ .CommonLabels.severity | toUpper }}{{- end }}:{{ .Alerts | len }}] {{ .CommonLabels.alertname }}
   {{ end }}

@@ -106,6 +106,8 @@ func (i *Int64) UnwrapTo(to any) error {
 			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint32(0)))).Interface())
 		case reflect.Uint:
 			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint(0)))).Interface())
+		default:
+			// fall through to the error, default is required by lint
 		}
 	}
 

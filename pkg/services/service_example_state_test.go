@@ -8,7 +8,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 
-	. "github.com/smartcontractkit/chainlink-common/pkg/internal/example"
+	. "github.com/smartcontractkit/chainlink-common/pkg/internal/example" // nolint
 )
 
 type stateMachine struct {
@@ -54,14 +54,9 @@ func (f *stateMachine) Close() error {
 func (f *stateMachine) run() {
 	defer f.wg.Done()
 
-	for {
-		select {
-		// ...
-		case <-f.stop:
-			return // stop the routine
-		}
+	for range f.stop {
+		return // stop the routine
 	}
-
 }
 
 func ExampleService() {

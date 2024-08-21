@@ -55,7 +55,7 @@ func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, con
 }
 
 func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
-	batch, err := r.s.FirstN(ctx, r.batchSize)
+	batch, err := r.s.FirstN(r.batchSize)
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
@@ -99,7 +99,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		weids = append(weids, q.WorkflowExecutionId)
 	}
 
-	reqs := r.s.GetByIDs(ctx, weids)
+	reqs := r.s.GetByIDs(weids)
 	reqMap := map[string]*requests.Request{}
 	for _, req := range reqs {
 		reqMap[req.WorkflowExecutionID] = req
@@ -168,17 +168,17 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 
-		countedWorkflowIds := map[string]bool{}
+		countedWorkflowIDs := map[string]bool{}
 		for _, id := range obs.RegisteredWorkflowIds {
 			// Skip if we've already counted this workflow ID. we want to avoid duplicates in the seen workflow IDs.
-			if _, ok := countedWorkflowIds[id]; ok {
+			if _, ok := countedWorkflowIDs[id]; ok {
 				continue
 			}
 
 			// Count how many times a workflow ID is seen from Observations, no need for initial value since it's 0 by default.
 			seenWorkflowIDs[id]++
 
-			countedWorkflowIds[id] = true
+			countedWorkflowIDs[id] = true
 		}
 
 		for _, rq := range obs.Observations {

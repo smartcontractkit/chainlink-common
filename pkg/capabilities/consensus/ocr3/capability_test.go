@@ -25,7 +25,7 @@ const workflowTestID2 = "consensus-workflow-test-id-2"
 const workflowTestID3 = "consensus-workflow-test-id-3"
 const workflowExecutionTestID = "consensus-workflow-execution-test-id-1"
 const workflowTestName = "consensus-workflow-test-name-1"
-const reportTestId = "rep-id-1"
+const reportTestID = "rep-id-1"
 
 type mockAggregator struct {
 	types.Aggregator
@@ -226,7 +226,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	resp := <-callback
 	assert.ErrorContains(t, resp.Err, "timeout exceeded: could not process request before expiry")
 
-	reqs := s.GetByIDs(ctx, []string{rid})
+	reqs := s.GetByIDs([]string{rid})
 
 	assert.Equal(t, 0, len(reqs))
 }

@@ -3,10 +3,11 @@ package chainwriter_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTxMetaFromProto(t *testing.T) {

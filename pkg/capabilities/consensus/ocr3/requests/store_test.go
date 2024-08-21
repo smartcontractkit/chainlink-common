@@ -107,10 +107,18 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 	)
 	require.NoError(t, err)
 	req := &Request{
-		WorkflowExecutionID: rid,
-		CallbackCh:          cb,
-		StopCh:              stopCh,
-		Observations:        obs,
+		WorkflowExecutionID:      rid,
+		WorkflowID:               "wid",
+		WorkflowName:             "name",
+		WorkflowOwner:            "owner",
+		WorkflowDonID:            1,
+		WorkflowDonConfigVersion: 1,
+		ReportID:                 "001",
+		KeyID:                    "key-001",
+
+		CallbackCh:   cb,
+		StopCh:       stopCh,
+		Observations: obs,
 	}
 
 	require.NoError(t, s.Add(req))
@@ -158,8 +166,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 			assert.Len(t, gr.Observations.Underlying, 3)
 
 			gr2 := tc.get(tests.Context(st), rid)
-			assert.Len(t, gr2.Observations.Underlying, 2)
-			assert.Equal(t, gr2.WorkflowExecutionID, rid)
+			assert.Equal(t, req, gr2)
 
 			gr.StopCh <- struct{}{}
 			<-stopCh

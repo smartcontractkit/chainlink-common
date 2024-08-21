@@ -152,13 +152,13 @@ func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, que
 	return ocr3types.QuorumTwoFPlusOne, nil
 }
 
-func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
-	m := map[string]map[ocrcommon.OracleID][]values.Value{}
+	execIDToOracleObservations := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
-	for _, o := range aos {
+	for _, attributedObservation := range attributedObservations {
 		obs := &pbtypes.Observations{}
-		err := proto.Unmarshal(o.Observation, obs)
+		err := proto.Unmarshal(attributedObservation.Observation, obs)
 		if err != nil {
 			r.lggr.Errorw("could not unmarshal observation", "error", err, "observation", obs)
 			continue
@@ -177,29 +177,29 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			countedWorkflowIDs[id] = true
 		}
 
-		for _, rq := range obs.Observations {
-			if rq == nil {
+		for _, request := range obs.Observations {
+			if request == nil {
 				r.lggr.Debugw("skipping nil request in observations", "observations", obs.Observations)
 				continue
 			}
 
-			if rq.Id == nil {
-				r.lggr.Debugw("skipping nil id in request", "request", rq)
+			if request.Id == nil {
+				r.lggr.Debugw("skipping nil id in request", "request", request)
 				continue
 			}
 
-			weid := rq.Id.WorkflowExecutionId
+			weid := request.Id.WorkflowExecutionId
 
-			obsList, innerErr := values.FromListValueProto(rq.Observations)
+			obsList, innerErr := values.FromListValueProto(request.Observations)
 			if obsList == nil || innerErr != nil {
-				r.lggr.Errorw("observations are not a list", "weID", weid, "oracleID", o.Observer, "err", innerErr)
+				r.lggr.Errorw("observations are not a list", "weID", weid, "oracleID", attributedObservation.Observer, "err", innerErr)
 				continue
 			}
 
-			if _, ok := m[weid]; !ok {
-				m[weid] = make(map[ocrcommon.OracleID][]values.Value)
+			if _, ok := execIDToOracleObservations[weid]; !ok {
+				execIDToOracleObservations[weid] = make(map[ocrcommon.OracleID][]values.Value)
 			}
-			m[weid][o.Observer] = obsList.Underlying
+			execIDToOracleObservations[weid][attributedObservation.Observer] = obsList.Underlying
 		}
 	}
 
@@ -209,19 +209,19 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		return nil, err
 	}
 
-	o := &pbtypes.Outcome{}
-	err = proto.Unmarshal(outctx.PreviousOutcome, o)
+	previousOutcome := &pbtypes.Outcome{}
+	err = proto.Unmarshal(outctx.PreviousOutcome, previousOutcome)
 	if err != nil {
 		return nil, err
 	}
-	if o.Outcomes == nil {
-		o.Outcomes = map[string]*pbtypes.AggregationOutcome{}
+	if previousOutcome.Outcomes == nil {
+		previousOutcome.Outcomes = map[string]*pbtypes.AggregationOutcome{}
 	}
 
 	// Wipe out the CurrentReports. This gets regenerated
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
-	o.CurrentReports = []*pbtypes.Report{}
+	previousOutcome.CurrentReports = []*pbtypes.Report{}
 	var allExecutionIDs []string
 
 	for _, weid := range q.Ids {
@@ -230,13 +230,13 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 		lggr := logger.With(r.lggr, "executionID", weid.WorkflowExecutionId, "workflowID", weid.WorkflowId)
-		obs, ok := m[weid.WorkflowExecutionId]
+		obs, ok := execIDToOracleObservations[weid.WorkflowExecutionId]
 		if !ok {
 			lggr.Debugw("could not find any observations matching weid requested in the query")
 			continue
 		}
 
-		workflowOutcome, ok := o.Outcomes[weid.WorkflowId]
+		workflowOutcome, ok := previousOutcome.Outcomes[weid.WorkflowId]
 		if !ok {
 			lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one")
 		}
@@ -269,30 +269,30 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			Outcome: outcome,
 			Id:      weid,
 		}
-		o.CurrentReports = append(o.CurrentReports, report)
+		previousOutcome.CurrentReports = append(previousOutcome.CurrentReports, report)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
-		o.Outcomes[weid.WorkflowId] = outcome
+		previousOutcome.Outcomes[weid.WorkflowId] = outcome
 	}
 
 	// We need to prune outcomes from previous workflows that are no longer relevant.
-	for workflowID, outcome := range o.Outcomes {
+	for workflowID, outcome := range previousOutcome.Outcomes {
 		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
 		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
 		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
-			delete(o.Outcomes, workflowID)
+			delete(previousOutcome.Outcomes, workflowID)
 			r.r.unregisterWorkflowID(workflowID)
 		}
 	}
 
-	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o)
+	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(previousOutcome)
 	h := sha256.New()
 	h.Write(rawOutcome)
 	outcomeHash := h.Sum(nil)
-	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nAggregatedWorkflowExecutions", len(o.CurrentReports), "allExecutionIDs", allExecutionIDs, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
+	r.lggr.Debugw("Outcome complete", "len", len(previousOutcome.Outcomes), "nAggregatedWorkflowExecutions", len(previousOutcome.CurrentReports), "allExecutionIDs", allExecutionIDs, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
 	return rawOutcome, err
 }
 

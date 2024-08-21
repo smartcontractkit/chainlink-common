@@ -29,28 +29,27 @@ type capabilityIface interface {
 	unregisterWorkflowID(workflowID string)
 }
 
-// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
-// This is affected by OCR round time.
-const outcomePruningThreshold = 3600
-
 type reportingPlugin struct {
-	batchSize int
-	s         *requests.Store
-	r         capabilityIface
-	config    ocr3types.ReportingPluginConfig
-	lggr      logger.Logger
+	batchSize               int
+	s                       *requests.Store
+	r                       capabilityIface
+	config                  ocr3types.ReportingPluginConfig
+	outcomePruningThreshold uint64
+	lggr                    logger.Logger
 }
 
-func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
+func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
+	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
 	// TODO: extract limits from OnchainConfig
 	// and perform validation.
 
 	return &reportingPlugin{
-		s:         s,
-		r:         r,
-		batchSize: batchSize,
-		config:    config,
-		lggr:      logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
+		s:                       s,
+		r:                       r,
+		batchSize:               batchSize,
+		config:                  config,
+		outcomePruningThreshold: outcomePruningThreshold,
+		lggr:                    logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
 	}, nil
 }
 
@@ -285,7 +284,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > outcomePruningThreshold {
+		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
 			delete(o.Outcomes, workflowID)
 			r.r.unregisterWorkflowID(workflowID)

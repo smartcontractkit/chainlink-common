@@ -12,10 +12,11 @@ import (
 )
 
 type factory struct {
-	store      *requests.Store
-	capability *capability
-	batchSize  int
-	lggr       logger.Logger
+	store                   *requests.Store
+	capability              *capability
+	batchSize               int
+	outcomePruningThreshold uint64
+	lggr                    logger.Logger
 
 	services.StateMachine
 }
@@ -25,17 +26,18 @@ const (
 	defaultMaxReportCount      = 20
 )
 
-func newFactory(s *requests.Store, c *capability, batchSize int, lggr logger.Logger) (*factory, error) {
+func newFactory(s *requests.Store, c *capability, batchSize int, outcomePruningThreshold uint64, lggr logger.Logger) (*factory, error) {
 	return &factory{
-		store:      s,
-		capability: c,
-		batchSize:  batchSize,
-		lggr:       logger.Named(lggr, "OCR3ReportingPluginFactory"),
+		store:                   s,
+		capability:              c,
+		batchSize:               batchSize,
+		outcomePruningThreshold: outcomePruningThreshold,
+		lggr:                    logger.Named(lggr, "OCR3ReportingPluginFactory"),
 	}, nil
 }
 
 func (o *factory) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
-	rp, err := newReportingPlugin(o.store, o.capability, o.batchSize, config, o.lggr)
+	rp, err := newReportingPlugin(o.store, o.capability, o.batchSize, config, o.outcomePruningThreshold, o.lggr)
 	info := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{

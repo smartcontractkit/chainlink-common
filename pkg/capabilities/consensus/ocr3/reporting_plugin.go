@@ -393,7 +393,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 				continue
 			}
 
-			report, err = enc.Encode(context.TODO(), *mv)
+			report, err = enc.Encode(context.Background(), *mv)
 			if err != nil {
 				r.lggr.Errorw("could not encode report for workflow", "error", err)
 				continue

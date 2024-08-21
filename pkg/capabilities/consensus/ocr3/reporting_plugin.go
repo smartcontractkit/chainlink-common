@@ -40,9 +40,6 @@ type reportingPlugin struct {
 
 func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
 	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
-	// TODO: extract limits from OnchainConfig
-	// and perform validation.
-
 	return &reportingPlugin{
 		s:                       s,
 		r:                       r,

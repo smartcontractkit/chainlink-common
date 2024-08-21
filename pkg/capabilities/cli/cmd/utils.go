@@ -26,11 +26,11 @@ func printFiles(dir string, files map[string]string) error {
 			}
 		}
 
-		if err := os.MkdirAll(path.Dir(file), 0600); err != nil {
+		if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
 			return err
 		}
 
-		if err := os.WriteFile(file, []byte(content), 0600); err != nil {
+		if err := os.WriteFile(file, []byte(content), 0666); err != nil {
 			return err
 		}
 	}

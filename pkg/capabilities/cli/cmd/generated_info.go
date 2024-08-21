@@ -22,6 +22,7 @@ type GeneratedInfo struct {
 	RootNumSlice   int
 	ExtraImports   []string
 	ID             *string
+	FullPackage    string
 }
 
 func (g GeneratedInfo) RootType() Struct {
@@ -55,6 +56,9 @@ func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (Generat
 
 	output := root.Outputs["Outputs"]
 
+	pkgParts := strings.Split(typeInfo.SchemaID, "/")
+	// skip http(s):// and drop the last part
+	fullPkg := strings.Join(pkgParts[2:len(pkgParts)-1], "/")
 	return GeneratedInfo{
 		Package:        pkg,
 		Config:         config,
@@ -66,6 +70,7 @@ func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (Generat
 		Input:          input,
 		ExtraImports:   extraImports,
 		ID:             capID,
+		FullPackage:    fullPkg,
 	}, nil
 }
 

@@ -36,7 +36,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "required": ["name", "number"]
+      "required": ["adapted_thing"]
     }
   },
   "additionalProperties": false,

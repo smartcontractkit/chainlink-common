@@ -76,7 +76,25 @@ func (j *ActionInputs) UnmarshalJSON(b []byte) error {
 
 type ActionOutputs struct {
 	// AdaptedThing corresponds to the JSON schema field "adapted_thing".
-	AdaptedThing *string `json:"adapted_thing,omitempty" yaml:"adapted_thing,omitempty" mapstructure:"adapted_thing,omitempty"`
+	AdaptedThing string `json:"adapted_thing" yaml:"adapted_thing" mapstructure:"adapted_thing"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ActionOutputs) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["adapted_thing"]; raw != nil && !ok {
+		return fmt.Errorf("field adapted_thing in ActionOutputs: required")
+	}
+	type Plain ActionOutputs
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = ActionOutputs(plain)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

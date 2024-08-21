@@ -94,8 +94,13 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	unmarshaled, err := pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
+	require.Equal(t, req, unmarshaled)
+
 	req.Metadata.ReferenceID = anyReferenceID
 	raw, err = pb.MarshalCapabilityRequest(req)
+	require.NoError(t, err)
+
+	unmarshaled, err = pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
 	require.Equal(t, req, unmarshaled)

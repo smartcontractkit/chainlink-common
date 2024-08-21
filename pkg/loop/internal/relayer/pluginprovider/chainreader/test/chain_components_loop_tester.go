@@ -1,4 +1,4 @@
-package chainreadertest
+package chaincomponentstest
 
 import (
 	"testing"
@@ -33,11 +33,11 @@ func TestAllEncodings(t *testing.T, test func(chainreader.EncodingVersion) func(
 
 type LoopTesterOpt func(*contractReaderLoopTester)
 
-// WrapChainReaderTesterForLoop allows you to test a [types.ContractReader] implementation behind a LOOP server
-func WrapChainReaderTesterForLoop(wrapped ChainReaderInterfaceTester[*testing.T], opts ...LoopTesterOpt) ChainReaderInterfaceTester[*testing.T] {
+// WrapChainComponentsTesterForLoop allows you to test a [types.ContractReader] implementation behind a LOOP server
+func WrapChainComponentsTesterForLoop(wrapped ChainComponentsInterfaceTester[*testing.T], opts ...LoopTesterOpt) ChainComponentsInterfaceTester[*testing.T] {
 	tester := &contractReaderLoopTester{
-		ChainReaderInterfaceTester: wrapped,
-		encodeWith:                 chainreader.DefaultEncodingVersion,
+		ChainComponentsInterfaceTester: wrapped,
+		encodeWith:                     chainreader.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -54,14 +54,14 @@ func WithChainReaderLoopEncoding(version chainreader.EncodingVersion) LoopTester
 }
 
 type contractReaderLoopTester struct {
-	ChainReaderInterfaceTester[*testing.T]
+	ChainComponentsInterfaceTester[*testing.T]
 	lst        loopServerTester
 	encodeWith chainreader.EncodingVersion
 }
 
 func (c *contractReaderLoopTester) Setup(t *testing.T) {
-	c.ChainReaderInterfaceTester.Setup(t)
-	chainReader := c.ChainReaderInterfaceTester.GetChainReader(t)
+	c.ChainComponentsInterfaceTester.Setup(t)
+	chainReader := c.ChainComponentsInterfaceTester.GetChainReader(t)
 
 	c.lst.registerHook = func(server *grpc.Server) {
 		if chainReader != nil {
@@ -78,5 +78,5 @@ func (c *contractReaderLoopTester) GetChainReader(t *testing.T) types.ContractRe
 }
 
 func (c *contractReaderLoopTester) Name() string {
-	return c.ChainReaderInterfaceTester.Name() + " on loop"
+	return c.ChainComponentsInterfaceTester.Name() + " on loop"
 }

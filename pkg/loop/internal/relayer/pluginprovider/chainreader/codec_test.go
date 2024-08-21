@@ -13,18 +13,18 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestCodecClient(t *testing.T) {
-	interfaceTester := chainreadertest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: &fakeCodec{}})
+	interfaceTester := chaincomponentstest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: &fakeCodec{}})
 	interfacetests.RunCodecInterfaceTests(t, interfaceTester)
 
 	es := &errCodec{}
-	esTester := chainreadertest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: es})
+	esTester := chaincomponentstest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: es})
 	esTester.Setup(t)
 	esCodec := esTester.GetCodec(t)
 
@@ -73,7 +73,7 @@ func TestCodecClient(t *testing.T) {
 
 	t.Run("Nil esCodec returns unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
-		nilTester := chainreadertest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: nil})
+		nilTester := chaincomponentstest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCodec := nilTester.GetCodec(t)
 

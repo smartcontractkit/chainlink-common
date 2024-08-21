@@ -19,7 +19,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
-	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -65,19 +65,19 @@ func TestVersionedBytesFunctions(t *testing.T) {
 	})
 }
 
-func TestChainReaderInterfaceTests(t *testing.T) {
+func TestChainComponentsInterfaceTests(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chaincomponentstest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
 			fake := &fakeChainReader{}
-			RunChainReaderInterfaceTests(
+			RunChainComponentsInterfaceTests(
 				t,
-				chainreadertest.WrapChainReaderTesterForLoop(
-					&fakeChainReaderInterfaceTester{impl: fake},
-					chainreadertest.WithChainReaderLoopEncoding(version),
+				chaincomponentstest.WrapChainComponentsTesterForLoop(
+					&fakeChainComponentsInterfaceTester{impl: fake},
+					chaincomponentstest.WithChainReaderLoopEncoding(version),
 				),
 				true,
 			)
@@ -88,14 +88,14 @@ func TestChainReaderInterfaceTests(t *testing.T) {
 func TestBind(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chaincomponentstest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(
-				&fakeChainReaderInterfaceTester{impl: es},
-				chainreadertest.WithChainReaderLoopEncoding(version),
+			errTester := chaincomponentstest.WrapChainComponentsTesterForLoop(
+				&fakeChainComponentsInterfaceTester{impl: es},
+				chaincomponentstest.WithChainReaderLoopEncoding(version),
 			)
 
 			errTester.Setup(t)
@@ -116,14 +116,14 @@ func TestBind(t *testing.T) {
 func TestGetLatestValue(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chaincomponentstest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(
-				&fakeChainReaderInterfaceTester{impl: es},
-				chainreadertest.WithChainReaderLoopEncoding(version),
+			errTester := chaincomponentstest.WrapChainComponentsTesterForLoop(
+				&fakeChainComponentsInterfaceTester{impl: es},
+				chaincomponentstest.WithChainReaderLoopEncoding(version),
 			)
 
 			errTester.Setup(t)
@@ -134,7 +134,7 @@ func TestGetLatestValue(t *testing.T) {
 
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chaincomponentstest.WrapChainComponentsTesterForLoop(&fakeChainComponentsInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -165,14 +165,14 @@ func TestGetLatestValue(t *testing.T) {
 func TestBatchGetLatestValues(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chaincomponentstest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(
-				&fakeChainReaderInterfaceTester{impl: es},
-				chainreadertest.WithChainReaderLoopEncoding(version),
+			errTester := chaincomponentstest.WrapChainComponentsTesterForLoop(
+				&fakeChainComponentsInterfaceTester{impl: es},
+				chaincomponentstest.WithChainReaderLoopEncoding(version),
 			)
 
 			errTester.Setup(t)
@@ -183,7 +183,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chaincomponentstest.WrapChainComponentsTesterForLoop(&fakeChainComponentsInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -214,24 +214,24 @@ func TestBatchGetLatestValues(t *testing.T) {
 func TestQueryKey(t *testing.T) {
 	t.Parallel()
 
-	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+	chaincomponentstest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
 			impl := &protoConversionTestChainReader{}
-			crTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl}, chainreadertest.WithChainReaderLoopEncoding(version))
+			crTester := chaincomponentstest.WrapChainComponentsTesterForLoop(&fakeChainComponentsInterfaceTester{impl: impl}, chaincomponentstest.WithChainReaderLoopEncoding(version))
 			crTester.Setup(t)
 			cr := crTester.GetChainReader(t)
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+			errTester := chaincomponentstest.WrapChainComponentsTesterForLoop(&fakeChainComponentsInterfaceTester{impl: es})
 			errTester.Setup(t)
 			chainReader := errTester.GetChainReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chaincomponentstest.WrapChainComponentsTesterForLoop(&fakeChainComponentsInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -270,13 +270,13 @@ func makeEncoder() cbor.EncMode {
 	return e
 }
 
-type fakeChainReaderInterfaceTester struct {
+type fakeChainComponentsInterfaceTester struct {
 	interfaceTesterBase
 	impl types.ContractReader
 	cw   fakeChainWriter
 }
 
-func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
+func (it *fakeChainComponentsInterfaceTester) Setup(_ *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	if ok {
 		fake.vals = []valConfidencePair{}
@@ -285,55 +285,55 @@ func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
 	}
 }
 
-func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.ContractReader {
+func (it *fakeChainComponentsInterfaceTester) GetChainReader(_ *testing.T) types.ContractReader {
 	return it.impl
 }
 
-func (it *fakeChainReaderInterfaceTester) GetChainWriter(_ *testing.T) types.ChainWriter {
+func (it *fakeChainComponentsInterfaceTester) GetChainWriter(_ *testing.T) types.ChainWriter {
 	it.cw.cr = it.impl.(*fakeChainReader)
 	return &it.cw
 }
 
-func (it *fakeChainReaderInterfaceTester) IncNonce() {}
+func (it *fakeChainComponentsInterfaceTester) IncNonce() {}
 
-func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
+func (it *fakeChainComponentsInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{
 		{Name: AnyContractName, Address: AnyContractName},
 		{Name: AnySecondContractName, Address: AnySecondContractName},
 	}
 }
 
-func (it *fakeChainReaderInterfaceTester) SetTestStructLatestValue(t *testing.T, testStruct *TestStruct) {
+func (it *fakeChainComponentsInterfaceTester) SetTestStructLatestValue(t *testing.T, testStruct *TestStruct) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.SetTestStructLatestValue(testStruct)
 }
 
-func (it *fakeChainReaderInterfaceTester) SetUintLatestValue(t *testing.T, val uint64, forCall ExpectedGetLatestValueArgs) {
+func (it *fakeChainComponentsInterfaceTester) SetUintLatestValue(t *testing.T, val uint64, forCall ExpectedGetLatestValueArgs) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.SetUintLatestValue(val, forCall)
 }
 
-func (it *fakeChainReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel) {
+func (it *fakeChainComponentsInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readName, confidenceLevel)
 }
 
-func (it *fakeChainReaderInterfaceTester) SetBatchLatestValues(t *testing.T, batchCallEntry BatchCallEntry) {
+func (it *fakeChainComponentsInterfaceTester) SetBatchLatestValues(t *testing.T, batchCallEntry BatchCallEntry) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.SetBatchLatestValues(batchCallEntry)
 }
 
-func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
+func (it *fakeChainComponentsInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.SetTrigger(testStruct)
 }
 
-func (it *fakeChainReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
+func (it *fakeChainComponentsInterfaceTester) MaxWaitTimeForEvents() time.Duration {
 	return time.Millisecond * 100
 }
 

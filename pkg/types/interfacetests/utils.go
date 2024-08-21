@@ -41,7 +41,7 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
-func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
+func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
 	if mockRun {
 		cw := tester.GetChainWriter(t)
 		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
@@ -66,7 +66,7 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], b
 	}
 }
 
-func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
+func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	txID := uuid.New().String()
 	cw := tester.GetChainWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
@@ -78,7 +78,7 @@ func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester
 	return txID
 }
 
-func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
+func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
 	ctx, cancel := context.WithTimeout(tests.Context(t), 5*time.Minute)
 	defer cancel()
 

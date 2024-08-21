@@ -79,6 +79,7 @@ func TestChainReaderInterfaceTests(t *testing.T) {
 					&fakeChainReaderInterfaceTester{impl: fake},
 					chainreadertest.WithChainReaderLoopEncoding(version),
 				),
+				true,
 			)
 		}
 	})
@@ -272,7 +273,7 @@ func makeEncoder() cbor.EncMode {
 type fakeChainReaderInterfaceTester struct {
 	interfaceTesterBase
 	impl types.ContractReader
-	cw   types.ChainWriter
+	cw   fakeChainWriter
 }
 
 func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
@@ -289,7 +290,8 @@ func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.Con
 }
 
 func (it *fakeChainReaderInterfaceTester) GetChainWriter(_ *testing.T) types.ChainWriter {
-	return it.cw
+	it.cw.cr = it.impl.(*fakeChainReader)
+	return &it.cw
 }
 
 func (it *fakeChainReaderInterfaceTester) IncNonce() {}
@@ -352,6 +354,52 @@ type fakeChainReader struct {
 	stored      []TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
+}
+
+type fakeChainWriter struct {
+	types.ChainWriter
+	cr *fakeChainReader
+}
+
+func (f *fakeChainWriter) SubmitTransaction(ctx context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
+	switch method {
+	case "addTestStruct":
+		v, ok := args.(TestStruct)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetTestStructLatestValue(&v)
+	case "setAlterablePrimitiveValue":
+		v, ok := args.(PrimitiveArgs)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetUintLatestValue(v.Value, ExpectedGetLatestValueArgs{})
+	case "triggerEvent":
+		v, ok := args.(TestStruct)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetTrigger(&v)
+	case "batchChainWrite":
+		v, ok := args.(BatchCallEntry)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetBatchLatestValues(v)
+	default:
+		return fmt.Errorf("unsupported method: %s", method)
+	}
+
+	return nil
+}
+
+func (f *fakeChainWriter) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+	return types.Finalized, nil
+}
+
+func (f *fakeChainWriter) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponents, error) {
+	return &types.ChainFeeComponents{}, nil
 }
 
 func (f *fakeChainReader) Start(_ context.Context) error { return nil }

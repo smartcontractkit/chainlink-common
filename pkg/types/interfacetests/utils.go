@@ -41,7 +41,12 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
-func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], batchCallEntry BatchCallEntry) {
+func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
+	if mockRun {
+		cw := tester.GetChainWriter(t)
+		cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		return
+	}
 	nameToAddress := make(map[string]string)
 	boundContracts := tester.GetBindings(t)
 	for _, bc := range boundContracts {
@@ -66,13 +71,13 @@ func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	require.NoError(t, err)
 
-	err = WaitForTransactionStatus(t, tester, txID, status)
+	err = WaitForTransactionStatus(t, tester, txID, status, false)
 	require.NoError(t, err)
 
 	return txID
 }
 
-func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string, status types.TransactionStatus) error {
+func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
 	ctx, cancel := context.WithTimeout(tests.Context(t), 5*time.Minute)
 	defer cancel()
 
@@ -85,6 +90,10 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainReaderInterfaceTes
 		case <-ctx.Done():
 			return fmt.Errorf("transaction %s not finalized within timeout period", txID)
 		case <-ticker.C:
+			if mockRun {
+				tester.GenerateBlocksTillConfidenceLevel(t, "", "", primitives.Finalized)
+				return nil
+			}
 			current, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
 			if err != nil {
 				return fmt.Errorf("failed to get transaction status: %w", err)

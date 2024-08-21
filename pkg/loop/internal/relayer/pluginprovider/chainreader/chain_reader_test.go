@@ -292,9 +292,7 @@ func (it *fakeChainReaderInterfaceTester) GetChainWriter(_ *testing.T) types.Cha
 	return it.cw
 }
 
-func (it *fakeChainReaderInterfaceTester) IncNonce() {
-	return
-}
+func (it *fakeChainReaderInterfaceTester) IncNonce() {}
 
 func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{

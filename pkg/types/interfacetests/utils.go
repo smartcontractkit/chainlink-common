@@ -66,7 +66,9 @@ func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainReaderInterfaceTester
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	require.NoError(t, err)
 
-	WaitForTransactionStatus(t, tester, txID, status)
+	err = WaitForTransactionStatus(t, tester, txID, status)
+	require.NoError(t, err)
+
 	return txID
 }
 

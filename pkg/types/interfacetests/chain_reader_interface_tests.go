@@ -113,7 +113,8 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 				var prim1 uint64
 				require.Error(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, primitives.Finalized, callArgs.Params, &prim1))
 
-				WaitForTransactionStatus(t, tester, txID, types.Finalized)
+				err := WaitForTransactionStatus(t, tester, txID, types.Finalized)
+				require.NoError(t, err)
 
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
 				assert.Equal(t, uint64(10), prim1)
@@ -217,7 +218,8 @@ func runChainReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Chain
 					return err != nil && assert.ErrorContains(t, err, types.ErrNotFound.Error())
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-				WaitForTransactionStatus(t, tester, txID, types.Finalized)
+				err := WaitForTransactionStatus(t, tester, txID, types.Finalized)
+				require.NoError(t, err)
 
 				ts2 := CreateTestStruct[T](3, tester)
 				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts2, contracts[0], types.Unconfirmed)

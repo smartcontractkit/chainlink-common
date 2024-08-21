@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"time"
 
+	"github.com/gogo/protobuf/sortkeys"
 	"google.golang.org/protobuf/proto"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
@@ -144,7 +146,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflowsIDs()
-	obs.Timestamp = uint64(time.Now().Unix())
+	obs.Timestamp = uint32(time.Now().Unix())
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -162,9 +164,8 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// execution ID -> oracle ID -> list of observations
 	m := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
-	timestampFreq := make(map[uint64]int)
-	var finalTimestamp uint64
-	maxFreq := 1
+	var sortedTimestamps []uint32
+	var finalTimestamp uint32
 	for _, o := range aos {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(o.Observation, obs)
@@ -186,12 +187,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			countedWorkflowIDs[id] = true
 		}
 
-		// Count the frequency of timestamps in the observations.
-		timestampFreq[obs.Timestamp]++
-		if timestampFreq[obs.Timestamp] > maxFreq {
-			maxFreq = timestampFreq[obs.Timestamp]
-			finalTimestamp = obs.Timestamp
-		}
+		sortedTimestamps = append(sortedTimestamps, obs.Timestamp)
 
 		for _, rq := range obs.Observations {
 			if rq == nil {
@@ -218,6 +214,18 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			m[weid][o.Observer] = obsList.Underlying
 		}
 	}
+
+	// Since we will most likely get N different timestamps, each with frequency=1, we get the median instead of the mode.
+	sortkeys.Uint32s(sortedTimestamps)
+	timestampCount := len(sortedTimestamps)
+	mid := timestampCount / 2
+	if timestampCount%2 == 1 {
+		finalTimestamp = sortedTimestamps[mid]
+	} else {
+		finalTimestamp = (sortedTimestamps[mid-1] + sortedTimestamps[mid]) / 2
+	}
+
+	fmt.Println("finalTimestamp: ", finalTimestamp)
 
 	q := &pbtypes.Query{}
 	err := proto.Unmarshal(query, q)

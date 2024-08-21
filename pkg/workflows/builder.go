@@ -8,13 +8,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
-// 1. Cap defines JSON schema for inputs and outputs of a cap.
-// Trigger: triggerOutputType := workflowBuilder.addTrigger(DataStreamsTrigger.ModifiedConfig{})
-// Adds metadata to the builder. Returns output type.
-// 2. Consensus: consensusOutputType := workflowBuilder.addConsensus(ConsensusConfig{
-// 	Inputs: triggerOutputType,
-// })
-
 type WorkflowSpecFactory struct {
 	spec           *WorkflowSpec
 	names          map[string]bool

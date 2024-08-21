@@ -303,34 +303,10 @@ func (it *fakeChainComponentsInterfaceTester) GetBindings(_ *testing.T) []types.
 	}
 }
 
-func (it *fakeChainComponentsInterfaceTester) SetTestStructLatestValue(t *testing.T, testStruct *TestStruct) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetTestStructLatestValue(testStruct)
-}
-
-func (it *fakeChainComponentsInterfaceTester) SetUintLatestValue(t *testing.T, val uint64, forCall ExpectedGetLatestValueArgs) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetUintLatestValue(val, forCall)
-}
-
 func (it *fakeChainComponentsInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readName, confidenceLevel)
-}
-
-func (it *fakeChainComponentsInterfaceTester) SetBatchLatestValues(t *testing.T, batchCallEntry BatchCallEntry) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetBatchLatestValues(batchCallEntry)
-}
-
-func (it *fakeChainComponentsInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetTrigger(testStruct)
 }
 
 func (it *fakeChainComponentsInterfaceTester) MaxWaitTimeForEvents() time.Duration {

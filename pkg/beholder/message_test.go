@@ -22,12 +22,6 @@ func ExampleMessage() {
 		"key_string": "new value",
 		"key_int32":  int32(1),
 	}
-	// Add more attributes
-	additionalAttributes.Add(
-		"key_string", "updated value", // this will overrider previous value
-		"key_int32", int32(2),
-		"key3", true,
-	)
 	// Add attributes to message
 	m1.AddAttributes(additionalAttributes)
 	fmt.Println("#2", m1)
@@ -89,17 +83,17 @@ func ExampleMessage() {
 	fmt.Println("#14", m6)
 	// Output:
 	// #1 Message{Attrs: map[key_string:value], Body: [1]}
-	// #2 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
+	// #2 Message{Attrs: map[key_int32:1 key_string:new value], Body: [1]}
 	// #3 Message{Attrs: map[], Body: []}
 	// #4 Message{Attrs: map[key_int:1], Body: []}
 	// #5 Message{Attrs: map[key_int:2], Body: []}
 	// #6 Message{Attrs: map[key_int:2], Body: [48 49 50 51]}
 	// #7 Message{Attrs: map[], Body: [48 49 50 51]}
 	// #8 Message{Attrs: map[], Body: []}
-	// #9 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [1]}
-	// #10 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
-	// #11 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
-	// #12 Message{Attrs: map[key3:true key_int32:2 key_string:updated value], Body: [2]}
+	// #9 Message{Attrs: map[key_int32:1 key_string:new value], Body: [1]}
+	// #10 Message{Attrs: map[key_int32:1 key_string:new value], Body: [2]}
+	// #11 Message{Attrs: map[key_int32:1 key_string:new value], Body: [2]}
+	// #12 Message{Attrs: map[key_int32:1 key_string:new value], Body: [2]}
 	// #13 Message{Attrs: map[key1:value5 key2:value6 key3:value3 key4:value4], Body: [1]}
 	// #14 Message{Attrs: map[key1:value1 key2:value2], Body: [1]}
 }

@@ -64,23 +64,14 @@ func (m Metadata) Attributes() Attributes {
 	}
 }
 
-type Attributes map[string]any
+type Attributes = map[string]any
 
-func NewAttributes(attrKVs ...any) Attributes {
-	attrs := make(Attributes, len(attrKVs)/2)
-	attrs.Add(attrKVs...)
-	return attrs
-}
+func newAttributes(attrKVs ...any) Attributes {
+	a := make(Attributes, len(attrKVs)/2)
 
-func (a Attributes) Add(attrKVs ...any) Attributes {
 	l := len(attrKVs)
 	for i := 0; i < l; {
 		switch t := attrKVs[i].(type) {
-		case map[string]any:
-			for k, v := range t {
-				a[k] = v
-			}
-			i++
 		case Attributes:
 			for k, v := range t {
 				a[k] = v
@@ -104,26 +95,17 @@ func (a Attributes) Add(attrKVs ...any) Attributes {
 func NewMessage(body []byte, attrKVs ...any) Message {
 	return Message{
 		Body:  body,
-		Attrs: NewAttributes(attrKVs...),
+		Attrs: newAttributes(attrKVs...),
 	}
 }
 
 func (e *Message) AddAttributes(attrKVs ...any) {
-	attrs := NewAttributes(attrKVs...)
+	attrs := newAttributes(attrKVs...)
 	if e.Attrs == nil {
-		e.Attrs = make(map[string]any, len(attrs))
+		e.Attrs = make(map[string]any, len(attrs)/2)
 	}
 	for k, v := range attrs {
 		e.Attrs[k] = v
-	}
-}
-
-func (e *Message) AddOtelAttributes(attrs ...attribute.KeyValue) {
-	if e.Attrs == nil {
-		e.Attrs = make(map[string]any, len(attrs))
-	}
-	for _, v := range attrs {
-		e.Attrs[string(v.Key)] = v.Value
 	}
 }
 

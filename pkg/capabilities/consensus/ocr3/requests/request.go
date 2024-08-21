@@ -36,6 +36,7 @@ func (r *Request) Copy() *Request {
 		ExpiresAt:                r.ExpiresAt,
 		WorkflowExecutionID:      r.WorkflowExecutionID,
 		WorkflowID:               r.WorkflowID,
+		WorkflowName:             r.WorkflowName,
 		WorkflowOwner:            r.WorkflowOwner,
 		WorkflowDonID:            r.WorkflowDonID,
 		WorkflowDonConfigVersion: r.WorkflowDonConfigVersion,

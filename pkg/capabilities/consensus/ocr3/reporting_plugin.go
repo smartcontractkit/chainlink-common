@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/sortkeys"
@@ -218,10 +217,9 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	if timestampCount%2 == 1 {
 		finalTimestamp = sortedTimestamps[mid]
 	} else {
-		finalTimestamp = (sortedTimestamps[mid-1] + sortedTimestamps[mid]) / 2
+		// a + (b-a) / 2 to avoid overflows
+		finalTimestamp = sortedTimestamps[mid-1] + (sortedTimestamps[mid]-sortedTimestamps[mid-1])/2
 	}
-
-	fmt.Println("finalTimestamp: ", finalTimestamp)
 
 	q := &pbtypes.Query{}
 	err := proto.Unmarshal(query, q)

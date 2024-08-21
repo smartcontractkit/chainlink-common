@@ -44,7 +44,8 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 func batchChainWrite[T TestingT[T]](t T, tester ChainReaderInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
 	if mockRun {
 		cw := tester.GetChainWriter(t)
-		cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		require.NoError(t, err)
 		return
 	}
 	nameToAddress := make(map[string]string)

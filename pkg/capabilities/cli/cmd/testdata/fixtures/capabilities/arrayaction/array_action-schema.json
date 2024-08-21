@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction/array-test-action@1.0.0",
+  "description": "Array Test Action",
+  "properties": {
+    "config": {
+      "type": "object",
+      "properties": {
+        "details": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "number": {
+              "type": "integer",
+              "description": "The interval in seconds after which a new trigger event is generated.",
+              "minimum": 1
+            }
+          },
+          "required": ["name", "number"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["details"],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "input_thing": {
+              "type": "boolean"
+            }
+          },
+          "required": ["input_thing"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["metadata"],
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "adapted_thing": {
+                "type": "string"
+              }
+            },
+            "required": ["adapted_thing"],
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

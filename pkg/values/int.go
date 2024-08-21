@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
@@ -88,6 +89,26 @@ func (i *Int64) UnwrapTo(to any) error {
 	case *any:
 		*tv = i.Underlying
 		return nil
+	}
+
+	rv := reflect.ValueOf(to)
+	if rv.Kind() == reflect.Ptr {
+		switch rv.Elem().Kind() {
+		case reflect.Int64:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int64(0)))).Interface())
+		case reflect.Int32:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int32(0)))).Interface())
+		case reflect.Int:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int(0)))).Interface())
+		case reflect.Uint64:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint64(0)))).Interface())
+		case reflect.Uint32:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint32(0)))).Interface())
+		case reflect.Uint:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint(0)))).Interface())
+		default:
+			// fall through to the error, default is required by lint
+		}
 	}
 
 	return fmt.Errorf("cannot unwrap to type %T", to)

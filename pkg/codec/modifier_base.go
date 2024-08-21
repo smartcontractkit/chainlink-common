@@ -27,7 +27,7 @@ func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType st
 			err = fmt.Errorf("%w: %v", types.ErrInvalidType, r)
 		}
 	}()
-	if m.fields == nil || len(m.fields) == 0 {
+	if len(m.fields) == 0 {
 		m.offToOnChainType[onChainType] = onChainType
 		m.onToOffChainType[onChainType] = onChainType
 		return onChainType, nil

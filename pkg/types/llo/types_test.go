@@ -39,6 +39,7 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 	require.NoError(t, err)
 
 	marshaledJSON, err := json.Marshal(channelDefinitions)
+	require.NoError(t, err)
 
 	assert.JSONEq(t, inputJSON, string(marshaledJSON))
 

@@ -35,6 +35,7 @@ message RequestMetadata {
   string workflow_name = 4;
   uint32 workflow_don_id = 6;
   uint32 workflow_don_config_version = 7;
+  string reference_id = 8;
 }
 
 message CapabilityRequest {

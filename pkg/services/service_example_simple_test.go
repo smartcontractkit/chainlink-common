@@ -7,7 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 
-	. "github.com/smartcontractkit/chainlink-common/pkg/internal/example"
+	. "github.com/smartcontractkit/chainlink-common/pkg/internal/example" // nolint
 )
 
 type simple struct {
@@ -18,6 +18,8 @@ func NewSimple(lggr logger.Logger) *simple {
 	return &simple{Service: services.Config{Name: "Example"}.NewService(lggr)}
 }
 
+// The name makes sense for the test even though there's no ExampleService struct
+// nolint
 func ExampleNewService() {
 	lggr, err := Logger()
 	if err != nil {

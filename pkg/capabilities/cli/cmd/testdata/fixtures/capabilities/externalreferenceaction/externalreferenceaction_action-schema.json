@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/externalreferenceaction/external-reference-test-action@1.0.0",
+  "description": "External Reference Test Action",
+  "properties": {
+    "config": {
+      "$ref": "../referenceaction/reference_action-schema.json#/$defs/SomeConfig"
+    },
+    "inputs": {
+      "$ref": "../referenceaction/reference_action-schema.json#/$defs/SomeInputs"
+    },
+    "outputs": {
+      "$ref": "../referenceaction/reference_action-schema.json#/$defs/SomeOutputs"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

@@ -269,39 +269,17 @@ func (j *FeedValue) UnmarshalJSON(b []byte) error {
 }
 
 type SignedReport struct {
-	// Err corresponds to the JSON schema field "Err".
-	Err bool `json:"Err" yaml:"Err" mapstructure:"Err"`
+	// Context corresponds to the JSON schema field "Context".
+	Context string `json:"Context" yaml:"Context" mapstructure:"Context"`
 
-	// Value corresponds to the JSON schema field "Value".
-	Value SignedReportValue `json:"Value" yaml:"Value" mapstructure:"Value"`
+	// ID corresponds to the JSON schema field "ID".
+	ID string `json:"ID" yaml:"ID" mapstructure:"ID"`
 
-	// WorkflowExecutionID corresponds to the JSON schema field "WorkflowExecutionID".
-	WorkflowExecutionID string `json:"WorkflowExecutionID" yaml:"WorkflowExecutionID" mapstructure:"WorkflowExecutionID"`
-}
+	// Report corresponds to the JSON schema field "Report".
+	Report string `json:"Report" yaml:"Report" mapstructure:"Report"`
 
-type SignedReportValue struct {
-	// Underlying corresponds to the JSON schema field "Underlying".
-	Underlying SignedReportValueUnderlying `json:"Underlying" yaml:"Underlying" mapstructure:"Underlying"`
-}
-
-type SignedReportValueUnderlying map[string]interface{}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *SignedReportValue) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["Underlying"]; raw != nil && !ok {
-		return fmt.Errorf("field Underlying in SignedReportValue: required")
-	}
-	type Plain SignedReportValue
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = SignedReportValue(plain)
-	return nil
+	// Signatures corresponds to the JSON schema field "Signatures".
+	Signatures []string `json:"Signatures,omitempty" yaml:"Signatures,omitempty" mapstructure:"Signatures,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -310,14 +288,14 @@ func (j *SignedReport) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["Err"]; raw != nil && !ok {
-		return fmt.Errorf("field Err in SignedReport: required")
+	if _, ok := raw["Context"]; raw != nil && !ok {
+		return fmt.Errorf("field Context in SignedReport: required")
 	}
-	if _, ok := raw["Value"]; raw != nil && !ok {
-		return fmt.Errorf("field Value in SignedReport: required")
+	if _, ok := raw["ID"]; raw != nil && !ok {
+		return fmt.Errorf("field ID in SignedReport: required")
 	}
-	if _, ok := raw["WorkflowExecutionID"]; raw != nil && !ok {
-		return fmt.Errorf("field WorkflowExecutionID in SignedReport: required")
+	if _, ok := raw["Report"]; raw != nil && !ok {
+		return fmt.Errorf("field Report in SignedReport: required")
 	}
 	type Plain SignedReport
 	var plain Plain

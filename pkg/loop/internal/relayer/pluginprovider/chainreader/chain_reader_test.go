@@ -355,9 +355,6 @@ type fakeChainReader struct {
 	vals        []valConfidencePair
 	triggers    []eventConfidencePair
 	stored      []TestStruct
-	vals        []valConfidencePair
-	triggers    []eventConfidencePair
-	stored      []TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
 	isStarted   bool

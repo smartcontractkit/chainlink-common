@@ -1,4 +1,4 @@
-package global_test
+package beholder_test
 
 import (
 	"strings"
@@ -18,15 +18,14 @@ import (
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/global"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestGlobal(t *testing.T) {
 	// Get global logger, tracer, meter, messageEmitter
-	// If not initialized with global.SetClient will return noop client
-	logger, tracer, meter, messageEmitter := global.Logger(), global.Tracer(), global.Meter(), global.Emitter()
+	// If not initialized with beholder.SetClient will return noop client
+	logger, tracer, meter, messageEmitter := beholder.Logger(), beholder.Tracer(), beholder.Meter(), beholder.Emitter()
 	noopClient := beholder.NewNoopClient()
 	assert.IsType(t, otellognoop.Logger{}, logger)
 	assert.IsType(t, oteltracenoop.Tracer{}, tracer)
@@ -35,15 +34,15 @@ func TestGlobal(t *testing.T) {
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
 	var noopClientPtr *beholder.OtelClient = &noopClient
-	assert.IsType(t, noopClientPtr, global.GetClient())
-	assert.NotSame(t, noopClientPtr, global.GetClient())
+	assert.IsType(t, noopClientPtr, beholder.GetClient())
+	assert.NotSame(t, noopClientPtr, beholder.GetClient())
 
-	// Set global client so it will be accessible from anywhere through beholder/global functions
-	global.SetClient(noopClientPtr)
-	assert.Same(t, noopClientPtr, global.GetClient())
+	// Set beholder client so it will be accessible from anywhere through beholder functions
+	beholder.SetClient(noopClientPtr)
+	assert.Same(t, noopClientPtr, beholder.GetClient())
 
-	// After that use global functions to get logger, tracer, meter, messageEmitter
-	logger, tracer, meter, messageEmitter = global.Logger(), global.Tracer(), global.Meter(), global.Emitter()
+	// After that use beholder functions to get logger, tracer, meter, messageEmitter
+	logger, tracer, meter, messageEmitter = beholder.Logger(), beholder.Tracer(), beholder.Meter(), beholder.Emitter()
 
 	// Emit otel log record
 	logger.Emit(tests.Context(t), otellog.Record{})
@@ -78,10 +77,10 @@ func TestClient_SetGlobalOtelProviders(t *testing.T) {
 	var b strings.Builder
 	client := beholder.NewStdoutClient(beholder.WithWriter(&b))
 	// Set global Otel Client
-	global.SetClient(&client)
+	beholder.SetClient(&client)
 
-	// Set global otel tracer, meter, logger providers from global client
-	global.SetGlobalOtelProviders()
+	// Set global otel tracer, meter, logger providers from global beholder otel client
+	beholder.SetGlobalOtelProviders()
 
 	assert.Equal(t, client.LoggerProvider, otellogglobal.GetLoggerProvider())
 	assert.Equal(t, client.TracerProvider, otel.GetTracerProvider())

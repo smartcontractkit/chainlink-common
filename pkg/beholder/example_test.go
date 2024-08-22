@@ -10,9 +10,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 
-	// chainlink-common
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/global"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 )
 
@@ -26,8 +24,8 @@ func ExampleBeholderCustomMessage() {
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
-	// Set global client so it will be accessible from anywhere through beholder/global functions
-	global.SetClient(&otelClient)
+	// Set global client so it will be accessible from anywhere through beholder functions
+	beholder.SetClient(&otelClient)
 
 	// Define a custom protobuf payload to emit
 	payload := &pb.TestCustomMessage{
@@ -44,8 +42,7 @@ func ExampleBeholderCustomMessage() {
 	// Emit the custom message anywhere from application logic
 	fmt.Println("Emit custom messages")
 	for range 10 {
-		// global.Emitter().Emit() can be used as well if passing otelClient is not an option
-		err := global.Emitter().Emit(context.Background(), payloadBytes,
+		err := beholder.Emitter().Emit(context.Background(), payloadBytes,
 			"beholder_data_schema", "/custom-message/versions/1", // required
 			"beholder_data_type", "custom_message",
 			"foo", "bar",
@@ -68,17 +65,17 @@ func ExampleBeholderMetricTraces() {
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
-	// Set global client so it will be accessible from anywhere through beholder/global functions
-	global.SetClient(&otelClient)
+	// Set global client so it will be accessible from anywhere through beholder functions
+	beholder.SetClient(&otelClient)
 
 	// Define a new counter
-	counter, err := global.Meter().Int64Counter("custom_message.count")
+	counter, err := beholder.Meter().Int64Counter("custom_message.count")
 	if err != nil {
 		log.Fatalf("failed to create new counter")
 	}
 
 	// Define a new gauge
-	gauge, err := global.Meter().Int64Gauge("custom_message.gauge")
+	gauge, err := beholder.Meter().Int64Gauge("custom_message.gauge")
 	if err != nil {
 		log.Fatalf("failed to create new gauge")
 	}
@@ -89,7 +86,7 @@ func ExampleBeholderMetricTraces() {
 	gauge.Record(ctx, rand.Int63n(101))
 
 	fmt.Println("Create new trace span")
-	_, rootSpan := global.Tracer().Start(ctx, "foo", trace.WithAttributes(
+	_, rootSpan := beholder.Tracer().Start(ctx, "foo", trace.WithAttributes(
 		attribute.String("app_name", "beholderdemo"),
 	))
 	defer rootSpan.End()
@@ -103,7 +100,7 @@ func ExampleNoopBeholder() {
 
 	fmt.Println("Emitting custom message via noop otel client")
 
-	err := global.Emitter().Emit(context.Background(), []byte("test message"),
+	err := beholder.Emitter().Emit(context.Background(), []byte("test message"),
 		"beholder_data_schema", "/custom-message/versions/1", // required
 	)
 	if err != nil {

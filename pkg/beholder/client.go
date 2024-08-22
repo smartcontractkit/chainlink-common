@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type Emitter interface {
+type MessageEmitter interface {
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
 }
@@ -42,7 +42,7 @@ type OtelClient struct {
 	// Meter
 	Meter otelmetric.Meter
 	// Message Emitter
-	Emitter Emitter
+	Emitter MessageEmitter
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
@@ -202,7 +202,7 @@ func (c OtelClient) ForPackage(name string) OtelClient {
 
 type errorHandlerFunc func(err error)
 
-// Sets the global error handler for OpenTelemetry
+// Sets global error handler for OpenTelemetry
 func setOtelErrorHandler(h errorHandlerFunc) {
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(h))
 }

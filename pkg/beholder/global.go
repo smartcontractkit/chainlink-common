@@ -1,4 +1,4 @@
-package global
+package beholder
 
 import (
 	"sync/atomic"
@@ -9,21 +9,19 @@ import (
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	oteltrace "go.opentelemetry.io/otel/trace"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
 // Pointer to the global Beholder Client
 var globalClient = defaultClient()
 
 // SetClient sets the global Beholder Client
-func SetClient(client *beholder.OtelClient) {
+func SetClient(client *OtelClient) {
 	globalClient.Store(client)
 }
 
 // Returns the global Beholder Client
 // Its thread-safe and can be used concurrently
-func GetClient() *beholder.OtelClient {
+func GetClient() *OtelClient {
 	return globalClient.Load()
 }
 
@@ -39,23 +37,19 @@ func Meter() otelmetric.Meter {
 	return GetClient().Meter
 }
 
-func Emitter() beholder.Emitter {
+func Emitter() MessageEmitter {
 	return GetClient().Emitter
 }
 
-func defaultClient() *atomic.Pointer[beholder.OtelClient] {
-	ptr := &atomic.Pointer[beholder.OtelClient]{}
-	client := beholder.NewNoopClient()
+func defaultClient() *atomic.Pointer[OtelClient] {
+	ptr := &atomic.Pointer[OtelClient]{}
+	client := NewNoopClient()
 	ptr.Store(&client)
 	return ptr
 }
 
-// Sets the global OTel logger, tracer, meter providers from OtelClient
-// Makes them accessible from anywhere in the code via global otel getters:
-// - otellog.GetLoggerProvider()
-// - otel.GetTracerProvider()
-// - otel.GetTextMapPropagator()
-// - otel.GetMeterProvider()
+// Sets global OTel logger, tracer, meter providers from OtelClient.
+// Makes them accessible from anywhere in the code via global otel getters.
 // Any package that relies on go.opentelemetry.io will be able to pick up configured global providers
 // e.g [otelgrpc](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc#example-NewServerHandler)
 func SetGlobalOtelProviders() {

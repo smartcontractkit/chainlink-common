@@ -10,7 +10,6 @@ require (
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
-	github.com/gogo/protobuf v1.3.2
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -141,7 +142,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflowsIDs()
-	obs.Timestamp = uint32(time.Now().Unix())
+	obs.Timestamp = timestamppb.New(time.Now())
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -159,8 +160,8 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	// execution ID -> oracle ID -> list of observations
 	execIDToOracleObservations := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
-	var sortedTimestamps []uint32
-	var finalTimestamp uint32
+	var sortedTimestamps []*timestamppb.Timestamp
+	var finalTimestamp *timestamppb.Timestamp
 	for _, attributedObservation := range attributedObservations {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(attributedObservation.Observation, obs)
@@ -211,14 +212,24 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	}
 
 	// Since we will most likely get N different timestamps, each with frequency=1, we get the median instead of the mode.
-	slices.Sort(sortedTimestamps)
+	slices.SortFunc(sortedTimestamps, func(a, b *timestamppb.Timestamp) int {
+		if a.AsTime().Before(b.AsTime()) {
+			return -1
+		}
+		if a.AsTime().After(b.AsTime()) {
+			return 1
+		}
+		return 0
+	})
 	timestampCount := len(sortedTimestamps)
 	mid := timestampCount / 2
 	if timestampCount%2 == 1 {
 		finalTimestamp = sortedTimestamps[mid]
 	} else {
+		a := sortedTimestamps[mid-1].AsTime().Unix()
+		b := sortedTimestamps[mid].AsTime().Unix()
 		// a + (b-a) / 2 to avoid overflows
-		finalTimestamp = sortedTimestamps[mid-1] + (sortedTimestamps[mid]-sortedTimestamps[mid-1])/2
+		finalTimestamp = timestamppb.New(time.Unix(a+(b-a)/2, 0))
 	}
 
 	q := &pbtypes.Query{}
@@ -384,7 +395,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			meta := &pbtypes.Metadata{
 				Version:          1,
 				ExecutionID:      id.WorkflowExecutionId,
-				Timestamp:        outcome.Timestamp,
+				Timestamp:        uint32(outcome.Timestamp.AsTime().Unix()),
 				DONID:            id.WorkflowDonId,
 				DONConfigVersion: id.WorkflowDonConfigVersion,
 				WorkflowID:       id.WorkflowId,

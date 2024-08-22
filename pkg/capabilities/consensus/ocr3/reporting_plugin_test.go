@@ -4,11 +4,13 @@ import (
 	"context"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -693,6 +695,9 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 	require.NoError(t, err)
 	o, err := values.NewList([]any{"hello"})
 	require.NoError(t, err)
+	time1 := time.Now().Add(time.Second * 1)
+	time2 := time.Now().Add(time.Second * 2)
+	time3 := time.Now().Add(time.Second * 3)
 	obs := &pbtypes.Observations{
 		Observations: []*pbtypes.Observation{
 			{
@@ -709,7 +714,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 			},
 		},
 		RegisteredWorkflowIds: []string{workflowTestID, workflowTestID2},
-		Timestamp:             uint32(3),
+		Timestamp:             timestamppb.New(time1),
 	}
 	obs2 := &pbtypes.Observations{
 		Observations: []*pbtypes.Observation{
@@ -727,7 +732,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 			},
 		},
 		RegisteredWorkflowIds: []string{workflowTestID},
-		Timestamp:             uint32(1),
+		Timestamp:             timestamppb.New(time2),
 	}
 	obs3 := &pbtypes.Observations{
 		Observations: []*pbtypes.Observation{
@@ -745,7 +750,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 			},
 		},
 		RegisteredWorkflowIds: []string{workflowTestID},
-		Timestamp:             uint32(2),
+		Timestamp:             timestamppb.New(time3),
 	}
 
 	rawObs, err := proto.Marshal(obs)
@@ -775,5 +780,5 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 	err = proto.Unmarshal(outcome, opb1)
 	require.NoError(t, err)
 
-	assert.Equal(t, uint32(2), opb1.Outcomes[workflowTestID].Timestamp)
+	assert.Equal(t, timestamppb.New(time2), opb1.Outcomes[workflowTestID].Timestamp)
 }

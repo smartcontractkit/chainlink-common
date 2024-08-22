@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"slices"
 	"time"
 
-	"github.com/gogo/protobuf/sortkeys"
 	"google.golang.org/protobuf/proto"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"

@@ -2,8 +2,10 @@
 
 package notstreams
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Feed struct {
 	// Object containing two benchmark prices extracted from the fullReport.

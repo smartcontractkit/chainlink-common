@@ -3,185 +3,177 @@
 package ocr3
 
 import (
-    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows"
-    streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
+func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory, ref string, input ConsensusInput) SignedReportCap {
 
+	def := workflows.StepDefinition{
+		ID: "offchain_reporting@1.0.0", Ref: ref,
+		Inputs: input.ToSteps(),
+		Config: map[string]any{
+			"aggregation_config": cfg.AggregationConfig,
+			"aggregation_method": cfg.AggregationMethod,
+			"encoder":            cfg.Encoder,
+			"encoder_config":     cfg.EncoderConfig,
+			"report_id":          cfg.ReportId,
+		},
+		CapabilityType: capabilities.CapabilityTypeConsensus,
+	}
 
-func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory,ref string, input ConsensusInput)SignedReportCap {
-    
-    def := workflows.StepDefinition{
-       ID: "offchain_reporting@1.0.0",Ref: ref,
-       Inputs: input.ToSteps(),
-       Config: map[string]any{
-           "aggregation_config": cfg.AggregationConfig,
-           "aggregation_method": cfg.AggregationMethod,
-           "encoder": cfg.Encoder,
-           "encoder_config": cfg.EncoderConfig,
-           "report_id": cfg.ReportId,
-       },
-       CapabilityType: capabilities.CapabilityTypeConsensus,
-   }
-
-
-    step := workflows.Step[SignedReport]{Definition: def}
-    return SignedReportCapFromStep(w, step)
+	step := workflows.Step[SignedReport]{Definition: def}
+	return SignedReportCapFromStep(w, step)
 }
-
 
 type FeedValueCap interface {
-    workflows.CapDefinition[FeedValue]
-    Deviation() workflows.CapDefinition[string]
-    Heartbeat() workflows.CapDefinition[int]
-    RemappedID() workflows.CapDefinition[string]
-    private()
+	workflows.CapDefinition[FeedValue]
+	Deviation() workflows.CapDefinition[string]
+	Heartbeat() workflows.CapDefinition[int]
+	RemappedID() workflows.CapDefinition[string]
+	private()
 }
-
 
 // FeedValueCapFromStep should only be called from generated code to assure type safety
 func FeedValueCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[FeedValue]) FeedValueCap {
-    raw :=  step.AddTo(w)
-    return &feedValue{CapDefinition: raw}
+	raw := step.AddTo(w)
+	return &feedValue{CapDefinition: raw}
 }
 
-
 type feedValue struct {
-    workflows.CapDefinition[FeedValue]
+	workflows.CapDefinition[FeedValue]
 }
 
 func (*feedValue) private() {}
 func (c *feedValue) Deviation() workflows.CapDefinition[string] {
-    return workflows.AccessField[FeedValue, string](c.CapDefinition, "Deviation")
+	return workflows.AccessField[FeedValue, string](c.CapDefinition, "Deviation")
 }
 func (c *feedValue) Heartbeat() workflows.CapDefinition[int] {
-    return workflows.AccessField[FeedValue, int](c.CapDefinition, "Heartbeat")
+	return workflows.AccessField[FeedValue, int](c.CapDefinition, "Heartbeat")
 }
 func (c *feedValue) RemappedID() workflows.CapDefinition[string] {
-    return workflows.AccessField[FeedValue, string](c.CapDefinition, "RemappedID")
+	return workflows.AccessField[FeedValue, string](c.CapDefinition, "RemappedID")
 }
 
 func NewFeedValueFromFields(
-                                                                        deviation workflows.CapDefinition[string],
-                                                                        heartbeat workflows.CapDefinition[int],
-                                                                        remappedID workflows.CapDefinition[string],) FeedValueCap {
-    return &simpleFeedValue{
-        CapDefinition: workflows.ComponentCapDefinition[FeedValue]{
-        "deviation": deviation.Ref(),
-        "heartbeat": heartbeat.Ref(),
-        "remappedID": remappedID.Ref(),
-        },
-        deviation: deviation,
-        heartbeat: heartbeat,
-        remappedID: remappedID,
-    }
+	deviation workflows.CapDefinition[string],
+	heartbeat workflows.CapDefinition[int],
+	remappedID workflows.CapDefinition[string]) FeedValueCap {
+	return &simpleFeedValue{
+		CapDefinition: workflows.ComponentCapDefinition[FeedValue]{
+			"deviation":  deviation.Ref(),
+			"heartbeat":  heartbeat.Ref(),
+			"remappedID": remappedID.Ref(),
+		},
+		deviation:  deviation,
+		heartbeat:  heartbeat,
+		remappedID: remappedID,
+	}
 }
 
 type simpleFeedValue struct {
-    workflows.CapDefinition[FeedValue]
-    deviation workflows.CapDefinition[string]
-    heartbeat workflows.CapDefinition[int]
-    remappedID workflows.CapDefinition[string]
+	workflows.CapDefinition[FeedValue]
+	deviation  workflows.CapDefinition[string]
+	heartbeat  workflows.CapDefinition[int]
+	remappedID workflows.CapDefinition[string]
 }
+
 func (c *simpleFeedValue) Deviation() workflows.CapDefinition[string] {
-    return c.deviation
+	return c.deviation
 }
 func (c *simpleFeedValue) Heartbeat() workflows.CapDefinition[int] {
-    return c.heartbeat
+	return c.heartbeat
 }
 func (c *simpleFeedValue) RemappedID() workflows.CapDefinition[string] {
-    return c.remappedID
+	return c.remappedID
 }
 
 func (c *simpleFeedValue) private() {}
 
-
 type SignedReportCap interface {
-    workflows.CapDefinition[SignedReport]
-    Context() workflows.CapDefinition[string]
-    ID() workflows.CapDefinition[string]
-    Report() workflows.CapDefinition[string]
-    Signatures() workflows.CapDefinition[[]string]
-    private()
+	workflows.CapDefinition[SignedReport]
+	Context() workflows.CapDefinition[string]
+	ID() workflows.CapDefinition[string]
+	Report() workflows.CapDefinition[string]
+	Signatures() workflows.CapDefinition[[]string]
+	private()
 }
-
 
 // SignedReportCapFromStep should only be called from generated code to assure type safety
 func SignedReportCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[SignedReport]) SignedReportCap {
-    raw :=  step.AddTo(w)
-    return &signedReport{CapDefinition: raw}
+	raw := step.AddTo(w)
+	return &signedReport{CapDefinition: raw}
 }
 
-
 type signedReport struct {
-    workflows.CapDefinition[SignedReport]
+	workflows.CapDefinition[SignedReport]
 }
 
 func (*signedReport) private() {}
 func (c *signedReport) Context() workflows.CapDefinition[string] {
-    return workflows.AccessField[SignedReport, string](c.CapDefinition, "Context")
+	return workflows.AccessField[SignedReport, string](c.CapDefinition, "Context")
 }
 func (c *signedReport) ID() workflows.CapDefinition[string] {
-    return workflows.AccessField[SignedReport, string](c.CapDefinition, "ID")
+	return workflows.AccessField[SignedReport, string](c.CapDefinition, "ID")
 }
 func (c *signedReport) Report() workflows.CapDefinition[string] {
-    return workflows.AccessField[SignedReport, string](c.CapDefinition, "Report")
+	return workflows.AccessField[SignedReport, string](c.CapDefinition, "Report")
 }
 func (c *signedReport) Signatures() workflows.CapDefinition[[]string] {
-    return workflows.AccessField[SignedReport, []string](c.CapDefinition, "Signatures")
+	return workflows.AccessField[SignedReport, []string](c.CapDefinition, "Signatures")
 }
 
 func NewSignedReportFromFields(
-                                                                        context workflows.CapDefinition[string],
-                                                                        iD workflows.CapDefinition[string],
-                                                                        report workflows.CapDefinition[string],
-                                                                        signatures workflows.CapDefinition[[]string],) SignedReportCap {
-    return &simpleSignedReport{
-        CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
-        "context": context.Ref(),
-        "iD": iD.Ref(),
-        "report": report.Ref(),
-        "signatures": signatures.Ref(),
-        },
-        context: context,
-        iD: iD,
-        report: report,
-        signatures: signatures,
-    }
+	context workflows.CapDefinition[string],
+	iD workflows.CapDefinition[string],
+	report workflows.CapDefinition[string],
+	signatures workflows.CapDefinition[[]string]) SignedReportCap {
+	return &simpleSignedReport{
+		CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
+			"context":    context.Ref(),
+			"iD":         iD.Ref(),
+			"report":     report.Ref(),
+			"signatures": signatures.Ref(),
+		},
+		context:    context,
+		iD:         iD,
+		report:     report,
+		signatures: signatures,
+	}
 }
 
 type simpleSignedReport struct {
-    workflows.CapDefinition[SignedReport]
-    context workflows.CapDefinition[string]
-    iD workflows.CapDefinition[string]
-    report workflows.CapDefinition[string]
-    signatures workflows.CapDefinition[[]string]
+	workflows.CapDefinition[SignedReport]
+	context    workflows.CapDefinition[string]
+	iD         workflows.CapDefinition[string]
+	report     workflows.CapDefinition[string]
+	signatures workflows.CapDefinition[[]string]
 }
+
 func (c *simpleSignedReport) Context() workflows.CapDefinition[string] {
-    return c.context
+	return c.context
 }
 func (c *simpleSignedReport) ID() workflows.CapDefinition[string] {
-    return c.iD
+	return c.iD
 }
 func (c *simpleSignedReport) Report() workflows.CapDefinition[string] {
-    return c.report
+	return c.report
 }
 func (c *simpleSignedReport) Signatures() workflows.CapDefinition[[]string] {
-    return c.signatures
+	return c.signatures
 }
 
 func (c *simpleSignedReport) private() {}
 
-
 type ConsensusInput struct {
-    Observations workflows.CapDefinition[[][]streams.Feed]
+	Observations workflows.CapDefinition[[][]streams.Feed]
 }
 
 func (input ConsensusInput) ToSteps() workflows.StepInputs {
-    return workflows.StepInputs{
-       Mapping: map[string]any{
-        "observations": input.Observations.Ref(),
-       },
-   }
+	return workflows.StepInputs{
+		Mapping: map[string]any{
+			"observations": input.Observations.Ref(),
+		},
+	}
 }

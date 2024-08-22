@@ -2,9 +2,11 @@
 
 package streams
 
-import "encoding/json"
-import "fmt"
-import "regexp"
+import (
+	"encoding/json"
+	"fmt"
+	"regexp"
+)
 
 type Feed struct {
 	// This value is extracted from the fullReport. Benchmark price represented as

@@ -19,8 +19,16 @@ type Unwrappable interface {
 type Value interface {
 	proto() *pb.Value
 
-	Copy() Value
+	copy() Value
 	Unwrappable
+}
+
+func Copy(v Value) Value {
+	if v == nil {
+		return v
+	}
+
+	return v.copy()
 }
 
 func Wrap(v any) (Value, error) {

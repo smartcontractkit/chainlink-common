@@ -56,7 +56,7 @@ func (b *BigInt) UnwrapTo(to any) error {
 	return nil
 }
 
-func (b *BigInt) Copy() Value {
+func (b *BigInt) copy() Value {
 	if b == nil {
 		return nil
 	}

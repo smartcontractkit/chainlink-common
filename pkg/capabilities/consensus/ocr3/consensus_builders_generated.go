@@ -99,9 +99,10 @@ func (c *simpleFeedValue) private() {}
 
 type SignedReportCap interface {
     workflows.CapDefinition[SignedReport]
-    Err() workflows.CapDefinition[bool]
-    Value() SignedReportValueCap
-    WorkflowExecutionID() workflows.CapDefinition[string]
+    Context() workflows.CapDefinition[string]
+    ID() workflows.CapDefinition[string]
+    Report() workflows.CapDefinition[string]
+    Signatures() workflows.CapDefinition[[]string]
     private()
 }
 
@@ -118,96 +119,59 @@ type signedReport struct {
 }
 
 func (*signedReport) private() {}
-func (c *signedReport) Err() workflows.CapDefinition[bool] {
-    return workflows.AccessField[SignedReport, bool](c.CapDefinition, "Err")
+func (c *signedReport) Context() workflows.CapDefinition[string] {
+    return workflows.AccessField[SignedReport, string](c.CapDefinition, "Context")
 }
-func (c *signedReport) Value() SignedReportValueCap {
-     return &signedReportValue{ CapDefinition: workflows.AccessField[SignedReport, SignedReportValue](c.CapDefinition, "Value")}
+func (c *signedReport) ID() workflows.CapDefinition[string] {
+    return workflows.AccessField[SignedReport, string](c.CapDefinition, "ID")
 }
-func (c *signedReport) WorkflowExecutionID() workflows.CapDefinition[string] {
-    return workflows.AccessField[SignedReport, string](c.CapDefinition, "WorkflowExecutionID")
+func (c *signedReport) Report() workflows.CapDefinition[string] {
+    return workflows.AccessField[SignedReport, string](c.CapDefinition, "Report")
+}
+func (c *signedReport) Signatures() workflows.CapDefinition[[]string] {
+    return workflows.AccessField[SignedReport, []string](c.CapDefinition, "Signatures")
 }
 
 func NewSignedReportFromFields(
-                                                                        err workflows.CapDefinition[bool],
-                                                                        value SignedReportValueCap,
-                                                                        workflowExecutionID workflows.CapDefinition[string],) SignedReportCap {
+                                                                        context workflows.CapDefinition[string],
+                                                                        iD workflows.CapDefinition[string],
+                                                                        report workflows.CapDefinition[string],
+                                                                        signatures workflows.CapDefinition[[]string],) SignedReportCap {
     return &simpleSignedReport{
         CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
-        "err": err.Ref(),
-        "value": value.Ref(),
-        "workflowExecutionID": workflowExecutionID.Ref(),
+        "context": context.Ref(),
+        "iD": iD.Ref(),
+        "report": report.Ref(),
+        "signatures": signatures.Ref(),
         },
-        err: err,
-        value: value,
-        workflowExecutionID: workflowExecutionID,
+        context: context,
+        iD: iD,
+        report: report,
+        signatures: signatures,
     }
 }
 
 type simpleSignedReport struct {
     workflows.CapDefinition[SignedReport]
-    err workflows.CapDefinition[bool]
-    value SignedReportValueCap
-    workflowExecutionID workflows.CapDefinition[string]
+    context workflows.CapDefinition[string]
+    iD workflows.CapDefinition[string]
+    report workflows.CapDefinition[string]
+    signatures workflows.CapDefinition[[]string]
 }
-func (c *simpleSignedReport) Err() workflows.CapDefinition[bool] {
-    return c.err
+func (c *simpleSignedReport) Context() workflows.CapDefinition[string] {
+    return c.context
 }
-func (c *simpleSignedReport) Value() SignedReportValueCap {
-    return c.value
+func (c *simpleSignedReport) ID() workflows.CapDefinition[string] {
+    return c.iD
 }
-func (c *simpleSignedReport) WorkflowExecutionID() workflows.CapDefinition[string] {
-    return c.workflowExecutionID
+func (c *simpleSignedReport) Report() workflows.CapDefinition[string] {
+    return c.report
+}
+func (c *simpleSignedReport) Signatures() workflows.CapDefinition[[]string] {
+    return c.signatures
 }
 
 func (c *simpleSignedReport) private() {}
-
-
-type SignedReportValueCap interface {
-    workflows.CapDefinition[SignedReportValue]
-    Underlying() SignedReportValueUnderlyingCap
-    private()
-}
-
-
-// SignedReportValueCapFromStep should only be called from generated code to assure type safety
-func SignedReportValueCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[SignedReportValue]) SignedReportValueCap {
-    raw :=  step.AddTo(w)
-    return &signedReportValue{CapDefinition: raw}
-}
-
-
-type signedReportValue struct {
-    workflows.CapDefinition[SignedReportValue]
-}
-
-func (*signedReportValue) private() {}
-func (c *signedReportValue) Underlying() SignedReportValueUnderlyingCap {
-     return SignedReportValueUnderlyingCap(workflows.AccessField[SignedReportValue, SignedReportValueUnderlying](c.CapDefinition, "Underlying"))
-}
-
-func NewSignedReportValueFromFields(
-                                                                        underlying SignedReportValueUnderlyingCap,) SignedReportValueCap {
-    return &simpleSignedReportValue{
-        CapDefinition: workflows.ComponentCapDefinition[SignedReportValue]{
-        "underlying": underlying.Ref(),
-        },
-        underlying: underlying,
-    }
-}
-
-type simpleSignedReportValue struct {
-    workflows.CapDefinition[SignedReportValue]
-    underlying SignedReportValueUnderlyingCap
-}
-func (c *simpleSignedReportValue) Underlying() SignedReportValueUnderlyingCap {
-    return c.underlying
-}
-
-func (c *simpleSignedReportValue) private() {}
-
-
-type SignedReportValueUnderlyingCap workflows.CapDefinition[SignedReportValueUnderlying]
 
 
 type ConsensusInput struct {

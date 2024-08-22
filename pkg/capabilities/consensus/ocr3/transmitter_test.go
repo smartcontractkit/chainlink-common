@@ -29,7 +29,7 @@ import (
 func TestTransmitter(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
 	wowner := "foo-owner"
-	repId := []byte{0xf0, 0xe0}
+	repID := []byte{0xf0, 0xe0}
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
@@ -54,7 +54,7 @@ func TestTransmitter(t *testing.T) {
 		"aggregation_config": map[string]any{},
 		"encoder":            "",
 		"encoder_config":     map[string]any{},
-		"report_id":          hex.EncodeToString(repId),
+		"report_id":          hex.EncodeToString(repID),
 	})
 	require.NoError(t, err)
 	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
@@ -75,7 +75,7 @@ func TestTransmitter(t *testing.T) {
 			WorkflowExecutionId: weid,
 			WorkflowId:          wid,
 			WorkflowOwner:       wowner,
-			ReportId:            hex.EncodeToString(repId),
+			ReportId:            hex.EncodeToString(repID),
 		},
 		ShouldReport: true,
 	}
@@ -108,7 +108,7 @@ func TestTransmitter(t *testing.T) {
 	assert.Equal(t, spb, signedReport.Report)
 	assert.Len(t, signedReport.Signatures, 1)
 	assert.Len(t, signedReport.Context, 96)
-	assert.Equal(t, repId, signedReport.ID)
+	assert.Equal(t, repID, signedReport.ID)
 }
 
 func TestTransmitter_ShouldReportFalse(t *testing.T) {

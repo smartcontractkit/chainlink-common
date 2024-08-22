@@ -19,6 +19,7 @@ const (
 	testInputsKey   = "input-key"
 	testInputsValue = "input-value"
 	testError       = "test-error"
+	anyReferenceID  = "anything"
 )
 
 func TestCapabilityRequestFromProto(t *testing.T) {
@@ -51,6 +52,10 @@ func TestCapabilityRequestFromProto(t *testing.T) {
 	}
 	_, err = pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
+
+	pr.Metadata.ReferenceId = anyReferenceID
+	_, err = pb.CapabilityRequestFromProto(&pr)
+	require.NoError(t, err)
 }
 
 func TestCapabilityResponseFromProto(t *testing.T) {
@@ -74,6 +79,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowName:             "test-workflow-name",
 			WorkflowDonID:            1,
 			WorkflowDonConfigVersion: 1,
+			ReferenceID:              anyReferenceID,
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -86,6 +92,15 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	unmarshaled, err := pb.UnmarshalCapabilityRequest(raw)
+	require.NoError(t, err)
+
+	require.Equal(t, req, unmarshaled)
+
+	req.Metadata.ReferenceID = anyReferenceID
+	raw, err = pb.MarshalCapabilityRequest(req)
+	require.NoError(t, err)
+
+	unmarshaled, err = pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
 	require.Equal(t, req, unmarshaled)

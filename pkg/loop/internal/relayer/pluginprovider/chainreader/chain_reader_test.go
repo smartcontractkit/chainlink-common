@@ -355,6 +355,9 @@ type fakeChainReader struct {
 	vals        []valConfidencePair
 	triggers    []eventConfidencePair
 	stored      []TestStruct
+	vals        []valConfidencePair
+	triggers    []eventConfidencePair
+	stored      []TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
 	isStarted   bool
@@ -578,7 +581,6 @@ func (f *fakeChainReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, _ s
 	for i, trigger := range f.triggers {
 		f.triggers[i] = eventConfidencePair{testStruct: trigger.testStruct, confidenceLevel: confidenceLevel}
 	}
-	return
 }
 
 type errChainReader struct {
@@ -654,11 +656,11 @@ func (pc *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, 
 		bSlice []query.SortBy
 	)
 
-	if pc.expectedLimitAndSort.SortBy != nil && len(pc.expectedLimitAndSort.SortBy) > 0 {
+	if len(pc.expectedLimitAndSort.SortBy) > 0 {
 		aSlice = pc.expectedLimitAndSort.SortBy
 	}
 
-	if limitAndSort.SortBy != nil && len(limitAndSort.SortBy) > 0 {
+	if len(limitAndSort.SortBy) > 0 {
 		bSlice = limitAndSort.SortBy
 	}
 

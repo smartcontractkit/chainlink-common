@@ -5,25 +5,28 @@
     "SignedReport": {
       "type": "object",
       "properties": {
-        "WorkflowExecutionID": {
-          "type": "string"
+        "Report": {
+          "type": "string",
+          "contentEncoding": "base64"
         },
-        "Value": {
-          "type": "object",
-          "properties": {
-            "Underlying": {
-              "type": "object"
-            }
-          },
-          "additionalProperties": false,
-          "required": ["Underlying"]
+        "Context": {
+          "type": "string",
+          "contentEncoding": "base64"
         },
-        "Err": {
-          "type": "boolean"
+        "Signatures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "contentEncoding": "base64"
+          }
+        },
+        "ID" : {
+          "type": "string",
+          "contentEncoding": "base64"
         }
       },
       "additionalProperties": false,
-      "required": ["WorkflowExecutionID", "Value", "Err"]
+      "required": ["Report", "Context", "Signature", "ID"]
     }
   }
 }

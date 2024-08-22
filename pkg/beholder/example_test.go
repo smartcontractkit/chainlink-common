@@ -2,6 +2,7 @@ package beholder_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 
@@ -39,9 +40,10 @@ func ExampleBeholderCustomMessage() {
 	}
 
 	// Emit the custom message anywhere from application logic
+	fmt.Println("Emit custom messages")
 	for range 10 {
 		// global.Emitter().Emit() can be used as well if passing otelClient is not an option
-		err := otelClient.Emitter.Emit(context.Background(), payloadBytes,
+		err := global.Emitter().Emit(context.Background(), payloadBytes,
 			"beholder_data_schema", "/custom-message/versions/1", // required
 			"beholder_data_type", "custom_message",
 			"foo", "bar",
@@ -51,6 +53,7 @@ func ExampleBeholderCustomMessage() {
 		}
 	}
 	// Output:
+	// Emit custom messages
 }
 
 func ExampleBeholderMetricTraces() {
@@ -79,15 +82,34 @@ func ExampleBeholderMetricTraces() {
 	}
 
 	// Use the counter and gauge for metrics within application logic
+	fmt.Println("Update metrics")
 	counter.Add(ctx, 1)
 	gauge.Record(ctx, rand.Int63n(101))
 
-	// Create a new trace span
+	fmt.Println("Create new trace span")
 	_, rootSpan := global.Tracer().Start(ctx, "foo", trace.WithAttributes(
 		attribute.String("app_name", "beholderdemo"),
 	))
 	defer rootSpan.End()
 	// Output:
+	// Update metrics
+	// Create new trace span
+}
+
+func ExampleNoopBeholder() {
+	fmt.Println("Beholder is not initialized. Fall back to Noop OTel Client")
+
+	fmt.Println("Emitting custom message via noop otel client")
+
+	err := global.Emitter().Emit(context.Background(), []byte("test message"),
+		"beholder_data_schema", "/custom-message/versions/1", // required
+	)
+	if err != nil {
+		log.Printf("Error emitting message: %v", err)
+	}
+	// Output:
+	// Beholder is not initialized. Fall back to Noop OTel Client
+	// Emitting custom message via noop otel client
 }
 
 func errorHandler(e error) {

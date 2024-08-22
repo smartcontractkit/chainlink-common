@@ -153,7 +153,7 @@ func (w *WorkflowSpecFactory) Spec() (WorkflowSpec, error) {
 		for k := range w.duplicateNames {
 			duplicates = append(duplicates, k)
 		}
-		return WorkflowSpec{}, fmt.Errorf("duplicte step ids %v", strings.Join(duplicates, ", "))
+		return WorkflowSpec{}, fmt.Errorf("duplicate step ids %v", strings.Join(duplicates, ", "))
 	}
 
 	if w.emptyNames {

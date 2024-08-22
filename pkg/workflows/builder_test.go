@@ -19,7 +19,7 @@ import (
 
 //go:generate go run github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/generate-types --dir $GOFILE
 
-// Note that the set of tests in this file cover the conversion from existing YAM -> code
+// Note that the set of tests in this file cover the conversion from existing YAML -> code
 // along with testing the structure of what is generated from the builders.
 // This implicitly tests the code generators functionally, as the generated code is used in the tests.
 
@@ -48,8 +48,8 @@ func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
 	return workflow, nil
 }
 
-// What if there were hundreds of feeds?  Like feeds that aren't for CCIP?
-
+// ModifiedConfig, and the test it's used in, show how you can structure config to remove copy/paste issues when data
+// needs to be repeated in multiple capability configurations.
 type ModifiedConfig struct {
 	Workflow                workflows.NewWorkflowParams
 	AllowedPartialStaleness string

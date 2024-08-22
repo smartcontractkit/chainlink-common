@@ -211,7 +211,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 	}
 
 	// Since we will most likely get N different timestamps, each with frequency=1, we get the median instead of the mode.
-	sortkeys.Uint32s(sortedTimestamps)
+	slices.Sort(sortedTimestamps)
 	timestampCount := len(sortedTimestamps)
 	mid := timestampCount / 2
 	if timestampCount%2 == 1 {

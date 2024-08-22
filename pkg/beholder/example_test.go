@@ -17,10 +17,12 @@ import (
 )
 
 func ExampleBeholderCustomMessage() {
+	ctx := context.Background()
+
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	otelClient, err := beholder.NewOtelClient(config, errorHandler)
+	otelClient, err := beholder.NewOtelClient(ctx, config, errorHandler)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
@@ -57,17 +59,17 @@ func ExampleBeholderCustomMessage() {
 }
 
 func ExampleBeholderMetricTraces() {
+	ctx := context.Background()
+
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	otelClient, err := beholder.NewOtelClient(config, errorHandler)
+	otelClient, err := beholder.NewOtelClient(ctx, config, errorHandler)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Set global client so it will be accessible from anywhere through beholder/global functions
 	global.SetClient(&otelClient)
-
-	ctx := context.Background()
 
 	// Define a new counter
 	counter, err := global.Meter().Int64Counter("custom_message.count")

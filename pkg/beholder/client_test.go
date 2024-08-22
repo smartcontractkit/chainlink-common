@@ -53,7 +53,7 @@ func TestClient(t *testing.T) {
 	}
 	defaultMessageBody := []byte("body bytes")
 
-	tests := []struct {
+	testCases := []struct {
 		name                   string
 		makeCustomAttributes   func() map[string]any
 		messageBody            []byte
@@ -76,7 +76,7 @@ func TestClient(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			exporterMock := mocks.NewOTLPExporter(t)
 			defer exporterMock.AssertExpectations(t)
@@ -88,7 +88,7 @@ func TestClient(t *testing.T) {
 			exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			}
-			client, err := newOtelClient(TestDefaultConfig(), otelErrorHandler, exporterFactory)
+			client, err := newOtelClient(tests.Context(t), TestDefaultConfig(), otelErrorHandler, exporterFactory)
 			if err != nil {
 				t.Fatalf("Error creating beholder client: %v", err)
 			}
@@ -140,6 +140,7 @@ func TestClient(t *testing.T) {
 func TestEmitterMessageValidation(t *testing.T) {
 	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
 		client, err := newOtelClient(
+			tests.Context(t),
 			TestDefaultConfig(),
 			func(err error) { t.Fatalf("otel error: %v", err) },
 			// Override exporter factory which is used by Client

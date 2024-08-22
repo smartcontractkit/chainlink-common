@@ -55,18 +55,17 @@ type OtelClient struct {
 }
 
 // NewOtelClient creates a new Client with OTel exporter
-func NewOtelClient(cfg Config, errorHandler errorHandlerFunc) (OtelClient, error) {
+func NewOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (OtelClient, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
 	}
-	return newOtelClient(cfg, errorHandler, factory)
+	return newOtelClient(ctx, cfg, errorHandler, factory)
 }
 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newOtelClient(cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (OtelClient, error) {
-	ctx := context.Background()
+func newOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (OtelClient, error) {
 	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
 	if err != nil {

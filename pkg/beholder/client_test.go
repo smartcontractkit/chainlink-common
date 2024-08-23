@@ -138,7 +138,7 @@ func TestClient(t *testing.T) {
 }
 
 func TestEmitterMessageValidation(t *testing.T) {
-	getEmitter := func(exporterMock *mocks.OTLPExporter) MessageEmitter {
+	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
 		client, err := newOtelClient(
 			tests.Context(t),
 			TestDefaultConfig(),

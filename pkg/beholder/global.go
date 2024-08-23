@@ -37,7 +37,7 @@ func Meter() otelmetric.Meter {
 	return GetClient().Meter
 }
 
-func Emitter() MessageEmitter {
+func MessageEmitter() Emitter {
 	return GetClient().Emitter
 }
 

@@ -42,7 +42,7 @@ func ExampleBeholderCustomMessage() {
 	// Emit the custom message anywhere from application logic
 	fmt.Println("Emit custom messages")
 	for range 10 {
-		err := beholder.Emitter().Emit(context.Background(), payloadBytes,
+		err := beholder.MessageEmitter().Emit(context.Background(), payloadBytes,
 			"beholder_data_schema", "/custom-message/versions/1", // required
 			"beholder_data_type", "custom_message",
 			"foo", "bar",
@@ -100,7 +100,7 @@ func ExampleNoopBeholder() {
 
 	fmt.Println("Emitting custom message via noop otel client")
 
-	err := beholder.Emitter().Emit(context.Background(), []byte("test message"),
+	err := beholder.MessageEmitter().Emit(context.Background(), []byte("test message"),
 		"beholder_data_schema", "/custom-message/versions/1", // required
 	)
 	if err != nil {

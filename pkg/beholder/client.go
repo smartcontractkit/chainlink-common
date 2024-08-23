@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type MessageEmitter interface {
+type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
 }
@@ -42,7 +42,7 @@ type OtelClient struct {
 	// Meter
 	Meter otelmetric.Meter
 	// Message Emitter
-	Emitter MessageEmitter
+	Emitter Emitter
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider

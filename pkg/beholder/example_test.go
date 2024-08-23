@@ -25,7 +25,7 @@ func ExampleBeholderCustomMessage() {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Set global client so it will be accessible from anywhere through beholder functions
-	beholder.SetClient(&client)
+	beholder.SetClient(client)
 
 	// Define a custom protobuf payload to emit
 	payload := &pb.TestCustomMessage{
@@ -66,7 +66,7 @@ func ExampleBeholderMetricTraces() {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Set global client so it will be accessible from anywhere through beholder functions
-	beholder.SetClient(&client)
+	beholder.SetClient(client)
 
 	// Define a new counter
 	counter, err := beholder.Meter().Int64Counter("custom_message.count")

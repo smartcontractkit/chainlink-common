@@ -44,7 +44,7 @@ func MessageEmitter() Emitter {
 func defaultClient() *atomic.Pointer[Client] {
 	ptr := &atomic.Pointer[Client]{}
 	client := NewNoopClient()
-	ptr.Store(&client)
+	ptr.Store(client)
 	return ptr
 }
 

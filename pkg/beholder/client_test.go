@@ -60,7 +60,7 @@ func TestClient(t *testing.T) {
 		messageCount           int
 		exporterMockErrorCount int
 		exporterOutputExpected bool
-		messageGenerator       func(client Client, messageBody []byte, customAttributes map[string]any)
+		messageGenerator       func(client *Client, messageBody []byte, customAttributes map[string]any)
 	}{
 		{
 			name:                   "Test Emit",
@@ -69,7 +69,7 @@ func TestClient(t *testing.T) {
 			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			messageGenerator: func(client Client, messageBody []byte, customAttributes map[string]any) {
+			messageGenerator: func(client *Client, messageBody []byte, customAttributes map[string]any) {
 				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},

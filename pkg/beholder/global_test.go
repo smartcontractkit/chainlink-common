@@ -33,7 +33,7 @@ func TestGlobal(t *testing.T) {
 	expectedMessageEmitter := beholder.NewNoopClient().Emitter
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
-	var noopClientPtr *beholder.Client = &noopClient
+	var noopClientPtr *beholder.Client = noopClient
 	assert.IsType(t, noopClientPtr, beholder.GetClient())
 	assert.NotSame(t, noopClientPtr, beholder.GetClient())
 
@@ -78,7 +78,7 @@ func TestClient_SetGlobalOtelProviders(t *testing.T) {
 	client, err := beholder.NewStdoutClient(beholder.WithWriter(&b))
 	assert.NoError(t, err)
 	// Set global Otel Client
-	beholder.SetClient(&client)
+	beholder.SetClient(client)
 
 	// Set global otel tracer, meter, logger providers from global beholder otel client
 	beholder.SetGlobalOtelProviders()

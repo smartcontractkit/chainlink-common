@@ -52,7 +52,7 @@ type Client struct {
 }
 
 // NewClient creates a new Client with initialized OpenTelemetry components
-func NewClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (Client, error) {
+func NewClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (*Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
 	}
@@ -62,7 +62,7 @@ func NewClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (Client, error) {
+func newClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
 	if err != nil {
@@ -166,7 +166,7 @@ func newClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, o
 	}
 	client := Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
 
-	return client, nil
+	return &client, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes

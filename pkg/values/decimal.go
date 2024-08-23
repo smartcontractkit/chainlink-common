@@ -32,7 +32,7 @@ func (d *Decimal) UnwrapTo(to any) error {
 	return unwrapTo(d.Underlying, to)
 }
 
-func (d *Decimal) Copy() Value {
+func (d *Decimal) copy() Value {
 	if d == nil {
 		return nil
 	}

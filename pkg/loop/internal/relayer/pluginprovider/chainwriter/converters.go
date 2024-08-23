@@ -17,6 +17,10 @@ func TxMetaToProto(meta *types.TxMeta) *pb.TransactionMeta {
 		proto.WorkflowExecutionId = *meta.WorkflowExecutionID
 	}
 
+	if meta.GasLimit != nil {
+		proto.GasLimit = pb.NewBigIntFromInt(meta.GasLimit)
+	}
+
 	return proto
 }
 
@@ -30,6 +34,10 @@ func TxMetaFromProto(proto *pb.TransactionMeta) *types.TxMeta {
 
 	if proto.WorkflowExecutionId != "" {
 		meta.WorkflowExecutionID = &proto.WorkflowExecutionId
+	}
+
+	if proto.GasLimit != nil {
+		meta.GasLimit = proto.GasLimit.Int()
 	}
 
 	return meta

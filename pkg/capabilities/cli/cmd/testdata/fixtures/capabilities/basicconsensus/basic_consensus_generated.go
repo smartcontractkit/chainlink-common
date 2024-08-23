@@ -2,8 +2,10 @@
 
 package basicconsensus
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Basic Test Consensus
 type Consensus struct {

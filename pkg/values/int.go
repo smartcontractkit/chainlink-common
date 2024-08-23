@@ -26,7 +26,7 @@ func (i *Int64) Unwrap() (any, error) {
 	return u, i.UnwrapTo(&u)
 }
 
-func (i *Int64) Copy() Value {
+func (i *Int64) copy() Value {
 	if i == nil {
 		return nil
 	}

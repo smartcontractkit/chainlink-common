@@ -2,9 +2,12 @@
 
 package externalreferenceaction
 
-import "encoding/json"
-import "fmt"
-import referenceaction "github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
+import (
+	"encoding/json"
+	"fmt"
+
+	referenceaction "github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
+)
 
 // External Reference Test Action
 type Action struct {

@@ -30,7 +30,7 @@ func (s *String) UnwrapTo(to any) error {
 	return unwrapTo(s.Underlying, to)
 }
 
-func (s *String) Copy() Value {
+func (s *String) copy() Value {
 	if s == nil {
 		return s
 	}

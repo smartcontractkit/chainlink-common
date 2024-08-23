@@ -2,11 +2,15 @@
 
 package chainwriter
 
-import "encoding/json"
-import "fmt"
-import ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
-import "reflect"
-import "regexp"
+import (
+	"encoding/json"
+	"fmt"
+
+	"reflect"
+	"regexp"
+
+	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
+)
 
 // Writes to a blockchain
 type Target struct {

@@ -32,7 +32,7 @@ func (b *Bytes) UnwrapTo(to any) error {
 	return unwrapTo(b.Underlying, to)
 }
 
-func (b *Bytes) Copy() Value {
+func (b *Bytes) copy() Value {
 	if b == nil {
 		return nil
 	}

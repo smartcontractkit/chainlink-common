@@ -1,0 +1,31 @@
+workflow:
+  name: ccipethsep
+  owner: '0x00000000000000000000000000000000000000aa'
+maxFrequencyMs: 5000
+default_heartbeat: 3600
+default_deviation: '0.05'
+feed_info:
+  - feedId: '0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd'
+    deviation: "0.07"
+    heartbeat: 4600
+    remappedID: "0x666666666666"
+  - feedId: '0x0003c317fec7fad514c67aacc6366bf2f007ce37100e3cddcacd0ccaa1f3746d'
+    remappedID: "0x777777777777"
+  - feedId: '0x0003da6ab44ea9296674d80fe2b041738189103d6b4ea9a4d34e2f891fa93d12'
+  - feedId: '0x0003477d00f1126313ba4a496db9bdbe4750b6744bc81fb7e6d66300e49d4029'
+  - feedId: '0x0003fb1a5301ca826cd61000178de1e848174a58f7f08b9a73714a5430a21081'
+  - feedId: '0x0003c42acd9513eaba145801755658e1182fd6e790875cf0c0a4afc32165ccc5'
+  - feedId: '0x0003212b4a6b17f1e71280362b4a212b6ffa54757da1b7f1597ca0f6c6ab0881'
+  - feedId: '0x0003f4a9e39e4ec62b9eacc8569318f3927a42fcda5d88b2b139228537371784'
+  - feedId: '0x00036c962c10ac4e0aafae5021c99c4f5adb503c0cb76cfddd8d17efe3098f67'
+  - feedId: '0x0003010b9d4a4740f554eeea1e6a2cf1e60189a3d8cf7ced7a03ce050df30076'
+report_id: '0001'
+encoder: EVM
+encoder_config:
+  abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
+chainWriter:
+  address: '0xE0082363396985ae2FdcC3a9F816A586Eed88416'
+  deltaStage: 45s
+  schedule: oneAtATime
+targetChain: 'write_ethereum-testnet-sepolia@1.0.0'
+allowedPartialStaleness: '0.5'

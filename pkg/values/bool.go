@@ -30,7 +30,7 @@ func (b *Bool) UnwrapTo(to any) error {
 	return unwrapTo(b.Underlying, to)
 }
 
-func (b *Bool) Copy() Value {
+func (b *Bool) copy() Value {
 	if b == nil {
 		return nil
 	}

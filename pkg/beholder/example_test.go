@@ -20,12 +20,12 @@ func ExampleBeholderCustomMessage() {
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	otelClient, err := beholder.NewOtelClient(ctx, config, errorHandler)
+	client, err := beholder.NewClient(ctx, config, errorHandler)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Set global client so it will be accessible from anywhere through beholder functions
-	beholder.SetClient(&otelClient)
+	beholder.SetClient(&client)
 
 	// Define a custom protobuf payload to emit
 	payload := &pb.TestCustomMessage{
@@ -61,12 +61,12 @@ func ExampleBeholderMetricTraces() {
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	otelClient, err := beholder.NewOtelClient(ctx, config, errorHandler)
+	client, err := beholder.NewClient(ctx, config, errorHandler)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Set global client so it will be accessible from anywhere through beholder functions
-	beholder.SetClient(&otelClient)
+	beholder.SetClient(&client)
 
 	// Define a new counter
 	counter, err := beholder.Meter().Int64Counter("custom_message.count")

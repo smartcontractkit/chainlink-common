@@ -51,18 +51,18 @@ type Client struct {
 	OnClose func() error
 }
 
-// NewOtelClient creates a new Client with OTel exporter
-func NewOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (Client, error) {
+// NewClient creates a new Client with OTel exporter
+func NewClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
 	}
-	return newOtelClient(ctx, cfg, errorHandler, factory)
+	return newClient(ctx, cfg, errorHandler, factory)
 }
 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (Client, error) {
+func newClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
 	if err != nil {
@@ -177,7 +177,7 @@ func (c Client) Close() (err error) {
 	return
 }
 
-// Returns a new OtelClient with the same configuration but with a different package name
+// Returns a new Client with the same configuration but with a different package name
 func (c Client) ForPackage(name string) Client {
 	// Logger
 	logger := c.LoggerProvider.Logger(name)

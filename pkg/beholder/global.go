@@ -48,7 +48,7 @@ func defaultClient() *atomic.Pointer[Client] {
 	return ptr
 }
 
-// Sets global OTel logger, tracer, meter providers from OtelClient.
+// Sets global OTel logger, tracer, meter providers from Client.
 // Makes them accessible from anywhere in the code via global otel getters.
 // Any package that relies on go.opentelemetry.io will be able to pick up configured global providers
 // e.g [otelgrpc](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc#example-NewServerHandler)

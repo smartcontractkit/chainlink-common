@@ -14,27 +14,27 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-func TestNoopOtelClient(t *testing.T) {
-	noopOtelClient := NewNoopClient()
-	assert.NotNil(t, noopOtelClient)
+func TestNoopClient(t *testing.T) {
+	noopClient := NewNoopClient()
+	assert.NotNil(t, noopClient)
 
 	// Message Emitter
-	err := noopOtelClient.Emitter.Emit(tests.Context(t), []byte("test"),
+	err := noopClient.Emitter.Emit(tests.Context(t), []byte("test"),
 		"key1", "value1",
 	)
 	assert.NoError(t, err)
 
 	// Logger
-	noopOtelClient.Logger.Emit(tests.Context(t), otellog.Record{})
+	noopClient.Logger.Emit(tests.Context(t), otellog.Record{})
 
 	// Define a new counter
-	counter, err := noopOtelClient.Meter.Int64Counter("custom_message.count")
+	counter, err := noopClient.Meter.Int64Counter("custom_message.count")
 	if err != nil {
 		log.Fatalf("failed to create new counter")
 	}
 
 	// Define a new gauge
-	gauge, err := noopOtelClient.Meter.Int64Gauge("custom_message.gauge")
+	gauge, err := noopClient.Meter.Int64Gauge("custom_message.gauge")
 	if err != nil {
 		log.Fatalf("failed to create new gauge")
 	}
@@ -45,11 +45,11 @@ func TestNoopOtelClient(t *testing.T) {
 	gauge.Record(tests.Context(t), rand.Int63n(101))
 
 	// Create a new trace span
-	_, rootSpan := noopOtelClient.Tracer.Start(context.Background(), "foo", trace.WithAttributes(
+	_, rootSpan := noopClient.Tracer.Start(context.Background(), "foo", trace.WithAttributes(
 		attribute.String("app_name", "beholderdemo"),
 	))
 	rootSpan.End()
 
-	err = noopOtelClient.Close()
+	err = noopClient.Close()
 	assert.NoError(t, err)
 }

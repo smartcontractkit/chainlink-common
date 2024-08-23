@@ -374,9 +374,9 @@ func Test_Copy(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		copied := tc.value.Copy()
+		copied := Copy(tc.value)
 		if tc.isNil {
-			assert.Nil(t, tc.value.Copy())
+			assert.Nil(t, Copy(tc.value))
 		} else {
 			assert.Equal(t, tc.value, copied)
 		}

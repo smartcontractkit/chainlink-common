@@ -2,11 +2,15 @@
 
 package ocr3
 
-import "encoding/json"
-import "fmt"
-import streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
-import "reflect"
-import "regexp"
+import (
+	"encoding/json"
+	"fmt"
+
+	"reflect"
+	"regexp"
+
+	streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
+)
 
 // OCR3 consensus exposed as a capability.
 type DataFeedsConsensus struct {

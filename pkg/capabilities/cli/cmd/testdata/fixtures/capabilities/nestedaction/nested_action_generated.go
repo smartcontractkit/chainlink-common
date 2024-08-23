@@ -2,8 +2,10 @@
 
 package nestedaction
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Nested Test Action
 type Action struct {

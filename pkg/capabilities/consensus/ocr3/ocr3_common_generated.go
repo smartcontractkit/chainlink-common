@@ -2,8 +2,10 @@
 
 package ocr3
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type SignedReport struct {
 	// Context corresponds to the JSON schema field "Context".

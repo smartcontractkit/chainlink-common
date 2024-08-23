@@ -3,92 +3,87 @@
 package basicconsensus
 
 import (
-    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
+func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory, ref string, input ConsensusInput) ConsensusOutputsCap {
 
-func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory,ref string, input ConsensusInput)ConsensusOutputsCap {
-    
-    def := workflows.StepDefinition{
-       ID: "basic-test-consensus@1.0.0",Ref: ref,
-       Inputs: input.ToSteps(),
-       Config: map[string]any{
-           "name": cfg.Name,
-           "number": cfg.Number,
-       },
-       CapabilityType: capabilities.CapabilityTypeConsensus,
-   }
+	def := workflows.StepDefinition{
+		ID: "basic-test-consensus@1.0.0", Ref: ref,
+		Inputs: input.ToSteps(),
+		Config: map[string]any{
+			"name":   cfg.Name,
+			"number": cfg.Number,
+		},
+		CapabilityType: capabilities.CapabilityTypeConsensus,
+	}
 
-
-    step := workflows.Step[ConsensusOutputs]{Definition: def}
-    return ConsensusOutputsCapFromStep(w, step)
+	step := workflows.Step[ConsensusOutputs]{Definition: def}
+	return ConsensusOutputsCapFromStep(w, step)
 }
-
 
 type ConsensusOutputsCap interface {
-    workflows.CapDefinition[ConsensusOutputs]
-    Consensus() workflows.CapDefinition[[]string]
-    Sigs() workflows.CapDefinition[[]string]
-    private()
+	workflows.CapDefinition[ConsensusOutputs]
+	Consensus() workflows.CapDefinition[[]string]
+	Sigs() workflows.CapDefinition[[]string]
+	private()
 }
-
 
 // ConsensusOutputsCapFromStep should only be called from generated code to assure type safety
 func ConsensusOutputsCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[ConsensusOutputs]) ConsensusOutputsCap {
-    raw :=  step.AddTo(w)
-    return &consensusOutputs{CapDefinition: raw}
+	raw := step.AddTo(w)
+	return &consensusOutputs{CapDefinition: raw}
 }
 
-
 type consensusOutputs struct {
-    workflows.CapDefinition[ConsensusOutputs]
+	workflows.CapDefinition[ConsensusOutputs]
 }
 
 func (*consensusOutputs) private() {}
 func (c *consensusOutputs) Consensus() workflows.CapDefinition[[]string] {
-    return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "Consensus")
+	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "Consensus")
 }
 func (c *consensusOutputs) Sigs() workflows.CapDefinition[[]string] {
-    return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "Sigs")
+	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "Sigs")
 }
 
 func NewConsensusOutputsFromFields(
-                                                                        consensus workflows.CapDefinition[[]string],
-                                                                        sigs workflows.CapDefinition[[]string],) ConsensusOutputsCap {
-    return &simpleConsensusOutputs{
-        CapDefinition: workflows.ComponentCapDefinition[ConsensusOutputs]{
-        "consensus": consensus.Ref(),
-        "sigs": sigs.Ref(),
-        },
-        consensus: consensus,
-        sigs: sigs,
-    }
+	consensus workflows.CapDefinition[[]string],
+	sigs workflows.CapDefinition[[]string]) ConsensusOutputsCap {
+	return &simpleConsensusOutputs{
+		CapDefinition: workflows.ComponentCapDefinition[ConsensusOutputs]{
+			"consensus": consensus.Ref(),
+			"sigs":      sigs.Ref(),
+		},
+		consensus: consensus,
+		sigs:      sigs,
+	}
 }
 
 type simpleConsensusOutputs struct {
-    workflows.CapDefinition[ConsensusOutputs]
-    consensus workflows.CapDefinition[[]string]
-    sigs workflows.CapDefinition[[]string]
+	workflows.CapDefinition[ConsensusOutputs]
+	consensus workflows.CapDefinition[[]string]
+	sigs      workflows.CapDefinition[[]string]
 }
+
 func (c *simpleConsensusOutputs) Consensus() workflows.CapDefinition[[]string] {
-    return c.consensus
+	return c.consensus
 }
 func (c *simpleConsensusOutputs) Sigs() workflows.CapDefinition[[]string] {
-    return c.sigs
+	return c.sigs
 }
 
 func (c *simpleConsensusOutputs) private() {}
 
-
 type ConsensusInput struct {
-    InputThing workflows.CapDefinition[bool]
+	InputThing workflows.CapDefinition[bool]
 }
 
 func (input ConsensusInput) ToSteps() workflows.StepInputs {
-    return workflows.StepInputs{
-       Mapping: map[string]any{
-        "input_thing": input.InputThing.Ref(),
-       },
-   }
+	return workflows.StepInputs{
+		Mapping: map[string]any{
+			"input_thing": input.InputThing.Ref(),
+		},
+	}
 }

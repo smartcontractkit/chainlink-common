@@ -15,13 +15,13 @@ import (
 var globalClient = defaultClient()
 
 // SetClient sets the global Beholder Client
-func SetClient(client *OtelClient) {
+func SetClient(client *Client) {
 	globalClient.Store(client)
 }
 
 // Returns the global Beholder Client
 // Its thread-safe and can be used concurrently
-func GetClient() *OtelClient {
+func GetClient() *Client {
 	return globalClient.Load()
 }
 
@@ -41,8 +41,8 @@ func MessageEmitter() Emitter {
 	return GetClient().Emitter
 }
 
-func defaultClient() *atomic.Pointer[OtelClient] {
-	ptr := &atomic.Pointer[OtelClient]{}
+func defaultClient() *atomic.Pointer[Client] {
+	ptr := &atomic.Pointer[Client]{}
 	client := NewNoopClient()
 	ptr.Store(&client)
 	return ptr

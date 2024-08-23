@@ -25,15 +25,12 @@ type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
 }
-type Client interface {
-	Close() error
-}
 
 type messageEmitter struct {
 	messageLogger otellog.Logger
 }
 
-type OtelClient struct {
+type Client struct {
 	Config Config
 	// Logger
 	Logger otellog.Logger
@@ -55,7 +52,7 @@ type OtelClient struct {
 }
 
 // NewOtelClient creates a new Client with OTel exporter
-func NewOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (OtelClient, error) {
+func NewOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
 	}
@@ -65,7 +62,7 @@ func NewOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFun
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (OtelClient, error) {
+func newOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
 	if err != nil {
@@ -167,13 +164,13 @@ func newOtelClient(ctx context.Context, cfg Config, errorHandler errorHandlerFun
 		}
 		return
 	}
-	client := OtelClient{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
+	client := Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}
 
 	return client, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes
-func (c OtelClient) Close() (err error) {
+func (c Client) Close() (err error) {
 	if c.OnClose != nil {
 		return c.OnClose()
 	}
@@ -181,7 +178,7 @@ func (c OtelClient) Close() (err error) {
 }
 
 // Returns a new OtelClient with the same configuration but with a different package name
-func (c OtelClient) ForPackage(name string) OtelClient {
+func (c Client) ForPackage(name string) Client {
 	// Logger
 	logger := c.LoggerProvider.Logger(name)
 	// Tracer

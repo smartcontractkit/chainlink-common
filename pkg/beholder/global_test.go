@@ -33,7 +33,7 @@ func TestGlobal(t *testing.T) {
 	expectedMessageEmitter := beholder.NewNoopClient().Emitter
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
-	var noopClientPtr *beholder.OtelClient = &noopClient
+	var noopClientPtr *beholder.Client = &noopClient
 	assert.IsType(t, noopClientPtr, beholder.GetClient())
 	assert.NotSame(t, noopClientPtr, beholder.GetClient())
 

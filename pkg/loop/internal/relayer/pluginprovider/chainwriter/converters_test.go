@@ -1,6 +1,7 @@
 package chainwriter_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,6 +28,18 @@ func TestTxMetaFromProto(t *testing.T) {
 		require.NotNil(t, meta)
 		require.Equal(t, "workflow-id", *meta.WorkflowExecutionID)
 	})
+
+	t.Run("without gas limit", func(t *testing.T) {
+		meta := chainwriter.TxMetaFromProto(&pb.TransactionMeta{})
+		require.NotNil(t, meta)
+		require.Nil(t, meta.GasLimit)
+	})
+
+	t.Run("with gas limit", func(t *testing.T) {
+		meta := chainwriter.TxMetaFromProto(&pb.TransactionMeta{GasLimit: pb.NewBigIntFromInt(big.NewInt(10))})
+		require.NotNil(t, meta)
+		require.Equal(t, big.NewInt(10), meta.GasLimit)
+	})
 }
 
 func TestTxMetaToProto(t *testing.T) {
@@ -46,5 +59,17 @@ func TestTxMetaToProto(t *testing.T) {
 		proto := chainwriter.TxMetaToProto(&types.TxMeta{WorkflowExecutionID: &workflowID})
 		require.NotNil(t, proto)
 		require.Equal(t, workflowID, proto.WorkflowExecutionId)
+	})
+
+	t.Run("without gas limit", func(t *testing.T) {
+		proto := chainwriter.TxMetaToProto(&types.TxMeta{})
+		require.NotNil(t, proto)
+		require.Empty(t, proto.GasLimit)
+	})
+
+	t.Run("with gas limit", func(t *testing.T) {
+		proto := chainwriter.TxMetaToProto(&types.TxMeta{GasLimit: big.NewInt(10)})
+		require.NotNil(t, proto)
+		require.Equal(t, big.NewInt(10), proto.GasLimit.Int())
 	})
 }

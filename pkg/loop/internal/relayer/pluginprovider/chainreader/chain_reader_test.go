@@ -287,13 +287,13 @@ func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.Con
 	return it.impl
 }
 
-func (it *fakeChainReaderInterfaceTester) StartChainReader(t *testing.T) {
+func (it *fakeChainReaderInterfaceTester) Start(t *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	require.NoError(t, fake.Start(context.Background()))
 }
 
-func (it *fakeChainReaderInterfaceTester) CloseChainReader(t *testing.T) {
+func (it *fakeChainReaderInterfaceTester) Close(t *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	require.NoError(t, fake.Close())

@@ -2,8 +2,10 @@
 
 package basictarget
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Basic Test Target
 type Target struct {

@@ -4,11 +4,13 @@ import (
 	"context"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -647,4 +649,136 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 	assert.Equal(t, uint64(defaultOutcomePruningThreshold+100), opb2.Outcomes[workflowTestID].LastSeenAt)
 	assert.Equal(t, uint64(100), opb2.Outcomes[workflowTestID2].LastSeenAt)
 	assert.Zero(t, opb2.Outcomes[workflowTestID3]) // This outcome was pruned
+}
+
+func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
+	lggr := logger.Test(t)
+	s := requests.NewStore()
+	mcap := &mockCapability{
+		aggregator: &aggregator{},
+		encoder:    &enc{},
+		registeredWorkflows: map[string]bool{
+			workflowTestID:  true,
+			workflowTestID2: true,
+		},
+	}
+	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	require.NoError(t, err)
+
+	weid := uuid.New().String()
+	wowner := uuid.New().String()
+	id := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	id2 := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID2,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	id3 := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID3,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	q := &pbtypes.Query{
+		Ids: []*pbtypes.Id{id, id2, id3},
+	}
+	qb, err := proto.Marshal(q)
+	require.NoError(t, err)
+	o, err := values.NewList([]any{"hello"})
+	require.NoError(t, err)
+	time1 := time.Now().Add(time.Second * 1)
+	time2 := time.Now().Add(time.Second * 2)
+	time3 := time.Now().Add(time.Second * 3)
+	obs := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:           id,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id2,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID, workflowTestID2},
+		Timestamp:             timestamppb.New(time1),
+	}
+	obs2 := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:           id,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id2,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID},
+		Timestamp:             timestamppb.New(time2),
+	}
+	obs3 := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:           id,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id2,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID},
+		Timestamp:             timestamppb.New(time3),
+	}
+
+	rawObs, err := proto.Marshal(obs)
+	require.NoError(t, err)
+	rawObs2, err := proto.Marshal(obs2)
+	require.NoError(t, err)
+	rawObs3, err := proto.Marshal(obs3)
+	require.NoError(t, err)
+	aos := []types.AttributedObservation{
+		{
+			Observation: rawObs,
+			Observer:    commontypes.OracleID(1),
+		},
+		{
+			Observation: rawObs2,
+			Observer:    commontypes.OracleID(1),
+		},
+		{
+			Observation: rawObs3,
+			Observer:    commontypes.OracleID(1),
+		},
+	}
+
+	outcome, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	require.NoError(t, err)
+	opb1 := &pbtypes.Outcome{}
+	err = proto.Unmarshal(outcome, opb1)
+	require.NoError(t, err)
+
+	assert.Equal(t, timestamppb.New(time2), opb1.Outcomes[workflowTestID].Timestamp)
 }

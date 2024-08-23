@@ -363,11 +363,15 @@ type fakeChainReader struct {
 var errServiceNotStarted = errors.New("ContractReader service not started")
 
 func (f *fakeChainReader) Start(_ context.Context) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 	f.isStarted = true
 	return nil
 }
 
 func (f *fakeChainReader) Close() error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 	f.isStarted = false
 	return nil
 }

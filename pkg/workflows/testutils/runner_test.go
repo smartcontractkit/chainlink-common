@@ -23,7 +23,6 @@ import (
 func TestRunner(t *testing.T) {
 	t.Parallel()
 	t.Run("Run runs a workflow for a single execution", func(t *testing.T) {
-		t.Skip("TODO https://smartcontract-it.atlassian.net/browse/KS-442, written earlier for a more full look and feel")
 		helper := &testHelper{t: t}
 		workflow := createTestWorkflow(helper.transformTrigger)
 
@@ -70,12 +69,28 @@ func TestRunner(t *testing.T) {
 		assert.Equal(t, consensus.Output, target.Inputs[0].SignedReport)
 	})
 
-	t.Run("Captures errors", func(t *testing.T) {
+	t.Run("Run allows hard-coded values", func(t *testing.T) {
+		assert.Fail(t, "Not implemented")
+	})
+
+	t.Run("Run allows unnesting of values", func(t *testing.T) {
+		assert.Fail(t, "Not implemented")
+	})
+
+	t.Run("Run allows unnesting of arrays", func(t *testing.T) {
+		assert.Fail(t, "Not implemented")
+	})
+
+	t.Run("Run waits for all dependencies", func(t *testing.T) {
+		assert.Fail(t, "Not implemented")
+	})
+
+	t.Run("Run captures errors", func(t *testing.T) {
 		t.Skip("TODO https://smartcontract-it.atlassian.net/browse/KS-442")
 		assert.Fail(t, "Not implemented")
 	})
 
-	t.Run("Fails if MockCapability is not provided for a step that is run", func(t *testing.T) {
+	t.Run("Run fails if MockCapability is not provided for a step that is run", func(t *testing.T) {
 		t.Skip("TODO https://smartcontract-it.atlassian.net/browse/KS-442")
 		assert.Fail(t, "Not implemented")
 	})
@@ -144,7 +159,7 @@ func createTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpec
 		actionTransform)
 
 	action := basicaction.ActionConfig{Name: "action", Number: 20}.
-		New(workflow, "basic action", basicaction.ActionInput{InputThing: tTransform.Value()})
+		New(workflow, "basicaction", basicaction.ActionInput{InputThing: tTransform.Value()})
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder:       "Test",
@@ -156,6 +171,7 @@ func createTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpec
 		DeltaStage: "2m",
 		Schedule:   "oneAtATime",
 	}.New(workflow, "chainwriter@1.0.0", chainwriter.TargetInput{SignedReport: consensus})
+
 	return workflow
 }
 

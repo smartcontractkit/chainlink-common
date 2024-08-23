@@ -52,17 +52,18 @@ type Client struct {
 }
 
 // NewClient creates a new Client with initialized OpenTelemetry components
-func NewClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (*Client, error) {
+// To handle OpenTelemetry errors use SetOtelErrorHandler
+func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
 	}
-	return newClient(ctx, cfg, errorHandler, factory)
+	return newClient(ctx, cfg, factory)
 }
 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
+func newClient(ctx context.Context, cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
 	if err != nil {
@@ -156,8 +157,6 @@ func newClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc, o
 		messageLogger: messageLogger,
 	}
 
-	setOtelErrorHandler(errorHandler)
-
 	onClose := func() (err error) {
 		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
@@ -197,10 +196,8 @@ func (c Client) ForPackage(name string) Client {
 	return newClient
 }
 
-type errorHandlerFunc func(err error)
-
 // Sets global error handler for OpenTelemetry
-func setOtelErrorHandler(h errorHandlerFunc) {
+func SetOtelErrorHandler(h func(err error)) {
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(h))
 }
 

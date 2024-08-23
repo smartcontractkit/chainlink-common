@@ -20,10 +20,12 @@ func ExampleBeholderCustomMessage() {
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	client, err := beholder.NewClient(ctx, config, errorHandler)
+	client, err := beholder.NewClient(ctx, config)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
+	// Handle OTel errors
+	beholder.SetOtelErrorHandler(errorHandler)
 	// Set global client so it will be accessible from anywhere through beholder functions
 	beholder.SetClient(client)
 
@@ -40,8 +42,9 @@ func ExampleBeholderCustomMessage() {
 	}
 
 	// Emit the custom message anywhere from application logic
-	fmt.Println("Emit custom messages")
 	for range 10 {
+		fmt.Println("Emit custom messages from mercury")
+
 		err := beholder.MessageEmitter().Emit(context.Background(), payloadBytes,
 			"beholder_data_schema", "/custom-message/versions/1", // required
 			"beholder_data_type", "custom_message",
@@ -61,10 +64,12 @@ func ExampleBeholderMetricTraces() {
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	client, err := beholder.NewClient(ctx, config, errorHandler)
+	client, err := beholder.NewClient(ctx, config)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
+	// Handle OTel errors
+	beholder.SetOtelErrorHandler(errorHandler)
 	// Set global client so it will be accessible from anywhere through beholder functions
 	beholder.SetClient(client)
 

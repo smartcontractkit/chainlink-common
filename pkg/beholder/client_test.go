@@ -88,10 +88,11 @@ func TestClient(t *testing.T) {
 			exporterFactory := func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			}
-			client, err := newClient(tests.Context(t), TestDefaultConfig(), otelErrorHandler, exporterFactory)
+			client, err := newClient(tests.Context(t), TestDefaultConfig(), exporterFactory)
 			if err != nil {
 				t.Fatalf("Error creating beholder client: %v", err)
 			}
+			SetOtelErrorHandler(otelErrorHandler)
 			// Number of exported messages
 			exportedMessageCount := 0
 
@@ -142,12 +143,12 @@ func TestEmitterMessageValidation(t *testing.T) {
 		client, err := newClient(
 			tests.Context(t),
 			TestDefaultConfig(),
-			func(err error) { t.Fatalf("otel error: %v", err) },
 			// Override exporter factory which is used by Client
 			func(context.Context, ...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
 			},
 		)
+		SetOtelErrorHandler(func(err error) { t.Fatalf("otel error: %v", err) })
 		assert.NoError(t, err)
 		return client.Emitter
 	}

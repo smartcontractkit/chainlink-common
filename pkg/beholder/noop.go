@@ -57,7 +57,7 @@ func NewStdoutClient(opts ...StddutClientOption) (*Client, error) {
 	}
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
 	logger := loggerProvider.Logger(defaultPackageName)
-	setOtelErrorHandler(func(err error) {
+	SetOtelErrorHandler(func(err error) {
 		fmt.Printf("OTel error %s", err)
 	})
 

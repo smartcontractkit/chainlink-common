@@ -2,32 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/offchain_reporting@1.0.0",
   "$defs": {
-    "SignedReport": {
-      "type": "object",
-      "properties": {
-        "Report": {
-          "type": "string",
-          "contentEncoding": "base64"
-        },
-        "Context": {
-          "type": "string",
-          "contentEncoding": "base64"
-        },
-        "Signatures": {
-          "type": "array",
-            "items": {
-                "type": "string",
-                "contentEncoding": "base64"
-            }
-        },
-        "ID" : {
-          "type": "string",
-          "contentEncoding": "base64"
-        }
-      },
-      "additionalProperties": false,
-      "required": ["Report", "Context", "Signature", "ID"]
-    },
     "FeedValue": {
       "type": "object",
       "properties": {
@@ -127,7 +101,7 @@
       "required": ["observations"]
     },
     "outputs": {
-      "$ref": "#/$defs/SignedReport"
+      "$ref": "ocr3_common-schema.json#/$defs/SignedReport"
     }
   },
   "additionalProperties": false,

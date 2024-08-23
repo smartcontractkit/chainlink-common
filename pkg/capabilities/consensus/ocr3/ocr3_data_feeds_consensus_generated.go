@@ -13,166 +13,166 @@ import (
 )
 
 // OCR3 consensus exposed as a capability.
-type Consensus struct {
+type DataFeedsConsensus struct {
 	// Config corresponds to the JSON schema field "config".
-	Config ConsensusConfig `json:"config" yaml:"config" mapstructure:"config"`
+	Config DataFeedsConsensusConfig `json:"config" yaml:"config" mapstructure:"config"`
 
 	// Inputs corresponds to the JSON schema field "inputs".
-	Inputs ConsensusInputs `json:"inputs" yaml:"inputs" mapstructure:"inputs"`
+	Inputs DataFeedsConsensusInputs `json:"inputs" yaml:"inputs" mapstructure:"inputs"`
 
 	// Outputs corresponds to the JSON schema field "outputs".
 	Outputs SignedReport `json:"outputs" yaml:"outputs" mapstructure:"outputs"`
 }
 
-type ConsensusConfig struct {
+type DataFeedsConsensusConfig struct {
 	// AggregationConfig corresponds to the JSON schema field "aggregation_config".
-	AggregationConfig ConsensusConfigAggregationConfig `json:"aggregation_config" yaml:"aggregation_config" mapstructure:"aggregation_config"`
+	AggregationConfig DataFeedsConsensusConfigAggregationConfig `json:"aggregation_config" yaml:"aggregation_config" mapstructure:"aggregation_config"`
 
 	// AggregationMethod corresponds to the JSON schema field "aggregation_method".
-	AggregationMethod ConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
+	AggregationMethod DataFeedsConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
 
 	// Encoder corresponds to the JSON schema field "encoder".
-	Encoder ConsensusConfigEncoder `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
+	Encoder DataFeedsConsensusConfigEncoder `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
 
 	// EncoderConfig corresponds to the JSON schema field "encoder_config".
-	EncoderConfig ConsensusConfigEncoderConfig `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
+	EncoderConfig DataFeedsConsensusConfigEncoderConfig `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
 
 	// ReportId corresponds to the JSON schema field "report_id".
 	ReportId string `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
 }
 
-type ConsensusConfigAggregationConfig struct {
+type DataFeedsConsensusConfigAggregationConfig struct {
 	// Allowed partial staleness as a number between 0 and 1.
 	AllowedPartialStaleness string `json:"allowedPartialStaleness" yaml:"allowedPartialStaleness" mapstructure:"allowedPartialStaleness"`
 
 	// Feeds corresponds to the JSON schema field "feeds".
-	Feeds ConsensusConfigAggregationConfigFeeds `json:"feeds" yaml:"feeds" mapstructure:"feeds"`
+	Feeds DataFeedsConsensusConfigAggregationConfigFeeds `json:"feeds" yaml:"feeds" mapstructure:"feeds"`
 }
 
-type ConsensusConfigAggregationConfigFeeds map[string]FeedValue
+type DataFeedsConsensusConfigAggregationConfigFeeds map[string]FeedValue
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConsensusConfigAggregationConfig) UnmarshalJSON(b []byte) error {
+func (j *DataFeedsConsensusConfigAggregationConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["allowedPartialStaleness"]; raw != nil && !ok {
-		return fmt.Errorf("field allowedPartialStaleness in ConsensusConfigAggregationConfig: required")
+		return fmt.Errorf("field allowedPartialStaleness in DataFeedsConsensusConfigAggregationConfig: required")
 	}
 	if _, ok := raw["feeds"]; raw != nil && !ok {
-		return fmt.Errorf("field feeds in ConsensusConfigAggregationConfig: required")
+		return fmt.Errorf("field feeds in DataFeedsConsensusConfigAggregationConfig: required")
 	}
-	type Plain ConsensusConfigAggregationConfig
+	type Plain DataFeedsConsensusConfigAggregationConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = ConsensusConfigAggregationConfig(plain)
+	*j = DataFeedsConsensusConfigAggregationConfig(plain)
 	return nil
 }
 
-type ConsensusConfigAggregationMethod string
+type DataFeedsConsensusConfigAggregationMethod string
 
-const ConsensusConfigAggregationMethodDataFeeds ConsensusConfigAggregationMethod = "data_feeds"
+const DataFeedsConsensusConfigAggregationMethodDataFeeds DataFeedsConsensusConfigAggregationMethod = "data_feeds"
 
-var enumValues_ConsensusConfigAggregationMethod = []interface{}{
+var enumValues_DataFeedsConsensusConfigAggregationMethod = []interface{}{
 	"data_feeds",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConsensusConfigAggregationMethod) UnmarshalJSON(b []byte) error {
+func (j *DataFeedsConsensusConfigAggregationMethod) UnmarshalJSON(b []byte) error {
 	var v string
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_ConsensusConfigAggregationMethod {
+	for _, expected := range enumValues_DataFeedsConsensusConfigAggregationMethod {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConsensusConfigAggregationMethod, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_DataFeedsConsensusConfigAggregationMethod, v)
 	}
-	*j = ConsensusConfigAggregationMethod(v)
+	*j = DataFeedsConsensusConfigAggregationMethod(v)
 	return nil
 }
 
-type ConsensusConfigEncoder string
+type DataFeedsConsensusConfigEncoder string
 
-type ConsensusConfigEncoderConfig struct {
+type DataFeedsConsensusConfigEncoderConfig struct {
 	// The ABI for report encoding.
 	Abi string `json:"abi" yaml:"abi" mapstructure:"abi"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConsensusConfigEncoderConfig) UnmarshalJSON(b []byte) error {
+func (j *DataFeedsConsensusConfigEncoderConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["abi"]; raw != nil && !ok {
-		return fmt.Errorf("field abi in ConsensusConfigEncoderConfig: required")
+		return fmt.Errorf("field abi in DataFeedsConsensusConfigEncoderConfig: required")
 	}
-	type Plain ConsensusConfigEncoderConfig
+	type Plain DataFeedsConsensusConfigEncoderConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = ConsensusConfigEncoderConfig(plain)
+	*j = DataFeedsConsensusConfigEncoderConfig(plain)
 	return nil
 }
 
-const ConsensusConfigEncoderEVM ConsensusConfigEncoder = "EVM"
+const DataFeedsConsensusConfigEncoderEVM DataFeedsConsensusConfigEncoder = "EVM"
 
-var enumValues_ConsensusConfigEncoder = []interface{}{
+var enumValues_DataFeedsConsensusConfigEncoder = []interface{}{
 	"EVM",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConsensusConfigEncoder) UnmarshalJSON(b []byte) error {
+func (j *DataFeedsConsensusConfigEncoder) UnmarshalJSON(b []byte) error {
 	var v string
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_ConsensusConfigEncoder {
+	for _, expected := range enumValues_DataFeedsConsensusConfigEncoder {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConsensusConfigEncoder, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_DataFeedsConsensusConfigEncoder, v)
 	}
-	*j = ConsensusConfigEncoder(v)
+	*j = DataFeedsConsensusConfigEncoder(v)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConsensusConfig) UnmarshalJSON(b []byte) error {
+func (j *DataFeedsConsensusConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["aggregation_config"]; raw != nil && !ok {
-		return fmt.Errorf("field aggregation_config in ConsensusConfig: required")
+		return fmt.Errorf("field aggregation_config in DataFeedsConsensusConfig: required")
 	}
 	if _, ok := raw["aggregation_method"]; raw != nil && !ok {
-		return fmt.Errorf("field aggregation_method in ConsensusConfig: required")
+		return fmt.Errorf("field aggregation_method in DataFeedsConsensusConfig: required")
 	}
 	if _, ok := raw["encoder"]; raw != nil && !ok {
-		return fmt.Errorf("field encoder in ConsensusConfig: required")
+		return fmt.Errorf("field encoder in DataFeedsConsensusConfig: required")
 	}
 	if _, ok := raw["encoder_config"]; raw != nil && !ok {
-		return fmt.Errorf("field encoder_config in ConsensusConfig: required")
+		return fmt.Errorf("field encoder_config in DataFeedsConsensusConfig: required")
 	}
 	if _, ok := raw["report_id"]; raw != nil && !ok {
-		return fmt.Errorf("field report_id in ConsensusConfig: required")
+		return fmt.Errorf("field report_id in DataFeedsConsensusConfig: required")
 	}
-	type Plain ConsensusConfig
+	type Plain DataFeedsConsensusConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
@@ -180,54 +180,54 @@ func (j *ConsensusConfig) UnmarshalJSON(b []byte) error {
 	if matched, _ := regexp.MatchString("^[a-f0-9]{4}$", string(plain.ReportId)); !matched {
 		return fmt.Errorf("field %s pattern match: must match %s", "^[a-f0-9]{4}$", "ReportId")
 	}
-	*j = ConsensusConfig(plain)
+	*j = DataFeedsConsensusConfig(plain)
 	return nil
 }
 
-type ConsensusInputs struct {
+type DataFeedsConsensusInputs struct {
 	// Observations corresponds to the JSON schema field "observations".
 	Observations [][]streams.Feed `json:"observations" yaml:"observations" mapstructure:"observations"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConsensusInputs) UnmarshalJSON(b []byte) error {
+func (j *DataFeedsConsensusInputs) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["observations"]; raw != nil && !ok {
-		return fmt.Errorf("field observations in ConsensusInputs: required")
+		return fmt.Errorf("field observations in DataFeedsConsensusInputs: required")
 	}
-	type Plain ConsensusInputs
+	type Plain DataFeedsConsensusInputs
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = ConsensusInputs(plain)
+	*j = DataFeedsConsensusInputs(plain)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Consensus) UnmarshalJSON(b []byte) error {
+func (j *DataFeedsConsensus) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
-		return fmt.Errorf("field config in Consensus: required")
+		return fmt.Errorf("field config in DataFeedsConsensus: required")
 	}
 	if _, ok := raw["inputs"]; raw != nil && !ok {
-		return fmt.Errorf("field inputs in Consensus: required")
+		return fmt.Errorf("field inputs in DataFeedsConsensus: required")
 	}
 	if _, ok := raw["outputs"]; raw != nil && !ok {
-		return fmt.Errorf("field outputs in Consensus: required")
+		return fmt.Errorf("field outputs in DataFeedsConsensus: required")
 	}
-	type Plain Consensus
+	type Plain DataFeedsConsensus
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = Consensus(plain)
+	*j = DataFeedsConsensus(plain)
 	return nil
 }
 
@@ -265,43 +265,5 @@ func (j *FeedValue) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("field %s: must be >= %v", "heartbeat", 1)
 	}
 	*j = FeedValue(plain)
-	return nil
-}
-
-type SignedReport struct {
-	// Context corresponds to the JSON schema field "Context".
-	Context string `json:"Context" yaml:"Context" mapstructure:"Context"`
-
-	// ID corresponds to the JSON schema field "ID".
-	ID string `json:"ID" yaml:"ID" mapstructure:"ID"`
-
-	// Report corresponds to the JSON schema field "Report".
-	Report string `json:"Report" yaml:"Report" mapstructure:"Report"`
-
-	// Signatures corresponds to the JSON schema field "Signatures".
-	Signatures []string `json:"Signatures,omitempty" yaml:"Signatures,omitempty" mapstructure:"Signatures,omitempty"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *SignedReport) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["Context"]; raw != nil && !ok {
-		return fmt.Errorf("field Context in SignedReport: required")
-	}
-	if _, ok := raw["ID"]; raw != nil && !ok {
-		return fmt.Errorf("field ID in SignedReport: required")
-	}
-	if _, ok := raw["Report"]; raw != nil && !ok {
-		return fmt.Errorf("field Report in SignedReport: required")
-	}
-	type Plain SignedReport
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = SignedReport(plain)
 	return nil
 }

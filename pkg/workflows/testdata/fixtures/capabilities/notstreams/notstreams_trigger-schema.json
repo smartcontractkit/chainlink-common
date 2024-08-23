@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams/notstreams@1.0.0",
+  "description": "Not Streams Trigger",
+  "$defs": {
+    "Feed": {
+      "type": "object",
+      "properties": {
+        "fullReport": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Full report represented as bytes encoded as base64 string."
+        },
+        "reportContext": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Report context represented as bytes encoded as base64 string. This is required to validate the signatures."
+        },
+        "signatures": {
+          "type": "array",
+          "description": "Signature over full report and report context represented as bytes encoded as base64 string.",
+          "items": {
+            "type": "string",
+            "contentEncoding": "base64"
+          },
+          "minItems": 1
+        },
+        "Price": {
+          "type": "object",
+          "properties": {
+            "PriceA": {
+              "type": "string",
+              "contentEncoding": "base64",
+              "description": "Benchmark price A represented as bytes encoded as base64 string."
+            },
+            "PriceB": {
+              "type": "string",
+              "contentEncoding": "base64",
+              "description": "Benchmark price B represented as bytes encoded as base64 string."
+            }
+          },
+          "description": "Object containing two benchmark prices extracted from the fullReport.",
+          "required": ["PriceA", "PriceB"]
+        },
+        "Timestamp": {
+          "type": "integer",
+          "description": "This value is extracted from the fullReport. A unix timestamp represented as an int64 value. Timestamp is captured at the time of report creation."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "fullReport",
+        "reportContext",
+        "signatures",
+        "Price",
+        "Timestamp"
+      ]
+    }
+  },
+  "properties": {
+    "config": {
+      "properties": {
+        "maxFrequencyMs": {
+          "type": "integer",
+          "description": "The interval in seconds after which a new trigger event is generated.",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["feedIds", "maxFrequencyMs"]
+    },
+    "outputs": {
+      "$ref": "#/$defs/Feed"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

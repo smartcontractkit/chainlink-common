@@ -2,8 +2,10 @@
 
 package arrayaction
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Array Test Action
 type Action struct {

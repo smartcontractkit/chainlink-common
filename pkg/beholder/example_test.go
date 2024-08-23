@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 )
 
-func ExampleBeholderCustomMessage() {
+func ExampleNewClient() {
 	ctx := context.Background()
 
 	config := beholder.DefaultConfig()
@@ -57,7 +57,7 @@ func ExampleBeholderCustomMessage() {
 	// Emit custom messages
 }
 
-func ExampleBeholderMetricTraces() {
+func ExampleTracer() {
 	ctx := context.Background()
 
 	config := beholder.DefaultConfig()
@@ -99,7 +99,7 @@ func ExampleBeholderMetricTraces() {
 	// Create new trace span
 }
 
-func ExampleNoopBeholder() {
+func ExampleNewNoopClient() {
 	fmt.Println("Beholder is not initialized. Fall back to Noop OTel Client")
 
 	fmt.Println("Emitting custom message via noop otel client")

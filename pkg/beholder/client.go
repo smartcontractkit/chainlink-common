@@ -51,7 +51,7 @@ type Client struct {
 	OnClose func() error
 }
 
-// NewClient creates a new Client with OTel exporter
+// NewClient creates a new Client with initialized OpenTelemetry components
 func NewClient(ctx context.Context, cfg Config, errorHandler errorHandlerFunc) (Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)

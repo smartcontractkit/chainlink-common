@@ -214,9 +214,10 @@ func TestClient_Close(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 
-	client := NewStdoutClient()
+	client, err := NewStdoutClient()
+	assert.NoError(t, err)
 
-	err := client.Close()
+	err = client.Close()
 	assert.NoError(t, err)
 
 	exporterMock.AssertExpectations(t)
@@ -226,7 +227,8 @@ func TestClient_ForPackage(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 	var b strings.Builder
-	client := NewStdoutClient(WithWriter(&b))
+	client, err := NewStdoutClient(WithWriter(&b))
+	assert.NoError(t, err)
 	clientForTest := client.ForPackage("TestClient_ForPackage")
 
 	// Log

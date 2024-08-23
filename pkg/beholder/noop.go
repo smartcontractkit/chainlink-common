@@ -43,15 +43,18 @@ func NewNoopClient() Client {
 // NewStdoutClient creates a new Client with stdout exporters
 // Use for testing and debugging
 // Also this client is used as a noop client when otel exporter is not initialized properly
-func NewStdoutClient(opts ...StddutClientOption) Client {
+func NewStdoutClient(opts ...StddutClientOption) (Client, error) {
 	cfg := DefaultStdoutClientConfig()
 	for _, opt := range opts {
 		opt(&cfg)
 	}
 	// Logger
-	loggerExporter, _ := stdoutlog.New(
+	loggerExporter, err := stdoutlog.New(
 		append([]stdoutlog.Option{stdoutlog.WithoutTimestamps()}, cfg.LogOptions...)...,
-	) // stdoutlog.New() never returns an error
+	)
+	if err != nil {
+		return NewNoopClient(), err
+	}
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
 	logger := loggerProvider.Logger(defaultPackageName)
 	setOtelErrorHandler(func(err error) {
@@ -59,7 +62,10 @@ func NewStdoutClient(opts ...StddutClientOption) Client {
 	})
 
 	// Tracer
-	traceExporter, _ := stdouttrace.New(cfg.TraceOptions...) // stdouttrace.New() never returns an error
+	traceExporter, err := stdouttrace.New(cfg.TraceOptions...)
+	if err != nil {
+		return NewNoopClient(), err
+	}
 
 	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(
 		sdktrace.NewSimpleSpanProcessor(traceExporter),
@@ -67,7 +73,10 @@ func NewStdoutClient(opts ...StddutClientOption) Client {
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	metricExporter, _ := stdoutmetric.New(cfg.MetricOptions...) // stdoutmetric.New() never returns an error
+	metricExporter, err := stdoutmetric.New(cfg.MetricOptions...)
+	if err != nil {
+		return NewNoopClient(), err
+	}
 	meterProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
@@ -89,7 +98,7 @@ func NewStdoutClient(opts ...StddutClientOption) Client {
 
 	client := Client{cfg.Config, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, onClose}
 
-	return client
+	return client, nil
 }
 
 type noopMessageEmitter struct{}

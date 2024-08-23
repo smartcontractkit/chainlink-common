@@ -75,7 +75,8 @@ func TestClient_SetGlobalOtelProviders(t *testing.T) {
 	})
 
 	var b strings.Builder
-	client := beholder.NewStdoutClient(beholder.WithWriter(&b))
+	client, err := beholder.NewStdoutClient(beholder.WithWriter(&b))
+	assert.NoError(t, err)
 	// Set global Otel Client
 	beholder.SetClient(&client)
 

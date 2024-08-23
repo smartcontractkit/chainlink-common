@@ -42,9 +42,8 @@ func ExampleBeholderCustomMessage() {
 	}
 
 	// Emit the custom message anywhere from application logic
+	fmt.Println("Emit custom messages")
 	for range 10 {
-		fmt.Println("Emit custom messages from mercury")
-
 		err := beholder.MessageEmitter().Emit(context.Background(), payloadBytes,
 			"beholder_data_schema", "/custom-message/versions/1", // required
 			"beholder_data_type", "custom_message",

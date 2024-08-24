@@ -14,6 +14,7 @@ service ExecutionFactoryGenerator {
 // ExecutionCustomHandlers is a gRPC service that services the custom
 // resource generation requests for the execution provider
 service ExecutionCustomHandlers {
+    rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusResponse) {}
     rpc NewCommitStoreReader(NewCommitStoreReaderRequest) returns (NewCommitStoreReaderResponse) {}
     rpc NewOffRampReader(NewOffRampReaderRequest) returns (NewOffRampReaderResponse) {}
     rpc NewOnRampReader(NewOnRampReaderRequest) returns (NewOnRampReaderResponse) {}
@@ -51,7 +52,7 @@ message NewCommitFactoryRequest {
 // for the return value of [github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipcommit.NewCommitReportingPluginFactory]
 // because the underlying return value is an interface, which is modeled as a service in gRPC
 message NewCommitFactoryResponse {
-    int32 commit_factory_service_id = 1;
+    uint32 commit_factory_service_id = 1;
 }
 
 // CommitCustomHandlers is a gRPC service that services the custom
@@ -64,6 +65,18 @@ service CommitCustomHandlers {
     rpc NewPriceRegistryReader(NewPriceRegistryReaderRequest) returns (NewPriceRegistryReaderResponse) {}
     rpc SourceNativeToken(SourceNativeTokenRequest) returns (SourceNativeTokenResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+// GetTransactionStatusRequest is a gRPC adapter for the input arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.GetTransactionStatus]
+message GetTransactionStatusRequest {
+    string transaction_id = 1;
+}
+
+// GetTransactionStatusResponse is a gRPC adapter for the output arguments of
+// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.GetTransactionStatus]
+message GetTransactionStatusResponse {
+    int32 transaction_status = 1;
 }
 
 // NewCommitStoreReaderRequest is a gRPC adapter for the input arguments of

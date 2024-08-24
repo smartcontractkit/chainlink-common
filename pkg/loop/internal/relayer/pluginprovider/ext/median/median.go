@@ -16,12 +16,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 var (
@@ -46,7 +46,7 @@ func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderC
 
 	maybeCr := chainreader.NewClient(b, cc)
 	var anyRetVal int
-	err := maybeCr.GetLatestValue(context.Background(), "", "", nil, &anyRetVal)
+	err := maybeCr.GetLatestValue(context.Background(), "", "", primitives.Unconfirmed, nil, &anyRetVal)
 	if status.Convert(err).Code() != codes.Unimplemented {
 		m.chainReader = maybeCr
 	}

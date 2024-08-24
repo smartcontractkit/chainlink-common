@@ -105,6 +105,8 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 	for feedID := range currentState.FeedInfo {
 		allIDs = append(allIDs, feedID)
 	}
+
+	a.lggr.Debugw("determined feeds to check", "nFeedIds", len(allIDs))
 	// ensure deterministic order of reportsNeedingUpdate
 	sort.Slice(allIDs, func(i, j int) bool { return allIDs[i] < allIDs[j] })
 	candidateIDs := []string{}
@@ -213,6 +215,7 @@ func (a *dataFeedsAggregator) initializeCurrentState(previousOutcome *types.Aggr
 			a.lggr.Debugw("removed obsolete feedID from state", "feedID", feedID)
 		}
 	}
+	a.lggr.Debugw("current state initialized", "state", currentState, "previousOutcome", previousOutcome)
 	return currentState, nil
 }
 

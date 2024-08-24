@@ -61,11 +61,11 @@ func (e ExecutionLOOPTester) Run(t *testing.T, p types.CCIPExecutionFactoryGener
 		factory, err := p.NewExecutionFactory(ctx, e.SrcProvider, e.DstProvider, e.SrcChainID, e.DstChainID, e.SourceTokenAddress)
 		require.NoError(t, err)
 
-		runReportingPluginFactory(t, factory)
+		runExecReportingPluginFactory(t, factory)
 	})
 }
 
-func runReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) {
+func runExecReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) {
 	// TODO BCF-3068 de-dupe this with the same function in median/test/median.go
 	rpi := libocr.ReportingPluginInfo{
 		Name:          "test",

@@ -135,6 +135,10 @@ func (s staticPluginRelayer) Name() string { panic("unimplemented") }
 
 func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
 
+func (s staticPluginRelayer) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (s staticPluginRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if s.StaticChecks && !(bytes.Equal(s.contractReaderConfig, contractReaderConfig)) {
 		return nil, fmt.Errorf("expected contractReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.contractReaderConfig), string(contractReaderConfig))

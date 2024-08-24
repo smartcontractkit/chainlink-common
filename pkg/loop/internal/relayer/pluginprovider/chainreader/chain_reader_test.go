@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -357,22 +358,18 @@ type fakeChainReader struct {
 	stored      []TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
-	isStarted   bool
+	isStarted   atomic.Bool
 }
 
 var errServiceNotStarted = errors.New("ContractReader service not started")
 
 func (f *fakeChainReader) Start(_ context.Context) error {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	f.isStarted = true
+	f.isStarted.Store(true)
 	return nil
 }
 
 func (f *fakeChainReader) Close() error {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	f.isStarted = false
+	f.isStarted.Store(false)
 	return nil
 }
 
@@ -408,7 +405,7 @@ func (f *fakeChainReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
 }
 
 func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
-	if !f.isStarted {
+	if !f.isStarted.Load() {
 		return errServiceNotStarted
 	}
 
@@ -484,7 +481,7 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 }
 
 func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
-	if !f.isStarted {
+	if !f.isStarted.Load() {
 		return nil, errServiceNotStarted
 	}
 
@@ -536,7 +533,7 @@ func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.
 }
 
 func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
-	if !f.isStarted {
+	if !f.isStarted.Load() {
 		return nil, errServiceNotStarted
 	}
 

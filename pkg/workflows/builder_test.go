@@ -40,7 +40,7 @@ func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
 	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	streamsTrigger := conf.Streams.New(workflow)
 	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+		Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 	)
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -112,7 +112,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*workflows.WorkflowSpecFactory, erro
 	streamsTrigger := streamsConfig.New(workflow)
 
 	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger),
+		Observations: workflows.ListOf[streams.Feed](streamsTrigger),
 	})
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -131,13 +131,24 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	notStreamsTrigger := conf.NotStream.New(workflow)
 
-	feedsInput := streams.NewFeedFromFields(
-		notStreamsTrigger.Price().PriceA(),
+	md := streams.NewSignersMetadataFromFields(
+		workflows.ConstantDefinition(1), workflows.ListOf(notStreamsTrigger.Metadata().Signer()))
+
+	payload := streams.NewFeedReportFromFields(
+		notStreamsTrigger.Payload().BuyPrice(),
 		workflows.ConstantDefinition[streams.FeedId](anyFakeFeedID),
-		notStreamsTrigger.FullReport(),
+		notStreamsTrigger.Payload().FullReport(),
+		notStreamsTrigger.Payload().ObservationTimestamp(),
+		notStreamsTrigger.Payload().ReportContext(),
+		workflows.ListOf(notStreamsTrigger.Payload().Signature()),
+	)
+
+	feedsInput := streams.NewFeedFromFields(
+		notStreamsTrigger.ID(),
+		md,
+		workflows.ListOf[streams.FeedReport](payload),
 		notStreamsTrigger.Timestamp(),
-		notStreamsTrigger.ReportContext(),
-		notStreamsTrigger.Signatures(),
+		notStreamsTrigger.TriggerType(),
 	)
 	ocrConfig := ocr3.DataFeedsConsensusConfig{
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
@@ -156,7 +167,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 	}
 
 	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
-		Observations: workflows.ListOf[[]streams.Feed](workflows.ListOf[streams.Feed](feedsInput)),
+		Observations: workflows.ListOf[streams.Feed](feedsInput),
 	})
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -185,7 +196,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		runSepoliaStagingTest(t, sepoliaDefaultConfig, NewWorkflowRemapped)
 	})
 
-	t.Run("maping different types without compute", func(t *testing.T) {
+	// This test intentionally uses a similar complex type to the real steams trigger
+	// this helps assure that mapping works correctly under many circumstances, including hard-coding
+	// and wrapping values into arrays, while still remaining somewhat realistic
+	t.Run("mapping different types without compute", func(t *testing.T) {
 		factory, err := NewWorkflowSpecFromPrimitives(notStreamSepoliaConfig)
 		require.NoError(t, err)
 
@@ -210,16 +224,25 @@ func TestBuilder_ValidSpec(t *testing.T) {
 					ID:  "offchain_reporting@1.0.0",
 					Ref: "data-feeds-report",
 					Inputs: workflows.StepInputs{
-						Mapping: map[string]any{"observations": [][]map[string]any{
+						Mapping: map[string]any{"observations": []map[string]any{
 							{
-								{
-									"benchmarkPrice":       "$(trigger.outputs.Price.PriceA)",
-									"feedId":               anyFakeFeedID,
-									"fullReport":           "$(trigger.outputs.FullReport)",
-									"observationTimestamp": "$(trigger.outputs.Timestamp)",
-									"reportContext":        "$(trigger.outputs.ReportContext)",
-									"signatures":           "$(trigger.outputs.Signatures)",
+								"ID": "$(trigger.outputs.ID)",
+								"Metadata": map[string]any{
+									"MinRequiredSignatures": 1,
+									"Signers":               []string{"$(trigger.outputs.Metadata.Signer)"},
 								},
+								"Payload": []map[string]any{
+									{
+										"BenchmarkPrice":       "$(trigger.outputs.Payload.BuyPrice)",
+										"FeedID":               anyFakeFeedID,
+										"FullReport":           "$(trigger.outputs.Payload.FullReport)",
+										"ObservationTimestamp": "$(trigger.outputs.Payload.ObservationTimestamp)",
+										"ReportContext":        "$(trigger.outputs.Payload.ReportContext)",
+										"Signatures":           []string{"$(trigger.outputs.Payload.Signature)"},
+									},
+								},
+								"Timestamp":   "$(trigger.outputs.Timestamp)",
+								"TriggerType": "$(trigger.outputs.TriggerType)",
 							},
 						}},
 					},
@@ -269,11 +292,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		consensus2 := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -291,7 +314,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -305,7 +328,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		require.NoError(t, err)
 
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
-		badStep := workflows.Step[[]streams.Feed]{
+		badStep := workflows.Step[streams.Feed]{
 			Definition: workflows.StepDefinition{
 				ID:             "streams-trigger@1.0.0",
 				Ref:            "Trigger",
@@ -318,7 +341,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		badCap := badStep.AddTo(workflow)
 
 		consensus := conf.Ocr.New(workflow, "", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](badCap)},
+			Observations: workflows.ListOf[streams.Feed](badCap)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -334,11 +357,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		consensus2 := conf.Ocr.New(workflow, "ccip_feeds_different", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})

@@ -47,13 +47,13 @@ type feedValue struct {
 
 func (*feedValue) private() {}
 func (c *feedValue) Deviation() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedValue, string](c.CapDefinition, "Deviation")
+	return workflows.AccessField[FeedValue, string](c.CapDefinition, "deviation")
 }
 func (c *feedValue) Heartbeat() workflows.CapDefinition[int] {
-	return workflows.AccessField[FeedValue, int](c.CapDefinition, "Heartbeat")
+	return workflows.AccessField[FeedValue, int](c.CapDefinition, "heartbeat")
 }
 func (c *feedValue) RemappedID() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedValue, string](c.CapDefinition, "RemappedID")
+	return workflows.AccessField[FeedValue, string](c.CapDefinition, "remappedID,omitempty")
 }
 
 func NewFeedValueFromFields(
@@ -62,9 +62,9 @@ func NewFeedValueFromFields(
 	remappedID workflows.CapDefinition[string]) FeedValueCap {
 	return &simpleFeedValue{
 		CapDefinition: workflows.ComponentCapDefinition[FeedValue]{
-			"deviation":  deviation.Ref(),
-			"heartbeat":  heartbeat.Ref(),
-			"remappedID": remappedID.Ref(),
+			"deviation":            deviation.Ref(),
+			"heartbeat":            heartbeat.Ref(),
+			"remappedID,omitempty": remappedID.Ref(),
 		},
 		deviation:  deviation,
 		heartbeat:  heartbeat,
@@ -92,7 +92,7 @@ func (c *simpleFeedValue) RemappedID() workflows.CapDefinition[string] {
 func (c *simpleFeedValue) private() {}
 
 type DataFeedsConsensusInput struct {
-	Observations workflows.CapDefinition[[][]streams.Feed]
+	Observations workflows.CapDefinition[[]streams.Feed]
 }
 
 func (input DataFeedsConsensusInput) ToSteps() workflows.StepInputs {

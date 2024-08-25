@@ -13,6 +13,7 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegeneration"
 )
 
 // CapabilitySchemaFilePattern is used to extract the package name from the file path.
@@ -61,7 +62,7 @@ func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []Workflo
 		return err
 	}
 
-	if err = printFiles(path.Dir(schemaPath), allFiles); err != nil {
+	if err = codegeneration.PrintFiles(path.Dir(schemaPath), allFiles); err != nil {
 		return err
 	}
 

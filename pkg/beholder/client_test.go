@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -92,7 +93,7 @@ func TestClient(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error creating beholder client: %v", err)
 			}
-			SetOtelErrorHandler(otelErrorHandler)
+			otel.SetErrorHandler(otel.ErrorHandlerFunc(otelErrorHandler))
 			// Number of exported messages
 			exportedMessageCount := 0
 
@@ -148,7 +149,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 				return exporterMock, nil
 			},
 		)
-		SetOtelErrorHandler(func(err error) { t.Fatalf("otel error: %v", err) })
+		otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { t.Fatalf("otel error: %v", err) }))
 		assert.NoError(t, err)
 		return client.Emitter
 	}

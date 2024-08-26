@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
@@ -52,7 +51,7 @@ type Client struct {
 }
 
 // NewClient creates a new Client with initialized OpenTelemetry components
-// To handle OpenTelemetry errors use SetOtelErrorHandler
+// To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler)
 func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	factory := func(ctx context.Context, options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return otlploggrpc.New(ctx, options...)
@@ -194,11 +193,6 @@ func (c Client) ForPackage(name string) Client {
 	newClient.Meter = meter
 	newClient.Emitter = messageEmitter
 	return newClient
-}
-
-// Sets global error handler for OpenTelemetry
-func SetOtelErrorHandler(h func(err error)) {
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(h))
 }
 
 func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {

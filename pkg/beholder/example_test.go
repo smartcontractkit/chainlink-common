@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
@@ -25,7 +26,7 @@ func ExampleNewClient() {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Handle OTel errors
-	beholder.SetOtelErrorHandler(errorHandler)
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(errorHandler))
 	// Set global client so it will be accessible from anywhere through beholder functions
 	beholder.SetClient(client)
 
@@ -68,7 +69,8 @@ func ExampleTracer() {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Handle OTel errors
-	beholder.SetOtelErrorHandler(errorHandler)
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(errorHandler))
+
 	// Set global client so it will be accessible from anywhere through beholder functions
 	beholder.SetClient(client)
 

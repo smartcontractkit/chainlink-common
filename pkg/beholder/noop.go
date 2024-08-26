@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -57,9 +58,9 @@ func NewStdoutClient(opts ...StddutClientOption) (*Client, error) {
 	}
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
 	logger := loggerProvider.Logger(defaultPackageName)
-	SetOtelErrorHandler(func(err error) {
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
 		fmt.Printf("OTel error %s", err)
-	})
+	}))
 
 	// Tracer
 	traceExporter, err := stdouttrace.New(cfg.TraceOptions...)

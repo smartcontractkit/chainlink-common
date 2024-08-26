@@ -275,23 +275,18 @@ type fakeChainReaderInterfaceTester struct {
 	impl types.ContractReader
 }
 
-func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
+func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	if ok {
 		fake.vals = []valConfidencePair{}
 		fake.triggers = []eventConfidencePair{}
 		fake.stored = []TestStruct{}
+		require.NoError(t, fake.Start(context.Background()))
 	}
 }
 
 func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.ContractReader {
 	return it.impl
-}
-
-func (it *fakeChainReaderInterfaceTester) Start(t *testing.T) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	require.NoError(t, fake.Start(context.Background()))
 }
 
 func (it *fakeChainReaderInterfaceTester) Close(t *testing.T) {

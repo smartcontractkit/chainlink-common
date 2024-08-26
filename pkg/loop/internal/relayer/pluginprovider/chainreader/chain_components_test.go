@@ -294,7 +294,7 @@ func (it *fakeChainComponentsInterfaceTester) GetChainWriter(_ *testing.T) types
 	return &it.cw
 }
 
-func (it *fakeChainComponentsInterfaceTester) IncNonce() {}
+func (it *fakeChainComponentsInterfaceTester) DirtyContracts() {}
 
 func (it *fakeChainComponentsInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{

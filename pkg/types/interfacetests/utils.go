@@ -67,6 +67,7 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T
 }
 
 func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
+	tester.DirtyContracts()
 	txID := uuid.New().String()
 	cw := tester.GetChainWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))

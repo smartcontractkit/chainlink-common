@@ -18,9 +18,8 @@ type ChainComponentsInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
 	GetChainReader(t T) types.ContractReader
 	GetChainWriter(t T) types.ChainWriter
-	// NOTE: not sure if this should be in the interface, or if it should be moved
-	// to the implementation along with waitForTransactionFinalization...
 	GetBindings(t T) []types.BoundContract
+	DirtyContracts()
 	MaxWaitTimeForEvents() time.Duration
 	// GenerateBlocksTillConfidenceLevel is only used by the internal common tests, all other tests can/should
 	// rely on the ChainWriter waiting for actual blocks to be mined.

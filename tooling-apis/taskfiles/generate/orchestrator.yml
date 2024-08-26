@@ -1,0 +1,26 @@
+version: "3"
+
+includes:
+  utils:
+    taskfile: ./base-generator.yml
+    dir: ../..
+    aliases: [base]
+
+tasks:
+  node:
+    desc: Generate the node gRPC API protobuf files and go module
+    cmds:
+      - task: base:generator
+        vars:
+          SERVICE: orchestrator
+          SUB_SERVICE: node
+          FILE_NAME: node/node.proto
+  job:
+    desc: Generate the job gRPC API protobuf files and go module
+    cmds:
+      - task: base:generator
+        vars:
+          SERVICE: orchestrator
+          SUB_SERVICE: proposer
+          FILE_NAME: proposer/proposer.proto
+  

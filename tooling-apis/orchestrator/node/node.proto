@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package tooling.orchestrator.node;
+
+option go_package = "orchestrator/node";
+
+// RPC methods that the FMS will call on the node.
+service NodeService {
+  rpc ProposeJob(ProposeJobRequest) returns (ProposeJobResponse);
+  rpc DeleteJob(DeleteJobRequest) returns (DeleteJobResponse);
+  rpc RevokeJob(RevokeJobRequest) returns (RevokeJobResponse);
+}
+
+message ProposeJobRequest {
+  string id = 1;
+  string spec = 2;
+  repeated string multiaddrs = 3;
+  int64 version = 4;
+}
+message ProposeJobResponse { string id = 2; }
+
+message DeleteJobRequest { string id = 1; }
+message DeleteJobResponse { string id = 1; }
+
+message RevokeJobRequest { string id = 1; }
+message RevokeJobResponse { string id = 1; }

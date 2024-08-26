@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package tooling.distributor.csa;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "job-distributor/csa";
+
+service CSAService {
+  rpc GetKeypair(GetKeypairRequest) returns (GetKeypairResponse);
+  rpc ListKeypairs(ListKeypairsRequest) returns (ListKeypairsResponse);
+}
+
+message Keypair {
+  int64 id = 1;
+  string public_key = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message GetKeypairRequest {}
+
+message GetKeypairResponse { Keypair keypair = 1; }
+
+message ListKeypairsRequest {}
+
+message ListKeypairsResponse { repeated Keypair keypairs = 1; }

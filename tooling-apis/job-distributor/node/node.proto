@@ -1,0 +1,217 @@
+syntax = "proto3";
+
+package tooling.distributor.node;
+
+import "google/protobuf/timestamp.proto";
+import "job-distributor/shared/ptypes/label.proto";
+
+option go_package = "job-distributor/node";
+
+// NodeService provides RPCs for managing nodes within the Job Distributor.
+service NodeService {
+  // DisableNode marks a node as disabled, disabling any active operations on
+  // it.
+  rpc DisableNode(DisableNodeRequest) returns (DisableNodeResponse) {}
+
+  // EnableNode enabled a disabled node, allowing operations to resume.
+  rpc EnableNode(EnableNodeRequest) returns (EnableNodeResponse) {}
+
+  // GetNode retrieves the details of a node by its unique identifier.
+  rpc GetNode(GetNodeRequest) returns (GetNodeResponse) {}
+
+  // ListNodes returns a list of nodes, optionally filtered by the provided
+  // criteria.
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {}
+
+  rpc ListNodeChainConfigs(ListNodeChainConfigsRequest)
+      returns (ListNodeChainConfigsResponse) {}
+
+  // RegisterNode registers a new node to the system.
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse) {}
+
+  // UpdateNode updates the details of an existing node.
+  rpc UpdateNode(UpdateNodeRequest) returns (UpdateNodeResponse) {}
+}
+
+// Node represents a node within the Job Distributor system.
+message Node {
+  string id = 1;         // Unique identifier for the node.
+  string name = 2;       // Human-readable name for the node.
+  string public_key = 3; // Public key used for secure communications.
+  bool is_enabled = 4;   // Indicates if the node is currently enabled.
+  bool is_connected =
+      5; // Indicates if the node is currently connected to the network.
+  repeated tooling.distributor.label.Label labels =
+      6; // Set of labels associated with the node.
+  google.protobuf.Timestamp created_at =
+      7; // Timestamp when the node was created.
+  google.protobuf.Timestamp updated_at =
+      8; // Timestamp when the node was last updated.
+}
+
+enum ChainType {
+  CHAIN_TYPE_UNSPECIFIED = 0;
+  CHAIN_TYPE_EVM = 1;
+  CHAIN_TYPE_SOLANA = 2;
+}
+
+message Chain {
+  string id = 1;
+  ChainType type = 2;
+}
+
+message OCR1Config {
+  message P2PKeyBundle {
+    string peer_id = 1;
+    string public_key = 2;
+  }
+
+  message OCRKeyBundle {
+    string bundle_id = 1;
+    string config_public_key = 2;
+    string offchain_public_key = 3;
+    string onchain_signing_address = 4;
+  }
+
+  bool enabled = 1;
+  bool is_bootstrap = 2;
+  P2PKeyBundle p2p_key_bundle = 3;
+  OCRKeyBundle ocr_key_bundle = 4;
+  string multiaddr = 5;
+}
+
+message OCR2Config {
+  message P2PKeyBundle {
+    string peer_id = 1;
+    string public_key = 2;
+  }
+
+  message OCRKeyBundle {
+    string bundle_id = 1;
+    string config_public_key = 2;
+    string offchain_public_key = 3;
+    string onchain_signing_address = 4;
+  }
+
+  message Plugins {
+    bool commit = 1;
+    bool execute = 2;
+    bool median = 3;
+    bool mercury = 4;
+    bool rebalancer = 5;
+  }
+
+  bool enabled = 1;
+  bool is_bootstrap = 2;
+  P2PKeyBundle p2p_key_bundle = 3;
+  OCRKeyBundle ocr_key_bundle = 4;
+  string multiaddr = 5;
+  Plugins plugins = 6;
+  string forwarder_address = 7;
+}
+
+message ChainConfig {
+  Chain chain = 1;
+  string account_address = 2;
+  string admin_address = 3;
+  OCR1Config ocr1_config = 4;
+  OCR2Config ocr2_config = 5;
+  string node_id = 6;
+}
+
+// RegisterNodeRequest contains the information needed to register a new node.
+message RegisterNodeRequest {
+  string name = 1;       // Desired name for the node.
+  string public_key = 2; // Public key for the node.
+  repeated tooling.distributor.label.Label labels =
+      3; // Labels to associate with the node.
+}
+
+// RegisterNodeResponse returns the newly registered node.
+message RegisterNodeResponse {
+  Node node = 1; // Details of the newly registered node.
+}
+
+// GetNodeRequest is the request to retrieve a single node by its ID.
+message GetNodeRequest {
+  string id = 1; // Unique identifier of the node to retrieve.
+}
+
+// GetNodeResponse is the response containing the requested node.
+message GetNodeResponse {
+  Node node = 1; // Details of the retrieved node.
+}
+
+// EnableState represents the enabled state of the node.
+enum EnableState {
+  ENABLE_STATE_UNSPECIFIED = 0;
+  ENABLE_STATE_ENABLED = 1;
+  ENABLE_STATE_DISABLED = 2;
+}
+
+/**
+ * ListNodesRequest is the request object for the ListNodes method.
+ *
+ * Provide a filter to return a subset of data. Nodes can be filtered by:
+ *   * ids - A list of node ids.
+ *   * archived - The archived state of the node.
+ *   * selectors - A list of selectors to filter nodes by their labels.
+ *
+ * If no filter is provided, all nodes are returned.
+ */
+message ListNodesRequest {
+  message Filter {
+    repeated string ids = 1;
+    EnableState enabled = 2;
+    repeated tooling.distributor.label.Selector selectors = 3;
+  }
+
+  Filter filter = 1;
+}
+
+/**
+ * ListNodesResponse is the response object for the ListNodes method.
+ *
+ * It returns a list of nodes that match the filter criteria.
+ */
+message ListNodesResponse {
+  repeated Node nodes = 1; // List of nodes.
+}
+
+// UpdateNodeRequest contains the information necessary to update a node.
+message UpdateNodeRequest {
+  string id = 1;         // Unique identifier of the node to update.
+  string name = 2;       // New name for the node, if changing.
+  string public_key = 3; // New public key for the node, if changing.
+  repeated tooling.distributor.label.Label labels =
+      4; // New set of labels for the node, if changing.
+}
+// UpdateNodeResponse returns the updated node.
+message UpdateNodeResponse {
+  Node node = 1; // Updated node details.
+}
+
+// DisableNodeRequest is used to mark a node as disabled.
+message DisableNodeRequest {
+  string id = 1; // Unique identifier of the node to disable.
+}
+// DisableNodeResponse returns the disabled node.
+message DisableNodeResponse {
+  Node node = 1; // Disabled node details.
+}
+
+// EnableNodeRequest is used to reactivate a disabled node.
+message EnableNodeRequest {
+  string id = 1; // Unique identifier of the node to enable.
+}
+// EnableNodeResponse returns the enabled node.
+message EnableNodeResponse {
+  Node node = 1; // Enabled node details.
+}
+
+message ListNodeChainConfigsRequest {
+  message Filter { repeated string node_ids = 1; }
+  Filter filter = 1;
+}
+
+message ListNodeChainConfigsResponse { repeated ChainConfig chain_configs = 1; }

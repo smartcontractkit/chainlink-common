@@ -1,0 +1,49 @@
+version: "3"
+
+includes:
+  utils:
+    taskfile: ./base-generator.yml
+    dir: ../..
+    aliases: [base]
+
+tasks:
+  shared:
+    desc: Generate the shared gRPC API protobuf files and go module
+    cmds:
+      - task: base:generator
+        vars:
+          SERVICE: job-distributor
+          SUB_SERVICE: shared
+          FILE_NAME: shared/ptypes/label.proto
+  node:
+    desc: Generate the node gRPC API protobuf files and go module
+    cmds:
+      - task: base:generator
+        vars:
+          SERVICE: job-distributor
+          SUB_SERVICE: node
+          FILE_NAME: node/node.proto
+  job:
+    desc: Generate the job gRPC API protobuf files and go module
+    cmds:
+      - task: base:generator
+        vars:
+          SERVICE: job-distributor
+          SUB_SERVICE: job
+          FILE_NAME: job/job.proto
+  csa:
+    desc: Generate the app gRPC API protobuf files and go module
+    cmds:
+      - task: base:generator
+        vars:
+          SERVICE: job-distributor
+          SUB_SERVICE: csa
+          FILE_NAME: csa/csa.proto
+  app:
+    desc: Generate the app gRPC API protobuf files and go module
+    cmds:
+      - task: base:generator
+        vars:
+          SERVICE: job-distributor
+          SUB_SERVICE: app
+          FILE_NAME: app/app.proto

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package tooling.distributor.label;
+
+option go_package = "job-distributor/ptypes";
+
+// Label defines a label as a key value pair
+message Label {
+  string key = 1;
+  optional string value = 2;
+}
+
+// SelectorOp defines the operation to be used in a selector
+enum SelectorOp {
+  EQ = 0;
+  NOT_EQ = 1;
+  IN = 2;
+  NOT_IN = 3;
+  EXIST = 4;
+  NOT_EXIST = 5;
+}
+
+// Selector defines a selector as a key value pair with an operation
+message Selector {
+  string key = 1;
+  SelectorOp op = 2;
+  optional string value = 3;
+}

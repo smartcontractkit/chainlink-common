@@ -1,0 +1,206 @@
+syntax = "proto3";
+
+package tooling.distributor.job;
+
+import "google/protobuf/timestamp.proto";
+import "job-distributor/shared/ptypes/label.proto";
+
+option go_package = "job-distributor/job";
+
+// JobService provides RPCs for managing jobs and job proposals within the
+// system.
+service JobService {
+  // GetJob retrieves the details of a specific job by its ID or UUID.
+  rpc GetJob(GetJobRequest) returns (GetJobResponse) {}
+
+  // GetProposal retrieves the details of a specific proposal by its ID.
+  rpc GetProposal(GetProposalRequest) returns (GetProposalResponse) {}
+
+  // ListJobs returns a list of jobs, optionally filtered by IDs or node IDs.
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {}
+
+  // ListProposals returns a list of proposals, optionally filtered by proposal
+  // or job IDs.
+  rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse) {}
+
+  // ProposeJob submits a new job proposal to a node.
+  rpc ProposeJob(ProposeJobRequest) returns (ProposeJobResponse) {}
+
+  // RevokeJob revokes an existing job proposal.
+  rpc RevokeJob(RevokeJobRequest) returns (RevokeJobResponse) {}
+
+  // DeleteJob deletes a job from the system.
+  rpc DeleteJob(DeleteJobRequest) returns (DeleteJobResponse) {}
+
+  // UpdateJob updates a job in the system.
+  rpc UpdateJob(UpdateJobRequest) returns (UpdateJobResponse) {}
+}
+
+// ProposalStatus defines the possible states of a job proposal.
+enum ProposalStatus {
+  PROPOSAL_STATUS_UNSPECIFIED = 0;
+  PROPOSAL_STATUS_PROPOSED =
+      1; // Proposal has been made but not yet decided upon.
+  PROPOSAL_STATUS_APPROVED = 2;  // Proposal has been accepted.
+  PROPOSAL_STATUS_REJECTED = 3;  // Proposal has been rejected.
+  PROPOSAL_STATUS_CANCELLED = 4; // Proposal has been cancelled.
+  PROPOSAL_STATUS_PENDING = 5;   // Proposal is pending review.
+  PROPOSAL_STATUS_REVOKED =
+      6; // Proposal has been revoked after being proposed.
+}
+
+// ProposalDeliveryStatus defines the delivery status of the proposal to the
+// node.
+enum ProposalDeliveryStatus {
+  PROPOSAL_DELIVERY_STATUS_UNSPECIFIED = 0;
+  PROPOSAL_DELIVERY_STATUS_DELIVERED = 1;    // Delivered to the node.
+  PROPOSAL_DELIVERY_STATUS_ACKNOWLEDGED = 2; // Acknowledged by the node.
+  PROPOSAL_DELIVERY_STATUS_FAILED = 3;       // Delivery failed.
+}
+
+// Job represents the structured data of a job within the system.
+message Job {
+  string id = 1;      // Unique identifier for the job.
+  string uuid = 2;    // Universally unique identifier for the job.
+  string node_id = 3; // ID of the node associated with this job.
+  repeated string proposal_ids =
+      4; // List of proposal IDs associated with this job.
+  google.protobuf.Timestamp created_at =
+      5; // Timestamp when the job was created.
+  google.protobuf.Timestamp updated_at =
+      6; // Timestamp when the job was last updated.
+  google.protobuf.Timestamp deleted_at =
+      7; // Timestamp when the job was deleted, if applicable.
+  repeated tooling.distributor.label.Label labels =
+      8; // Set of labels associated with the job.
+}
+
+// Proposal represents a job proposal.
+message Proposal {
+  string id = 1; // Unique identifier for the proposal.
+  int64 revision =
+      2; // Revision number of the proposal.  Montonically increasing.
+  ProposalStatus status = 3; // Current status of the proposal.
+  ProposalDeliveryStatus delivery_status =
+      4;             // Delivery status of the proposal.
+  string spec = 5;   // Specification of the job proposed.
+  string job_id = 6; // ID of the job associated with this proposal.
+  google.protobuf.Timestamp created_at =
+      7; // Timestamp when the proposal was created.
+  google.protobuf.Timestamp updated_at =
+      8; // Timestamp when the proposal was last updated.
+  optional google.protobuf.Timestamp acked_at =
+      9; // Timestamp when the proposal was acknowledged.
+  optional google.protobuf.Timestamp response_received_at =
+      10; // Timestamp when a response was received.
+}
+
+// GetJobRequest specifies the criteria for retrieving a job.
+message GetJobRequest {
+  oneof id_oneof {
+    string id = 1;   // Unique identifier of the job.
+    string uuid = 2; // Universally unique identifier of the job.
+  }
+}
+
+// GetJobResponse contains the job details.
+message GetJobResponse {
+  Job job = 1; // Details of the retrieved job.
+}
+
+// GetProposalRequest specifies the criteria for retrieving a proposal.
+message GetProposalRequest {
+  string id = 1; // Unique identifier of the proposal to retrieve.
+}
+
+// GetProposalResponse contains the proposal details.
+message GetProposalResponse {
+  Proposal proposal = 1; // Details of the retrieved proposal.
+}
+
+// ListJobsRequest specifies filters for listing jobs.
+message ListJobsRequest {
+  message Filter {
+    repeated string ids = 1;      // Filter by job IDs.
+    repeated string node_ids = 2; // Filter by node IDs.
+    repeated tooling.distributor.label.Selector selectors =
+        3; // Filter by selectors
+  }
+
+  Filter filter = 1; // Filters applied to the job listing.
+}
+
+// ListJobsResponse contains a list of jobs that match the filters.
+message ListJobsResponse {
+  repeated Job jobs = 1; // List of jobs.
+}
+
+// ListProposalsRequest specifies filters for listing proposals.
+message ListProposalsRequest {
+  message Filter {
+    repeated string ids = 1;     // Filter by proposal IDs.
+    repeated string job_ids = 2; // Filter by job IDs.
+  }
+
+  Filter filter = 1; // Filters applied to the proposal listing.
+}
+
+// ListProposalsResponse contains a list of proposals that match the filters.
+message ListProposalsResponse {
+  repeated Proposal proposals = 1; // List of proposals.
+}
+
+// ProposeJobRequest contains the information needed to submit a new job
+// proposal.
+message ProposeJobRequest {
+  string node_id = 1; // ID of the node to which the job is proposed.
+  string spec = 2;    // Specification of the job being proposed.
+  repeated tooling.distributor.label.Label labels =
+      3; // Labels to associate with the job.
+}
+
+// ProposeJobResponse returns the newly created proposal.
+message ProposeJobResponse {
+  Proposal proposal = 1; // Details of the newly created proposal.
+}
+
+// RevokeJobRequest specifies the criteria for revoking a job proposal.
+message RevokeJobRequest {
+  oneof id_oneof {
+    string id = 1;   // Unique identifier of the proposal to revoke.
+    string uuid = 2; // Universally unique identifier of the proposal to revoke.
+  }
+}
+
+// RevokeJobResponse returns the revoked proposal.
+message RevokeJobResponse {
+  Proposal proposal = 1; // Details of the revoked proposal.
+}
+
+// DeleteJobRequest specifies the criteria for deleting a job.
+message DeleteJobRequest {
+  oneof id_oneof {
+    string id = 1;   // Unique identifier of the job to delete.
+    string uuid = 2; // Universally unique identifier of the job to delete.
+  }
+}
+
+// DeleteJobResponse returns details of the deleted job.
+message DeleteJobResponse {
+  Job job = 1; // Details of the deleted job.
+}
+
+// UpdateJobRequest specifies the criteria for updating a job.
+message UpdateJobRequest {
+  oneof id_oneof {
+    string id = 1;   // Unique identifier of the job to update.
+    string uuid = 2; // Universally unique identifier of the job to update.
+  }
+  repeated tooling.distributor.label.Label labels =
+      3; // Set of labels associated with the job.
+}
+
+// UpdateJobResponse returns details of the updated job.
+message UpdateJobResponse {
+  Job job = 1; // Details of the updated job.
+}

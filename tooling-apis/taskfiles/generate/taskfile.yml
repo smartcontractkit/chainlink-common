@@ -1,0 +1,38 @@
+version: "3"
+
+includes:
+  job-distributor:
+    taskfile: ./job-distributor.yml
+    dir: ../..
+    aliases: [jd]
+  orchestrator:
+    taskfile: ./orchestrator.yml
+    dir: ../..
+
+tasks:
+  default:
+    desc: Generate all protobuf files for all services
+    cmds:
+      - task: job-distributor
+      - task: orchestrator
+
+  job-distributor:
+    desc: Generate all protobuf files for the job-distributor service
+    cmds:
+      - rm -rf ./sdk/go/job-distributor
+      - task: jd:shared
+      - task: jd:node
+      - task: jd:job
+      - task: jd:csa
+      - task: jd:app
+      
+  orchestrator:
+    desc: Generate all protobuf files for the orchestrator service
+    cmds:
+      - rm -rf ./sdk/go/orchestrator
+      - task: orchestrator:node
+      - task: orchestrator:job
+      
+
+
+    

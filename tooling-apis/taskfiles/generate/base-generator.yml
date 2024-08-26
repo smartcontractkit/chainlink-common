@@ -1,0 +1,17 @@
+version: "3"
+
+tasks:
+  generator:
+    internal: true
+    cmds:
+      - >
+        protoc
+        --go_out ./sdk/go
+        --go_opt paths=source_relative
+        --go-grpc_out ./sdk/go
+        --go-grpc_opt paths=source_relative
+        ./{{.SERVICE}}/{{.FILE_NAME}}
+      - >
+        cd ./sdk/go/{{.SERVICE}}/{{.SUB_SERVICE}} && 
+        go mod init github.com/smartcontractkit/chainlink-common/tooling-protos/{{.SERVICE}}/{{.SUB_SERVICE}} && 
+        go mod tidy

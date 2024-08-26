@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package tooling.orchestrator.proposer;
+
+option go_package = "orchestrator/proposer";
+
+// RPC methods that the node will call on the FMS.
+service FeedsManager {
+  rpc ApprovedJob(ApprovedJobRequest) returns (ApprovedJobResponse);
+  rpc Healthcheck(HealthcheckRequest) returns (HealthcheckResponse);
+  rpc UpdateNode(UpdateNodeRequest) returns (UpdateNodeResponse);
+  rpc RejectedJob(RejectedJobRequest) returns (RejectedJobResponse);
+  rpc CancelledJob(CancelledJobRequest) returns (CancelledJobResponse);
+}
+
+// Defines the allowed job types
+enum JobType {
+  JOB_TYPE_UNSPECIFIED = 0;
+  JOB_TYPE_FLUX_MONITOR = 1;
+  JOB_TYPE_OCR = 2;
+  JOB_TYPE_OCR2 = 3;
+}
+
+enum ChainType {
+  CHAIN_TYPE_UNSPECIFIED = 0;
+  CHAIN_TYPE_EVM = 1;
+  CHAIN_TYPE_SOLANA = 2;
+}
+
+message Chain {
+  string id = 1;
+  ChainType type = 2;
+}
+
+// An account on a specific blockchain
+message Account {
+  ChainType chain_type = 1;
+  string chain_id = 2;
+  string address = 3;
+}
+
+// The config for Flux Monitor on a specific chain
+message FluxMonitorConfig { bool enabled = 1; }
+
+// The config for OCR1 on a specific chain
+message OCR1Config {
+  message P2PKeyBundle {
+    string peer_id = 1;
+    string public_key = 2;
+  }
+
+  message OCRKeyBundle {
+    string bundle_id = 1;
+    string config_public_key = 2;
+    string offchain_public_key = 3;
+    string onchain_signing_address = 4;
+  }
+
+  bool enabled = 1;
+  bool is_bootstrap = 2;
+  P2PKeyBundle p2p_key_bundle = 3;
+  OCRKeyBundle ocr_key_bundle = 4;
+  string multiaddr = 5;
+}
+
+// The config for OCR2 on a specific chain
+message OCR2Config {
+  message P2PKeyBundle {
+    string peer_id = 1;
+    string public_key = 2;
+  }
+
+  message OCRKeyBundle {
+    string bundle_id = 1;
+    string config_public_key = 2;
+    string offchain_public_key = 3;
+    string onchain_signing_address = 4;
+  }
+
+  message Plugins {
+    bool commit = 1;
+    bool execute = 2;
+    bool median = 3;
+    bool mercury = 4;
+    bool rebalancer = 5;
+  }
+
+  bool enabled = 1;
+  bool is_bootstrap = 2;
+  P2PKeyBundle p2p_key_bundle = 3;
+  OCRKeyBundle ocr_key_bundle = 4;
+  string multiaddr = 5;
+  Plugins plugins = 6;
+  optional string forwarder_address = 7;
+}
+
+message ChainConfig {
+  Chain chain = 1;
+  string account_address = 2;
+  string admin_address = 3;
+  FluxMonitorConfig flux_monitor_config = 4;
+  OCR1Config ocr1_config = 5;
+  OCR2Config ocr2_config = 6;
+}
+
+message UpdateNodeRequest {
+  repeated JobType job_types = 1;
+  int64 chain_id = 2; // To be removed when all nodes are upgraded to 1.2
+  repeated string account_addresses = 3;
+  bool is_bootstrap_peer = 4;
+  string bootstrap_multiaddr = 5;
+  string version = 6;
+  repeated int64 chain_ids = 7;
+  repeated Account accounts = 8;
+  repeated Chain chains = 9;
+
+  repeated ChainConfig chain_configs = 10;
+}
+message UpdateNodeResponse {}
+
+message ApprovedJobRequest {
+  string uuid = 1;
+  int64 version = 2;
+}
+message ApprovedJobResponse {}
+
+message HealthcheckRequest {}
+message HealthcheckResponse {}
+
+message RejectedJobRequest {
+  string uuid = 1;
+  int64 version = 2;
+}
+message RejectedJobResponse {}
+
+message CancelledJobRequest {
+  string uuid = 1;
+  int64 version = 2;
+}
+message CancelledJobResponse {}

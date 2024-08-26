@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package tooling.distributor.app;
+
+option go_package = "job-distributor/app";
+
+/* AppService exposes two endpoints for querying the health and version of the
+ * API */
+service AppService {
+  rpc Version(VersionRequest) returns (VersionResponse) {}
+  rpc Health(HealthRequest) returns (HealthResponse) {}
+}
+
+message VersionRequest {}
+
+message VersionResponse { string version = 1; }
+
+message HealthRequest {}
+
+message HealthResponse {}

@@ -25,19 +25,19 @@ func GetClient() *Client {
 	return globalClient.Load()
 }
 
-func Logger() otellog.Logger {
+func GetLogger() otellog.Logger {
 	return GetClient().Logger
 }
 
-func Tracer() oteltrace.Tracer {
+func GetTracer() oteltrace.Tracer {
 	return GetClient().Tracer
 }
 
-func Meter() otelmetric.Meter {
+func GetMeter() otelmetric.Meter {
 	return GetClient().Meter
 }
 
-func MessageEmitter() Emitter {
+func GetEmitter() Emitter {
 	return GetClient().Emitter
 }
 

@@ -25,7 +25,7 @@ import (
 func TestGlobal(t *testing.T) {
 	// Get global logger, tracer, meter, messageEmitter
 	// If not initialized with beholder.SetClient will return noop client
-	logger, tracer, meter, messageEmitter := beholder.Logger(), beholder.Tracer(), beholder.Meter(), beholder.MessageEmitter()
+	logger, tracer, meter, messageEmitter := beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()
 	noopClient := beholder.NewNoopClient()
 	assert.IsType(t, otellognoop.Logger{}, logger)
 	assert.IsType(t, oteltracenoop.Tracer{}, tracer)
@@ -42,7 +42,7 @@ func TestGlobal(t *testing.T) {
 	assert.Same(t, noopClientPtr, beholder.GetClient())
 
 	// After that use beholder functions to get logger, tracer, meter, messageEmitter
-	logger, tracer, meter, messageEmitter = beholder.Logger(), beholder.Tracer(), beholder.Meter(), beholder.MessageEmitter()
+	logger, tracer, meter, messageEmitter = beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()
 
 	// Emit otel log record
 	logger.Emit(tests.Context(t), otellog.Record{})

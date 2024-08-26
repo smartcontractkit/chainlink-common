@@ -45,7 +45,7 @@ func ExampleNewClient() {
 	// Emit the custom message anywhere from application logic
 	fmt.Println("Emit custom messages")
 	for range 10 {
-		err := beholder.MessageEmitter().Emit(context.Background(), payloadBytes,
+		err := beholder.GetEmitter().Emit(context.Background(), payloadBytes,
 			"beholder_data_schema", "/custom-message/versions/1", // required
 			"beholder_data_type", "custom_message",
 			"foo", "bar",
@@ -75,13 +75,13 @@ func ExampleTracer() {
 	beholder.SetClient(client)
 
 	// Define a new counter
-	counter, err := beholder.Meter().Int64Counter("custom_message.count")
+	counter, err := beholder.GetMeter().Int64Counter("custom_message.count")
 	if err != nil {
 		log.Fatalf("failed to create new counter")
 	}
 
 	// Define a new gauge
-	gauge, err := beholder.Meter().Int64Gauge("custom_message.gauge")
+	gauge, err := beholder.GetMeter().Int64Gauge("custom_message.gauge")
 	if err != nil {
 		log.Fatalf("failed to create new gauge")
 	}
@@ -92,7 +92,7 @@ func ExampleTracer() {
 	gauge.Record(ctx, rand.Int63n(101))
 
 	fmt.Println("Create new trace span")
-	_, rootSpan := beholder.Tracer().Start(ctx, "foo", trace.WithAttributes(
+	_, rootSpan := beholder.GetTracer().Start(ctx, "foo", trace.WithAttributes(
 		attribute.String("app_name", "beholderdemo"),
 	))
 	defer rootSpan.End()
@@ -106,7 +106,7 @@ func ExampleNewNoopClient() {
 
 	fmt.Println("Emitting custom message via noop otel client")
 
-	err := beholder.MessageEmitter().Emit(context.Background(), []byte("test message"),
+	err := beholder.GetEmitter().Emit(context.Background(), []byte("test message"),
 		"beholder_data_schema", "/custom-message/versions/1", // required
 	)
 	if err != nil {

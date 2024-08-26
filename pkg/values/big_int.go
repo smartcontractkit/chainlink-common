@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
@@ -45,13 +46,17 @@ func (b *BigInt) UnwrapTo(to any) error {
 		}
 		*tb = b.Underlying
 	default:
+		rto := reflect.ValueOf(to)
+		if rto.CanConvert(reflect.TypeOf(new(big.Int))) {
+			return b.UnwrapTo(rto.Convert(reflect.TypeOf(new(big.Int))).Interface())
+		}
 		return fmt.Errorf("cannot unwrap to value of type: %T", to)
 	}
 
 	return nil
 }
 
-func (b *BigInt) Copy() Value {
+func (b *BigInt) copy() Value {
 	if b == nil {
 		return nil
 	}

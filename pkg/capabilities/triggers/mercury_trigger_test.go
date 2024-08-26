@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math/big"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -353,22 +351,6 @@ func TestMercuryTrigger_ConfigValidation(t *testing.T) {
 	conf, err = ts.ValidateConfig(rawConf)
 	require.NoError(t, err)
 	require.NotEmpty(t, conf)
-}
-
-func TestMercuryTrigger_GenerateSchema(t *testing.T) {
-	ts := NewMercuryTriggerService(1000, logger.Nop())
-	schema, err := ts.Schema()
-	require.NoError(t, err)
-	var shouldUpdate = false
-	if shouldUpdate {
-		err = os.WriteFile("./testdata/fixtures/mercury/schema.json", []byte(schema), 0600)
-		require.NoError(t, err)
-	}
-
-	fixture, err := os.ReadFile("./testdata/fixtures/mercury/schema.json")
-	require.NoError(t, err)
-
-	utils.AssertJSONEqual(t, fixture, []byte(schema))
 }
 
 func TestMercuryTrigger_WrapReports(t *testing.T) {

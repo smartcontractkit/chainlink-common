@@ -20,16 +20,16 @@ if command -v golangci-lint >/dev/null 2>&1; then
     if [ "$LOCAL_VERSION" = "$GOLANGCI_LINT_VERSION" ]; then
         echo "Local golangci-lint version ($LOCAL_VERSION) matches desired version ($GOLANGCI_LINT_VERSION). Using local version."
         # shellcheck disable=SC2086
-        golangci-lint run $COMMON_OPTS $EXTRA_OPTS  
+        golangci-lint run $COMMON_OPTS $EXTRA_OPTS | tee "$OUTPUT_FILE"
 
     else
         echo "Local golangci-lint version ($LOCAL_VERSION) does not match desired version ($GOLANGCI_LINT_VERSION). Using Docker version."
-        $DOCKER_CMD > "$OUTPUT_FILE"
+        $DOCKER_CMD | tee "$OUTPUT_FILE"
     fi
 
 else
     echo "Local golangci-lint not found. Using Docker version."
-    $DOCKER_CMD > "$OUTPUT_FILE"
+    $DOCKER_CMD | tee "$OUTPUT_FILE"
 fi
 
 echo "Linting complete. Results saved to $OUTPUT_FILE"

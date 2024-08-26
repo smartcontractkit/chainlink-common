@@ -26,6 +26,7 @@ message SubmitTransactionRequest {
 
 message TransactionMeta {
     string workflow_execution_id = 1;
+    BigInt gas_limit = 2;
 }
 
 // GetTransactionStatusRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetTransactionStatus].
@@ -37,10 +38,11 @@ message GetTransactionStatusRequest {
 // This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
 enum TransactionStatus {
     TRANSACTION_STATUS_UNKNOWN = 0;
-    TRANSACTION_STATUS_UNCONFIRMED = 1;
-    TRANSACTION_STATUS_FINALIZED = 2;
-    TRANSACTION_STATUS_FAILED = 3;
-    TRANSACTION_STATUS_FATAL = 4;
+    TRANSACTION_STATUS_PENDING = 1;
+    TRANSACTION_STATUS_UNCONFIRMED = 2;
+    TRANSACTION_STATUS_FINALIZED = 3;
+    TRANSACTION_STATUS_FAILED = 4;
+    TRANSACTION_STATUS_FATAL = 5;
 }
 
 // GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetTransactionStatus].

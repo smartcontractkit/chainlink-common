@@ -74,5 +74,6 @@ jobs:
       - name: Ensure "make generate" has been run
         run: |
           make rm-mocked
+          make rm-builders
           make generate
           git diff --stat --exit-code

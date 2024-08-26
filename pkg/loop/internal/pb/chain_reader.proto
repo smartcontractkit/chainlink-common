@@ -151,7 +151,7 @@ message Comparator  {
 }
 
 message Block{
-  uint64 block_number = 1;
+  string block_number = 1;
   ComparisonOperator operator = 2;
 }
 

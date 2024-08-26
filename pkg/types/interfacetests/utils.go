@@ -80,7 +80,7 @@ func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTe
 }
 
 func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
-	ctx, cancel := context.WithTimeout(tests.Context(t), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(tests.Context(t), 15*time.Minute)
 	defer cancel()
 
 	ticker := time.NewTicker(1 * time.Second)

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink/capabilities/cron-trigger@1.0.0/root",
+  "properties": {
+    "config": {
+      "properties": {
+        "schedule": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["schedule"]
+    },
+    "inputs": {
+      "properties": {},
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "outputs": {
+      "properties": {
+        "Event": {
+          "properties": {
+            "TriggerType": {
+              "type": "string"
+            },
+            "ID": {
+              "type": "string"
+            },
+            "Outputs": {
+              "properties": {
+                "Underlying": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "Underlying"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "TriggerType",
+            "ID",
+            "Outputs"
+          ]
+        },
+        "Err": true
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["Event", "Err"]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config", "inputs", "outputs"],
+  "description": "A trigger to schedule workflow execution to run periodically at fixed times, dates, or intervals."
+}

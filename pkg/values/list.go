@@ -38,7 +38,7 @@ func (l *List) Unwrap() (any, error) {
 	return nl, l.UnwrapTo(&nl)
 }
 
-func (l *List) Copy() Value {
+func (l *List) copy() Value {
 	return l.CopyList()
 }
 
@@ -49,7 +49,7 @@ func (l *List) CopyList() *List {
 
 	dest := []Value{}
 	for _, el := range l.Underlying {
-		dest = append(dest, el.Copy())
+		dest = append(dest, Copy(el))
 	}
 	return &List{Underlying: dest}
 }

@@ -3,40 +3,36 @@
 package chainwriter
 
 import (
-    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows"
-    ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
+func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory, id string, input TargetInput) {
 
+	def := workflows.StepDefinition{
+		ID:     id,
+		Inputs: input.ToSteps(),
+		Config: map[string]any{
+			"address":    cfg.Address,
+			"deltaStage": cfg.DeltaStage,
+			"schedule":   cfg.Schedule,
+		},
+		CapabilityType: capabilities.CapabilityTypeTarget,
+	}
 
-func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory,id string, input TargetInput) {
-    
-    def := workflows.StepDefinition{
-       ID: id,
-       Inputs: input.ToSteps(),
-       Config: map[string]any{
-           "address": cfg.Address,
-           "deltaStage": cfg.DeltaStage,
-           "schedule": cfg.Schedule,
-       },
-       CapabilityType: capabilities.CapabilityTypeTarget,
-   }
-
-
-    step := workflows.Step[struct{}]{Definition: def}
-    step.AddTo(w)
+	step := workflows.Step[struct{}]{Definition: def}
+	step.AddTo(w)
 }
 
-
 type TargetInput struct {
-    SignedReport workflows.CapDefinition[ocr3.SignedReport]
+	SignedReport workflows.CapDefinition[ocr3.SignedReport]
 }
 
 func (input TargetInput) ToSteps() workflows.StepInputs {
-    return workflows.StepInputs{
-       Mapping: map[string]any{
-        "signed_report": input.SignedReport.Ref(),
-       },
-   }
+	return workflows.StepInputs{
+		Mapping: map[string]any{
+			"signed_report": input.SignedReport.Ref(),
+		},
+	}
 }

@@ -2,8 +2,10 @@
 
 package basictrigger
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Basic Test Trigger
 type Trigger struct {

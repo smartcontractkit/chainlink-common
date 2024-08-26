@@ -57,6 +57,9 @@ func genFromTemplate(name, rawTemplate string, info GeneratedInfo) (string, erro
 		"HasOutputs": func(tpe string) bool {
 			return len(info.Types[tpe].Outputs) > 0
 		},
+		"IsCommon": func(tpe capabilities.CapabilityType) bool {
+			return tpe.IsValid() != nil
+		},
 	}).Parse(rawTemplate)
 	if err != nil {
 		return "", err

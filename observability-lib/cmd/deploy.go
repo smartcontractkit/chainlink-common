@@ -1,82 +1,37 @@
 package cmd
 
 import (
-	"errors"
-
-	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
-
-	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/nop-ocr"
-
 	"github.com/spf13/cobra"
-
-	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
-	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/core-node"
-	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
-	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/k8s-resources"
-	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
 )
 
 var DeployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "Deploy Grafana Dashboards, Prometheus Alerts",
+	Short: "Deploy Grafana dashboard and associated alerts",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dataSources, errDataSources := cmd.Flags().GetStringArray("grafana-data-sources")
-		if errDataSources != nil || len(dataSources) < 1 {
-			return errDataSources
+		alertsTags, errAlertsTags := cmd.Flags().GetStringToString("alerts-tags")
+		if errAlertsTags != nil {
+			return errAlertsTags
 		}
 
-		dataSourcesType := SetDataSources(dataSources)
-		name := cmd.Flag("dashboard-name").Value.String()
-		platform := cmd.Flag("platform").Value.String()
-		url := cmd.Flag("grafana-url").Value.String()
-		folder := cmd.Flag("dashboard-folder").Value.String()
-		typeDashboard := cmd.Flag("type").Value.String()
+		err := NewDashboard(&CommandOptions{
+			GrafanaURL:            cmd.Flag("grafana-url").Value.String(),
+			GrafanaToken:          cmd.Flag("grafana-token").Value.String(),
+			Name:                  cmd.Flag("dashboard-name").Value.String(),
+			FolderName:            cmd.Flag("dashboard-folder").Value.String(),
+			Platform:              cmd.Flag("platform").Value.String(),
+			TypeDashboard:         cmd.Flag("type").Value.String(),
+			MetricsDataSourceName: cmd.Flag("metrics-datasource").Value.String(),
+			LogsDataSourceName:    cmd.Flag("logs-datasource").Value.String(),
+			EnableAlerts:          cmd.Flag("enable-alerts").Value.String() == "true",
+			AlertsTags:            alertsTags,
+			NotificationTemplates: cmd.Flag("notification-templates").Value.String(),
+			SlackChannel:          cmd.Flag("slack-channel").Value.String(),
+			SlackWebhookURL:       cmd.Flag("slack-webhook").Value.String(),
+			SlackToken:            cmd.Flag("slack-token").Value.String(),
+		})
 
-		var builder dashboard.Dashboard
-		var err error
-
-		switch typeDashboard {
-		case "core-node":
-			builder, err = corenode.BuildDashboard(name, dataSourcesType.Metrics, platform)
-		case "core-node-components":
-			builder, err = corenodecomponents.BuildDashboard(name, dataSourcesType.Metrics, dataSourcesType.Logs)
-		case "core-node-resources":
-			builder, err = k8sresources.BuildDashboard(name, dataSourcesType.Metrics, dataSourcesType.Logs)
-		case "ocr":
-			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
-		case "ocr2":
-			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
-		case "ocr3":
-			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
-		case "nop-ocr2":
-			builder, err = nopocr.BuildDashboard(name, dataSourcesType.Metrics, platform, "ocr2")
-		case "nop-ocr3":
-			builder, err = nopocr.BuildDashboard(name, dataSourcesType.Metrics, platform, "ocr3")
-		default:
-			return errors.New("invalid dashboard type")
-		}
 		if err != nil {
-			utils.Logger.Error().
-				Str("Name", name).
-				Str("URL", url).
-				Str("Folder", folder).
-				Str("Type", typeDashboard).
-				Msg("Could not build dashboard")
 			return err
-		}
-
-		dashboard := NewDashboard(
-			name,
-			cmd.Flag("grafana-token").Value.String(),
-			url,
-			folder,
-			dataSourcesType,
-			platform,
-			builder,
-		)
-		errDeploy := dashboard.Deploy()
-		if errDeploy != nil {
-			return errDeploy
 		}
 
 		return nil
@@ -104,7 +59,16 @@ func init() {
 	if errToken != nil {
 		panic(errToken)
 	}
-	DeployCmd.Flags().StringArray("grafana-data-sources", []string{"Prometheus"}, "Data sources to add to the dashboard, at least one required")
+	DeployCmd.Flags().String("metrics-datasource", "Prometheus", "Metrics datasource name")
+	DeployCmd.Flags().String("logs-datasource", "", "Logs datasource name")
 	DeployCmd.Flags().String("platform", "docker", "Platform where the dashboard is deployed (docker or kubernetes)")
-	DeployCmd.Flags().String("type", "core-node", "Dashboard type can be either core-node | core-node-components")
+	DeployCmd.Flags().String("type", "core-node", "Dashboard type can be either core-node | core-node-components | core-node-resources | don-ocr | don-ocr2 | don-ocr3 | nop-ocr2 | nop-ocr3")
+	DeployCmd.Flags().Bool("enable-alerts", false, "Deploy alerts")
+	DeployCmd.Flags().StringToString("alerts-tags", map[string]string{
+		"team": "chainlink-team",
+	}, "Alerts tags")
+	DeployCmd.Flags().String("notification-templates", "", "Filepath in yaml format, will create notification templates depending on key-value pairs in the yaml file")
+	DeployCmd.Flags().String("slack-channel", "", "Slack channel, required when setting up slack contact points")
+	DeployCmd.Flags().String("slack-webhook", "", "Slack webhook URL, required when setting up slack contact points")
+	DeployCmd.Flags().String("slack-token", "", "Slack token, required when setting up slack contact points and slack webhook is not provided")
 }

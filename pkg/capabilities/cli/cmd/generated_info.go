@@ -89,14 +89,15 @@ func extractInputAndConfig(generatedStructs map[string]Struct, typeInfo TypeInfo
 
 	configType := root.Outputs["Config"].Type
 	config, ok := generatedStructs[configType]
-	if !ok {
+	if !ok && typeInfo.CapabilityType.IsValid() == nil {
 		config = Struct{
 			Name: lastAfterDot(configType),
 			Ref:  &configType,
 		}
 	}
+
 	for k := range generatedStructs {
-		if strings.HasPrefix(k, configType) || (input != nil && strings.HasPrefix(k, input.Name)) {
+		if (ok && strings.HasPrefix(k, configType)) || (input != nil && strings.HasPrefix(k, input.Name)) {
 			delete(generatedStructs, k)
 		}
 	}

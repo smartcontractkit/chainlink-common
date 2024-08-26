@@ -26,7 +26,7 @@ import (
 type Config struct {
 	Workflow    workflows.NewWorkflowParams
 	Streams     *streams.TriggerConfig
-	Ocr         *ocr3.ConsensusConfig
+	Ocr         *ocr3.DataFeedsConsensusConfig
 	ChainWriter *chainwriter.TargetConfig
 	TargetChain string
 }
@@ -39,7 +39,7 @@ func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
 
 	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	streamsTrigger := conf.Streams.New(workflow)
-	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
+	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
 	)
 
@@ -58,8 +58,8 @@ type ModifiedConfig struct {
 	DefaultDeviation        string     `yaml:"default_deviation" json:"default_deviation"`
 	FeedInfo                []FeedInfo `yaml:"feed_info" json:"feed_info"`
 	ReportID                string     `yaml:"report_id" json:"report_id"`
-	Encoder                 ocr3.ConsensusConfigEncoder
-	EncoderConfig           ocr3.ConsensusConfigEncoderConfig `yaml:"encoder_config" json:"encoder_config"`
+	Encoder                 ocr3.DataFeedsConsensusConfigEncoder
+	EncoderConfig           ocr3.DataFeedsConsensusConfigEncoderConfig `yaml:"encoder_config" json:"encoder_config"`
 	ChainWriter             *chainwriter.TargetConfig
 	TargetChain             string
 }
@@ -78,17 +78,17 @@ func NewWorkflowRemapped(rawConfig []byte) (*workflows.WorkflowSpecFactory, erro
 	}
 
 	streamsConfig := streams.TriggerConfig{MaxFrequencyMs: conf.MaxFrequencyMs}
-	ocr3Config := ocr3.ConsensusConfig{
+	ocr3Config := ocr3.DataFeedsConsensusConfig{
 		AggregationMethod: "data_feeds",
 		Encoder:           conf.Encoder,
 		EncoderConfig:     conf.EncoderConfig,
 		ReportId:          conf.ReportID,
-		AggregationConfig: ocr3.ConsensusConfigAggregationConfig{
+		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
 			AllowedPartialStaleness: conf.AllowedPartialStaleness,
 		},
 	}
 
-	feeds := ocr3.ConsensusConfigAggregationConfigFeeds{}
+	feeds := ocr3.DataFeedsConsensusConfigAggregationConfigFeeds{}
 	for _, elm := range conf.FeedInfo {
 		streamsConfig.FeedIds = append(streamsConfig.FeedIds, elm.FeedID)
 		feed := ocr3.FeedValue{
@@ -111,7 +111,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*workflows.WorkflowSpecFactory, erro
 	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	streamsTrigger := streamsConfig.New(workflow)
 
-	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
+	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger),
 	})
 
@@ -139,8 +139,8 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 		notStreamsTrigger.ReportContext(),
 		notStreamsTrigger.Signatures(),
 	)
-	ocrConfig := ocr3.ConsensusConfig{
-		AggregationConfig: ocr3.ConsensusConfigAggregationConfig{
+	ocrConfig := ocr3.DataFeedsConsensusConfig{
+		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
 			AllowedPartialStaleness: conf.Ocr.AllowedPartialStaleness,
 			Feeds: map[string]ocr3.FeedValue{
 				anyFakeFeedID: {
@@ -155,7 +155,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 		ReportId:          conf.Ocr.ReportID,
 	}
 
-	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.ConsensusInput{
+	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
 		Observations: workflows.ListOf[[]streams.Feed](workflows.ListOf[streams.Feed](feedsInput)),
 	})
 
@@ -224,7 +224,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 						}},
 					},
 					Config: map[string]any{
-						"aggregation_config": ocr3.ConsensusConfigAggregationConfig{
+						"aggregation_config": ocr3.DataFeedsConsensusConfigAggregationConfig{
 							AllowedPartialStaleness: "0.5",
 							Feeds: map[string]ocr3.FeedValue{
 								anyFakeFeedID: {
@@ -235,7 +235,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 						},
 						"aggregation_method": "data_feeds",
 						"encoder":            "EVM",
-						"encoder_config": ocr3.ConsensusConfigEncoderConfig{
+						"encoder_config": ocr3.DataFeedsConsensusConfigEncoderConfig{
 							Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 						},
 						"report_id": "0001",
@@ -268,11 +268,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
-		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
+		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
 		)
 
-		consensus2 := conf.Ocr.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
+		consensus2 := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
 		)
 
@@ -290,7 +290,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
-		consensus := conf.Ocr.New(workflow, "", ocr3.ConsensusInput{
+		consensus := conf.Ocr.New(workflow, "", ocr3.DataFeedsConsensusInput{
 			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
 		)
 
@@ -317,7 +317,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 
 		badCap := badStep.AddTo(workflow)
 
-		consensus := conf.Ocr.New(workflow, "", ocr3.ConsensusInput{
+		consensus := conf.Ocr.New(workflow, "", ocr3.DataFeedsConsensusInput{
 			Observations: workflows.ListOf[[]streams.Feed](badCap)},
 		)
 
@@ -333,11 +333,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
-		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.ConsensusInput{
+		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
 		)
 
-		consensus2 := conf.Ocr.New(workflow, "ccip_feeds_different", ocr3.ConsensusInput{
+		consensus2 := conf.Ocr.New(workflow, "ccip_feeds_different", ocr3.DataFeedsConsensusInput{
 			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
 		)
 
@@ -382,13 +382,13 @@ type NotStreamsConfig struct {
 }
 
 type ModifiedConsensusConfig struct {
-	AllowedPartialStaleness string                                `json:"allowedPartialStaleness" yaml:"allowedPartialStaleness" mapstructure:"allowedPartialStaleness"`
-	Deviation               string                                `json:"deviation" yaml:"deviation" mapstructure:"deviation"`
-	Heartbeat               int                                   `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
-	AggregationMethod       ocr3.ConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
-	Encoder                 ocr3.ConsensusConfigEncoder           `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
-	EncoderConfig           ocr3.ConsensusConfigEncoderConfig     `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
-	ReportID                string                                `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+	AllowedPartialStaleness string                                         `json:"allowedPartialStaleness" yaml:"allowedPartialStaleness" mapstructure:"allowedPartialStaleness"`
+	Deviation               string                                         `json:"deviation" yaml:"deviation" mapstructure:"deviation"`
+	Heartbeat               int                                            `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
+	AggregationMethod       ocr3.DataFeedsConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
+	Encoder                 ocr3.DataFeedsConsensusConfigEncoder           `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
+	EncoderConfig           ocr3.DataFeedsConsensusConfigEncoderConfig     `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
+	ReportID                string                                         `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
 }
 
 func UnmarshalYaml[T any](raw []byte) (*T, error) {

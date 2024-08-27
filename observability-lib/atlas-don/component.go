@@ -5,73 +5,107 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 
-	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
-func BuildDashboard(name string, dataSourceMetric string, platform string, ocrVersion string) (dashboard.Dashboard, error) {
-	props := Props{
-		MetricsDataSource: dataSourceMetric,
-		PlatformOpts:      PlatformPanelOpts(platform, ocrVersion),
-		OcrVersion:        ocrVersion,
+func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error) {
+	props := &Props{
+		Name:              options.Name,
+		MetricsDataSource: options.MetricsDataSource,
+		PlatformOpts:      PlatformPanelOpts(options.Platform, options.OCRVersion),
+		FolderUID:         options.FolderUID,
+		OCRVersion:        options.OCRVersion,
 	}
 
-	builder := dashboard.NewDashboardBuilder(name).
-		Tags([]string{"DON", ocrVersion}).
-		Refresh("30s").
-		Time("now-30m", "now")
+	builder := grafana.NewBuilder(options, &grafana.BuilderOptions{
+		Tags:     []string{"DON", options.OCRVersion},
+		Refresh:  "30s",
+		TimeFrom: "now-30m",
+		TimeTo:   "now",
+	})
 
-	utils.AddVars(builder, vars(props))
+	builder.AddVars(vars(props)...)
 
-	builder.WithRow(dashboard.NewRowBuilder("Summary"))
-	utils.AddPanels(builder, summary(props))
+	builder.AddRow("Summary")
+	builder.AddPanel(summary(props)...)
 
-	builder.WithRow(dashboard.NewRowBuilder("OCR Contract Oracle"))
-	utils.AddPanels(builder, ocrContractConfigOracle(props))
+	builder.AddRow("OCR Contract Oracle")
+	builder.AddPanel(ocrContractConfigOracle(props)...)
 
-	builder.WithRow(dashboard.NewRowBuilder("DON Nodes"))
-	utils.AddPanels(builder, ocrContractConfigNodes(props))
+	builder.AddRow("DON Nodes")
+	builder.AddPanel(ocrContractConfigNodes(props)...)
 
-	builder.WithRow(dashboard.NewRowBuilder("Price Reporting"))
-	utils.AddPanels(builder, priceReporting(props))
+	builder.AddRow("Price Reporting")
+	builder.AddPanel(priceReporting(props)...)
 
-	builder.WithRow(dashboard.NewRowBuilder("Round / Epoch Progression"))
-	utils.AddPanels(builder, roundEpochProgression(props))
+	builder.AddRow("Round / Epoch Progression")
+	builder.AddPanel(roundEpochProgression(props)...)
 
-	builder.WithRow(dashboard.NewRowBuilder("OCR Contract Config Delta"))
-	utils.AddPanels(builder, ocrContractConfigDelta(props))
+	builder.AddRow("OCR Contract Config Delta")
+	builder.AddPanel(ocrContractConfigDelta(props)...)
 
 	return builder.Build()
 }
 
-func vars(p Props) []cog.Builder[dashboard.VariableModel] {
+func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 	var variables []cog.Builder[dashboard.VariableModel]
 
-	variables = append(variables,
-		utils.QueryVariable(p.MetricsDataSource, "namespace", "Namespace",
-			`label_values(namespace)`, true).Regex("otpe[1-3]?$"))
+	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
+			Label: "Namespace",
+			Name:  "namespace",
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(namespace)`,
+		Regex:      "otpe[1-3]?$",
+	}))
 
-	variables = append(variables,
-		utils.QueryVariable(p.MetricsDataSource, "job", "Job",
-			`label_values(up{namespace="$namespace"}, job)`, true))
+	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
+			Label: "Job",
+			Name:  "job",
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(up{namespace="$namespace"}, job)`,
+	}))
 
-	variables = append(variables,
-		utils.QueryVariable(p.MetricsDataSource, "pod", "Pod",
-			`label_values(up{namespace="$namespace", job="$job"}, pod)`, true))
+	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
+			Label: "Pod",
+			Name:  "pod",
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(up{namespace="$namespace", job="$job"}, pod)`,
+		Multi:      true,
+	}))
 
 	variableFeedID := "feed_id"
-	if p.OcrVersion == "ocr3" {
+	if p.OCRVersion == "ocr3" {
 		variableFeedID = "feed_id_name"
 	}
 
-	variableQueryContract := utils.QueryVariable(p.MetricsDataSource, "contract", "Contract",
-		`label_values(`+p.OcrVersion+`_contract_config_f{job="$job"}, contract)`, true)
+	variableQueryContract := grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
+			Label: "Contract",
+			Name:  "contract",
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(` + p.OCRVersion + `_contract_config_f{job="$job"}, contract)`,
+	})
 
-	variableQueryFeedID := utils.QueryVariable(p.MetricsDataSource, variableFeedID, "Feed ID",
-		`label_values(`+p.OcrVersion+`_contract_config_f{job="$job", contract="$contract"}, `+variableFeedID+`)`, true)
+	variableQueryFeedID := grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
+			Label: "Feed ID",
+			Name:  variableFeedID,
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(` + p.OCRVersion + `_contract_config_f{job="$job", contract="$contract"}, ` + variableFeedID + `)`,
+		Multi:      true,
+	})
 
 	variables = append(variables, variableQueryContract)
 
-	switch p.OcrVersion {
+	switch p.OCRVersion {
 	case "ocr2":
 		variables = append(variables, variableQueryFeedID)
 	case "ocr3":
@@ -81,198 +115,206 @@ func vars(p Props) []cog.Builder[dashboard.VariableModel] {
 	return variables
 }
 
-func summary(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
+func summary(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Telemetry Down",
-		"Which jobs are not receiving any telemetry?",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `bool:` + p.OcrVersion + `_telemetry_down{` + p.PlatformOpts.LabelQuery + `} == 1`,
-			Legend: "{{job}} | {{report_type}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Telemetry Down",
+			Description: "Which jobs are not receiving any telemetry?",
+			Span:        8,
+			Height:      4,
+			Query: []grafana.Query{
+				{
+					Expr:   `bool:` + p.OCRVersion + `_telemetry_down{` + p.PlatformOpts.LabelQuery + `} == 1`,
+					Legend: "{{job}} | {{report_type}}",
+				},
+			},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "default"},
+					{Value: grafana.Pointer[float64](0), Color: "green"},
+					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
 		},
-	).Thresholds(
-		dashboard.NewThresholdsConfigBuilder().
-			Mode(dashboard.ThresholdsModeAbsolute).
-			Steps([]dashboard.Threshold{
-				{Value: utils.Float64Ptr(0), Color: "green"},
-				{Value: utils.Float64Ptr(0.99), Color: "red"},
-			})),
-	)
+		TextMode:    common.BigValueTextModeName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Oracle Down",
-		"Which NOPs are not providing any telemetry?",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `bool:` + p.OcrVersion + `_oracle_telemetry_down_except_telemetry_down{job=~"${job}", oracle!="csa_unknown"} == 1`,
-			Legend: "{{oracle}} | {{report_type}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Oracle Down",
+			Description: "Which NOPs are not providing any telemetry?",
+			Span:        8,
+			Height:      4,
+			Query: []grafana.Query{
+				{
+					Expr:   `bool:` + p.OCRVersion + `_oracle_telemetry_down_except_telemetry_down{job=~"${job}", oracle!="csa_unknown"} == 1`,
+					Legend: "{{oracle}} | {{report_type}}",
+				},
+			},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "default"},
+					{Value: grafana.Pointer[float64](0), Color: "green"},
+					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
 		},
-	).Thresholds(
-		dashboard.NewThresholdsConfigBuilder().
-			Mode(dashboard.ThresholdsModeAbsolute).
-			Steps([]dashboard.Threshold{
-				{Value: utils.Float64Ptr(0), Color: "green"},
-				{Value: utils.Float64Ptr(0.99), Color: "red"},
-			})),
-	)
+		TextMode:    common.BigValueTextModeName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Feeds reporting failure",
-		"Which feeds are failing to report?",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `bool:` + p.OcrVersion + `_feed_reporting_failure_except_feed_telemetry_down{job=~"${job}", oracle!="csa_unknown"} == 1`,
-			Legend: "{{feed_id_name}} on {{job}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Feeds reporting failure",
+			Description: "Which feeds are failing to report?",
+			Span:        8,
+			Height:      4,
+			Query: []grafana.Query{
+				{
+					Expr:   `bool:` + p.OCRVersion + `_feed_reporting_failure_except_feed_telemetry_down{job=~"${job}", oracle!="csa_unknown"} == 1`,
+					Legend: "{{feed_id_name}} on {{job}}",
+				},
+			},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "default"},
+					{Value: grafana.Pointer[float64](0), Color: "green"},
+					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
 		},
-	).Thresholds(
-		dashboard.NewThresholdsConfigBuilder().
-			Mode(dashboard.ThresholdsModeAbsolute).
-			Steps([]dashboard.Threshold{
-				{Value: utils.Float64Ptr(0), Color: "green"},
-				{Value: utils.Float64Ptr(0.99), Color: "red"},
-			})),
-	)
+		TextMode:    common.BigValueTextModeName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Feed telemetry Down",
-		"Which feeds are not receiving any telemetry?",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `bool:` + p.OcrVersion + `_feed_telemetry_down_except_telemetry_down{job=~"${job}"} == 1`,
-			Legend: "{{feed_id_name}} on {{job}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Feed telemetry Down",
+			Description: "Which feeds are not receiving any telemetry?",
+			Span:        8,
+			Height:      4,
+			Query: []grafana.Query{
+				{
+					Expr:   `bool:` + p.OCRVersion + `_feed_telemetry_down_except_telemetry_down{job=~"${job}"} == 1`,
+					Legend: "{{feed_id_name}} on {{job}}",
+				},
+			},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "default"},
+					{Value: grafana.Pointer[float64](0), Color: "green"},
+					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
 		},
-	).Thresholds(
-		dashboard.NewThresholdsConfigBuilder().
-			Mode(dashboard.ThresholdsModeAbsolute).
-			Steps([]dashboard.Threshold{
-				{Value: utils.Float64Ptr(0), Color: "green"},
-				{Value: utils.Float64Ptr(0.99), Color: "red"},
-			})),
-	)
+		TextMode:    common.BigValueTextModeName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Oracles no observations",
-		"Which NOPs are not providing observations?",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `bool:` + p.OcrVersion + `_oracle_blind_except_telemetry_down{job=~"${job}"} == 1`,
-			Legend: "{{oracle}} | {{report_type}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Oracles no observations",
+			Description: "Which NOPs are not providing observations?",
+			Span:        8,
+			Height:      4,
+			Query: []grafana.Query{
+				{
+					Expr:   `bool:` + p.OCRVersion + `_oracle_blind_except_telemetry_down{job=~"${job}"} == 1`,
+					Legend: "{{oracle}} | {{report_type}}",
+				},
+			},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "default"},
+					{Value: grafana.Pointer[float64](0), Color: "green"},
+					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
 		},
-	).Thresholds(
-		dashboard.NewThresholdsConfigBuilder().
-			Mode(dashboard.ThresholdsModeAbsolute).
-			Steps([]dashboard.Threshold{
-				{Value: utils.Float64Ptr(0), Color: "green"},
-				{Value: utils.Float64Ptr(0.99), Color: "red"},
-			})),
-	)
+		TextMode:    common.BigValueTextModeName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Oracles not contributing observations to feeds",
-		"Which oracles are failing to make observations on feeds they should be participating in?",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `bool:` + p.OcrVersion + `_oracle_feed_no_observations_except_oracle_blind_except_feed_reporting_failure_except_feed_telemetry_down{job=~"${job}"} == 1`,
-			Legend: "{{oracle}} | {{report_type}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Oracles not contributing observations to feeds",
+			Description: "Which oracles are failing to make observations on feeds they should be participating in?",
+			Span:        8,
+			Height:      4,
+			Query: []grafana.Query{
+				{
+					Expr:   `bool:` + p.OCRVersion + `_oracle_feed_no_observations_except_oracle_blind_except_feed_reporting_failure_except_feed_telemetry_down{job=~"${job}"} == 1`,
+					Legend: "{{oracle}} | {{report_type}}",
+				},
+			},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "default"},
+					{Value: grafana.Pointer[float64](0), Color: "green"},
+					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
 		},
-	).Thresholds(
-		dashboard.NewThresholdsConfigBuilder().
-			Mode(dashboard.ThresholdsModeAbsolute).
-			Steps([]dashboard.Threshold{
-				{Value: utils.Float64Ptr(0), Color: "green"},
-				{Value: utils.Float64Ptr(0.99), Color: "red"},
-			})),
-	)
+		TextMode:    common.BigValueTextModeName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	return panelsArray
+	return panels
 }
 
-func ocrContractConfigOracle(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
+func ocrContractConfigOracle(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"OCR Contract Oracle Active",
-		"set to one as long as an oracle is on a feed",
-		8,
-		24,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `sum(` + p.OcrVersion + `_contract_oracle_active{` + p.PlatformOpts.LabelQuery + `}) by (contract, oracle)`,
-			Legend: "{{contract}} - {{oracle}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "OCR Contract Oracle Active",
+			Description: "set to one as long as an oracle is on a feed",
+			Span:        24,
+			Height:      8,
+			Decimals:    1,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(` + p.OCRVersion + `_contract_oracle_active{` + p.PlatformOpts.LabelQuery + `}) by (contract, oracle)`,
+					Legend: "{{contract}} - {{oracle}}",
+				},
+			},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "default"},
+					{Value: grafana.Pointer[float64](0), Color: "red"},
+					{Value: grafana.Pointer[float64](0.99), Color: "green"},
+				},
+			},
 		},
-	).Thresholds(
-		dashboard.NewThresholdsConfigBuilder().
-			Mode(dashboard.ThresholdsModeAbsolute).
-			Steps([]dashboard.Threshold{
-				{Value: utils.Float64Ptr(0), Color: "red"},
-				{Value: utils.Float64Ptr(0.99), Color: "green"},
-			})),
-	)
+		TextMode:    common.BigValueTextModeName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	return panelsArray
+	return panels
 }
 
-func ocrContractConfigNodes(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
+func ocrContractConfigNodes(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
 
 	var variableFeedID string
-	switch p.OcrVersion {
+	switch p.OCRVersion {
 	case "ocr":
 		variableFeedID = "contract"
 	case "ocr2":
@@ -281,411 +323,436 @@ func ocrContractConfigNodes(p Props) []cog.Builder[dashboard.Panel] {
 		variableFeedID = "feed_id_name"
 	}
 
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Number of NOPs",
-		"",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_n{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{` + variableFeedID + `}}`,
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Number of NOPs",
+			Span:       24,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_n{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{` + variableFeedID + `}}`,
+				},
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_r_max{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `Max nodes`,
+				},
+				{
+					Expr:   `avg(2 * ` + p.OCRVersion + `_contract_config_f{` + p.PlatformOpts.LabelQuery + `} + 1)`,
+					Legend: `Min nodes`,
+				},
+			},
+			Min: grafana.Pointer[float64](0),
 		},
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_r_max{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `Max nodes`,
-		},
-		utils.PrometheusQuery{
-			Query:  `avg(2 * ` + p.OcrVersion + `_contract_config_f{` + p.PlatformOpts.LabelQuery + `} + 1)`,
-			Legend: `Min nodes`,
-		},
-	).Min(0))
+	}))
 
-	return panelsArray
+	return panels
 }
 
-func priceReporting(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
+func priceReporting(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
 
-	telemetryP2PReceivedTotal := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"P2P messages received",
-		"From an individual node's perspective, how many messages are they receiving from other nodes? Uses ocr_telemetry_p2p_received_total",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `sum by (sender, receiver) (increase(` + p.OcrVersion + `_telemetry_p2p_received_total{job=~"${job}"}[5m]))`,
-			Legend: `{{sender}} > {{receiver}}`,
+	telemetryP2PReceivedTotal := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "P2P messages received",
+			Description: "From an individual node's perspective, how many messages are they receiving from other nodes? Uses ocr_telemetry_p2p_received_total",
+			Span:        24,
+			Height:      6,
+			Decimals:    1,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum by (sender, receiver) (increase(` + p.OCRVersion + `_telemetry_p2p_received_total{job=~"${job}"}[5m]))`,
+					Legend: `{{sender}} > {{receiver}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryP2PReceivedTotalRate := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"P2P messages received Rate",
-		"From an individual node's perspective, how many messages are they receiving from other nodes? Uses ocr_telemetry_p2p_received_total",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `sum by (sender, receiver) (rate(` + p.OcrVersion + `_telemetry_p2p_received_total{job=~"${job}"}[5m]))`,
-			Legend: `{{sender}} > {{receiver}}`,
+	telemetryP2PReceivedTotalRate := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "P2P messages received Rate",
+			Description: "From an individual node's perspective, how many messages are they receiving from other nodes? Uses ocr_telemetry_p2p_received_total",
+			Span:        24,
+			Height:      6,
+			Decimals:    1,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum by (sender, receiver) (rate(` + p.OCRVersion + `_telemetry_p2p_received_total{job=~"${job}"}[5m]))`,
+					Legend: `{{sender}} > {{receiver}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryObservationAsk := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Ask observation in MessageObserve sent",
-		"",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_observation_ask{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{oracle}}`,
+	telemetryObservationAsk := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Ask observation in MessageObserve sent",
+			Span:       24,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_observation_ask{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryObservation := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Price observation in MessageObserve sent",
-		"",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_observation{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{oracle}}`,
+	telemetryObservation := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Price observation in MessageObserve sent",
+			Span:       24,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_observation{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryObservationBid := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Bid observation in MessageObserve sent",
-		"",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_observation_bid{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{oracle}}`,
+	telemetryObservationBid := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Bid observation in MessageObserve sent",
+			Span:       24,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_observation_bid{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryMessageProposeObservationAsk := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Ask MessagePropose observations",
-		"",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_message_propose_observation_ask{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{oracle}}`,
+	telemetryMessageProposeObservationAsk := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Ask MessagePropose observations",
+			Span:       24,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_ask{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryMessageProposeObservation := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Price MessagePropose observations",
-		"",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_message_propose_observation{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{oracle}}`,
+	telemetryMessageProposeObservation := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Price MessagePropose observations",
+			Span:       24,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryMessageProposeObservationBid := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Bid MessagePropose observations",
-		"",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_message_propose_observation_bid{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{oracle}}`,
+	telemetryMessageProposeObservationBid := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Bid MessagePropose observations",
+			Span:       24,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_bid{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryMessageProposeObservationTotal := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Total number of observations included in MessagePropose",
-		"How often is a node's observation included in the report?",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_message_propose_observation_total{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: `{{oracle}}`,
+	telemetryMessageProposeObservationTotal := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Total number of observations included in MessagePropose",
+			Description: "How often is a node's observation included in the report?",
+			Span:        24,
+			Height:      6,
+			Decimals:    1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_total{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	telemetryMessageObserveTotal := utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Total MessageObserve sent",
-		"From an individual node's perspective, how often are they sending an observation?",
-		6,
-		24,
-		1,
-		"",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `rate(` + p.OcrVersion + `_telemetry_message_observe_total{` + p.PlatformOpts.LabelQuery + `}[5m])`,
-			Legend: `{{oracle}}`,
+	telemetryMessageObserveTotal := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Total MessageObserve sent",
+			Description: "From an individual node's perspective, how often are they sending an observation?",
+			Span:        24,
+			Height:      6,
+			Decimals:    1,
+			Query: []grafana.Query{
+				{
+					Expr:   `rate(` + p.OCRVersion + `_telemetry_message_observe_total{` + p.PlatformOpts.LabelQuery + `}[5m])`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	)
+	})
 
-	switch p.OcrVersion {
+	switch p.OCRVersion {
 	case "ocr":
-		panelsArray = append(panelsArray, telemetryP2PReceivedTotal)
-		panelsArray = append(panelsArray, telemetryP2PReceivedTotalRate)
-		panelsArray = append(panelsArray, telemetryObservation)
-		panelsArray = append(panelsArray, telemetryMessageObserveTotal)
+		panels = append(panels, telemetryP2PReceivedTotal)
+		panels = append(panels, telemetryP2PReceivedTotalRate)
+		panels = append(panels, telemetryObservation)
+		panels = append(panels, telemetryMessageObserveTotal)
 	case "ocr2":
-		panelsArray = append(panelsArray, telemetryP2PReceivedTotal)
-		panelsArray = append(panelsArray, telemetryP2PReceivedTotalRate)
-		panelsArray = append(panelsArray, telemetryObservation)
-		panelsArray = append(panelsArray, telemetryMessageObserveTotal)
+		panels = append(panels, telemetryP2PReceivedTotal)
+		panels = append(panels, telemetryP2PReceivedTotalRate)
+		panels = append(panels, telemetryObservation)
+		panels = append(panels, telemetryMessageObserveTotal)
 	case "ocr3":
-		panelsArray = append(panelsArray, telemetryP2PReceivedTotal)
-		panelsArray = append(panelsArray, telemetryP2PReceivedTotalRate)
-		panelsArray = append(panelsArray, telemetryObservationAsk)
-		panelsArray = append(panelsArray, telemetryObservation)
-		panelsArray = append(panelsArray, telemetryObservationBid)
-		panelsArray = append(panelsArray, telemetryMessageProposeObservationAsk)
-		panelsArray = append(panelsArray, telemetryMessageProposeObservation)
-		panelsArray = append(panelsArray, telemetryMessageProposeObservationBid)
-		panelsArray = append(panelsArray, telemetryMessageProposeObservationTotal)
-		panelsArray = append(panelsArray, telemetryMessageObserveTotal)
+		panels = append(panels, telemetryP2PReceivedTotal)
+		panels = append(panels, telemetryP2PReceivedTotalRate)
+		panels = append(panels, telemetryObservationAsk)
+		panels = append(panels, telemetryObservation)
+		panels = append(panels, telemetryObservationBid)
+		panels = append(panels, telemetryMessageProposeObservationAsk)
+		panels = append(panels, telemetryMessageProposeObservation)
+		panels = append(panels, telemetryMessageProposeObservationBid)
+		panels = append(panels, telemetryMessageProposeObservationTotal)
+		panels = append(panels, telemetryMessageObserveTotal)
 	}
 
-	return panelsArray
+	return panels
 }
 
-func roundEpochProgression(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
+func roundEpochProgression(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
 
 	variableFeedID := "feed_id"
-	if p.OcrVersion == "ocr3" {
+	if p.OCRVersion == "ocr3" {
 		variableFeedID = "feed_id_name"
 	}
 
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Agreed Epoch Progression",
-		"",
-		6,
-		8,
-		1,
-		"short",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_feed_agreed_epoch{` + variableFeedID + `=~"${` + variableFeedID + `}"}`,
-			Legend: `{{` + variableFeedID + `}}`,
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Agreed Epoch Progression",
+			Span:       8,
+			Height:     6,
+			Decimals:   1,
+			Unit:       "short",
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_feed_agreed_epoch{` + variableFeedID + `=~"${` + variableFeedID + `}"}`,
+					Legend: `{{` + variableFeedID + `}}`,
+				},
+			},
 		},
-	))
+	}))
 
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Round Epoch Progression",
-		"",
-		6,
-		8,
-		1,
-		"short",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_telemetry_epoch_round{` + variableFeedID + `=~"${` + variableFeedID + `}"}`,
-			Legend: `{{oracle}}`,
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Round Epoch Progression",
+			Span:       8,
+			Height:     6,
+			Decimals:   1,
+			Unit:       "short",
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_telemetry_epoch_round{` + variableFeedID + `=~"${` + variableFeedID + `}"}`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	))
+	}))
 
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Rounds Started",
-		`Tracks individual nodes firing "new round" message via telemetry (not part of P2P messages)`,
-		6,
-		8,
-		1,
-		"short",
-		common.LegendPlacementBottom,
-		utils.PrometheusQuery{
-			Query:  `rate(` + p.OcrVersion + `_telemetry_round_started_total{` + variableFeedID + `=~"${` + variableFeedID + `}"}[1m])`,
-			Legend: `{{oracle}}`,
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Rounds Started",
+			Description: `Tracks individual nodes firing "new round" message via telemetry (not part of P2P messages)`,
+			Span:        8,
+			Height:      6,
+			Decimals:    1,
+			Unit:        "short",
+			Query: []grafana.Query{
+				{
+					Expr:   `rate(` + p.OCRVersion + `_telemetry_round_started_total{` + variableFeedID + `=~"${` + variableFeedID + `}"}[1m])`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	))
+	}))
 
-	panelsArray = append(panelsArray, utils.TimeSeriesPanel(
-		p.MetricsDataSource,
-		"Telemetry Ingested",
-		"",
-		6,
-		8,
-		1,
-		"short",
-		common.LegendPlacementRight,
-		utils.PrometheusQuery{
-			Query:  `rate(` + p.OcrVersion + `_telemetry_ingested_total{` + variableFeedID + `=~"${` + variableFeedID + `}"}[1m])`,
-			Legend: `{{oracle}}`,
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Telemetry Ingested",
+			Span:       8,
+			Height:     6,
+			Decimals:   1,
+			Unit:       "short",
+			Query: []grafana.Query{
+				{
+					Expr:   `rate(` + p.OCRVersion + `_telemetry_ingested_total{` + variableFeedID + `=~"${` + variableFeedID + `}"}[1m])`,
+					Legend: `{{oracle}}`,
+				},
+			},
 		},
-	))
+	}))
 
-	return panelsArray
+	return panels
 }
 
-func ocrContractConfigDelta(p Props) []cog.Builder[dashboard.Panel] {
-	var panelsArray []cog.Builder[dashboard.Panel]
+func ocrContractConfigDelta(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Relative Deviation Threshold",
-		"",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeValueAndName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_alpha{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{contract}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Relative Deviation Threshold",
+			Span:       8,
+			Height:     4,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_alpha{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: "{{contract}}",
+				},
+			},
 		},
-	))
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Max Contract Value Age Seconds",
-		"",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeValueAndName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_delta_c_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{contract}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Max Contract Value Age Seconds",
+			Span:       8,
+			Height:     4,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_c_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: "{{contract}}",
+				},
+			},
 		},
-	))
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Observation Grace Period Seconds",
-		"",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeValueAndName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_delta_grace_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{contract}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Observation Grace Period Seconds",
+			Span:       8,
+			Height:     4,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_grace_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: "{{contract}}",
+				},
+			},
 		},
-	))
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Bad Epoch Timeout Seconds",
-		"",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeValueAndName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_delta_progress_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{contract}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Bad Epoch Timeout Seconds",
+			Span:       8,
+			Height:     4,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_progress_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: "{{contract}}",
+				},
+			},
 		},
-	))
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Resend Interval Seconds",
-		"",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeValueAndName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_delta_resend_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{contract}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Resend Interval Seconds",
+			Span:       8,
+			Height:     4,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_resend_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: "{{contract}}",
+				},
+			},
 		},
-	))
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Round Interval Seconds",
-		"",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeValueAndName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_delta_round_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{contract}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Round Interval Seconds",
+			Span:       8,
+			Height:     4,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_round_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: "{{contract}}",
+				},
+			},
 		},
-	))
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	panelsArray = append(panelsArray, utils.StatPanel(
-		p.MetricsDataSource,
-		"Transmission Stage Timeout Seconds",
-		"",
-		4,
-		8,
-		1,
-		"",
-		common.BigValueColorModeValue,
-		common.BigValueGraphModeNone,
-		common.BigValueTextModeValueAndName,
-		common.VizOrientationHorizontal,
-		utils.PrometheusQuery{
-			Query:  `` + p.OcrVersion + `_contract_config_delta_stage_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-			Legend: "{{contract}}",
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Transmission Stage Timeout Second",
+			Span:       8,
+			Height:     4,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_stage_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: "{{contract}}",
+				},
+			},
 		},
-	))
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
+	}))
 
-	return panelsArray
+	return panels
 }

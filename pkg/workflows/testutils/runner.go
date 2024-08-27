@@ -55,7 +55,7 @@ func (r *Runner) Run(factory *workflows.WorkflowSpecFactory) error {
 
 	r.setupSteps(factory, spec)
 
-	return r.walk(workflows.KeywordTrigger)
+	return r.walk(spec, workflows.KeywordTrigger)
 }
 
 func (r *Runner) ensureGraph(spec workflows.WorkflowSpec) error {
@@ -126,14 +126,14 @@ func (r *Runner) GetRegisteredMock(name string, step string) CapabilityMock {
 	return r.registry[name]
 }
 
-func (r *Runner) walk(ref string) error {
+func (r *Runner) walk(spec workflows.WorkflowSpec, ref string) error {
 	capability := r.idToStep[ref]
 	mock := r.GetRegisteredMock(capability.ID, ref)
 	if mock == nil {
 		return fmt.Errorf("no mock found for capability %s on step %s", capability, ref)
 	}
 
-	request, err := r.buildRequest(capability)
+	request, err := r.buildRequest(spec, capability)
 	if err != nil {
 		return err
 	}
@@ -161,10 +161,10 @@ func (r *Runner) walk(ref string) error {
 		return nil
 	}
 
-	return r.walkNext(edges, err)
+	return r.walkNext(spec, edges)
 }
 
-func (r *Runner) buildRequest(capability workflows.StepDefinition) (capabilities.CapabilityRequest, error) {
+func (r *Runner) buildRequest(spec workflows.WorkflowSpec, capability workflows.StepDefinition) (capabilities.CapabilityRequest, error) {
 	conf, err := values.NewMap(capability.Config)
 	if err != nil {
 		return capabilities.CapabilityRequest{}, err
@@ -176,18 +176,22 @@ func (r *Runner) buildRequest(capability workflows.StepDefinition) (capabilities
 	}
 
 	request := capabilities.CapabilityRequest{
-		Metadata: capabilities.RequestMetadata{},
-		Config:   conf,
-		Inputs:   inputs,
+		Metadata: capabilities.RequestMetadata{
+			WorkflowOwner: spec.Owner,
+			WorkflowName:  spec.Name,
+			ReferenceID:   capability.Ref,
+		},
+		Config: conf,
+		Inputs: inputs,
 	}
 	return request, nil
 }
 
-func (r *Runner) walkNext(edges map[string]graph.Edge[string], err error) error {
+func (r *Runner) walkNext(spec workflows.WorkflowSpec, edges map[string]graph.Edge[string]) error {
 	var errs []error
 	for edgeRef := range edges {
 		if r.iReady(edgeRef) {
-			if err = r.walk(edgeRef); err != nil {
+			if err := r.walk(spec, edgeRef); err != nil {
 				errs = append(errs, err)
 			}
 		}

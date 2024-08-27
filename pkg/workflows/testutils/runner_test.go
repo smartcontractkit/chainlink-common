@@ -58,7 +58,7 @@ func TestRunner(t *testing.T) {
 		assert.Equal(t, "it was true", action.Output.AdaptedThing)
 
 		assert.True(t, helper.transformTriggerCalled)
-		consensus := consensusMock.GetStepDecoded("Consensus")
+		consensus := consensusMock.GetStepDecoded("consensus")
 		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
 		require.Len(t, consensus.Input.Observations, 1)
 
@@ -158,8 +158,8 @@ func createTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpec
 		workflows.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		actionTransform)
 
-	action := basicaction.ActionConfig{Name: "action", Number: 20}.
-		New(workflow, "basicaction", basicaction.ActionInput{InputThing: tTransform.Value()})
+	action := basicaction.ActionConfig{Name: "name", Number: 20}.
+		New(workflow, "action", basicaction.ActionInput{InputThing: tTransform.Value()})
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder:       "Test",

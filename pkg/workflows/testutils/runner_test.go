@@ -29,23 +29,9 @@ func TestRunner(t *testing.T) {
 
 		runner := testutils.NewRunner()
 
-		triggerMock := basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
-			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
-		})
+		triggerMock, actionMock, consensusMock, targetMock := setupAllRunnerMocks(t, runner)
 
-		actionMock := basicactiontest.Action(runner, func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
-			assert.True(t, input.InputThing)
-			return basicaction.ActionOutputs{AdaptedThing: "it was true"}, nil
-		})
-
-		consensusMock := ocr3test.IdenticalConsensus[basicaction.ActionOutputs](runner)
-
-		targetMock := chainwritertest.Target(runner, "chainwriter@1.0.0", func(input chainwriter.TargetInputs) error {
-			return nil
-		})
-
-		err := runner.Run(workflow)
-		require.NoError(t, err)
+		require.NoError(t, runner.Run(workflow))
 
 		trigger := triggerMock.GetStep()
 		assert.NoError(t, trigger.Error)
@@ -64,14 +50,46 @@ func TestRunner(t *testing.T) {
 
 		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()
-		require.NoError(t, err)
 		assert.Len(t, target.Errors, 0)
 		assert.Len(t, target.Inputs, 1)
 		assert.Equal(t, rawConsensus.Output, target.Inputs[0].SignedReport)
 	})
 
 	t.Run("Run allows hard-coded values", func(t *testing.T) {
-		assert.Fail(t, "Not implemented")
+		workflow := workflows.NewWorkflowSpecFactory(workflows.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+		trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
+		hardCodedInput := basicaction.NewActionOutputsFromFields(workflows.ConstantDefinition("hard-coded"))
+		tTransform := workflows.Compute2[basictrigger.TriggerOutputs, basicaction.ActionOutputs, bool](
+			workflow,
+			"transform",
+			workflows.Compute2Inputs[basictrigger.TriggerOutputs, basicaction.ActionOutputs]{Arg0: trigger, Arg1: hardCodedInput},
+			func(sdk workflows.Sdk, tr basictrigger.TriggerOutputs, hc basicaction.ActionOutputs) (bool, error) {
+				assert.Equal(t, "hard-coded", hc.AdaptedThing)
+				assert.NotNil(t, sdk)
+				assert.Equal(t, "cool", tr.CoolOutput)
+				return true, nil
+			})
+
+		action := basicaction.ActionConfig{Name: "name", Number: 20}.
+			New(workflow, "action", basicaction.ActionInput{InputThing: tTransform.Value()})
+
+		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
+			Encoder:       "Test",
+			EncoderConfig: ocr3.EncoderConfig{Abi: "Test"},
+		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+
+		chainwriter.TargetConfig{
+			Address:    "0x123",
+			DeltaStage: "2m",
+			Schedule:   "oneAtATime",
+		}.New(workflow, "chainwriter@1.0.0", chainwriter.TargetInput{SignedReport: consensus})
+
+		runner := testutils.NewRunner()
+		_, _, _, targetMock := setupAllRunnerMocks(t, runner)
+
+		require.NoError(t, runner.Run(workflow))
+		target := targetMock.GetAllWrites()
+		assert.Len(t, target.Inputs, 1)
 	})
 
 	t.Run("Run allows unnesting of values", func(t *testing.T) {
@@ -182,6 +200,24 @@ func TestRunner(t *testing.T) {
 		actual := runner.GetRegisteredMock(differentStep.ID(), "action")
 		assert.Nil(t, actual)
 	})
+}
+
+func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.TriggerMock[basictrigger.TriggerOutputs], *testutils.Mock[basicaction.ActionInputs, basicaction.ActionOutputs], *ocr3test.IdenticalConsensusMock[basicaction.ActionOutputs], *testutils.TargetMock[chainwriter.TargetInputs]) {
+	triggerMock := basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+		return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
+	})
+
+	actionMock := basicactiontest.Action(runner, func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
+		assert.True(t, input.InputThing)
+		return basicaction.ActionOutputs{AdaptedThing: "it was true"}, nil
+	})
+
+	consensusMock := ocr3test.IdenticalConsensus[basicaction.ActionOutputs](runner)
+
+	targetMock := chainwritertest.Target(runner, "chainwriter@1.0.0", func(input chainwriter.TargetInputs) error {
+		return nil
+	})
+	return triggerMock, actionMock, consensusMock, targetMock
 }
 
 type actionTransform func(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error)

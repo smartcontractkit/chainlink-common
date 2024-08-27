@@ -22,7 +22,7 @@ type testMercuryCodec struct {
 }
 
 func (c testMercuryCodec) Unwrap(wrapped values.Value) ([]datastreams.FeedReport, error) {
-	dest := datastreams.StreamsTriggerPayload{}
+	dest := datastreams.StreamsTriggerEvent{}
 	err := wrapped.UnwrapTo(&dest)
 	return dest.Payload, err
 }
@@ -99,7 +99,7 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 }
 
 func getRawResponse(t *testing.T, reports []datastreams.FeedReport, timestamp int64) []byte {
-	resp, err := wrapReports(reports, eventID, timestamp, datastreams.SignersMetadata{})
+	resp, err := wrapReports(reports, eventID, timestamp, datastreams.Metadata{})
 	require.NoError(t, err)
 	rawResp, err := pb.MarshalTriggerResponse(resp)
 	require.NoError(t, err)

@@ -336,7 +336,7 @@ func TestMercuryTrigger_WrapReports(t *testing.T) {
 	S := 31   // signers
 	P := 50   // feeds
 	B := 1000 // report size in bytes
-	meta := datastreams.SignersMetadata{}
+	meta := datastreams.Metadata{}
 	for i := 0; i < S; i++ {
 		meta.Signers = append(meta.Signers, randomByteArray(t, 20))
 	}

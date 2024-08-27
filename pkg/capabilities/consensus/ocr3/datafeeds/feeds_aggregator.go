@@ -67,15 +67,15 @@ var _ types.Aggregator = (*dataFeedsAggregator)(nil)
 // EncodableOutcome is a list of aggregated price points.
 // Metadata is a map of feedID -> (timestamp, price) representing onchain state (see DataFeedsOutcomeMetadata proto)
 func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
-	allowedSigners, minRequiredSignatures, payloads := a.extractSignersAndPayloads(observations, f)
-	if len(payloads) > 0 && minRequiredSignatures == 0 {
+	allowedSigners, minRequiredSignatures, events := a.extractSignersAndPayloads(observations, f)
+	if len(events) > 0 && minRequiredSignatures == 0 {
 		return nil, fmt.Errorf("cannot process non-empty observation payloads with minRequiredSignatures set to 0")
 	}
-	a.lggr.Debugw("extracted signers", "nAllowedSigners", len(allowedSigners), "minRequired", minRequiredSignatures, "nPayloads", len(payloads))
+	a.lggr.Debugw("extracted signers", "nAllowedSigners", len(allowedSigners), "minRequired", minRequiredSignatures, "nEvents", len(events))
 	// find latest valid report for each feed ID
 	latestReportPerFeed := make(map[datastreams.FeedID]datastreams.FeedReport)
-	for nodeID, payload := range payloads {
-		mercuryReports, err := a.reportCodec.Unwrap(payload)
+	for nodeID, event := range events {
+		mercuryReports, err := a.reportCodec.Unwrap(event)
 		if err != nil {
 			a.lggr.Errorf("node %d contributed with invalid reports: %v", nodeID, err)
 			continue
@@ -219,7 +219,7 @@ func (a *dataFeedsAggregator) initializeCurrentState(previousOutcome *types.Aggr
 }
 
 func (a *dataFeedsAggregator) extractSignersAndPayloads(observations map[ocrcommon.OracleID][]values.Value, fConsensus int) ([][]byte, int, map[ocrcommon.OracleID]values.Value) {
-	payloads := make(map[ocrcommon.OracleID]values.Value)
+	events := make(map[ocrcommon.OracleID]values.Value)
 	signers := make(map[[addrLen]byte]int)
 	mins := make(map[int]int)
 	for nodeID, nodeObservations := range observations {
@@ -232,7 +232,7 @@ func (a *dataFeedsAggregator) extractSignersAndPayloads(observations map[ocrcomm
 			a.lggr.Warnf("node %d contributed with more than one observation", nodeID)
 			continue
 		}
-		triggerEvent := &datastreams.StreamsTriggerPayload{}
+		triggerEvent := &datastreams.StreamsTriggerEvent{}
 		if err := nodeObservations[0].UnwrapTo(triggerEvent); err != nil {
 			a.lggr.Warnf("could not parse observations from node %d: %v", nodeID, err)
 			continue
@@ -247,7 +247,7 @@ func (a *dataFeedsAggregator) extractSignersAndPayloads(observations map[ocrcomm
 			signers[signer]++
 		}
 		mins[meta.MinRequiredSignatures]++
-		payloads[nodeID] = nodeObservations[0]
+		events[nodeID] = nodeObservations[0]
 	}
 	// Agree on signers list and min-required. It's technically possible to have F+1 valid values from one trigger DON and F+1 from another trigger DON.
 	// In that case both values are legitimate and signers list will contain nodes from both DONs. However, min-required value will be the higher one (if different).
@@ -264,7 +264,7 @@ func (a *dataFeedsAggregator) extractSignersAndPayloads(observations map[ocrcomm
 			minRequired = minCandidate
 		}
 	}
-	return allowedSigners, minRequired, payloads
+	return allowedSigners, minRequired, events
 }
 
 func extractUniqueSigners(signers [][]byte) (map[[addrLen]byte]struct{}, error) {

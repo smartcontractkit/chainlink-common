@@ -33,8 +33,8 @@ var (
 )
 
 func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
-	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerPayload{
-		Metadata: datastreams.SignersMetadata{
+	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerEvent{
+		Metadata: datastreams.Metadata{
 			Signers:               [][]byte{newSigner(t), newSigner(t)},
 			MinRequiredSignatures: 1,
 		},
@@ -108,8 +108,8 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 }
 
 func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
-	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerPayload{
-		Metadata: datastreams.SignersMetadata{
+	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerEvent{
+		Metadata: datastreams.Metadata{
 			Signers:               [][]byte{newSigner(t), newSigner(t)},
 			MinRequiredSignatures: 1,
 		},
@@ -182,8 +182,8 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 }
 
 func TestDataFeedsAggregator_Aggregate_Failures(t *testing.T) {
-	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerPayload{
-		Metadata: datastreams.SignersMetadata{
+	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerEvent{
+		Metadata: datastreams.Metadata{
 			Signers:               [][]byte{newSigner(t), newSigner(t)},
 			MinRequiredSignatures: 1,
 		},

@@ -68,30 +68,30 @@ type FeedReport struct {
 }
 
 // passed alongside Streams trigger events
-type SignersMetadata struct {
+type Metadata struct {
 	Signers               [][]byte
 	MinRequiredSignatures int
 }
 
-type StreamsTriggerPayload struct {
+type StreamsTriggerEvent struct {
 	Payload   []FeedReport
-	Metadata  SignersMetadata
+	Metadata  Metadata
 	Timestamp int64
 }
 
 type ReportCodec interface {
-	// unwrap reports and convert to a list of FeedReport
+	// unwrap StreamsTriggerEvent and convert to a list of FeedReport
 	Unwrap(wrapped values.Value) ([]FeedReport, error)
 
-	// wrap a list of FeedReport to Value
+	// wrap a list of FeedReport to a wrapped StreamsTriggerEvent Value
 	Wrap(reports []FeedReport) (values.Value, error)
 
 	// validate signatures on a single FeedReport
 	Validate(feedReport FeedReport, allowedSigners [][]byte, minRequiredSignatures int) error
 }
 
-// Helpers for unwrapping a list of StreamsTriggerPayload - more efficient than using mapstructure/reflection
-func UnwrapStreamsTriggerPayloadToFeedReportList(wrapped values.Value) ([]FeedReport, error) {
+// Helpers for unwrapping a StreamsTriggerPayload into a []FeedReport - more efficient than using mapstructure/reflection
+func UnwrapStreamsTriggerEventToFeedReportList(wrapped values.Value) ([]FeedReport, error) {
 	result := []FeedReport{}
 	triggerEvent, ok := wrapped.(*values.Map)
 	if !ok {

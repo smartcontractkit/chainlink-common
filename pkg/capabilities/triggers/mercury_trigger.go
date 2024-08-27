@@ -181,7 +181,7 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 
 			// use 32-byte-padded timestamp as EventID (human-readable)
 			eventID := fmt.Sprintf("streams_%024s", strconv.FormatInt(timestamp, 10))
-			capabilityResponse, err := wrapReports(reportList, eventID, timestamp, datastreams.SignersMetadata{})
+			capabilityResponse, err := wrapReports(reportList, eventID, timestamp, datastreams.Metadata{})
 			if err != nil {
 				o.lggr.Errorw("error wrapping reports", "err", err)
 				continue
@@ -197,8 +197,8 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 	}
 }
 
-func wrapReports(reportList []datastreams.FeedReport, eventID string, timestamp int64, meta datastreams.SignersMetadata) (capabilities.TriggerResponse, error) {
-	out := datastreams.StreamsTriggerPayload{
+func wrapReports(reportList []datastreams.FeedReport, eventID string, timestamp int64, meta datastreams.Metadata) (capabilities.TriggerResponse, error) {
+	out := datastreams.StreamsTriggerEvent{
 		Payload:   reportList,
 		Metadata:  meta,
 		Timestamp: timestamp,

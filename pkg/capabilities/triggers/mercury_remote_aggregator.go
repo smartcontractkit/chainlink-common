@@ -87,7 +87,7 @@ func (a *mercuryRemoteAggregator) Aggregate(triggerEventID string, responses [][
 	for _, feedID := range allIDs {
 		reportList = append(reportList, latestReports[datastreams.FeedID(feedID)])
 	}
-	meta := datastreams.SignersMetadata{
+	meta := datastreams.Metadata{
 		Signers:               a.allowedSigners,
 		MinRequiredSignatures: a.minRequiredSignatures,
 	}

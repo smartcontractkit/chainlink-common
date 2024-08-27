@@ -119,20 +119,20 @@ func noopOnClose() error {
 	return nil
 }
 
-type WriterClientConfig struct {
+type writerClientConfig struct {
 	Config
 	LogOptions    []stdoutlog.Option
 	TraceOptions  []stdouttrace.Option
 	MetricOptions []stdoutmetric.Option
 }
 
-func DefaultWriterClientConfig() WriterClientConfig {
-	return WriterClientConfig{
+func DefaultWriterClientConfig() writerClientConfig {
+	return writerClientConfig{
 		Config: DefaultConfig(),
 	}
 }
 
-func (cfg *WriterClientConfig) WithWriter(w io.Writer) {
+func (cfg *writerClientConfig) WithWriter(w io.Writer) {
 	cfg.LogOptions = append(cfg.LogOptions, stdoutlog.WithWriter(w))
 	cfg.TraceOptions = append(cfg.TraceOptions, stdouttrace.WithWriter(w))
 	cfg.MetricOptions = append(cfg.MetricOptions, stdoutmetric.WithWriter(w))

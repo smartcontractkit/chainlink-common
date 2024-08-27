@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
 )
 
 func TestInterpolateKey(t *testing.T) {
@@ -122,7 +123,7 @@ func TestInterpolateKey(t *testing.T) {
 					Outputs: val,
 				},
 			},
-			errMsg: "could not interpolate ref part `notAString` (ref: `evm_median.outputs.reportsList.notAString`) in `[listElement]`: `notAString` is not convertible to an int",
+			errMsg: "could not interpolate ref part: strconv.Atoi: parsing \"notAString\": invalid syntax: `notAString` (ref: `evm_median.outputs.reportsList.notAString`) in `[listElement]`: `notAString` is not convertible to an int",
 		},
 		{
 			name: "digging into an array with a negative index",
@@ -217,7 +218,7 @@ func TestInterpolateInputsFromState(t *testing.T) {
 
 type fakeResults map[string]*exec.Result
 
-func (f fakeResults) GetResultForStep(s string) (*exec.Result, bool) {
+func (f fakeResults) ResultForStep(s string) (*exec.Result, bool) {
 	r, ok := f[s]
 	return r, ok
 }

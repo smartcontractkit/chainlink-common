@@ -1,6 +1,7 @@
 package testutils_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestRunner(t *testing.T) {
 	t.Parallel()
 	t.Run("Run runs a workflow for a single execution", func(t *testing.T) {
 		helper := &testHelper{t: t}
-		workflow := createTestWorkflow(helper.transformTrigger)
+		workflow := createBasicTestWorkflow(helper.transformTrigger)
 
 		runner := testutils.NewRunner()
 
@@ -47,12 +48,11 @@ func TestRunner(t *testing.T) {
 		require.NoError(t, err)
 
 		trigger := triggerMock.GetStep()
-		assert.NotNil(t, trigger)
 		assert.NoError(t, trigger.Error)
 		assert.Equal(t, "cool", trigger.Output.CoolOutput)
 
 		action := actionMock.GetStep("action")
-		assert.NotNil(t, action)
+		assert.True(t, action.WasRun)
 		assert.Equal(t, basicaction.ActionInputs{InputThing: true}, action.Input)
 		assert.NoError(t, action.Error)
 		assert.Equal(t, "it was true", action.Output.AdaptedThing)
@@ -87,13 +87,49 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run captures errors", func(t *testing.T) {
-		t.Skip("TODO https://smartcontract-it.atlassian.net/browse/KS-442")
-		assert.Fail(t, "Not implemented")
+		expectedErr := errors.New("nope")
+		wf := createBasicTestWorkflow(func(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error) {
+			return false, expectedErr
+		})
+
+		runner := testutils.NewRunner()
+
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
+		})
+
+		basicactiontest.Action(runner, func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
+			return basicaction.ActionOutputs{AdaptedThing: "it was true"}, nil
+		})
+
+		consensusMock := ocr3test.IdenticalConsensus[basicaction.ActionOutputs](runner)
+
+		err := runner.Run(wf)
+		assert.True(t, errors.Is(err, expectedErr))
+
+		consensus := consensusMock.GetStep("consensus")
+		assert.False(t, consensus.WasRun)
 	})
 
 	t.Run("Run fails if MockCapability is not provided for a step that is run", func(t *testing.T) {
-		t.Skip("TODO https://smartcontract-it.atlassian.net/browse/KS-442")
-		assert.Fail(t, "Not implemented")
+		helper := &testHelper{t: t}
+		workflow := createBasicTestWorkflow(helper.transformTrigger)
+
+		runner := testutils.NewRunner()
+
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
+		})
+
+		ocr3test.IdenticalConsensus[basicaction.ActionOutputs](runner)
+
+		chainwritertest.Target(runner, "chainwriter@1.0.0", func(input chainwriter.TargetInputs) error {
+			return nil
+		})
+
+		err := runner.Run(workflow)
+		require.Error(t, err)
+		require.Equal(t, "no mock found for capability basic-test-action@1.0.0 on step action", err.Error())
 	})
 
 	t.Run("Fails build if workflow spec generation fails", func(t *testing.T) {
@@ -150,7 +186,7 @@ func TestRunner(t *testing.T) {
 
 type actionTransform func(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error)
 
-func createTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpecFactory {
+func createBasicTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpecFactory {
 	workflow := workflows.NewWorkflowSpecFactory(workflows.NewWorkflowParams{Name: "tester", Owner: "ryan"})
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 	tTransform := workflows.Compute1[basictrigger.TriggerOutputs, bool](

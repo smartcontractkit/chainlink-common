@@ -130,7 +130,7 @@ func (r *Runner) walk(spec workflows.WorkflowSpec, ref string) error {
 	capability := r.idToStep[ref]
 	mock := r.GetRegisteredMock(capability.ID, ref)
 	if mock == nil {
-		return fmt.Errorf("no mock found for capability %s on step %s", capability, ref)
+		return fmt.Errorf("no mock found for capability %s on step %s", capability.ID, ref)
 	}
 
 	request, err := r.buildRequest(spec, capability)
@@ -151,6 +151,11 @@ func (r *Runner) walk(spec workflows.WorkflowSpec, ref string) error {
 		Outputs: results.Value,
 		Error:   results.Err,
 	}
+
+	if results.Err != nil {
+		return results.Err
+	}
+
 	edges, ok := r.am[ref]
 	if !ok {
 		return nil

@@ -60,7 +60,7 @@ func TestRunner(t *testing.T) {
 		assert.True(t, helper.transformTriggerCalled)
 		consensus := consensusMock.GetStepDecoded("Consensus")
 		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
-		require.Len(t, consensus.Input, 1)
+		require.Len(t, consensus.Input.Observations, 1)
 
 		target := targetMock.GetAllWrites()
 		require.NoError(t, err)

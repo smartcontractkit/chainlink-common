@@ -5,5 +5,5 @@ type ConsensusInput[T any] struct {
 }
 
 type singleConsensusInput[T any] struct {
-	Observation T
+	Observations T
 }

@@ -74,11 +74,11 @@ func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepRes
 	step := c.GetStep(ref)
 	var t T
 	if step.WasRun && step.Error == nil {
-		bytes := step.Output.Report
+		bytes, _ := base64.StdEncoding.DecodeString(step.Output.Report)
 		wrapped := &pb.Map{}
 
 		// safe because we marshalled it in the mock step
-		_ = proto.Unmarshal([]byte(bytes), wrapped)
+		_ = proto.Unmarshal(bytes, wrapped)
 		mv, _ := values.FromMapValueProto(wrapped)
 		_ = mv.UnwrapTo(&t)
 	}

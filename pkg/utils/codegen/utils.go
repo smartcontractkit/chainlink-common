@@ -36,9 +36,5 @@ func WriteFiles(dir, localPrefix string, files map[string]string) error {
 		}
 	}
 
-	if len(errs) == 0 {
-		return nil
-	}
-
 	return errors.Join(errs...)
 }

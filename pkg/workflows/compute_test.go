@@ -68,7 +68,7 @@ func TestCompute(t *testing.T) {
 						"aggregation_config": ocr3.DataFeedsConsensusConfigAggregationConfig{
 							AllowedPartialStaleness: "false",
 							Feeds: map[string]ocr3.FeedValue{
-								anyFakeFeedId: {
+								anyFakeFeedID: {
 									Deviation: "0.5",
 									Heartbeat: 3600,
 								},
@@ -117,7 +117,7 @@ func TestCompute(t *testing.T) {
 			{
 				{
 					BenchmarkPrice:       "12.3",
-					FeedId:               anyFakeFeedId,
+					FeedId:               anyFakeFeedID,
 					FullReport:           "report",
 					ObservationTimestamp: 123,
 					ReportContext:        "context",
@@ -163,7 +163,7 @@ func createWorkflow(fn func(_ workflows.SDK, inputFeed notstreams.Feed) ([][]str
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
 			AllowedPartialStaleness: "false",
 			Feeds: map[string]ocr3.FeedValue{
-				anyFakeFeedId: {
+				anyFakeFeedID: {
 					Deviation: "0.5",
 					Heartbeat: 3600,
 				},
@@ -193,7 +193,7 @@ func convertFeed(_ workflows.SDK, inputFeed notstreams.Feed) ([][]streams.Feed, 
 		{
 			{
 				BenchmarkPrice:       inputFeed.Price.PriceA,
-				FeedId:               anyFakeFeedId,
+				FeedId:               anyFakeFeedID,
 				FullReport:           inputFeed.FullReport,
 				ObservationTimestamp: inputFeed.Timestamp,
 				ReportContext:        inputFeed.ReportContext,

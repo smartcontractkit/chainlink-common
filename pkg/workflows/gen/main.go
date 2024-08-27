@@ -6,7 +6,7 @@ import (
 	"log"
 	"text/template"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegeneration"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
 )
 
 //go:embed compute.go.templ
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	files := map[string]string{"compute_generated.go": results.String()}
-	if err = codegeneration.PrintFiles(".", files); err != nil {
+	if err = codegen.WriteFiles(".", "github.com/smartcontractkit", files); err != nil {
 		log.Fatal(err)
 	}
 }

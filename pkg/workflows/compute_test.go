@@ -135,7 +135,7 @@ func TestCompute(t *testing.T) {
 
 	t.Run("compute returns errors correctly", func(t *testing.T) {
 		anyErr := errors.New("nope")
-		workflow := createWorkflow(func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]streams.Feed, error) {
+		workflow := createWorkflow(func(_ workflows.SDK, inputFeed notstreams.Feed) ([][]streams.Feed, error) {
 			return nil, anyErr
 		})
 
@@ -148,7 +148,7 @@ func TestCompute(t *testing.T) {
 	})
 }
 
-func createWorkflow(fn func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]streams.Feed, error)) *workflows.WorkflowSpecFactory {
+func createWorkflow(fn func(_ workflows.SDK, inputFeed notstreams.Feed) ([][]streams.Feed, error)) *workflows.WorkflowSpecFactory {
 	workflow := workflows.NewWorkflowSpecFactory(workflows.NewWorkflowParams{
 		Owner: "owner",
 		Name:  "name",
@@ -188,7 +188,7 @@ func createWorkflow(fn func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]str
 	return workflow
 }
 
-func convertFeed(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]streams.Feed, error) {
+func convertFeed(_ workflows.SDK, inputFeed notstreams.Feed) ([][]streams.Feed, error) {
 	return [][]streams.Feed{
 		{
 			{

@@ -1,5 +1,5 @@
 package workflows
 
-type Sdk interface {
+type SDK interface {
 	// Functions to come
 }

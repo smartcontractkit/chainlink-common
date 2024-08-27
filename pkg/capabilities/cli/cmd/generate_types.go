@@ -13,14 +13,14 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegeneration"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
 )
 
 // CapabilitySchemaFilePattern is used to extract the package name from the file path.
 // This is used as the package name for the generated Go types.
 var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|consensus|target|common)-schema\.json$`)
 
-func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
+func GenerateTypes(dir, localPrefix string, helpers []WorkflowHelperGenerator) error {
 	schemaPaths, err := schemaFilesFromDir(dir)
 	if err != nil {
 		return err
@@ -32,14 +32,14 @@ func GenerateTypes(dir string, helpers []WorkflowHelperGenerator) error {
 	}
 
 	for _, schemaPath := range schemaPaths {
-		if err = generateFromSchema(schemaPath, cfgInfo, helpers); err != nil {
+		if err = generateFromSchema(schemaPath, localPrefix, cfgInfo, helpers); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []WorkflowHelperGenerator) error {
+func generateFromSchema(schemaPath, localPrefix string, cfgInfo ConfigInfo, helpers []WorkflowHelperGenerator) error {
 	allFiles := map[string]string{}
 	file, content, err := TypesFromJSONSchema(schemaPath, cfgInfo)
 	if err != nil {
@@ -62,7 +62,7 @@ func generateFromSchema(schemaPath string, cfgInfo ConfigInfo, helpers []Workflo
 		return err
 	}
 
-	if err = codegeneration.PrintFiles(path.Dir(schemaPath), allFiles); err != nil {
+	if err = codegen.WriteFiles(path.Dir(schemaPath), localPrefix, allFiles); err != nil {
 		return err
 	}
 

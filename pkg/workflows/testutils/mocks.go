@@ -141,7 +141,9 @@ func (t *TargetMock[I]) GetAllWrites() TargetResults[I] {
 		targetResults.NumRuns++
 		step := t.mock.GetStep(ref)
 		targetResults.Inputs = append(targetResults.Inputs, step.Input)
-		targetResults.Errors = append(targetResults.Errors, step.Error)
+		if step.Error != nil {
+			targetResults.Errors = append(targetResults.Errors, step.Error)
+		}
 	}
 	return targetResults
 }

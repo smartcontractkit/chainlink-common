@@ -62,11 +62,12 @@ func TestRunner(t *testing.T) {
 		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
 		require.Len(t, consensus.Input.Observations, 1)
 
+		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()
 		require.NoError(t, err)
-		assert.Empty(t, target.Errors)
+		assert.Len(t, target.Errors, 0)
 		assert.Len(t, target.Inputs, 1)
-		assert.Equal(t, consensus.Output, target.Inputs[0].SignedReport)
+		assert.Equal(t, rawConsensus.Output, target.Inputs[0].SignedReport)
 	})
 
 	t.Run("Run allows hard-coded values", func(t *testing.T) {

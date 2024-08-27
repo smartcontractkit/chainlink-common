@@ -9,12 +9,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
 )
 
 func NewRunner() *Runner {
 	return &Runner{
 		registry:     map[string]CapabilityMock{},
-		results:      map[string]capabilities.CapabilityResponse{},
+		results:      runnerResults{},
 		idToStep:     map[string]workflows.StepDefinition{},
 		dependencies: map[string][]string{},
 		sdk:          &Sdk{},
@@ -29,7 +30,7 @@ type ConsensusMock interface {
 type Runner struct {
 	registry     map[string]CapabilityMock
 	am           map[string]map[string]graph.Edge[string]
-	results      map[string]capabilities.CapabilityResponse
+	results      runnerResults
 	idToStep     map[string]workflows.StepDefinition
 	dependencies map[string][]string
 	sdk          workflows.Sdk
@@ -82,6 +83,10 @@ func (r *Runner) ensureGraph(spec workflows.WorkflowSpec) error {
 
 func (r *Runner) setupSteps(factory *workflows.WorkflowSpecFactory, spec workflows.WorkflowSpec) {
 	for _, step := range spec.Steps() {
+		if step.Ref == "" {
+			step.Ref = step.ID
+		}
+
 		r.idToStep[step.Ref] = step
 		if run := factory.GetFn(step.Ref); run != nil {
 			compute := &computeCapability{
@@ -128,24 +133,18 @@ func (r *Runner) walk(ref string) error {
 		return fmt.Errorf("no mock found for capability %s on step %s", capability, ref)
 	}
 
-	conf, err := values.NewMap(capability.Config)
+	request, err := r.buildRequest(capability)
 	if err != nil {
 		return err
 	}
 
-	inputs, err := r.buildInput(capability)
-	if err != nil {
-		return err
+	results := mock.Run(request)
+
+	r.results[ref] = &exec.Result{
+		Inputs:  request.Inputs,
+		Outputs: results.Value,
+		Error:   results.Err,
 	}
-
-	request := capabilities.CapabilityRequest{
-		Metadata: capabilities.RequestMetadata{},
-		Config:   conf,
-		Inputs:   inputs,
-	}
-
-	r.results[ref] = mock.Run(request)
-
 	edges, ok := r.am[ref]
 	if !ok {
 		return nil
@@ -154,16 +153,36 @@ func (r *Runner) walk(ref string) error {
 	return r.walkNext(edges, err)
 }
 
+func (r *Runner) buildRequest(capability workflows.StepDefinition) (capabilities.CapabilityRequest, error) {
+	conf, err := values.NewMap(capability.Config)
+	if err != nil {
+		return capabilities.CapabilityRequest{}, err
+	}
+
+	inputs, err := r.buildInput(capability)
+	if err != nil {
+		return capabilities.CapabilityRequest{}, err
+	}
+
+	request := capabilities.CapabilityRequest{
+		Metadata: capabilities.RequestMetadata{},
+		Config:   conf,
+		Inputs:   inputs,
+	}
+	return request, nil
+}
+
 func (r *Runner) walkNext(edges map[string]graph.Edge[string], err error) error {
+	var errs []error
 	for edgeRef := range edges {
 		if r.iReady(edgeRef) {
 			if err = r.walk(edgeRef); err != nil {
-				return err
+				errs = append(errs, err)
 			}
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 func (r *Runner) buildInput(capability workflows.StepDefinition) (*values.Map, error) {
@@ -174,14 +193,10 @@ func (r *Runner) buildInput(capability workflows.StepDefinition) (*values.Map, e
 		input = capability.Inputs.Mapping
 	}
 
-	val, err := workflows.DeepMap(input, func(s string) (any, error) {
-		return s, nil
-	})
-
+	val, err := exec.FindAndInterpolateAllKeys(input, r.results)
 	if err != nil {
 		return nil, err
 	}
-
 	return values.NewMap(val.(map[string]any))
 }
 
@@ -202,3 +217,12 @@ func getFullName(name string, step *string) string {
 	}
 	return fullName
 }
+
+type runnerResults map[string]*exec.Result
+
+func (f runnerResults) ResultForStep(s string) (*exec.Result, bool) {
+	r, ok := f[s]
+	return r, ok
+}
+
+var _ exec.Results = runnerResults{}

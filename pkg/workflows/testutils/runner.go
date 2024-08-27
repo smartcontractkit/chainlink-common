@@ -138,6 +138,17 @@ func (r *Runner) walk(ref string) error {
 		return err
 	}
 
+	if c, ok := mock.(ConsensusMock); ok {
+		multiplex, merr := c.MultiplexObservations(request.Inputs)
+		if merr != nil {
+			return merr
+		}
+
+		request.Inputs = &values.Map{Underlying: map[string]values.Value{
+			"observations": multiplex,
+		}}
+	}
+
 	results := mock.Run(request)
 
 	r.results[ref] = &exec.Result{

@@ -25,7 +25,7 @@ func (input Compute1Inputs[I0]) ToSteps() StepInputs {
 	}
 }
 
-func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1Inputs[I0], compute func(Sdk, I0) (O, error)) ComputeOutputCap[O] {
+func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1Inputs[I0], compute func(SDK, I0) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -34,7 +34,7 @@ func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1I
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime1Inputs[I0]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -64,7 +64,7 @@ func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1I
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -89,7 +89,7 @@ func (input Compute2Inputs[I0, I1]) ToSteps() StepInputs {
 	}
 }
 
-func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input Compute2Inputs[I0, I1], compute func(Sdk, I0, I1) (O, error)) ComputeOutputCap[O] {
+func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input Compute2Inputs[I0, I1], compute func(SDK, I0, I1) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -98,7 +98,7 @@ func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input C
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime2Inputs[I0, I1]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -128,7 +128,7 @@ func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input C
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -156,7 +156,7 @@ func (input Compute3Inputs[I0, I1, I2]) ToSteps() StepInputs {
 	}
 }
 
-func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string, input Compute3Inputs[I0, I1, I2], compute func(Sdk, I0, I1, I2) (O, error)) ComputeOutputCap[O] {
+func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string, input Compute3Inputs[I0, I1, I2], compute func(SDK, I0, I1, I2) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -165,7 +165,7 @@ func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string,
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime3Inputs[I0, I1, I2]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -195,7 +195,7 @@ func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string,
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -226,7 +226,7 @@ func (input Compute4Inputs[I0, I1, I2, I3]) ToSteps() StepInputs {
 	}
 }
 
-func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref string, input Compute4Inputs[I0, I1, I2, I3], compute func(Sdk, I0, I1, I2, I3) (O, error)) ComputeOutputCap[O] {
+func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref string, input Compute4Inputs[I0, I1, I2, I3], compute func(SDK, I0, I1, I2, I3) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -235,7 +235,7 @@ func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime4Inputs[I0, I1, I2, I3]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -265,7 +265,7 @@ func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -299,7 +299,7 @@ func (input Compute5Inputs[I0, I1, I2, I3, I4]) ToSteps() StepInputs {
 	}
 }
 
-func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFactory, ref string, input Compute5Inputs[I0, I1, I2, I3, I4], compute func(Sdk, I0, I1, I2, I3, I4) (O, error)) ComputeOutputCap[O] {
+func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFactory, ref string, input Compute5Inputs[I0, I1, I2, I3, I4], compute func(SDK, I0, I1, I2, I3, I4) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -308,7 +308,7 @@ func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFact
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime5Inputs[I0, I1, I2, I3, I4]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -338,7 +338,7 @@ func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFact
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -375,7 +375,7 @@ func (input Compute6Inputs[I0, I1, I2, I3, I4, I5]) ToSteps() StepInputs {
 	}
 }
 
-func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *WorkflowSpecFactory, ref string, input Compute6Inputs[I0, I1, I2, I3, I4, I5], compute func(Sdk, I0, I1, I2, I3, I4, I5) (O, error)) ComputeOutputCap[O] {
+func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *WorkflowSpecFactory, ref string, input Compute6Inputs[I0, I1, I2, I3, I4, I5], compute func(SDK, I0, I1, I2, I3, I4, I5) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -384,7 +384,7 @@ func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *Workflow
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime6Inputs[I0, I1, I2, I3, I4, I5]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -414,7 +414,7 @@ func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *Workflow
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -454,7 +454,7 @@ func (input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6]) ToSteps() StepInputs {
 	}
 }
 
-func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *WorkflowSpecFactory, ref string, input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6], compute func(Sdk, I0, I1, I2, I3, I4, I5, I6) (O, error)) ComputeOutputCap[O] {
+func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *WorkflowSpecFactory, ref string, input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6], compute func(SDK, I0, I1, I2, I3, I4, I5, I6) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -463,7 +463,7 @@ func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime7Inputs[I0, I1, I2, I3, I4, I5, I6]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -493,7 +493,7 @@ func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -536,7 +536,7 @@ func (input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]) ToSteps() StepInputs
 	}
 }
 
-func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O any](w *WorkflowSpecFactory, ref string, input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7], compute func(Sdk, I0, I1, I2, I3, I4, I5, I6, I7) (O, error)) ComputeOutputCap[O] {
+func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O any](w *WorkflowSpecFactory, ref string, input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7], compute func(SDK, I0, I1, I2, I3, I4, I5, I6, I7) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -545,7 +545,7 @@ func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O 
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -575,7 +575,7 @@ func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O 
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -621,7 +621,7 @@ func (input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]) ToSteps() StepIn
 	}
 }
 
-func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, O any](w *WorkflowSpecFactory, ref string, input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8], compute func(Sdk, I0, I1, I2, I3, I4, I5, I6, I7, I8) (O, error)) ComputeOutputCap[O] {
+func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, O any](w *WorkflowSpecFactory, ref string, input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8], compute func(SDK, I0, I1, I2, I3, I4, I5, I6, I7, I8) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -630,7 +630,7 @@ func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -660,7 +660,7 @@ func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -709,7 +709,7 @@ func (input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]) ToSteps() S
 	}
 }
 
-func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, I9 any, O any](w *WorkflowSpecFactory, ref string, input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9], compute func(Sdk, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9) (O, error)) ComputeOutputCap[O] {
+func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, I9 any, O any](w *WorkflowSpecFactory, ref string, input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9], compute func(SDK, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:             "internal!!custom_compute@1.0.0",
 		Ref:            ref,
@@ -718,7 +718,7 @@ func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
 		var inputs runtime10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
 			return capabilities.CapabilityResponse{Err: err}
@@ -748,7 +748,7 @@ func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(sdk Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}

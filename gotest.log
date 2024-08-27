@@ -1,0 +1,312 @@
+[0;32m📦 github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader[0m
+  [0;32m✅ FuzzCodec[0;37m (0s)[0m
+  [0;32m✅ FuzzCodec/seed#0[0;37m (0s)[0m
+  [0;32m✅ FuzzCodec/seed#0/Fuzz_codec[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR[0;37m (10ms)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/BatchGetLatestValues_returns_error_if_type_cannot_be_encoded_in_the_wire_format[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/BatchGetLatestValues_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/BatchGetLatestValues_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/BatchGetLatestValues_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/BatchGetLatestValues_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/BatchGetLatestValues_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/BatchGetLatestValues_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/CBOR/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1[0;37m (10ms)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/BatchGetLatestValues_returns_error_if_type_cannot_be_encoded_in_the_wire_format[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/BatchGetLatestValues_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/BatchGetLatestValues_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/BatchGetLatestValues_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/BatchGetLatestValues_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/BatchGetLatestValues_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/BatchGetLatestValues_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv1/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/BatchGetLatestValues_returns_error_if_type_cannot_be_encoded_in_the_wire_format[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/BatchGetLatestValues_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/BatchGetLatestValues_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/BatchGetLatestValues_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/BatchGetLatestValues_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/BatchGetLatestValues_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/BatchGetLatestValues_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestBatchGetLatestValues/JSONv2/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestBind[0;37m (0s)[0m
+  [0;32m✅ TestBind/CBOR[0;37m (0s)[0m
+  [0;32m✅ TestBind/CBOR/Bind_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestBind/CBOR/Bind_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBind/CBOR/Bind_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestBind/CBOR/Bind_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestBind/CBOR/Bind_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBind/CBOR/Bind_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv1[0;37m (10ms)[0m
+  [0;32m✅ TestBind/JSONv1/Bind_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv1/Bind_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv1/Bind_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv1/Bind_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv1/Bind_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv1/Bind_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv2[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv2/Bind_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv2/Bind_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv2/Bind_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv2/Bind_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv2/Bind_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestBind/JSONv2/Bind_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR[0;37m (14.23s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop[0;37m (20ms)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValue_without_arguments_and_with_slice_return_for_relay_client_on_loop[0;37m (10ms)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_allows_multiple_contract_names_to_have_the_same_function_Name_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_sets_errors_properly_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_supports_same_read_with_different_params_and_results_retain_order_from_request_even_with_multiple_contracts_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_supports_same_read_with_different_params_and_results_retain_order_from_request_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_works_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_works_without_arguments_and_with_primitive_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_wraps_config_with_modifiers_using_its_own_mapstructure_overrides_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop[0;37m (12.19s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_event_based_on_provided_confidence_level_for_relay_client_on_loop[0;37m (3.04s)[0m
+Waiting for transaction d7003851-c497-4f6f-852d-8c58af01540c to reach status 2
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_allows_multiple_contract_names_to_have_the_same_function_name_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_based_on_confidence_level_for_relay_client_on_loop[0;37m (3s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_gets_latest_event_for_relay_client_on_loop[0;37m (2.01s)[0m
+Waiting for transaction f41fc72f-f655-4171-bd71-c071a54d985e to reach status 2
+Transaction 78c89122-0588-471a-b6a8-d26d4fd38ba1 reached status: 3
+Transaction 4a39caea-ee67-4d8c-b4f3-2d7334ff8a66 reached status: 3
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_gets_latest_event_with_filtering_for_relay_client_on_loop[0;37m (2.11s)[0m
+Waiting for transaction 4ae937d7-c3da-482a-8be2-a725aff380f5 to reach status 2
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_returns_not_found_if_event_was_never_triggered_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_without_arguments_and_with_primitive_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_without_arguments_and_with_slice_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Get_latest_value_wraps_config_with_modifiers_using_its_own_mapstructure_overrides_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/GetLatestValue_for_relay_client_on_loop/Gets_the_latest_value_for_relay_client_on_loop[0;37m (2.01s)[0m
+Waiting for transaction 10f94494-a0fc-46c8-9f87-c3cccd75c1c5 to reach status 2
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/QueryKey_for_relay_client_on_loop[0;37m (2.02s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/QueryKey_for_relay_client_on_loop/QueryKey_returns_not_found_if_sequence_never_happened_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/CBOR/QueryKey_for_relay_client_on_loop/QueryKey_returns_sequence_data_properly_for_relay_client_on_loop[0;37m (2.02s)[0m
+Waiting for transaction fe1240e6-3df1-48ee-8311-7f022948ef0b to reach status 2
+Transaction 57ea43e2-9500-440c-a97e-87176627cac5 reached status: 3
+Waiting for transaction a34fdefc-49f7-4e29-9e88-be7899b9516b to reach status 2
+Transaction edce29b6-3e9c-4f9b-a0ce-48abf6756ba3 reached status: 3
+Waiting for transaction 6378944e-d9aa-480b-b9dc-3e9e1b4a66f1 to reach status 2
+Transaction fe1240e6-3df1-48ee-8311-7f022948ef0b reached status: 3
+Waiting for transaction 5cb740ea-429d-4339-99a5-3d3f63e60d95 to reach status 2
+Transaction a34fdefc-49f7-4e29-9e88-be7899b9516b reached status: 3
+Transaction 5cb740ea-429d-4339-99a5-3d3f63e60d95 reached status: 3
+Transaction 6378944e-d9aa-480b-b9dc-3e9e1b4a66f1 reached status: 3
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1[0;37m (14.23s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop[0;37m (20ms)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValue_without_arguments_and_with_slice_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_allows_multiple_contract_names_to_have_the_same_function_Name_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_sets_errors_properly_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_supports_same_read_with_different_params_and_results_retain_order_from_request_even_with_multiple_contracts_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_supports_same_read_with_different_params_and_results_retain_order_from_request_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_works_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_works_without_arguments_and_with_primitive_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_wraps_config_with_modifiers_using_its_own_mapstructure_overrides_for_relay_client_on_loop[0;37m (10ms)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop[0;37m (12.19s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_event_based_on_provided_confidence_level_for_relay_client_on_loop[0;37m (3.04s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_allows_multiple_contract_names_to_have_the_same_function_name_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_based_on_confidence_level_for_relay_client_on_loop[0;37m (3.01s)[0m
+Waiting for transaction ff14d235-84f9-444e-b7cb-797f82533b12 to reach status 2
+Waiting for transaction e49eb5f6-e6d8-4c24-83cd-b915f41e9a8a to reach status 2
+Transaction d3880a4e-1bc3-4980-9a9d-d693f7b70e4b reached status: 3
+Transaction ff14d235-84f9-444e-b7cb-797f82533b12 reached status: 3
+Waiting for transaction d3880a4e-1bc3-4980-9a9d-d693f7b70e4b to reach status 3
+Transaction e49eb5f6-e6d8-4c24-83cd-b915f41e9a8a reached status: 3
+Waiting for transaction e49eb5f6-e6d8-4c24-83cd-b915f41e9a8a to reach status 3
+Waiting for transaction ff14d235-84f9-444e-b7cb-797f82533b12 to reach status 3
+Waiting for transaction c5920c0d-aa5e-4257-848c-e5a53382e0b0 to reach status 2
+Waiting for transaction 78c89122-0588-471a-b6a8-d26d4fd38ba1 to reach status 2
+Waiting for transaction 4a39caea-ee67-4d8c-b4f3-2d7334ff8a66 to reach status 2
+Transaction c5920c0d-aa5e-4257-848c-e5a53382e0b0 reached status: 3
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_gets_latest_event_for_relay_client_on_loop[0;37m (2.01s)[0m
+Waiting for transaction 15f06604-70cd-4394-914d-a75c87f4516f to reach status 2
+Waiting for transaction 0b72c573-7173-4a8d-888f-58cf56e87129 to reach status 2
+Transaction f41fc72f-f655-4171-bd71-c071a54d985e reached status: 3
+Waiting for transaction 0340f03b-81ff-4964-a287-39397806289e to reach status 2
+Transaction 15f06604-70cd-4394-914d-a75c87f4516f reached status: 3
+Waiting for transaction 8a4f5f07-cab6-4539-b6cf-a6aa8129627c to reach status 2
+Transaction 0b72c573-7173-4a8d-888f-58cf56e87129 reached status: 3
+Waiting for transaction a4da1ac1-5b77-4f88-90dd-0f28c44152e8 to reach status 2
+Transaction 0340f03b-81ff-4964-a287-39397806289e reached status: 3
+Transaction a4da1ac1-5b77-4f88-90dd-0f28c44152e8 reached status: 3
+Transaction 8a4f5f07-cab6-4539-b6cf-a6aa8129627c reached status: 3
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_gets_latest_event_with_filtering_for_relay_client_on_loop[0;37m (2.11s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_returns_not_found_if_event_was_never_triggered_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_without_arguments_and_with_primitive_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_without_arguments_and_with_slice_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Get_latest_value_wraps_config_with_modifiers_using_its_own_mapstructure_overrides_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/GetLatestValue_for_relay_client_on_loop/Gets_the_latest_value_for_relay_client_on_loop[0;37m (2.01s)[0m
+Waiting for transaction da0901ff-87bb-446b-a6f7-5361abd3aab5 to reach status 2
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/QueryKey_for_relay_client_on_loop[0;37m (2.03s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/QueryKey_for_relay_client_on_loop/QueryKey_returns_not_found_if_sequence_never_happened_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv1/QueryKey_for_relay_client_on_loop/QueryKey_returns_sequence_data_properly_for_relay_client_on_loop[0;37m (2.03s)[0m
+Waiting for transaction edce29b6-3e9c-4f9b-a0ce-48abf6756ba3 to reach status 2
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2[0;37m (14.22s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop[0;37m (10ms)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValue_without_arguments_and_with_slice_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_allows_multiple_contract_names_to_have_the_same_function_Name_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_sets_errors_properly_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_supports_same_read_with_different_params_and_results_retain_order_from_request_even_with_multiple_contracts_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_supports_same_read_with_different_params_and_results_retain_order_from_request_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_works_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_works_without_arguments_and_with_primitive_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/BatchGetLatestValues_for_relay_client_on_loop/BatchGetLatestValues_wraps_config_with_modifiers_using_its_own_mapstructure_overrides_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop[0;37m (12.19s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_event_based_on_provided_confidence_level_for_relay_client_on_loop[0;37m (3.04s)[0m
+Waiting for transaction d9ec9f7b-e972-4fbb-8c4b-4e222418e0a3 to reach status 2
+Waiting for transaction 1dabd95d-3ba9-4e1f-aecd-fb65922b01dd to reach status 2
+Transaction d7003851-c497-4f6f-852d-8c58af01540c reached status: 3
+Transaction 1dabd95d-3ba9-4e1f-aecd-fb65922b01dd reached status: 3
+Transaction d9ec9f7b-e972-4fbb-8c4b-4e222418e0a3 reached status: 3
+Waiting for transaction d7003851-c497-4f6f-852d-8c58af01540c to reach status 3
+Waiting for transaction 1dabd95d-3ba9-4e1f-aecd-fb65922b01dd to reach status 3
+Waiting for transaction d9ec9f7b-e972-4fbb-8c4b-4e222418e0a3 to reach status 3
+Waiting for transaction d82faff1-49fa-4bba-8757-68cc505d561d to reach status 2
+Waiting for transaction 3f41748e-4350-4d76-bcc7-dac72519c5b1 to reach status 2
+Waiting for transaction b6fb65b5-53b1-4885-bece-f10d710ec06c to reach status 2
+Transaction d82faff1-49fa-4bba-8757-68cc505d561d reached status: 3
+Transaction 3f41748e-4350-4d76-bcc7-dac72519c5b1 reached status: 3
+Transaction b6fb65b5-53b1-4885-bece-f10d710ec06c reached status: 3
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_allows_multiple_contract_names_to_have_the_same_function_name_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_based_on_confidence_level_for_relay_client_on_loop[0;37m (3.01s)[0m
+Waiting for transaction d3880a4e-1bc3-4980-9a9d-d693f7b70e4b to reach status 2
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_gets_latest_event_for_relay_client_on_loop[0;37m (2.01s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_gets_latest_event_with_filtering_for_relay_client_on_loop[0;37m (2.1s)[0m
+Waiting for transaction 0de3a914-01b2-41f5-bd18-21f37a0a159c to reach status 2
+Waiting for transaction fb03cbdc-ae1e-4eb2-a45e-0ee1d98c9308 to reach status 2
+Transaction fb03cbdc-ae1e-4eb2-a45e-0ee1d98c9308 reached status: 3
+Waiting for transaction 6d23a018-1116-4cce-b59f-0c0708a54f3d to reach status 2
+Transaction 4ae937d7-c3da-482a-8be2-a725aff380f5 reached status: 3
+Waiting for transaction 558a380b-cb7f-4504-9e69-b02ad028f277 to reach status 2
+Transaction 0de3a914-01b2-41f5-bd18-21f37a0a159c reached status: 3
+Waiting for transaction cd4375fe-15ed-4c2f-ba85-dd7fa2b54ee7 to reach status 2
+Transaction cd4375fe-15ed-4c2f-ba85-dd7fa2b54ee7 reached status: 3
+Transaction 6d23a018-1116-4cce-b59f-0c0708a54f3d reached status: 3
+Transaction 558a380b-cb7f-4504-9e69-b02ad028f277 reached status: 3
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_returns_not_found_if_event_was_never_triggered_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_without_arguments_and_with_primitive_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_without_arguments_and_with_slice_return_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Get_latest_value_wraps_config_with_modifiers_using_its_own_mapstructure_overrides_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/GetLatestValue_for_relay_client_on_loop/Gets_the_latest_value_for_relay_client_on_loop[0;37m (2.01s)[0m
+Waiting for transaction a9bdc1df-cdd9-485b-a445-b4314ae5a4d1 to reach status 2
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/QueryKey_for_relay_client_on_loop[0;37m (2.02s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/QueryKey_for_relay_client_on_loop/QueryKey_returns_not_found_if_sequence_never_happened_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestChainReaderInterfaceTests/JSONv2/QueryKey_for_relay_client_on_loop/QueryKey_returns_sequence_data_properly_for_relay_client_on_loop[0;37m (2.02s)[0m
+Waiting for transaction 57ea43e2-9500-440c-a97e-87176627cac5 to reach status 2
+  [0;32m✅ TestCodecClient[0;37m (50ms)[0m
+  [0;32m✅ TestCodecClient/Decode_respects_config_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Decode_returns_error_if_type_cannot_be_decoded_in_the_wire_format[0;37m (10ms)[0m
+  [0;32m✅ TestCodecClient/Decode_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Decode_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Decode_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Decode_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Decode_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Decode_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_allows_nil_params_to_be_encoded,_either_as_empty_encoding_or_with_prefix_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_does_not_panic_on_nil_field_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_respects_config_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_returns_an_error_if_a_field_is_not_provided_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_returns_an_error_if_the_item_isn't_compatible_for_relay_client_on_loop[0;37m (10ms)[0m
+  [0;32m✅ TestCodecClient/Encode_returns_error_if_type_cannot_be_encoded_in_the_wire_format[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encode_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encodes_and_decodes_a_single_item_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encodes_and_decodes_a_slice_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encodes_and_decodes_a_slices_with_one_element_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encodes_and_decodes_an_array_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encodes_and_decodes_an_arrays_with_one_element_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encodes_compatible_maps_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Encodes_compatible_types_for_relay_client_on_loop[0;37m (10ms)[0m
+  [0;32m✅ TestCodecClient/GetMaxDecodingSize_returns_errors_for_unknown_types_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxDecodingSize_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxDecodingSize_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxDecodingSize_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxDecodingSize_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxDecodingSize_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxDecodingSize_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxEncodingSize_returns_errors_for_unknown_types_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxEncodingSize_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxEncodingSize_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxEncodingSize_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxEncodingSize_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxEncodingSize_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/GetMaxEncodingSize_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Nil_esCodec_returns_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Returns_an_error_encoding_if_arrays_are_the_too_large_to_encode_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Returns_an_error_encoding_if_arrays_are_the_too_small_to_encode_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestCodecClient/Returns_an_error_if_type_is_undefined_for_relay_client_on_loop[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/GetLatestValue_returns_error_if_type_cannot_be_encoded_in_the_wire_format[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/GetLatestValue_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/GetLatestValue_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/GetLatestValue_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/GetLatestValue_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/GetLatestValue_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/GetLatestValue_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/CBOR/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+Transaction a9bdc1df-cdd9-485b-a445-b4314ae5a4d1 reached status: 3
+Waiting for transaction cc54c6f6-9956-4c67-b8f1-c1009f4c6136 to reach status 2
+Transaction da0901ff-87bb-446b-a6f7-5361abd3aab5 reached status: 3
+Waiting for transaction 88af0d69-981b-4be8-9cd6-99ff34fddbcf to reach status 2
+Transaction 10f94494-a0fc-46c8-9f87-c3cccd75c1c5 reached status: 3
+Waiting for transaction aab2d5a9-6ec0-4393-9026-9a4756964ef0 to reach status 2
+Transaction aab2d5a9-6ec0-4393-9026-9a4756964ef0 reached status: 3
+Transaction cc54c6f6-9956-4c67-b8f1-c1009f4c6136 reached status: 3
+Transaction 88af0d69-981b-4be8-9cd6-99ff34fddbcf reached status: 3
+  [0;32m✅ TestGetLatestValue/JSONv1[0;37m (10ms)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/GetLatestValue_returns_error_if_type_cannot_be_encoded_in_the_wire_format[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/GetLatestValue_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/GetLatestValue_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/GetLatestValue_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/GetLatestValue_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/GetLatestValue_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/GetLatestValue_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv1/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/GetLatestValue_returns_error_if_type_cannot_be_encoded_in_the_wire_format[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/GetLatestValue_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/GetLatestValue_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/GetLatestValue_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/GetLatestValue_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/GetLatestValue_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/GetLatestValue_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestGetLatestValue/JSONv2/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR[0;37m (10ms)[0m
+  [0;32m✅ TestQueryKey/CBOR/QueryKey_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR/QueryKey_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR/QueryKey_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR/QueryKey_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR/QueryKey_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR/QueryKey_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/CBOR/test_QueryKey_proto_conversion[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1[0;37m (10ms)[0m
+  [0;32m✅ TestQueryKey/JSONv1/QueryKey_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1/QueryKey_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1/QueryKey_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1/QueryKey_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1/QueryKey_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1/QueryKey_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv1/test_QueryKey_proto_conversion[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2[0;37m (10ms)[0m
+  [0;32m✅ TestQueryKey/JSONv2/QueryKey_unwraps_errors_from_server_element_is_not_a_slice[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2/QueryKey_unwraps_errors_from_server_field_not_found[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2/QueryKey_unwraps_errors_from_server_invalid_encoding[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2/QueryKey_unwraps_errors_from_server_invalid_type[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2/QueryKey_unwraps_errors_from_server_not_found[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2/QueryKey_unwraps_errors_from_server_slice_is_wrong_length[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2/nil_reader_should_return_unimplemented[0;37m (0s)[0m
+  [0;32m✅ TestQueryKey/JSONv2/test_QueryKey_proto_conversion[0;37m (0s)[0m
+  [0;32m✅ TestVersionedBytesFunctions[0;37m (0s)[0m
+  [0;32m✅ TestVersionedBytesFunctions/chainreader.DecodeVersionedBytes[0;37m (0s)[0m
+  [0;32m✅ TestVersionedBytesFunctions/chainreader.EncodeVersionedBytes_unsupported_encoding_version[0;37m (0s)[0m
+  [0;32m✅ TestVersionedBytesFunctions/chainreader.EncodeVersionedBytes_unsupported_type[0;37m (0s)[0m
+

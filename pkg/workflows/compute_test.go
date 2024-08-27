@@ -32,8 +32,8 @@ func TestCompute(t *testing.T) {
 	t.Run("creates correct workflow spec", func(t *testing.T) {
 		workflow := createWorkflow(convertFeed)
 
-		spec, err := workflow.Spec()
-		require.NoError(t, err)
+		spec, err2 := workflow.Spec()
+		require.NoError(t, err2)
 		expectedSpec := workflows.WorkflowSpec{
 			Name:  "name",
 			Owner: "owner",

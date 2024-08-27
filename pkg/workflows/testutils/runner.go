@@ -139,14 +139,9 @@ func (r *Runner) walk(spec workflows.WorkflowSpec, ref string) error {
 	}
 
 	if c, ok := mock.(ConsensusMock); ok {
-		multiplex, merr := c.MultiplexObservations(request.Inputs)
-		if merr != nil {
-			return merr
+		if request.Inputs, err = c.SingleToManyObservations(request.Inputs); err != nil {
+			return err
 		}
-
-		request.Inputs = &values.Map{Underlying: map[string]values.Value{
-			"observations": multiplex,
-		}}
 	}
 
 	results := mock.Run(request)

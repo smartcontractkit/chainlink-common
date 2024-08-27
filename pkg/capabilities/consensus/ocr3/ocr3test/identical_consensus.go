@@ -66,8 +66,13 @@ type IdenticalConsensusMock[T any] struct {
 
 var _ testutils.ConsensusMock = &IdenticalConsensusMock[struct{}]{}
 
-func (c *IdenticalConsensusMock[T]) MultiplexObservations(input values.Value) (*values.List, error) {
-	return values.NewList([]any{input})
+func (c *IdenticalConsensusMock[T]) SingleToManyObservations(input values.Value) (values.Value, error) {
+	tmp := singleConsensusInput[T]{}
+	if err := input.UnwrapTo(&tmp); err != nil {
+		return nil, err
+	}
+
+	return values.Wrap(ConsensusInput[T]{Observations: []T{tmp.Observation}})
 }
 
 func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepResults[ConsensusInput[T], T] {
@@ -75,11 +80,11 @@ func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepRes
 	var t T
 	if step.WasRun && step.Error == nil {
 		bytes, _ := base64.StdEncoding.DecodeString(step.Output.Report)
-		wrapped := &pb.Map{}
+		wrapped := &pb.Value{}
 
 		// safe because we marshalled it in the mock step
 		_ = proto.Unmarshal(bytes, wrapped)
-		mv, _ := values.FromMapValueProto(wrapped)
+		mv, _ := values.FromProto(wrapped)
 		_ = mv.UnwrapTo(&t)
 	}
 

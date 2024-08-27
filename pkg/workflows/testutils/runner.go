@@ -24,7 +24,7 @@ func NewRunner() *Runner {
 
 type ConsensusMock interface {
 	CapabilityMock
-	MultiplexObservations(value values.Value) (*values.List, error)
+	SingleToManyObservations(value values.Value) (values.Value, error)
 }
 
 type Runner struct {

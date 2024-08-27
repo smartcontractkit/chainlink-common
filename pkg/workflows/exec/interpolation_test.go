@@ -1,4 +1,4 @@
-package execution_test
+package exec_test
 
 import (
 	"errors"
@@ -6,10 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/execution"
-
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 func TestInterpolateKey(t *testing.T) {
@@ -37,7 +36,7 @@ func TestInterpolateKey(t *testing.T) {
 			name: "digging into a string",
 			key:  "evm_median.outputs.reports",
 			state: fakeResults{
-				"evm_median": &execution.Result{
+				"evm_median": &exec.Result{
 					Outputs: values.NewString("<a report>"),
 				},
 			},
@@ -149,7 +148,7 @@ func TestInterpolateKey(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			got, err := execution.InterpolateKey(tc.key, tc.state)
+			got, err := exec.InterpolateKey(tc.key, tc.state)
 			if tc.errMsg != "" {
 				require.ErrorContains(st, err, tc.errMsg)
 			} else {
@@ -205,7 +204,7 @@ func TestInterpolateInputsFromState(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-			got, err := execution.FindAndInterpolateAllKeys(tc.inputs, tc.state)
+			got, err := exec.FindAndInterpolateAllKeys(tc.inputs, tc.state)
 			if tc.errMsg != "" {
 				require.ErrorContains(st, err, tc.errMsg)
 			} else {
@@ -216,11 +215,11 @@ func TestInterpolateInputsFromState(t *testing.T) {
 	}
 }
 
-type fakeResults map[string]*execution.Result
+type fakeResults map[string]*exec.Result
 
-func (f fakeResults) GetResultForStep(s string) (*execution.Result, bool) {
+func (f fakeResults) GetResultForStep(s string) (*exec.Result, bool) {
 	r, ok := f[s]
 	return r, ok
 }
 
-var _ execution.Results = fakeResults{}
+var _ exec.Results = fakeResults{}

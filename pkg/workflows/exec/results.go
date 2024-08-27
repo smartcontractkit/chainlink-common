@@ -1,9 +1,9 @@
-package execution
+package exec
 
 import "github.com/smartcontractkit/chainlink-common/pkg/values"
 
 type Results interface {
-	GetResultForStep(string) (*Result, bool)
+	ResultForStep(string) (*Result, bool)
 }
 
 type Result struct {

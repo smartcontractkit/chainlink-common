@@ -1,4 +1,4 @@
-package execution
+package exec
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ func InterpolateKey(key string, state Results) (any, error) {
 	}
 
 	// lookup the step we want to get either input or output state from
-	sc, ok := state.GetResultForStep(parts[0])
+	sc, ok := state.ResultForStep(parts[0])
 	if !ok {
 		return "", fmt.Errorf("could not find ref `%s`", parts[0])
 	}
@@ -64,7 +64,7 @@ func InterpolateKey(key string, state Results) (any, error) {
 		case []any:
 			i, err := strconv.Atoi(r)
 			if err != nil {
-				return "", fmt.Errorf("could not interpolate ref part `%s` (ref: `%s`) in `%+v`: `%s` is not convertible to an int", r, key, v, r)
+				return "", fmt.Errorf("could not interpolate ref part: %w: `%s` (ref: `%s`) in `%+v`: `%s` is not convertible to an int", err, r, key, v, r)
 			}
 
 			if (i > len(v)-1) || (i < 0) {

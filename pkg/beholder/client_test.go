@@ -229,7 +229,7 @@ func TestClient_ForPackage(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 	var b strings.Builder
-	client, err := NewStdoutClient(WithWriter(&b))
+	client, err := NewWriterClient(&b)
 	assert.NoError(t, err)
 	clientForTest := client.ForPackage("TestClient_ForPackage")
 

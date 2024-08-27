@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -41,14 +42,17 @@ func NewNoopClient() *Client {
 	return &client
 }
 
-// NewStdoutClient creates a new Client with stdout exporters
-// Use for testing and debugging
-// Also this client is used as a noop client when otel exporter is not initialized properly
-func NewStdoutClient(opts ...StddutClientOption) (*Client, error) {
-	cfg := DefaultStdoutClientConfig()
-	for _, opt := range opts {
-		opt(&cfg)
-	}
+// NewStdoutClient creates a new Client with exporters which send telemetry data to standard output
+// Used for testing and debugging
+func NewStdoutClient() (*Client, error) {
+	return NewWriterClient(os.Stdout)
+}
+
+// NewWriterClient creates a new Client with otel exporters which send telemetry data to custom io.Writer
+func NewWriterClient(w io.Writer) (*Client, error) {
+	cfg := DefaultWriterClientConfig()
+	cfg.WithWriter(w)
+
 	// Logger
 	loggerExporter, err := stdoutlog.New(
 		append([]stdoutlog.Option{stdoutlog.WithoutTimestamps()}, cfg.LogOptions...)...,
@@ -115,25 +119,21 @@ func noopOnClose() error {
 	return nil
 }
 
-type StddutClientOption func(*StdoutClientConfig)
-
-type StdoutClientConfig struct {
+type WriterClientConfig struct {
 	Config
 	LogOptions    []stdoutlog.Option
 	TraceOptions  []stdouttrace.Option
 	MetricOptions []stdoutmetric.Option
 }
 
-func DefaultStdoutClientConfig() StdoutClientConfig {
-	return StdoutClientConfig{
+func DefaultWriterClientConfig() WriterClientConfig {
+	return WriterClientConfig{
 		Config: DefaultConfig(),
 	}
 }
 
-func WithWriter(w io.Writer) StddutClientOption {
-	return func(cfg *StdoutClientConfig) {
-		cfg.LogOptions = append(cfg.LogOptions, stdoutlog.WithWriter(w))
-		cfg.TraceOptions = append(cfg.TraceOptions, stdouttrace.WithWriter(w))
-		cfg.MetricOptions = append(cfg.MetricOptions, stdoutmetric.WithWriter(w))
-	}
+func (cfg *WriterClientConfig) WithWriter(w io.Writer) {
+	cfg.LogOptions = append(cfg.LogOptions, stdoutlog.WithWriter(w))
+	cfg.TraceOptions = append(cfg.TraceOptions, stdouttrace.WithWriter(w))
+	cfg.MetricOptions = append(cfg.MetricOptions, stdoutmetric.WithWriter(w))
 }

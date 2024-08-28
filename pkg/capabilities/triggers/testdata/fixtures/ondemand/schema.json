@@ -9,16 +9,33 @@
     },
     "outputs": {
       "properties": {
-        "Value": {
+        "Event": {
           "properties": {
-            "Underlying": {
-              "type": "object"
+            "TriggerType": {
+              "type": "string"
+            },
+            "ID": {
+              "type": "string"
+            },
+            "Outputs": {
+              "properties": {
+                "Underlying": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "Underlying"
+              ]
             }
           },
           "additionalProperties": false,
           "type": "object",
           "required": [
-            "Underlying"
+            "TriggerType",
+            "ID",
+            "Outputs"
           ]
         },
         "Err": true
@@ -26,7 +43,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "Value",
+        "Event",
         "Err"
       ]
     }

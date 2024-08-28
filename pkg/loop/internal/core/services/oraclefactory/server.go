@@ -57,7 +57,7 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 	serviceName := "ReportingPluginFactory"
 	reportingPluginFactoryServiceConn, err := s.broker.Dial(req.ReportingPluginFactoryServiceId)
 	if err != nil {
-		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
+		return nil, fmt.Errorf("error dialing %s service: %w", serviceName, err)
 	}
 	resources = append(resources, net.Resource{
 		Closer: reportingPluginFactoryServiceConn,
@@ -67,7 +67,7 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 	serviceName = "ContractConfigTracker"
 	contractConfigTrackerConn, err := s.broker.Dial(req.ContractConfigTrackerId)
 	if err != nil {
-		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
+		return nil, fmt.Errorf("error dialing %s service: %w", serviceName, err)
 	}
 	resources = append(resources, net.Resource{
 		Closer: contractConfigTrackerConn,
@@ -77,7 +77,7 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 	serviceName = "OffchainConfigDigester"
 	offchainConfigDigesterConn, err := s.broker.Dial(req.OffchainConfigDigesterId)
 	if err != nil {
-		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
+		return nil, fmt.Errorf("error dialing %s service: %w", serviceName, err)
 	}
 	resources = append(resources, net.Resource{
 		Closer: offchainConfigDigesterConn,
@@ -87,7 +87,7 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 	serviceName = "ContractTransmitter"
 	contractTransmitterConn, err := s.broker.Dial(req.ContractTransmitterId)
 	if err != nil {
-		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
+		return nil, fmt.Errorf("error dialing %s service: %w", serviceName, err)
 	}
 	resources = append(resources, net.Resource{
 		Closer: contractTransmitterConn,
@@ -97,7 +97,7 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 	args := core.OracleArgs{
 		LocalConfig: types.LocalConfig{
 			BlockchainTimeout:                  req.LocalConfig.BlockchainTimeout.AsDuration(),
-			ContractConfigConfirmations:        uint16(req.LocalConfig.ContractConfigConfirmations),
+			ContractConfigConfirmations:        uint16(req.LocalConfig.ContractConfigConfirmations), // #nosec G115
 			SkipContractConfigConfirmations:    req.LocalConfig.SkipContractConfigConfirmations,
 			ContractConfigTrackerPollInterval:  req.LocalConfig.ContractConfigTrackerPollInterval.AsDuration(),
 			ContractTransmitterTransmitTimeout: req.LocalConfig.ContractTransmitterTransmitTimeout.AsDuration(),

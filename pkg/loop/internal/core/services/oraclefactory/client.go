@@ -41,7 +41,7 @@ func NewClient(log logger.Logger, broker *net.BrokerExt, conn grpc.ClientConnInt
 		grpc:          oraclefactorypb.NewOracleFactoryClient(conn)}
 }
 
-func (c client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (offchainreporting2plus.Oracle, error) {
+func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (offchainreporting2plus.Oracle, error) {
 	var resources []net.Resource
 
 	serviceName := "ReportingPluginFactoryServer"
@@ -54,7 +54,7 @@ func (c client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (offc
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serve new %w: %w", serviceName, err)
+		return nil, fmt.Errorf("failed to serve new %s: %w", serviceName, err)
 	}
 	resources = append(resources, reportingPluginFactoryServerRes)
 
@@ -68,7 +68,7 @@ func (c client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (offc
 	)
 	if err != nil {
 		c.broker.CloseAll(resources...)
-		return nil, fmt.Errorf("failed to serve new %w: %w", serviceName, err)
+		return nil, fmt.Errorf("failed to serve new %s: %w", serviceName, err)
 	}
 	resources = append(resources, contractConfigTrackerRes)
 
@@ -82,7 +82,7 @@ func (c client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (offc
 	)
 	if err != nil {
 		c.broker.CloseAll(resources...)
-		return nil, fmt.Errorf("failed to serve new %w: %w", serviceName, err)
+		return nil, fmt.Errorf("failed to serve new %s: %w", serviceName, err)
 	}
 	resources = append(resources, contractTransmitterServerRes)
 
@@ -96,7 +96,7 @@ func (c client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (offc
 	)
 	if err != nil {
 		c.broker.CloseAll(resources...)
-		return nil, fmt.Errorf("failed to serve new %w: %w", serviceName, err)
+		return nil, fmt.Errorf("failed to serve new %s: %w", serviceName, err)
 	}
 	resources = append(resources, offchainConfigDigesterRes)
 

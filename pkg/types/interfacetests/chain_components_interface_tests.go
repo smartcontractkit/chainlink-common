@@ -45,12 +45,12 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 const AnyExtraValue = 3
 
 func RunChainComponentsInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runChainComponentsGetLatestValueInterfaceTests(t, tester, mockRun) })
-	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runChainComponentsBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
+	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
+	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
 	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
 }
 
-func runChainComponentsGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	tests := []testcase[T]{
 		{
 			name: "Gets the latest value",
@@ -280,7 +280,7 @@ func runChainComponentsGetLatestValueInterfaceTests[T TestingT[T]](t T, tester C
 	runTests(t, tester, tests)
 }
 
-func runChainComponentsBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	testCases := []testcase[T]{
 		{
 			name: "BatchGetLatestValues works",

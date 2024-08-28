@@ -75,7 +75,7 @@ func TestChainReaderInterfaceTests(t *testing.T) {
 			fake := &fakeChainReader{}
 			RunChainComponentsInterfaceTests(
 				t,
-				chainreadertest.WrapChainComponentsTesterForLoop(
+				chainreadertest.WrapContractReaderTesterForLoop(
 					&fakeChainReaderInterfaceTester{impl: fake},
 					chainreadertest.WithChainReaderLoopEncoding(version),
 				),
@@ -93,7 +93,7 @@ func TestBind(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainComponentsTesterForLoop(
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(
 				&fakeChainReaderInterfaceTester{impl: es},
 				chainreadertest.WithChainReaderLoopEncoding(version),
 			)
@@ -121,7 +121,7 @@ func TestGetLatestValue(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainComponentsTesterForLoop(
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(
 				&fakeChainReaderInterfaceTester{impl: es},
 				chainreadertest.WithChainReaderLoopEncoding(version),
 			)
@@ -134,7 +134,7 @@ func TestGetLatestValue(t *testing.T) {
 
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainComponentsTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -170,7 +170,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainComponentsTesterForLoop(
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(
 				&fakeChainReaderInterfaceTester{impl: es},
 				chainreadertest.WithChainReaderLoopEncoding(version),
 			)
@@ -183,7 +183,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainComponentsTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -219,19 +219,19 @@ func TestQueryKey(t *testing.T) {
 			t.Parallel()
 
 			impl := &protoConversionTestChainReader{}
-			crTester := chainreadertest.WrapChainComponentsTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl}, chainreadertest.WithChainReaderLoopEncoding(version))
+			crTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl}, chainreadertest.WithChainReaderLoopEncoding(version))
 			crTester.Setup(t)
 			cr := crTester.GetChainReader(t)
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainComponentsTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
 			errTester.Setup(t)
 			chainReader := errTester.GetChainReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainComponentsTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 

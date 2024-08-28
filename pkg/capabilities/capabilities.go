@@ -406,6 +406,9 @@ type RemoteTargetConfig struct {
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
+	if c == nil {
+		return
+	}
 	if c.RegistrationRefresh == 0 {
 		c.RegistrationRefresh = DefaultRegistrationRefresh
 	}

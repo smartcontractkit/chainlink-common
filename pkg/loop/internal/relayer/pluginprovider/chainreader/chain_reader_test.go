@@ -73,7 +73,7 @@ func TestChainReaderInterfaceTests(t *testing.T) {
 			t.Parallel()
 
 			fake := &fakeChainReader{}
-			RunChainComponentsInterfaceTests(
+			RunContractReaderInterfaceTests(
 				t,
 				chainreadertest.WrapContractReaderTesterForLoop(
 					&fakeChainReaderInterfaceTester{impl: fake},

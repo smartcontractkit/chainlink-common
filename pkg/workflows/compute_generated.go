@@ -27,7 +27,7 @@ func (input Compute1Inputs[I0]) ToSteps() StepInputs {
 
 func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1Inputs[I0], compute func(SDK, I0) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -91,7 +91,7 @@ func (input Compute2Inputs[I0, I1]) ToSteps() StepInputs {
 
 func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input Compute2Inputs[I0, I1], compute func(SDK, I0, I1) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -158,7 +158,7 @@ func (input Compute3Inputs[I0, I1, I2]) ToSteps() StepInputs {
 
 func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string, input Compute3Inputs[I0, I1, I2], compute func(SDK, I0, I1, I2) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -228,7 +228,7 @@ func (input Compute4Inputs[I0, I1, I2, I3]) ToSteps() StepInputs {
 
 func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref string, input Compute4Inputs[I0, I1, I2, I3], compute func(SDK, I0, I1, I2, I3) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -301,7 +301,7 @@ func (input Compute5Inputs[I0, I1, I2, I3, I4]) ToSteps() StepInputs {
 
 func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFactory, ref string, input Compute5Inputs[I0, I1, I2, I3, I4], compute func(SDK, I0, I1, I2, I3, I4) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -377,7 +377,7 @@ func (input Compute6Inputs[I0, I1, I2, I3, I4, I5]) ToSteps() StepInputs {
 
 func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *WorkflowSpecFactory, ref string, input Compute6Inputs[I0, I1, I2, I3, I4, I5], compute func(SDK, I0, I1, I2, I3, I4, I5) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -456,7 +456,7 @@ func (input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6]) ToSteps() StepInputs {
 
 func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *WorkflowSpecFactory, ref string, input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6], compute func(SDK, I0, I1, I2, I3, I4, I5, I6) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -538,7 +538,7 @@ func (input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]) ToSteps() StepInputs
 
 func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O any](w *WorkflowSpecFactory, ref string, input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7], compute func(SDK, I0, I1, I2, I3, I4, I5, I6, I7) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -623,7 +623,7 @@ func (input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]) ToSteps() StepIn
 
 func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, O any](w *WorkflowSpecFactory, ref string, input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8], compute func(SDK, I0, I1, I2, I3, I4, I5, I6, I7, I8) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
@@ -711,7 +711,7 @@ func (input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]) ToSteps() S
 
 func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, I9 any, O any](w *WorkflowSpecFactory, ref string, input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9], compute func(SDK, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:             "internal!!custom_compute@1.0.0",
+		ID:             "__internal__custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},

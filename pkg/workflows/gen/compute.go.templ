@@ -32,7 +32,7 @@ func (input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]) ToSteps()
 
 func Compute{{.}}[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSpecFactory, ref string, input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}], compute func(SDK, {{range RangeNum . }}I{{.}},{{ end }})(O, error)) ComputeOutputCap[O] {
     def := StepDefinition{
-       ID: "internal!!custom_compute@1.0.0",
+       ID: "__internal__custom_compute@1.0.0",
        Ref: ref,
        Inputs: input.ToSteps(),
        Config: map[string]any{},

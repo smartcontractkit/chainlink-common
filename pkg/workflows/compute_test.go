@@ -48,7 +48,7 @@ func TestCompute(t *testing.T) {
 			},
 			Actions: []workflows.StepDefinition{
 				{
-					ID:  "internal!!custom_compute@1.0.0",
+					ID:  "__internal__custom_compute@1.0.0",
 					Ref: "Compute",
 					Inputs: workflows.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs)"},

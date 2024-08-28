@@ -42,19 +42,9 @@ func (s *server) Close() error {
 }
 
 func (s *server) OracleClose(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
-	err := s.impl.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, s.impl.Close()
 }
 
 func (s *server) OracleStart(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
-	err := s.impl.Start()
-	if err != nil {
-		return nil, err
-	}
-
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, s.impl.Start()
 }

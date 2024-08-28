@@ -44,16 +44,16 @@ type feed struct {
 
 func (*feed) private() {}
 func (c *feed) FullReport() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "FullReport")
+	return workflows.AccessField[Feed, string](c.CapDefinition, "fullReport")
 }
 func (c *feed) Price() FeedPriceCap {
 	return &feedPrice{CapDefinition: workflows.AccessField[Feed, FeedPrice](c.CapDefinition, "Price")}
 }
 func (c *feed) ReportContext() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "ReportContext")
+	return workflows.AccessField[Feed, string](c.CapDefinition, "reportContext")
 }
 func (c *feed) Signatures() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[Feed, []string](c.CapDefinition, "Signatures")
+	return workflows.AccessField[Feed, []string](c.CapDefinition, "signatures")
 }
 func (c *feed) Timestamp() workflows.CapDefinition[int] {
 	return workflows.AccessField[Feed, int](c.CapDefinition, "Timestamp")
@@ -68,10 +68,10 @@ func NewFeedFromFields(
 	return &simpleFeed{
 		CapDefinition: workflows.ComponentCapDefinition[Feed]{
 			"fullReport":    fullReport.Ref(),
-			"price":         price.Ref(),
+			"Price":         price.Ref(),
 			"reportContext": reportContext.Ref(),
 			"signatures":    signatures.Ref(),
-			"timestamp":     timestamp.Ref(),
+			"Timestamp":     timestamp.Ref(),
 		},
 		fullReport:    fullReport,
 		price:         price,
@@ -138,8 +138,8 @@ func NewFeedPriceFromFields(
 	priceB workflows.CapDefinition[string]) FeedPriceCap {
 	return &simpleFeedPrice{
 		CapDefinition: workflows.ComponentCapDefinition[FeedPrice]{
-			"priceA": priceA.Ref(),
-			"priceB": priceB.Ref(),
+			"PriceA": priceA.Ref(),
+			"PriceB": priceB.Ref(),
 		},
 		priceA: priceA,
 		priceB: priceB,

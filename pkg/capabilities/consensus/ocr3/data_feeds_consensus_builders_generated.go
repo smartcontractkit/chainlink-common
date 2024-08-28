@@ -47,13 +47,13 @@ type feedValue struct {
 
 func (*feedValue) private() {}
 func (c *feedValue) Deviation() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedValue, string](c.CapDefinition, "Deviation")
+	return workflows.AccessField[FeedValue, string](c.CapDefinition, "deviation")
 }
 func (c *feedValue) Heartbeat() workflows.CapDefinition[int] {
-	return workflows.AccessField[FeedValue, int](c.CapDefinition, "Heartbeat")
+	return workflows.AccessField[FeedValue, int](c.CapDefinition, "heartbeat")
 }
 func (c *feedValue) RemappedID() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedValue, string](c.CapDefinition, "RemappedID")
+	return workflows.AccessField[FeedValue, string](c.CapDefinition, "remappedID")
 }
 
 func NewFeedValueFromFields(

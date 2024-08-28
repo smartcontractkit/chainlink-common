@@ -20,11 +20,13 @@ type Action struct {
 }
 
 type ActionConfig struct {
-	// Name corresponds to the JSON schema field "name".
-	Name string `json:"name" yaml:"name" mapstructure:"name"`
+	// CamelCaseInSchemaForTesting corresponds to the JSON schema field
+	// "camelCaseInSchemaForTesting".
+	CamelCaseInSchemaForTesting string `json:"camelCaseInSchemaForTesting" yaml:"camelCaseInSchemaForTesting" mapstructure:"camelCaseInSchemaForTesting"`
 
-	// The interval in seconds after which a new trigger event is generated.
-	Number int `json:"number" yaml:"number" mapstructure:"number"`
+	// SnakeCaseInSchemaForTesting corresponds to the JSON schema field
+	// "snake_case_in_schema_for_testing".
+	SnakeCaseInSchemaForTesting int `json:"snake_case_in_schema_for_testing" yaml:"snake_case_in_schema_for_testing" mapstructure:"snake_case_in_schema_for_testing"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -33,19 +35,19 @@ func (j *ActionConfig) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["name"]; raw != nil && !ok {
-		return fmt.Errorf("field name in ActionConfig: required")
+	if _, ok := raw["camelCaseInSchemaForTesting"]; raw != nil && !ok {
+		return fmt.Errorf("field camelCaseInSchemaForTesting in ActionConfig: required")
 	}
-	if _, ok := raw["number"]; raw != nil && !ok {
-		return fmt.Errorf("field number in ActionConfig: required")
+	if _, ok := raw["snake_case_in_schema_for_testing"]; raw != nil && !ok {
+		return fmt.Errorf("field snake_case_in_schema_for_testing in ActionConfig: required")
 	}
 	type Plain ActionConfig
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if 1 > plain.Number {
-		return fmt.Errorf("field %s: must be >= %v", "number", 1)
+	if 1 > plain.SnakeCaseInSchemaForTesting {
+		return fmt.Errorf("field %s: must be >= %v", "snake_case_in_schema_for_testing", 1)
 	}
 	*j = ActionConfig(plain)
 	return nil

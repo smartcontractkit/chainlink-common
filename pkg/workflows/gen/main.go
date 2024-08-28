@@ -9,7 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
 )
 
-//go:embed compute.go.templ
+//go:embed compute.go.tmpl
 var computeGo string
 
 const toolName = "github.com/smartcontractkit/chainlink-common/pkg/workflows/gen"

@@ -26,6 +26,7 @@ message SubmitTransactionRequest {
 
 message TransactionMeta {
     string workflow_execution_id = 1;
+    BigInt gas_limit = 2;
 }
 
 // GetTransactionStatusRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainWriter.GetTransactionStatus].

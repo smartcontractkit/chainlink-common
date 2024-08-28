@@ -7,6 +7,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
+const (
+	ErrSettingTransactionGasLimitNotSupported = InvalidArgumentError("setting transaction gas limit is not supported")
+)
+
 type ChainWriter interface {
 	services.Service
 
@@ -27,6 +31,10 @@ type ChainWriter interface {
 type TxMeta struct {
 	// Used for Keystone Workflows
 	WorkflowExecutionID *string
+	// An optional maximum gas limit for the transaction. If not set the ChainWriter implementation will be responsible for
+	// setting a gas limit for the transaction.  If it is set and the ChainWriter implementation does not support setting
+	// this value per transaction it will return ErrSettingTransactionGasLimitNotSupported
+	GasLimit *big.Int
 }
 
 // TransactionStatus are the status we expect every TXM to support and that can be returned by StatusForUUID.

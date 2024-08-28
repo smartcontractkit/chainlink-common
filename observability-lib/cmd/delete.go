@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/spf13/cobra"
 )
 
@@ -9,25 +8,11 @@ var DeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete Grafana Dashboard",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := cmd.Flag("dashboard-name").Value.String()
-		url := cmd.Flag("grafana-url").Value.String()
-
-		dashboard := NewDashboard(
-			name,
-			cmd.Flag("grafana-token").Value.String(),
-			url,
-			"",
-			DataSources{},
-			"",
-			dashboard.Dashboard{},
-		)
-
-		err := dashboard.Delete()
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return DeleteDashboard(&CommandOptions{
+			GrafanaURL:   cmd.Flag("grafana-url").Value.String(),
+			GrafanaToken: cmd.Flag("grafana-token").Value.String(),
+			Name:         cmd.Flag("dashboard-name").Value.String(),
+		})
 	},
 }
 

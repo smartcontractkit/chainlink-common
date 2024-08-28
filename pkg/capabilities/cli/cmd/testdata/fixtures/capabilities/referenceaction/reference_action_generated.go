@@ -2,8 +2,10 @@
 
 package referenceaction
 
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Basic Test Action
 type Action struct {

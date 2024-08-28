@@ -82,14 +82,14 @@ type actionOutputsElemResults struct {
 
 func (*actionOutputsElemResults) private() {}
 func (c *actionOutputsElemResults) AdaptedThing() workflows.CapDefinition[string] {
-	return workflows.AccessField[ActionOutputsElemResults, string](c.CapDefinition, "AdaptedThing")
+	return workflows.AccessField[ActionOutputsElemResults, string](c.CapDefinition, "adapted_thing")
 }
 
 func NewActionOutputsElemResultsFromFields(
 	adaptedThing workflows.CapDefinition[string]) ActionOutputsElemResultsCap {
 	return &simpleActionOutputsElemResults{
 		CapDefinition: workflows.ComponentCapDefinition[ActionOutputsElemResults]{
-			"adaptedThing": adaptedThing.Ref(),
+			"adapted_thing": adaptedThing.Ref(),
 		},
 		adaptedThing: adaptedThing,
 	}

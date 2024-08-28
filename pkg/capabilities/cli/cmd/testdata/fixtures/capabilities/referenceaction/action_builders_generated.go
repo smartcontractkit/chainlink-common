@@ -41,14 +41,14 @@ type someOutputs struct {
 
 func (*someOutputs) private() {}
 func (c *someOutputs) AdaptedThing() workflows.CapDefinition[string] {
-	return workflows.AccessField[SomeOutputs, string](c.CapDefinition, "AdaptedThing")
+	return workflows.AccessField[SomeOutputs, string](c.CapDefinition, "adapted_thing")
 }
 
 func NewSomeOutputsFromFields(
 	adaptedThing workflows.CapDefinition[string]) SomeOutputsCap {
 	return &simpleSomeOutputs{
 		CapDefinition: workflows.ComponentCapDefinition[SomeOutputs]{
-			"adaptedThing": adaptedThing.Ref(),
+			"adapted_thing": adaptedThing.Ref(),
 		},
 		adaptedThing: adaptedThing,
 	}

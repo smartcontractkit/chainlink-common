@@ -42,10 +42,10 @@ type consensusOutputs struct {
 
 func (*consensusOutputs) private() {}
 func (c *consensusOutputs) Consensus() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "Consensus")
+	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "consensus")
 }
 func (c *consensusOutputs) Sigs() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "Sigs")
+	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "sigs")
 }
 
 func NewConsensusOutputsFromFields(

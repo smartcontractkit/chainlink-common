@@ -3,6 +3,8 @@ package cmd_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicconsensus"
@@ -50,8 +52,8 @@ func TestTypeGeneration(t *testing.T) {
 			// assure the right type of action
 			var action basicaction.ActionOutputsCap //nolint
 			action = basicaction.ActionConfig{
-				Name:   "anything",
-				Number: 123,
+				CamelCaseInSchemaForTesting: "anything",
+				SnakeCaseInSchemaForTesting: 123,
 			}.New(factory, "reference", basicaction.ActionInput{
 				InputThing: workflows.CapDefinition[bool](nil),
 			})
@@ -215,6 +217,19 @@ func TestTypeGeneration(t *testing.T) {
 			adapted = basicaction.NewActionOutputsFromFields(action.AdaptedThing())
 			_ = adapted
 		})
+	})
+
+	t.Run("casing is respected from the json schema", func(t *testing.T) {
+		workflow := workflows.NewWorkflowSpecFactory(workflows.NewWorkflowParams{Owner: "owner", Name: "name"})
+		ai := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "foo", SnakeCaseInSchemaForTesting: 12}.
+			New(workflow, "ref", basicaction.ActionInput{InputThing: workflows.ConstantDefinition[bool](true)})
+		spec, _ := workflow.Spec()
+		require.Len(t, spec.Actions, 1)
+		actual := spec.Actions[0]
+		require.Equal(t, 12, actual.Config["snake_case_in_schema_for_testing"])
+		require.Equal(t, "foo", actual.Config["camelCaseInSchemaForTesting"])
+		require.True(t, actual.Inputs.Mapping["input_thing"].(bool))
+		require.Equal(t, "$(ref.outputs.adapted_thing)", ai.AdaptedThing().Ref())
 	})
 }
 

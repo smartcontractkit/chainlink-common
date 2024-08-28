@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -23,9 +22,9 @@ type testMercuryCodec struct {
 }
 
 func (c testMercuryCodec) Unwrap(wrapped values.Value) ([]datastreams.FeedReport, error) {
-	dest := []datastreams.FeedReport{}
+	dest := datastreams.StreamsTriggerEvent{}
 	err := wrapped.UnwrapTo(&dest)
-	return dest, err
+	return dest.Payload, err
 }
 
 func (c testMercuryCodec) Validate(report datastreams.FeedReport, _ [][]byte, _ int) error {
@@ -79,9 +78,8 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 	// aggregator should return latest value for each feedID
 	aggResponse, err := agg.Aggregate(eventID, [][]byte{rawNode1Resp, rawNode2Resp})
 	require.NoError(t, err)
-	aggEvent := capabilities.TriggerEvent{}
-	require.NoError(t, aggResponse.Value.UnwrapTo(&aggEvent))
-	decodedReports, err := testMercuryCodec{}.Unwrap(aggEvent.Payload)
+	aggEvent := aggResponse.Event
+	decodedReports, err := testMercuryCodec{}.Unwrap(aggEvent.Outputs)
 	require.NoError(t, err)
 
 	require.Len(t, decodedReports, 2)
@@ -92,9 +90,7 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 	rawNode3Resp := getRawResponse(t, []datastreams.FeedReport{feed1Old, feed2Old}, 400)
 	aggResponse, err = agg.Aggregate(eventID, [][]byte{rawNode3Resp})
 	require.NoError(t, err)
-	aggEvent = capabilities.TriggerEvent{}
-	require.NoError(t, aggResponse.Value.UnwrapTo(&aggEvent))
-	decodedReports, err = testMercuryCodec{}.Unwrap(aggEvent.Payload)
+	decodedReports, err = testMercuryCodec{}.Unwrap(aggResponse.Event.Outputs)
 	require.NoError(t, err)
 
 	require.Len(t, decodedReports, 2)
@@ -103,9 +99,9 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 }
 
 func getRawResponse(t *testing.T, reports []datastreams.FeedReport, timestamp int64) []byte {
-	resp, err := wrapReports(reports, eventID, timestamp, datastreams.SignersMetadata{})
+	resp, err := wrapReports(reports, eventID, timestamp, datastreams.Metadata{})
 	require.NoError(t, err)
-	rawResp, err := pb.MarshalCapabilityResponse(resp)
+	rawResp, err := pb.MarshalTriggerResponse(resp)
 	require.NoError(t, err)
 	return rawResp
 }

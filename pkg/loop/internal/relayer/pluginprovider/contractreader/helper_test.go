@@ -100,12 +100,6 @@ func (fakeTypeProvider) CreateContractType(readName string, isEncode bool) (any,
 			return &typ, nil
 		}
 		return 0, errors.New("comparator types should only be encoded")
-	case EventNameNestedField:
-		if isEncode {
-			var typ [2]byte
-			return &typ, nil
-		}
-		return 0, errors.New("comparator types should only be encoded")
 	}
 	return nil, types.ErrInvalidType
 }

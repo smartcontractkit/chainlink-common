@@ -35,7 +35,7 @@ func TestPluginStandardCapabilities(t *testing.T) {
 			assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 			assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 
-			err = s.Initialise(context.Background(), "", nil, nil, nil, nil, nil, nil)
+			err = s.Initialise(context.Background(), "", nil, nil, nil, nil, nil, nil, nil)
 			assert.NoError(t, err)
 		})
 }
@@ -52,7 +52,7 @@ func TestRunningStandardCapabilitiesPluginOutOfProcess(t *testing.T) {
 	assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 	assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 
-	err = scs.Initialise(context.Background(), "", nil, nil, nil, nil, nil, nil)
+	err = scs.Initialise(context.Background(), "", nil, nil, nil, nil, nil, nil, nil)
 	assert.NoError(t, err)
 }
 

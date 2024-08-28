@@ -70,7 +70,7 @@ func TestRunner(t *testing.T) {
 				return true, nil
 			})
 
-		action := basicaction.ActionConfig{Name: "name", Number: 20}.
+		action := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "name", SnakeCaseInSchemaForTesting: 20}.
 			New(workflow, "action", basicaction.ActionInput{InputThing: tTransform.Value()})
 
 		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
@@ -92,16 +92,14 @@ func TestRunner(t *testing.T) {
 		assert.Len(t, target.Inputs, 1)
 	})
 
-	t.Run("Run allows unnesting of values", func(t *testing.T) {
-		assert.Fail(t, "Not implemented")
-	})
+	t.Run("Run returns errors if capabilities were registered multiple times", func(t *testing.T) {
+		helper := &testHelper{t: t}
+		workflow := createBasicTestWorkflow(helper.transformTrigger)
+		runner := testutils.NewRunner()
+		setupAllRunnerMocks(t, runner)
+		setupAllRunnerMocks(t, runner)
 
-	t.Run("Run allows unnesting of arrays", func(t *testing.T) {
-		assert.Fail(t, "Not implemented")
-	})
-
-	t.Run("Run waits for all dependencies", func(t *testing.T) {
-		assert.Fail(t, "Not implemented")
+		require.Error(t, runner.Run(workflow))
 	})
 
 	t.Run("Run captures errors", func(t *testing.T) {
@@ -231,7 +229,7 @@ func createBasicTestWorkflow(actionTransform actionTransform) *workflows.Workflo
 		workflows.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		actionTransform)
 
-	action := basicaction.ActionConfig{Name: "name", Number: 20}.
+	action := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "name", SnakeCaseInSchemaForTesting: 20}.
 		New(workflow, "action", basicaction.ActionInput{InputThing: tTransform.Value()})
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{

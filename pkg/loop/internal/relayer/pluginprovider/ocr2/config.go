@@ -27,8 +27,8 @@ type ConfigProviderClient struct {
 
 func NewConfigProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ConfigProviderClient {
 	c := &ConfigProviderClient{ServiceClient: goplugin.NewServiceClient(b, cc)}
-	c.offchainDigester = &offchainConfigDigesterClient{b, pb.NewOffchainConfigDigesterClient(cc)}
-	c.contractTracker = &contractConfigTrackerClient{pb.NewContractConfigTrackerClient(cc)}
+	c.offchainDigester = NewOffchainConfigDigesterClient(b, cc)
+	c.contractTracker = NewContractConfigTrackerClient(cc)
 	return c
 }
 
@@ -45,6 +45,13 @@ var _ libocr.OffchainConfigDigester = (*offchainConfigDigesterClient)(nil)
 type offchainConfigDigesterClient struct {
 	*net.BrokerExt
 	grpc pb.OffchainConfigDigesterClient
+}
+
+func NewOffchainConfigDigesterClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *offchainConfigDigesterClient {
+	return &offchainConfigDigesterClient{
+		b,
+		pb.NewOffchainConfigDigesterClient(cc),
+	}
 }
 
 func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig) (digest libocr.ConfigDigest, err error) {
@@ -125,6 +132,12 @@ var _ libocr.ContractConfigTracker = (*contractConfigTrackerClient)(nil)
 
 type contractConfigTrackerClient struct {
 	grpc pb.ContractConfigTrackerClient
+}
+
+func NewContractConfigTrackerClient(cc grpc.ClientConnInterface) *contractConfigTrackerClient {
+	return &contractConfigTrackerClient{
+		grpc: pb.NewContractConfigTrackerClient(cc),
+	}
 }
 
 func (c *contractConfigTrackerClient) Notify() <-chan struct{} { return nil }

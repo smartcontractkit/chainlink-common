@@ -13,6 +13,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	oraclepb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oracle"
 	oraclefactorypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oraclefactory"
+	ocr2relayer "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
+	ocr3relayer "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -52,22 +54,45 @@ func (s *server) Close() error {
 func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRequest) (*oraclefactorypb.NewOracleReply, error) {
 	var resources []net.Resource
 
+	serviceName := "ReportingPluginFactory"
 	reportingPluginFactoryServiceConn, err := s.broker.Dial(req.ReportingPluginFactoryServiceId)
 	if err != nil {
-		return nil, fmt.Errorf("error dialing reporting plugin factory service: %w", err)
+		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
 	}
 	resources = append(resources, net.Resource{
 		Closer: reportingPluginFactoryServiceConn,
-		Name:   "ReportingPluginFactoryServiceConn",
+		Name:   serviceName,
 	})
 
-	// From capabiliteis binary:
-	// oracleFactory.Neworacle(ctx, args)
-	// Args will be actual implementations (functions)
+	serviceName = "ContractConfigTracker"
+	contractConfigTrackerConn, err := s.broker.Dial(req.ContractConfigTrackerId)
+	if err != nil {
+		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
+	}
+	resources = append(resources, net.Resource{
+		Closer: contractConfigTrackerConn,
+		Name:   serviceName,
+	})
 
-	// My NewOracle function on the client:
-	// Mounts the objects using ServeNew and returns the connection ID
-	// ConnectionID is sent over the wire.
+	serviceName = "OffchainConfigDigester"
+	offchainConfigDigesterConn, err := s.broker.Dial(req.OffchainConfigDigesterId)
+	if err != nil {
+		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
+	}
+	resources = append(resources, net.Resource{
+		Closer: offchainConfigDigesterConn,
+		Name:   serviceName,
+	})
+
+	serviceName = "ContractTransmitter"
+	contractTransmitterConn, err := s.broker.Dial(req.ContractTransmitterId)
+	if err != nil {
+		return nil, fmt.Errorf("error dialing %w service: %w", serviceName, err)
+	}
+	resources = append(resources, net.Resource{
+		Closer: contractTransmitterConn,
+		Name:   serviceName,
+	})
 
 	args := core.OracleArgs{
 		LocalConfig: types.LocalConfig{
@@ -84,16 +109,16 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 			s.broker,
 			reportingPluginFactoryServiceConn,
 		),
-		// ContractConfigTracker:         req.ContractConfigTrackerId,
-		// ContractTransmitter:           req.ContractTransmitter,
-		// OffchainConfigDigester:        req.OffchainConfigDigester,
+		ContractConfigTracker: ocr2relayer.NewContractConfigTrackerClient(
+			contractConfigTrackerConn,
+		),
+		OffchainConfigDigester: ocr2relayer.NewOffchainConfigDigesterClient(
+			s.broker,
+			offchainConfigDigesterConn,
+		),
+		ContractTransmitter: ocr3relayer.NewContractTransmitterClient(s.broker, contractTransmitterConn),
 	}
 
-	// I will need to implement the NewOracle function on the Core Node
-	// In generics package this should be a lightweight wrapper generic.NewOracle(ctx, args)
-	// This implementation will live in chainlink repo
-	// This will return an oracle. I need to wrap that in a Oracle Client and Server. Reverse principle.
-	// In this case, the client is the capabilities binary and the server is the core node.
 	oracleImpl, err := s.impl.NewOracle(ctx, args)
 	oracleServer, oracleRes := oracle.NewServer(s.log, oracleImpl, s.broker)
 	resources = append(resources, oracleRes)

@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	oracle "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oracle"
+	oraclesrv "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oracle"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	oraclepb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oracle"
@@ -119,12 +119,12 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 		ContractTransmitter: ocr3relayer.NewContractTransmitterClient(s.broker, contractTransmitterConn),
 	}
 
-	oracleImpl, err := s.impl.NewOracle(ctx, args)
+	oracle, err := s.impl.NewOracle(ctx, args)
 	if err != nil {
 		return nil, fmt.Errorf("NewOracle call failed: %w", err)
 	}
 
-	oracleServer, oracleServerRes := oracle.NewServer(s.log, oracleImpl, s.broker)
+	oracleServer, oracleServerRes := oraclesrv.NewServer(s.log, oracle, s.broker)
 	resources = append(resources, oracleServerRes)
 	oracleID, oracleRes, err := s.broker.ServeNew("Oracle", func(gs *grpc.Server) {
 		oraclepb.RegisterOracleServer(gs, oracleServer)

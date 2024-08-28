@@ -12,6 +12,8 @@ import (
 //go:embed compute.go.templ
 var computeGo string
 
+const toolName = "github.com/smartcontractkit/chainlink-common/pkg/workflows/gen"
+
 func main() {
 	computes := rangeNum(11)[1:]
 	t, err := template.New("go compute").Funcs(template.FuncMap{"RangeNum": rangeNum}).Parse(computeGo)
@@ -25,7 +27,7 @@ func main() {
 	}
 
 	files := map[string]string{"compute_generated.go": results.String()}
-	if err = codegen.WriteFiles(".", "github.com/smartcontractkit", files); err != nil {
+	if err = codegen.WriteFiles(".", "github.com/smartcontractkit", toolName, files); err != nil {
 		log.Fatal(err)
 	}
 }

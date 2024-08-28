@@ -129,7 +129,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		return reply.ID, nil, nil
 	})
-	return newReportingPluginFactoryClient(o.PluginClient.BrokerExt, cc), nil
+	return NewReportingPluginFactoryClient(o.PluginClient.BrokerExt, cc), nil
 }
 
 func (o *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (core.ValidationService, error) {
@@ -241,7 +241,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
-		ocr3pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.BrokerExt))
+		ocr3pb.RegisterReportingPluginFactoryServer(s, NewReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes, keyValueStoreRes, relayerSetRes)
 	if err != nil {
 		return nil, err

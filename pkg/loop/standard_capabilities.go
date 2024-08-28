@@ -65,7 +65,7 @@ type StandardCapabilities interface {
 	services.Service
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore,
 		capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet) error
+		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 

@@ -53,7 +53,6 @@ func NewStandardCapabilitiesClient(brokerExt *net.BrokerExt, conn *grpc.ClientCo
 	}
 }
 
-// Serve a libOcrHandle. What's the type?
 func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService,
 	keyValueStore core.KeyValueStore, capabilitiesRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
 	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
@@ -115,11 +114,11 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	}
 	resources = append(resources, relayerSetRes)
 
-	oracleFactorServer, oracleFactorServerRes := oraclefactory.NewServer(c.Logger, oracleFactory, c.BrokerExt)
-	resources = append(resources, oracleFactorServerRes)
+	oracleFactoryServer, oracleFactoryServerRes := oraclefactory.NewServer(c.Logger, oracleFactory, c.BrokerExt)
+	resources = append(resources, oracleFactoryServerRes)
 
 	oracleFactoryID, oracleFactoryRes, err := c.ServeNew("OracleFactory", func(s *grpc.Server) {
-		oraclefactorypb.RegisterOracleFactoryServer(s, oracleFactorServer)
+		oraclefactorypb.RegisterOracleFactoryServer(s, oracleFactoryServer)
 	})
 	if err != nil {
 		c.CloseAll(resources...)
@@ -205,7 +204,6 @@ func RegisterStandardCapabilitiesServer(server *grpc.Server, broker net.Broker, 
 }
 
 func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *capabilitiespb.InitialiseRequest) (*emptypb.Empty, error) {
-	// Step 1 - get the connection
 	telemetryConn, err := s.Dial(request.TelemetryId)
 	if err != nil {
 		return nil, net.ErrConnDial{Name: "Telemetry", ID: request.TelemetryId, Err: err}
@@ -214,7 +212,6 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	var resources []net.Resource
 	resources = append(resources, net.Resource{Closer: telemetryConn, Name: "TelemetryConn"})
 
-	// Step 2 - wrap a connection in the client (which means every connection has to have a client)
 	telemetry := telemetry.NewTelemetryServiceClient(telemetryConn)
 
 	keyValueStoreConn, err := s.Dial(request.KeyValueStoreId)

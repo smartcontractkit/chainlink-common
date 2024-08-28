@@ -82,6 +82,12 @@ type offchainConfigDigesterServer struct {
 	impl libocr.OffchainConfigDigester
 }
 
+func NewOffchainConfigDigesterServer(impl libocr.OffchainConfigDigester) *offchainConfigDigesterServer {
+	return &offchainConfigDigesterServer{
+		impl: impl,
+	}
+}
+
 func (o *offchainConfigDigesterServer) ConfigDigest(ctx context.Context, request *pb.ConfigDigestRequest) (*pb.ConfigDigestReply, error) {
 	if request.ContractConfig.F > math.MaxUint8 {
 		return nil, pb.ErrUint8Bounds{Name: "F", U: request.ContractConfig.F}
@@ -187,6 +193,12 @@ type contractConfigTrackerServer struct {
 	impl libocr.ContractConfigTracker
 }
 
+func NewContractConfigTrackerServer(impl libocr.ContractConfigTracker) *contractConfigTrackerServer {
+	return &contractConfigTrackerServer{
+		impl: impl,
+	}
+}
+
 func (c *contractConfigTrackerServer) LatestConfigDetails(ctx context.Context, request *pb.LatestConfigDetailsRequest) (*pb.LatestConfigDetailsReply, error) {
 	changedInBlock, configDigest, err := c.impl.LatestConfigDetails(ctx)
 	if err != nil {
@@ -246,6 +258,6 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 
 func RegisterConfigProviderServices(s *grpc.Server, provider types.ConfigProvider) {
 	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: provider})
-	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
-	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
+	pb.RegisterOffchainConfigDigesterServer(s, NewOffchainConfigDigesterServer(provider.OffchainConfigDigester()))
+	pb.RegisterContractConfigTrackerServer(s, NewContractConfigTrackerServer(provider.ContractConfigTracker()))
 }

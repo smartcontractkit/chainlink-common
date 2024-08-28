@@ -120,8 +120,12 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 	}
 
 	oracleImpl, err := s.impl.NewOracle(ctx, args)
-	oracleServer, oracleRes := oracle.NewServer(s.log, oracleImpl, s.broker)
-	resources = append(resources, oracleRes)
+	if err != nil {
+		return nil, fmt.Errorf("NewOracle call failed: %w", err)
+	}
+
+	oracleServer, oracleServerRes := oracle.NewServer(s.log, oracleImpl, s.broker)
+	resources = append(resources, oracleServerRes)
 	oracleID, oracleRes, err := s.broker.ServeNew("Oracle", func(gs *grpc.Server) {
 		oraclepb.RegisterOracleServer(gs, oracleServer)
 	})
@@ -129,6 +133,7 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 		s.broker.CloseAll(resources...)
 		return nil, fmt.Errorf("failed to serve new oracle: %w", err)
 	}
+	resources = append(resources, oracleRes)
 
 	s.resources = append(s.resources, resources...)
 	return &oraclefactorypb.NewOracleReply{OracleId: oracleID}, nil

@@ -3,6 +3,7 @@ package interfacetests
 import (
 	"errors"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -45,13 +46,81 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 const AnyExtraValue = 3
 
 func RunChainComponentsInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runChainComponentsGetLatestValueInterfaceTests(t, tester, mockRun) })
+	var wg sync.WaitGroup
+	latestValCh := make(chan uint64)
+	errCh := make(chan error)
+	t.Run("GetLatestValue for "+tester.Name(), func(t T) {
+		runChainComponentsGetLatestValueInterfaceTests(t, tester, mockRun, &wg, &latestValCh, &errCh)
+	})
 	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runChainComponentsBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
 	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
+	go func() {
+		wg.Wait()
+		close(latestValCh)
+		close(errCh)
+	}()
+
+	for {
+		select {
+		case err := <-errCh:
+			require.NoError(t, err, "Error during finalization")
+		case val, ok := <-latestValCh:
+			if ok {
+				assert.Equal(t, uint64(10), val, "Finalized value mismatch")
+			} else {
+				return
+			}
+		}
+	}
 }
 
-func runChainComponentsGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+func runChainComponentsGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool, finalizationWg *sync.WaitGroup, latestValCh *chan uint64, errCh *chan error) {
 	tests := []testcase[T]{
+		{
+			name: "Get latest value based on confidence level",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetChainReader(t)
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				var returnVal1 uint64
+				callArgs := ExpectedGetLatestValueArgs{
+					ContractName:    AnyContractName,
+					ReadName:        MethodReturningAlterableUint64,
+					ConfidenceLevel: primitives.Unconfirmed,
+					Params:          nil,
+					ReturnVal:       &returnVal1,
+				}
+
+				contracts := tester.GetBindings(t)
+
+				txID := SubmitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 10}, contracts[0], types.Unconfirmed)
+
+				finalizationWg.Add(1)
+
+				var prim1 uint64
+				require.Error(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, primitives.Finalized, callArgs.Params, &prim1))
+
+				go func() {
+					defer finalizationWg.Done()
+
+					err := WaitForTransactionStatus(t, tester, txID, types.Finalized, mockRun)
+					if err != nil {
+						*errCh <- err
+						return
+					}
+
+					require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
+					*latestValCh <- prim1
+				}()
+
+				_ = SubmitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 20}, contracts[0], types.Unconfirmed)
+
+				var prim2 uint64
+				require.NoError(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, callArgs.ConfidenceLevel, callArgs.Params, &prim2))
+				assert.Equal(t, uint64(20), prim2)
+			},
+		},
 		{
 			name: "Gets the latest value",
 			test: func(t T) {
@@ -90,42 +159,6 @@ func runChainComponentsGetLatestValueInterfaceTests[T TestingT[T]](t T, tester C
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningUint64, primitives.Unconfirmed, nil, &prim))
 
 				assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
-			},
-		},
-		{
-			name: "Get latest value based on confidence level",
-			test: func(t T) {
-				ctx := tests.Context(t)
-				cr := tester.GetChainReader(t)
-				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
-
-				var returnVal1 uint64
-				callArgs := ExpectedGetLatestValueArgs{
-					ContractName:    AnyContractName,
-					ReadName:        MethodReturningAlterableUint64,
-					ConfidenceLevel: primitives.Unconfirmed,
-					Params:          nil,
-					ReturnVal:       &returnVal1,
-				}
-
-				contracts := tester.GetBindings(t)
-
-				txID := SubmitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 10}, contracts[0], types.Unconfirmed)
-
-				var prim1 uint64
-				require.Error(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, primitives.Finalized, callArgs.Params, &prim1))
-
-				err := WaitForTransactionStatus(t, tester, txID, types.Finalized, mockRun)
-				require.NoError(t, err)
-
-				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
-				assert.Equal(t, uint64(10), prim1)
-
-				_ = SubmitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 20}, contracts[0], types.Unconfirmed)
-
-				var prim2 uint64
-				require.NoError(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, callArgs.ConfidenceLevel, callArgs.Params, &prim2))
-				assert.Equal(t, uint64(20), prim2)
 			},
 		},
 		{

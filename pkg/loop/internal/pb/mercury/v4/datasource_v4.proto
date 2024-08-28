@@ -28,8 +28,6 @@ message Block {
 // Observation is a gRPC adapter for [pkg/types/mercury/v1/Observation]
 message Observation {
     BigInt benchmarkPrice = 1;
-    BigInt bid = 2;
-    BigInt ask = 3;
     int64 maxFinalizedTimestamp = 4;
     BigInt linkPrice = 5;
     BigInt nativePrice = 6;

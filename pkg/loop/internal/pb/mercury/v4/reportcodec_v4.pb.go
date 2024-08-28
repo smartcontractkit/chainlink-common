@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ReportFields is a gRPC adapter for the ReportFields struct [pkg/types/mercury/v3/ReportFields].
+// ReportFields is a gRPC adapter for the ReportFields struct [pkg/types/mercury/v4/ReportFields].
 type ReportFields struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -33,8 +33,6 @@ type ReportFields struct {
 	LinkFee            *pb.BigInt `protobuf:"bytes,4,opt,name=linkFee,proto3" json:"linkFee,omitempty"`
 	ExpiresAt          uint32     `protobuf:"varint,5,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
 	BenchmarkPrice     *pb.BigInt `protobuf:"bytes,6,opt,name=benchmarkPrice,proto3" json:"benchmarkPrice,omitempty"`
-	Bid                *pb.BigInt `protobuf:"bytes,7,opt,name=bid,proto3" json:"bid,omitempty"`
-	Ask                *pb.BigInt `protobuf:"bytes,8,opt,name=ask,proto3" json:"ask,omitempty"`
 	MarketStatus       uint32     `protobuf:"varint,9,opt,name=marketStatus,proto3" json:"marketStatus,omitempty"`
 }
 
@@ -112,20 +110,6 @@ func (x *ReportFields) GetBenchmarkPrice() *pb.BigInt {
 	return nil
 }
 
-func (x *ReportFields) GetBid() *pb.BigInt {
-	if x != nil {
-		return x.Bid
-	}
-	return nil
-}
-
-func (x *ReportFields) GetAsk() *pb.BigInt {
-	if x != nil {
-		return x.Ask
-	}
-	return nil
-}
-
 func (x *ReportFields) GetMarketStatus() uint32 {
 	if x != nil {
 		return x.MarketStatus
@@ -133,7 +117,7 @@ func (x *ReportFields) GetMarketStatus() uint32 {
 	return 0
 }
 
-// BuildReportRequest is gRPC adapter for the inputs arguments of [pkg/types/mercury/v3/ReportCodec.BuildReport].
+// BuildReportRequest is gRPC adapter for the inputs arguments of [pkg/types/mercury/v4/ReportCodec.BuildReport].
 type BuildReportRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -181,7 +165,7 @@ func (x *BuildReportRequest) GetReportFields() *ReportFields {
 	return nil
 }
 
-// BuildReportReply is gRPC adapter for the return values of [pkg/types/mercury/v3/ReportCodec.BuildReport].
+// BuildReportReply is gRPC adapter for the return values of [pkg/types/mercury/v4/ReportCodec.BuildReport].
 type BuildReportReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -229,7 +213,7 @@ func (x *BuildReportReply) GetReport() []byte {
 	return nil
 }
 
-// MaxReportLengthRequest is gRPC adapter for the input arguments of [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
+// MaxReportLengthRequest is gRPC adapter for the input arguments of [github.com/smartcontractkit/chainlink-data-streams/mercury/v4/ReportCodec.MaxReportLength].
 type MaxReportLengthRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -277,7 +261,7 @@ func (x *MaxReportLengthRequest) GetNumOracles() uint64 {
 	return 0
 }
 
-// MaxReportLengthReply is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.MaxReportLength].
+// MaxReportLengthReply is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v4/ReportCodec.MaxReportLength].
 type MaxReportLengthReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -325,7 +309,7 @@ func (x *MaxReportLengthReply) GetMaxReportLength() uint64 {
 	return 0
 }
 
-// ObservationTimestampFromReportRequest is gRPC adapter for the input arguments [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.ObservationTimestampFromReport].
+// ObservationTimestampFromReportRequest is gRPC adapter for the input arguments [github.com/smartcontractkit/chainlink-data-streams/mercury/v4/ReportCodec.ObservationTimestampFromReport].
 type ObservationTimestampFromReportRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -373,7 +357,7 @@ func (x *ObservationTimestampFromReportRequest) GetReport() []byte {
 	return nil
 }
 
-// ObservationTimestampFromReportReply is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v3/ReportCodec.ObservationTimestampFromReport].
+// ObservationTimestampFromReportReply is gRPC adapter for the return values of [github.com/smartcontractkit/chainlink-data-streams/mercury/v4/ReportCodec.ObservationTimestampFromReport].
 type ObservationTimestampFromReportReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -428,7 +412,7 @@ var file_reportcodec_v4_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x1b, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x69, 0x6e, 0x74,
 	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x70, 0x62, 0x2e, 0x6d, 0x65, 0x72, 0x63, 0x75, 0x72, 0x79,
 	0x2e, 0x76, 0x34, 0x1a, 0x0d, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0xe8, 0x02, 0x0a, 0x0c, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x46, 0x69, 0x65,
+	0x74, 0x6f, 0x22, 0xa8, 0x02, 0x0a, 0x0c, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x46, 0x69, 0x65,
 	0x6c, 0x64, 0x73, 0x12, 0x2e, 0x0a, 0x12, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x46, 0x72, 0x6f, 0x6d,
 	0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52,
 	0x12, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x46, 0x72, 0x6f, 0x6d, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
@@ -444,11 +428,7 @@ var file_reportcodec_v4_proto_rawDesc = []byte{
 	0x73, 0x41, 0x74, 0x12, 0x34, 0x0a, 0x0e, 0x62, 0x65, 0x6e, 0x63, 0x68, 0x6d, 0x61, 0x72, 0x6b,
 	0x50, 0x72, 0x69, 0x63, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x6c, 0x6f,
 	0x6f, 0x70, 0x2e, 0x42, 0x69, 0x67, 0x49, 0x6e, 0x74, 0x52, 0x0e, 0x62, 0x65, 0x6e, 0x63, 0x68,
-	0x6d, 0x61, 0x72, 0x6b, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x1e, 0x0a, 0x03, 0x62, 0x69, 0x64,
-	0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x42, 0x69,
-	0x67, 0x49, 0x6e, 0x74, 0x52, 0x03, 0x62, 0x69, 0x64, 0x12, 0x1e, 0x0a, 0x03, 0x61, 0x73, 0x6b,
-	0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x42, 0x69,
-	0x67, 0x49, 0x6e, 0x74, 0x52, 0x03, 0x61, 0x73, 0x6b, 0x12, 0x22, 0x0a, 0x0c, 0x6d, 0x61, 0x72,
+	0x6d, 0x61, 0x72, 0x6b, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x22, 0x0a, 0x0c, 0x6d, 0x61, 0x72,
 	0x6b, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0d, 0x52,
 	0x0c, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x63, 0x0a,
 	0x12, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75,
@@ -538,20 +518,18 @@ var file_reportcodec_v4_proto_depIdxs = []int32{
 	7, // 0: loop.internal.pb.mercury.v4.ReportFields.nativeFee:type_name -> loop.BigInt
 	7, // 1: loop.internal.pb.mercury.v4.ReportFields.linkFee:type_name -> loop.BigInt
 	7, // 2: loop.internal.pb.mercury.v4.ReportFields.benchmarkPrice:type_name -> loop.BigInt
-	7, // 3: loop.internal.pb.mercury.v4.ReportFields.bid:type_name -> loop.BigInt
-	7, // 4: loop.internal.pb.mercury.v4.ReportFields.ask:type_name -> loop.BigInt
-	0, // 5: loop.internal.pb.mercury.v4.BuildReportRequest.reportFields:type_name -> loop.internal.pb.mercury.v4.ReportFields
-	1, // 6: loop.internal.pb.mercury.v4.ReportCodec.BuildReport:input_type -> loop.internal.pb.mercury.v4.BuildReportRequest
-	3, // 7: loop.internal.pb.mercury.v4.ReportCodec.MaxReportLength:input_type -> loop.internal.pb.mercury.v4.MaxReportLengthRequest
-	5, // 8: loop.internal.pb.mercury.v4.ReportCodec.ObservationTimestampFromReport:input_type -> loop.internal.pb.mercury.v4.ObservationTimestampFromReportRequest
-	2, // 9: loop.internal.pb.mercury.v4.ReportCodec.BuildReport:output_type -> loop.internal.pb.mercury.v4.BuildReportReply
-	4, // 10: loop.internal.pb.mercury.v4.ReportCodec.MaxReportLength:output_type -> loop.internal.pb.mercury.v4.MaxReportLengthReply
-	6, // 11: loop.internal.pb.mercury.v4.ReportCodec.ObservationTimestampFromReport:output_type -> loop.internal.pb.mercury.v4.ObservationTimestampFromReportReply
-	9, // [9:12] is the sub-list for method output_type
-	6, // [6:9] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	0, // 3: loop.internal.pb.mercury.v4.BuildReportRequest.reportFields:type_name -> loop.internal.pb.mercury.v4.ReportFields
+	1, // 4: loop.internal.pb.mercury.v4.ReportCodec.BuildReport:input_type -> loop.internal.pb.mercury.v4.BuildReportRequest
+	3, // 5: loop.internal.pb.mercury.v4.ReportCodec.MaxReportLength:input_type -> loop.internal.pb.mercury.v4.MaxReportLengthRequest
+	5, // 6: loop.internal.pb.mercury.v4.ReportCodec.ObservationTimestampFromReport:input_type -> loop.internal.pb.mercury.v4.ObservationTimestampFromReportRequest
+	2, // 7: loop.internal.pb.mercury.v4.ReportCodec.BuildReport:output_type -> loop.internal.pb.mercury.v4.BuildReportReply
+	4, // 8: loop.internal.pb.mercury.v4.ReportCodec.MaxReportLength:output_type -> loop.internal.pb.mercury.v4.MaxReportLengthReply
+	6, // 9: loop.internal.pb.mercury.v4.ReportCodec.ObservationTimestampFromReport:output_type -> loop.internal.pb.mercury.v4.ObservationTimestampFromReportReply
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_reportcodec_v4_proto_init() }

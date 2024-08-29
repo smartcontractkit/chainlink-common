@@ -53,8 +53,8 @@ func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
 type ModifiedConfig struct {
 	Workflow                workflows.NewWorkflowParams
 	AllowedPartialStaleness string
-	MaxFrequencyMs          int
-	DefaultHeartbeat        int        `yaml:"default_heartbeat" json:"default_heartbeat"`
+	MaxFrequencyMs          uint64
+	DefaultHeartbeat        uint64     `yaml:"default_heartbeat" json:"default_heartbeat"`
 	DefaultDeviation        string     `yaml:"default_deviation" json:"default_deviation"`
 	FeedInfo                []FeedInfo `yaml:"feed_info" json:"feed_info"`
 	ReportID                string     `yaml:"report_id" json:"report_id"`
@@ -67,7 +67,7 @@ type ModifiedConfig struct {
 type FeedInfo struct {
 	FeedID     streams.FeedId
 	Deviation  *string
-	Heartbeat  *int
+	Heartbeat  *uint64
 	RemappedID *string
 }
 
@@ -132,7 +132,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 	notStreamsTrigger := conf.NotStream.New(workflow)
 
 	md := streams.NewSignersMetadataFromFields(
-		workflows.ConstantDefinition(1), workflows.ListOf(notStreamsTrigger.Metadata().Signer()))
+		workflows.ConstantDefinition(int64(1)), workflows.ListOf(notStreamsTrigger.Metadata().Signer()))
 
 	payload := streams.NewFeedReportFromFields(
 		notStreamsTrigger.Payload().BuyPrice(),
@@ -407,7 +407,7 @@ type NotStreamsConfig struct {
 type ModifiedConsensusConfig struct {
 	AllowedPartialStaleness string                                         `json:"allowedPartialStaleness" yaml:"allowedPartialStaleness" mapstructure:"allowedPartialStaleness"`
 	Deviation               string                                         `json:"deviation" yaml:"deviation" mapstructure:"deviation"`
-	Heartbeat               int                                            `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
+	Heartbeat               uint64                                         `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
 	AggregationMethod       ocr3.DataFeedsConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
 	Encoder                 ocr3.Encoder                                   `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
 	EncoderConfig           ocr3.EncoderConfig                             `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`

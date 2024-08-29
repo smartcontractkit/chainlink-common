@@ -6,27 +6,43 @@
       "type": "object",
       "properties": {
         "Report": {
-          "type": "string",
-          "contentEncoding": "base64"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "Context": {
-          "type": "string",
-          "contentEncoding": "base64"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "Signatures": {
           "type": "array",
           "items": {
-            "type": "string",
-            "contentEncoding": "base64"
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
           }
         },
-        "ID" : {
-          "type": "string",
-          "contentEncoding": "base64"
+        "ID": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         }
       },
       "additionalProperties": false,
-      "required": ["Report", "Context", "Signature", "ID"]
+      "required": ["Report", "Context", "Signatures", "ID"]
     },
     "encoder": {
       "type": "string",

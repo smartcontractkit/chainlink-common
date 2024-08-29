@@ -26,23 +26,23 @@ type Feed struct {
 
 type FeedReport struct {
 	// BuyPrice corresponds to the JSON schema field "BuyPrice".
-	BuyPrice string `json:"BuyPrice" yaml:"BuyPrice" mapstructure:"BuyPrice"`
+	BuyPrice []uint8 `json:"BuyPrice" yaml:"BuyPrice" mapstructure:"BuyPrice"`
 
 	// FullReport corresponds to the JSON schema field "FullReport".
-	FullReport string `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
+	FullReport []uint8 `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
 
 	// ObservationTimestamp corresponds to the JSON schema field
 	// "ObservationTimestamp".
-	ObservationTimestamp int `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
+	ObservationTimestamp int64 `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
 
 	// ReportContext corresponds to the JSON schema field "ReportContext".
-	ReportContext string `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
+	ReportContext []uint8 `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
 
 	// SellPrice corresponds to the JSON schema field "SellPrice".
-	SellPrice string `json:"SellPrice" yaml:"SellPrice" mapstructure:"SellPrice"`
+	SellPrice []uint8 `json:"SellPrice" yaml:"SellPrice" mapstructure:"SellPrice"`
 
 	// Signature corresponds to the JSON schema field "Signature".
-	Signature string `json:"Signature" yaml:"Signature" mapstructure:"Signature"`
+	Signature []uint8 `json:"Signature" yaml:"Signature" mapstructure:"Signature"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -142,7 +142,7 @@ type Trigger struct {
 
 type TriggerConfig struct {
 	// The interval in seconds after which a new trigger event is generated.
-	MaxFrequencyMs int `json:"maxFrequencyMs" yaml:"maxFrequencyMs" mapstructure:"maxFrequencyMs"`
+	MaxFrequencyMs uint64 `json:"maxFrequencyMs" yaml:"maxFrequencyMs" mapstructure:"maxFrequencyMs"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

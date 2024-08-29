@@ -43,26 +43,24 @@ func (j *FeedId) UnmarshalJSON(b []byte) error {
 }
 
 type FeedReport struct {
-	// This value is extracted from the fullReport. Benchmark price represented as
-	// bytes encoded as base64 string.
-	BenchmarkPrice string `json:"BenchmarkPrice" yaml:"BenchmarkPrice" mapstructure:"BenchmarkPrice"`
+	// BenchmarkPrice corresponds to the JSON schema field "BenchmarkPrice".
+	BenchmarkPrice []uint8 `json:"BenchmarkPrice" yaml:"BenchmarkPrice" mapstructure:"BenchmarkPrice"`
 
 	// FeedID corresponds to the JSON schema field "FeedID".
 	FeedID FeedId `json:"FeedID" yaml:"FeedID" mapstructure:"FeedID"`
 
-	// Full report represented as bytes encoded as base64 string.
-	FullReport string `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
+	// FullReport corresponds to the JSON schema field "FullReport".
+	FullReport []uint8 `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
 
 	// ObservationTimestamp corresponds to the JSON schema field
 	// "ObservationTimestamp".
-	ObservationTimestamp int `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
+	ObservationTimestamp int64 `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
 
-	// Report context represented as bytes encoded as base64 string. This is required
-	// to validate the signatures.
-	ReportContext string `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
+	// ReportContext corresponds to the JSON schema field "ReportContext".
+	ReportContext []uint8 `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
 
 	// Signatures corresponds to the JSON schema field "Signatures".
-	Signatures []string `json:"Signatures" yaml:"Signatures" mapstructure:"Signatures"`
+	Signatures [][]uint8 `json:"Signatures" yaml:"Signatures" mapstructure:"Signatures"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -131,7 +129,7 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 type SignersMetadata struct {
 	// MinRequiredSignatures corresponds to the JSON schema field
 	// "MinRequiredSignatures".
-	MinRequiredSignatures int `json:"MinRequiredSignatures" yaml:"MinRequiredSignatures" mapstructure:"MinRequiredSignatures"`
+	MinRequiredSignatures int64 `json:"MinRequiredSignatures" yaml:"MinRequiredSignatures" mapstructure:"MinRequiredSignatures"`
 
 	// Signers corresponds to the JSON schema field "Signers".
 	Signers []string `json:"Signers" yaml:"Signers" mapstructure:"Signers"`
@@ -173,7 +171,7 @@ type TriggerConfig struct {
 	FeedIds []FeedId `json:"feedIds" yaml:"feedIds" mapstructure:"feedIds"`
 
 	// The interval in seconds after which a new trigger event is generated.
-	MaxFrequencyMs int `json:"maxFrequencyMs" yaml:"maxFrequencyMs" mapstructure:"maxFrequencyMs"`
+	MaxFrequencyMs uint64 `json:"maxFrequencyMs" yaml:"maxFrequencyMs" mapstructure:"maxFrequencyMs"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

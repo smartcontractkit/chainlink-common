@@ -110,7 +110,7 @@ require (
 
 replace (
 	// until merged upstream: https://github.com/omissis/go-jsonschema/pull/264
-	github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-rtinianov
+	github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-smallSizedInts
 
 	// until merged upstream: https://github.com/hashicorp/go-plugin/pull/257
 	github.com/hashicorp/go-plugin => github.com/smartcontractkit/go-plugin v0.0.0-20240208201424-b3b91517de16

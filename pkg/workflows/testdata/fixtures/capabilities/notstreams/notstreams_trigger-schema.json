@@ -7,8 +7,7 @@
       "type": "object",
       "properties": {
         "Signer": {
-          "type": "string",
-          "format": "base64"
+            "type": "string"
         }
       },
       "required": ["Signer"]
@@ -17,24 +16,44 @@
       "type": "object",
       "properties": {
         "FullReport": {
-          "type": "string",
-          "format": "base64"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "ReportContext": {
-          "type": "string",
-          "format": "base64"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "Signature": {
-          "type": "string",
-          "format": "base64"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "BuyPrice": {
-          "type": "string",
-          "format": "base64"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "SellPrice": {
-          "type": "string",
-          "format": "base64"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "ObservationTimestamp": {
           "type": "integer"

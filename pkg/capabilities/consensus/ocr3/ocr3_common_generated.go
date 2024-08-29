@@ -61,16 +61,16 @@ func (j *Encoder) UnmarshalJSON(b []byte) error {
 
 type SignedReport struct {
 	// Context corresponds to the JSON schema field "Context".
-	Context string `json:"Context" yaml:"Context" mapstructure:"Context"`
+	Context []uint8 `json:"Context" yaml:"Context" mapstructure:"Context"`
 
 	// ID corresponds to the JSON schema field "ID".
-	ID string `json:"ID" yaml:"ID" mapstructure:"ID"`
+	ID []uint8 `json:"ID" yaml:"ID" mapstructure:"ID"`
 
 	// Report corresponds to the JSON schema field "Report".
-	Report string `json:"Report" yaml:"Report" mapstructure:"Report"`
+	Report []uint8 `json:"Report" yaml:"Report" mapstructure:"Report"`
 
 	// Signatures corresponds to the JSON schema field "Signatures".
-	Signatures []string `json:"Signatures,omitempty" yaml:"Signatures,omitempty" mapstructure:"Signatures,omitempty"`
+	Signatures [][]uint8 `json:"Signatures" yaml:"Signatures" mapstructure:"Signatures"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -87,6 +87,9 @@ func (j *SignedReport) UnmarshalJSON(b []byte) error {
 	}
 	if _, ok := raw["Report"]; raw != nil && !ok {
 		return fmt.Errorf("field Report in SignedReport: required")
+	}
+	if _, ok := raw["Signatures"]; raw != nil && !ok {
+		return fmt.Errorf("field Signatures in SignedReport: required")
 	}
 	type Plain SignedReport
 	var plain Plain

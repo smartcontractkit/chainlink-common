@@ -187,7 +187,7 @@ type FeedValue struct {
 
 	// The interval in seconds after which a new report is generated, regardless of
 	// whether any deviations have occurred. New reports reset the timer.
-	Heartbeat int `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
+	Heartbeat uint64 `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
 
 	// An optional remapped ID for the feed.
 	RemappedID *string `json:"remappedID,omitempty" yaml:"remappedID,omitempty" mapstructure:"remappedID,omitempty"`

@@ -3,12 +3,12 @@ package oracle
 import (
 	"context"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	oraclepb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oracle"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 var _ oraclepb.OracleServer = (*server)(nil)
@@ -17,13 +17,13 @@ type server struct {
 	oraclepb.UnimplementedOracleServer
 
 	broker *net.BrokerExt
-	impl   offchainreporting2plus.Oracle
+	impl   core.Oracle
 	log    logger.Logger
 
 	Name string
 }
 
-func NewServer(log logger.Logger, impl offchainreporting2plus.Oracle, broker *net.BrokerExt) (*server, net.Resource) {
+func NewServer(log logger.Logger, impl core.Oracle, broker *net.BrokerExt) (*server, net.Resource) {
 	name := "OracleServer"
 	newServer := &server{
 		log:    log,
@@ -41,10 +41,10 @@ func (s *server) Close() error {
 	return nil
 }
 
-func (s *server) OracleClose(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.impl.Close()
+func (s *server) OracleClose(ctx context.Context, e *emptypb.Empty) (*emptypb.Empty, error) {
+	return e, s.impl.Close(ctx)
 }
 
-func (s *server) OracleStart(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.impl.Start()
+func (s *server) OracleStart(ctx context.Context, e *emptypb.Empty) (*emptypb.Empty, error) {
+	return e, s.impl.Start(ctx)
 }

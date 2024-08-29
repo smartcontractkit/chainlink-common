@@ -7,8 +7,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oracle"
 	reportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr3"
@@ -41,7 +39,7 @@ func NewClient(log logger.Logger, broker *net.BrokerExt, conn grpc.ClientConnInt
 		grpc:          oraclefactorypb.NewOracleFactoryClient(conn)}
 }
 
-func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (offchainreporting2plus.Oracle, error) {
+func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (core.Oracle, error) {
 	var resources []net.Resource
 
 	serviceName := "ReportingPluginFactoryServer"

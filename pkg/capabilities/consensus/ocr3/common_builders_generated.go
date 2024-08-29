@@ -46,10 +46,10 @@ func NewSignedReportFromFields(
 	signatures workflows.CapDefinition[[]string]) SignedReportCap {
 	return &simpleSignedReport{
 		CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
-			"context":    context.Ref(),
-			"iD":         iD.Ref(),
-			"report":     report.Ref(),
-			"signatures": signatures.Ref(),
+			"Context":    context.Ref(),
+			"ID":         iD.Ref(),
+			"Report":     report.Ref(),
+			"Signatures": signatures.Ref(),
 		},
 		context:    context,
 		iD:         iD,

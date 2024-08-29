@@ -30,7 +30,7 @@ type TargetInput struct {
 func (input TargetInput) ToSteps() workflows.StepInputs {
 	return workflows.StepInputs{
 		Mapping: map[string]any{
-			"cool_input,omitempty": input.CoolInput.Ref(),
+			"cool_input": input.CoolInput.Ref(),
 		},
 	}
 }

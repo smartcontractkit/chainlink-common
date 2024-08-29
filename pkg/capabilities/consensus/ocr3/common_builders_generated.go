@@ -36,7 +36,7 @@ func (c *signedReport) Report() workflows.CapDefinition[string] {
 	return workflows.AccessField[SignedReport, string](c.CapDefinition, "Report")
 }
 func (c *signedReport) Signatures() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[SignedReport, []string](c.CapDefinition, "Signatures,omitempty")
+	return workflows.AccessField[SignedReport, []string](c.CapDefinition, "Signatures")
 }
 
 func NewSignedReportFromFields(
@@ -46,10 +46,10 @@ func NewSignedReportFromFields(
 	signatures workflows.CapDefinition[[]string]) SignedReportCap {
 	return &simpleSignedReport{
 		CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
-			"Context":              context.Ref(),
-			"ID":                   iD.Ref(),
-			"Report":               report.Ref(),
-			"Signatures,omitempty": signatures.Ref(),
+			"Context":    context.Ref(),
+			"ID":         iD.Ref(),
+			"Report":     report.Ref(),
+			"Signatures": signatures.Ref(),
 		},
 		context:    context,
 		iD:         iD,

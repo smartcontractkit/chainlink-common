@@ -53,7 +53,7 @@ func (c *feedValue) Heartbeat() workflows.CapDefinition[int] {
 	return workflows.AccessField[FeedValue, int](c.CapDefinition, "heartbeat")
 }
 func (c *feedValue) RemappedID() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedValue, string](c.CapDefinition, "remappedID,omitempty")
+	return workflows.AccessField[FeedValue, string](c.CapDefinition, "remappedID")
 }
 
 func NewFeedValueFromFields(
@@ -62,9 +62,9 @@ func NewFeedValueFromFields(
 	remappedID workflows.CapDefinition[string]) FeedValueCap {
 	return &simpleFeedValue{
 		CapDefinition: workflows.ComponentCapDefinition[FeedValue]{
-			"deviation":            deviation.Ref(),
-			"heartbeat":            heartbeat.Ref(),
-			"remappedID,omitempty": remappedID.Ref(),
+			"deviation":  deviation.Ref(),
+			"heartbeat":  heartbeat.Ref(),
+			"remappedID": remappedID.Ref(),
 		},
 		deviation:  deviation,
 		heartbeat:  heartbeat,

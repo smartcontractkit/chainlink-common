@@ -41,14 +41,14 @@ type triggerOutputs struct {
 
 func (*triggerOutputs) private() {}
 func (c *triggerOutputs) CoolOutput() workflows.CapDefinition[string] {
-	return workflows.AccessField[TriggerOutputs, string](c.CapDefinition, "cool_output,omitempty")
+	return workflows.AccessField[TriggerOutputs, string](c.CapDefinition, "cool_output")
 }
 
 func NewTriggerOutputsFromFields(
 	coolOutput workflows.CapDefinition[string]) TriggerOutputsCap {
 	return &simpleTriggerOutputs{
 		CapDefinition: workflows.ComponentCapDefinition[TriggerOutputs]{
-			"cool_output,omitempty": coolOutput.Ref(),
+			"cool_output": coolOutput.Ref(),
 		},
 		coolOutput: coolOutput,
 	}

@@ -1,7 +1,6 @@
 package ocr3test
 
 import (
-	"encoding/base64"
 	"errors"
 
 	"google.golang.org/protobuf/proto"
@@ -50,10 +49,10 @@ func identicalConsensus[T any](inputs ConsensusInput[T]) (ocr3.SignedReport, err
 	}
 
 	return ocr3.SignedReport{
-		Context:    "this is a test",
-		ID:         "12",
-		Report:     base64.StdEncoding.EncodeToString(bytes),
-		Signatures: []string{"sig1", "sig2", "sig3", "sig4"},
+		Context:    []byte("this is a test"),
+		ID:         []byte("12"),
+		Report:     bytes,
+		Signatures: [][]byte{[]byte("sig1"), []byte("sig2"), []byte("sig3"), []byte("sig4")},
 	}, nil
 }
 
@@ -79,11 +78,10 @@ func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepRes
 	step := c.GetStep(ref)
 	var t T
 	if step.WasRun && step.Error == nil {
-		bytes, _ := base64.StdEncoding.DecodeString(step.Output.Report)
 		wrapped := &pb.Value{}
 
 		// safe because we marshalled it in the mock step
-		_ = proto.Unmarshal(bytes, wrapped)
+		_ = proto.Unmarshal(step.Output.Report, wrapped)
 		mv, _ := values.FromProto(wrapped)
 		_ = mv.UnwrapTo(&t)
 	}

@@ -108,4 +108,4 @@ require (
 )
 
 // until merged upstream: https://github.com/omissis/go-jsonschema/pull/264
-replace github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-rtinianov
+replace github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-smallSizedInts

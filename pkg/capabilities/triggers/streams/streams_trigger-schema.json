@@ -15,7 +15,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "format": "base64"
+            "description": "The id of the signer."
           }
         },
         "MinRequiredSignatures": {
@@ -35,22 +35,26 @@
         },
         "FullReport": {
           "type": "string",
-          "format": "base64"
+          "contentEncoding": "base64",
+          "description": "Full report represented as bytes encoded as base64 string."
         },
         "ReportContext": {
           "type": "string",
-          "format": "base64"
+          "contentEncoding": "base64",
+          "description": "Report context represented as bytes encoded as base64 string. This is required to validate the signatures."
         },
         "Signatures": {
           "type": "array",
           "items": {
             "type": "string",
-            "format": "base64"
+            "contentEncoding": "base64",
+            "description": "Signature over full report and report context represented as bytes encoded as base64 string."
           }
         },
         "BenchmarkPrice": {
           "type": "string",
-          "format": "base64"
+          "contentEncoding": "base64",
+          "description": "This value is extracted from the fullReport. Benchmark price represented as bytes encoded as base64 string."
         },
         "ObservationTimestamp": {
           "type": "integer"

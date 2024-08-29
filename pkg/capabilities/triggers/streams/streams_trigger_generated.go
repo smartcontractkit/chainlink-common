@@ -43,20 +43,22 @@ func (j *FeedId) UnmarshalJSON(b []byte) error {
 }
 
 type FeedReport struct {
-	// BenchmarkPrice corresponds to the JSON schema field "BenchmarkPrice".
+	// This value is extracted from the fullReport. Benchmark price represented as
+	// bytes encoded as base64 string.
 	BenchmarkPrice string `json:"BenchmarkPrice" yaml:"BenchmarkPrice" mapstructure:"BenchmarkPrice"`
 
 	// FeedID corresponds to the JSON schema field "FeedID".
 	FeedID FeedId `json:"FeedID" yaml:"FeedID" mapstructure:"FeedID"`
 
-	// FullReport corresponds to the JSON schema field "FullReport".
+	// Full report represented as bytes encoded as base64 string.
 	FullReport string `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
 
 	// ObservationTimestamp corresponds to the JSON schema field
 	// "ObservationTimestamp".
 	ObservationTimestamp int `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
 
-	// ReportContext corresponds to the JSON schema field "ReportContext".
+	// Report context represented as bytes encoded as base64 string. This is required
+	// to validate the signatures.
 	ReportContext string `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
 
 	// Signatures corresponds to the JSON schema field "Signatures".

@@ -18,23 +18,28 @@ import (
 )
 
 func TestCompute(t *testing.T) {
-	nsf, err := values.CreateMapFromStruct(map[string]any{"Arg0": notstreams.Feed{
-		Price: notstreams.FeedPrice{
-			PriceA: "12.3",
-			PriceB: "32.1",
+	anyNotStreamsInput := notstreams.Feed{
+		ID:       "id",
+		Metadata: notstreams.SignerMetadata{Signer: "signer1"},
+		Payload: notstreams.FeedReport{
+			BuyPrice:             "123",
+			FullReport:           "report",
+			ObservationTimestamp: 2,
+			ReportContext:        "context",
+			SellPrice:            "124",
+			Signature:            "sig",
 		},
-		Timestamp:     123,
-		FullReport:    "report",
-		ReportContext: "context",
-		Signatures:    []string{"sig1", "sig2"},
-	}})
+		Timestamp:   "2022-01-05",
+		TriggerType: "Type",
+	}
+	nsf, err := values.CreateMapFromStruct(map[string]any{"Arg0": anyNotStreamsInput})
 	require.NoError(t, err)
 
 	t.Run("creates correct workflow spec", func(t *testing.T) {
 		workflow := createWorkflow(convertFeed)
 
-		spec, err := workflow.Spec()
-		require.NoError(t, err)
+		spec, err2 := workflow.Spec()
+		require.NoError(t, err2)
 		expectedSpec := workflows.WorkflowSpec{
 			Name:  "name",
 			Owner: "owner",
@@ -49,7 +54,7 @@ func TestCompute(t *testing.T) {
 			},
 			Actions: []workflows.StepDefinition{
 				{
-					ID:  "internal!!custom_compute@1.0.0",
+					ID:  "__internal__custom_compute@1.0.0",
 					Ref: "Compute",
 					Inputs: workflows.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs)"},
@@ -114,20 +119,10 @@ func TestCompute(t *testing.T) {
 		actual := fn(struct{}{}, req)
 		require.NoError(t, actual.Err)
 
-		expected := [][]streams.Feed{
-			{
-				{
-					BenchmarkPrice:       "12.3",
-					FeedId:               anyFakeFeedID,
-					FullReport:           "report",
-					ObservationTimestamp: 123,
-					ReportContext:        "context",
-					Signatures:           []string{"sig1", "sig2"},
-				},
-			},
-		}
+		expected, err := convertFeed(nil, anyNotStreamsInput)
+		require.NoError(t, err)
 
-		computed := &workflows.ComputeOutput[[][]streams.Feed]{}
+		computed := &workflows.ComputeOutput[[]streams.Feed]{}
 		err = actual.Value.UnwrapTo(computed)
 		require.NoError(t, err)
 
@@ -136,7 +131,7 @@ func TestCompute(t *testing.T) {
 
 	t.Run("compute returns errors correctly", func(t *testing.T) {
 		anyErr := errors.New("nope")
-		workflow := createWorkflow(func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]streams.Feed, error) {
+		workflow := createWorkflow(func(_ workflows.SDK, inputFeed notstreams.Feed) ([]streams.Feed, error) {
 			return nil, anyErr
 		})
 
@@ -149,16 +144,14 @@ func TestCompute(t *testing.T) {
 	})
 }
 
-func createWorkflow(fn func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]streams.Feed, error)) *workflows.WorkflowSpecFactory {
+func createWorkflow(fn func(_ workflows.SDK, inputFeed notstreams.Feed) ([]streams.Feed, error)) *workflows.WorkflowSpecFactory {
 	workflow := workflows.NewWorkflowSpecFactory(workflows.NewWorkflowParams{
 		Owner: "owner",
 		Name:  "name",
 	})
 
 	trigger := notstreams.TriggerConfig{MaxFrequencyMs: 5000}.New(workflow)
-	computed := workflows.Compute1(workflow, "Compute", workflows.Compute1Inputs[notstreams.Feed]{
-		Arg0: trigger,
-	}, fn)
+	computed := workflows.Compute1(workflow, "Compute", workflows.Compute1Inputs[notstreams.Feed]{Arg0: trigger}, fn)
 
 	consensus := ocr3.DataFeedsConsensusConfig{
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
@@ -189,17 +182,23 @@ func createWorkflow(fn func(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]str
 	return workflow
 }
 
-func convertFeed(_ workflows.Sdk, inputFeed notstreams.Feed) ([][]streams.Feed, error) {
-	return [][]streams.Feed{
+func convertFeed(_ workflows.SDK, inputFeed notstreams.Feed) ([]streams.Feed, error) {
+	return []streams.Feed{
 		{
-			{
-				BenchmarkPrice:       inputFeed.Price.PriceA,
-				FeedId:               anyFakeFeedID,
-				FullReport:           inputFeed.FullReport,
-				ObservationTimestamp: inputFeed.Timestamp,
-				ReportContext:        inputFeed.ReportContext,
-				Signatures:           inputFeed.Signatures,
+			ID:       inputFeed.ID,
+			Metadata: streams.SignersMetadata{Signers: []string{inputFeed.Metadata.Signer}},
+			Payload: []streams.FeedReport{
+				{
+					BenchmarkPrice:       inputFeed.Payload.BuyPrice,
+					FeedID:               anyFakeFeedID,
+					FullReport:           inputFeed.Payload.FullReport,
+					ObservationTimestamp: inputFeed.Payload.ObservationTimestamp,
+					ReportContext:        inputFeed.Payload.ReportContext,
+					Signatures:           []string{inputFeed.Payload.Signature},
+				},
 			},
+			Timestamp:   inputFeed.Timestamp,
+			TriggerType: inputFeed.TriggerType,
 		},
 	}, nil
 }

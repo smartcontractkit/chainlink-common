@@ -6,8 +6,8 @@ import (
 )
 
 type computeCapability struct {
-	sdk      workflows.Sdk
-	callback func(sdk workflows.Sdk, request capabilities.CapabilityRequest) capabilities.CapabilityResponse
+	sdk      workflows.SDK
+	callback func(sdk workflows.SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse
 }
 
 func (c *computeCapability) Run(request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
@@ -15,7 +15,7 @@ func (c *computeCapability) Run(request capabilities.CapabilityRequest) capabili
 }
 
 func (c *computeCapability) ID() string {
-	return "internal!!custom_compute@1.0.0"
+	return "__internal__custom_compute@1.0.0"
 }
 
 var _ CapabilityMock = &computeCapability{}

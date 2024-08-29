@@ -121,17 +121,18 @@ func (q *queryLogger) logError(err error) {
 func (q *queryLogger) logTiming(ctx context.Context, start time.Time) {
 	elapsed := time.Since(start)
 
-	lggr := q.lggr.With("elapsed", elapsed.Round(time.Microsecond), "sql", q)
+	// including `"sql", q` here causes significant unnecessary serialization, so we repeat it at each log line instead
+	lggr := q.lggr.With("elapsed", elapsed.Round(time.Microsecond))
 	if err := ctx.Err(); err != nil {
 		if errors.Is(err, context.Canceled) {
-			lggr.Debugw("SQL Context Canceled", "err", context.Cause(ctx))
+			lggr.Debugw("SQL Context Canceled", "err", context.Cause(ctx), "sql", q)
 			return
 		} else if !errors.Is(err, context.DeadlineExceeded) {
-			lggr.Debugw("SQL Context Error", "err", err)
+			lggr.Debugw("SQL Context Error", "err", err, "sql", q)
 			return
 		}
 		lggr = lggr.With("err", err)
-		lggr.Debugw("SQL Deadline Exceeded")
+		lggr.Debugw("SQL Deadline Exceeded", "sql", q)
 	}
 
 	// Success or Deadline Exceeded, so calculate how much of the timeout was used.
@@ -163,11 +164,11 @@ func (q *queryLogger) logTiming(ctx context.Context, start time.Time) {
 	thresholds.FromContextValue(ctx)
 
 	if elapsed >= timeout {
-		lggr.Criticalw(slowMsg)
+		lggr.Criticalw(slowMsg, "sql", q)
 	} else if errThreshold := thresholds.Error(timeout); errThreshold > 0 && elapsed > errThreshold {
-		lggr.Errorw(slowMsg)
+		lggr.Errorw(slowMsg, "sql", q)
 	} else if warnThreshold := thresholds.Warn(timeout); warnThreshold > 0 && elapsed > warnThreshold {
-		lggr.Warnw(slowMsg)
+		lggr.Warnw(slowMsg, "sql", q)
 	}
 
 	PromSQLQueryTime.Observe(pct)

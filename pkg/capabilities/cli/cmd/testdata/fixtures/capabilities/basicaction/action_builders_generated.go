@@ -13,8 +13,8 @@ func (cfg ActionConfig) New(w *workflows.WorkflowSpecFactory, ref string, input 
 		ID: "basic-test-action@1.0.0", Ref: ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
-			"name":   cfg.Name,
-			"number": cfg.Number,
+			"camelCaseInSchemaForTesting":      cfg.CamelCaseInSchemaForTesting,
+			"snake_case_in_schema_for_testing": cfg.SnakeCaseInSchemaForTesting,
 		},
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
@@ -41,14 +41,14 @@ type actionOutputs struct {
 
 func (*actionOutputs) private() {}
 func (c *actionOutputs) AdaptedThing() workflows.CapDefinition[string] {
-	return workflows.AccessField[ActionOutputs, string](c.CapDefinition, "AdaptedThing")
+	return workflows.AccessField[ActionOutputs, string](c.CapDefinition, "adapted_thing")
 }
 
 func NewActionOutputsFromFields(
 	adaptedThing workflows.CapDefinition[string]) ActionOutputsCap {
 	return &simpleActionOutputs{
 		CapDefinition: workflows.ComponentCapDefinition[ActionOutputs]{
-			"adaptedThing": adaptedThing.Ref(),
+			"adapted_thing": adaptedThing.Ref(),
 		},
 		adaptedThing: adaptedThing,
 	}

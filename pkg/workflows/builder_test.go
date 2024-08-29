@@ -185,7 +185,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		runSepoliaStagingTest(t, sepoliaDefaultConfig, NewWorkflowRemapped)
 	})
 
-	t.Run("maping different types without compute", func(t *testing.T) {
+	t.Run("mapping different types without compute", func(t *testing.T) {
 		factory, err := NewWorkflowSpecFromPrimitives(notStreamSepoliaConfig)
 		require.NoError(t, err)
 
@@ -215,10 +215,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 								{
 									"benchmarkPrice":       "$(trigger.outputs.Price.PriceA)",
 									"feedId":               anyFakeFeedID,
-									"fullReport":           "$(trigger.outputs.FullReport)",
+									"fullReport":           "$(trigger.outputs.fullReport)",
 									"observationTimestamp": "$(trigger.outputs.Timestamp)",
-									"reportContext":        "$(trigger.outputs.ReportContext)",
-									"signatures":           "$(trigger.outputs.Signatures)",
+									"reportContext":        "$(trigger.outputs.reportContext)",
+									"signatures":           "$(trigger.outputs.signatures)",
 								},
 							},
 						}},

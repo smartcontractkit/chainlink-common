@@ -11,6 +11,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
 	github.com/go-playground/validator/v10 v10.4.1
+	github.com/go-viper/mapstructure/v2 v2.1.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
@@ -24,7 +25,6 @@ require (
 	github.com/jpillora/backoff v1.0.0
 	github.com/lib/pq v1.10.9
 	github.com/linkedin/goavro/v2 v2.12.0
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/prometheus/client_golang v1.17.0
@@ -114,9 +114,6 @@ replace (
 
 	// until merged upstream: https://github.com/hashicorp/go-plugin/pull/257
 	github.com/hashicorp/go-plugin => github.com/smartcontractkit/go-plugin v0.0.0-20240208201424-b3b91517de16
-
-	// until merged upstream: https://github.com/mitchellh/mapstructure/pull/343
-	github.com/mitchellh/mapstructure v1.5.0 => github.com/nolag/mapstructure v1.5.2-0.20240625151721-90ea83a3f479
 
 	// until merged upstream: https://github.com/mwitkow/grpc-proxy/pull/69
 	github.com/mwitkow/grpc-proxy => github.com/smartcontractkit/grpc-proxy v0.0.0-20230731113816-f1be6620749f

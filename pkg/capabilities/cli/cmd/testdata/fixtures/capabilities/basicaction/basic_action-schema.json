@@ -5,18 +5,17 @@
   "properties": {
     "config": {
       "properties": {
-        "name": {
+        "camelCaseInSchemaForTesting": {
           "type": "string"
         },
-        "number": {
+        "snake_case_in_schema_for_testing": {
           "type": "integer",
-          "description": "The interval in seconds after which a new trigger event is generated.",
           "minimum": 1
         }
       },
       "additionalProperties": false,
       "type": "object",
-      "required": ["name", "number"]
+      "required": ["camelCaseInSchemaForTesting", "snake_case_in_schema_for_testing"]
     },
     "inputs" : {
         "properties": {
@@ -36,7 +35,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "required": ["name", "number"]
+      "required": ["adapted_thing"]
     }
   },
   "additionalProperties": false,

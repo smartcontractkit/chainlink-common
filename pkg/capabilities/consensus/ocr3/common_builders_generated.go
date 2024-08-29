@@ -26,7 +26,7 @@ type encoderConfig struct {
 
 func (*encoderConfig) private() {}
 func (c *encoderConfig) Abi() workflows.CapDefinition[string] {
-	return workflows.AccessField[EncoderConfig, string](c.CapDefinition, "Abi")
+	return workflows.AccessField[EncoderConfig, string](c.CapDefinition, "abi")
 }
 
 func NewEncoderConfigFromFields(

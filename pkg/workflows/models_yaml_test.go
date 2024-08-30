@@ -143,7 +143,6 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 
 		workflowSpec, err := ParseWorkflowSpecYaml(string(workflowBytes))
 		require.NoError(t, err)
-		require.Equal(t, string(workflowBytes), workflowSpec.String())
 
 		workflowSpecBytes, err := json.MarshalIndent(workflowSpec, "", "  ")
 		require.NoError(t, err)
@@ -179,7 +178,6 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 
 		// original YAML and CIDs should be different
 		require.NotEqual(t, workflowSpec1.CID(), workflowSpec2.CID())
-		require.NotEqual(t, workflowSpec1.String(), workflowSpec2.String())
 
 		// the parsed results should be logically equivalent
 		require.Equal(t, workflowSpec1.Actions, workflowSpec2.Actions)

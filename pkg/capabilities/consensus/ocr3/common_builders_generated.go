@@ -8,47 +8,9 @@ import (
 
 type EncoderCap workflows.CapDefinition[Encoder]
 
-type EncoderConfigCap interface {
-	workflows.CapDefinition[EncoderConfig]
-	Abi() workflows.CapDefinition[string]
-	private()
-}
+type EncoderConfigCap workflows.CapDefinition[EncoderConfig]
 
-// EncoderConfigCapFromStep should only be called from generated code to assure type safety
-func EncoderConfigCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[EncoderConfig]) EncoderConfigCap {
-	raw := step.AddTo(w)
-	return &encoderConfig{CapDefinition: raw}
-}
-
-type encoderConfig struct {
-	workflows.CapDefinition[EncoderConfig]
-}
-
-func (*encoderConfig) private() {}
-func (c *encoderConfig) Abi() workflows.CapDefinition[string] {
-	return workflows.AccessField[EncoderConfig, string](c.CapDefinition, "Abi")
-}
-
-func NewEncoderConfigFromFields(
-	abi workflows.CapDefinition[string]) EncoderConfigCap {
-	return &simpleEncoderConfig{
-		CapDefinition: workflows.ComponentCapDefinition[EncoderConfig]{
-			"abi": abi.Ref(),
-		},
-		abi: abi,
-	}
-}
-
-type simpleEncoderConfig struct {
-	workflows.CapDefinition[EncoderConfig]
-	abi workflows.CapDefinition[string]
-}
-
-func (c *simpleEncoderConfig) Abi() workflows.CapDefinition[string] {
-	return c.abi
-}
-
-func (c *simpleEncoderConfig) private() {}
+type ReportIdCap workflows.CapDefinition[ReportId]
 
 type SignedReportCap interface {
 	workflows.CapDefinition[SignedReport]
@@ -90,10 +52,10 @@ func NewSignedReportFromFields(
 	signatures workflows.CapDefinition[[]string]) SignedReportCap {
 	return &simpleSignedReport{
 		CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
-			"context":    context.Ref(),
-			"iD":         iD.Ref(),
-			"report":     report.Ref(),
-			"signatures": signatures.Ref(),
+			"Context":    context.Ref(),
+			"ID":         iD.Ref(),
+			"Report":     report.Ref(),
+			"Signatures": signatures.Ref(),
 		},
 		context:    context,
 		iD:         iD,

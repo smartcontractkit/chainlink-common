@@ -132,7 +132,7 @@ func TestRunner(t *testing.T) {
 	})
 }
 
-type actionTransform func(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error)
+type actionTransform func(sdk workflows.SDK, outputs basictrigger.TriggerOutputs) (bool, error)
 
 func createTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpecFactory {
 	workflow := workflows.NewWorkflowSpecFactory(workflows.NewWorkflowParams{Name: "tester", Owner: "ryan"})
@@ -143,12 +143,12 @@ func createTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpec
 		workflows.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		actionTransform)
 
-	action := basicaction.ActionConfig{Name: "action", Number: 20}.
+	action := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "action", SnakeCaseInSchemaForTesting: 20}.
 		New(workflow, "basic action", basicaction.ActionInput{InputThing: tTransform.Value()})
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder:       "Test",
-		EncoderConfig: ocr3.EncoderConfig{Abi: "Test"},
+		EncoderConfig: ocr3.EncoderConfig{},
 	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
 
 	chainwriter.TargetConfig{
@@ -164,7 +164,7 @@ type testHelper struct {
 	transformTriggerCalled bool
 }
 
-func (helper *testHelper) transformTrigger(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error) {
+func (helper *testHelper) transformTrigger(sdk workflows.SDK, outputs basictrigger.TriggerOutputs) (bool, error) {
 	assert.NotNil(helper.t, sdk)
 	assert.Equal(helper.t, "cool", outputs.CoolOutput)
 	assert.False(helper.t, helper.transformTriggerCalled)

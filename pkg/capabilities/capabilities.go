@@ -83,12 +83,12 @@ type CapabilityRequest struct {
 }
 
 type TriggerEvent struct {
+	// The ID of the trigger capability
 	TriggerType string
-	ID          string
-	Timestamp   string
-	// Trigger-specific payload+metadata
-	Metadata values.Value
-	Payload  values.Value
+	// The ID of the trigger event
+	ID string
+	// Trigger-specific payload
+	Outputs *values.Map
 }
 
 type RegisterToWorkflowRequest struct {
@@ -128,9 +128,23 @@ type BaseCapability interface {
 	Info(ctx context.Context) (CapabilityInfo, error)
 }
 
+type TriggerRegistrationRequest struct {
+	// TriggerID uniquely identifies the trigger by concatenating
+	// the workflow ID and the trigger's index in the spec.
+	TriggerID string
+
+	Metadata RequestMetadata
+	Config   *values.Map
+}
+
+type TriggerResponse struct {
+	Event TriggerEvent
+	Err   error
+}
+
 type TriggerExecutable interface {
-	RegisterTrigger(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
-	UnregisterTrigger(ctx context.Context, request CapabilityRequest) error
+	RegisterTrigger(ctx context.Context, request TriggerRegistrationRequest) (<-chan TriggerResponse, error)
+	UnregisterTrigger(ctx context.Context, request TriggerRegistrationRequest) error
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.
@@ -392,6 +406,9 @@ type RemoteTargetConfig struct {
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
+	if c == nil {
+		return
+	}
 	if c.RegistrationRefresh == 0 {
 		c.RegistrationRefresh = DefaultRegistrationRefresh
 	}

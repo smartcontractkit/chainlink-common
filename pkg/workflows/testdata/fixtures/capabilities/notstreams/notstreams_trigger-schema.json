@@ -1,59 +1,79 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams/notstreams@1.0.0",
-  "description": "Not Streams Trigger",
+  "description": "Streams Trigger",
   "$defs": {
+    "SignerMetadata": {
+      "type": "object",
+      "properties": {
+        "Signer": {
+          "type": "string",
+          "format": "base64"
+        }
+      },
+      "required": ["Signer"]
+    },
+    "FeedReport": {
+      "type": "object",
+      "properties": {
+        "FullReport": {
+          "type": "string",
+          "format": "base64"
+        },
+        "ReportContext": {
+          "type": "string",
+          "format": "base64"
+        },
+        "Signature": {
+          "type": "string",
+          "format": "base64"
+        },
+        "BuyPrice": {
+          "type": "string",
+          "format": "base64"
+        },
+        "SellPrice": {
+          "type": "string",
+          "format": "base64"
+        },
+        "ObservationTimestamp": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "FullReport",
+        "ReportContext",
+        "Signature",
+        "BuyPrice",
+        "SellPrice",
+        "ObservationTimestamp"
+      ]
+    },
     "Feed": {
       "type": "object",
       "properties": {
-        "fullReport": {
-          "type": "string",
-          "contentEncoding": "base64",
-          "description": "Full report represented as bytes encoded as base64 string."
+        "TriggerType": {
+          "type": "string"
         },
-        "reportContext": {
-          "type": "string",
-          "contentEncoding": "base64",
-          "description": "Report context represented as bytes encoded as base64 string. This is required to validate the signatures."
-        },
-        "signatures": {
-          "type": "array",
-          "description": "Signature over full report and report context represented as bytes encoded as base64 string.",
-          "items": {
-            "type": "string",
-            "contentEncoding": "base64"
-          },
-          "minItems": 1
-        },
-        "Price": {
-          "type": "object",
-          "properties": {
-            "PriceA": {
-              "type": "string",
-              "contentEncoding": "base64",
-              "description": "Benchmark price A represented as bytes encoded as base64 string."
-            },
-            "PriceB": {
-              "type": "string",
-              "contentEncoding": "base64",
-              "description": "Benchmark price B represented as bytes encoded as base64 string."
-            }
-          },
-          "description": "Object containing two benchmark prices extracted from the fullReport.",
-          "required": ["PriceA", "PriceB"]
+        "ID": {
+          "type": "string"
         },
         "Timestamp": {
-          "type": "integer",
-          "description": "This value is extracted from the fullReport. A unix timestamp represented as an int64 value. Timestamp is captured at the time of report creation."
+          "type": "string"
+        },
+        "Metadata": {
+          "$ref": "#/$defs/SignerMetadata"
+        },
+        "Payload": {
+          "$ref": "#/$defs/FeedReport"
         }
       },
-      "additionalProperties": false,
       "required": [
-        "fullReport",
-        "reportContext",
-        "signatures",
-        "Price",
-        "Timestamp"
+        "TriggerType",
+        "ID",
+        "Timestamp",
+        "Metadata",
+        "Payload"
       ]
     }
   },
@@ -68,7 +88,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "required": ["feedIds", "maxFrequencyMs"]
+      "required": ["maxFrequencyMs"]
     },
     "outputs": {
       "$ref": "#/$defs/Feed"

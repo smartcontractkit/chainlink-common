@@ -2,6 +2,6 @@ package testutils
 
 import "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 
-type Sdk struct{}
+type SDK struct{}
 
-var _ workflows.Sdk = &Sdk{}
+var _ workflows.SDK = &SDK{}

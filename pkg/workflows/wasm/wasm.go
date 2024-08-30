@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -178,7 +178,7 @@ func (m *module) run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	return m.response, m.err
 }
 
-func GetWorkflowSpec(ctx context.Context, binary []byte, config []byte) (*workflows.WorkflowSpec, error) {
+func GetWorkflowSpec(ctx context.Context, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
 	m, err := newModule(binary)
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)

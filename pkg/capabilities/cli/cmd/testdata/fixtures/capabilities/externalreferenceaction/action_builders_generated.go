@@ -5,21 +5,21 @@ package externalreferenceaction
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	referenceaction "github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
 type SomeConfig referenceaction.SomeConfig
 
-func (cfg SomeConfig) New(w *workflows.WorkflowSpecFactory, ref string, input ActionInput) referenceaction.SomeOutputsCap {
+func (cfg SomeConfig) New(w *sdk.WorkflowSpecFactory, ref string, input ActionInput) referenceaction.SomeOutputsCap {
 
-	def := workflows.StepDefinition{
+	def := sdk.StepDefinition{
 		ID: "external-reference-test-action@1.0.0", Ref: ref,
 		Inputs:         input.ToSteps(),
 		Config:         map[string]any{},
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	step := workflows.Step[referenceaction.SomeOutputs]{Definition: def}
+	step := sdk.Step[referenceaction.SomeOutputs]{Definition: def}
 	return referenceaction.SomeOutputsCapFromStep(w, step)
 }
 

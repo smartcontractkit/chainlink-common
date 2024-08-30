@@ -15,7 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -83,21 +83,21 @@ func Test_Runner_Config(t *testing.T) {
 }
 
 func TestRunner_Run_ExecuteCompute(t *testing.T) {
-	workflow := workflows.NewWorkflowSpecFactory(
-		workflows.NewWorkflowParams{
+	workflow := sdk.NewWorkflowSpecFactory(
+		sdk.NewWorkflowParams{
 			Name:  "tester",
 			Owner: "cedric",
 		},
 	)
 
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
-	computeFn := func(sdk workflows.SDK, outputs basictrigger.TriggerOutputs) (bool, error) {
+	computeFn := func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
 		return true, nil
 	}
-	workflows.Compute1(
+	sdk.Compute1(
 		workflow,
 		"compute",
-		workflows.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		computeFn,
 	)
 
@@ -150,21 +150,21 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 }
 
 func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
-	workflow := workflows.NewWorkflowSpecFactory(
-		workflows.NewWorkflowParams{
+	workflow := sdk.NewWorkflowSpecFactory(
+		sdk.NewWorkflowParams{
 			Name:  "tester",
 			Owner: "cedric",
 		},
 	)
 
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
-	computeFn := func(sdk workflows.SDK, outputs basictrigger.TriggerOutputs) (bool, error) {
+	computeFn := func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
 		return true, nil
 	}
-	workflows.Compute1(
+	sdk.Compute1(
 		workflow,
 		"compute",
-		workflows.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		computeFn,
 	)
 

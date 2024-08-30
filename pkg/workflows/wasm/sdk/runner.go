@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -22,7 +22,7 @@ type Runner struct {
 	req          *wasmpb.Request
 }
 
-func (r *Runner) Run(factory *workflows.WorkflowSpecFactory) {
+func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 	if r.req == nil {
 		req, err := r.parseRequest()
 		if err != nil {
@@ -107,7 +107,7 @@ func (r *Runner) parseRequest() (*wasmpb.Request, error) {
 	return req, err
 }
 
-func (r *Runner) handleSpecRequest(factory *workflows.WorkflowSpecFactory, id string) (*wasmpb.Response, error) {
+func (r *Runner) handleSpecRequest(factory *sdk.WorkflowSpecFactory, id string) (*wasmpb.Response, error) {
 	spec, err := factory.Spec()
 	if err != nil {
 		return nil, fmt.Errorf("error getting spec from factory: %w", err)
@@ -126,7 +126,7 @@ func (r *Runner) handleSpecRequest(factory *workflows.WorkflowSpecFactory, id st
 	}, nil
 }
 
-func (r *Runner) handleComputeRequest(factory *workflows.WorkflowSpecFactory, id string, computeReq *wasmpb.ComputeRequest) (*wasmpb.Response, error) {
+func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id string, computeReq *wasmpb.ComputeRequest) (*wasmpb.Response, error) {
 	req := computeReq.Request
 	if req == nil {
 		return nil, errors.New("invalid compute request: nil request")
@@ -141,17 +141,14 @@ func (r *Runner) handleComputeRequest(factory *workflows.WorkflowSpecFactory, id
 		return nil, fmt.Errorf("invalid compute request: could not find compute function for id %s", req.Metadata.ReferenceId)
 	}
 
-	sdk := &SDK{}
+	sdk := &Runtime{}
 
 	creq, err := capabilitiespb.CapabilityRequestFromProto(req)
 	if err != nil {
 		return nil, fmt.Errorf("invalid compute request: could not translate proto into capability request")
 	}
 
-	resp, err := fn(sdk, creq)
-	if err != nil {
-		return nil, fmt.Errorf("error executing compute: %w", err)
-	}
+	resp := fn(sdk, creq)
 
 	resppb := capabilitiespb.CapabilityResponseToProto(resp)
 

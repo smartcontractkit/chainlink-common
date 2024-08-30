@@ -4,13 +4,13 @@ package chainwriter
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	ocr3cap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory, id string, input TargetInput) {
+func (cfg TargetConfig) New(w *sdk.WorkflowSpecFactory, id string, input TargetInput) {
 
-	def := workflows.StepDefinition{
+	def := sdk.StepDefinition{
 		ID:     id,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -21,16 +21,16 @@ func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory, id string, input T
 		CapabilityType: capabilities.CapabilityTypeTarget,
 	}
 
-	step := workflows.Step[struct{}]{Definition: def}
+	step := sdk.Step[struct{}]{Definition: def}
 	step.AddTo(w)
 }
 
 type TargetInput struct {
-	SignedReport workflows.CapDefinition[ocr3.SignedReport]
+	SignedReport sdk.CapDefinition[ocr3cap.SignedReport]
 }
 
-func (input TargetInput) ToSteps() workflows.StepInputs {
-	return workflows.StepInputs{
+func (input TargetInput) ToSteps() sdk.StepInputs {
+	return sdk.StepInputs{
 		Mapping: map[string]any{
 			"signed_report": input.SignedReport.Ref(),
 		},

@@ -46,22 +46,22 @@ type feed struct {
 
 func (*feed) private() {}
 func (c *feed) BenchmarkPrice() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "BenchmarkPrice")
+	return workflows.AccessField[Feed, string](c.CapDefinition, "benchmarkPrice")
 }
 func (c *feed) FeedId() FeedIdCap {
 	return FeedIdCap(workflows.AccessField[Feed, FeedId](c.CapDefinition, "FeedId"))
 }
 func (c *feed) FullReport() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "FullReport")
+	return workflows.AccessField[Feed, string](c.CapDefinition, "fullReport")
 }
 func (c *feed) ObservationTimestamp() workflows.CapDefinition[int] {
-	return workflows.AccessField[Feed, int](c.CapDefinition, "ObservationTimestamp")
+	return workflows.AccessField[Feed, int](c.CapDefinition, "observationTimestamp")
 }
 func (c *feed) ReportContext() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "ReportContext")
+	return workflows.AccessField[Feed, string](c.CapDefinition, "reportContext")
 }
 func (c *feed) Signatures() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[Feed, []string](c.CapDefinition, "Signatures")
+	return workflows.AccessField[Feed, []string](c.CapDefinition, "signatures")
 }
 
 func NewFeedFromFields(

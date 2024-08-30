@@ -3,7 +3,7 @@ package median
 import (
 	"context"
 
-	"github.com/mwitkow/grpc-proxy/proxy"
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	"google.golang.org/grpc"
 

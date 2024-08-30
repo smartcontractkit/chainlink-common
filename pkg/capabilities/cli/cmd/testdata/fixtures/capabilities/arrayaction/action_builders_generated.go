@@ -40,7 +40,7 @@ type actionOutputsElem struct {
 
 func (*actionOutputsElem) private() {}
 func (c *actionOutputsElem) Results() ActionOutputsElemResultsCap {
-	return &actionOutputsElemResults{CapDefinition: workflows.AccessField[ActionOutputsElem, ActionOutputsElemResults](c.CapDefinition, "Results")}
+	return &actionOutputsElemResults{CapDefinition: workflows.AccessField[ActionOutputsElem, ActionOutputsElemResults](c.CapDefinition, "results")}
 }
 
 func NewActionOutputsElemFromFields(

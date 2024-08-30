@@ -9,27 +9,20 @@ import (
 )
 
 type Feed struct {
-	// This value is extracted from the fullReport. Benchmark price represented as
-	// bytes encoded as base64 string.
-	BenchmarkPrice string `json:"benchmarkPrice" yaml:"benchmarkPrice" mapstructure:"benchmarkPrice"`
+	// ID corresponds to the JSON schema field "ID".
+	ID string `json:"ID" yaml:"ID" mapstructure:"ID"`
 
-	// FeedId corresponds to the JSON schema field "feedId".
-	FeedId FeedId `json:"feedId" yaml:"feedId" mapstructure:"feedId"`
+	// Metadata corresponds to the JSON schema field "Metadata".
+	Metadata SignersMetadata `json:"Metadata" yaml:"Metadata" mapstructure:"Metadata"`
 
-	// Full report represented as bytes encoded as base64 string.
-	FullReport string `json:"fullReport" yaml:"fullReport" mapstructure:"fullReport"`
+	// Payload corresponds to the JSON schema field "Payload".
+	Payload []FeedReport `json:"Payload" yaml:"Payload" mapstructure:"Payload"`
 
-	// This value is extracted from the fullReport. A unix timestamp represented as an
-	// int64 value. Timestamp is captured at the time of report creation.
-	ObservationTimestamp int `json:"observationTimestamp" yaml:"observationTimestamp" mapstructure:"observationTimestamp"`
+	// Timestamp corresponds to the JSON schema field "Timestamp".
+	Timestamp string `json:"Timestamp" yaml:"Timestamp" mapstructure:"Timestamp"`
 
-	// Report context represented as bytes encoded as base64 string. This is required
-	// to validate the signatures.
-	ReportContext string `json:"reportContext" yaml:"reportContext" mapstructure:"reportContext"`
-
-	// Signature over full report and report context represented as bytes encoded as
-	// base64 string.
-	Signatures []string `json:"signatures" yaml:"signatures" mapstructure:"signatures"`
+	// TriggerType corresponds to the JSON schema field "TriggerType".
+	TriggerType string `json:"TriggerType" yaml:"TriggerType" mapstructure:"TriggerType"`
 }
 
 // The ID of the data feed.
@@ -49,39 +42,119 @@ func (j *FeedId) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type FeedReport struct {
+	// This value is extracted from the fullReport. Benchmark price represented as
+	// bytes encoded as base64 string.
+	BenchmarkPrice string `json:"BenchmarkPrice" yaml:"BenchmarkPrice" mapstructure:"BenchmarkPrice"`
+
+	// FeedID corresponds to the JSON schema field "FeedID".
+	FeedID FeedId `json:"FeedID" yaml:"FeedID" mapstructure:"FeedID"`
+
+	// Full report represented as bytes encoded as base64 string.
+	FullReport string `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
+
+	// ObservationTimestamp corresponds to the JSON schema field
+	// "ObservationTimestamp".
+	ObservationTimestamp int `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
+
+	// Report context represented as bytes encoded as base64 string. This is required
+	// to validate the signatures.
+	ReportContext string `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
+
+	// Signatures corresponds to the JSON schema field "Signatures".
+	Signatures []string `json:"Signatures" yaml:"Signatures" mapstructure:"Signatures"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *FeedReport) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["BenchmarkPrice"]; raw != nil && !ok {
+		return fmt.Errorf("field BenchmarkPrice in FeedReport: required")
+	}
+	if _, ok := raw["FeedID"]; raw != nil && !ok {
+		return fmt.Errorf("field FeedID in FeedReport: required")
+	}
+	if _, ok := raw["FullReport"]; raw != nil && !ok {
+		return fmt.Errorf("field FullReport in FeedReport: required")
+	}
+	if _, ok := raw["ObservationTimestamp"]; raw != nil && !ok {
+		return fmt.Errorf("field ObservationTimestamp in FeedReport: required")
+	}
+	if _, ok := raw["ReportContext"]; raw != nil && !ok {
+		return fmt.Errorf("field ReportContext in FeedReport: required")
+	}
+	if _, ok := raw["Signatures"]; raw != nil && !ok {
+		return fmt.Errorf("field Signatures in FeedReport: required")
+	}
+	type Plain FeedReport
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = FeedReport(plain)
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Feed) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["benchmarkPrice"]; raw != nil && !ok {
-		return fmt.Errorf("field benchmarkPrice in Feed: required")
+	if _, ok := raw["ID"]; raw != nil && !ok {
+		return fmt.Errorf("field ID in Feed: required")
 	}
-	if _, ok := raw["feedId"]; raw != nil && !ok {
-		return fmt.Errorf("field feedId in Feed: required")
+	if _, ok := raw["Metadata"]; raw != nil && !ok {
+		return fmt.Errorf("field Metadata in Feed: required")
 	}
-	if _, ok := raw["fullReport"]; raw != nil && !ok {
-		return fmt.Errorf("field fullReport in Feed: required")
+	if _, ok := raw["Payload"]; raw != nil && !ok {
+		return fmt.Errorf("field Payload in Feed: required")
 	}
-	if _, ok := raw["observationTimestamp"]; raw != nil && !ok {
-		return fmt.Errorf("field observationTimestamp in Feed: required")
+	if _, ok := raw["Timestamp"]; raw != nil && !ok {
+		return fmt.Errorf("field Timestamp in Feed: required")
 	}
-	if _, ok := raw["reportContext"]; raw != nil && !ok {
-		return fmt.Errorf("field reportContext in Feed: required")
-	}
-	if _, ok := raw["signatures"]; raw != nil && !ok {
-		return fmt.Errorf("field signatures in Feed: required")
+	if _, ok := raw["TriggerType"]; raw != nil && !ok {
+		return fmt.Errorf("field TriggerType in Feed: required")
 	}
 	type Plain Feed
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if plain.Signatures != nil && len(plain.Signatures) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "signatures", 1)
-	}
 	*j = Feed(plain)
+	return nil
+}
+
+type SignersMetadata struct {
+	// MinRequiredSignatures corresponds to the JSON schema field
+	// "MinRequiredSignatures".
+	MinRequiredSignatures int `json:"MinRequiredSignatures" yaml:"MinRequiredSignatures" mapstructure:"MinRequiredSignatures"`
+
+	// Signers corresponds to the JSON schema field "Signers".
+	Signers []string `json:"Signers" yaml:"Signers" mapstructure:"Signers"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SignersMetadata) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["MinRequiredSignatures"]; raw != nil && !ok {
+		return fmt.Errorf("field MinRequiredSignatures in SignersMetadata: required")
+	}
+	if _, ok := raw["Signers"]; raw != nil && !ok {
+		return fmt.Errorf("field Signers in SignersMetadata: required")
+	}
+	type Plain SignersMetadata
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = SignersMetadata(plain)
 	return nil
 }
 
@@ -91,7 +164,7 @@ type Trigger struct {
 	Config TriggerConfig `json:"config" yaml:"config" mapstructure:"config"`
 
 	// Outputs corresponds to the JSON schema field "outputs".
-	Outputs []Feed `json:"outputs,omitempty" yaml:"outputs,omitempty" mapstructure:"outputs,omitempty"`
+	Outputs *Feed `json:"outputs,omitempty" yaml:"outputs,omitempty" mapstructure:"outputs,omitempty"`
 }
 
 type TriggerConfig struct {

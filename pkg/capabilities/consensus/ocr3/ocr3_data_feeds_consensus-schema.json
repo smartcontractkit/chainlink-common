@@ -15,12 +15,18 @@
           "description": "The interval in seconds after which a new report is generated, regardless of whether any deviations have occurred. New reports reset the timer."
         },
         "remappedID": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "An optional remapped ID for the feed."
         }
       },
       "additionalProperties": false,
-      "required": ["deviation", "heartbeat"]
+      "required": [
+        "deviation",
+        "heartbeat"
+      ]
     }
   },
   "properties": {
@@ -28,7 +34,9 @@
       "properties": {
         "aggregation_method": {
           "type": "string",
-          "enum": ["data_feeds"]
+          "enum": [
+            "data_feeds"
+          ]
         },
         "aggregation_config": {
           "type": "object",
@@ -48,18 +56,23 @@
             }
           },
           "additionalProperties": false,
-          "required": ["allowedPartialStaleness", "feeds"]
+          "required": [
+            "allowedPartialStaleness",
+            "feeds"
+          ]
         },
         "encoder": {
           "$ref": "ocr3_common-schema.json#/$defs/encoder"
         },
         "encoder_config": {
-            "$ref": "ocr3_common-schema.json#/$defs/encoder_config"
+          "$ref": "ocr3_common-schema.json#/$defs/encoder_config"
         },
         "report_id": {
           "type": "string",
           "pattern": "^[a-f0-9]{4}$",
-          "examples": ["0x0001"]
+          "examples": [
+            "0x0001"
+          ]
         }
       },
       "additionalProperties": false,
@@ -77,16 +90,15 @@
         "observations": {
           "type": "array",
           "items": {
-            "type": "array",
-            "items": {
-              "$ref": "../../triggers/streams/streams_trigger-schema.json#/$defs/Feed"
-            }
+            "$ref": "../../triggers/streams/streams_trigger-schema.json#/$defs/Feed"
           }
         }
       },
       "additionalProperties": false,
       "type": "object",
-      "required": ["observations"]
+      "required": [
+        "observations"
+      ]
     },
     "outputs": {
       "$ref": "ocr3_common-schema.json#/$defs/SignedReport"
@@ -94,6 +106,10 @@
   },
   "additionalProperties": false,
   "type": "object",
-  "required": ["config", "inputs", "outputs"],
+  "required": [
+    "config",
+    "inputs",
+    "outputs"
+  ],
   "description": "OCR3 consensus exposed as a capability."
 }

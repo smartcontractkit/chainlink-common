@@ -92,7 +92,7 @@ func (c *simpleFeedValue) RemappedID() workflows.CapDefinition[string] {
 func (c *simpleFeedValue) private() {}
 
 type DataFeedsConsensusInput struct {
-	Observations workflows.CapDefinition[[][]streams.Feed]
+	Observations workflows.CapDefinition[[]streams.Feed]
 }
 
 func (input DataFeedsConsensusInput) ToSteps() workflows.StepInputs {

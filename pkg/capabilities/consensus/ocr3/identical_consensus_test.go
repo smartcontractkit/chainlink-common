@@ -23,8 +23,8 @@ func TestIdenticalConsensus(t *testing.T) {
 	trigger := basictrigger.TriggerConfig{Name: "1234", Number: 1}.New(workflow)
 
 	consensus := ocr3.IdenticalConsensusConfig[basictrigger.TriggerOutputs]{
-		Encoder:       "EVM",
-		EncoderConfig: ocr3.EncoderConfig{Abi: "(string CoolOutput)"},
+		Encoder:       ocr3.EncoderEVM,
+		EncoderConfig: ocr3.EncoderConfig{},
 	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{Observations: trigger})
 
 	chainwriter.TargetConfig{
@@ -57,7 +57,7 @@ func TestIdenticalConsensus(t *testing.T) {
 				ID:             "offchain_reporting@1.0.0",
 				Ref:            "consensus",
 				Inputs:         workflows.StepInputs{Mapping: map[string]any{"observations": "$(trigger.outputs)"}},
-				Config:         map[string]any{"encoder": "EVM", "encoder_config": map[string]any{"abi": "(string CoolOutput)"}},
+				Config:         map[string]any{"encoder": "EVM", "encoder_config": map[string]any{}},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},
 		},

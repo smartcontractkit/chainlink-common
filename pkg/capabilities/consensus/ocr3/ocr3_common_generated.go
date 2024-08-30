@@ -10,28 +10,7 @@ import (
 
 type Encoder string
 
-type EncoderConfig struct {
-	// The ABI for report encoding.
-	Abi string `json:"abi" yaml:"abi" mapstructure:"abi"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *EncoderConfig) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["abi"]; raw != nil && !ok {
-		return fmt.Errorf("field abi in EncoderConfig: required")
-	}
-	type Plain EncoderConfig
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = EncoderConfig(plain)
-	return nil
-}
+type EncoderConfig map[string]interface{}
 
 const EncoderEVM Encoder = "EVM"
 

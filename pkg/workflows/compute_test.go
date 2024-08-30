@@ -76,11 +76,9 @@ func TestCompute(t *testing.T) {
 							},
 						},
 						"aggregation_method": "data_feeds",
-						"encoder":            "EVM",
-						"encoder_config": ocr3.EncoderConfig{
-							Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
-						},
-						"report_id": "0001",
+						"encoder":            ocr3.EncoderEVM,
+						"encoder_config":     ocr3.EncoderConfig{},
+						"report_id":          "0001",
 					},
 					CapabilityType: capabilities.CapabilityTypeConsensus,
 				},
@@ -171,11 +169,9 @@ func createWorkflow(fn func(_ workflows.SDK, inputFeed notstreams.Feed) ([][]str
 			},
 		},
 		AggregationMethod: "data_feeds",
-		Encoder:           "EVM",
-		EncoderConfig: ocr3.EncoderConfig{
-			Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
-		},
-		ReportId: "0001",
+		Encoder:           ocr3.EncoderEVM,
+		EncoderConfig:     ocr3.EncoderConfig{},
+		ReportId:          "0001",
 	}.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
 		Observations: computed.Value(),
 	})

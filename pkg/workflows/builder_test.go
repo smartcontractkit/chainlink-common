@@ -235,7 +235,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 						"aggregation_method": "data_feeds",
 						"encoder":            "EVM",
 						"encoder_config": ocr3.EncoderConfig{
-							Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
+							"Abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 						},
 						"report_id": "0001",
 					},

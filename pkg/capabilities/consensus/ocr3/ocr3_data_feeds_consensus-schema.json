@@ -62,33 +62,13 @@
           ]
         },
         "encoder": {
-          "type": "string",
-          "enum": [
-            "EVM"
-          ]
+          "$ref": "ocr3_common-schema.json#/$defs/encoder"
         },
         "encoder_config": {
-          "type": "object",
-          "properties": {
-            "abi": {
-              "type": "string",
-              "description": "The ABI for report encoding.",
-              "examples": [
-                "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
-              ]
-            }
-          },
-          "additionalProperties": false,
-          "required": [
-            "abi"
-          ]
+          "$ref": "ocr3_common-schema.json#/$defs/encoder_config"
         },
         "report_id": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{4}$",
-          "examples": [
-            "0x0001"
-          ]
+            "$ref": "ocr3_common-schema.json#/$defs/report_id"
         }
       },
       "additionalProperties": false,

@@ -45,10 +45,10 @@ func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID
 type {{$key}}Cap interface {
     workflows.CapDefinition[{{ $key }}]
     {{- range $fieldName, $type := .Outputs }}
-        {{- if $type.IsPrimitive }}
+        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
     {{$fieldName}}() workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
         {{- else }}
-    {{$fieldName}}() {{Repeat "[]" $type.NumSlice}}{{ $type.Type }}Cap
+    {{$fieldName}}() {{ $type.Type }}Cap
         {{- end }}
     {{- end }}
     private()
@@ -69,26 +69,26 @@ type {{$key|LowerFirst}} struct {
 func (*{{$key|LowerFirst}}) private() {}
 
     {{- range $fieldName, $type := .Outputs }}
-        {{- if or $type.IsPrimitive }}
+        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
 func (c *{{$key|LowerFirst}}) {{$fieldName}}() workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
     return workflows.AccessField[{{$value.Name}}, {{Repeat "[]" $type.NumSlice}}{{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")
 }
         {{- else }}
 func (c *{{$key|LowerFirst}}) {{$fieldName}}() {{ $type.Type }}Cap {
            {{- if $type.Type|HasOutputs }}
-     return &{{ $type.Type | LowerFirst }}{ CapDefinition: workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$fieldName}}")}
+     return &{{ $type.Type | LowerFirst }}{ CapDefinition: workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")}
            {{- else }}
-     return {{ $type.Type }}Cap(workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$fieldName}}"))
+     return {{ $type.Type }}Cap(workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}"))
            {{- end }}
 }
         {{- end }}
     {{- end }}
 
 func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
-                                                                            {{- if $type.IsPrimitive }}
+                                                                            {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
                                                                         {{$fieldName|LowerFirst}} workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}],
                                                                             {{- else }}
-                                                                        {{$fieldName|LowerFirst}} {{Repeat "[]" $type.NumSlice}}{{ $type.Type }}Cap,
+                                                                        {{$fieldName|LowerFirst}} {{ $type.Type }}Cap,
                                                                             {{- end }}                                                                        {{- end }}) {{$key}}Cap {
     return &simple{{$key}}{
         CapDefinition: workflows.ComponentCapDefinition[{{$value.Name}}]{ {{- range $fieldName, $type := .Outputs }}
@@ -104,16 +104,16 @@ func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
 type simple{{$key}} struct {
     workflows.CapDefinition[{{ $key }}]
     {{- range $fieldName, $type := .Outputs }}
-        {{- if $type.IsPrimitive }}
+        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
     {{$fieldName|LowerFirst}} workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
         {{- else }}
-    {{$fieldName|LowerFirst}} {{Repeat "[]" $type.NumSlice}}{{ $type.Type }}Cap
+    {{$fieldName|LowerFirst}} {{ $type.Type }}Cap
         {{- end }}
     {{- end }}
 }
 
  {{- range $fieldName, $type := .Outputs }}
-        {{- if $type.IsPrimitive }}
+        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
 func (c *simple{{$key}}) {{$fieldName}}() workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
         {{- else }}
 func (c *simple{{$key}}) {{$fieldName}}() {{ $type.Type }}Cap {

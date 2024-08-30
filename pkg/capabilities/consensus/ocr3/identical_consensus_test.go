@@ -54,10 +54,12 @@ func TestIdenticalConsensus(t *testing.T) {
 		Actions: []workflows.StepDefinition{},
 		Consensus: []workflows.StepDefinition{
 			{
-				ID:             "offchain_reporting@1.0.0",
-				Ref:            "consensus",
-				Inputs:         workflows.StepInputs{Mapping: map[string]any{"observations": "$(trigger.outputs)"}},
-				Config:         map[string]any{"encoder": "EVM", "encoder_config": map[string]any{}},
+				ID:     "offchain_reporting@1.0.0",
+				Ref:    "consensus",
+				Inputs: workflows.StepInputs{Mapping: map[string]any{"observations": "$(trigger.outputs)"}},
+				Config: map[string]any{
+					"encoder": "EVM", "encoder_config": map[string]any{}, "aggregation_method": "identical",
+				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},
 		},

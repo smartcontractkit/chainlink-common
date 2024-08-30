@@ -14,10 +14,12 @@ type IdenticalConsensusConfig[T any] struct {
 
 func (c IdenticalConsensusConfig[T]) New(w *workflows.WorkflowSpecFactory, ref string, input IdenticalConsensusInput[T]) SignedReportCap {
 	def := workflows.StepDefinition{
-		ID:             "offchain_reporting@1.0.0",
-		Ref:            ref,
-		Inputs:         input.ToSteps(),
-		Config:         map[string]any{"encoder": c.Encoder, "encoder_config": c.EncoderConfig},
+		ID:     "offchain_reporting@1.0.0",
+		Ref:    ref,
+		Inputs: input.ToSteps(),
+		Config: map[string]any{
+			"encoder": c.Encoder, "encoder_config": c.EncoderConfig, "aggregation_method": "identical",
+		},
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 	}
 

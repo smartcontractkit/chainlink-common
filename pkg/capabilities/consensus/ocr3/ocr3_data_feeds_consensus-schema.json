@@ -68,11 +68,7 @@
           "$ref": "ocr3_common-schema.json#/$defs/encoder_config"
         },
         "report_id": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{4}$",
-          "examples": [
-            "0x0001"
-          ]
+            "$ref": "ocr3_common-schema.json#/$defs/report_id"
         }
       },
       "additionalProperties": false,

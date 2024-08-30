@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"regexp"
 )
 
 type Encoder string
@@ -35,6 +36,22 @@ func (j *Encoder) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Encoder, v)
 	}
 	*j = Encoder(v)
+	return nil
+}
+
+type ReportId string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ReportId) UnmarshalJSON(b []byte) error {
+	type Plain ReportId
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString("^[a-f0-9]{4}$", string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "^[a-f0-9]{4}$", "")
+	}
+	*j = ReportId(plain)
 	return nil
 }
 

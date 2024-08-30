@@ -53,10 +53,10 @@ type ModifiedConfig struct {
 	Workflow                workflows.NewWorkflowParams
 	AllowedPartialStaleness string
 	MaxFrequencyMs          int
-	DefaultHeartbeat        int        `yaml:"default_heartbeat" json:"default_heartbeat"`
-	DefaultDeviation        string     `yaml:"default_deviation" json:"default_deviation"`
-	FeedInfo                []FeedInfo `yaml:"feed_info" json:"feed_info"`
-	ReportID                string     `yaml:"report_id" json:"report_id"`
+	DefaultHeartbeat        int           `yaml:"default_heartbeat" json:"default_heartbeat"`
+	DefaultDeviation        string        `yaml:"default_deviation" json:"default_deviation"`
+	FeedInfo                []FeedInfo    `yaml:"feed_info" json:"feed_info"`
+	ReportID                ocr3.ReportId `yaml:"report_id" json:"report_id"`
 	Encoder                 ocr3.Encoder
 	EncoderConfig           ocr3.EncoderConfig `yaml:"encoder_config" json:"encoder_config"`
 	ChainWriter             *chainwriter.TargetConfig
@@ -400,7 +400,7 @@ type ModifiedConsensusConfig struct {
 	AggregationMethod       ocr3.DataFeedsConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
 	Encoder                 ocr3.Encoder                                   `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
 	EncoderConfig           ocr3.EncoderConfig                             `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
-	ReportID                string                                         `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+	ReportID                ocr3.ReportId                                  `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
 }
 
 func UnmarshalYaml[T any](raw []byte) (*T, error) {

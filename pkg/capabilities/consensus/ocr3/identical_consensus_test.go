@@ -25,6 +25,7 @@ func TestIdenticalConsensus(t *testing.T) {
 	consensus := ocr3.IdenticalConsensusConfig[basictrigger.TriggerOutputs]{
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
+		ReportID:      "0001",
 	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{Observations: trigger})
 
 	chainwriter.TargetConfig{
@@ -58,7 +59,10 @@ func TestIdenticalConsensus(t *testing.T) {
 				Ref:    "consensus",
 				Inputs: workflows.StepInputs{Mapping: map[string]any{"observations": "$(trigger.outputs)"}},
 				Config: map[string]any{
-					"encoder": "EVM", "encoder_config": map[string]any{}, "aggregation_method": "identical",
+					"encoder":            "EVM",
+					"encoder_config":     map[string]any{},
+					"aggregation_method": "identical",
+					"report_id":          "0001",
 				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},

@@ -10,6 +10,7 @@ import (
 type IdenticalConsensusConfig[T any] struct {
 	Encoder       Encoder
 	EncoderConfig EncoderConfig
+	ReportID      ReportId
 }
 
 func (c IdenticalConsensusConfig[T]) New(w *workflows.WorkflowSpecFactory, ref string, input IdenticalConsensusInput[T]) SignedReportCap {
@@ -18,7 +19,10 @@ func (c IdenticalConsensusConfig[T]) New(w *workflows.WorkflowSpecFactory, ref s
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
-			"encoder": c.Encoder, "encoder_config": c.EncoderConfig, "aggregation_method": "identical",
+			"encoder":            c.Encoder,
+			"encoder_config":     c.EncoderConfig,
+			"aggregation_method": "identical",
+			"report_id":          c.ReportID,
 		},
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 	}

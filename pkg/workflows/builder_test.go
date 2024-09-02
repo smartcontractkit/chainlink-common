@@ -2,10 +2,8 @@ package workflows_test
 
 import (
 	_ "embed"
-	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
 
@@ -15,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testdata/fixtures/capabilities/notstreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
 )
 
 //go:generate go run github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/generate-types --dir $GOFILE
@@ -40,7 +39,7 @@ func NewWorkflowSpec(rawConfig []byte) (*workflows.WorkflowSpecFactory, error) {
 	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	streamsTrigger := conf.Streams.New(workflow)
 	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+		Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 	)
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -54,12 +53,12 @@ type ModifiedConfig struct {
 	Workflow                workflows.NewWorkflowParams
 	AllowedPartialStaleness string
 	MaxFrequencyMs          int
-	DefaultHeartbeat        int        `yaml:"default_heartbeat" json:"default_heartbeat"`
-	DefaultDeviation        string     `yaml:"default_deviation" json:"default_deviation"`
-	FeedInfo                []FeedInfo `yaml:"feed_info" json:"feed_info"`
-	ReportID                string     `yaml:"report_id" json:"report_id"`
-	Encoder                 ocr3.DataFeedsConsensusConfigEncoder
-	EncoderConfig           ocr3.DataFeedsConsensusConfigEncoderConfig `yaml:"encoder_config" json:"encoder_config"`
+	DefaultHeartbeat        int           `yaml:"default_heartbeat" json:"default_heartbeat"`
+	DefaultDeviation        string        `yaml:"default_deviation" json:"default_deviation"`
+	FeedInfo                []FeedInfo    `yaml:"feed_info" json:"feed_info"`
+	ReportID                ocr3.ReportId `yaml:"report_id" json:"report_id"`
+	Encoder                 ocr3.Encoder
+	EncoderConfig           ocr3.EncoderConfig `yaml:"encoder_config" json:"encoder_config"`
 	ChainWriter             *chainwriter.TargetConfig
 	TargetChain             string
 }
@@ -112,7 +111,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*workflows.WorkflowSpecFactory, erro
 	streamsTrigger := streamsConfig.New(workflow)
 
 	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-		Observations: workflows.ListOf[[]streams.Feed](streamsTrigger),
+		Observations: workflows.ListOf[streams.Feed](streamsTrigger),
 	})
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -131,13 +130,24 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 	workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 	notStreamsTrigger := conf.NotStream.New(workflow)
 
-	feedsInput := streams.NewFeedFromFields(
-		notStreamsTrigger.Price().PriceA(),
+	md := streams.NewSignersMetadataFromFields(
+		workflows.ConstantDefinition(1), workflows.ListOf(notStreamsTrigger.Metadata().Signer()))
+
+	payload := streams.NewFeedReportFromFields(
+		notStreamsTrigger.Payload().BuyPrice(),
 		workflows.ConstantDefinition[streams.FeedId](anyFakeFeedID),
-		notStreamsTrigger.FullReport(),
+		notStreamsTrigger.Payload().FullReport(),
+		notStreamsTrigger.Payload().ObservationTimestamp(),
+		notStreamsTrigger.Payload().ReportContext(),
+		workflows.ListOf(notStreamsTrigger.Payload().Signature()),
+	)
+
+	feedsInput := streams.NewFeedFromFields(
+		notStreamsTrigger.ID(),
+		md,
+		workflows.ListOf[streams.FeedReport](payload),
 		notStreamsTrigger.Timestamp(),
-		notStreamsTrigger.ReportContext(),
-		notStreamsTrigger.Signatures(),
+		notStreamsTrigger.TriggerType(),
 	)
 	ocrConfig := ocr3.DataFeedsConsensusConfig{
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
@@ -156,7 +166,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 	}
 
 	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
-		Observations: workflows.ListOf[[]streams.Feed](workflows.ListOf[streams.Feed](feedsInput)),
+		Observations: workflows.ListOf[streams.Feed](feedsInput),
 	})
 
 	conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -185,6 +195,9 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		runSepoliaStagingTest(t, sepoliaDefaultConfig, NewWorkflowRemapped)
 	})
 
+	// This test intentionally uses a similar complex type to the real steams trigger
+	// this helps assure that mapping works correctly under many circumstances, including hard-coding
+	// and wrapping values into arrays, while still remaining somewhat realistic
 	t.Run("mapping different types without compute", func(t *testing.T) {
 		factory, err := NewWorkflowSpecFromPrimitives(notStreamSepoliaConfig)
 		require.NoError(t, err)
@@ -210,16 +223,25 @@ func TestBuilder_ValidSpec(t *testing.T) {
 					ID:  "offchain_reporting@1.0.0",
 					Ref: "data-feeds-report",
 					Inputs: workflows.StepInputs{
-						Mapping: map[string]any{"observations": [][]map[string]any{
+						Mapping: map[string]any{"observations": []map[string]any{
 							{
-								{
-									"benchmarkPrice":       "$(trigger.outputs.Price.PriceA)",
-									"feedId":               anyFakeFeedID,
-									"fullReport":           "$(trigger.outputs.fullReport)",
-									"observationTimestamp": "$(trigger.outputs.Timestamp)",
-									"reportContext":        "$(trigger.outputs.reportContext)",
-									"signatures":           "$(trigger.outputs.signatures)",
+								"ID": "$(trigger.outputs.ID)",
+								"Metadata": map[string]any{
+									"MinRequiredSignatures": 1,
+									"Signers":               []string{"$(trigger.outputs.Metadata.Signer)"},
 								},
+								"Payload": []map[string]any{
+									{
+										"BenchmarkPrice":       "$(trigger.outputs.Payload.BuyPrice)",
+										"FeedID":               anyFakeFeedID,
+										"FullReport":           "$(trigger.outputs.Payload.FullReport)",
+										"ObservationTimestamp": "$(trigger.outputs.Payload.ObservationTimestamp)",
+										"ReportContext":        "$(trigger.outputs.Payload.ReportContext)",
+										"Signatures":           []string{"$(trigger.outputs.Payload.Signature)"},
+									},
+								},
+								"Timestamp":   "$(trigger.outputs.Timestamp)",
+								"TriggerType": "$(trigger.outputs.TriggerType)",
 							},
 						}},
 					},
@@ -235,8 +257,8 @@ func TestBuilder_ValidSpec(t *testing.T) {
 						},
 						"aggregation_method": "data_feeds",
 						"encoder":            "EVM",
-						"encoder_config": ocr3.DataFeedsConsensusConfigEncoderConfig{
-							Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
+						"encoder_config": ocr3.EncoderConfig{
+							"Abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 						},
 						"report_id": "0001",
 					},
@@ -259,7 +281,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 			},
 		}
 
-		assertWorkflowSpec(t, expected, actual)
+		testutils.AssertWorkflowSpec(t, expected, actual)
 	})
 
 	t.Run("duplicate names causes errors", func(t *testing.T) {
@@ -269,11 +291,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		consensus2 := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -291,7 +313,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -305,7 +327,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		require.NoError(t, err)
 
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
-		badStep := workflows.Step[[]streams.Feed]{
+		badStep := workflows.Step[streams.Feed]{
 			Definition: workflows.StepDefinition{
 				ID:             "streams-trigger@1.0.0",
 				Ref:            "Trigger",
@@ -318,7 +340,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		badCap := badStep.AddTo(workflow)
 
 		consensus := conf.Ocr.New(workflow, "", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](badCap)},
+			Observations: workflows.ListOf[streams.Feed](badCap)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -334,11 +356,11 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := workflows.NewWorkflowSpecFactory(conf.Workflow)
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		consensus2 := conf.Ocr.New(workflow, "ccip_feeds_different", ocr3.DataFeedsConsensusInput{
-			Observations: workflows.ListOf[[]streams.Feed](streamsTrigger)},
+			Observations: workflows.ListOf[streams.Feed](streamsTrigger)},
 		)
 
 		conf.ChainWriter.New(workflow, conf.TargetChain, chainwriter.TargetInput{SignedReport: consensus})
@@ -360,17 +382,7 @@ func runSepoliaStagingTest(t *testing.T, config []byte, gen func([]byte) (*workf
 	expectedSpecYaml, err := UnmarshalYaml[workflows.WorkflowSpecYaml](expectedSepolia)
 	require.NoError(t, err)
 	expectedSpec := expectedSpecYaml.ToWorkflowSpec()
-	assertWorkflowSpec(t, expectedSpec, testWorkflowSpec)
-}
-
-func assertWorkflowSpec(t *testing.T, expectedSpec, testWorkflowSpec workflows.WorkflowSpec) {
-	expected, err := json.Marshal(expectedSpec)
-	require.NoError(t, err)
-
-	actual, err := json.Marshal(testWorkflowSpec)
-	require.NoError(t, err)
-
-	assert.Equal(t, string(expected), string(actual))
+	testutils.AssertWorkflowSpec(t, expectedSpec, testWorkflowSpec)
 }
 
 type NotStreamsConfig struct {
@@ -386,9 +398,9 @@ type ModifiedConsensusConfig struct {
 	Deviation               string                                         `json:"deviation" yaml:"deviation" mapstructure:"deviation"`
 	Heartbeat               int                                            `json:"heartbeat" yaml:"heartbeat" mapstructure:"heartbeat"`
 	AggregationMethod       ocr3.DataFeedsConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
-	Encoder                 ocr3.DataFeedsConsensusConfigEncoder           `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
-	EncoderConfig           ocr3.DataFeedsConsensusConfigEncoderConfig     `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
-	ReportID                string                                         `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+	Encoder                 ocr3.Encoder                                   `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
+	EncoderConfig           ocr3.EncoderConfig                             `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
+	ReportID                ocr3.ReportId                                  `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
 }
 
 func UnmarshalYaml[T any](raw []byte) (*T, error) {

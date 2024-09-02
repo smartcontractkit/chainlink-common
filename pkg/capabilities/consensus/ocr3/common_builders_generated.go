@@ -6,6 +6,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
+type EncoderCap workflows.CapDefinition[Encoder]
+
+type EncoderConfigCap workflows.CapDefinition[EncoderConfig]
+
+type ReportIdCap workflows.CapDefinition[ReportId]
+
 type SignedReportCap interface {
 	workflows.CapDefinition[SignedReport]
 	Context() workflows.CapDefinition[string]

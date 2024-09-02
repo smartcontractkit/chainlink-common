@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"reflect"
-	"regexp"
 
 	streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
@@ -32,13 +31,13 @@ type DataFeedsConsensusConfig struct {
 	AggregationMethod DataFeedsConsensusConfigAggregationMethod `json:"aggregation_method" yaml:"aggregation_method" mapstructure:"aggregation_method"`
 
 	// Encoder corresponds to the JSON schema field "encoder".
-	Encoder DataFeedsConsensusConfigEncoder `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
+	Encoder Encoder `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
 
 	// EncoderConfig corresponds to the JSON schema field "encoder_config".
-	EncoderConfig DataFeedsConsensusConfigEncoderConfig `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
+	EncoderConfig EncoderConfig `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
 
 	// ReportId corresponds to the JSON schema field "report_id".
-	ReportId string `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+	ReportId ReportId `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
 }
 
 type DataFeedsConsensusConfigAggregationConfig struct {
@@ -100,57 +99,6 @@ func (j *DataFeedsConsensusConfigAggregationMethod) UnmarshalJSON(b []byte) erro
 	return nil
 }
 
-type DataFeedsConsensusConfigEncoder string
-
-type DataFeedsConsensusConfigEncoderConfig struct {
-	// The ABI for report encoding.
-	Abi string `json:"abi" yaml:"abi" mapstructure:"abi"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *DataFeedsConsensusConfigEncoderConfig) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["abi"]; raw != nil && !ok {
-		return fmt.Errorf("field abi in DataFeedsConsensusConfigEncoderConfig: required")
-	}
-	type Plain DataFeedsConsensusConfigEncoderConfig
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = DataFeedsConsensusConfigEncoderConfig(plain)
-	return nil
-}
-
-const DataFeedsConsensusConfigEncoderEVM DataFeedsConsensusConfigEncoder = "EVM"
-
-var enumValues_DataFeedsConsensusConfigEncoder = []interface{}{
-	"EVM",
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *DataFeedsConsensusConfigEncoder) UnmarshalJSON(b []byte) error {
-	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	var ok bool
-	for _, expected := range enumValues_DataFeedsConsensusConfigEncoder {
-		if reflect.DeepEqual(v, expected) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_DataFeedsConsensusConfigEncoder, v)
-	}
-	*j = DataFeedsConsensusConfigEncoder(v)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DataFeedsConsensusConfig) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
@@ -177,16 +125,13 @@ func (j *DataFeedsConsensusConfig) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if matched, _ := regexp.MatchString("^[a-f0-9]{4}$", string(plain.ReportId)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", "^[a-f0-9]{4}$", "ReportId")
-	}
 	*j = DataFeedsConsensusConfig(plain)
 	return nil
 }
 
 type DataFeedsConsensusInputs struct {
 	// Observations corresponds to the JSON schema field "observations".
-	Observations [][]streams.Feed `json:"observations" yaml:"observations" mapstructure:"observations"`
+	Observations []streams.Feed `json:"observations" yaml:"observations" mapstructure:"observations"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

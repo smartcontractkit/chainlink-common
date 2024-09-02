@@ -68,12 +68,10 @@ func (f *mockCallbackExecutable) UnregisterFromWorkflow(ctx context.Context, req
 	return nil
 }
 
-func (f *mockCallbackExecutable) Execute(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
-	f.callback <- capabilities.CapabilityResponse{
+func (f *mockCallbackExecutable) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	return capabilities.CapabilityResponse{
 		Value: nil,
-		Err:   errors.New("some-error"),
-	}
-	return f.callback, nil
+	}, nil
 }
 
 var _ capabilities.TriggerCapability = (*mockTriggerCapability)(nil)
@@ -122,7 +120,6 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	capabilityResponse := capabilities.CapabilityResponse{
 		Value: values.EmptyMap(),
-		Err:   errors.New("some-error"),
 	}
 
 	pluginName := "registry-test"
@@ -318,7 +315,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	actionCallbackChan <- capabilityResponse
 	callbackChan, err := actionCap.Execute(tests.Context(t), capabilities.CapabilityRequest{})
 	require.NoError(t, err)
-	require.Equal(t, capabilityResponse, <-callbackChan)
+	require.Equal(t, capabilityResponse, callbackChan)
 	err = actionCap.UnregisterFromWorkflow(tests.Context(t), capabilities.UnregisterFromWorkflowRequest{})
 	require.NoError(t, err)
 	require.Nil(t, testAction.registeredWorkflowRequest)

@@ -1,6 +1,7 @@
 package ocr3
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -105,27 +106,24 @@ func TestOCR3Capability(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	callback, err := cp.Execute(ctx, executeReq)
-	require.NoError(t, err)
+
+	respCh := executeAsync(ctx, executeReq, cp.Execute)
 
 	obsv, err := values.NewList(obs)
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response
 	mresp, err := values.NewMap(map[string]any{"observations": obsv})
-	cp.reqHandler.SendResponse(ctx, &requests.Response{
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: mresp,
-		},
+	cp.reqHandler.SendResponse(ctx, requests.Response{
+		Value:               mresp,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
 
-	expectedCapabilityResponse := capabilities.CapabilityResponse{
-		Value: mresp,
-	}
+	resp := <-respCh
+	assert.Nil(t, resp.Err)
 
-	assert.Equal(t, expectedCapabilityResponse, <-callback)
+	assert.Equal(t, mresp, resp.Value)
 }
 
 func TestOCR3Capability_Eviction(t *testing.T) {
@@ -165,11 +163,22 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 		Inputs: inputs,
 	}
 
-	callback, err := cp.Execute(ctx, executeReq)
-	require.NoError(t, err)
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				fc.Advance(1 * time.Hour)
+			}
+		}
+	}()
 
-	fc.Advance(1 * time.Hour)
-	resp := <-callback
+	respCh := executeAsync(ctx, executeReq, cp.Execute)
+
+	resp := <-respCh
 	assert.ErrorContains(t, resp.Err, "timeout exceeded: could not process request before expiry")
 
 	request := s.Get(rid)
@@ -217,14 +226,26 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 		Inputs: inputs,
 	}
 
-	callback, err := cp.Execute(ctx, executeReq)
-	require.NoError(t, err)
-
 	// 1 minute is more than the config timeout we provided, but less than
 	// the hardcoded timeout.
-	fc.Advance(1 * time.Minute)
-	resp := <-callback
-	assert.ErrorContains(t, resp.Err, "timeout exceeded: could not process request before expiry")
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				// 1 minute is more than the config timeout we provided, but less than
+				// the hardcoded timeout.
+				fc.Advance(1 * time.Minute)
+			}
+		}
+	}()
+
+	_, err = cp.Execute(ctx, executeReq)
+
+	assert.ErrorContains(t, err, "timeout exceeded: could not process request before expiry")
 
 	reqs := s.GetByIDs([]string{rid})
 
@@ -366,10 +387,8 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent
-	cp.reqHandler.SendResponse(ctx, &requests.Response{
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: obsv,
-		},
+	cp.reqHandler.SendResponse(ctx, requests.Response{
+		Value:               obsv,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
@@ -382,14 +401,14 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	callback, err := cp.Execute(ctx, executeReq)
+	response, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	expectedCapabilityResponse := capabilities.CapabilityResponse{
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, <-callback)
+	assert.Equal(t, expectedCapabilityResponse, response)
 }
 
 func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsumer(t *testing.T) {
@@ -427,10 +446,8 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent
-	cp.reqHandler.SendResponse(ctx, &requests.Response{
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: obsv,
-		},
+	cp.reqHandler.SendResponse(ctx, requests.Response{
+		Value:               obsv,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
@@ -443,12 +460,28 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 		Config: config,
 		Inputs: inputs,
 	}
-	callback, err := cp.Execute(ctx, executeReq)
+	resp, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	expectedCapabilityResponse := capabilities.CapabilityResponse{
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, <-callback)
+	assert.Equal(t, expectedCapabilityResponse, resp)
+}
+
+type asyncCapabilityResponse struct {
+	capabilities.CapabilityResponse
+	Err error
+}
+
+func executeAsync(ctx context.Context, request capabilities.CapabilityRequest, toExecute func(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)) <-chan asyncCapabilityResponse {
+	respCh := make(chan asyncCapabilityResponse, 1)
+	go func() {
+		resp, err := toExecute(ctx, request)
+		respCh <- asyncCapabilityResponse{CapabilityResponse: capabilities.CapabilityResponse{Value: resp.Value}, Err: err}
+		close(respCh)
+	}()
+
+	return respCh
 }

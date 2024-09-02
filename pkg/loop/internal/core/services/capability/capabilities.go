@@ -337,29 +337,24 @@ func (c *callbackExecutableServer) Execute(reqpb *capabilitiespb.CapabilityReque
 		return fmt.Errorf("could not unmarshal capability request: %w", err)
 	}
 
-	responseCh, err := c.impl.Execute(server.Context(), req)
+	var responseMessage *capabilitiespb.ResponseMessage
+	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		return fmt.Errorf("error executing capability request: %w", err)
-	}
-
-	err = server.Send(&capabilitiespb.ResponseMessage{
-		Message: &capabilitiespb.ResponseMessage_Ack{
-			Ack: &emptypb.Empty{},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("error sending ack: %w", err)
-	}
-
-	for resp := range responseCh {
-		msg := &capabilitiespb.ResponseMessage{
+		responseMessage = &capabilitiespb.ResponseMessage{
 			Message: &capabilitiespb.ResponseMessage_Response{
-				Response: pb.CapabilityResponseToProto(resp),
+				Response: &capabilitiespb.CapabilityResponse{Error: err.Error()},
 			},
 		}
-		if err = server.Send(msg); err != nil {
-			return fmt.Errorf("error sending response for execute request %s: %w", reqpb, err)
+	} else {
+		responseMessage = &capabilitiespb.ResponseMessage{
+			Message: &capabilitiespb.ResponseMessage_Response{
+				Response: pb.CapabilityResponseToProto(response),
+			},
 		}
+	}
+
+	if err = server.Send(responseMessage); err != nil {
+		return fmt.Errorf("error sending response for execute request %s: %w", reqpb, err)
 	}
 
 	return nil
@@ -379,22 +374,32 @@ func newCallbackExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn
 
 var _ capabilities.CallbackExecutable = (*callbackExecutableClient)(nil)
 
-func (c *callbackExecutableClient) Execute(ctx context.Context, req capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (c *callbackExecutableClient) Execute(ctx context.Context, req capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	responseStream, err := c.grpc.Execute(ctx, pb.CapabilityRequestToProto(req))
 	if err != nil {
-		return nil, fmt.Errorf("error executing capability request: %w", err)
+		return capabilities.CapabilityResponse{}, fmt.Errorf("error executing capability request: %w", err)
 	}
 
-	resp, err := responseStream.Recv()
+	message, err := responseStream.Recv()
 	if err != nil {
-		return nil, fmt.Errorf("error waiting for ack: %w", err)
+		return capabilities.CapabilityResponse{}, fmt.Errorf("error waiting for ack: %w", err)
 	}
 
-	if _, ok := resp.GetMessage().(*capabilitiespb.ResponseMessage_Ack); !ok {
-		return nil, fmt.Errorf("protocol error: first message received was not an ack: %+v", resp.GetMessage())
+	resp := message.GetResponse()
+	if resp == nil {
+		return capabilities.CapabilityResponse{}, fmt.Errorf("nil message when receiving response")
 	}
 
-	return forwardCapabilityResponsesToChannel(ctx, c.Logger, req, responseStream.Recv)
+	if resp.Error != "" {
+		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
+	}
+
+	r, err := pb.CapabilityResponseFromProto(resp)
+	if err != nil {
+		return capabilities.CapabilityResponse{}, fmt.Errorf("could not unmarshal response: %w", err)
+	}
+
+	return r, err
 }
 
 func (c *callbackExecutableClient) UnregisterFromWorkflow(ctx context.Context, req capabilities.UnregisterFromWorkflowRequest) error {
@@ -429,58 +434,6 @@ func (c *callbackExecutableClient) RegisterToWorkflow(ctx context.Context, req c
 
 	_, err := c.grpc.RegisterToWorkflow(ctx, r)
 	return err
-}
-
-func forwardCapabilityResponsesToChannel(ctx context.Context, logger logger.Logger, req capabilities.CapabilityRequest, receive func() (*capabilitiespb.ResponseMessage, error)) (<-chan capabilities.CapabilityResponse, error) {
-	responseCh := make(chan capabilities.CapabilityResponse)
-
-	go func() {
-		defer close(responseCh)
-		for {
-			message, err := receive()
-			if errors.Is(err, io.EOF) {
-				return
-			}
-
-			if err != nil {
-				resp := capabilities.CapabilityResponse{
-					Err: err,
-				}
-				select {
-				case responseCh <- resp:
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			resp := message.GetResponse()
-			if resp == nil {
-				resp := capabilities.CapabilityResponse{
-					Err: errors.New("unexpected message type when receiving response: expected response"),
-				}
-				select {
-				case responseCh <- resp:
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			r, err := pb.CapabilityResponseFromProto(resp)
-			if err != nil {
-				r = capabilities.CapabilityResponse{
-					Err: err,
-				}
-			}
-
-			select {
-			case responseCh <- r:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	return responseCh, nil
 }
 
 func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger, req capabilities.TriggerRegistrationRequest, receive func() (*capabilitiespb.TriggerResponseMessage, error)) (<-chan capabilities.TriggerResponse, error) {

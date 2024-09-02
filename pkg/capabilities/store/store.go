@@ -14,6 +14,7 @@ type CapabilitiesStore[T any] interface {
 	Read(capabilityID string) (value T, ok bool)
 	ReadAll() (values map[string]T)
 	Write(capabilityID string, value T)
+	InsertIfNotExists(capabilityID string, value T) error
 	Delete(capabilityID string)
 }
 

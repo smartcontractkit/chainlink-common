@@ -31,8 +31,6 @@ var Fixtures = Parameters{
 		LinkFee:            big.NewInt(3),
 		ExpiresAt:          4,
 		BenchmarkPrice:     big.NewInt(5),
-		Ask:                big.NewInt(6),
-		Bid:                big.NewInt(7),
 		MarketStatus:       1,
 	},
 	MaxReportLength:      20,
@@ -46,8 +44,6 @@ var Fixtures = Parameters{
 	},
 	Observation: mercury_v4_types.Observation{
 		BenchmarkPrice:        mercury.ObsResult[*big.Int]{Val: big.NewInt(50)},
-		Ask:                   mercury.ObsResult[*big.Int]{Val: big.NewInt(60)},
-		Bid:                   mercury.ObsResult[*big.Int]{Val: big.NewInt(70)},
 		MaxFinalizedTimestamp: mercury.ObsResult[int64]{Val: 79},
 		LinkPrice:             mercury.ObsResult[*big.Int]{Val: big.NewInt(30)},
 		NativePrice:           mercury.ObsResult[*big.Int]{Val: big.NewInt(20)},

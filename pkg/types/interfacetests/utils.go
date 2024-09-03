@@ -64,7 +64,7 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T
 			if !isOk {
 				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contractName, readEntry.Name, readEntry.ReturnValue)
 			}
-			SubmitTransactionToCW(t, tester, "addTestStruct", val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
+			SubmitTransactionToCW(t, tester, MethodSettingStruct, val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
 		}
 	}
 }

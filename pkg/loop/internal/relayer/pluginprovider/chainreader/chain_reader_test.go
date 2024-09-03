@@ -339,19 +339,19 @@ type fakeChainWriter struct {
 
 func (f *fakeChainWriter) SubmitTransaction(ctx context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
 	switch method {
-	case "addTestStruct":
+	case MethodSettingStruct:
 		v, ok := args.(TestStruct)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)
 		}
 		f.cr.SetTestStructLatestValue(&v)
-	case "setAlterablePrimitiveValue":
+	case MethodSettingUint64:
 		v, ok := args.(PrimitiveArgs)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)
 		}
 		f.cr.SetUintLatestValue(v.Value, ExpectedGetLatestValueArgs{})
-	case "triggerEvent":
+	case MethodTriggeringEvent:
 		v, ok := args.(TestStruct)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)

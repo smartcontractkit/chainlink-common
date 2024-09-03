@@ -34,6 +34,9 @@ const (
 	MethodReturningAlterableUint64              = "GetAlterablePrimitiveValue"
 	MethodReturningUint64Slice                  = "GetSliceValue"
 	MethodReturningSeenStruct                   = "GetSeenStruct"
+	MethodSettingStruct                         = "addTestStruct"
+	MethodSettingUint64                         = "setAlterablePrimitiveValue"
+	MethodTriggeringEvent                       = "triggerEvent"
 	EventName                                   = "SomeEvent"
 	EventWithFilterName                         = "SomeEventToFilter"
 	AnyContractName                             = "TestContract"
@@ -59,11 +62,11 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				firstItem := CreateTestStruct(0, tester)
 
 				contracts := tester.GetBindings(t)
-				_ = SubmitTransactionToCW(t, tester, "addTestStruct", firstItem, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
 
 				secondItem := CreateTestStruct(1, tester)
 
-				_ = SubmitTransactionToCW(t, tester, "addTestStruct", secondItem, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
 
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
@@ -110,7 +113,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 
 				contracts := tester.GetBindings(t)
 
-				txID := SubmitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 10}, contracts[0], types.Unconfirmed)
+				txID := SubmitTransactionToCW(t, tester, MethodSettingUint64, PrimitiveArgs{Value: 10}, contracts[0], types.Unconfirmed)
 
 				var prim1 uint64
 				require.Error(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, primitives.Finalized, callArgs.Params, &prim1))
@@ -121,7 +124,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				require.NoError(t, cr.GetLatestValue(ctx, AnyContractName, MethodReturningAlterableUint64, primitives.Finalized, nil, &prim1))
 				assert.Equal(t, uint64(10), prim1)
 
-				_ = SubmitTransactionToCW(t, tester, "setAlterablePrimitiveValue", PrimitiveArgs{Value: 20}, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingUint64, PrimitiveArgs{Value: 20}, contracts[0], types.Unconfirmed)
 
 				var prim2 uint64
 				require.NoError(t, cr.GetLatestValue(ctx, callArgs.ContractName, callArgs.ReadName, callArgs.ConfidenceLevel, callArgs.Params, &prim2))
@@ -191,10 +194,10 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				contracts := tester.GetBindings(t)
 
 				ts := CreateTestStruct[T](0, tester)
-				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts, contracts[0], types.Unconfirmed)
 
 				ts = CreateTestStruct[T](1, tester)
-				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts, contracts[0], types.Unconfirmed)
 
 				result := &TestStruct{}
 				assert.Eventually(t, func() bool {
@@ -212,7 +215,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				contracts := tester.GetBindings(t)
 				ts1 := CreateTestStruct[T](2, tester)
 
-				txID := SubmitTransactionToCW(t, tester, "triggerEvent", ts1, contracts[0], types.Unconfirmed)
+				txID := SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, contracts[0], types.Unconfirmed)
 
 				result := &TestStruct{}
 				assert.Eventually(t, func() bool {
@@ -224,7 +227,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				require.NoError(t, err)
 
 				ts2 := CreateTestStruct[T](3, tester)
-				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts2, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, contracts[0], types.Unconfirmed)
 
 				assert.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, AnyContractName, EventName, primitives.Finalized, nil, &result)
@@ -258,9 +261,9 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ts0 := CreateTestStruct(0, tester)
 
 				contracts := tester.GetBindings(t)
-				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts0, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts0, contracts[0], types.Unconfirmed)
 				ts1 := CreateTestStruct(1, tester)
-				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts1, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, contracts[0], types.Unconfirmed)
 
 				filterParams := &FilterEventParams{Field: *ts0.Field}
 				assert.Never(t, func() bool {
@@ -533,9 +536,9 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 				contracts := tester.GetBindings(t)
 				ts1 := CreateTestStruct[T](0, tester)
-				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts1, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, contracts[0], types.Unconfirmed)
 				ts2 := CreateTestStruct[T](1, tester)
-				_ = SubmitTransactionToCW(t, tester, "triggerEvent", ts2, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, contracts[0], types.Unconfirmed)
 
 				ts := &TestStruct{}
 				assert.Eventually(t, func() bool {

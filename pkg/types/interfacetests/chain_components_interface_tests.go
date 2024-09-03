@@ -19,6 +19,9 @@ type ChainComponentsInterfaceTester[T TestingT[T]] interface {
 	GetChainReader(t T) types.ContractReader
 	GetChainWriter(t T) types.ChainWriter
 	GetBindings(t T) []types.BoundContract
+	// DirtyContracts signals to the underlying tester than the test contracts are dirty, i.e. the state has been changed such that
+	// new, fresh contracts should be deployed. This usually happens after a value is written to the contract via
+	// the ChainWriter.
 	DirtyContracts()
 	MaxWaitTimeForEvents() time.Duration
 	// GenerateBlocksTillConfidenceLevel is only used by the internal common tests, all other tests can/should

@@ -34,7 +34,7 @@ func TestFeedID_Validate(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func Test_UnwrapFeedReportList(t *testing.T) {
+func Test_UnwrapStreamsTriggerEventToFeedReportList(t *testing.T) {
 	feedReports := []datastreams.FeedReport{
 		{
 			FeedID:        feedIDAStr,
@@ -50,10 +50,13 @@ func Test_UnwrapFeedReportList(t *testing.T) {
 		},
 	}
 
-	wrapped, err := values.Wrap(feedReports)
+	payload := datastreams.StreamsTriggerEvent{
+		Payload: feedReports,
+	}
+	wrapped, err := values.Wrap(payload)
 	require.NoError(t, err)
 
-	unwrapped, err := datastreams.UnwrapFeedReportList(wrapped)
+	unwrapped, err := datastreams.UnwrapStreamsTriggerEventToFeedReportList(wrapped)
 	require.NoError(t, err)
 	require.Equal(t, feedReports, unwrapped)
 }

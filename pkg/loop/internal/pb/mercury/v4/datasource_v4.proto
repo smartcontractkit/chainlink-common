@@ -28,6 +28,8 @@ message Block {
 // Observation is a gRPC adapter for [pkg/types/mercury/v1/Observation]
 message Observation {
     BigInt benchmarkPrice = 1;
+    BigInt bid = 2 [deprecated=true]; // Field not used for v4.
+    BigInt ask = 3 [deprecated=true]; // Field not used for v4.
     int64 maxFinalizedTimestamp = 4;
     BigInt linkPrice = 5;
     BigInt nativePrice = 6;

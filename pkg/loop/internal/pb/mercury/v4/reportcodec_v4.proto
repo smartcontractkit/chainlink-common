@@ -24,6 +24,8 @@ message ReportFields {
   BigInt linkFee = 4;
   uint32 expiresAt = 5;
   BigInt benchmarkPrice = 6;
+  BigInt bid = 7 [deprecated=true]; // Field not used for v4.
+  BigInt ask = 8 [deprecated=true]; // Field not used for v4.
   uint32 marketStatus = 9;
 }
 

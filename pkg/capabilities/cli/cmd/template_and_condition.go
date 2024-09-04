@@ -1,28 +1,41 @@
 package cmd
 
+import "embed"
+
 type TemplateAndCondition interface {
-	Template() string
+	// FS returns the embed.FS that contains the templates.
+	// Note, that because of how templates are loaded, only the file name is used to refer the template.
+	// therefore, the file names must be unique.
+	FS() embed.FS
+
+	// Root returns the template to run to produce the output file
+	Root() string
 	ShouldGenerate(info GeneratedInfo) bool
 }
 
 type BaseGenerate struct {
-	TemplateValue string
+	FSValue   embed.FS
+	RootValue string
 }
 
-func (a BaseGenerate) Template() string {
-	return a.TemplateValue
+func (b *BaseGenerate) FS() embed.FS {
+	return b.FSValue
 }
 
-func (a BaseGenerate) ShouldGenerate(GeneratedInfo) bool {
+func (b *BaseGenerate) Root() string {
+	return b.RootValue
+}
+
+func (b *BaseGenerate) ShouldGenerate(GeneratedInfo) bool {
 	return true
 }
 
-type TestHelperGenerate struct {
-	TemplateValue string
+func (b *BaseGenerate) ForTestOnly() TemplateAndCondition {
+	return TestHelperGenerate{BaseGenerate: b}
 }
 
-func (a TestHelperGenerate) Template() string {
-	return a.TemplateValue
+type TestHelperGenerate struct {
+	*BaseGenerate
 }
 
 func (a TestHelperGenerate) ShouldGenerate(info GeneratedInfo) bool {

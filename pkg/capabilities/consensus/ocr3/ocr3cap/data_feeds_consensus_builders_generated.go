@@ -56,6 +56,15 @@ func (c *feedValue) RemappedID() sdk.CapDefinition[string] {
 	return sdk.AccessField[FeedValue, string](c.CapDefinition, "remappedID")
 }
 
+func WrapFeedValue(cap sdk.CapDefinition[FeedValue]) FeedValueCap {
+	if wrapped, ok := cap.(FeedValueCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &feedValue{CapDefinition: cap}
+}
+
 func NewFeedValueFromFields(
 	deviation sdk.CapDefinition[string],
 	heartbeat sdk.CapDefinition[uint64],

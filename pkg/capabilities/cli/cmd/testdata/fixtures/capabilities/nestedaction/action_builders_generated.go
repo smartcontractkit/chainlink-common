@@ -43,6 +43,15 @@ func (c *actionOutputs) Results() ActionOutputsResultsCap {
 	return &actionOutputsResults{CapDefinition: sdk.AccessField[ActionOutputs, ActionOutputsResults](c.CapDefinition, "results")}
 }
 
+func WrapActionOutputs(cap sdk.CapDefinition[ActionOutputs]) ActionOutputsCap {
+	if wrapped, ok := cap.(ActionOutputsCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &actionOutputs{CapDefinition: cap}
+}
+
 func NewActionOutputsFromFields(
 	results ActionOutputsResultsCap) ActionOutputsCap {
 	return &simpleActionOutputs{
@@ -83,6 +92,15 @@ type actionOutputsResults struct {
 func (*actionOutputsResults) private() {}
 func (c *actionOutputsResults) AdaptedThing() sdk.CapDefinition[string] {
 	return sdk.AccessField[ActionOutputsResults, string](c.CapDefinition, "adapted_thing")
+}
+
+func WrapActionOutputsResults(cap sdk.CapDefinition[ActionOutputsResults]) ActionOutputsResultsCap {
+	if wrapped, ok := cap.(ActionOutputsResultsCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &actionOutputsResults{CapDefinition: cap}
 }
 
 func NewActionOutputsResultsFromFields(

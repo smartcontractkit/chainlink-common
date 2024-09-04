@@ -60,6 +60,15 @@ func (c *feed) TriggerType() sdk.CapDefinition[string] {
 	return sdk.AccessField[Feed, string](c.CapDefinition, "TriggerType")
 }
 
+func WrapFeed(cap sdk.CapDefinition[Feed]) FeedCap {
+	if wrapped, ok := cap.(FeedCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &feed{CapDefinition: cap}
+}
+
 func NewFeedFromFields(
 	iD sdk.CapDefinition[string],
 	metadata SignersMetadataCap,
@@ -152,6 +161,15 @@ func (c *feedReport) Signatures() sdk.CapDefinition[[][]uint8] {
 	return sdk.AccessField[FeedReport, [][]uint8](c.CapDefinition, "Signatures")
 }
 
+func WrapFeedReport(cap sdk.CapDefinition[FeedReport]) FeedReportCap {
+	if wrapped, ok := cap.(FeedReportCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &feedReport{CapDefinition: cap}
+}
+
 func NewFeedReportFromFields(
 	benchmarkPrice sdk.CapDefinition[[]uint8],
 	feedID FeedIdCap,
@@ -231,6 +249,15 @@ func (c *signersMetadata) MinRequiredSignatures() sdk.CapDefinition[int64] {
 }
 func (c *signersMetadata) Signers() sdk.CapDefinition[[]string] {
 	return sdk.AccessField[SignersMetadata, []string](c.CapDefinition, "Signers")
+}
+
+func WrapSignersMetadata(cap sdk.CapDefinition[SignersMetadata]) SignersMetadataCap {
+	if wrapped, ok := cap.(SignersMetadataCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &signersMetadata{CapDefinition: cap}
 }
 
 func NewSignersMetadataFromFields(

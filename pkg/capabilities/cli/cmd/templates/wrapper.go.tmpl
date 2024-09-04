@@ -1,0 +1,8 @@
+func Wrap{{.}}(cap sdk.CapDefinition[{{.}}]) {{.}}Cap {
+    if wrapped, ok := cap.({{.}}Cap); ok {
+        return wrapped
+    }
+
+    // if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+    return &{{.|LowerFirst}}{CapDefinition: cap}
+}

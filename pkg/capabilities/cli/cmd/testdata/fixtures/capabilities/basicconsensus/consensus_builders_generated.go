@@ -48,6 +48,15 @@ func (c *consensusOutputs) Sigs() sdk.CapDefinition[[]string] {
 	return sdk.AccessField[ConsensusOutputs, []string](c.CapDefinition, "sigs")
 }
 
+func WrapConsensusOutputs(cap sdk.CapDefinition[ConsensusOutputs]) ConsensusOutputsCap {
+	if wrapped, ok := cap.(ConsensusOutputsCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &consensusOutputs{CapDefinition: cap}
+}
+
 func NewConsensusOutputsFromFields(
 	consensus sdk.CapDefinition[[]string],
 	sigs sdk.CapDefinition[[]string]) ConsensusOutputsCap {

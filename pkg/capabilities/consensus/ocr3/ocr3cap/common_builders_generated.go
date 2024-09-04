@@ -29,6 +29,15 @@ func (c *encoderConfig) Abi() sdk.CapDefinition[string] {
 	return sdk.AccessField[EncoderConfig, string](c.CapDefinition, "abi")
 }
 
+func WrapEncoderConfig(cap sdk.CapDefinition[EncoderConfig]) EncoderConfigCap {
+	if wrapped, ok := cap.(EncoderConfigCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &encoderConfig{CapDefinition: cap}
+}
+
 func NewEncoderConfigFromFields(
 	abi sdk.CapDefinition[string]) EncoderConfigCap {
 	return &simpleEncoderConfig{
@@ -81,6 +90,15 @@ func (c *signedReport) Report() sdk.CapDefinition[[]uint8] {
 }
 func (c *signedReport) Signatures() sdk.CapDefinition[[][]uint8] {
 	return sdk.AccessField[SignedReport, [][]uint8](c.CapDefinition, "Signatures")
+}
+
+func WrapSignedReport(cap sdk.CapDefinition[SignedReport]) SignedReportCap {
+	if wrapped, ok := cap.(SignedReportCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &signedReport{CapDefinition: cap}
 }
 
 func NewSignedReportFromFields(

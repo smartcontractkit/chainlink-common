@@ -84,6 +84,8 @@ func (c *{{$key|LowerFirst}}) {{$fieldName}}() {{ $type.Type }}Cap {
         {{- end }}
     {{- end }}
 
+{{ template "wrapper.go.tmpl" $key }}
+
 func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
                                                                             {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
                                                                         {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}],

@@ -44,6 +44,15 @@ func (c *someOutputs) AdaptedThing() sdk.CapDefinition[string] {
 	return sdk.AccessField[SomeOutputs, string](c.CapDefinition, "adapted_thing")
 }
 
+func WrapSomeOutputs(cap sdk.CapDefinition[SomeOutputs]) SomeOutputsCap {
+	if wrapped, ok := cap.(SomeOutputsCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &someOutputs{CapDefinition: cap}
+}
+
 func NewSomeOutputsFromFields(
 	adaptedThing sdk.CapDefinition[string]) SomeOutputsCap {
 	return &simpleSomeOutputs{

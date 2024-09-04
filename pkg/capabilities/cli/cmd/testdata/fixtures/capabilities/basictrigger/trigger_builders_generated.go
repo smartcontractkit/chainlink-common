@@ -44,6 +44,15 @@ func (c *triggerOutputs) CoolOutput() sdk.CapDefinition[string] {
 	return sdk.AccessField[TriggerOutputs, string](c.CapDefinition, "cool_output")
 }
 
+func WrapTriggerOutputs(cap sdk.CapDefinition[TriggerOutputs]) TriggerOutputsCap {
+	if wrapped, ok := cap.(TriggerOutputsCap); ok {
+		return wrapped
+	}
+
+	// if it was created from accessing an array element, it won't already be wrapped, but is safe to access fields from
+	return &triggerOutputs{CapDefinition: cap}
+}
+
 func NewTriggerOutputsFromFields(
 	coolOutput sdk.CapDefinition[string]) TriggerOutputsCap {
 	return &simpleTriggerOutputs{

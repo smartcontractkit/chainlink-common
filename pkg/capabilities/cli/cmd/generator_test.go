@@ -44,12 +44,14 @@ func TestTypeGeneration(t *testing.T) {
 			}.New(factory)
 
 			// verify that the underlying interface is right
-			var _ sdk.CapDefinition[basictrigger.TriggerOutputs] = trigger
+			var def sdk.CapDefinition[basictrigger.TriggerOutputs] = trigger
 
 			// verify the type is correct
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = trigger.CoolOutput()
 			_ = expectedOutput
+
+			trigger = basictrigger.WrapTriggerOutputs(def)
 		})
 	})
 
@@ -67,12 +69,14 @@ func TestTypeGeneration(t *testing.T) {
 			})
 
 			// verify that the underlying interface is right
-			var _ sdk.CapDefinition[basicaction.ActionOutputs] = action
+			var def sdk.CapDefinition[basicaction.ActionOutputs] = action
 
 			// verify the type is correct
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = action.AdaptedThing()
 			_ = expectedOutput
+
+			action = basicaction.WrapActionOutputs(def)
 		})
 	})
 
@@ -90,7 +94,9 @@ func TestTypeGeneration(t *testing.T) {
 			})
 
 			// verify that the underlying interface is right
-			var _ sdk.CapDefinition[basicconsensus.ConsensusOutputs] = consensus
+			var def sdk.CapDefinition[basicconsensus.ConsensusOutputs] = consensus
+
+			consensus = basicconsensus.WrapConsensusOutputs(def)
 
 			// verify the type is correct
 			var expectedConsensusField sdk.CapDefinition[[]string] //nolint

@@ -2,6 +2,7 @@ package chainreader_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,41 +55,41 @@ func (it *interfaceTesterBase) Name() string {
 
 type fakeTypeProvider struct{}
 
-func (f fakeTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
-	return f.CreateContractType("", itemType, isEncode)
+func (f fakeTypeProvider) CreateType(readName string, isEncode bool) (any, error) {
+	return f.CreateContractType(readName, isEncode)
 }
 
 var _ types.ContractTypeProvider = (*fakeTypeProvider)(nil)
 
-func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
-	switch itemType {
-	case NilType:
+func (fakeTypeProvider) CreateContractType(readName string, isEncode bool) (any, error) {
+	switch true {
+	case strings.HasSuffix(readName, NilType):
 		return &struct{}{}, nil
-	case TestItemType:
+	case strings.HasSuffix(readName, TestItemType):
 		return &TestStruct{}, nil
-	case TestItemSliceType:
+	case strings.HasSuffix(readName, TestItemSliceType):
 		return &[]TestStruct{}, nil
-	case TestItemArray2Type:
+	case strings.HasSuffix(readName, TestItemArray2Type):
 		return &[2]TestStruct{}, nil
-	case TestItemArray1Type:
+	case strings.HasSuffix(readName, TestItemArray1Type):
 		return &[1]TestStruct{}, nil
-	case MethodTakingLatestParamsReturningTestStruct:
+	case strings.HasSuffix(readName, MethodTakingLatestParamsReturningTestStruct):
 		if isEncode {
 			return &LatestParams{}, nil
 		}
 		return &TestStruct{}, nil
-	case MethodReturningUint64, MethodReturningAlterableUint64:
+	case strings.HasSuffix(readName, MethodReturningUint64), strings.HasSuffix(readName, MethodReturningAlterableUint64):
 		tmp := uint64(0)
 		return &tmp, nil
-	case MethodReturningUint64Slice:
+	case strings.HasSuffix(readName, MethodReturningUint64Slice):
 		var tmp []uint64
 		return &tmp, nil
-	case MethodReturningSeenStruct, TestItemWithConfigExtra:
+	case strings.HasSuffix(readName, MethodReturningSeenStruct), strings.HasSuffix(readName, TestItemWithConfigExtra):
 		if isEncode {
 			return &TestStruct{}, nil
 		}
 		return &TestStructWithExtraField{}, nil
-	case EventName, EventWithFilterName:
+	case strings.HasSuffix(readName, EventName), strings.HasSuffix(readName, EventWithFilterName):
 		if isEncode {
 			return &FilterEventParams{}, nil
 		}

@@ -1,6 +1,8 @@
 package testutils
 
 import (
+	"encoding/json"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -41,6 +43,19 @@ func (m *Mock[I, O]) Run(request capabilities.CapabilityRequest) capabilities.Ca
 	}
 
 	m.inputs[request.Metadata.ReferenceID] = i
+
+	// validate against schema
+	var tmp I
+	b, err := json.Marshal(i)
+	if err != nil {
+		m.errors[request.Metadata.ReferenceID] = err
+		return capabilities.CapabilityResponse{Err: err}
+	}
+
+	if err = json.Unmarshal(b, &tmp); err != nil {
+		m.errors[request.Metadata.ReferenceID] = err
+		return capabilities.CapabilityResponse{Err: err}
+	}
 
 	result, err := m.fn(i)
 	if err != nil {

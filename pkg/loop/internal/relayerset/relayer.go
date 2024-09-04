@@ -7,12 +7,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 type relayerClient struct {
-	*relayer.RelayerClient
 	log              logger.Logger
 	relayerSetClient *Client
 	relayerID        types.RelayID
@@ -20,7 +21,6 @@ type relayerClient struct {
 
 func newRelayerClient(log logger.Logger, client *Client, relayID types.RelayID) *relayerClient {
 	return &relayerClient{
-		RelayerClient:    relayer.NewRelayerClient(client.BrokerExt, client.ClientConn()),
 		log:              log,
 		relayerSetClient: client,
 		relayerID:        relayID,
@@ -38,6 +38,30 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	})
 
 	return relayer.WrapProviderClientConnection(rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
+}
+
+func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
+	cc := r.relayerSetClient.NewClientConn("ContractReader", func(ctx context.Context) (uint32, net.Resources, error) {
+		contractReaderID, err := r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
+		if err != nil {
+			return 0, nil, fmt.Errorf("error getting NewContractReader from relayerSetServer: %w", err)
+		}
+
+		return contractReaderID, nil, nil
+	})
+
+	return chainreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ChainReaderClientInRelayerSet"), cc), nil
+}
+
+func (r *relayerClient) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+	cwc := r.relayerSetClient.NewClientConn("ChainWriter", func(ctx context.Context) (uint32, net.Resources, error) {
+		chainWriterID, err := r.relayerSetClient.NewChainWriter(ctx, r.relayerID, chainWriterConfig)
+		if err != nil {
+			return 0, nil, err
+		}
+		return chainWriterID, nil, nil
+	})
+	return chainwriter.NewClient(r.relayerSetClient.BrokerExt.WithName("ChainWriterClient"), cwc), nil
 }
 
 func (r *relayerClient) Start(context.Context) error {

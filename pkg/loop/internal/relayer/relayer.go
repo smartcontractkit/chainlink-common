@@ -72,7 +72,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		}
 		return reply.RelayerID, nil, nil
 	})
-	return NewRelayerClient(p.BrokerExt, cc), nil
+	return newRelayerClient(p.BrokerExt, cc), nil
 }
 
 type pluginRelayerServer struct {
@@ -180,22 +180,22 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 	return &pb.SignReply{SignedData: signed}, nil
 }
 
-var _ looptypes.Relayer = (*RelayerClient)(nil)
+var _ looptypes.Relayer = (*relayerClient)(nil)
 
-// RelayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
-type RelayerClient struct {
+// relayerClient adapts a GRPC [pb.relayerClient] to implement [Relayer].
+type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
 
 	relayer pb.RelayerClient
 }
 
-func NewRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *RelayerClient {
+func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("ChainRelayerClient")
-	return &RelayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
+	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
-func (r *RelayerClient) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+func (r *relayerClient) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
 	cwc := r.NewClientConn("ChainWriter", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewChainWriter(ctx, &pb.NewChainWriterRequest{ChainWriterConfig: chainWriterConfig})
 		if err != nil {
@@ -206,7 +206,7 @@ func (r *RelayerClient) NewChainWriter(_ context.Context, chainWriterConfig []by
 	return chainwriter.NewClient(r.WithName("ChainWriterClient"), cwc), nil
 }
 
-func (r *RelayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
+func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	cc := r.NewClientConn("ChainReader", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewContractReader(ctx, &pb.NewContractReaderRequest{ContractReaderConfig: contractReaderConfig})
 		if err != nil {
@@ -218,7 +218,7 @@ func (r *RelayerClient) NewContractReader(_ context.Context, contractReaderConfi
 	return chainreader.NewClient(r.WithName("ChainReaderClient"), cc), nil
 }
 
-func (r *RelayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {
+func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {
 	cc := r.NewClientConn("ConfigProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewConfigProvider(ctx, &pb.NewConfigProviderRequest{
 			RelayArgs: &pb.RelayArgs{
@@ -237,7 +237,7 @@ func (r *RelayerClient) NewConfigProvider(ctx context.Context, rargs types.Relay
 	return ocr2.NewConfigProviderClient(r.WithName("ConfigProviderClient"), cc), nil
 }
 
-func (r *RelayerClient) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
+func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
 	cc := r.NewClientConn("PluginProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewPluginProvider(ctx, &pb.NewPluginProviderRequest{
 			RelayArgs: &pb.RelayArgs{
@@ -300,11 +300,11 @@ func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterfa
 	}
 }
 
-func (r *RelayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.LLOProvider, error) {
+func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.LLOProvider, error) {
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
-func (r *RelayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
+func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	reply, err := r.relayer.GetChainStatus(ctx, &pb.GetChainStatusRequest{})
 	if err != nil {
 		return types.ChainStatus{}, err
@@ -317,7 +317,7 @@ func (r *RelayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, 
 	}, nil
 }
 
-func (r *RelayerClient) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
+func (r *relayerClient) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
 	reply, err := r.relayer.ListNodeStatuses(ctx, &pb.ListNodeStatusesRequest{
 		PageSize:  pageSize,
 		PageToken: pageToken,
@@ -337,7 +337,7 @@ func (r *RelayerClient) ListNodeStatuses(ctx context.Context, pageSize int32, pa
 	return
 }
 
-func (r *RelayerClient) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
+func (r *relayerClient) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
 	_, err := r.relayer.Transact(ctx, &pb.TransactionRequest{
 		From:         from,
 		To:           to,

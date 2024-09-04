@@ -124,3 +124,27 @@ func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, r
 	}
 	return resp.PluginProviderId, nil
 }
+
+func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, contractReaderConfig []byte) (uint32, error) {
+	req := &relayerset.NewContractReaderRequest{
+		RelayerId:            &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+		ContractReaderConfig: contractReaderConfig,
+	}
+	resp, err := k.relayerSetClient.NewContractReader(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("error getting new contract reader: %w", err)
+	}
+	return resp.ContractReaderId, nil
+}
+
+func (k *Client) NewChainWriter(ctx context.Context, relayID types.RelayID, chainWriterConfig []byte) (uint32, error) {
+	req := &relayerset.NewChainWriterRequest{
+		RelayerId:         &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+		ChainWriterConfig: chainWriterConfig,
+	}
+	resp, err := k.relayerSetClient.NewChainWriter(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("error getting new chain writer: %w", err)
+	}
+	return resp.ChainWriterId, nil
+}

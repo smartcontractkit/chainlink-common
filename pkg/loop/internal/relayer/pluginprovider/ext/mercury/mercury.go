@@ -12,11 +12,13 @@ import (
 	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1"
 	mercury_v2_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2"
 	mercury_v3_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3"
+	mercury_v4_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v4"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 	mercury_v1 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercury_v2 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	mercury_v3 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
+	mercury_v4 "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v4"
 )
 
 var (
@@ -27,6 +29,7 @@ var (
 
 type ProviderClient struct {
 	*ocr2.PluginProviderClient
+	reportCodecV4      mercury_v4.ReportCodec
 	reportCodecV3      mercury_v3.ReportCodec
 	reportCodecV2      mercury_v2.ReportCodec
 	reportCodecV1      mercury_v1.ReportCodec
@@ -42,6 +45,7 @@ func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderC
 	m.reportCodecV1 = newReportCodecV1Client(mercury_v1_internal.NewReportCodecClient(cc))
 	m.reportCodecV2 = newReportCodecV2Client(mercury_v2_internal.NewReportCodecClient(cc))
 	m.reportCodecV3 = newReportCodecV3Client(mercury_v3_internal.NewReportCodecClient(cc))
+	m.reportCodecV4 = newReportCodecV4Client(mercury_v4_internal.NewReportCodecClient(cc))
 
 	m.onchainConfigCodec = newOnchainConfigCodecClient(cc)
 	m.serverFetcher = newServerFetcherClient(cc)
@@ -49,6 +53,10 @@ func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderC
 
 	m.chainReader = chainreader.NewClient(b, cc)
 	return m
+}
+
+func (m *ProviderClient) ReportCodecV4() mercury_v4.ReportCodec {
+	return m.reportCodecV4
 }
 
 func (m *ProviderClient) ReportCodecV3() mercury_v3.ReportCodec {
@@ -94,6 +102,7 @@ func RegisterProviderServices(s *grpc.Server, provider types.MercuryProvider) {
 	mercury_pb.RegisterReportCodecV1Server(s, newReportCodecV1Server(s, provider.ReportCodecV1()))
 	mercury_pb.RegisterReportCodecV2Server(s, newReportCodecV2Server(s, provider.ReportCodecV2()))
 	mercury_pb.RegisterReportCodecV3Server(s, newReportCodecV3Server(s, provider.ReportCodecV3()))
+	mercury_pb.RegisterReportCodecV4Server(s, newReportCodecV4Server(s, provider.ReportCodecV4()))
 }
 
 // RegisterProviderServicesV1 registers the Mercury services with the given gRPC server.
@@ -106,6 +115,7 @@ func RegisterProviderServicesV1(s *grpc.Server, provider types.MercuryProvider) 
 	mercury_pb.RegisterReportCodecV1Server(s, newReportCodecV1Server(s, provider.ReportCodecV1()))
 	mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
 	mercury_pb.RegisterReportCodecV3Server(s, mercury_pb.UnimplementedReportCodecV3Server{})
+	mercury_pb.RegisterReportCodecV4Server(s, mercury_pb.UnimplementedReportCodecV4Server{})
 }
 
 // RegisterProviderServicesV2 registers the Mercury services with the given gRPC server.
@@ -118,6 +128,7 @@ func RegisterProviderServicesV2(s *grpc.Server, provider types.MercuryProvider) 
 	mercury_pb.RegisterReportCodecV2Server(s, newReportCodecV2Server(s, provider.ReportCodecV2()))
 	mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
 	mercury_pb.RegisterReportCodecV3Server(s, mercury_pb.UnimplementedReportCodecV3Server{})
+	mercury_pb.RegisterReportCodecV4Server(s, mercury_pb.UnimplementedReportCodecV4Server{})
 }
 
 // RegisterProviderServicesV3 registers the Mercury services with the given gRPC server.
@@ -130,4 +141,18 @@ func RegisterProviderServicesV3(s *grpc.Server, provider types.MercuryProvider) 
 	mercury_pb.RegisterReportCodecV3Server(s, newReportCodecV3Server(s, provider.ReportCodecV3()))
 	mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
 	mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
+	mercury_pb.RegisterReportCodecV4Server(s, mercury_pb.UnimplementedReportCodecV4Server{})
+}
+
+// RegisterProviderServicesV4 registers the Mercury services with the given gRPC server.
+// It registers only the v4 version of the report codec service and the version-agnostic services.
+// It should be used when you only need to register the v4 version of the report codec service, and will cause
+// gRPC to return an unimplemented error for the v1 and v2 and v3 versions.
+func RegisterProviderServicesV4(s *grpc.Server, provider types.MercuryProvider) {
+	registerVersionAgnosticServices(s, provider)
+
+	mercury_pb.RegisterReportCodecV4Server(s, newReportCodecV4Server(s, provider.ReportCodecV4()))
+	mercury_pb.RegisterReportCodecV1Server(s, mercury_pb.UnimplementedReportCodecV1Server{})
+	mercury_pb.RegisterReportCodecV2Server(s, mercury_pb.UnimplementedReportCodecV2Server{})
+	mercury_pb.RegisterReportCodecV3Server(s, mercury_pb.UnimplementedReportCodecV3Server{})
 }

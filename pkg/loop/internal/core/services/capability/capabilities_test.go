@@ -23,7 +23,7 @@ import (
 
 type mockTrigger struct {
 	capabilities.BaseCapability
-	callback        chan capabilities.CapabilityResponse
+	callback        chan capabilities.TriggerResponse
 	triggerActive   bool
 	unregisterCalls chan bool
 	registerCalls   chan bool
@@ -31,7 +31,7 @@ type mockTrigger struct {
 	mu sync.Mutex
 }
 
-func (m *mockTrigger) RegisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (m *mockTrigger) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -45,7 +45,7 @@ func (m *mockTrigger) RegisterTrigger(ctx context.Context, request capabilities.
 	return m.callback, nil
 }
 
-func (m *mockTrigger) UnregisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) error {
+func (m *mockTrigger) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -72,7 +72,7 @@ func (m *mockTrigger) Stop() {
 func mustMockTrigger(t *testing.T) *mockTrigger {
 	return &mockTrigger{
 		BaseCapability:  capabilities.MustNewCapabilityInfo("trigger@1.0.0", capabilities.CapabilityTypeTrigger, "a mock trigger"),
-		callback:        make(chan capabilities.CapabilityResponse, 10),
+		callback:        make(chan capabilities.TriggerResponse, 10),
 		unregisterCalls: make(chan bool, 10),
 		registerCalls:   make(chan bool, 10),
 	}
@@ -179,22 +179,26 @@ func Test_Capabilities(t *testing.T) {
 
 		ch, err := ctr.RegisterTrigger(
 			ctx,
-			capabilities.CapabilityRequest{})
+			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
 		v, err := values.NewMap(map[string]any{"hello": "world"})
 		require.NoError(t, err)
 
-		cr1 := capabilities.CapabilityResponse{
-			Value: v,
+		cr1 := capabilities.TriggerResponse{
+			Event: capabilities.TriggerEvent{
+				Outputs: v,
+			},
 		}
 		mtr.callback <- cr1
 
 		v, err = values.NewMap(map[string]any{"hello": "world"})
 		require.NoError(t, err)
 
-		cr2 := capabilities.CapabilityResponse{
-			Value: v,
+		cr2 := capabilities.TriggerResponse{
+			Event: capabilities.TriggerEvent{
+				Outputs: v,
+			},
 		}
 		mtr.callback <- cr2
 
@@ -213,7 +217,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ch, err := ctr.RegisterTrigger(
 			ctx,
-			capabilities.CapabilityRequest{})
+			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
 		// Wait for registration to complete
@@ -239,7 +243,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ch, err := ctr.RegisterTrigger(
 			ctx,
-			capabilities.CapabilityRequest{})
+			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
 		// Wait for registration to complete
@@ -272,7 +276,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ch, err := ctr.RegisterTrigger(
 			ctx,
-			capabilities.CapabilityRequest{})
+			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
 		// Wait for registration to complete
@@ -304,7 +308,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ch, err := ctr.RegisterTrigger(
 			ctx,
-			capabilities.CapabilityRequest{})
+			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
 		// Wait for registration to complete
@@ -313,7 +317,7 @@ func Test_Capabilities(t *testing.T) {
 
 		err = ctr.UnregisterTrigger(
 			ctx,
-			capabilities.CapabilityRequest{})
+			capabilities.TriggerRegistrationRequest{})
 
 		require.NoError(t, err)
 
@@ -337,7 +341,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ch, err := ctr.RegisterTrigger(
 			ctxWithCancel,
-			capabilities.CapabilityRequest{})
+			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
 		// Wait for registration to complete
@@ -514,7 +518,7 @@ func (m *synchronousCallback) Execute(ctx context.Context, request capabilities.
 func mustSynchronousCallback(t *testing.T, _type capabilities.CapabilityType) *synchronousCallback {
 	return &synchronousCallback{
 		BaseCapability: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback-%s@1.0.0", _type), _type, fmt.Sprintf("a mock %s", _type)),
-		callback:       make(chan capabilities.CapabilityResponse, 0),
+		callback:       make(chan capabilities.CapabilityResponse),
 		executeCalled:  false,
 	}
 }

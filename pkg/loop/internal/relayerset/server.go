@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mwitkow/grpc-proxy/proxy"
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,14 +55,14 @@ func (s *Server) Get(ctx context.Context, req *relayerset.GetRelayerRequest) (*r
 
 	relayers, err := s.impl.List(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error getting all relayers: %v", err))
+		return nil, status.Errorf(codes.Internal, "error getting all relayers: %v", err)
 	}
 
 	if _, ok := relayers[id]; ok {
 		return &relayerset.GetRelayerResponse{Id: req.Id}, nil
 	}
 
-	return nil, status.Errorf(codes.NotFound, fmt.Sprintf("relayer not found for id %s", id))
+	return nil, status.Errorf(codes.NotFound, "relayer not found for id %s", id)
 }
 
 func (s *Server) List(ctx context.Context, req *relayerset.ListAllRelayersRequest) (*relayerset.ListAllRelayersResponse, error) {
@@ -73,7 +73,7 @@ func (s *Server) List(ctx context.Context, req *relayerset.ListAllRelayersReques
 
 	relayers, err := s.impl.List(ctx, relayIDs...)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error getting all relayers: %v", err))
+		return nil, status.Errorf(codes.Internal, "error getting all relayers: %v", err)
 	}
 
 	ids := make([]*relayerset.RelayerId, len(relayers))
@@ -114,7 +114,7 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 
 	pluginProvider, err := relayer.NewPluginProvider(ctx, relayArgs, pluginArgs)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error creating plugin provider: %v", err))
+		return nil, status.Errorf(codes.Internal, "error creating plugin provider: %v", err)
 	}
 
 	var providerClientConn grpc.ClientConnInterface
@@ -122,7 +122,7 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 	if !ok {
 		providerClientConn, err = s.getProviderConnection(pluginProvider, relayArgs.ProviderType)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, fmt.Sprintf("error getting provider connection: %v", err))
+			return nil, status.Errorf(codes.Internal, "error getting provider connection: %v", err)
 		}
 	} else {
 		providerClientConn = providerConn.ClientConn()
@@ -130,7 +130,7 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 
 	providerID, providerRes, err := s.broker.Serve("PluginProvider", proxy.NewProxy(providerClientConn))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error serving plugin provider: %v", err))
+		return nil, status.Errorf(codes.Internal, "error serving plugin provider: %v", err)
 	}
 	s.serverResources.Add(providerRes)
 
@@ -171,7 +171,7 @@ func (s *Server) StartRelayer(ctx context.Context, relayID *relayerset.RelayerId
 	}
 
 	if err := relayer.Start(ctx); err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error starting relayer: %v", err))
+		return nil, status.Errorf(codes.Internal, "error starting relayer: %v", err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -184,7 +184,7 @@ func (s *Server) CloseRelayer(ctx context.Context, relayID *relayerset.RelayerId
 	}
 
 	if err = relayer.Close(); err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error starting relayer: %v", err))
+		return nil, status.Errorf(codes.Internal, "error starting relayer: %v", err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -197,7 +197,7 @@ func (s *Server) RelayerReady(ctx context.Context, relayID *relayerset.RelayerId
 	}
 
 	if err := relayer.Ready(); err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error getting relayer ready: %v", err))
+		return nil, status.Errorf(codes.Internal, "error getting relayer ready: %v", err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -230,7 +230,7 @@ func (s *Server) RelayerName(ctx context.Context, relayID *relayerset.RelayerId)
 func (s *Server) getRelayer(ctx context.Context, relayerID *relayerset.RelayerId) (core.Relayer, error) {
 	relayer, err := s.impl.Get(ctx, types.RelayID{ChainID: relayerID.ChainId, Network: relayerID.Network})
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, fmt.Sprintf("error getting relayer: %v", err))
+		return nil, status.Errorf(codes.NotFound, "error getting relayer: %v", err)
 	}
 
 	return relayer, nil

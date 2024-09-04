@@ -134,12 +134,17 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_CONSENSUS
 	case capabilities.CapabilityTypeTarget:
 		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_TARGET
+	case capabilities.CapabilityTypeUnknown:
+		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
+	default:
+		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
 	}
 
 	return &capabilitiespb.CapabilityInfoReply{
 		Id:             info.ID,
 		CapabilityType: ct,
 		Description:    info.Description,
+		IsLocal:        info.IsLocal,
 	}
 }
 
@@ -182,6 +187,7 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		ID:             resp.Id,
 		CapabilityType: ct,
 		Description:    resp.Description,
+		IsLocal:        resp.IsLocal,
 	}, nil
 }
 
@@ -201,9 +207,12 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
-func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.CapabilityRequest,
+func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.TriggerRegistrationRequest,
 	server capabilitiespb.TriggerExecutable_RegisterTriggerServer) error {
-	req := pb.CapabilityRequestFromProto(request)
+	req, err := pb.TriggerRegistrationRequestFromProto(request)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal capability request: %w", err)
+	}
 	responseCh, err := t.impl.RegisterTrigger(server.Context(), req)
 	if err != nil {
 		return fmt.Errorf("error registering trigger: %w", err)
@@ -226,9 +235,9 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Capabi
 				return nil
 			}
 
-			msg := &capabilitiespb.ResponseMessage{
-				Message: &capabilitiespb.ResponseMessage_Response{
-					Response: pb.CapabilityResponseToProto(resp),
+			msg := &capabilitiespb.TriggerResponseMessage{
+				Message: &capabilitiespb.TriggerResponseMessage_Response{
+					Response: pb.TriggerResponseToProto(resp),
 				},
 			}
 			if err = server.Send(msg); err != nil {
@@ -238,8 +247,12 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Capabi
 	}
 }
 
-func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *capabilitiespb.CapabilityRequest) (*emptypb.Empty, error) {
-	if err := t.impl.UnregisterTrigger(ctx, pb.CapabilityRequestFromProto(request)); err != nil {
+func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *capabilitiespb.TriggerRegistrationRequest) (*emptypb.Empty, error) {
+	req, err := pb.TriggerRegistrationRequestFromProto(request)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal capability request: %w", err)
+	}
+	if err := t.impl.UnregisterTrigger(ctx, req); err != nil {
 		return nil, fmt.Errorf("error unregistering trigger: %w", err)
 	}
 
@@ -251,17 +264,17 @@ type triggerExecutableClient struct {
 	*net.BrokerExt
 }
 
-func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
-	responseStream, err := t.grpc.RegisterTrigger(ctx, pb.CapabilityRequestToProto(req))
+func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	responseStream, err := t.grpc.RegisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
 	if err != nil {
 		return nil, fmt.Errorf("error registering trigger: %w", err)
 	}
 
-	return forwardResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)
+	return forwardTriggerResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)
 }
 
-func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req capabilities.CapabilityRequest) error {
-	_, err := t.grpc.UnregisterTrigger(ctx, pb.CapabilityRequestToProto(req))
+func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) error {
+	_, err := t.grpc.UnregisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
 	return err
 }
 
@@ -289,31 +302,42 @@ func newCallbackExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Cal
 var _ capabilitiespb.CallbackExecutableServer = (*callbackExecutableServer)(nil)
 
 func (c *callbackExecutableServer) RegisterToWorkflow(ctx context.Context, req *capabilitiespb.RegisterToWorkflowRequest) (*emptypb.Empty, error) {
-	config := values.FromProto(req.Config)
+	config, err := values.FromMapValueProto(req.Config)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal config into map: %w", err)
+	}
 
-	err := c.impl.RegisterToWorkflow(ctx, capabilities.RegisterToWorkflowRequest{
+	err = c.impl.RegisterToWorkflow(ctx, capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
 			WorkflowID: req.Metadata.WorkflowId,
 		},
-		Config: config.(*values.Map),
+		Config: config,
 	})
 	return &emptypb.Empty{}, err
 }
 
 func (c *callbackExecutableServer) UnregisterFromWorkflow(ctx context.Context, req *capabilitiespb.UnregisterFromWorkflowRequest) (*emptypb.Empty, error) {
-	config := values.FromProto(req.Config)
+	config, err := values.FromMapValueProto(req.Config)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal config into map: %w", err)
+	}
 
-	err := c.impl.UnregisterFromWorkflow(ctx, capabilities.UnregisterFromWorkflowRequest{
+	err = c.impl.UnregisterFromWorkflow(ctx, capabilities.UnregisterFromWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
 			WorkflowID: req.Metadata.WorkflowId,
 		},
-		Config: config.(*values.Map),
+		Config: config,
 	})
 	return &emptypb.Empty{}, err
 }
 
-func (c *callbackExecutableServer) Execute(req *capabilitiespb.CapabilityRequest, server capabilitiespb.CallbackExecutable_ExecuteServer) error {
-	responseCh, err := c.impl.Execute(server.Context(), pb.CapabilityRequestFromProto(req))
+func (c *callbackExecutableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, server capabilitiespb.CallbackExecutable_ExecuteServer) error {
+	req, err := pb.CapabilityRequestFromProto(reqpb)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal capability request: %w", err)
+	}
+
+	responseCh, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
 		return fmt.Errorf("error executing capability request: %w", err)
 	}
@@ -334,7 +358,7 @@ func (c *callbackExecutableServer) Execute(req *capabilitiespb.CapabilityRequest
 			},
 		}
 		if err = server.Send(msg); err != nil {
-			return fmt.Errorf("error sending response for execute request %s: %w", req, err)
+			return fmt.Errorf("error sending response for execute request %s: %w", reqpb, err)
 		}
 	}
 
@@ -370,7 +394,7 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, req capabilities
 		return nil, fmt.Errorf("protocol error: first message received was not an ack: %+v", resp.GetMessage())
 	}
 
-	return forwardResponsesToChannel(ctx, c.Logger, req, responseStream.Recv)
+	return forwardCapabilityResponsesToChannel(ctx, c.Logger, req, responseStream.Recv)
 }
 
 func (c *callbackExecutableClient) UnregisterFromWorkflow(ctx context.Context, req capabilities.UnregisterFromWorkflowRequest) error {
@@ -380,7 +404,7 @@ func (c *callbackExecutableClient) UnregisterFromWorkflow(ctx context.Context, r
 	}
 
 	r := &capabilitiespb.UnregisterFromWorkflowRequest{
-		Config: values.Proto(config),
+		Config: values.ProtoMap(config),
 		Metadata: &capabilitiespb.RegistrationMetadata{
 			WorkflowId: req.Metadata.WorkflowID,
 		},
@@ -397,7 +421,7 @@ func (c *callbackExecutableClient) RegisterToWorkflow(ctx context.Context, req c
 	}
 
 	r := &capabilitiespb.RegisterToWorkflowRequest{
-		Config: values.Proto(config),
+		Config: values.ProtoMap(config),
 		Metadata: &capabilitiespb.RegistrationMetadata{
 			WorkflowId: req.Metadata.WorkflowID,
 		},
@@ -407,7 +431,7 @@ func (c *callbackExecutableClient) RegisterToWorkflow(ctx context.Context, req c
 	return err
 }
 
-func forwardResponsesToChannel(ctx context.Context, logger logger.Logger, req capabilities.CapabilityRequest, receive func() (*capabilitiespb.ResponseMessage, error)) (<-chan capabilities.CapabilityResponse, error) {
+func forwardCapabilityResponsesToChannel(ctx context.Context, logger logger.Logger, req capabilities.CapabilityRequest, receive func() (*capabilitiespb.ResponseMessage, error)) (<-chan capabilities.CapabilityResponse, error) {
 	responseCh := make(chan capabilities.CapabilityResponse)
 
 	go func() {
@@ -441,8 +465,67 @@ func forwardResponsesToChannel(ctx context.Context, logger logger.Logger, req ca
 				return
 			}
 
+			r, err := pb.CapabilityResponseFromProto(resp)
+			if err != nil {
+				r = capabilities.CapabilityResponse{
+					Err: err,
+				}
+			}
+
 			select {
-			case responseCh <- pb.CapabilityResponseFromProto(resp):
+			case responseCh <- r:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return responseCh, nil
+}
+
+func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger, req capabilities.TriggerRegistrationRequest, receive func() (*capabilitiespb.TriggerResponseMessage, error)) (<-chan capabilities.TriggerResponse, error) {
+	responseCh := make(chan capabilities.TriggerResponse)
+
+	go func() {
+		defer close(responseCh)
+		for {
+			message, err := receive()
+			if errors.Is(err, io.EOF) {
+				return
+			}
+
+			if err != nil {
+				resp := capabilities.TriggerResponse{
+					Err: err,
+				}
+				select {
+				case responseCh <- resp:
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			resp := message.GetResponse()
+			if resp == nil {
+				resp := capabilities.TriggerResponse{
+					Err: errors.New("unexpected message type when receiving response: expected response"),
+				}
+				select {
+				case responseCh <- resp:
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			r, err := pb.TriggerResponseFromProto(resp)
+			if err != nil {
+				r = capabilities.TriggerResponse{
+					Err: err,
+				}
+			}
+
+			select {
+			case responseCh <- r:
 			case <-ctx.Done():
 				return
 			}

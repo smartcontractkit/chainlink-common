@@ -11,7 +11,7 @@ import (
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -69,6 +69,21 @@ func FuzzRelayer(f *testing.F) {
 }
 
 func newPluginRelayerExec(t *testing.T, staticChecks bool, stopCh <-chan struct{}) loop.PluginRelayer {
+	relayer := loop.GRPCPluginRelayer{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
+	cc := relayer.ClientConfig()
+	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName, staticChecks, 0)
+	c := plugin.NewClient(cc)
+	t.Cleanup(c.Kill)
+	client, err := c.Client()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = client.Close() })
+	require.NoError(t, client.Ping())
+	i, err := client.Dispense(loop.PluginRelayerName)
+	require.NoError(t, err)
+	return i.(loop.PluginRelayer)
+}
+
+func newPluginRelayerCommit(t *testing.T, staticChecks bool, stopCh <-chan struct{}) loop.PluginRelayer {
 	relayer := loop.GRPCPluginRelayer{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := relayer.ClientConfig()
 	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName, staticChecks, 0)

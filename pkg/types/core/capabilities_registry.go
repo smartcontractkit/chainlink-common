@@ -6,8 +6,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
-//go:generate mockery --quiet --name CapabilitiesRegistry --output ./mocks/ --case=underscore
 type CapabilitiesRegistry interface {
+	LocalNode(ctx context.Context) (capabilities.Node, error)
+	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
+
 	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)
 	GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error)
 	GetAction(ctx context.Context, ID string) (capabilities.ActionCapability, error)

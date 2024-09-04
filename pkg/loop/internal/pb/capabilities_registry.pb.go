@@ -7,6 +7,7 @@
 package pb
 
 import (
+	pb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -70,6 +71,142 @@ func (ExecuteAPIType) EnumDescriptor() ([]byte, []int) {
 	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{0}
 }
 
+// DON has arguments for [github.com/smartcontractkit/chainlink-common/pkg/capabilities.DON].
+type DON struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id            uint32   `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Members       [][]byte `protobuf:"bytes,2,rep,name=members,proto3" json:"members,omitempty"` // [n][32]byte where n is the number of members
+	F             uint32   `protobuf:"varint,3,opt,name=f,proto3" json:"f,omitempty"`            // uint8
+	ConfigVersion uint32   `protobuf:"varint,4,opt,name=configVersion,proto3" json:"configVersion,omitempty"`
+}
+
+func (x *DON) Reset() {
+	*x = DON{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DON) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DON) ProtoMessage() {}
+
+func (x *DON) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DON.ProtoReflect.Descriptor instead.
+func (*DON) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *DON) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *DON) GetMembers() [][]byte {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
+func (x *DON) GetF() uint32 {
+	if x != nil {
+		return x.F
+	}
+	return 0
+}
+
+func (x *DON) GetConfigVersion() uint32 {
+	if x != nil {
+		return x.ConfigVersion
+	}
+	return 0
+}
+
+// LocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.LocalNode].
+type LocalNodeReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PeerID         []byte `protobuf:"bytes,1,opt,name=peerID,proto3" json:"peerID,omitempty"` // [32]byte
+	WorkflowDON    *DON   `protobuf:"bytes,2,opt,name=workflowDON,proto3" json:"workflowDON,omitempty"`
+	CapabilityDONs []*DON `protobuf:"bytes,3,rep,name=CapabilityDONs,proto3" json:"CapabilityDONs,omitempty"`
+}
+
+func (x *LocalNodeReply) Reset() {
+	*x = LocalNodeReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LocalNodeReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LocalNodeReply) ProtoMessage() {}
+
+func (x *LocalNodeReply) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LocalNodeReply.ProtoReflect.Descriptor instead.
+func (*LocalNodeReply) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *LocalNodeReply) GetPeerID() []byte {
+	if x != nil {
+		return x.PeerID
+	}
+	return nil
+}
+
+func (x *LocalNodeReply) GetWorkflowDON() *DON {
+	if x != nil {
+		return x.WorkflowDON
+	}
+	return nil
+}
+
+func (x *LocalNodeReply) GetCapabilityDONs() []*DON {
+	if x != nil {
+		return x.CapabilityDONs
+	}
+	return nil
+}
+
 // Get has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get].
 type GetRequest struct {
 	state         protoimpl.MessageState
@@ -82,7 +219,7 @@ type GetRequest struct {
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[0]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -95,7 +232,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +245,7 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetRequest) GetId() string {
@@ -131,7 +268,7 @@ type GetReply struct {
 func (x *GetReply) Reset() {
 	*x = GetReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[1]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -144,7 +281,7 @@ func (x *GetReply) String() string {
 func (*GetReply) ProtoMessage() {}
 
 func (x *GetReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -157,7 +294,7 @@ func (x *GetReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReply.ProtoReflect.Descriptor instead.
 func (*GetReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetReply) GetCapabilityID() uint32 {
@@ -186,7 +323,7 @@ type GetTriggerRequest struct {
 func (x *GetTriggerRequest) Reset() {
 	*x = GetTriggerRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[2]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -199,7 +336,7 @@ func (x *GetTriggerRequest) String() string {
 func (*GetTriggerRequest) ProtoMessage() {}
 
 func (x *GetTriggerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -212,7 +349,7 @@ func (x *GetTriggerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTriggerRequest.ProtoReflect.Descriptor instead.
 func (*GetTriggerRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetTriggerRequest) GetId() string {
@@ -234,7 +371,7 @@ type GetTriggerReply struct {
 func (x *GetTriggerReply) Reset() {
 	*x = GetTriggerReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[3]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -247,7 +384,7 @@ func (x *GetTriggerReply) String() string {
 func (*GetTriggerReply) ProtoMessage() {}
 
 func (x *GetTriggerReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -260,7 +397,7 @@ func (x *GetTriggerReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTriggerReply.ProtoReflect.Descriptor instead.
 func (*GetTriggerReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetTriggerReply) GetCapabilityID() uint32 {
@@ -282,7 +419,7 @@ type GetActionRequest struct {
 func (x *GetActionRequest) Reset() {
 	*x = GetActionRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[4]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -295,7 +432,7 @@ func (x *GetActionRequest) String() string {
 func (*GetActionRequest) ProtoMessage() {}
 
 func (x *GetActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -308,7 +445,7 @@ func (x *GetActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetActionRequest.ProtoReflect.Descriptor instead.
 func (*GetActionRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetActionRequest) GetId() string {
@@ -330,7 +467,7 @@ type GetActionReply struct {
 func (x *GetActionReply) Reset() {
 	*x = GetActionReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[5]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -343,7 +480,7 @@ func (x *GetActionReply) String() string {
 func (*GetActionReply) ProtoMessage() {}
 
 func (x *GetActionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -356,7 +493,7 @@ func (x *GetActionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetActionReply.ProtoReflect.Descriptor instead.
 func (*GetActionReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetActionReply) GetCapabilityID() uint32 {
@@ -378,7 +515,7 @@ type GetConsensusRequest struct {
 func (x *GetConsensusRequest) Reset() {
 	*x = GetConsensusRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[6]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -391,7 +528,7 @@ func (x *GetConsensusRequest) String() string {
 func (*GetConsensusRequest) ProtoMessage() {}
 
 func (x *GetConsensusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +541,7 @@ func (x *GetConsensusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConsensusRequest.ProtoReflect.Descriptor instead.
 func (*GetConsensusRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetConsensusRequest) GetId() string {
@@ -426,7 +563,7 @@ type GetConsensusReply struct {
 func (x *GetConsensusReply) Reset() {
 	*x = GetConsensusReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[7]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -439,7 +576,7 @@ func (x *GetConsensusReply) String() string {
 func (*GetConsensusReply) ProtoMessage() {}
 
 func (x *GetConsensusReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -452,7 +589,7 @@ func (x *GetConsensusReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConsensusReply.ProtoReflect.Descriptor instead.
 func (*GetConsensusReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetConsensusReply) GetCapabilityID() uint32 {
@@ -474,7 +611,7 @@ type GetTargetRequest struct {
 func (x *GetTargetRequest) Reset() {
 	*x = GetTargetRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[8]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -487,7 +624,7 @@ func (x *GetTargetRequest) String() string {
 func (*GetTargetRequest) ProtoMessage() {}
 
 func (x *GetTargetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -500,7 +637,7 @@ func (x *GetTargetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTargetRequest.ProtoReflect.Descriptor instead.
 func (*GetTargetRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetTargetRequest) GetId() string {
@@ -522,7 +659,7 @@ type ListReply struct {
 func (x *ListReply) Reset() {
 	*x = ListReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[9]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -535,7 +672,7 @@ func (x *ListReply) String() string {
 func (*ListReply) ProtoMessage() {}
 
 func (x *ListReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -548,7 +685,7 @@ func (x *ListReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReply.ProtoReflect.Descriptor instead.
 func (*ListReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListReply) GetCapabilityID() []uint32 {
@@ -570,7 +707,7 @@ type GetTargetReply struct {
 func (x *GetTargetReply) Reset() {
 	*x = GetTargetReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[10]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -583,7 +720,7 @@ func (x *GetTargetReply) String() string {
 func (*GetTargetReply) ProtoMessage() {}
 
 func (x *GetTargetReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -596,7 +733,7 @@ func (x *GetTargetReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTargetReply.ProtoReflect.Descriptor instead.
 func (*GetTargetReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetTargetReply) GetCapabilityID() uint32 {
@@ -619,7 +756,7 @@ type AddRequest struct {
 func (x *AddRequest) Reset() {
 	*x = AddRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[11]
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -632,7 +769,7 @@ func (x *AddRequest) String() string {
 func (*AddRequest) ProtoMessage() {}
 
 func (x *AddRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -645,7 +782,7 @@ func (x *AddRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddRequest.ProtoReflect.Descriptor instead.
 func (*AddRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AddRequest) GetCapabilityID() uint32 {
@@ -662,6 +799,108 @@ func (x *AddRequest) GetType() ExecuteAPIType {
 	return ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN
 }
 
+type ConfigForCapabilityRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CapabilityID string `protobuf:"bytes,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	DonID        uint32 `protobuf:"varint,2,opt,name=donID,proto3" json:"donID,omitempty"`
+}
+
+func (x *ConfigForCapabilityRequest) Reset() {
+	*x = ConfigForCapabilityRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConfigForCapabilityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfigForCapabilityRequest) ProtoMessage() {}
+
+func (x *ConfigForCapabilityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfigForCapabilityRequest.ProtoReflect.Descriptor instead.
+func (*ConfigForCapabilityRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ConfigForCapabilityRequest) GetCapabilityID() string {
+	if x != nil {
+		return x.CapabilityID
+	}
+	return ""
+}
+
+func (x *ConfigForCapabilityRequest) GetDonID() uint32 {
+	if x != nil {
+		return x.DonID
+	}
+	return 0
+}
+
+type ConfigForCapabilityReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CapabilityConfig *pb.CapabilityConfig `protobuf:"bytes,1,opt,name=capability_config,json=capabilityConfig,proto3" json:"capability_config,omitempty"`
+}
+
+func (x *ConfigForCapabilityReply) Reset() {
+	*x = ConfigForCapabilityReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConfigForCapabilityReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfigForCapabilityReply) ProtoMessage() {}
+
+func (x *ConfigForCapabilityReply) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_capabilities_registry_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfigForCapabilityReply.ProtoReflect.Descriptor instead.
+func (*ConfigForCapabilityReply) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ConfigForCapabilityReply) GetCapabilityConfig() *pb.CapabilityConfig {
+	if x != nil {
+		return x.CapabilityConfig
+	}
+	return nil
+}
+
 var File_loop_internal_pb_capabilities_registry_proto protoreflect.FileDescriptor
 
 var file_loop_internal_pb_capabilities_registry_proto_rawDesc = []byte{
@@ -670,7 +909,24 @@ var file_loop_internal_pb_capabilities_registry_proto_rawDesc = []byte{
 	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x04,
 	0x6c, 0x6f, 0x6f, 0x70, 0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0x1c, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x6f, 0x1a, 0x1e, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x2f,
+	0x70, 0x62, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x22, 0x63, 0x0a, 0x03, 0x44, 0x4f, 0x4e, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x6d, 0x62,
+	0x65, 0x72, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x07, 0x6d, 0x65, 0x6d, 0x62, 0x65,
+	0x72, 0x73, 0x12, 0x0c, 0x0a, 0x01, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x01, 0x66,
+	0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f,
+	0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x56,
+	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x88, 0x01, 0x0a, 0x0e, 0x4c, 0x6f, 0x63, 0x61, 0x6c,
+	0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x65, 0x65,
+	0x72, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x70, 0x65, 0x65, 0x72, 0x49,
+	0x44, 0x12, 0x2b, 0x0a, 0x0b, 0x77, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x44, 0x4f, 0x4e,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x44, 0x4f,
+	0x4e, 0x52, 0x0b, 0x77, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x44, 0x4f, 0x4e, 0x12, 0x31,
+	0x0a, 0x0e, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x44, 0x4f, 0x4e, 0x73,
+	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x44, 0x4f,
+	0x4e, 0x52, 0x0e, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x44, 0x4f, 0x4e,
+	0x73, 0x22, 0x1c, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
 	0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x22,
 	0x58, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x22, 0x0a, 0x0c, 0x63,
 	0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28,
@@ -709,45 +965,66 @@ var file_loop_internal_pb_capabilities_registry_proto_rawDesc = []byte{
 	0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x49, 0x44, 0x12, 0x28, 0x0a, 0x04,
 	0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x14, 0x2e, 0x6c, 0x6f, 0x6f,
 	0x70, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x41, 0x50, 0x49, 0x54, 0x79, 0x70, 0x65,
-	0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x2a, 0x6b, 0x0a, 0x0e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74,
-	0x65, 0x41, 0x50, 0x49, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1c, 0x0a, 0x18, 0x45, 0x58, 0x45, 0x43,
-	0x55, 0x54, 0x45, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x4b,
-	0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x1c, 0x0a, 0x18, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54,
-	0x45, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x54, 0x52, 0x49, 0x47, 0x47,
-	0x45, 0x52, 0x10, 0x01, 0x12, 0x1d, 0x0a, 0x19, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x45, 0x5f,
-	0x41, 0x50, 0x49, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x43, 0x41, 0x4c, 0x4c, 0x42, 0x41, 0x43,
-	0x4b, 0x10, 0x02, 0x32, 0xa7, 0x03, 0x0a, 0x14, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69,
-	0x74, 0x69, 0x65, 0x73, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x12, 0x29, 0x0a, 0x03,
-	0x47, 0x65, 0x74, 0x12, 0x10, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74,
-	0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3e, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x54, 0x72,
-	0x69, 0x67, 0x67, 0x65, 0x72, 0x12, 0x17, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74,
-	0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15,
-	0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72,
-	0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x41, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x41,
-	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x6c,
-	0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x70,
-	0x6c, 0x79, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x73, 0x65,
-	0x6e, 0x73, 0x75, 0x73, 0x12, 0x19, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x43,
-	0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x17, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e,
-	0x73, 0x75, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x47, 0x65,
-	0x74, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47,
-	0x65, 0x74, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x14, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74,
-	0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x31, 0x0a, 0x04, 0x4c, 0x69, 0x73, 0x74, 0x12,
-	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x4c,
-	0x69, 0x73, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x31, 0x0a, 0x03, 0x41, 0x64,
-	0x64, 0x12, 0x10, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x42, 0x43, 0x5a,
-	0x41, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72,
-	0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61,
-	0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b,
-	0x67, 0x2f, 0x6c, 0x6f, 0x6f, 0x70, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x56, 0x0a, 0x1a, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x46, 0x6f, 0x72, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x22, 0x0a, 0x0c, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69,
+	0x74, 0x79, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x61, 0x70, 0x61,
+	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x49, 0x44, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x6f, 0x6e, 0x49,
+	0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x64, 0x6f, 0x6e, 0x49, 0x44, 0x22, 0x5f,
+	0x0a, 0x18, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x46, 0x6f, 0x72, 0x43, 0x61, 0x70, 0x61, 0x62,
+	0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x43, 0x0a, 0x11, 0x63, 0x61,
+	0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x43, 0x61, 0x70,
+	0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x10, 0x63,
+	0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2a,
+	0x6b, 0x0a, 0x0e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x41, 0x50, 0x49, 0x54, 0x79, 0x70,
+	0x65, 0x12, 0x1c, 0x0a, 0x18, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x45, 0x5f, 0x41, 0x50, 0x49,
+	0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12,
+	0x1c, 0x0a, 0x18, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x45, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x54,
+	0x59, 0x50, 0x45, 0x5f, 0x54, 0x52, 0x49, 0x47, 0x47, 0x45, 0x52, 0x10, 0x01, 0x12, 0x1d, 0x0a,
+	0x19, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x45, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x54, 0x59, 0x50,
+	0x45, 0x5f, 0x43, 0x41, 0x4c, 0x4c, 0x42, 0x41, 0x43, 0x4b, 0x10, 0x02, 0x32, 0xbf, 0x04, 0x0a,
+	0x14, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x52, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x79, 0x12, 0x3b, 0x0a, 0x09, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x4e, 0x6f,
+	0x64, 0x65, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x14, 0x2e, 0x6c, 0x6f, 0x6f,
+	0x70, 0x2e, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79,
+	0x22, 0x00, 0x12, 0x59, 0x0a, 0x13, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x46, 0x6f, 0x72, 0x43,
+	0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x12, 0x20, 0x2e, 0x6c, 0x6f, 0x6f, 0x70,
+	0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x46, 0x6f, 0x72, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69,
+	0x6c, 0x69, 0x74, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x6c, 0x6f,
+	0x6f, 0x70, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x46, 0x6f, 0x72, 0x43, 0x61, 0x70, 0x61,
+	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x29, 0x0a,
+	0x03, 0x47, 0x65, 0x74, 0x12, 0x10, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65,
+	0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3e, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x54,
+	0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x12, 0x17, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65,
+	0x74, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x15, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65,
+	0x72, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x41,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74,
+	0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e,
+	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65,
+	0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x73,
+	0x65, 0x6e, 0x73, 0x75, 0x73, 0x12, 0x19, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74,
+	0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x17, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x73, 0x65,
+	0x6e, 0x73, 0x75, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x09, 0x47,
+	0x65, 0x74, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x16, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e,
+	0x47, 0x65, 0x74, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x14, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x61, 0x72, 0x67, 0x65,
+	0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x31, 0x0a, 0x04, 0x4c, 0x69, 0x73, 0x74,
+	0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e,
+	0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x31, 0x0a, 0x03, 0x41,
+	0x64, 0x64, 0x12, 0x10, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x42, 0x43,
+	0x5a, 0x41, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61,
+	0x72, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70,
+	0x6b, 0x67, 0x2f, 0x6c, 0x6f, 0x6f, 0x70, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c,
+	0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -763,45 +1040,57 @@ func file_loop_internal_pb_capabilities_registry_proto_rawDescGZIP() []byte {
 }
 
 var file_loop_internal_pb_capabilities_registry_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_loop_internal_pb_capabilities_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_loop_internal_pb_capabilities_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_loop_internal_pb_capabilities_registry_proto_goTypes = []interface{}{
-	(ExecuteAPIType)(0),         // 0: loop.ExecuteAPIType
-	(*GetRequest)(nil),          // 1: loop.GetRequest
-	(*GetReply)(nil),            // 2: loop.GetReply
-	(*GetTriggerRequest)(nil),   // 3: loop.GetTriggerRequest
-	(*GetTriggerReply)(nil),     // 4: loop.GetTriggerReply
-	(*GetActionRequest)(nil),    // 5: loop.GetActionRequest
-	(*GetActionReply)(nil),      // 6: loop.GetActionReply
-	(*GetConsensusRequest)(nil), // 7: loop.GetConsensusRequest
-	(*GetConsensusReply)(nil),   // 8: loop.GetConsensusReply
-	(*GetTargetRequest)(nil),    // 9: loop.GetTargetRequest
-	(*ListReply)(nil),           // 10: loop.ListReply
-	(*GetTargetReply)(nil),      // 11: loop.GetTargetReply
-	(*AddRequest)(nil),          // 12: loop.AddRequest
-	(*emptypb.Empty)(nil),       // 13: google.protobuf.Empty
+	(ExecuteAPIType)(0),                // 0: loop.ExecuteAPIType
+	(*DON)(nil),                        // 1: loop.DON
+	(*LocalNodeReply)(nil),             // 2: loop.LocalNodeReply
+	(*GetRequest)(nil),                 // 3: loop.GetRequest
+	(*GetReply)(nil),                   // 4: loop.GetReply
+	(*GetTriggerRequest)(nil),          // 5: loop.GetTriggerRequest
+	(*GetTriggerReply)(nil),            // 6: loop.GetTriggerReply
+	(*GetActionRequest)(nil),           // 7: loop.GetActionRequest
+	(*GetActionReply)(nil),             // 8: loop.GetActionReply
+	(*GetConsensusRequest)(nil),        // 9: loop.GetConsensusRequest
+	(*GetConsensusReply)(nil),          // 10: loop.GetConsensusReply
+	(*GetTargetRequest)(nil),           // 11: loop.GetTargetRequest
+	(*ListReply)(nil),                  // 12: loop.ListReply
+	(*GetTargetReply)(nil),             // 13: loop.GetTargetReply
+	(*AddRequest)(nil),                 // 14: loop.AddRequest
+	(*ConfigForCapabilityRequest)(nil), // 15: loop.ConfigForCapabilityRequest
+	(*ConfigForCapabilityReply)(nil),   // 16: loop.ConfigForCapabilityReply
+	(*pb.CapabilityConfig)(nil),        // 17: loop.CapabilityConfig
+	(*emptypb.Empty)(nil),              // 18: google.protobuf.Empty
 }
 var file_loop_internal_pb_capabilities_registry_proto_depIdxs = []int32{
-	0,  // 0: loop.GetReply.type:type_name -> loop.ExecuteAPIType
-	0,  // 1: loop.AddRequest.type:type_name -> loop.ExecuteAPIType
-	1,  // 2: loop.CapabilitiesRegistry.Get:input_type -> loop.GetRequest
-	3,  // 3: loop.CapabilitiesRegistry.GetTrigger:input_type -> loop.GetTriggerRequest
-	5,  // 4: loop.CapabilitiesRegistry.GetAction:input_type -> loop.GetActionRequest
-	7,  // 5: loop.CapabilitiesRegistry.GetConsensus:input_type -> loop.GetConsensusRequest
-	9,  // 6: loop.CapabilitiesRegistry.GetTarget:input_type -> loop.GetTargetRequest
-	13, // 7: loop.CapabilitiesRegistry.List:input_type -> google.protobuf.Empty
-	12, // 8: loop.CapabilitiesRegistry.Add:input_type -> loop.AddRequest
-	2,  // 9: loop.CapabilitiesRegistry.Get:output_type -> loop.GetReply
-	4,  // 10: loop.CapabilitiesRegistry.GetTrigger:output_type -> loop.GetTriggerReply
-	6,  // 11: loop.CapabilitiesRegistry.GetAction:output_type -> loop.GetActionReply
-	8,  // 12: loop.CapabilitiesRegistry.GetConsensus:output_type -> loop.GetConsensusReply
-	11, // 13: loop.CapabilitiesRegistry.GetTarget:output_type -> loop.GetTargetReply
-	10, // 14: loop.CapabilitiesRegistry.List:output_type -> loop.ListReply
-	13, // 15: loop.CapabilitiesRegistry.Add:output_type -> google.protobuf.Empty
-	9,  // [9:16] is the sub-list for method output_type
-	2,  // [2:9] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	1,  // 0: loop.LocalNodeReply.workflowDON:type_name -> loop.DON
+	1,  // 1: loop.LocalNodeReply.CapabilityDONs:type_name -> loop.DON
+	0,  // 2: loop.GetReply.type:type_name -> loop.ExecuteAPIType
+	0,  // 3: loop.AddRequest.type:type_name -> loop.ExecuteAPIType
+	17, // 4: loop.ConfigForCapabilityReply.capability_config:type_name -> loop.CapabilityConfig
+	18, // 5: loop.CapabilitiesRegistry.LocalNode:input_type -> google.protobuf.Empty
+	15, // 6: loop.CapabilitiesRegistry.ConfigForCapability:input_type -> loop.ConfigForCapabilityRequest
+	3,  // 7: loop.CapabilitiesRegistry.Get:input_type -> loop.GetRequest
+	5,  // 8: loop.CapabilitiesRegistry.GetTrigger:input_type -> loop.GetTriggerRequest
+	7,  // 9: loop.CapabilitiesRegistry.GetAction:input_type -> loop.GetActionRequest
+	9,  // 10: loop.CapabilitiesRegistry.GetConsensus:input_type -> loop.GetConsensusRequest
+	11, // 11: loop.CapabilitiesRegistry.GetTarget:input_type -> loop.GetTargetRequest
+	18, // 12: loop.CapabilitiesRegistry.List:input_type -> google.protobuf.Empty
+	14, // 13: loop.CapabilitiesRegistry.Add:input_type -> loop.AddRequest
+	2,  // 14: loop.CapabilitiesRegistry.LocalNode:output_type -> loop.LocalNodeReply
+	16, // 15: loop.CapabilitiesRegistry.ConfigForCapability:output_type -> loop.ConfigForCapabilityReply
+	4,  // 16: loop.CapabilitiesRegistry.Get:output_type -> loop.GetReply
+	6,  // 17: loop.CapabilitiesRegistry.GetTrigger:output_type -> loop.GetTriggerReply
+	8,  // 18: loop.CapabilitiesRegistry.GetAction:output_type -> loop.GetActionReply
+	10, // 19: loop.CapabilitiesRegistry.GetConsensus:output_type -> loop.GetConsensusReply
+	13, // 20: loop.CapabilitiesRegistry.GetTarget:output_type -> loop.GetTargetReply
+	12, // 21: loop.CapabilitiesRegistry.List:output_type -> loop.ListReply
+	18, // 22: loop.CapabilitiesRegistry.Add:output_type -> google.protobuf.Empty
+	14, // [14:23] is the sub-list for method output_type
+	5,  // [5:14] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_loop_internal_pb_capabilities_registry_proto_init() }
@@ -811,7 +1100,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRequest); i {
+			switch v := v.(*DON); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -823,7 +1112,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetReply); i {
+			switch v := v.(*LocalNodeReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -835,7 +1124,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTriggerRequest); i {
+			switch v := v.(*GetRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -847,7 +1136,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTriggerReply); i {
+			switch v := v.(*GetReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -859,7 +1148,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetActionRequest); i {
+			switch v := v.(*GetTriggerRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -871,7 +1160,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetActionReply); i {
+			switch v := v.(*GetTriggerReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -883,7 +1172,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetConsensusRequest); i {
+			switch v := v.(*GetActionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -895,7 +1184,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetConsensusReply); i {
+			switch v := v.(*GetActionReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -907,7 +1196,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTargetRequest); i {
+			switch v := v.(*GetConsensusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -919,7 +1208,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListReply); i {
+			switch v := v.(*GetConsensusReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -931,7 +1220,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTargetReply); i {
+			switch v := v.(*GetTargetRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -943,7 +1232,55 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			}
 		}
 		file_loop_internal_pb_capabilities_registry_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ListReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_loop_internal_pb_capabilities_registry_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTargetReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_loop_internal_pb_capabilities_registry_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_loop_internal_pb_capabilities_registry_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConfigForCapabilityRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_loop_internal_pb_capabilities_registry_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConfigForCapabilityReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -961,7 +1298,7 @@ func file_loop_internal_pb_capabilities_registry_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_loop_internal_pb_capabilities_registry_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   12,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

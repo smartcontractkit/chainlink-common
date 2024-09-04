@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams/streams-trigger@1.0.0",
+  "description": "Streams Trigger",
+  "$defs": {
+    "feedId": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$",
+      "description": "The ID of the data feed."
+    },
+    "SignersMetadata": {
+      "type": "object",
+      "properties": {
+        "Signers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "The id of the signer."
+          }
+        },
+        "MinRequiredSignatures": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "Signers",
+        "MinRequiredSignatures"
+      ]
+    },
+    "FeedReport": {
+      "type": "object",
+      "properties": {
+        "FeedID": {
+          "$ref": "#/$defs/feedId"
+        },
+        "FullReport": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Full report represented as bytes encoded as base64 string."
+        },
+        "ReportContext": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Report context represented as bytes encoded as base64 string. This is required to validate the signatures."
+        },
+        "Signatures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "description": "Signature over full report and report context represented as bytes encoded as base64 string."
+          }
+        },
+        "BenchmarkPrice": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "This value is extracted from the fullReport. Benchmark price represented as bytes encoded as base64 string."
+        },
+        "ObservationTimestamp": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "FeedID",
+        "FullReport",
+        "ReportContext",
+        "Signatures",
+        "BenchmarkPrice",
+        "ObservationTimestamp"
+      ]
+    },
+    "Feed": {
+      "type": "object",
+      "properties": {
+        "TriggerType": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "string"
+        },
+        "Timestamp": {
+          "type": "string"
+        },
+        "Metadata": {
+          "$ref": "#/$defs/SignersMetadata"
+        },
+        "Payload": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FeedReport"
+          }
+        }
+      },
+      "required": [
+        "TriggerType",
+        "ID",
+        "Timestamp",
+        "Metadata",
+        "Payload"
+      ]
+    }
+  },
+  "properties": {
+    "config": {
+      "properties": {
+        "feedIds": {
+          "type": "array",
+          "description": "The IDs of the data feeds that will have their reports included in the trigger event.",
+          "items": {
+            "$ref": "#/$defs/feedId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "maxFrequencyMs": {
+          "type": "integer",
+          "description": "The interval in seconds after which a new trigger event is generated.",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["feedIds", "maxFrequencyMs"]
+    },
+    "outputs": {
+      "$ref": "#/$defs/Feed"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

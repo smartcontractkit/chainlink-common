@@ -54,18 +54,17 @@ type capability struct {
 	callbackChannelBufferSize int
 
 	registeredWorkflowsIDs map[string]bool
-	registeredWorkflowsMu  sync.RWMutex
+	mu                     sync.RWMutex
 }
 
 var _ capabilityIface = (*capability)(nil)
 var _ capabilities.ConsensusCapability = (*capability)(nil)
-var ocr3CapabilityValidator = capabilities.NewValidator[config, inputs, requests.Response](capabilities.ValidatorArgs{Info: info})
 
 func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
-		Validator:         ocr3CapabilityValidator,
+		Validator:         capabilities.NewValidator[config, inputs, requests.Response](capabilities.ValidatorArgs{Info: info}),
 		reqHandler:        requests.NewHandler(lggr, s, clock, requestTimeout),
 		clock:             clock,
 		requestTimeout:    requestTimeout,
@@ -118,6 +117,8 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	agg, err := o.aggregatorFactory(c.AggregationMethod, *c.AggregationConfig, o.lggr)
 	if err != nil {
 		return err
@@ -129,8 +130,6 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 	o.encoders[request.Metadata.WorkflowID] = encoder
-	o.registeredWorkflowsMu.Lock()
-	defer o.registeredWorkflowsMu.Unlock()
 	o.registeredWorkflowsIDs[request.Metadata.WorkflowID] = true
 	return nil
 }
@@ -154,8 +153,8 @@ func (o *capability) getEncoder(workflowID string) (types.Encoder, error) {
 }
 
 func (o *capability) getRegisteredWorkflowsIDs() []string {
-	o.registeredWorkflowsMu.RLock()
-	defer o.registeredWorkflowsMu.RUnlock()
+	o.mu.RLock()
+	defer o.mu.RUnlock()
 
 	workflows := make([]string, 0, len(o.registeredWorkflowsIDs))
 	for wf := range o.registeredWorkflowsIDs {
@@ -165,14 +164,14 @@ func (o *capability) getRegisteredWorkflowsIDs() []string {
 }
 
 func (o *capability) unregisterWorkflowID(workflowID string) {
-	o.registeredWorkflowsMu.Lock()
-	defer o.registeredWorkflowsMu.Unlock()
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	delete(o.registeredWorkflowsIDs, workflowID)
 }
 
 func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
-	o.registeredWorkflowsMu.Lock()
-	defer o.registeredWorkflowsMu.Unlock()
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	delete(o.registeredWorkflowsIDs, request.Metadata.WorkflowID)
 	delete(o.aggregators, request.Metadata.WorkflowID)
 	delete(o.encoders, request.Metadata.WorkflowID)
@@ -203,7 +202,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return nil, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}
-		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs)
+		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
 		var responseErr error
 		if m.Terminate {
 			o.lggr.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
@@ -280,6 +279,7 @@ func (o *capability) queueRequestForProcessing(
 		WorkflowDonID:            metadata.WorkflowDonID,
 		WorkflowDonConfigVersion: metadata.WorkflowDonConfigVersion,
 		Observations:             i.Observations,
+		KeyID:                    c.KeyID,
 		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}
 

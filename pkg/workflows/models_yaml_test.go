@@ -56,7 +56,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 	t.Run("Type coercion", func(t *testing.T) {
 		workflowBytes := fixtureReader("workflow_1")
 
-		spec := workflowSpecYaml{}
+		spec := WorkflowSpecYaml{}
 		err := yaml.Unmarshal(workflowBytes, &spec)
 		require.NoError(t, err)
 
@@ -117,7 +117,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 	t.Run("Table and string capability id", func(t *testing.T) {
 		workflowBytes := fixtureReader("workflow_2")
 
-		spec := workflowSpecYaml{}
+		spec := WorkflowSpecYaml{}
 		err := yaml.Unmarshal(workflowBytes, &spec)
 		require.NoError(t, err)
 
@@ -244,7 +244,6 @@ func TestJsonSchema(t *testing.T) {
 
 			err = jsonSchema.Validate(passingFixture1)
 			require.NoError(t, err)
-
 		})
 
 		// test ref regex
@@ -345,7 +344,7 @@ func TestJsonSchema(t *testing.T) {
 }
 
 func TestMappingCustomType(t *testing.T) {
-	m := mapping(map[string]any{})
+	m := Mapping(map[string]any{})
 	data := `
 {
 	"foo": 100,

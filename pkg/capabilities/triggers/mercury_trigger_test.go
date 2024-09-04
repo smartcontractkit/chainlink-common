@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math/big"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -30,16 +28,9 @@ func registerTrigger(
 	feedIDs []string,
 	triggerID string,
 ) (
-	<-chan capabilities.CapabilityResponse,
-	capabilities.CapabilityRequest,
+	<-chan capabilities.TriggerResponse,
+	capabilities.TriggerRegistrationRequest,
 ) {
-	var unregisterRequest capabilities.CapabilityRequest
-
-	inputs, err := values.NewMap(map[string]interface{}{
-		"triggerId": triggerID,
-	})
-	require.NoError(t, err)
-
 	config, err := values.NewMap(map[string]interface{}{
 		"feedIds":        feedIDs,
 		"maxFrequencyMs": 100,
@@ -49,20 +40,15 @@ func registerTrigger(
 	requestMetadata := capabilities.RequestMetadata{
 		WorkflowID: "workflow-id-1",
 	}
-	registerRequest := capabilities.CapabilityRequest{
-		Metadata: requestMetadata,
-		Inputs:   inputs,
-		Config:   config,
+	registerRequest := capabilities.TriggerRegistrationRequest{
+		Metadata:  requestMetadata,
+		TriggerID: triggerID,
+		Config:    config,
 	}
 	triggerEventsCh, err := ts.RegisterTrigger(ctx, registerRequest)
 	require.NoError(t, err)
 
-	unregisterRequest = capabilities.CapabilityRequest{
-		Metadata: requestMetadata,
-		Inputs:   inputs,
-	}
-
-	return triggerEventsCh, unregisterRequest
+	return triggerEventsCh, registerRequest
 }
 
 var (
@@ -100,7 +86,7 @@ func TestMercuryTrigger(t *testing.T) {
 	err = ts.ProcessReport(mfr)
 	assert.NoError(t, err)
 	msg := <-callback
-	triggerEvent, reports := upwrapTriggerEvent(t, msg.Value)
+	triggerEvent, reports := upwrapTriggerEvent(t, msg)
 	assert.Equal(t, triggerID, triggerEvent.TriggerType)
 	assert.Len(t, reports, 1)
 	assert.Equal(t, mfr[0], reports[0])
@@ -178,7 +164,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.NoError(t, err)
 
 	msg := <-callback1
-	triggerEvent, reports := upwrapTriggerEvent(t, msg.Value)
+	triggerEvent, reports := upwrapTriggerEvent(t, msg)
 	assert.Equal(t, triggerID, triggerEvent.TriggerType)
 	assert.Len(t, reports, 3)
 	assert.Equal(t, mfr1[0], reports[0])
@@ -186,7 +172,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 	assert.Equal(t, mfr1[3], reports[2])
 
 	msg = <-callback2
-	triggerEvent, reports = upwrapTriggerEvent(t, msg.Value)
+	triggerEvent, reports = upwrapTriggerEvent(t, msg)
 	assert.Equal(t, triggerID, triggerEvent.TriggerType)
 	assert.Len(t, reports, 2)
 	assert.Equal(t, mfr1[2], reports[0])
@@ -206,7 +192,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 
 	retryCount := 0
 	for rMsg := range callback2 {
-		triggerEvent, reports = upwrapTriggerEvent(t, rMsg.Value)
+		triggerEvent, reports = upwrapTriggerEvent(t, rMsg)
 		require.NoError(t, err)
 		require.Len(t, reports, 2)
 		require.Equal(t, triggerID, triggerEvent.TriggerType)
@@ -232,12 +218,6 @@ func TestMercuryTrigger_RegisterTriggerErrors(t *testing.T) {
 	ctx := tests.Context(t)
 	require.NoError(t, ts.Start(ctx))
 
-	im := map[string]interface{}{
-		"triggerId": "test-id-1",
-	}
-	inputsWrapped, err := values.NewMap(im)
-	require.NoError(t, err)
-
 	cm := map[string]interface{}{
 		"feedIds":        []string{feedOne},
 		"maxFrequencyMs": 90,
@@ -245,12 +225,12 @@ func TestMercuryTrigger_RegisterTriggerErrors(t *testing.T) {
 	configWrapped, err := values.NewMap(cm)
 	require.NoError(t, err)
 
-	cr := capabilities.CapabilityRequest{
+	cr := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "workflow-id-1",
 		},
-		Config: configWrapped,
-		Inputs: inputsWrapped,
+		Config:    configWrapped,
+		TriggerID: "test-id-1",
 	}
 	_, err = ts.RegisterTrigger(ctx, cr)
 	require.Error(t, err)
@@ -290,14 +270,11 @@ func TestGetNextWaitIntervalMs(t *testing.T) {
 	assert.Equal(t, int64(0), getNextWaitIntervalMs(12000, 1000, 14600))
 }
 
-func upwrapTriggerEvent(t *testing.T, wrappedEvent values.Value) (capabilities.TriggerEvent, []datastreams.FeedReport) {
-	event := capabilities.TriggerEvent{}
-	err := wrappedEvent.UnwrapTo(&event)
+func upwrapTriggerEvent(t *testing.T, req capabilities.TriggerResponse) (capabilities.TriggerEvent, []datastreams.FeedReport) {
+	require.NotNil(t, req.Event.Outputs)
+	mercuryReports, err := testMercuryCodec{}.Unwrap(req.Event.Outputs)
 	require.NoError(t, err)
-	require.NotNil(t, event.Payload)
-	mercuryReports, err := testMercuryCodec{}.Unwrap(event.Payload)
-	require.NoError(t, err)
-	return event, mercuryReports
+	return req.Event, mercuryReports
 }
 
 func TestMercuryTrigger_ConfigValidation(t *testing.T) {
@@ -355,27 +332,11 @@ func TestMercuryTrigger_ConfigValidation(t *testing.T) {
 	require.NotEmpty(t, conf)
 }
 
-func TestMercuryTrigger_GenerateSchema(t *testing.T) {
-	ts := NewMercuryTriggerService(1000, logger.Nop())
-	schema, err := ts.Schema()
-	require.NoError(t, err)
-	var shouldUpdate = false
-	if shouldUpdate {
-		err = os.WriteFile("./testdata/fixtures/mercury/schema.json", []byte(schema), 0600)
-		require.NoError(t, err)
-	}
-
-	fixture, err := os.ReadFile("./testdata/fixtures/mercury/schema.json")
-	require.NoError(t, err)
-
-	utils.AssertJSONEqual(t, fixture, []byte(schema))
-}
-
 func TestMercuryTrigger_WrapReports(t *testing.T) {
 	S := 31   // signers
 	P := 50   // feeds
 	B := 1000 // report size in bytes
-	meta := datastreams.SignersMetadata{}
+	meta := datastreams.Metadata{}
 	for i := 0; i < S; i++ {
 		meta.Signers = append(meta.Signers, randomByteArray(t, 20))
 	}
@@ -396,8 +357,8 @@ func TestMercuryTrigger_WrapReports(t *testing.T) {
 	}
 	wrapped, err := wrapReports(reportList, "event_id", 1234, meta)
 	require.NoError(t, err)
-	require.NotNil(t, wrapped.Value)
-	require.Len(t, wrapped.Value.Underlying["Payload"].(*values.List).Underlying, P)
+	require.NotNil(t, wrapped.Event)
+	require.Len(t, wrapped.Event.Outputs.Underlying["Payload"].(*values.List).Underlying, P)
 }
 
 func randomByteArray(t *testing.T, n int) []byte {

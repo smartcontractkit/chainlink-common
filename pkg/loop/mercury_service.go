@@ -13,7 +13,42 @@ import (
 	mercury_v1_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercury_v2_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	mercury_v3_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
+	mercury_v4_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v4"
 )
+
+var _ ocr3types.MercuryPluginFactory = (*MercuryV4Service)(nil)
+
+// MercuryV3Service is a [types.Service] that maintains an internal [types.PluginMedian].
+type MercuryV4Service struct {
+	goplugin.PluginService[*GRPCPluginMercury, types.MercuryPluginFactory]
+}
+
+var _ ocr3types.MercuryPluginFactory = (*MercuryV4Service)(nil)
+
+// NewMercuryV3Service returns a new [*MercuryV3Service].
+// cmd must return a new exec.Cmd each time it is called.
+func NewMercuryV4Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MercuryProvider, dataSource mercury_v4_types.DataSource) *MercuryV4Service {
+	newService := func(ctx context.Context, instance any) (types.MercuryPluginFactory, error) {
+		plug, ok := instance.(types.PluginMercury)
+		if !ok {
+			return nil, fmt.Errorf("expected PluginMercury but got %T", instance)
+		}
+		return plug.NewMercuryV4Factory(ctx, provider, dataSource)
+	}
+	stopCh := make(chan struct{})
+	lggr = logger.Named(lggr, "MercuryV3")
+	var ms MercuryV4Service
+	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
+	ms.Init(PluginMercuryName, &GRPCPluginMercury{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
+	return &ms
+}
+
+func (m *MercuryV4Service) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+	if err := m.Wait(); err != nil {
+		return nil, ocr3types.MercuryPluginInfo{}, err
+	}
+	return m.Service.NewMercuryPlugin(config)
+}
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV3Service)(nil)
 

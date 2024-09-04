@@ -111,6 +111,7 @@ var ExecutionFactoryGenerator_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	ExecutionCustomHandlers_GetTransactionStatus_FullMethodName      = "/loop.internal.pb.ccip.ExecutionCustomHandlers/GetTransactionStatus"
 	ExecutionCustomHandlers_NewCommitStoreReader_FullMethodName      = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewCommitStoreReader"
 	ExecutionCustomHandlers_NewOffRampReader_FullMethodName          = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewOffRampReader"
 	ExecutionCustomHandlers_NewOnRampReader_FullMethodName           = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewOnRampReader"
@@ -125,6 +126,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ExecutionCustomHandlersClient interface {
+	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusResponse, error)
 	NewCommitStoreReader(ctx context.Context, in *NewCommitStoreReaderRequest, opts ...grpc.CallOption) (*NewCommitStoreReaderResponse, error)
 	NewOffRampReader(ctx context.Context, in *NewOffRampReaderRequest, opts ...grpc.CallOption) (*NewOffRampReaderResponse, error)
 	NewOnRampReader(ctx context.Context, in *NewOnRampReaderRequest, opts ...grpc.CallOption) (*NewOnRampReaderResponse, error)
@@ -141,6 +143,15 @@ type executionCustomHandlersClient struct {
 
 func NewExecutionCustomHandlersClient(cc grpc.ClientConnInterface) ExecutionCustomHandlersClient {
 	return &executionCustomHandlersClient{cc}
+}
+
+func (c *executionCustomHandlersClient) GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusResponse, error) {
+	out := new(GetTransactionStatusResponse)
+	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_GetTransactionStatus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *executionCustomHandlersClient) NewCommitStoreReader(ctx context.Context, in *NewCommitStoreReaderRequest, opts ...grpc.CallOption) (*NewCommitStoreReaderResponse, error) {
@@ -219,6 +230,7 @@ func (c *executionCustomHandlersClient) Close(ctx context.Context, in *emptypb.E
 // All implementations must embed UnimplementedExecutionCustomHandlersServer
 // for forward compatibility
 type ExecutionCustomHandlersServer interface {
+	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusResponse, error)
 	NewCommitStoreReader(context.Context, *NewCommitStoreReaderRequest) (*NewCommitStoreReaderResponse, error)
 	NewOffRampReader(context.Context, *NewOffRampReaderRequest) (*NewOffRampReaderResponse, error)
 	NewOnRampReader(context.Context, *NewOnRampReaderRequest) (*NewOnRampReaderResponse, error)
@@ -234,6 +246,9 @@ type ExecutionCustomHandlersServer interface {
 type UnimplementedExecutionCustomHandlersServer struct {
 }
 
+func (UnimplementedExecutionCustomHandlersServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+}
 func (UnimplementedExecutionCustomHandlersServer) NewCommitStoreReader(context.Context, *NewCommitStoreReaderRequest) (*NewCommitStoreReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewCommitStoreReader not implemented")
 }
@@ -270,6 +285,24 @@ type UnsafeExecutionCustomHandlersServer interface {
 
 func RegisterExecutionCustomHandlersServer(s grpc.ServiceRegistrar, srv ExecutionCustomHandlersServer) {
 	s.RegisterService(&ExecutionCustomHandlers_ServiceDesc, srv)
+}
+
+func _ExecutionCustomHandlers_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutionCustomHandlersServer).GetTransactionStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExecutionCustomHandlers_GetTransactionStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExecutionCustomHandlersServer).GetTransactionStatus(ctx, req.(*GetTransactionStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ExecutionCustomHandlers_NewCommitStoreReader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -423,6 +456,10 @@ var ExecutionCustomHandlers_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.internal.pb.ccip.ExecutionCustomHandlers",
 	HandlerType: (*ExecutionCustomHandlersServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetTransactionStatus",
+			Handler:    _ExecutionCustomHandlers_GetTransactionStatus_Handler,
+		},
 		{
 			MethodName: "NewCommitStoreReader",
 			Handler:    _ExecutionCustomHandlers_NewCommitStoreReader_Handler,

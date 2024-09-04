@@ -68,7 +68,7 @@ func TestInt8(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Int8()
-		bytes := make([]byte, 1-1)
+		bytes := make([]byte, 1-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})
@@ -149,7 +149,7 @@ func TestUint8(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Uint8()
-		bytes := make([]byte, 1-1)
+		bytes := make([]byte, 1-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})
@@ -230,7 +230,7 @@ func TestInt16(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Int16()
-		bytes := make([]byte, 2-1)
+		bytes := make([]byte, 2-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})
@@ -311,7 +311,7 @@ func TestUint16(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Uint16()
-		bytes := make([]byte, 2-1)
+		bytes := make([]byte, 2-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})
@@ -392,7 +392,7 @@ func TestInt32(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Int32()
-		bytes := make([]byte, 4-1)
+		bytes := make([]byte, 4-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})
@@ -473,7 +473,7 @@ func TestUint32(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Uint32()
-		bytes := make([]byte, 4-1)
+		bytes := make([]byte, 4-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})
@@ -554,7 +554,7 @@ func TestInt64(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Int64()
-		bytes := make([]byte, 8-1)
+		bytes := make([]byte, 8-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})
@@ -635,7 +635,7 @@ func TestUint64(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := bi.Uint64()
-		bytes := make([]byte, 8-1)
+		bytes := make([]byte, 8-1) // nolint
 		_, _, err := i.Decode(bytes)
 		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
 	})

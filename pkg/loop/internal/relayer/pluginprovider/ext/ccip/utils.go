@@ -7,6 +7,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
+	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
 type GRPCResourceCloser interface {
@@ -23,4 +26,46 @@ func shutdownGRPCServer(ctx context.Context, rc GRPCResourceCloser) error {
 		return nil
 	}
 	return err
+}
+
+func txMetaToPB(in cciptypes.TxMeta) *ccippb.TxMeta {
+	return &ccippb.TxMeta{
+		BlockTimestampUnixMilli: in.BlockTimestampUnixMilli,
+		BlockNumber:             in.BlockNumber,
+		TxHash:                  in.TxHash,
+		LogIndex:                in.LogIndex,
+		Finalized:               finalityStatusToPB(in.Finalized),
+	}
+}
+
+func txMeta(meta *ccippb.TxMeta) cciptypes.TxMeta {
+	return cciptypes.TxMeta{
+		BlockTimestampUnixMilli: meta.BlockTimestampUnixMilli,
+		BlockNumber:             meta.BlockNumber,
+		TxHash:                  meta.TxHash,
+		LogIndex:                meta.LogIndex,
+		Finalized:               finalityStatus(meta.Finalized),
+	}
+}
+
+func finalityStatus(finalized ccippb.FinalityStatus) cciptypes.FinalizedStatus {
+	switch finalized {
+	case ccippb.FinalityStatus_Finalized:
+		return cciptypes.FinalizedStatusFinalized
+	case ccippb.FinalityStatus_NotFinalized:
+		return cciptypes.FinalizedStatusNotFinalized
+	default:
+		return cciptypes.FinalizedStatusUnknown
+	}
+}
+
+func finalityStatusToPB(finalized cciptypes.FinalizedStatus) ccippb.FinalityStatus {
+	switch finalized {
+	case cciptypes.FinalizedStatusFinalized:
+		return ccippb.FinalityStatus_Finalized
+	case cciptypes.FinalizedStatusNotFinalized:
+		return ccippb.FinalityStatus_NotFinalized
+	default:
+		return ccippb.FinalityStatus_Unknown
+	}
 }

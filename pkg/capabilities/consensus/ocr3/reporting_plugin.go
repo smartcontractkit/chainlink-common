@@ -4,14 +4,19 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"slices"
+	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
+
+	"google.golang.org/protobuf/types/known/structpb"
 
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -27,33 +32,29 @@ type capabilityIface interface {
 	unregisterWorkflowID(workflowID string)
 }
 
-// TODO: 3,600 is the amount of rounds we allow as threshold. This should be configurable.
-// This is affected by OCR round time.
-const outcomePruningThreshold = 3600
-
 type reportingPlugin struct {
-	batchSize int
-	s         *requests.Store
-	r         capabilityIface
-	config    ocr3types.ReportingPluginConfig
-	lggr      logger.Logger
+	batchSize               int
+	s                       *requests.Store
+	r                       capabilityIface
+	config                  ocr3types.ReportingPluginConfig
+	outcomePruningThreshold uint64
+	lggr                    logger.Logger
 }
 
-func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
-	// TODO: extract limits from OnchainConfig
-	// and perform validation.
-
+func newReportingPlugin(s *requests.Store, r capabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
+	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
-		s:         s,
-		r:         r,
-		batchSize: batchSize,
-		config:    config,
-		lggr:      logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
+		s:                       s,
+		r:                       r,
+		batchSize:               batchSize,
+		config:                  config,
+		outcomePruningThreshold: outcomePruningThreshold,
+		lggr:                    logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
 	}, nil
 }
 
 func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
-	batch, err := r.s.FirstN(ctx, r.batchSize)
+	batch, err := r.s.FirstN(r.batchSize)
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
@@ -70,6 +71,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			WorkflowDonId:            rq.WorkflowDonID,
 			WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
 			ReportId:                 rq.ReportID,
+			KeyId:                    rq.KeyID,
 		})
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
@@ -89,10 +91,14 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 
 	weids := []string{}
 	for _, q := range queryReq.Ids {
+		if q == nil {
+			r.lggr.Debugw("skipping nil id for query", "query", queryReq)
+			continue
+		}
 		weids = append(weids, q.WorkflowExecutionId)
 	}
 
-	reqs := r.s.GetN(ctx, weids)
+	reqs := r.s.GetByIDs(weids)
 	reqMap := map[string]*requests.Request{}
 	for _, req := range reqs {
 		reqMap[req.WorkflowExecutionID] = req
@@ -103,12 +109,19 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	for _, weid := range weids {
 		rq, ok := reqMap[weid]
 		if !ok {
-			r.lggr.Debugw("could not find local observations for weid requested in the query", "weid", weid)
+			r.lggr.Debugw("could not find local observations for weid requested in the query", "executionID", weid)
 			continue
 		}
+
+		lggr := logger.With(
+			r.lggr,
+			"executionID", rq.WorkflowExecutionID,
+			"workflowID", rq.WorkflowID,
+		)
+
 		listProto := values.Proto(rq.Observations).GetListValue()
 		if listProto == nil {
-			r.lggr.Errorw("observations are not a list", "weID", rq.WorkflowExecutionID)
+			lggr.Errorw("observations are not a list")
 			continue
 		}
 		newOb := &pbtypes.Observation{
@@ -121,6 +134,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 				WorkflowDonId:            rq.WorkflowDonID,
 				WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
 				ReportId:                 rq.ReportID,
+				KeyId:                    rq.KeyID,
 			},
 		}
 
@@ -128,6 +142,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 	obs.RegisteredWorkflowIds = r.r.getRegisteredWorkflowsIDs()
+	obs.Timestamp = timestamppb.New(time.Now())
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -141,45 +156,80 @@ func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, que
 	return ocr3types.QuorumTwoFPlusOne, nil
 }
 
-func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
-	m := map[string]map[ocrcommon.OracleID][]values.Value{}
+	execIDToOracleObservations := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
-	for _, o := range aos {
+	var sortedTimestamps []*timestamppb.Timestamp
+	var finalTimestamp *timestamppb.Timestamp
+	for _, attributedObservation := range attributedObservations {
 		obs := &pbtypes.Observations{}
-		err := proto.Unmarshal(o.Observation, obs)
+		err := proto.Unmarshal(attributedObservation.Observation, obs)
 		if err != nil {
 			r.lggr.Errorw("could not unmarshal observation", "error", err, "observation", obs)
 			continue
 		}
 
-		countedWorkflowIds := map[string]bool{}
+		countedWorkflowIDs := map[string]bool{}
 		for _, id := range obs.RegisteredWorkflowIds {
 			// Skip if we've already counted this workflow ID. we want to avoid duplicates in the seen workflow IDs.
-			if _, ok := countedWorkflowIds[id]; ok {
+			if _, ok := countedWorkflowIDs[id]; ok {
 				continue
 			}
 
 			// Count how many times a workflow ID is seen from Observations, no need for initial value since it's 0 by default.
 			seenWorkflowIDs[id]++
 
-			countedWorkflowIds[id] = true
+			countedWorkflowIDs[id] = true
 		}
 
-		for _, rq := range obs.Observations {
-			weid := rq.Id.WorkflowExecutionId
+		sortedTimestamps = append(sortedTimestamps, obs.Timestamp)
 
-			obsList := values.FromListValueProto(rq.Observations)
-			if obsList == nil {
-				r.lggr.Errorw("observations are not a list", "weID", weid, "oracleID", o.Observer)
+		for _, request := range obs.Observations {
+			if request == nil {
+				r.lggr.Debugw("skipping nil request in observations", "observations", obs.Observations)
 				continue
 			}
 
-			if _, ok := m[weid]; !ok {
-				m[weid] = make(map[ocrcommon.OracleID][]values.Value)
+			if request.Id == nil {
+				r.lggr.Debugw("skipping nil id in request", "request", request)
+				continue
 			}
-			m[weid][o.Observer] = obsList.Underlying
+
+			weid := request.Id.WorkflowExecutionId
+
+			obsList, innerErr := values.FromListValueProto(request.Observations)
+			if obsList == nil || innerErr != nil {
+				r.lggr.Errorw("observations are not a list", "weID", weid, "oracleID", attributedObservation.Observer, "err", innerErr)
+				continue
+			}
+
+			if _, ok := execIDToOracleObservations[weid]; !ok {
+				execIDToOracleObservations[weid] = make(map[ocrcommon.OracleID][]values.Value)
+			}
+			execIDToOracleObservations[weid][attributedObservation.Observer] = obsList.Underlying
 		}
+	}
+
+	// Since we will most likely get N different timestamps, each with frequency=1, we get the median instead of the mode.
+	slices.SortFunc(sortedTimestamps, func(a, b *timestamppb.Timestamp) int {
+		if a.AsTime().Before(b.AsTime()) {
+			return -1
+		}
+		if a.AsTime().After(b.AsTime()) {
+			return 1
+		}
+		return 0
+	})
+	timestampCount := len(sortedTimestamps)
+	mid := timestampCount / 2
+	if timestampCount%2 == 1 {
+		finalTimestamp = sortedTimestamps[mid]
+	} else {
+		a := sortedTimestamps[mid-1].AsTime().Unix()
+		b := sortedTimestamps[mid].AsTime().Unix()
+		// a + (b-a) / 2 to avoid overflows
+		finalTimestamp = timestamppb.New(time.Unix(a+(b-a)/2, 0))
 	}
 
 	q := &pbtypes.Query{}
@@ -188,47 +238,52 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		return nil, err
 	}
 
-	o := &pbtypes.Outcome{}
-	err = proto.Unmarshal(outctx.PreviousOutcome, o)
+	previousOutcome := &pbtypes.Outcome{}
+	err = proto.Unmarshal(outctx.PreviousOutcome, previousOutcome)
 	if err != nil {
 		return nil, err
 	}
-	if o.Outcomes == nil {
-		o.Outcomes = map[string]*pbtypes.AggregationOutcome{}
+	if previousOutcome.Outcomes == nil {
+		previousOutcome.Outcomes = map[string]*pbtypes.AggregationOutcome{}
 	}
 
 	// Wipe out the CurrentReports. This gets regenerated
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
-	o.CurrentReports = []*pbtypes.Report{}
+	previousOutcome.CurrentReports = []*pbtypes.Report{}
 	var allExecutionIDs []string
 
 	for _, weid := range q.Ids {
-		obs, ok := m[weid.WorkflowExecutionId]
+		if weid == nil {
+			r.lggr.Debugw("skipping nil id in query", "query", q)
+			continue
+		}
+		lggr := logger.With(r.lggr, "executionID", weid.WorkflowExecutionId, "workflowID", weid.WorkflowId)
+		obs, ok := execIDToOracleObservations[weid.WorkflowExecutionId]
 		if !ok {
-			r.lggr.Debugw("could not find any observations matching weid requested in the query", "weid", weid.WorkflowExecutionId)
+			lggr.Debugw("could not find any observations matching weid requested in the query")
 			continue
 		}
 
-		workflowOutcome, ok := o.Outcomes[weid.WorkflowId]
+		workflowOutcome, ok := previousOutcome.Outcomes[weid.WorkflowId]
 		if !ok {
-			r.lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one", "workflowID", weid.WorkflowId)
+			lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one")
 		}
 
 		if len(obs) < (2*r.config.F + 1) {
-			r.lggr.Debugw("insufficient observations for workflow execution id", "weid", weid.WorkflowExecutionId)
+			lggr.Debugw("insufficient observations for workflow execution id")
 			continue
 		}
 
 		agg, err2 := r.r.getAggregator(weid.WorkflowId)
 		if err2 != nil {
-			r.lggr.Errorw("could not retrieve aggregator for workflow", "error", err, "workflowID", weid.WorkflowId)
+			lggr.Errorw("could not retrieve aggregator for workflow", "error", err2)
 			continue
 		}
 
 		outcome, err2 := agg.Aggregate(workflowOutcome, obs, r.config.F)
 		if err2 != nil {
-			r.lggr.Errorw("error aggregating outcome", "error", err, "workflowID", weid.WorkflowId)
+			lggr.Errorw("error aggregating outcome", "error", err2)
 			return nil, err
 		}
 
@@ -239,35 +294,59 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			outcome.LastSeenAt = workflowOutcome.LastSeenAt
 		}
 
+		outcome.Timestamp = finalTimestamp
+
 		report := &pbtypes.Report{
 			Outcome: outcome,
 			Id:      weid,
 		}
-		o.CurrentReports = append(o.CurrentReports, report)
+		previousOutcome.CurrentReports = append(previousOutcome.CurrentReports, report)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
-		o.Outcomes[weid.WorkflowId] = outcome
+		previousOutcome.Outcomes[weid.WorkflowId] = outcome
 	}
 
 	// We need to prune outcomes from previous workflows that are no longer relevant.
-	for workflowID, outcome := range o.Outcomes {
+	for workflowID, outcome := range previousOutcome.Outcomes {
 		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
 		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > outcomePruningThreshold {
+		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
-			delete(o.Outcomes, workflowID)
+			delete(previousOutcome.Outcomes, workflowID)
 			r.r.unregisterWorkflowID(workflowID)
 		}
 	}
 
-	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o)
+	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(previousOutcome)
 	h := sha256.New()
 	h.Write(rawOutcome)
 	outcomeHash := h.Sum(nil)
-	r.lggr.Debugw("Outcome complete", "len", len(o.Outcomes), "nAggregatedWorkflowExecutions", len(o.CurrentReports), "allExecutionIDs", allExecutionIDs, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
+	r.lggr.Debugw("Outcome complete", "len", len(previousOutcome.Outcomes), "nAggregatedWorkflowExecutions", len(previousOutcome.CurrentReports), "allExecutionIDs", allExecutionIDs, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
 	return rawOutcome, err
+}
+
+func marshalReportInfo(info *pbtypes.ReportInfo, keyID string) ([]byte, error) {
+	p, err := proto.MarshalOptions{Deterministic: true}.Marshal(info)
+	if err != nil {
+		return nil, err
+	}
+
+	infos, err := structpb.NewStruct(map[string]any{
+		"keyBundleName": keyID,
+		"reportInfo":    p,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ip, err := proto.MarshalOptions{Deterministic: true}.Marshal(infos)
+	if err != nil {
+		return nil, err
+	}
+
+	return ip, nil
 }
 
 func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[[]byte], error) {
@@ -280,6 +359,30 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 	reports := []ocr3types.ReportWithInfo[[]byte]{}
 
 	for _, report := range o.CurrentReports {
+		if report == nil {
+			r.lggr.Debugw("skipping nil report in outcome", "outcome", o)
+			continue
+		}
+
+		if report.Id == nil {
+			r.lggr.Debugw("skipping report with nil id in outcome", "report", report)
+			continue
+		}
+
+		if report.Outcome == nil {
+			r.lggr.Debugw("skipping report with nil outcome", "report", report)
+			continue
+		}
+
+		r.lggr.Debugw("generating reports", "len", len(o.CurrentReports), "shouldReport", report.Outcome.ShouldReport, "executionID", report.Id.WorkflowExecutionId)
+
+		lggr := logger.With(
+			r.lggr,
+			"workflowID", report.Id.WorkflowId,
+			"executionID", report.Id.WorkflowExecutionId,
+			"shouldReport", report.Outcome.ShouldReport,
+		)
+
 		outcome, id := report.Outcome, report.Id
 
 		info := &pbtypes.ReportInfo{
@@ -292,7 +395,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			meta := &pbtypes.Metadata{
 				Version:          1,
 				ExecutionID:      id.WorkflowExecutionId,
-				Timestamp:        0, // TODO include timestamp in consensus phase
+				Timestamp:        uint32(outcome.Timestamp.AsTime().Unix()),
 				DONID:            id.WorkflowDonId,
 				DONConfigVersion: id.WorkflowDonConfigVersion,
 				WorkflowID:       id.WorkflowId,
@@ -302,34 +405,39 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			}
 			newOutcome, err := pbtypes.AppendMetadata(outcome, meta)
 			if err != nil {
-				r.lggr.Errorw("could not append IDs")
+				lggr.Errorw("could not append IDs")
 				continue
 			}
 
 			enc, err := r.r.getEncoder(id.WorkflowId)
 			if err != nil {
-				r.lggr.Errorw("could not retrieve encoder for workflow", "error", err, "workflowID", id.WorkflowId)
+				lggr.Errorw("could not retrieve encoder for workflow", "error", err)
 				continue
 			}
 
-			mv := values.FromMapValueProto(newOutcome.EncodableOutcome)
-			report, err = enc.Encode(context.TODO(), *mv)
+			mv, err := values.FromMapValueProto(newOutcome.EncodableOutcome)
 			if err != nil {
-				r.lggr.Errorw("could not encode report for workflow", "error", err, "workflowID", id.WorkflowId)
+				r.lggr.Errorw("could not decode map from map value proto", "error", err)
+				continue
+			}
+
+			report, err = enc.Encode(context.Background(), *mv)
+			if err != nil {
+				r.lggr.Errorw("could not encode report for workflow", "error", err)
 				continue
 			}
 		}
 
-		p, err := proto.MarshalOptions{Deterministic: true}.Marshal(info)
+		infob, err := marshalReportInfo(info, id.KeyId)
 		if err != nil {
-			r.lggr.Errorw("could not marshal id into ReportWithInfo", "error", err, "workflowID", id.WorkflowId, "shouldReport", info.ShouldReport)
+			r.lggr.Errorw("could not marshal id into ReportWithInfo", "error", err)
 			continue
 		}
 
 		// Append every report, even if shouldReport = false, to let the transmitter mark the step as complete.
 		reports = append(reports, ocr3types.ReportWithInfo[[]byte]{
 			Report: report,
-			Info:   p,
+			Info:   infob,
 		})
 	}
 

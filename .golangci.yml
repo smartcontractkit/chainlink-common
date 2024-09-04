@@ -16,7 +16,8 @@ linters:
     - whitespace
     - depguard
     - containedctx
-    - gomodguard
+    - fatcontext
+    - mirror
     - loggercheck
 linters-settings:
   exhaustive:
@@ -33,8 +34,8 @@ linters-settings:
       # - G304
       # - G404
   govet:
-    # report about shadowed variables
-    check-shadowing: true
+    enable:
+      - shadow
     settings:
       printf:
         # Additionally check chainlink custom loggers
@@ -83,7 +84,7 @@ linters-settings:
       - name: struct-tag
       # - name: string-format
       - name: string-of-int
-      # - name: range-val-address
+      - name: range-val-address
       - name: range-val-in-closure
       - name: modifies-value-receiver
       - name: modifies-parameter

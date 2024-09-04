@@ -42,7 +42,7 @@ func (f *Comparator) Accept(visitor Visitor) {
 
 // Block is a primitive of KeyFilter that filters search in comparison to block number.
 type Block struct {
-	Block    uint64
+	Block    string
 	Operator ComparisonOperator
 }
 

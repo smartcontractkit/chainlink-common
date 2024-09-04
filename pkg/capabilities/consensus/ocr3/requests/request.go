@@ -24,6 +24,29 @@ type Request struct {
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
 	ReportID                 string
+
+	KeyID string
+}
+
+func (r *Request) Copy() *Request {
+	return &Request{
+		Observations: r.Observations.CopyList(),
+
+		// No need to copy these, they're value types.
+		ExpiresAt:                r.ExpiresAt,
+		WorkflowExecutionID:      r.WorkflowExecutionID,
+		WorkflowID:               r.WorkflowID,
+		WorkflowName:             r.WorkflowName,
+		WorkflowOwner:            r.WorkflowOwner,
+		WorkflowDonID:            r.WorkflowDonID,
+		WorkflowDonConfigVersion: r.WorkflowDonConfigVersion,
+		ReportID:                 r.ReportID,
+		KeyID:                    r.KeyID,
+
+		// Intentionally not copied, but are thread-safe.
+		CallbackCh: r.CallbackCh,
+		StopCh:     r.StopCh,
+	}
 }
 
 type Response struct {

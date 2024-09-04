@@ -135,6 +135,10 @@ func (s staticPluginRelayer) Name() string { panic("unimplemented") }
 
 func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
 
+func (s staticPluginRelayer) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (s staticPluginRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if s.StaticChecks && !(bytes.Equal(s.contractReaderConfig, contractReaderConfig)) {
 		return nil, fmt.Errorf("expected contractReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.contractReaderConfig), string(contractReaderConfig))
@@ -522,7 +526,7 @@ type fuzzerKeystore struct {
 
 func (k fuzzerKeystore) Accounts(ctx context.Context) ([]string, error) {
 	if k.acctErr {
-		err := fmt.Errorf(k.errStr)
+		err := errors.New(k.errStr)
 
 		if k.valuesWithErr {
 			return k.accounts, err
@@ -538,7 +542,7 @@ func (k fuzzerKeystore) Accounts(ctx context.Context) ([]string, error) {
 // nil data can be used as a no-op to check for account existence.
 func (k fuzzerKeystore) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
 	if k.signErr {
-		err := fmt.Errorf(k.errStr)
+		err := errors.New(k.errStr)
 
 		if k.valuesWithErr {
 			return k.signed, err

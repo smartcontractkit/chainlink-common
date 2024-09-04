@@ -22,6 +22,7 @@ import (
 	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint
@@ -136,7 +137,7 @@ func TestGetLatestValue(t *testing.T) {
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
-				err := nilCr.GetLatestValue(ctx, "", "method", "anything", "anything")
+				err := nilCr.GetLatestValue(ctx, "", "method", primitives.Unconfirmed, "anything", "anything")
 				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 			})
 
@@ -144,7 +145,7 @@ func TestGetLatestValue(t *testing.T) {
 				es.err = errorType
 				t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := tests.Context(t)
-					err := chainReader.GetLatestValue(ctx, "", "method", nil, "anything")
+					err := chainReader.GetLatestValue(ctx, "", "method", primitives.Unconfirmed, nil, "anything")
 					assert.True(t, errors.Is(err, errorType))
 				})
 			}
@@ -153,7 +154,56 @@ func TestGetLatestValue(t *testing.T) {
 			es.err = nil
 			t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 				ctx := tests.Context(t)
-				err := chainReader.GetLatestValue(ctx, "", "method", &cannotEncode{}, &TestStruct{})
+				err := chainReader.GetLatestValue(ctx, "", "method", primitives.Unconfirmed, &cannotEncode{}, &TestStruct{})
+				assert.True(t, errors.Is(err, types.ErrInvalidType))
+			})
+		}
+	})
+}
+
+func TestBatchGetLatestValues(t *testing.T) {
+	t.Parallel()
+
+	chainreadertest.TestAllEncodings(t, func(version chainreader.EncodingVersion) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+
+			es := &errChainReader{}
+			errTester := chainreadertest.WrapChainReaderTesterForLoop(
+				&fakeChainReaderInterfaceTester{impl: es},
+				chainreadertest.WithChainReaderLoopEncoding(version),
+			)
+
+			errTester.Setup(t)
+			chainReader := errTester.GetChainReader(t)
+
+			t.Run("nil reader should return unimplemented", func(t *testing.T) {
+				t.Parallel()
+
+				ctx := tests.Context(t)
+
+				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester.Setup(t)
+				nilCr := nilTester.GetChainReader(t)
+
+				_, err := nilCr.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
+				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+			})
+
+			for _, errorType := range errorTypes {
+				es.err = errorType
+				t.Run("BatchGetLatestValues unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+					ctx := tests.Context(t)
+					_, err := chainReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
+					assert.True(t, errors.Is(err, errorType))
+				})
+			}
+
+			// make sure that errors come from client directly
+			es.err = nil
+			t.Run("BatchGetLatestValues returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+				ctx := tests.Context(t)
+				_, err := chainReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{"contract": {{ReadName: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}}}})
 				assert.True(t, errors.Is(err, types.ErrInvalidType))
 			})
 		}
@@ -227,8 +277,9 @@ type fakeChainReaderInterfaceTester struct {
 func (it *fakeChainReaderInterfaceTester) Setup(_ *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	if ok {
+		fake.vals = []valConfidencePair{}
+		fake.triggers = []eventConfidencePair{}
 		fake.stored = []TestStruct{}
-		fake.triggers = []TestStruct{}
 	}
 }
 
@@ -243,10 +294,28 @@ func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.Boun
 	}
 }
 
-func (it *fakeChainReaderInterfaceTester) SetLatestValue(t *testing.T, testStruct *TestStruct) {
+func (it *fakeChainReaderInterfaceTester) SetTestStructLatestValue(t *testing.T, testStruct *TestStruct) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
-	fake.SetLatestValue(testStruct)
+	fake.SetTestStructLatestValue(testStruct)
+}
+
+func (it *fakeChainReaderInterfaceTester) SetUintLatestValue(t *testing.T, val uint64, forCall ExpectedGetLatestValueArgs) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	fake.SetUintLatestValue(val, forCall)
+}
+
+func (it *fakeChainReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readName, confidenceLevel)
+}
+
+func (it *fakeChainReaderInterfaceTester) SetBatchLatestValues(t *testing.T, batchCallEntry BatchCallEntry) {
+	fake, ok := it.impl.(*fakeChainReader)
+	assert.True(t, ok)
+	fake.SetBatchLatestValues(batchCallEntry)
 }
 
 func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
@@ -259,11 +328,23 @@ func (it *fakeChainReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
 	return time.Millisecond * 100
 }
 
+type valConfidencePair struct {
+	val             uint64
+	confidenceLevel primitives.ConfidenceLevel
+}
+
+type eventConfidencePair struct {
+	testStruct      TestStruct
+	confidenceLevel primitives.ConfidenceLevel
+}
+
 type fakeChainReader struct {
 	fakeTypeProvider
-	stored   []TestStruct
-	lock     sync.Mutex
-	triggers []TestStruct
+	vals        []valConfidencePair
+	triggers    []eventConfidencePair
+	stored      []TestStruct
+	batchStored BatchCallEntry
+	lock        sync.Mutex
 }
 
 func (f *fakeChainReader) Start(_ context.Context) error { return nil }
@@ -280,14 +361,38 @@ func (f *fakeChainReader) Bind(_ context.Context, _ []types.BoundContract) error
 	return nil
 }
 
-func (f *fakeChainReader) SetLatestValue(ts *TestStruct) {
+func (f *fakeChainReader) SetTestStructLatestValue(ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.stored = append(f.stored, *ts)
 }
 
-func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, params, returnVal any) error {
-	if method == MethodReturningUint64 {
+func (f *fakeChainReader) SetUintLatestValue(val uint64, _ ExpectedGetLatestValueArgs) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.vals = append(f.vals, valConfidencePair{val: val, confidenceLevel: primitives.Unconfirmed})
+}
+
+func (f *fakeChainReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.batchStored = make(BatchCallEntry)
+	for contractName, contractBatchEntry := range batchCallEntry {
+		f.batchStored[contractName] = contractBatchEntry
+	}
+}
+
+func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	if method == MethodReturningAlterableUint64 {
+		r := returnVal.(*uint64)
+		for i := len(f.vals) - 1; i >= 0; i-- {
+			if f.vals[i].confidenceLevel == confidenceLevel {
+				*r = f.vals[i].val
+				return nil
+			}
+		}
+		return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
+	} else if method == MethodReturningUint64 {
 		r := returnVal.(*uint64)
 		if contractName == AnyContractName {
 			*r = AnyValueToReadWithoutAnArgument
@@ -314,23 +419,26 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 		if len(f.triggers) == 0 {
 			return types.ErrNotFound
 		}
-		*returnVal.(*TestStruct) = f.triggers[len(f.triggers)-1]
-		return nil
+
+		for i := len(f.triggers) - 1; i >= 0; i-- {
+			if f.triggers[i].confidenceLevel == confidenceLevel {
+				*returnVal.(*TestStruct) = f.triggers[i].testStruct
+				return nil
+			}
+		}
+
+		return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
 	} else if method == EventWithFilterName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
 		param := params.(*FilterEventParams)
 		for i := len(f.triggers) - 1; i >= 0; i-- {
-			if *f.triggers[i].Field == param.Field {
-				*returnVal.(*TestStruct) = f.triggers[i]
+			if *f.triggers[i].testStruct.Field == param.Field {
+				*returnVal.(*TestStruct) = f.triggers[i].testStruct
 				return nil
 			}
 		}
 		return types.ErrNotFound
-	} else if method == DifferentMethodReturningUint64 {
-		r := returnVal.(*uint64)
-		*r = AnyDifferentValueToReadWithoutAnArgument
-		return nil
 	} else if method != MethodTakingLatestParamsReturningTestStruct {
 		return errors.New("unknown method " + method)
 	}
@@ -339,8 +447,59 @@ func (f *fakeChainReader) GetLatestValue(_ context.Context, contractName, method
 	defer f.lock.Unlock()
 	lp := params.(*LatestParams)
 	rv := returnVal.(*TestStruct)
+	if lp.I-1 >= len(f.stored) {
+		return errors.New("latest params index out of bounds for stored test structs")
+	}
 	*rv = f.stored[lp.I-1]
 	return nil
+}
+
+func (f *fakeChainReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	result := make(types.BatchGetLatestValuesResult)
+	for requestContractName, requestContractBatch := range request {
+		storedContractBatch := f.batchStored[requestContractName]
+
+		contractBatchResults := types.ContractBatchResults{}
+		for i := 0; i < len(requestContractBatch); i++ {
+			var err error
+			var returnVal any
+			req := requestContractBatch[i]
+			if req.ReadName == MethodReturningUint64 {
+				returnVal = req.ReturnVal.(*uint64)
+				if requestContractName == AnyContractName {
+					*returnVal.(*uint64) = AnyValueToReadWithoutAnArgument
+				} else {
+					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
+				}
+			} else if req.ReadName == MethodReturningUint64Slice {
+				returnVal = req.ReturnVal.(*[]uint64)
+				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
+			} else if req.ReadName == MethodReturningSeenStruct {
+				ts := *req.Params.(*TestStruct)
+				ts.Account = anyAccountBytes
+				ts.BigField = big.NewInt(2)
+				returnVal = &TestStructWithExtraField{
+					TestStruct: ts,
+					ExtraField: AnyExtraValue,
+				}
+			} else if req.ReadName == MethodTakingLatestParamsReturningTestStruct {
+				latestParams := requestContractBatch[i].Params.(*LatestParams)
+				if latestParams.I <= 0 {
+					returnVal = &LatestParams{}
+					err = fmt.Errorf("invalid param %d", latestParams.I)
+				} else {
+					returnVal = storedContractBatch[latestParams.I-1].ReturnValue
+				}
+			} else {
+				return nil, errors.New("unknown read " + req.ReadName)
+			}
+			brr := types.BatchReadResult{ReadName: req.ReadName}
+			brr.SetResult(returnVal, err)
+			contractBatchResults = append(contractBatchResults, brr)
+		}
+		result[requestContractName] = contractBatchResults
+	}
+	return result, nil
 }
 
 func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
@@ -353,7 +512,7 @@ func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.Key
 
 		var sequences []types.Sequence
 		for _, trigger := range f.triggers {
-			sequences = append(sequences, types.Sequence{Data: trigger})
+			sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
 		}
 
 		if !limitAndSort.HasSequenceSort() {
@@ -373,7 +532,19 @@ func (f *fakeChainReader) QueryKey(_ context.Context, _ string, filter query.Key
 func (f *fakeChainReader) SetTrigger(testStruct *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.triggers = append(f.triggers, *testStruct)
+	f.triggers = append(f.triggers, eventConfidencePair{testStruct: *testStruct, confidenceLevel: primitives.Unconfirmed})
+}
+
+func (f *fakeChainReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, _ string, confidenceLevel primitives.ConfidenceLevel) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	for i, val := range f.vals {
+		f.vals[i] = valConfidencePair{val: val.val, confidenceLevel: confidenceLevel}
+	}
+
+	for i, trigger := range f.triggers {
+		f.triggers[i] = eventConfidencePair{testStruct: trigger.testStruct, confidenceLevel: confidenceLevel}
+	}
 }
 
 type errChainReader struct {
@@ -390,8 +561,12 @@ func (e *errChainReader) Name() string { panic("unimplemented") }
 
 func (e *errChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
-func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any) error {
+func (e *errChainReader) GetLatestValue(_ context.Context, _, _ string, _ primitives.ConfidenceLevel, _, _ any) error {
 	return e.err
+}
+
+func (e *errChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	return nil, e.err
 }
 
 func (e *errChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
@@ -418,8 +593,12 @@ func (pc *protoConversionTestChainReader) Name() string { panic("unimplemented")
 
 func (pc *protoConversionTestChainReader) HealthReport() map[string]error { panic("unimplemented") }
 
-func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _ string, _, _ any) error {
+func (pc *protoConversionTestChainReader) GetLatestValue(_ context.Context, _, _ string, _ primitives.ConfidenceLevel, _, _ any) error {
 	return nil
+}
+
+func (pc *protoConversionTestChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	return nil, nil
 }
 
 func (pc *protoConversionTestChainReader) Bind(_ context.Context, bc []types.BoundContract) error {
@@ -441,11 +620,11 @@ func (pc *protoConversionTestChainReader) QueryKey(_ context.Context, _ string, 
 		bSlice []query.SortBy
 	)
 
-	if pc.expectedLimitAndSort.SortBy != nil && len(pc.expectedLimitAndSort.SortBy) > 0 {
+	if len(pc.expectedLimitAndSort.SortBy) > 0 {
 		aSlice = pc.expectedLimitAndSort.SortBy
 	}
 
-	if limitAndSort.SortBy != nil && len(limitAndSort.SortBy) > 0 {
+	if len(limitAndSort.SortBy) > 0 {
 		bSlice = limitAndSort.SortBy
 	}
 

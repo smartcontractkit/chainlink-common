@@ -11,8 +11,6 @@ import (
 )
 
 // OffRampReader all methods need to accept a context and return an error
-//
-//go:generate mockery --quiet --name OffRampReader --filename offramp_reader_mock.go --case=underscore
 type OffRampReader interface {
 	Address(ctx context.Context) (Address, error)
 	// ChangeConfig notifies the reader that the config has changed onchain
@@ -52,7 +50,6 @@ type ExecutionStateChangedWithTxMeta struct {
 
 type ExecutionStateChanged struct {
 	SequenceNumber uint64
-	Finalized      bool
 }
 
 type TokenBucketRateLimit struct {
@@ -81,6 +78,8 @@ type ExecOffchainConfig struct {
 	RootSnoozeTime config.Duration
 	// MessageVisibilityInterval is the interval at which we check for new messages.
 	MessageVisibilityInterval config.Duration
+	// BatchingStrategyID is the strategy to use for batching messages.
+	BatchingStrategyID uint32
 }
 
 type ExecOnchainConfig struct {

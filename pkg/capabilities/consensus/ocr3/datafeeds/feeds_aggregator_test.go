@@ -13,7 +13,6 @@ import (
 
 	"github.com/smartcontractkit/libocr/commontypes"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams/mocks"
@@ -34,14 +33,11 @@ var (
 )
 
 func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
-	metaVal, err := values.Wrap(datastreams.SignersMetadata{
-		Signers:               [][]byte{newSigner(t), newSigner(t)},
-		MinRequiredSignatures: 1,
-	})
-	require.NoError(t, err)
-	mockTriggerEvent, err := values.Wrap(capabilities.TriggerEvent{
-		Metadata: metaVal,
-		Payload:  &values.Map{},
+	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerEvent{
+		Metadata: datastreams.Metadata{
+			Signers:               [][]byte{newSigner(t), newSigner(t)},
+			MinRequiredSignatures: 1,
+		},
 	})
 	require.NoError(t, err)
 	config := getConfig(t, feedIDA.String(), "0.1", heartbeatA)
@@ -87,7 +83,7 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	require.Equal(t, big.NewInt(100).Bytes(), newState.FeedInfo[feedIDA.String()].BenchmarkPrice)
 
 	// validate encodable outcome
-	val := values.FromMapValueProto(outcome.EncodableOutcome)
+	val, err := values.FromMapValueProto(outcome.EncodableOutcome)
 	require.NoError(t, err)
 	topLevelMap, err := val.Unwrap()
 	require.NoError(t, err)
@@ -112,14 +108,11 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 }
 
 func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
-	metaVal, err := values.Wrap(datastreams.SignersMetadata{
-		Signers:               [][]byte{newSigner(t), newSigner(t)},
-		MinRequiredSignatures: 1,
-	})
-	require.NoError(t, err)
-	mockTriggerEvent, err := values.Wrap(capabilities.TriggerEvent{
-		Metadata: metaVal,
-		Payload:  &values.Map{},
+	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerEvent{
+		Metadata: datastreams.Metadata{
+			Signers:               [][]byte{newSigner(t), newSigner(t)},
+			MinRequiredSignatures: 1,
+		},
 	})
 	require.NoError(t, err)
 	config := getConfig(t, feedIDA.String(), "0.1", heartbeatA)
@@ -189,15 +182,11 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 }
 
 func TestDataFeedsAggregator_Aggregate_Failures(t *testing.T) {
-	meta := datastreams.SignersMetadata{
-		Signers:               [][]byte{newSigner(t), newSigner(t)},
-		MinRequiredSignatures: 1,
-	}
-	metaVal, err := values.Wrap(meta)
-	require.NoError(t, err)
-	mockTriggerEvent, err := values.Wrap(capabilities.TriggerEvent{
-		Metadata: metaVal,
-		Payload:  &values.Map{},
+	mockTriggerEvent, err := values.Wrap(datastreams.StreamsTriggerEvent{
+		Metadata: datastreams.Metadata{
+			Signers:               [][]byte{newSigner(t), newSigner(t)},
+			MinRequiredSignatures: 1,
+		},
 	})
 	require.NoError(t, err)
 

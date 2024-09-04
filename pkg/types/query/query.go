@@ -57,7 +57,7 @@ func Comparator(name string, valueComparators ...primitives.ValueComparator) Exp
 	return Expression{Primitive: &primitives.Comparator{Name: name, ValueComparators: valueComparators}}
 }
 
-func Block(block uint64, operator primitives.ComparisonOperator) Expression {
+func Block(block string, operator primitives.ComparisonOperator) Expression {
 	return Expression{
 		Primitive: &primitives.Block{Block: block, Operator: operator},
 	}
@@ -82,12 +82,18 @@ func TxHash(txHash string) Expression {
 }
 
 func And(expressions ...Expression) Expression {
+	if len(expressions) == 1 {
+		return expressions[0]
+	}
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: AND},
 	}
 }
 
 func Or(expressions ...Expression) Expression {
+	if len(expressions) == 1 {
+		return expressions[0]
+	}
 	return Expression{
 		BoolExpression: BoolExpression{Expressions: expressions, BoolOperator: OR},
 	}

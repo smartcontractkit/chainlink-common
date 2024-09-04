@@ -88,6 +88,22 @@ func Test_ListUnwrapTo(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expected, got)
 	})
+
+	t.Run("cannot unwrap a nil list", func(t *testing.T) {
+		l := (*List)(nil)
+		_, err := l.Unwrap()
+		assert.ErrorContains(t, err, "cannot unwrap nil")
+
+		var a []any
+		err = l.UnwrapTo(&a)
+		assert.ErrorContains(t, err, "cannot unwrap nil")
+	})
+
+	t.Run("can unwrap an unitialized list", func(t *testing.T) {
+		l := &List{}
+		_, err := l.Unwrap()
+		assert.NoError(t, err)
+	})
 }
 
 func sliceTest[T any](t *testing.T, expected []T, got []T) {

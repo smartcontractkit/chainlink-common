@@ -5,8 +5,11 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "google/protobuf/empty.proto";
+import "capabilities/pb/registry.proto";
 
 service CapabilitiesRegistry {
+  rpc LocalNode (google.protobuf.Empty) returns (LocalNodeReply) {}
+  rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
   rpc Get (GetRequest) returns (GetReply) {}
   rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
   rpc GetAction (GetActionRequest) returns (GetActionReply) {}
@@ -20,6 +23,22 @@ enum ExecuteAPIType {
   EXECUTE_API_TYPE_UNKNOWN = 0;
   EXECUTE_API_TYPE_TRIGGER = 1;
   EXECUTE_API_TYPE_CALLBACK = 2;
+}
+
+
+// DON has arguments for [github.com/smartcontractkit/chainlink-common/pkg/capabilities.DON].
+message DON {
+  uint32 id = 1;
+  repeated bytes members = 2; // [n][32]byte where n is the number of members
+  uint32 f = 3; // uint8
+  uint32 configVersion  = 4;
+}
+
+// LocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.LocalNode].
+message LocalNodeReply {
+  bytes peerID = 1; // [32]byte
+  DON workflowDON = 2;
+  repeated DON CapabilityDONs = 3;
 }
 
 // Get has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get].
@@ -83,4 +102,13 @@ message GetTargetReply {
 message AddRequest {
   uint32 capabilityID = 1;
   ExecuteAPIType type = 2;
+}
+
+message ConfigForCapabilityRequest {
+  string capabilityID = 1;
+  uint32 donID = 2;
+}
+
+message ConfigForCapabilityReply {
+  loop.CapabilityConfig capability_config = 1;
 }

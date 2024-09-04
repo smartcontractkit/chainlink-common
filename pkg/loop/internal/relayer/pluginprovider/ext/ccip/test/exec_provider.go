@@ -41,6 +41,7 @@ var ExecutionProvider = staticExecProvider{
 		sourceNativeTokenResponse: ccip.Address("source native token response"),
 		tokenDataReader:           TokenDataReader,
 		tokenPoolBatchedReader:    TokenPoolBatchedReader,
+		transactionStatusResponse: types.Fatal,
 	},
 }
 
@@ -59,6 +60,7 @@ type staticExecProviderConfig struct {
 	sourceNativeTokenResponse ccip.Address
 	tokenDataReader           TokenDataReaderEvaluator
 	tokenPoolBatchedReader    TokenPoolBatchedReaderEvaluator
+	transactionStatusResponse types.TransactionStatus
 }
 
 type staticExecProvider struct {
@@ -92,6 +94,15 @@ func (s staticExecProvider) ContractTransmitter() libocr.ContractTransmitter {
 
 // Evaluate implements ExecProviderEvaluator.
 func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecProvider) error {
+	// GetTransactionStatus test case
+	otherTransactionStatus, err := other.GetTransactionStatus(ctx, "ignored")
+	if err != nil {
+		return fmt.Errorf("failed to get other transaction status: %w", err)
+	}
+	if otherTransactionStatus != s.transactionStatusResponse {
+		return fmt.Errorf("expected transaction status %d but got %d", s.transactionStatusResponse, otherTransactionStatus)
+	}
+
 	// CommitStoreReader test case
 	otherCommitStore, err := other.NewCommitStoreReader(ctx, "ignored")
 	if err != nil {
@@ -171,6 +182,11 @@ func (s staticExecProvider) HealthReport() map[string]error {
 // Name implements ExecProviderEvaluator.
 func (s staticExecProvider) Name() string {
 	panic("unimplemented")
+}
+
+// GetTransactionStatus implements ExecProviderEvaluator.
+func (s staticExecProvider) GetTransactionStatus(ctx context.Context, tid string) (types.TransactionStatus, error) {
+	return s.transactionStatusResponse, nil
 }
 
 // NewCommitStoreReader implements ExecProviderEvaluator.
@@ -259,6 +275,13 @@ func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other
 			other, err := other.NewTokenDataReader(ctx, "ignored")
 			require.NoError(t, err)
 			assert.NoError(t, s.tokenDataReader.Evaluate(ctx, other))
+		})
+
+		// GetTransactionStatus test case
+		t.Run("GetTransactionStatus", func(t *testing.T) {
+			other, err := other.GetTransactionStatus(ctx, "ignored")
+			require.NoError(t, err)
+			assert.Equal(t, s.transactionStatusResponse, other)
 		})
 	})
 }

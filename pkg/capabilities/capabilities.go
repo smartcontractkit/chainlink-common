@@ -14,7 +14,7 @@ import (
 )
 
 // CapabilityType is an enum for the type of capability.
-type CapabilityType int
+type CapabilityType string
 
 var ErrStopExecution = &errStopExecution{}
 
@@ -32,28 +32,12 @@ func (e errStopExecution) Is(err error) bool {
 
 // CapabilityType enum values.
 const (
-	CapabilityTypeTrigger CapabilityType = iota
-	CapabilityTypeAction
-	CapabilityTypeConsensus
-	CapabilityTypeTarget
+	CapabilityTypeUnknown   CapabilityType = "unknown"
+	CapabilityTypeTrigger   CapabilityType = "trigger"
+	CapabilityTypeAction    CapabilityType = "action"
+	CapabilityTypeConsensus CapabilityType = "consensus"
+	CapabilityTypeTarget    CapabilityType = "target"
 )
-
-// String returns a string representation of CapabilityType
-func (c CapabilityType) String() string {
-	switch c {
-	case CapabilityTypeTrigger:
-		return "trigger"
-	case CapabilityTypeAction:
-		return "action"
-	case CapabilityTypeConsensus:
-		return "consensus"
-	case CapabilityTypeTarget:
-		return "target"
-	}
-
-	// Panic as this should be unreachable.
-	panic("unknown capability type")
-}
 
 // IsValid checks if the capability type is valid.
 func (c CapabilityType) IsValid() error {
@@ -63,6 +47,8 @@ func (c CapabilityType) IsValid() error {
 		CapabilityTypeConsensus,
 		CapabilityTypeTarget:
 		return nil
+	case CapabilityTypeUnknown:
+		return fmt.Errorf("invalid capability type: %s", c)
 	}
 
 	return fmt.Errorf("invalid capability type: %s", c)
@@ -81,6 +67,7 @@ type RequestMetadata struct {
 	WorkflowName             string
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
+	ReferenceID              string
 }
 
 type RegistrationMetadata struct {
@@ -96,12 +83,12 @@ type CapabilityRequest struct {
 }
 
 type TriggerEvent struct {
+	// The ID of the trigger capability
 	TriggerType string
-	ID          string
-	Timestamp   string
-	// Trigger-specific payload+metadata
-	Metadata values.Value
-	Payload  values.Value
+	// The ID of the trigger event
+	ID string
+	// Trigger-specific payload
+	Outputs *values.Map
 }
 
 type RegisterToWorkflowRequest struct {
@@ -141,9 +128,23 @@ type BaseCapability interface {
 	Info(ctx context.Context) (CapabilityInfo, error)
 }
 
+type TriggerRegistrationRequest struct {
+	// TriggerID uniquely identifies the trigger by concatenating
+	// the workflow ID and the trigger's index in the spec.
+	TriggerID string
+
+	Metadata RequestMetadata
+	Config   *values.Map
+}
+
+type TriggerResponse struct {
+	Event TriggerEvent
+	Err   error
+}
+
 type TriggerExecutable interface {
-	RegisterTrigger(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
-	UnregisterTrigger(ctx context.Context, request CapabilityRequest) error
+	RegisterTrigger(ctx context.Context, request TriggerRegistrationRequest) (<-chan TriggerResponse, error)
+	UnregisterTrigger(ctx context.Context, request TriggerRegistrationRequest) error
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.
@@ -174,6 +175,10 @@ type TargetCapability interface {
 	CallbackCapability
 }
 
+// DON represents a network of connected nodes.
+//
+// For an example of an empty DON check, see the following link:
+// https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31
 type DON struct {
 	ID               uint32
 	ConfigVersion    uint32
@@ -183,6 +188,20 @@ type DON struct {
 	AcceptsWorkflows bool
 }
 
+// Node contains the node's peer ID and the DONs it is part of.
+//
+// Note the following relationships between the workflow and capability DONs and this node.
+//
+// There is a 1:0..1 relationship between this node and a workflow DON.
+// This means that this node can be part at most one workflow DON at a time.
+// As a side note, a workflow DON can have multiple nodes.
+//
+// There is a 1:N relationship between this node and capability DONs, where N is the number of capability DONs.
+// This means that this node can be part of multiple capability DONs at a time.
+//
+// Although WorkflowDON is a value rather than a pointer, a node can be part of no workflow DON but 0 or more capability DONs.
+// You can assert this by checking for zero values in the WorkflowDON field.
+// See https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31 for an example.
 type Node struct {
 	PeerID         *p2ptypes.PeerID
 	WorkflowDON    DON
@@ -200,6 +219,7 @@ type CapabilityInfo struct {
 	CapabilityType CapabilityType
 	Description    string
 	DON            *DON
+	IsLocal        bool
 }
 
 // Parse out the version from the ID.
@@ -232,24 +252,12 @@ const (
 	idMaxLength = 128
 )
 
-// NewCapabilityInfo returns a new CapabilityInfo.
-func NewCapabilityInfo(
-	id string,
-	capabilityType CapabilityType,
-	description string,
-) (CapabilityInfo, error) {
-	return NewRemoteCapabilityInfo(id, capabilityType, description, nil)
-}
-
-// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
-// This is largely intended for internal use by the registry syncer.
-// Capability developers should use `NewCapabilityInfo` instead as this
-// omits the requirement to pass in the DON Info.
-func NewRemoteCapabilityInfo(
+func newCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
+	isLocal bool,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
@@ -267,7 +275,30 @@ func NewRemoteCapabilityInfo(
 		CapabilityType: capabilityType,
 		Description:    description,
 		DON:            don,
+		IsLocal:        isLocal,
 	}, nil
+}
+
+// NewCapabilityInfo returns a new CapabilityInfo.
+func NewCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, nil, true)
+}
+
+// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
+// This is largely intended for internal use by the registry syncer.
+// Capability developers should use `NewCapabilityInfo` instead as this
+// omits the requirement to pass in the DON Info.
+func NewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+	don *DON,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, don, false)
 }
 
 // MustNewCapabilityInfo returns a new CapabilityInfo,
@@ -277,7 +308,12 @@ func MustNewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 ) CapabilityInfo {
-	return MustNewRemoteCapabilityInfo(id, capabilityType, description, nil)
+	c, err := NewCapabilityInfo(id, capabilityType, description)
+	if err != nil {
+		panic(err)
+	}
+
+	return c
 }
 
 // MustNewRemoteCapabilityInfo returns a new CapabilityInfo,
@@ -348,4 +384,44 @@ outerLoop:
 	}
 
 	return &values.List{Underlying: vs}, nil
+}
+
+const (
+	DefaultRegistrationRefresh = 30 * time.Second
+	DefaultRegistrationExpiry  = 2 * time.Minute
+	DefaultMessageExpiry       = 2 * time.Minute
+)
+
+type RemoteTriggerConfig struct {
+	RegistrationRefresh     time.Duration
+	RegistrationExpiry      time.Duration
+	MinResponsesToAggregate uint32
+	MessageExpiry           time.Duration
+}
+
+type RemoteTargetConfig struct {
+	RequestHashExcludedAttributes []string
+}
+
+// NOTE: consider splitting this config into values stored in Registry (KS-118)
+// and values defined locally by Capability owners.
+func (c *RemoteTriggerConfig) ApplyDefaults() {
+	if c == nil {
+		return
+	}
+	if c.RegistrationRefresh == 0 {
+		c.RegistrationRefresh = DefaultRegistrationRefresh
+	}
+	if c.RegistrationExpiry == 0 {
+		c.RegistrationExpiry = DefaultRegistrationExpiry
+	}
+	if c.MessageExpiry == 0 {
+		c.MessageExpiry = DefaultMessageExpiry
+	}
+}
+
+type CapabilityConfiguration struct {
+	DefaultConfig       *values.Map
+	RemoteTriggerConfig *RemoteTriggerConfig
+	RemoteTargetConfig  *RemoteTargetConfig
 }

@@ -11,9 +11,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
+	ocr3rp "github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins/ocr3"
 	commontypes "github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
+
+var _ ocr3rp.ProviderServer[commontypes.PluginProvider] = (*Capability)(nil)
 
 type Capability struct {
 	loop.Plugin
@@ -22,12 +25,13 @@ type Capability struct {
 }
 
 type Config struct {
-	RequestTimeout    *time.Duration
-	BatchSize         int
-	Logger            logger.Logger
-	AggregatorFactory types.AggregatorFactory
-	EncoderFactory    types.EncoderFactory
-	SendBufferSize    int
+	RequestTimeout          *time.Duration
+	BatchSize               int
+	OutcomePruningThreshold uint64
+	Logger                  logger.Logger
+	AggregatorFactory       types.AggregatorFactory
+	EncoderFactory          types.EncoderFactory
+	SendBufferSize          int
 
 	store      *requests.Store
 	capability *capability
@@ -35,9 +39,10 @@ type Config struct {
 }
 
 const (
-	defaultRequestExpiry  time.Duration = 20 * time.Second
-	defaultBatchSize                    = 20
-	defaultSendBufferSize               = 10
+	defaultRequestExpiry           time.Duration = 20 * time.Second
+	defaultBatchSize                             = 20
+	defaultSendBufferSize                        = 10
+	defaultOutcomePruningThreshold               = 3600
 )
 
 func NewOCR3(config Config) *Capability {
@@ -48,6 +53,10 @@ func NewOCR3(config Config) *Capability {
 
 	if config.BatchSize == 0 {
 		config.BatchSize = defaultBatchSize
+	}
+
+	if config.OutcomePruningThreshold == 0 {
+		config.OutcomePruningThreshold = defaultOutcomePruningThreshold
 	}
 
 	if config.SendBufferSize == 0 {
@@ -82,7 +91,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 	provider commontypes.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
 	errorLog core.ErrorLog, capabilityRegistry core.CapabilitiesRegistry, keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
-	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.Logger)
+	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.OutcomePruningThreshold, o.config.Logger)
 	if err != nil {
 		return nil, err
 	}

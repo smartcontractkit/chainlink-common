@@ -56,7 +56,7 @@ func Test_CapabilityInfo(t *testing.T) {
 func Test_CapabilityInfo_Invalid(t *testing.T) {
 	_, err := NewCapabilityInfo(
 		"capability-id@2.0.0",
-		CapabilityType(5),
+		CapabilityTypeUnknown,
 		"This is a mock capability that doesn't do anything.",
 	)
 	assert.ErrorContains(t, err, "invalid capability type")

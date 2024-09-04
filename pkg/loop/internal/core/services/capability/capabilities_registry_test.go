@@ -6,15 +6,18 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -32,18 +35,18 @@ func (f *mockBaseCapability) Info(ctx context.Context) (capabilities.CapabilityI
 var _ capabilities.TriggerExecutable = (*mockTriggerExecutable)(nil)
 
 type mockTriggerExecutable struct {
-	callback chan capabilities.CapabilityResponse
+	callback chan capabilities.TriggerResponse
 }
 
-func (f *mockTriggerExecutable) XXXTestingPushToCallbackChan(cr capabilities.CapabilityResponse) {
+func (f *mockTriggerExecutable) XXXTestingPushToCallbackChan(cr capabilities.TriggerResponse) {
 	f.callback <- cr
 }
 
-func (f *mockTriggerExecutable) RegisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (f *mockTriggerExecutable) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return f.callback, nil
 }
 
-func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) error {
+func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	f.callback = nil
 	return nil
 }
@@ -153,6 +156,76 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	_, err = rc.Get(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
+	pid := p2ptypes.PeerID([32]byte{0: 1})
+	expectedNode := capabilities.Node{
+		PeerID: &pid,
+		WorkflowDON: capabilities.DON{
+			ID: 11,
+			Members: []p2ptypes.PeerID{
+				[32]byte{0: 2},
+				[32]byte{0: 3},
+			},
+			F:             2,
+			ConfigVersion: 1,
+		},
+		CapabilityDONs: []capabilities.DON{
+			{
+				ID:            22,
+				Members:       []p2ptypes.PeerID{},
+				F:             1,
+				ConfigVersion: 2,
+			},
+			{
+				ID: 33,
+				Members: []p2ptypes.PeerID{
+					[32]byte{0: 4},
+					[32]byte{0: 5},
+					[32]byte{0: 6},
+				},
+				F:             3,
+				ConfigVersion: 3,
+			},
+		},
+	}
+
+	reg.On("LocalNode", mock.Anything).Once().Return(expectedNode, nil)
+
+	actualNode, err := rc.LocalNode(tests.Context(t))
+	require.NoError(t, err)
+	// check local node struct
+	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)
+
+	// check workflow DON
+	require.Len(t, expectedNode.WorkflowDON.Members, len(actualNode.WorkflowDON.Members))
+	require.ElementsMatch(t, expectedNode.WorkflowDON.Members, actualNode.WorkflowDON.Members)
+	require.Equal(t, expectedNode.WorkflowDON.ID, actualNode.WorkflowDON.ID)
+	require.Equal(t, expectedNode.WorkflowDON.F, actualNode.WorkflowDON.F)
+	require.Equal(t, expectedNode.WorkflowDON.ConfigVersion, actualNode.WorkflowDON.ConfigVersion)
+
+	// check capability DONs
+	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
+	for i := range expectedNode.CapabilityDONs {
+		require.Equal(t, expectedNode.CapabilityDONs[i].ID, actualNode.CapabilityDONs[i].ID)
+		require.Len(t, expectedNode.CapabilityDONs[i].Members, len(actualNode.CapabilityDONs[i].Members))
+		require.ElementsMatch(t, expectedNode.CapabilityDONs[i].Members, actualNode.CapabilityDONs[i].Members)
+		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
+		require.Equal(t, expectedNode.CapabilityDONs[i].ConfigVersion, actualNode.CapabilityDONs[i].ConfigVersion)
+	}
+
+	// Check zero values for empty node
+	emptyNode := capabilities.Node{}
+	reg.On("LocalNode", mock.Anything).Once().Return(emptyNode, nil)
+	actualNode, err = rc.LocalNode(tests.Context(t))
+	require.NoError(t, err)
+	require.Nil(t, actualNode.PeerID)
+	require.Equal(t, capabilities.DON{
+		ID:            0,
+		Members:       nil,
+		F:             0,
+		ConfigVersion: 0,
+	}, actualNode.WorkflowDON)
+	require.Empty(t, actualNode.CapabilityDONs)
+
 	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetAction(tests.Context(t), "some-id")
 	require.ErrorContains(t, err, "capability not found")
@@ -182,7 +255,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	}
 	testTrigger := mockTriggerCapability{
 		mockBaseCapability:    &mockBaseCapability{info: triggerInfo},
-		mockTriggerExecutable: &mockTriggerExecutable{callback: make(chan capabilities.CapabilityResponse, 10)},
+		mockTriggerExecutable: &mockTriggerExecutable{callback: make(chan capabilities.TriggerResponse, 10)},
 	}
 
 	// After adding the trigger, we'll expect something wrapped by the internal client type below.
@@ -198,19 +271,19 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	testCapabilityInfo(t, triggerInfo, triggerCap)
 
 	// Test TriggerExecutable
-	callbackChan, err := triggerCap.RegisterTrigger(tests.Context(t), capabilities.CapabilityRequest{
-		Inputs: &values.Map{},
-		Config: &values.Map{},
-	})
+	triggerChan, err := triggerCap.RegisterTrigger(tests.Context(t), capabilities.TriggerRegistrationRequest{})
 	require.NoError(t, err)
 
-	testTrigger.XXXTestingPushToCallbackChan(capabilityResponse)
-	require.Equal(t, capabilityResponse, <-callbackChan)
+	triggerResponse := capabilities.TriggerResponse{
+		Event: capabilities.TriggerEvent{
+			Outputs: values.EmptyMap(),
+		},
+		Err: errors.New("some-error"),
+	}
+	testTrigger.XXXTestingPushToCallbackChan(triggerResponse)
+	require.Equal(t, triggerResponse, <-triggerChan)
 
-	err = triggerCap.UnregisterTrigger(tests.Context(t), capabilities.CapabilityRequest{
-		Inputs: &values.Map{},
-		Config: &values.Map{},
-	})
+	err = triggerCap.UnregisterTrigger(tests.Context(t), capabilities.TriggerRegistrationRequest{})
 	require.NoError(t, err)
 	require.Nil(t, testTrigger.callback)
 
@@ -243,7 +316,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.Equal(t, workflowRequest.Metadata.WorkflowID, testAction.registeredWorkflowRequest.Metadata.WorkflowID)
 
 	actionCallbackChan <- capabilityResponse
-	callbackChan, err = actionCap.Execute(tests.Context(t), capabilities.CapabilityRequest{})
+	callbackChan, err := actionCap.Execute(tests.Context(t), capabilities.CapabilityRequest{})
 	require.NoError(t, err)
 	require.Equal(t, capabilityResponse, <-callbackChan)
 	err = actionCap.UnregisterFromWorkflow(tests.Context(t), capabilities.UnregisterFromWorkflowRequest{})
@@ -290,4 +363,78 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 	require.Equal(t, expectedInfo.CapabilityType, gotInfo.CapabilityType)
 	require.Equal(t, expectedInfo.Description, gotInfo.Description)
 	require.Equal(t, expectedInfo.Version(), gotInfo.Version())
+}
+func TestToDON(t *testing.T) {
+	don := &pb.DON{
+		Id: 0,
+		Members: [][]byte{
+			{0: 4, 31: 0},
+			{0: 5, 31: 0},
+		},
+		F:             2,
+		ConfigVersion: 1,
+	}
+
+	expected := capabilities.DON{
+		ID: 0,
+		Members: []p2ptypes.PeerID{
+			[32]byte{0: 4},
+			[32]byte{0: 5},
+		},
+		F:             2,
+		ConfigVersion: 1,
+	}
+
+	actual := toDON(don)
+
+	require.Equal(t, expected, actual)
+}
+
+func TestCapabilitiesRegistry_ConfigForCapabilities(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "some-cap@1.0.0"
+	donID := uint32(1)
+	wm, err := values.WrapMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
+
+	var rtc capabilities.RemoteTriggerConfig
+	rtc.ApplyDefaults()
+	expectedCapConfig := capabilities.CapabilityConfiguration{
+		DefaultConfig:       wm,
+		RemoteTriggerConfig: &rtc,
+	}
+	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
+
+	capConf, err := rc.ConfigForCapability(tests.Context(t), capID, donID)
+	require.NoError(t, err)
+	assert.Equal(t, expectedCapConfig, capConf)
 }

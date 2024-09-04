@@ -1,6 +1,8 @@
 package values
 
 import (
+	"errors"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
@@ -17,9 +19,20 @@ func (b *Bool) proto() *pb.Value {
 }
 
 func (b *Bool) Unwrap() (any, error) {
-	return b.Underlying, nil
+	var bl bool
+	return bl, b.UnwrapTo(&bl)
 }
 
 func (b *Bool) UnwrapTo(to any) error {
-	return unwrapTo[bool](b.Underlying, to)
+	if b == nil {
+		return errors.New("could not unwrap nil values.Bool")
+	}
+	return unwrapTo(b.Underlying, to)
+}
+
+func (b *Bool) copy() Value {
+	if b == nil {
+		return nil
+	}
+	return &Bool{Underlying: b.Underlying}
 }

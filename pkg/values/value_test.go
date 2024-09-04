@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -213,7 +213,8 @@ func Test_Value(t *testing.T) {
 
 			pb := Proto(wrapped)
 
-			rehydratedValue := FromProto(pb)
+			rehydratedValue, err := FromProto(pb)
+			require.NoError(t, err)
 			assert.Equal(st, wrapped, rehydratedValue)
 
 			unwrapped, err := Unwrap(rehydratedValue)
@@ -227,6 +228,63 @@ func Test_Value(t *testing.T) {
 	}
 }
 
+func Test_StructWrapUnwrap(t *testing.T) {
+	// TODO: https://smartcontract-it.atlassian.net/browse/KS-439 decimal.Decimal is broken when encoded.
+	type sStruct struct {
+		Str string
+		I   int
+		Bi  *big.Int
+		// D  decimal.Decimal
+	}
+	expected := sStruct{
+		Str: "hi",
+		I:   10,
+		Bi:  big.NewInt(1),
+		// D:  decimal.NewFromFloat(24.3),
+	}
+
+	wrapped, err := Wrap(expected)
+	require.NoError(t, err)
+
+	unwrapped := sStruct{}
+	err = wrapped.UnwrapTo(&unwrapped)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, unwrapped)
+}
+
+func Test_SameUnderlyingTypes(t *testing.T) {
+	type str string
+	type i int
+	type bi big.Int
+	// TODO https://smartcontract-it.atlassian.net/browse/KS-439 decimal.Decimal is broken when encoded.
+	// type d decimal.Decimal
+	type sStruct struct {
+		Str str
+		I   i
+		Bi  *bi
+		// D   d
+	}
+	expected := sStruct{
+		Str: "hi",
+		I:   10,
+		Bi:  (*bi)(big.NewInt(1)),
+		// D:   d(decimal.NewFromFloat(24.3)),
+	}
+
+	wrapped, err := Wrap(expected)
+	require.NoError(t, err)
+
+	unwrapped := sStruct{}
+	err = wrapped.UnwrapTo(&unwrapped)
+	require.NoError(t, err)
+
+	// big ints don't pass assert equal because pointer isn't the same
+	assert.Equal(t, 0, (*big.Int)(expected.Bi).Cmp((*big.Int)(unwrapped.Bi)))
+	expected.Bi = unwrapped.Bi
+	assert.Equal(t, expected, unwrapped)
+}
+
 func Test_WrapMap(t *testing.T) {
 	a := struct{ A string }{A: "foo"}
 	am, err := WrapMap(a)
@@ -237,4 +295,90 @@ func Test_WrapMap(t *testing.T) {
 
 	_, err = WrapMap("foo")
 	require.ErrorContains(t, err, "could not wrap")
+}
+
+func Test_Copy(t *testing.T) {
+	dec, err := decimal.NewFromString("1.01")
+	require.NoError(t, err)
+
+	list, err := NewList([]any{"hello", int64(1.00)})
+	require.NoError(t, err)
+
+	mp, err := NewMap(map[string]any{
+		"hello": 1,
+		"world": map[string]any{
+			"a": "b",
+			"c": 10,
+		},
+		"foo": big.NewInt(100),
+		"bar": decimal.NewFromFloat(1.00),
+	})
+	require.NoError(t, err)
+
+	tcs := []struct {
+		value Value
+		isNil bool
+	}{
+		{
+			value: NewString("hello"),
+		},
+		{
+			value: NewBytes([]byte("hello")),
+		},
+		{
+			value: NewInt64(int64(100)),
+		},
+		{
+			value: NewDecimal(dec),
+		},
+		{
+			value: NewBigInt(big.NewInt(101)),
+		},
+		{
+			value: NewBool(true),
+		},
+		{
+			value: list,
+		},
+		{
+			value: mp,
+		},
+		{
+			value: (*String)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Bytes)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Int64)(nil),
+			isNil: true,
+		},
+		{
+			value: (*BigInt)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Bool)(nil),
+			isNil: true,
+		},
+		{
+			value: (*List)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Map)(nil),
+			isNil: true,
+		},
+	}
+
+	for _, tc := range tcs {
+		copied := Copy(tc.value)
+		if tc.isNil {
+			assert.Nil(t, Copy(tc.value))
+		} else {
+			assert.Equal(t, tc.value, copied)
+		}
+	}
 }

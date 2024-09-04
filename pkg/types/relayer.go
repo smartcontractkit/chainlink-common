@@ -81,16 +81,31 @@ type NodeStatus struct {
 type ChainService interface {
 	Service
 
+	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
+	// ListNodeStatuses returns the status of RPC nodes.
 	ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error)
+	// Transact submits a transaction to transfer tokens.
+	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 }
 
+// Relayer is the product-facing, and context-less sub-interface of [loop.Relayer].
+//
 // Deprecated: use loop.Relayer, which includes context.Context.
 type Relayer interface {
 	Service
+
+	// NewChainWriter returns a new ChainWriter.
+	// The format of config depends on the implementation.
+	NewChainWriter(ctx context.Context, config []byte) (ChainWriter, error)
+
+	// NewContractReader returns a new ContractReader.
+	// The format of contractReaderConfig depends on the implementation.
 	NewContractReader(contractReaderConfig []byte) (ContractReader, error)
+
 	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)
+
 	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
@@ -98,6 +113,8 @@ type Relayer interface {
 	NewLLOProvider(rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
 	NewCCIPCommitProvider(rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error)
 	NewCCIPExecProvider(rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error)
+
 	NewPluginProvider(rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
+
 	NewOCR3CapabilityProvider(rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
 }

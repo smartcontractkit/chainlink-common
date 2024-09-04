@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -12,6 +13,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 var _ core.CapabilitiesRegistry = (*capabilitiesRegistryClient)(nil)
@@ -19,6 +23,97 @@ var _ core.CapabilitiesRegistry = (*capabilitiesRegistryClient)(nil)
 type capabilitiesRegistryClient struct {
 	*net.BrokerExt
 	grpc pb.CapabilitiesRegistryClient
+}
+
+func toDON(don *pb.DON) capabilities.DON {
+	var members []p2ptypes.PeerID
+	for _, m := range don.Members {
+		members = append(members, p2ptypes.PeerID(m))
+	}
+
+	return capabilities.DON{
+		ID:            don.Id,
+		Members:       members,
+		F:             uint8(don.F),
+		ConfigVersion: don.ConfigVersion,
+	}
+}
+
+func toPbDON(don capabilities.DON) *pb.DON {
+	membersBytes := make([][]byte, len(don.Members))
+	for j, m := range don.Members {
+		m := m
+		membersBytes[j] = m[:]
+	}
+
+	return &pb.DON{
+		Id:            don.ID,
+		Members:       membersBytes,
+		F:             uint32(don.F),
+		ConfigVersion: don.ConfigVersion,
+	}
+}
+
+func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabilities.Node, error) {
+	res, err := cr.grpc.LocalNode(ctx, &emptypb.Empty{})
+	if err != nil {
+		return capabilities.Node{}, err
+	}
+
+	var pid *p2ptypes.PeerID
+	if len(res.PeerID) > 0 {
+		p := p2ptypes.PeerID(res.PeerID)
+		pid = &p
+	}
+
+	cDONs := make([]capabilities.DON, len(res.CapabilityDONs))
+	for i, don := range res.CapabilityDONs {
+		cDONs[i] = toDON(don)
+	}
+
+	return capabilities.Node{
+		PeerID:         pid,
+		WorkflowDON:    toDON(res.WorkflowDON),
+		CapabilityDONs: cDONs,
+	}, nil
+}
+
+func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+	res, err := cr.grpc.ConfigForCapability(ctx, &pb.ConfigForCapabilityRequest{
+		CapabilityID: capabilityID,
+		DonID:        donID,
+	})
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, err
+	}
+
+	mc, err := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
+	}
+
+	var remoteTriggerConfig *capabilities.RemoteTriggerConfig
+	var remoteTargetConfig *capabilities.RemoteTargetConfig
+
+	switch res.CapabilityConfig.RemoteConfig.(type) {
+	case *capabilitiespb.CapabilityConfig_RemoteTriggerConfig:
+		prtc := res.CapabilityConfig.GetRemoteTriggerConfig()
+		remoteTriggerConfig = &capabilities.RemoteTriggerConfig{}
+		remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
+		remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+		remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
+		remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
+	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
+		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
+		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
+		remoteTargetConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
+	}
+
+	return capabilities.CapabilityConfiguration{
+		DefaultConfig:       mc,
+		RemoteTriggerConfig: remoteTriggerConfig,
+		RemoteTargetConfig:  remoteTargetConfig,
+	}, nil
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
@@ -200,6 +295,68 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 		CapabilityID: id,
 		Type:         pb.ExecuteAPIType(getExecuteAPIType(info.CapabilityType)),
 	}, nil
+}
+
+func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, req *pb.ConfigForCapabilityRequest) (*pb.ConfigForCapabilityReply, error) {
+	cc, err := c.impl.ConfigForCapability(ctx, req.CapabilityID, req.DonID)
+	if err != nil {
+		return nil, err
+	}
+
+	ecm := values.Proto(cc.DefaultConfig).GetMapValue()
+
+	ccp := &capabilitiespb.CapabilityConfig{
+		DefaultConfig: ecm,
+	}
+
+	if cc.RemoteTriggerConfig != nil {
+		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
+			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
+				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
+				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
+				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
+				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
+			},
+		}
+	}
+
+	if cc.RemoteTargetConfig != nil {
+		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTargetConfig{
+			RemoteTargetConfig: &capabilitiespb.RemoteTargetConfig{
+				RequestHashExcludedAttributes: cc.RemoteTargetConfig.RequestHashExcludedAttributes,
+			},
+		}
+	}
+
+	return &pb.ConfigForCapabilityReply{
+		CapabilityConfig: ccp,
+	}, nil
+}
+
+func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.LocalNodeReply, error) {
+	node, err := c.impl.LocalNode(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	workflowDONpb := toPbDON(node.WorkflowDON)
+
+	capabilityDONsPb := make([]*pb.DON, len(node.CapabilityDONs))
+	for i, don := range node.CapabilityDONs {
+		capabilityDONsPb[i] = toPbDON(don)
+	}
+
+	var pid []byte
+	if node.PeerID != nil {
+		pid = node.PeerID[:]
+	}
+	reply := &pb.LocalNodeReply{
+		PeerID:         pid,
+		WorkflowDON:    workflowDONpb,
+		CapabilityDONs: capabilityDONsPb,
+	}
+
+	return reply, nil
 }
 
 func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb.GetTriggerRequest) (*pb.GetTriggerReply, error) {
@@ -387,6 +544,8 @@ func validateCapability(impl capabilities.BaseCapability, t capabilities.Capabil
 		if !ok {
 			return fmt.Errorf("expected TargetCapability but got %T", impl)
 		}
+	case capabilities.CapabilityTypeUnknown:
+		return fmt.Errorf("unknown capability type")
 	}
 	return nil
 }
@@ -424,6 +583,8 @@ func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.Ba
 			impl:        i,
 			cancelFuncs: map[string]func(){},
 		})
+	case capabilities.CapabilityTypeUnknown:
+		// Only register the base capability server
 	}
 	capabilitiespb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(impl))
 }

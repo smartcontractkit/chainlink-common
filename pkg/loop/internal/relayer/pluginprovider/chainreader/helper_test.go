@@ -77,7 +77,7 @@ func (fakeTypeProvider) CreateContractType(_, itemType string, isEncode bool) (a
 			return &LatestParams{}, nil
 		}
 		return &TestStruct{}, nil
-	case MethodReturningUint64, DifferentMethodReturningUint64:
+	case MethodReturningUint64, MethodReturningAlterableUint64:
 		tmp := uint64(0)
 		return &tmp, nil
 	case MethodReturningUint64Slice:
@@ -106,7 +106,7 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 
 	primitiveExpressions := []query.Expression{query.TxHash("txHash")}
 	for _, op := range operatorValues {
-		primitiveExpressions = append(primitiveExpressions, query.Block(123, op))
+		primitiveExpressions = append(primitiveExpressions, query.Block("123", op))
 		primitiveExpressions = append(primitiveExpressions, query.Timestamp(123, op))
 
 		var valueComparators []primitives.ValueComparator

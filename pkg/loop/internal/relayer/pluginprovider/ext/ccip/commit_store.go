@@ -551,7 +551,7 @@ func commitStoreReportWithTxMetaPB(r ccip.CommitStoreReportWithTxMeta) (*ccippb.
 		return nil, fmt.Errorf("cannot convert commit store report: %w", err)
 	}
 	return &ccippb.CommitStoreReportWithTxMeta{
-		TxMeta: txMetaPB(r.TxMeta),
+		TxMeta: txMetaToPB(r.TxMeta),
 		Report: report,
 	}, nil
 }

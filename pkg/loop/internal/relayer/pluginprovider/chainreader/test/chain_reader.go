@@ -1,4 +1,4 @@
-package chainreadertest
+package chaincomponentstest
 
 import (
 	"context"
@@ -23,7 +23,7 @@ var (
 	}
 )
 
-// staticChainReader is a static implementation of ChainReaderTester
+// staticChainReader is a static implementation of ChainComponentsTester
 type staticChainReader struct {
 	contractName   string
 	contractMethod string

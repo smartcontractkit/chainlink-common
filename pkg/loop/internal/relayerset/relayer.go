@@ -20,11 +20,7 @@ type relayerClient struct {
 }
 
 func newRelayerClient(log logger.Logger, client *Client, relayID types.RelayID) *relayerClient {
-	return &relayerClient{
-		log:              log,
-		relayerSetClient: client,
-		relayerID:        relayID,
-	}
+	return &relayerClient{log: log, relayerSetClient: client, relayerID: relayID}
 }
 
 func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayArgs, pargs core.PluginArgs) (types.PluginProvider, error) {

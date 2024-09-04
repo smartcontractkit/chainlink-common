@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -56,9 +57,23 @@ func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (Generat
 
 	output := root.Outputs["Outputs"]
 
-	pkgParts := strings.Split(typeInfo.SchemaID, "/")
-	// skip http(s):// and drop the last part
-	fullPkg := strings.Join(pkgParts[2:len(pkgParts)-1], "/")
+	fullPkg := typeInfo.SchemaID
+
+	// drop protocol
+	index := strings.Index(typeInfo.SchemaID, "//")
+	if index != -1 {
+		fullPkg = fullPkg[index+2:]
+	}
+
+	// drop the capability name and version
+	index = strings.LastIndex(fullPkg, "/")
+	if index == -1 {
+		return GeneratedInfo{},
+			fmt.Errorf("invalid schema ID: %s must end in /capability_name and optioanlly a version", typeInfo.SchemaID)
+	}
+
+	fullPkg = fullPkg[:index]
+
 	return GeneratedInfo{
 		Package:        pkg,
 		Config:         config,

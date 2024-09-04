@@ -36,7 +36,7 @@ func (r *Runner) Run(factory *workflows.WorkflowSpecFactory) error {
 
 	// TODO https://smartcontract-it.atlassian.net/browse/KS-442, implement this function
 	_ = spec
-	return nil
+	return errors.New("TODO https://smartcontract-it.atlassian.net/browse/KS-442")
 }
 
 // MockCapability registers a new capability mock with the runner

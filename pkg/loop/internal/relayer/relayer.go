@@ -182,7 +182,7 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 
 var _ looptypes.Relayer = (*relayerClient)(nil)
 
-// relayerClient adapts a GRPC [pb.relayerClient] to implement [Relayer].
+// relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient

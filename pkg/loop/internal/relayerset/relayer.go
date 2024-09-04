@@ -12,13 +12,19 @@ import (
 )
 
 type relayerClient struct {
+	*relayer.RelayerClient
 	log              logger.Logger
 	relayerSetClient *Client
 	relayerID        types.RelayID
 }
 
 func newRelayerClient(log logger.Logger, client *Client, relayID types.RelayID) *relayerClient {
-	return &relayerClient{log: log, relayerSetClient: client, relayerID: relayID}
+	return &relayerClient{
+		RelayerClient:    relayer.NewRelayerClient(client.BrokerExt, client.ClientConn()),
+		log:              log,
+		relayerSetClient: client,
+		relayerID:        relayID,
+	}
 }
 
 func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayArgs, pargs core.PluginArgs) (types.PluginProvider, error) {

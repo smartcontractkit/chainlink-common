@@ -51,7 +51,7 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.26.0
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
+	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	golang.org/x/tools v0.24.0
 	gonum.org/v1/gonum v0.15.0
 	google.golang.org/grpc v1.65.0
@@ -109,4 +109,4 @@ require (
 )
 
 // until merged upstream: https://github.com/omissis/go-jsonschema/pull/264
-replace github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-smallSizedInts
+replace github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.2-rtinianov-merge-request

@@ -15,12 +15,18 @@
           "description": "The interval in seconds after which a new report is generated, regardless of whether any deviations have occurred. New reports reset the timer."
         },
         "remappedID": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "An optional remapped ID for the feed."
         }
       },
       "additionalProperties": false,
-      "required": ["deviation", "heartbeat"]
+      "required": [
+        "deviation",
+        "heartbeat"
+      ]
     }
   },
   "properties": {
@@ -28,7 +34,9 @@
       "properties": {
         "aggregation_method": {
           "type": "string",
-          "enum": ["data_feeds"]
+          "enum": [
+            "data_feeds"
+          ]
         },
         "aggregation_config": {
           "type": "object",
@@ -48,30 +56,19 @@
             }
           },
           "additionalProperties": false,
-          "required": ["allowedPartialStaleness", "feeds"]
+          "required": [
+            "allowedPartialStaleness",
+            "feeds"
+          ]
         },
         "encoder": {
-          "type": "string",
-          "enum": ["EVM"]
+          "$ref": "ocr3_common-schema.json#/$defs/encoder"
         },
         "encoder_config": {
-          "type": "object",
-          "properties": {
-            "abi": {
-              "type": "string",
-              "description": "The ABI for report encoding.",
-              "examples": [
-                "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
-              ]
-            }
-          },
-          "additionalProperties": false,
-          "required": ["abi"]
+          "$ref": "ocr3_common-schema.json#/$defs/encoder_config"
         },
         "report_id": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{4}$",
-          "examples": ["0x0001"]
+            "$ref": "ocr3_common-schema.json#/$defs/report_id"
         }
       },
       "additionalProperties": false,
@@ -89,16 +86,15 @@
         "observations": {
           "type": "array",
           "items": {
-            "type": "array",
-            "items": {
-              "$ref": "../../triggers/streams/streams_trigger-schema.json#/$defs/Feed"
-            }
+            "$ref": "../../triggers/streams/streams_trigger-schema.json#/$defs/Feed"
           }
         }
       },
       "additionalProperties": false,
       "type": "object",
-      "required": ["observations"]
+      "required": [
+        "observations"
+      ]
     },
     "outputs": {
       "$ref": "ocr3_common-schema.json#/$defs/SignedReport"
@@ -106,6 +102,10 @@
   },
   "additionalProperties": false,
   "type": "object",
-  "required": ["config", "inputs", "outputs"],
+  "required": [
+    "config",
+    "inputs",
+    "outputs"
+  ],
   "description": "OCR3 consensus exposed as a capability."
 }

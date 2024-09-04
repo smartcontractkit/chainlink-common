@@ -41,7 +41,9 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
+// Batch chain write takes a batch call entry and writes it to the chain using the ChainWriter.
 func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
+	// This is necessary because the mock helper function requires the entire batchCallEntry rather than an individual testStruct
 	if mockRun {
 		cw := tester.GetChainWriter(t)
 		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
@@ -54,6 +56,7 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T
 		nameToAddress[bc.Name] = bc.Address
 	}
 
+	// For each contract in the batch call entry, submit the read entries to the chain
 	for contractName, contractBatch := range batchCallEntry {
 		require.Contains(t, nameToAddress, contractName)
 		for _, readEntry := range contractBatch {
@@ -61,11 +64,12 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T
 			if !isOk {
 				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contractName, readEntry.Name, readEntry.ReturnValue)
 			}
-			SubmitTransactionToCW(t, tester, "addTestStruct", val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
+			SubmitTransactionToCW(t, tester, MethodSettingStruct, val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
 		}
 	}
 }
 
+// SubmitTransactionToCW submits a transaction to the ChainWriter and waits for it to reach the given status.
 func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	tester.DirtyContracts()
 	txID := uuid.New().String()
@@ -79,6 +83,7 @@ func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTe
 	return txID
 }
 
+// WaitForTransactionStatus waits for a transaction to reach the given status.
 func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
 	ctx, cancel := context.WithTimeout(tests.Context(t), 15*time.Minute)
 	defer cancel()
@@ -86,7 +91,6 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfac
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	fmt.Printf("Waiting for transaction %s to reach status %d\n", txID, status)
 	for {
 		select {
 		case <-ctx.Done():
@@ -104,7 +108,6 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfac
 			if current == types.Failed || current == types.Fatal {
 				return fmt.Errorf("transaction %s has failed or is fatal", txID)
 			} else if current >= status {
-				fmt.Printf("Transaction %s reached status: %d\n", txID, current)
 				return nil
 			} else {
 				continue

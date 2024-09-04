@@ -33,8 +33,8 @@ func TestAllEncodings(t *testing.T, test func(chainreader.EncodingVersion) func(
 
 type LoopTesterOpt func(*contractReaderLoopTester)
 
-// WrapChainComponentsTesterForLoop allows you to test a [types.ContractReader] and [types.ChainWriter] implementation behind a LOOP server
-func WrapChainComponentsTesterForLoop(wrapped ChainComponentsInterfaceTester[*testing.T], opts ...LoopTesterOpt) ChainComponentsInterfaceTester[*testing.T] {
+// WrapContractReaderTesterForLoop allows you to test a [types.ContractReader] and [types.ChainWriter] implementation behind a LOOP server
+func WrapContractReaderTesterForLoop(wrapped ChainComponentsInterfaceTester[*testing.T], opts ...LoopTesterOpt) ChainComponentsInterfaceTester[*testing.T] {
 	tester := &contractReaderLoopTester{
 		ChainComponentsInterfaceTester: wrapped,
 		encodeWith:                     chainreader.DefaultEncodingVersion,

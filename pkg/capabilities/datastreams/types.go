@@ -68,34 +68,50 @@ type FeedReport struct {
 }
 
 // passed alongside Streams trigger events
-type SignersMetadata struct {
+type Metadata struct {
 	Signers               [][]byte
 	MinRequiredSignatures int
 }
 
+type StreamsTriggerEvent struct {
+	Payload   []FeedReport
+	Metadata  Metadata
+	Timestamp int64
+}
+
 type ReportCodec interface {
-	// unwrap reports and convert to a list of FeedReport
+	// unwrap StreamsTriggerEvent and convert to a list of FeedReport
 	Unwrap(wrapped values.Value) ([]FeedReport, error)
 
-	// wrap a list of FeedReport to Value
+	// wrap a list of FeedReport to a wrapped StreamsTriggerEvent Value
 	Wrap(reports []FeedReport) (values.Value, error)
 
 	// validate signatures on a single FeedReport
 	Validate(feedReport FeedReport, allowedSigners [][]byte, minRequiredSignatures int) error
 }
 
-// Helpers for unwrapping a list of FeedReports - more efficient than using mapstructure/reflection
-func UnwrapFeedReportList(wrapped values.Value) ([]FeedReport, error) {
+// Helpers for unwrapping a StreamsTriggerPayload into a []FeedReport - more efficient than using mapstructure/reflection
+func UnwrapStreamsTriggerEventToFeedReportList(wrapped values.Value) ([]FeedReport, error) {
 	result := []FeedReport{}
-	lst, ok := wrapped.(*values.List)
+	triggerEvent, ok := wrapped.(*values.Map)
 	if !ok {
-		return nil, errors.New("expected list")
+		return nil, fmt.Errorf("unexpected value %+v for trigger payload: expected map, got %T", wrapped, wrapped)
 	}
-	for _, v := range lst.Underlying {
+
+	p, ok := triggerEvent.Underlying["Payload"]
+	if !ok {
+		return nil, errors.New("expected map to have Payload field")
+	}
+
+	plst, ok := p.(*values.List)
+	if !ok {
+		return nil, errors.New("expected Payload to be a list")
+	}
+	for _, v := range plst.Underlying {
 		report := FeedReport{}
 		mp, ok := v.(*values.Map)
 		if !ok {
-			return nil, errors.New("expected map")
+			return nil, fmt.Errorf("unexpected value %+v for feed report: expected map, got %T", v, v)
 		}
 		var err error
 		report.FeedID, err = getStringField(mp, "FeedID")
@@ -127,6 +143,7 @@ func UnwrapFeedReportList(wrapped values.Value) ([]FeedReport, error) {
 		}
 		result = append(result, report)
 	}
+
 	return result, nil
 }
 

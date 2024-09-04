@@ -128,7 +128,10 @@ func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string
 					tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1])
 					jsonTag := tag.Get("json")
 					if jsonTag != "" {
-						f.ConfigName = jsonTag
+						jsonName := strings.Split(jsonTag, ",")[0]
+						if jsonName != "" {
+							f.ConfigName = jsonName
+						}
 					}
 				}
 

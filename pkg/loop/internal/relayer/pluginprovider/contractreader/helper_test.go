@@ -168,17 +168,14 @@ func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	)
 	require.NoError(t, err)
 
-	// andOverPrimitivesBoolExpr
 	qf, err = query.Where(ProtoTest, andOverPrimitivesBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	// orOverPrimitivesBoolExpr
 	qf, err = query.Where(ProtoTest, orOverPrimitivesBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)
 
-	// nestedBoolExpr
 	qf, err = query.Where(ProtoTest, nestedBoolExpr)
 	require.NoError(t, err)
 	queryFilters = append(queryFilters, qf)

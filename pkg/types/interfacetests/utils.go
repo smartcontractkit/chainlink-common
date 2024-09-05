@@ -144,10 +144,10 @@ type MidLevelTestStruct struct {
 type TestStruct struct {
 	Field          *int32
 	OracleID       commontypes.OracleID
-	DifferentField string
 	OracleIDs      [32]commontypes.OracleID
 	Account        []byte
 	Accounts       [][]byte
+	DifferentField string
 	BigField       *big.Int
 	NestedStruct   MidLevelTestStruct
 }
@@ -201,10 +201,10 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	return TestStruct{
 		Field:          &fv,
 		OracleID:       commontypes.OracleID(i + 1),
-		DifferentField: s,
 		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
 		Account:        tester.GetAccountBytes(i + 3),
 		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
+		DifferentField: s,
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
 		NestedStruct: MidLevelTestStruct{
 			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},

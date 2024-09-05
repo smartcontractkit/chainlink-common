@@ -741,7 +741,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression, contractName, key s
 		case *pb.Primitive_Comparator:
 			var valueComparators []primitives.ValueComparator
 			for _, pbValueComparator := range primitive.Comparator.ValueComparators {
-				val, err := getContractEncodedType(contractName, fmt.Sprintf(key+"."+primitive.Comparator.Name), impl, true)
+				val, err := getContractEncodedType(contractName, key+"."+primitive.Comparator.Name, impl, true)
 				if err != nil {
 					return query.Expression{}, err
 				}

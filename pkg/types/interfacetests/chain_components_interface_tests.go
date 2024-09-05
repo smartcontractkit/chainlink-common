@@ -654,11 +654,11 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 					sequences, err := cr.QueryKey(ctx, AnyContractName, query.KeyFilter{Key: EventName, Expressions: []query.Expression{
 						query.Comparator("Field",
 							primitives.ValueComparator{
-								Value:    int32(15),
+								Value:    *ts2.Field,
 								Operator: primitives.Gte,
 							},
 							primitives.ValueComparator{
-								Value:    int32(35),
+								Value:    *ts3.Field,
 								Operator: primitives.Lte,
 							}),
 					},

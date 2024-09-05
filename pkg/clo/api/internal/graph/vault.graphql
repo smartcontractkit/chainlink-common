@@ -1,0 +1,30 @@
+mutation CreateVault($input: CreateVaultInput!) {
+  createVault(input: $input) {
+    vault {
+      id
+      name
+      address
+      type
+      network {
+        id
+      }
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}
+
+query GetVault($id: ID!) {
+  vault(id: $id) {
+    id
+    name
+    address
+    type
+    network {
+      id
+    }
+    createdAt
+    updatedAt
+  }
+}

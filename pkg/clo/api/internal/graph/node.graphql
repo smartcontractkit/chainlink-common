@@ -1,0 +1,52 @@
+query GetNodes {
+  nodes {
+    id
+    name
+    nodeOperator {
+      id
+    }
+    createdAt
+  }
+}
+
+query GetNode($id: ID!) {
+  node(id: $id) {
+    id
+    name
+    publicKey
+    nodeOperator {
+      id
+    }
+  }
+}
+
+mutation CreateNode($input: CreateNodeInput!) {
+  createNode(input: $input) {
+    node {
+      id
+      name
+      publicKey
+      nodeOperator {
+        id
+      }
+      createdAt
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}
+
+mutation AssignNodetoJob($input: AssignNodeToJobInput!) {
+  assignNodeToJob(input: $input) {
+    job {
+      id
+      uuid
+      status
+      spec
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}

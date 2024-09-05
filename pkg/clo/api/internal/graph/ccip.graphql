@@ -1,0 +1,536 @@
+query GetChain($id: ID!) {
+  ccip {
+    chain(id: $id) {
+      id
+      supportedTokens {
+        token
+        address
+        price
+        priceType
+      }
+      wrappedNativeToken
+      feeTokens
+      contracts {
+        id
+        name
+        version
+        metadata
+        address
+      }
+      network {
+        id
+        name
+        chainID
+        chainType
+        # additional attributes may be retrieved using GetNetworks
+      }
+      displayName
+      deployedTemplate
+    }
+  }
+}
+
+query GetChains($filter: CCIPChainFilter) {
+  ccip {
+    chains(filter: $filter) {
+      id
+      network {
+        id
+        chainID
+        name
+      }
+    }
+  }
+}
+
+fragment SourceFields on CCIPEndpoint {
+  chain {
+    network {
+      name
+      id
+      chainID
+    }
+  }
+  contracts {
+    name
+    address
+  }
+}
+
+fragment DONFields on DON {
+  id
+  executionType
+  network {
+    id
+  }
+  jobs {
+    id
+    uuid
+    type
+    ocr2PluginType
+    status
+    nodeOperator {
+      id
+      name
+    }
+    node {
+      id
+    }
+    isBootstrap
+    spec
+    proposalChanged
+    canPropose
+    canRevoke
+    createdAt
+  }
+}
+
+fragment LegFields on CCIPLaneLeg {
+  id
+  source {
+    ...SourceFields
+  }
+  destination {
+    ...SourceFields
+  }
+  dons {
+    ...DONFields
+  }
+}
+
+query GetLane($id: ID!) {
+  ccip {
+    lane(id: $id) {
+      id
+      deployedTemplate
+      deployedProvisionalTemplate
+      status
+      legA {
+        ...LegFields
+      }
+      legB {
+        ...LegFields
+      }
+      legAProvisional {
+        ...LegFields
+      }
+      legBProvisional {
+        ...LegFields
+      }
+    }
+  }
+}
+
+query ListLanes {
+  ccip {
+    lanes {
+      id
+      archivedAt
+      status
+      legA {
+        id
+        source {
+          chain {
+            network {
+              name
+              chainID
+            }
+          }
+          contracts {
+            name
+            address
+            deployedAt
+            semver
+          }
+        }
+        destination {
+          chain {
+            network {
+              name
+              chainID
+            }
+          }
+          contracts {
+            name
+            address
+            deployedAt
+            semver
+          }
+        }
+        dons {
+          id
+          network {
+            chainID
+          }
+          jobs {
+            id
+            node {
+              id
+              name
+            }
+            type
+            status
+            ocr2PluginType
+            nodeOperator {
+              id
+              keys
+              name
+            }
+          }
+        }
+      }
+      legB {
+        id
+        source {
+          chain {
+            network {
+              name
+              chainID
+            }
+          }
+          contracts {
+            name
+            address
+            deployedAt
+            semver
+          }
+        }
+        destination {
+          chain {
+            network {
+              name
+              chainID
+            }
+          }
+          contracts {
+            name
+            address
+            deployedAt
+            semver
+          }
+        }
+        dons {
+          id
+          network {
+            chainID
+          }
+          jobs {
+            id
+            node {
+              id
+              name
+            }
+            type
+            status
+            ocr2PluginType
+            nodeOperator {
+              id
+              keys
+              name
+            }
+          }
+        }
+      }
+      legAProvisional {
+        id
+        source {
+          chain {
+            network {
+              name
+              id
+              chainID
+            }
+          }
+          contracts {
+            name
+            address
+            semver
+          }
+        }
+        destination {
+          chain {
+            network {
+              name
+              id
+            }
+          }
+          contracts {
+            name
+            address
+            semver
+          }
+        }
+        dons {
+          id
+          network {
+            id
+          }
+          jobs {
+            id
+            proposalChanged
+            node {
+              id
+            }
+            type
+            status
+            ocr2PluginType
+            nodeOperator {
+              id
+            }
+            spec
+          }
+        }
+      }
+      legBProvisional {
+        id
+        source {
+          chain {
+            network {
+              name
+              id
+              chainID
+            }
+          }
+          contracts {
+            name
+            address
+            semver
+          }
+        }
+        destination {
+          chain {
+            network {
+              name
+              id
+            }
+          }
+          contracts {
+            name
+            address
+            semver
+          }
+        }
+        dons {
+          id
+          network {
+            id
+          }
+          jobs {
+            id
+            proposalChanged
+            node {
+              id
+            }
+            type
+            status
+            ocr2PluginType
+            nodeOperator {
+              id
+            }
+            spec
+          }
+        }
+      }
+    }
+  }
+}
+
+query ListLaneLegs($filter: CCIPLaneLegsFilter!) {
+  ccip {
+    laneLegs(filter: $filter) {
+      id
+      source {
+        chain {
+          contracts {
+            name
+            address
+            metadata
+          }
+        }
+        contracts {
+          name
+          address
+          metadata
+        }
+      }
+      destination {
+        chain {
+          contracts {
+            name
+            address
+            metadata
+          }
+        }
+        contracts {
+          name
+          address
+        }
+      }
+      supportedTokens
+    }
+  }
+}
+
+mutation AddChain($input: AddChainInput!) {
+  ccip {
+    addChain(input: $input) {
+      chain {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation UpdateChain($input: UpdateCCIPChainInput!) {
+  ccip {
+    updateChain(input: $input) {
+      chain {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation AddLane($input: AddLaneInput!) {
+  ccip {
+    addLane(input: $input) {
+      lane {
+        id
+        legA {
+          id
+        }
+        legB {
+          id
+        }
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation UpdateLane($input: UpdateLaneInput!) {
+  ccip {
+    updateLane(input: $input) {
+      lane {
+        id
+        status
+        displayName
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation AddTokenPool($input: AddTokenPoolInput!) {
+  ccip {
+    addTokenPool(input: $input) {
+      chain {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation DeployChain($input: CCIP_DeployChainInput!) {
+  ccip {
+    deployChain(input: $input) {
+      workflowRun {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation DeployContract($input: DeployContractInput!) {
+  ccip {
+    deployContract(input: $input) {
+      workflowRun {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation SetAllowListTokenPool($input: SetAllowListTokenPoolInput!) {
+  ccip {
+    setAllowListTokenPool(input: $input) {
+      workflowRun {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation DeregisterTestToken($input: DeregisterTestTokenInput!) {
+  ccip {
+    deregisterTestToken(input: $input) {
+      workflowRun {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation TransferOwnership($input: TransferOwnershipInput!) {
+  ccip {
+    transferOwnership(input: $input) {
+      workflowRun {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation TransferAdminRole($input: TransferAdminRoleInput!) {
+  ccip {
+    transferAdminRole(input: $input) {
+      workflowRun {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation ConfirmLaneUpgrade($input: ConfirmLaneUpgradeInput!) {
+  ccip {
+    confirmLaneUpgrade(input: $input) {
+      lane {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}

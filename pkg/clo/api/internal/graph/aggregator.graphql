@@ -1,0 +1,118 @@
+query GetAggregator($id: ID!) {
+  aggregator(id: $id) {
+    id
+    name
+    contractAddress
+    contractType
+    ownerAddress
+    ownerAddressType
+    pendingOwnerAddress
+    transferOwnershipStatus
+    don {
+      id
+      jobs {
+        id
+        status
+        nodeOperator {
+          id
+          name
+        }
+        isBootstrap
+        proposalChanged
+        canPropose
+      }
+    }
+    bootstrapMultiaddrs
+    feed {
+      id
+    }
+    network {
+      id
+    }
+    category {
+      id
+      name
+      color
+    }
+    createdAt
+  }
+}
+
+query GetAggregators($filter: ListAggregatorsFilter!) {
+  aggregators(filter: $filter) {
+    id
+    name
+    contractAddress
+    contractType
+    ownerAddress
+    ownerAddressType
+    pendingOwnerAddress
+    transferOwnershipStatus
+    don {
+      id
+      jobs {
+        id
+        status
+        nodeOperator {
+          id
+          name
+        }
+        isBootstrap
+        proposalChanged
+        canPropose
+      }
+    }
+    bootstrapMultiaddrs
+    feed {
+      id
+    }
+    network {
+      id
+    }
+    category {
+      id
+      name
+      color
+    }
+    createdAt
+  }
+}
+
+mutation AddFeedAggregator($input: AddFeedAggregatorInput!) {
+  addFeedAggregator(input: $input) {
+    aggregator {
+      id
+      feed {
+        id
+      }
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}
+
+mutation ImportFeedAggregator($input: ImportFeedAggregatorInput!) {
+  importFeedAggregator(input: $input) {
+    aggregator {
+      id
+      feed {
+        id
+      }
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}
+
+mutation UpdateAggregator($input: UpdateAggregatorInput!) {
+  updateAggregator(input: $input) {
+    aggregator {
+      id
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}

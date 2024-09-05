@@ -1,0 +1,13 @@
+# Where are all the schema files located? globs are supported eg  src/**/*.graphqls
+schema:
+  - pkg/graph/schemas/*.graphqls
+
+# Where should any generated models go?
+model:
+  filename: api/models/models_gen.go
+  package: models
+omit_getters: true
+skip_mod_tidy: true
+skip_validation: true
+autobind:
+  - "github.com/smartcontractkit/feeds-manager/api/models"

@@ -1,0 +1,12 @@
+fragment MutationErrorFragment on MutationError {
+  ... on GenericError {
+    message
+  }
+  ... on InvalidInputError {
+    message
+    path
+  }
+  ... on UniqueViolationError {
+    message
+  }
+}

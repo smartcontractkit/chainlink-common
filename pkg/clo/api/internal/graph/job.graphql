@@ -1,0 +1,24 @@
+mutation ProposeJob($input: ProposeJobInput!) {
+  proposeJob(input: $input) {
+    job {
+      id
+      status
+      createdAt
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}
+
+mutation CreateBootstrapJob($input: CreateBootstrapJobInput!) {
+  createBootstrapJob(input: $input) {
+    job {
+      id
+      status
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}

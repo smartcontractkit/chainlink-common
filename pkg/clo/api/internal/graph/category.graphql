@@ -1,0 +1,8 @@
+query GetCategories {
+  categories {
+    id
+    name
+    color
+    createdAt
+  }
+}

@@ -1,0 +1,118 @@
+query GetMercuryV03Feed($id: ID!) {
+  mercuryv03 {
+    feed(id: $id) {
+      id
+      name
+      externalFeedID
+      verifiers {
+        networkStack {
+          id
+          verifierProxyAddress
+        }
+        networkStackType
+      }
+      reportSchemaVersion
+      don {
+        id
+        jobs {
+          id
+          status
+          spec
+          isBootstrap
+          canPropose
+          canRevoke
+          proposalChanged
+          nodeOperator {
+            id
+            name
+          }
+          node {
+            id
+            name
+          }
+        }
+      }
+      createdAt
+      archivedAt
+    }
+  }
+}
+
+query GetMercuryV03Feeds {
+  mercuryv03 {
+    feeds {
+      id
+      name
+      externalFeedID
+      reportSchemaVersion
+      archivedAt
+    }
+  }
+}
+
+mutation ImportMercuryV03Feed($input: ImportMercuryV03FeedInput!) {
+  mercuryv03 {
+    importFeed(input: $input) {
+      feed {
+        id
+        name
+        externalFeedID
+        verifiers {
+          networkStack {
+            id
+            verifierAddress
+            verifierProxyAddress
+            rewardBankAddress
+            feeManagerAddress
+            mercuryServerURL
+            mercuryServerPubKey
+            network {
+              id
+            }
+          }
+        }
+        createdAt
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation UpdateMercuryV03Feed($input: UpdateMercuryV03FeedInput!) {
+  mercuryv03 {
+    updateFeed(input: $input) {
+      feed {
+        id
+        verifiers {
+          networkStack {
+            id
+          }
+        }
+        don {
+          id
+        }
+        updatedAt
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}
+
+mutation ImportMercuryV03NetworkStack(
+  $input: ImportMercuryV03NetworkStackInput!
+) {
+  mercuryv03 {
+    importNetworkStack(input: $input) {
+      networkStack {
+        id
+      }
+      errors {
+        ...MutationErrorFragment
+      }
+    }
+  }
+}

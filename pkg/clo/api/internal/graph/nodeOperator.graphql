@@ -1,0 +1,90 @@
+query GetNodeOperators {
+  nodeOperators {
+    id
+    keys
+    name
+    email
+    website
+    metadata {
+      nodeCount
+      jobCount
+    }
+    nodes {
+      id
+      connected
+      name
+      publicKey
+      categories {
+        id
+        name
+      }
+      supportedProducts
+      chainConfigs {
+        network {
+          id
+        }
+        adminAddress
+        accountAddress
+        ocr1Config {
+          ocrKeyBundle {
+            configPublicKey
+            offchainPublicKey
+            onchainSigningAddress
+          }
+          p2pKeyBundle {
+            peerID
+          }
+        }
+        ocr2Config {
+          enabled
+          isBootstrap
+          multiaddr
+          ocrKeyBundle {
+            bundleID
+            configPublicKey
+            offchainPublicKey
+            onchainSigningAddress
+          }
+          p2pKeyBundle {
+            peerID
+            publicKey
+          }
+          plugins {
+            ccipCommit
+            ccipExecution
+            median
+            mercury
+          }
+        }
+      }
+    }
+    createdAt
+  }
+}
+
+query GetNodeOperator($id: ID!) {
+  nodeOperator(id: $id) {
+    id
+    keys
+    name
+    email
+    website
+    createdAt
+  }
+}
+
+mutation CreateNodeOperator($input: CreateNodeOperatorInput!) {
+  createNodeOperator(input: $input) {
+    nodeOperator {
+      id
+      keys
+      name
+      email
+      website
+      createdAt
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}

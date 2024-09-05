@@ -1,0 +1,23 @@
+query GetNetworks($input: NetworksInput) {
+  networks(input: $input) {
+    id
+    chainID
+    chainType
+    name
+    nativeToken
+    archived
+    linkContractAddress
+    flagsContractAddress
+    linkFunding
+    billingAdminAccessControllerAddress
+    requesterAdminAccessControllerAddress
+    iconName
+    explorerURL
+    vaults {
+      id
+      name
+      address
+      type
+    }
+  }
+}

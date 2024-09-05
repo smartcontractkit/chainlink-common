@@ -1,0 +1,9 @@
+query GetWorkflowRun($id: ID!) {
+  workflowRun(id: $id) {
+    id
+    workflowType
+    status
+    createdAt
+    name
+  }
+}

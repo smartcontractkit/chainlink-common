@@ -1,0 +1,122 @@
+mutation AddFeed($input: AddFeedInput!) {
+  addFeed(input: $input) {
+    feed {
+      id
+      name
+      network {
+        id
+      }
+      aggregators {
+        id
+      }
+      proxy {
+        id
+      }
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}
+
+query GetFeed($id: ID!) {
+  feed(id: $id) {
+    id
+    name
+    status
+    network {
+      id
+    }
+    proxy {
+      id
+      contractAddress
+    }
+    aggregators {
+      id
+    }
+    workflowRuns {
+      id
+      workflowType
+      status
+      actions {
+        name
+        actionType
+        run {
+          id
+          actionType
+          status
+          tasks {
+            name
+            run {
+              id
+              input
+              output
+              status
+            }
+          }
+        }
+      }
+      createdAt
+    }
+    createdAt
+  }
+}
+
+query GetFeeds($input: FeedsInput) {
+  feeds(input: $input) {
+    id
+    name
+    status
+    network {
+      id
+      chainID
+    }
+    proxy {
+      id
+    }
+    aggregators {
+      id
+      name
+      contractAddress
+      category {
+        name
+      }
+    }
+    workflowRuns {
+      id
+      accountAddress
+    }
+    createdAt
+  }
+}
+
+mutation ImportFeed($input: ImportFeedInput!) {
+  importFeed(input: $input) {
+    feed {
+      id
+      name
+      status
+      network {
+        id
+      }
+      proxy {
+        id
+      }
+      aggregators {
+        id
+        name
+        contractAddress
+        category {
+          name
+        }
+      }
+      workflowRuns {
+        id
+      }
+      createdAt
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}

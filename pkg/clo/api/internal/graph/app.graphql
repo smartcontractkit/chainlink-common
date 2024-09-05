@@ -1,0 +1,7 @@
+mutation SetupApp($input: SetupAppInput!) {
+  setupApp(input: $input) {
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}

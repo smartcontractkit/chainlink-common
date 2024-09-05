@@ -1,0 +1,9 @@
+query GetProfile {
+  profile {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}

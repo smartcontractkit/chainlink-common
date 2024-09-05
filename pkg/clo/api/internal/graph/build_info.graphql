@@ -1,0 +1,5 @@
+query GetBuildInfo {
+  buildInfo {
+    version
+  }
+}

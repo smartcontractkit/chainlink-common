@@ -1,0 +1,19 @@
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    session {
+      id
+      token
+    }
+    errors {
+      ...MutationErrorFragment
+    }
+  }
+}
+
+mutation Logout {
+  logout {
+    session {
+      id
+    }
+  }
+}

@@ -18,7 +18,7 @@ func NewRunner() *Runner {
 		results:      runnerResults{},
 		idToStep:     map[string]workflows.StepDefinition{},
 		dependencies: map[string][]string{},
-		sdk:          &Sdk{},
+		sdk:          &SDK{},
 	}
 }
 
@@ -33,7 +33,7 @@ type Runner struct {
 	results      runnerResults
 	idToStep     map[string]workflows.StepDefinition
 	dependencies map[string][]string
-	sdk          workflows.Sdk
+	sdk          workflows.SDK
 	errors       []error
 }
 

@@ -57,8 +57,6 @@ func pbReportFields(fields mercury_v4_types.ReportFields) *mercury_v4_pb.ReportF
 		LinkFee:            pb.NewBigIntFromInt(fields.LinkFee),
 		ExpiresAt:          fields.ExpiresAt,
 		BenchmarkPrice:     pb.NewBigIntFromInt(fields.BenchmarkPrice),
-		Ask:                pb.NewBigIntFromInt(fields.Ask),
-		Bid:                pb.NewBigIntFromInt(fields.Bid),
 		MarketStatus:       fields.MarketStatus,
 	}
 }
@@ -106,8 +104,6 @@ func reportFields(fields *mercury_v4_pb.ReportFields) mercury_v4_types.ReportFie
 		LinkFee:            fields.LinkFee.Int(),
 		ExpiresAt:          fields.ExpiresAt,
 		BenchmarkPrice:     fields.BenchmarkPrice.Int(),
-		Ask:                fields.Ask.Int(),
-		Bid:                fields.Bid.Int(),
 		MarketStatus:       fields.MarketStatus,
 	}
 }

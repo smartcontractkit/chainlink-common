@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"reflect"
-	"regexp"
 
 	streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 )
@@ -38,7 +37,7 @@ type DataFeedsConsensusConfig struct {
 	EncoderConfig EncoderConfig `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
 
 	// ReportId corresponds to the JSON schema field "report_id".
-	ReportId string `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+	ReportId ReportId `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
 }
 
 type DataFeedsConsensusConfigAggregationConfig struct {
@@ -126,16 +125,13 @@ func (j *DataFeedsConsensusConfig) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if matched, _ := regexp.MatchString("^[a-f0-9]{4}$", string(plain.ReportId)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", "^[a-f0-9]{4}$", "ReportId")
-	}
 	*j = DataFeedsConsensusConfig(plain)
 	return nil
 }
 
 type DataFeedsConsensusInputs struct {
 	// Observations corresponds to the JSON schema field "observations".
-	Observations [][]streams.Feed `json:"observations" yaml:"observations" mapstructure:"observations"`
+	Observations []streams.Feed `json:"observations" yaml:"observations" mapstructure:"observations"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

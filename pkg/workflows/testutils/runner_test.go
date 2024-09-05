@@ -63,9 +63,9 @@ func TestRunner(t *testing.T) {
 			workflow,
 			"transform",
 			workflows.Compute2Inputs[basictrigger.TriggerOutputs, basicaction.ActionOutputs]{Arg0: trigger, Arg1: hardCodedInput},
-			func(sdk workflows.Sdk, tr basictrigger.TriggerOutputs, hc basicaction.ActionOutputs) (bool, error) {
+			func(SDK workflows.SDK, tr basictrigger.TriggerOutputs, hc basicaction.ActionOutputs) (bool, error) {
 				assert.Equal(t, "hard-coded", hc.AdaptedThing)
-				assert.NotNil(t, sdk)
+				assert.NotNil(t, SDK)
 				assert.Equal(t, "cool", tr.CoolOutput)
 				return true, nil
 			})
@@ -75,7 +75,7 @@ func TestRunner(t *testing.T) {
 
 		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 			Encoder:       "Test",
-			EncoderConfig: ocr3.EncoderConfig{Abi: "Test"},
+			EncoderConfig: ocr3.EncoderConfig{},
 		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
 
 		chainwriter.TargetConfig{
@@ -104,7 +104,7 @@ func TestRunner(t *testing.T) {
 
 	t.Run("Run captures errors", func(t *testing.T) {
 		expectedErr := errors.New("nope")
-		wf := createBasicTestWorkflow(func(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error) {
+		wf := createBasicTestWorkflow(func(SDK workflows.SDK, outputs basictrigger.TriggerOutputs) (bool, error) {
 			return false, expectedErr
 		})
 
@@ -218,7 +218,7 @@ func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.Tri
 	return triggerMock, actionMock, consensusMock, targetMock
 }
 
-type actionTransform func(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error)
+type actionTransform func(SDK workflows.SDK, outputs basictrigger.TriggerOutputs) (bool, error)
 
 func createBasicTestWorkflow(actionTransform actionTransform) *workflows.WorkflowSpecFactory {
 	workflow := workflows.NewWorkflowSpecFactory(workflows.NewWorkflowParams{Name: "tester", Owner: "ryan"})
@@ -234,7 +234,7 @@ func createBasicTestWorkflow(actionTransform actionTransform) *workflows.Workflo
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder:       "Test",
-		EncoderConfig: ocr3.EncoderConfig{Abi: "Test"},
+		EncoderConfig: ocr3.EncoderConfig{},
 	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
 
 	chainwriter.TargetConfig{
@@ -251,8 +251,8 @@ type testHelper struct {
 	transformTriggerCalled bool
 }
 
-func (helper *testHelper) transformTrigger(sdk workflows.Sdk, outputs basictrigger.TriggerOutputs) (bool, error) {
-	assert.NotNil(helper.t, sdk)
+func (helper *testHelper) transformTrigger(SDK workflows.SDK, outputs basictrigger.TriggerOutputs) (bool, error) {
+	assert.NotNil(helper.t, SDK)
 	assert.Equal(helper.t, "cool", outputs.CoolOutput)
 	assert.False(helper.t, helper.transformTriggerCalled)
 	helper.transformTriggerCalled = true

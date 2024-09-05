@@ -256,6 +256,8 @@ func TestMockGeneration(t *testing.T) {
 
 	t.Run("Basic action", func(t *testing.T) {
 		runner := testutils.NewRunner()
+
+		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := basicactiontest.Action(runner, func(_ basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -266,6 +268,7 @@ func TestMockGeneration(t *testing.T) {
 
 		// verify type is correct
 		var mock *testutils.Mock[basicaction.ActionInputs, basicaction.ActionOutputs] //nolint
+		// nolint
 		mock = capMock
 		mock = specificMock
 		_ = mock
@@ -285,6 +288,8 @@ func TestMockGeneration(t *testing.T) {
 
 	t.Run("References", func(t *testing.T) {
 		runner := testutils.NewRunner()
+
+		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := referenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
 			return referenceaction.SomeOutputs{}, nil
 		})
@@ -295,6 +300,7 @@ func TestMockGeneration(t *testing.T) {
 
 		// verify type is correct
 		var mock *testutils.Mock[referenceaction.SomeInputs, referenceaction.SomeOutputs] //nolint
+		// nolint
 		mock = capMock
 		mock = specificMock
 		_ = mock
@@ -302,6 +308,8 @@ func TestMockGeneration(t *testing.T) {
 
 	t.Run("External references", func(t *testing.T) {
 		runner := testutils.NewRunner()
+
+		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := externalreferenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
 			return referenceaction.SomeOutputs{}, nil
 		})
@@ -312,6 +320,8 @@ func TestMockGeneration(t *testing.T) {
 
 		// verify type is correct
 		var mock *testutils.Mock[referenceaction.SomeInputs, referenceaction.SomeOutputs] //nolint
+
+		// nolint ineffectual assignment is ok, it's for testing the type.
 		mock = capMock
 		mock = specificMock
 		_ = mock
@@ -321,6 +331,7 @@ func TestMockGeneration(t *testing.T) {
 
 	t.Run("Array action", func(t *testing.T) {
 		runner := testutils.NewRunner()
+		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := arrayactiontest.Action(runner, func(_ arrayaction.ActionInputs) ([]arrayaction.ActionOutputsElem, error) {
 			return []arrayaction.ActionOutputsElem{}, nil
 		})
@@ -331,6 +342,8 @@ func TestMockGeneration(t *testing.T) {
 
 		// verify type is correct
 		var mock *testutils.Mock[arrayaction.ActionInputs, []arrayaction.ActionOutputsElem] //nolint
+
+		// nolint ineffectual assignment is ok, it's for testing the type.
 		mock = capMock
 		mock = specificMock
 		_ = mock

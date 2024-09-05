@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725458326218,
+  "lastUpdate": 1725542215835,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -126,6 +126,48 @@ window.BENCHMARK_DATA = {
             "value": 28311,
             "unit": "ns/op",
             "extra": "42404 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1702865+kidambisrinivas@users.noreply.github.com",
+            "name": "Sri Kidambi",
+            "username": "kidambisrinivas"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1128f33dc70bd0fc787679c6c862079bd694697e",
+          "message": "Expose ContractReader and ChainWriter of relayer in relayerSet (#749)\n\n* Embed relayer::relayer in relayerset::relayer to expose chainReader\r\n\r\n* Add NewContractReader and NewChainWriter functionality in relayerset\r\n\r\n* Minor change\r\n\r\n* Addressed PR comment\r\n\r\n* Use .mockery.yaml instead of go:generate\r\n\r\n* Add documentation and comments",
+          "timestamp": "2024-09-05T14:16:01+01:00",
+          "tree_id": "dc77244db77eb66b004f683df9837f99904f967c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1128f33dc70bd0fc787679c6c862079bd694697e"
+        },
+        "date": 1725542215097,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458.4,
+            "unit": "ns/op",
+            "extra": "2287370 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.4,
+            "unit": "ns/op",
+            "extra": "2073802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28302,
+            "unit": "ns/op",
+            "extra": "42394 times\n4 procs"
           }
         ]
       }

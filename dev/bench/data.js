@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725542215835,
+  "lastUpdate": 1725544381116,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -166,6 +166,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "BenchmarkKeystore_Sign/ed25519/in-process",
             "value": 28302,
+            "unit": "ns/op",
+            "extra": "42394 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1229e6bc456fc2bf56be07823c3f554e99fe8f01",
+          "message": "Remove redundant interface type (#750)",
+          "timestamp": "2024-09-05T14:52:07+01:00",
+          "tree_id": "4786246f4f79b504c5f9d114eec9f8f098b36df3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1229e6bc456fc2bf56be07823c3f554e99fe8f01"
+        },
+        "date": 1725544380701,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.8,
+            "unit": "ns/op",
+            "extra": "2626786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 537.3,
+            "unit": "ns/op",
+            "extra": "2338347 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28283,
             "unit": "ns/op",
             "extra": "42394 times\n4 procs"
           }

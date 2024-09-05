@@ -6,14 +6,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction/arrayactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction/basicactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicconsensus"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget/basictargettest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger/basictriggertest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/externalreferenceaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/externalreferenceaction/externalreferenceactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/nestedaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction/referenceactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
 )
 
 //go:generate go run github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/generate-types --dir $GOFILE
@@ -21,8 +28,9 @@ import (
 // Notes:
 //
 //	This doesn't get "code coverage" because the generate command is executed before the test
-//	Since the builder isn't implemented yet, the types added aren't tested yet.
-//	They will be tested here and in the tests for the builder as well.
+//	These tests only verify syntax to assure use is as intended, the test for the `workflows.WorkflowSpecFactory` and `testutils.Runner`
+//	test their interactions with those components.  This is done to avoid duplication in testing effort
+//	and allows specific testing of what interfaces should be implemented by generated code.
 func TestTypeGeneration(t *testing.T) {
 	t.Run("Basic trigger", func(t *testing.T) {
 		onlyVerifySyntax(func() {
@@ -233,11 +241,115 @@ func TestTypeGeneration(t *testing.T) {
 	})
 }
 
+func TestMockGeneration(t *testing.T) {
+	t.Run("Basic trigger", func(t *testing.T) {
+		runner := testutils.NewRunner()
+		capMock := basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{}, nil
+		})
+
+		// verify type is correct
+		var mock *testutils.TriggerMock[basictrigger.TriggerOutputs] //nolint
+		mock = capMock
+		_ = mock
+	})
+
+	t.Run("Basic action", func(t *testing.T) {
+		runner := testutils.NewRunner()
+
+		// nolint value is never used but it's assigned to mock to verify the type
+		capMock := basicactiontest.Action(runner, func(_ basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
+			return basicaction.ActionOutputs{}, nil
+		})
+
+		specificMock := basicactiontest.ActionForStep(runner, "step", func(_ basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
+			return basicaction.ActionOutputs{}, nil
+		})
+
+		// verify type is correct
+		var mock *testutils.Mock[basicaction.ActionInputs, basicaction.ActionOutputs] //nolint
+		// nolint
+		mock = capMock
+		mock = specificMock
+		_ = mock
+	})
+
+	t.Run("Basic target", func(t *testing.T) {
+		runner := testutils.NewRunner()
+		capMock := basictargettest.Target(runner, func(_ basictarget.TargetInputs) error {
+			return nil
+		})
+
+		// verify type is correct
+		var mock *testutils.TargetMock[basictarget.TargetInputs] //nolint
+		mock = capMock
+		_ = mock
+	})
+
+	t.Run("References", func(t *testing.T) {
+		runner := testutils.NewRunner()
+
+		// nolint value is never used but it's assigned to mock to verify the type
+		capMock := referenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
+			return referenceaction.SomeOutputs{}, nil
+		})
+
+		specificMock := referenceactiontest.ActionForStep(runner, "step", func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
+			return referenceaction.SomeOutputs{}, nil
+		})
+
+		// verify type is correct
+		var mock *testutils.Mock[referenceaction.SomeInputs, referenceaction.SomeOutputs] //nolint
+		// nolint
+		mock = capMock
+		mock = specificMock
+		_ = mock
+	})
+
+	t.Run("External references", func(t *testing.T) {
+		runner := testutils.NewRunner()
+
+		// nolint value is never used but it's assigned to mock to verify the type
+		capMock := externalreferenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
+			return referenceaction.SomeOutputs{}, nil
+		})
+
+		specificMock := externalreferenceactiontest.ActionForStep(runner, "step", func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
+			return referenceaction.SomeOutputs{}, nil
+		})
+
+		// verify type is correct
+		var mock *testutils.Mock[referenceaction.SomeInputs, referenceaction.SomeOutputs] //nolint
+
+		// nolint ineffectual assignment is ok, it's for testing the type.
+		mock = capMock
+		mock = specificMock
+		_ = mock
+	})
+
+	// no need to test nesting, we don't generate anything different for the mock's
+
+	t.Run("Array action", func(t *testing.T) {
+		runner := testutils.NewRunner()
+		// nolint value is never used but it's assigned to mock to verify the type
+		capMock := arrayactiontest.Action(runner, func(_ arrayaction.ActionInputs) ([]arrayaction.ActionOutputsElem, error) {
+			return []arrayaction.ActionOutputsElem{}, nil
+		})
+
+		specificMock := arrayactiontest.ActionForStep(runner, "step", func(_ arrayaction.ActionInputs) ([]arrayaction.ActionOutputsElem, error) {
+			return []arrayaction.ActionOutputsElem{}, nil
+		})
+
+		// verify type is correct
+		var mock *testutils.Mock[arrayaction.ActionInputs, []arrayaction.ActionOutputsElem] //nolint
+
+		// nolint ineffectual assignment is ok, it's for testing the type.
+		mock = capMock
+		mock = specificMock
+		_ = mock
+	})
+}
+
 // onlyVerifySyntax allows testing of the syntax while the builder still isn't implemented.
 // The fact that the code compiles, verifies that the generated code works for typing.
-func onlyVerifySyntax(run func()) {
-	defer func() {
-		_ = recover()
-	}()
-	run()
-}
+func onlyVerifySyntax(_ func()) {}

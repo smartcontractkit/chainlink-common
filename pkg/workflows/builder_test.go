@@ -149,6 +149,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*workflows.WorkflowSpecFac
 		notStreamsTrigger.Timestamp(),
 		notStreamsTrigger.TriggerType(),
 	)
+
 	ocrConfig := ocr3.DataFeedsConsensusConfig{
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
 			AllowedPartialStaleness: conf.Ocr.AllowedPartialStaleness,

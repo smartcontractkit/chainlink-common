@@ -1,11 +1,16 @@
 package interfacetests
 
 import (
+	"context"
 	"fmt"
 	"math/big"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/smartcontractkit/libocr/commontypes"
+	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -36,10 +41,89 @@ func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	}
 }
 
+// Batch chain write takes a batch call entry and writes it to the chain using the ChainWriter.
+func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
+	// This is necessary because the mock helper function requires the entire batchCallEntry rather than an individual testStruct
+	if mockRun {
+		cw := tester.GetChainWriter(t)
+		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		require.NoError(t, err)
+		return
+	}
+	nameToAddress := make(map[string]string)
+	boundContracts := tester.GetBindings(t)
+	for _, bc := range boundContracts {
+		nameToAddress[bc.Name] = bc.Address
+	}
+
+	// For each contract in the batch call entry, submit the read entries to the chain
+	for contractName, contractBatch := range batchCallEntry {
+		require.Contains(t, nameToAddress, contractName)
+		for _, readEntry := range contractBatch {
+			val, isOk := readEntry.ReturnValue.(*TestStruct)
+			if !isOk {
+				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contractName, readEntry.Name, readEntry.ReturnValue)
+			}
+			SubmitTransactionToCW(t, tester, MethodSettingStruct, val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
+		}
+	}
+}
+
+// SubmitTransactionToCW submits a transaction to the ChainWriter and waits for it to reach the given status.
+func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
+	tester.DirtyContracts()
+	txID := uuid.New().String()
+	cw := tester.GetChainWriter(t)
+	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
+	require.NoError(t, err)
+
+	err = WaitForTransactionStatus(t, tester, txID, status, false)
+	require.NoError(t, err)
+
+	return txID
+}
+
+// WaitForTransactionStatus waits for a transaction to reach the given status.
+func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
+	ctx, cancel := context.WithTimeout(tests.Context(t), 15*time.Minute)
+	defer cancel()
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("transaction %s not finalized within timeout period", txID)
+		case <-ticker.C:
+			if mockRun {
+				tester.GenerateBlocksTillConfidenceLevel(t, "", "", primitives.Finalized)
+				return nil
+			}
+			current, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
+			if err != nil {
+				return fmt.Errorf("failed to get transaction status: %w", err)
+			}
+
+			if current == types.Failed || current == types.Fatal {
+				return fmt.Errorf("transaction %s has failed or is fatal", txID)
+			} else if current >= status {
+				return nil
+			} else {
+				continue
+			}
+		}
+	}
+}
+
 type ExpectedGetLatestValueArgs struct {
 	ContractName, ReadName string
 	ConfidenceLevel        primitives.ConfidenceLevel
 	Params, ReturnVal      any
+}
+
+type PrimitiveArgs struct {
+	Value uint64
 }
 
 func (e ExpectedGetLatestValueArgs) String() string {

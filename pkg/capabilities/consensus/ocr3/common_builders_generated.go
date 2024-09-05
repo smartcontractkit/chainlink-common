@@ -6,6 +6,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
+type EncoderCap workflows.CapDefinition[Encoder]
+
+type EncoderConfigCap workflows.CapDefinition[EncoderConfig]
+
+type ReportIdCap workflows.CapDefinition[ReportId]
+
 type SignedReportCap interface {
 	workflows.CapDefinition[SignedReport]
 	Context() workflows.CapDefinition[string]
@@ -46,10 +52,10 @@ func NewSignedReportFromFields(
 	signatures workflows.CapDefinition[[]string]) SignedReportCap {
 	return &simpleSignedReport{
 		CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
-			"context":    context.Ref(),
-			"iD":         iD.Ref(),
-			"report":     report.Ref(),
-			"signatures": signatures.Ref(),
+			"Context":    context.Ref(),
+			"ID":         iD.Ref(),
+			"Report":     report.Ref(),
+			"Signatures": signatures.Ref(),
 		},
 		context:    context,
 		iD:         iD,

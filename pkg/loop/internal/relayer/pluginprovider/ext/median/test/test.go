@@ -9,7 +9,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
-	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 )
 
@@ -51,7 +51,7 @@ var (
 				},
 			},
 			onchainConfigCodec: staticOnchainConfigCodec{},
-			chainReader:        chainreadertest.ChainReader,
+			chainReader:        chaincomponentstest.ChainReader,
 		},
 	}
 )

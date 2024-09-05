@@ -8,49 +8,95 @@
       "pattern": "^0x[0-9a-f]{64}$",
       "description": "The ID of the data feed."
     },
-    "Feed": {
+    "SignersMetadata": {
       "type": "object",
       "properties": {
-        "feedId": {
+        "Signers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "The id of the signer."
+          }
+        },
+        "MinRequiredSignatures": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "Signers",
+        "MinRequiredSignatures"
+      ]
+    },
+    "FeedReport": {
+      "type": "object",
+      "properties": {
+        "FeedID": {
           "$ref": "#/$defs/feedId"
         },
-        "fullReport": {
+        "FullReport": {
           "type": "string",
           "contentEncoding": "base64",
           "description": "Full report represented as bytes encoded as base64 string."
         },
-        "reportContext": {
+        "ReportContext": {
           "type": "string",
           "contentEncoding": "base64",
           "description": "Report context represented as bytes encoded as base64 string. This is required to validate the signatures."
         },
-        "signatures": {
+        "Signatures": {
           "type": "array",
-          "description": "Signature over full report and report context represented as bytes encoded as base64 string.",
           "items": {
             "type": "string",
-            "contentEncoding": "base64"
-          },
-          "minItems": 1
+            "contentEncoding": "base64",
+            "description": "Signature over full report and report context represented as bytes encoded as base64 string."
+          }
         },
-        "benchmarkPrice": {
+        "BenchmarkPrice": {
           "type": "string",
           "contentEncoding": "base64",
           "description": "This value is extracted from the fullReport. Benchmark price represented as bytes encoded as base64 string."
         },
-        "observationTimestamp": {
-          "type": "integer",
-          "description": "This value is extracted from the fullReport. A unix timestamp represented as an int64 value. Timestamp is captured at the time of report creation."
+        "ObservationTimestamp": {
+          "type": "integer"
         }
       },
-      "additionalProperties": false,
       "required": [
-        "feedId",
-        "fullReport",
-        "reportContext",
-        "signatures",
-        "benchmarkPrice",
-        "observationTimestamp"
+        "FeedID",
+        "FullReport",
+        "ReportContext",
+        "Signatures",
+        "BenchmarkPrice",
+        "ObservationTimestamp"
+      ]
+    },
+    "Feed": {
+      "type": "object",
+      "properties": {
+        "TriggerType": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "string"
+        },
+        "Timestamp": {
+          "type": "string"
+        },
+        "Metadata": {
+          "$ref": "#/$defs/SignersMetadata"
+        },
+        "Payload": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FeedReport"
+          }
+        }
+      },
+      "required": [
+        "TriggerType",
+        "ID",
+        "Timestamp",
+        "Metadata",
+        "Payload"
       ]
     }
   },
@@ -77,11 +123,7 @@
       "required": ["feedIds", "maxFrequencyMs"]
     },
     "outputs": {
-      "items": {
-        "$ref": "#/$defs/Feed"
-      },
-      "additionalProperties": false,
-      "type": "array"
+      "$ref": "#/$defs/Feed"
     }
   },
   "additionalProperties": false,

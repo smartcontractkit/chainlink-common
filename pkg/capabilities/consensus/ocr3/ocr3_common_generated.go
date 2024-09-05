@@ -5,7 +5,55 @@ package ocr3
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"regexp"
 )
+
+type Encoder string
+
+type EncoderConfig map[string]interface{}
+
+const EncoderEVM Encoder = "EVM"
+
+var enumValues_Encoder = []interface{}{
+	"EVM",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Encoder) UnmarshalJSON(b []byte) error {
+	var v string
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_Encoder {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Encoder, v)
+	}
+	*j = Encoder(v)
+	return nil
+}
+
+type ReportId string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ReportId) UnmarshalJSON(b []byte) error {
+	type Plain ReportId
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString("^[a-f0-9]{4}$", string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "^[a-f0-9]{4}$", "")
+	}
+	*j = ReportId(plain)
+	return nil
+}
 
 type SignedReport struct {
 	// Context corresponds to the JSON schema field "Context".

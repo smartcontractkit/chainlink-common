@@ -14,6 +14,7 @@ import (
 var goWorkflowTemplate string
 
 var dir = flag.String("dir", "", fmt.Sprintf("Directory to search for %s files, if a file is provided, the directory it is in will be used", cmd.CapabilitySchemaFilePattern.String()))
+var localPrefix = flag.String("local_prefix", "github.com/smartcontractkit", "The local prefix to use when formatting go files")
 
 func main() {
 	flag.Parse()
@@ -32,7 +33,11 @@ func run(dir string) error {
 		dir = path.Dir(dir)
 	}
 
-	return cmd.GenerateTypes(dir, []cmd.WorkflowHelperGenerator{
+	if localPrefix == nil {
+		tmp := "github.com/smartcontractkit"
+		localPrefix = &tmp
+	}
+	return cmd.GenerateTypes(dir, *localPrefix, []cmd.WorkflowHelperGenerator{
 		&cmd.TemplateWorkflowGeneratorHelper{
 			Templates: map[string]string{"{{.BaseName|ToSnake}}_builders_generated.go": goWorkflowTemplate},
 		},

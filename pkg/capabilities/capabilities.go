@@ -99,8 +99,8 @@ type UnregisterFromWorkflowRequest struct {
 	Config   *values.Map
 }
 
-// CallbackExecutable is an interface for executing a capability.
-type CallbackExecutable interface {
+// Executable is an interface for executing a capability.
+type Executable interface {
 	RegisterToWorkflow(ctx context.Context, request RegisterToWorkflowRequest) error
 	UnregisterFromWorkflow(ctx context.Context, request UnregisterFromWorkflowRequest) error
 	Execute(ctx context.Context, request CapabilityRequest) (CapabilityResponse, error)
@@ -149,7 +149,7 @@ type TriggerCapability interface {
 // capabilities. This interface is useful when trying to capture capabilities of varying types.
 type CallbackCapability interface {
 	BaseCapability
-	CallbackExecutable
+	Executable
 }
 
 // ActionCapability interface needs to be implemented by all action capabilities.

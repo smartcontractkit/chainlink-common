@@ -71,7 +71,7 @@ type CallbackCapabilityClient struct {
 }
 
 type CallbackCapability interface {
-	capabilities.CallbackExecutable
+	capabilities.Executable
 	capabilities.BaseCapability
 }
 
@@ -286,12 +286,12 @@ type callbackExecutableServer struct {
 	capabilitiespb.UnimplementedCallbackExecutableServer
 	*net.BrokerExt
 
-	impl capabilities.CallbackExecutable
+	impl capabilities.Executable
 
 	cancelFuncs map[string]func()
 }
 
-func newCallbackExecutableServer(brokerExt *net.BrokerExt, impl capabilities.CallbackExecutable) *callbackExecutableServer {
+func newCallbackExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Executable) *callbackExecutableServer {
 	return &callbackExecutableServer{
 		impl:        impl,
 		BrokerExt:   brokerExt,
@@ -372,7 +372,7 @@ func newCallbackExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn
 	}
 }
 
-var _ capabilities.CallbackExecutable = (*callbackExecutableClient)(nil)
+var _ capabilities.Executable = (*callbackExecutableClient)(nil)
 
 func (c *callbackExecutableClient) Execute(ctx context.Context, req capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	responseStream, err := c.grpc.Execute(ctx, pb.CapabilityRequestToProto(req))

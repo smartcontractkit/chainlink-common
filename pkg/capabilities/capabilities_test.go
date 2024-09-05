@@ -98,7 +98,7 @@ func Test_CapabilityInfo_Invalid(t *testing.T) {
 }
 
 type mockCapabilityWithExecute struct {
-	CallbackExecutable
+	Executable
 	CapabilityInfo
 	ExecuteFn func(ctx context.Context, req CapabilityRequest) (CapabilityResponse, error)
 }

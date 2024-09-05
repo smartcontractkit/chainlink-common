@@ -126,7 +126,7 @@ func (c *capabilityPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBr
 	switch c.capability.(type) {
 	case capabilities.TriggerExecutable:
 		return NewTriggerCapabilityClient(bext, client), nil
-	case capabilities.CallbackExecutable:
+	case capabilities.Executable:
 		return NewCallbackCapabilityClient(bext, client), nil
 	}
 

@@ -51,7 +51,7 @@ func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request c
 	return nil
 }
 
-var _ capabilities.CallbackExecutable = (*mockCallbackExecutable)(nil)
+var _ capabilities.Executable = (*mockCallbackExecutable)(nil)
 
 type mockCallbackExecutable struct {
 	registeredWorkflowRequest *capabilities.RegisterToWorkflowRequest

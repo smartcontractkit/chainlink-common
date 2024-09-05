@@ -99,7 +99,7 @@ message UnregisterFromWorkflowRequest {
   values.Map config = 2;
 }
 
-service CallbackExecutable {
+service Executable {
   rpc RegisterToWorkflow (RegisterToWorkflowRequest) returns (google.protobuf.Empty) {}
   rpc UnregisterFromWorkflow (UnregisterFromWorkflowRequest) returns (google.protobuf.Empty) {}
   rpc Execute(CapabilityRequest) returns (stream ResponseMessage) {}

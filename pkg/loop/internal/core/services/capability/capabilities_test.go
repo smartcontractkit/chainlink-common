@@ -78,7 +78,7 @@ func mustMockTrigger(t *testing.T) *mockTrigger {
 	}
 }
 
-type mockCallback struct {
+type mockExecutable struct {
 	capabilities.BaseCapability
 	callback      chan capabilities.CapabilityResponse
 	responseError error
@@ -87,17 +87,17 @@ type mockCallback struct {
 	unregRequest capabilities.UnregisterFromWorkflowRequest
 }
 
-func (m *mockCallback) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (m *mockExecutable) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	m.regRequest = request
 	return nil
 }
 
-func (m *mockCallback) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (m *mockExecutable) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	m.unregRequest = request
 	return nil
 }
 
-func (m *mockCallback) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+func (m *mockExecutable) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	if m.responseError != nil {
 		return capabilities.CapabilityResponse{}, m.responseError
 	}
@@ -105,8 +105,8 @@ func (m *mockCallback) Execute(ctx context.Context, request capabilities.Capabil
 	return <-m.callback, nil
 }
 
-func mustMockCallback(t *testing.T, _type capabilities.CapabilityType) *mockCallback {
-	return &mockCallback{
+func mustMockExecutable(t *testing.T, _type capabilities.CapabilityType) *mockExecutable {
+	return &mockExecutable{
 		BaseCapability: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback-%s@1.0.0", _type), _type, fmt.Sprintf("a mock %s", _type)),
 		callback:       make(chan capabilities.CapabilityResponse, 10),
 	}
@@ -127,7 +127,7 @@ func (c *capabilityPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBr
 	case capabilities.TriggerExecutable:
 		return NewTriggerCapabilityClient(bext, client), nil
 	case capabilities.Executable:
-		return NewCallbackCapabilityClient(bext, client), nil
+		return NewExecutableCapabilityClient(bext, client), nil
 	}
 
 	panic(fmt.Sprintf("unexpected capability type %T", c.capability))
@@ -137,8 +137,8 @@ func (c *capabilityPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Se
 	switch tc := c.capability.(type) {
 	case capabilities.TriggerCapability:
 		return RegisterTriggerCapabilityServer(server, broker, c.brokerCfg, tc)
-	case CallbackCapability:
-		return RegisterCallbackCapabilityServer(server, broker, c.brokerCfg, tc)
+	case ExecutableCapability:
+		return RegisterExecutableCapabilityServer(server, broker, c.brokerCfg, tc)
 	}
 
 	return nil
@@ -382,7 +382,7 @@ func Test_Capabilities(t *testing.T) {
 		ctx, cancel := context.WithCancel(testContext)
 		defer cancel()
 
-		ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
@@ -415,7 +415,7 @@ func Test_Capabilities(t *testing.T) {
 		ctx, cancel := context.WithCancel(testContext)
 		defer cancel()
 
-		ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
@@ -447,7 +447,7 @@ func Test_Capabilities(t *testing.T) {
 		ctx, cancel := context.WithCancel(testContext)
 		defer cancel()
 
-		ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
@@ -475,7 +475,7 @@ func Test_Capabilities(t *testing.T) {
 		ctx, cancel := context.WithCancel(testContext)
 		defer cancel()
 
-		ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 

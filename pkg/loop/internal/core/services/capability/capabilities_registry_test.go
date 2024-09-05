@@ -51,24 +51,24 @@ func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request c
 	return nil
 }
 
-var _ capabilities.Executable = (*mockCallbackExecutable)(nil)
+var _ capabilities.Executable = (*mockExecutableCapability)(nil)
 
-type mockCallbackExecutable struct {
+type mockExecutableCapability struct {
 	registeredWorkflowRequest *capabilities.RegisterToWorkflowRequest
 	callback                  chan capabilities.CapabilityResponse
 }
 
-func (f *mockCallbackExecutable) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (f *mockExecutableCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	f.registeredWorkflowRequest = &request
 	return nil
 }
 
-func (f *mockCallbackExecutable) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (f *mockExecutableCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	f.registeredWorkflowRequest = nil
 	return nil
 }
 
-func (f *mockCallbackExecutable) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+func (f *mockExecutableCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	return capabilities.CapabilityResponse{
 		Value: nil,
 	}, nil
@@ -83,17 +83,17 @@ type mockTriggerCapability struct {
 
 type mockActionCapability struct {
 	*mockBaseCapability
-	*mockCallbackExecutable
+	*mockExecutableCapability
 }
 
 type mockConsensusCapability struct {
 	*mockBaseCapability
-	*mockCallbackExecutable
+	*mockExecutableCapability
 }
 
 type mockTargetCapability struct {
 	*mockBaseCapability
-	*mockCallbackExecutable
+	*mockExecutableCapability
 }
 
 type testRegistryPlugin struct {
@@ -293,8 +293,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	actionCallbackChan := make(chan capabilities.CapabilityResponse, 10)
 	testAction := mockActionCapability{
-		mockBaseCapability:     &mockBaseCapability{info: actionInfo},
-		mockCallbackExecutable: &mockCallbackExecutable{callback: actionCallbackChan},
+		mockBaseCapability:       &mockBaseCapability{info: actionInfo},
+		mockExecutableCapability: &mockExecutableCapability{callback: actionCallbackChan},
 	}
 	reg.On("GetAction", mock.Anything, "action-1@2.0.0").Return(testAction, nil)
 	actionCap, err := rc.GetAction(tests.Context(t), "action-1@2.0.0")
@@ -327,8 +327,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		Description:    "consensus-1-description",
 	}
 	testConsensus := mockConsensusCapability{
-		mockBaseCapability:     &mockBaseCapability{info: consensusInfo},
-		mockCallbackExecutable: &mockCallbackExecutable{},
+		mockBaseCapability:       &mockBaseCapability{info: consensusInfo},
+		mockExecutableCapability: &mockExecutableCapability{},
 	}
 	reg.On("GetConsensus", mock.Anything, "consensus-1@3.0.0").Return(testConsensus, nil)
 	consensusCap, err := rc.GetConsensus(tests.Context(t), "consensus-1@3.0.0")
@@ -343,8 +343,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		Description:    "target-1-description",
 	}
 	testTarget := mockTargetCapability{
-		mockBaseCapability:     &mockBaseCapability{info: targetInfo},
-		mockCallbackExecutable: &mockCallbackExecutable{},
+		mockBaseCapability:       &mockBaseCapability{info: targetInfo},
+		mockExecutableCapability: &mockExecutableCapability{},
 	}
 	reg.On("GetTarget", mock.Anything, "target-1@1.0.0").Return(testTarget, nil)
 	targetCap, err := rc.GetTarget(tests.Context(t), "target-1@1.0.0")

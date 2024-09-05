@@ -74,12 +74,13 @@ func TestChainReaderInterfaceTests(t *testing.T) {
 			t.Parallel()
 
 			fake := &fakeChainReader{}
-			RunChainReaderInterfaceTests(
+			RunContractReaderInterfaceTests(
 				t,
-				chainreadertest.WrapChainReaderTesterForLoop(
+				chainreadertest.WrapContractReaderTesterForLoop(
 					&fakeChainReaderInterfaceTester{impl: fake},
 					chainreadertest.WithChainReaderLoopEncoding(version),
 				),
+				true,
 			)
 		}
 	})
@@ -93,7 +94,7 @@ func TestBind(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(
 				&fakeChainReaderInterfaceTester{impl: es},
 				chainreadertest.WithChainReaderLoopEncoding(version),
 			)
@@ -121,7 +122,7 @@ func TestGetLatestValue(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(
 				&fakeChainReaderInterfaceTester{impl: es},
 				chainreadertest.WithChainReaderLoopEncoding(version),
 			)
@@ -134,7 +135,7 @@ func TestGetLatestValue(t *testing.T) {
 
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -170,7 +171,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 			t.Parallel()
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(
 				&fakeChainReaderInterfaceTester{impl: es},
 				chainreadertest.WithChainReaderLoopEncoding(version),
 			)
@@ -183,7 +184,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -219,19 +220,19 @@ func TestQueryKey(t *testing.T) {
 			t.Parallel()
 
 			impl := &protoConversionTestChainReader{}
-			crTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl}, chainreadertest.WithChainReaderLoopEncoding(version))
+			crTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: impl}, chainreadertest.WithChainReaderLoopEncoding(version))
 			crTester.Setup(t)
 			cr := crTester.GetChainReader(t)
 
 			es := &errChainReader{}
-			errTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
+			errTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: es})
 			errTester.Setup(t)
 			chainReader := errTester.GetChainReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
 				ctx := tests.Context(t)
 
-				nilTester := chainreadertest.WrapChainReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
+				nilTester := chainreadertest.WrapContractReaderTesterForLoop(&fakeChainReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetChainReader(t)
 
@@ -273,6 +274,7 @@ func makeEncoder() cbor.EncMode {
 type fakeChainReaderInterfaceTester struct {
 	interfaceTesterBase
 	impl types.ContractReader
+	cw   fakeChainWriter
 }
 
 func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {
@@ -287,6 +289,13 @@ func (it *fakeChainReaderInterfaceTester) Setup(t *testing.T) {
 func (it *fakeChainReaderInterfaceTester) GetChainReader(_ *testing.T) types.ContractReader {
 	return it.impl
 }
+
+func (it *fakeChainReaderInterfaceTester) GetChainWriter(_ *testing.T) types.ChainWriter {
+	it.cw.cr = it.impl.(*fakeChainReader)
+	return &it.cw
+}
+
+func (it *fakeChainReaderInterfaceTester) DirtyContracts() {}
 
 func (it *fakeChainReaderInterfaceTester) Start(t *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
@@ -307,34 +316,10 @@ func (it *fakeChainReaderInterfaceTester) GetBindings(_ *testing.T) []types.Boun
 	}
 }
 
-func (it *fakeChainReaderInterfaceTester) SetTestStructLatestValue(t *testing.T, testStruct *TestStruct) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetTestStructLatestValue(testStruct)
-}
-
-func (it *fakeChainReaderInterfaceTester) SetUintLatestValue(t *testing.T, val uint64, forCall ExpectedGetLatestValueArgs) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetUintLatestValue(val, forCall)
-}
-
 func (it *fakeChainReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readName, confidenceLevel)
-}
-
-func (it *fakeChainReaderInterfaceTester) SetBatchLatestValues(t *testing.T, batchCallEntry BatchCallEntry) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetBatchLatestValues(batchCallEntry)
-}
-
-func (it *fakeChainReaderInterfaceTester) TriggerEvent(t *testing.T, testStruct *TestStruct) {
-	fake, ok := it.impl.(*fakeChainReader)
-	assert.True(t, ok)
-	fake.SetTrigger(testStruct)
 }
 
 func (it *fakeChainReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
@@ -362,6 +347,52 @@ type fakeChainReader struct {
 }
 
 var errServiceNotStarted = errors.New("ContractReader service not started")
+
+type fakeChainWriter struct {
+	types.ChainWriter
+	cr *fakeChainReader
+}
+
+func (f *fakeChainWriter) SubmitTransaction(ctx context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
+	switch method {
+	case MethodSettingStruct:
+		v, ok := args.(TestStruct)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetTestStructLatestValue(&v)
+	case MethodSettingUint64:
+		v, ok := args.(PrimitiveArgs)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetUintLatestValue(v.Value, ExpectedGetLatestValueArgs{})
+	case MethodTriggeringEvent:
+		v, ok := args.(TestStruct)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetTrigger(&v)
+	case "batchChainWrite":
+		v, ok := args.(BatchCallEntry)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", args)
+		}
+		f.cr.SetBatchLatestValues(v)
+	default:
+		return fmt.Errorf("unsupported method: %s", method)
+	}
+
+	return nil
+}
+
+func (f *fakeChainWriter) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+	return types.Finalized, nil
+}
+
+func (f *fakeChainWriter) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponents, error) {
+	return &types.ChainFeeComponents{}, nil
+}
 
 func (f *fakeChainReader) Start(_ context.Context) error {
 	f.isStarted.Store(true)

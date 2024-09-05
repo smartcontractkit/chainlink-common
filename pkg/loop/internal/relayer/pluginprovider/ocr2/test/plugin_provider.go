@@ -7,7 +7,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
-	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -18,8 +18,8 @@ var AgnosticProvider = staticPluginProvider{
 	offchainConfigDigester: OffchainConfigDigester,
 	contractConfigTracker:  ContractConfigTracker,
 	contractTransmitter:    ContractTransmitter,
-	chainReader:            chainreadertest.ChainReader,
-	codec:                  chainreadertest.Codec,
+	chainReader:            chaincomponentstest.ChainReader,
+	codec:                  chaincomponentstest.Codec,
 }
 
 // staticPluginProvider is a static implementation of PluginProviderTester
@@ -27,7 +27,7 @@ type staticPluginProvider struct {
 	offchainConfigDigester staticOffchainConfigDigester
 	contractConfigTracker  staticContractConfigTracker
 	contractTransmitter    testtypes.ContractTransmitterEvaluator
-	chainReader            testtypes.ChainReaderTester
+	chainReader            testtypes.ChainComponentsTester
 	codec                  testtypes.CodecEvaluator
 }
 

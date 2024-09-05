@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -12,9 +13,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
 )
 
-func NewRunner() *Runner {
+func NewRunner(ctx context.Context) *Runner {
 	return &Runner{
-		registry:     map[string]CapabilityMock{},
+		ctx:          ctx,
+		registry:     map[string]capabilities.CallbackCapability{},
 		results:      runnerResults{},
 		idToStep:     map[string]workflows.StepDefinition{},
 		dependencies: map[string][]string{},
@@ -23,12 +25,14 @@ func NewRunner() *Runner {
 }
 
 type ConsensusMock interface {
-	CapabilityMock
+	capabilities.ConsensusCapability
 	SingleToManyObservations(value values.Value) (*values.Map, error)
 }
 
 type Runner struct {
-	registry     map[string]CapabilityMock
+	ctx          context.Context
+	trigger      capabilities.TriggerCapability
+	registry     map[string]capabilities.CallbackCapability
 	am           map[string]map[string]graph.Edge[string]
 	results      runnerResults
 	idToStep     map[string]workflows.StepDefinition
@@ -93,7 +97,12 @@ func (r *Runner) setupSteps(factory *workflows.WorkflowSpecFactory, spec workflo
 				sdk:      r.sdk,
 				callback: run,
 			}
-			r.MockCapability(compute.ID(), &step.Ref, compute)
+			info, err := compute.Info(r.ctx)
+			if err != nil {
+				r.errors = append(r.errors, err)
+				continue
+			}
+			r.MockCapability(info.ID, &step.Ref, compute)
 		}
 	}
 	r.idToStep[workflows.KeywordTrigger] = spec.Triggers[0]
@@ -104,7 +113,7 @@ func (r *Runner) setupSteps(factory *workflows.WorkflowSpecFactory, spec workflo
 // If a step is explicitly mocked, that will take priority over a mock of the entire capability.
 // This is best used with generated code to ensure correctness
 // Note that mocks of custom compute will not be used in place of the user's code
-func (r *Runner) MockCapability(name string, step *string, capability CapabilityMock) {
+func (r *Runner) MockCapability(name string, step *string, capability capabilities.CallbackCapability) {
 	fullName := getFullName(name, step)
 	if r.registry[fullName] != nil {
 		forSuffix := ""
@@ -117,7 +126,11 @@ func (r *Runner) MockCapability(name string, step *string, capability Capability
 	r.registry[fullName] = capability
 }
 
-func (r *Runner) GetRegisteredMock(name string, step string) CapabilityMock {
+func (r *Runner) MockTrigger(trigger capabilities.TriggerCapability) {
+	r.trigger = trigger
+}
+
+func (r *Runner) GetRegisteredMock(name string, step string) capabilities.ActionCapability {
 	fullName := getFullName(name, &step)
 	if c, ok := r.registry[fullName]; ok {
 		return c
@@ -144,7 +157,15 @@ func (r *Runner) walk(spec workflows.WorkflowSpec, ref string) error {
 		}
 	}
 
-	results := mock.Run(request)
+	resultCh, err := mock.Execute(r.ctx, request)
+	if err != nil {
+		return err
+	}
+
+	results, ok := <-resultCh
+	if !ok {
+		return nil
+	}
 
 	r.results[ref] = &exec.Result{
 		Inputs:  request.Inputs,
@@ -190,7 +211,7 @@ func (r *Runner) buildRequest(spec workflows.WorkflowSpec, capability workflows.
 func (r *Runner) walkNext(spec workflows.WorkflowSpec, edges map[string]graph.Edge[string]) error {
 	var errs []error
 	for edgeRef := range edges {
-		if r.iReady(edgeRef) {
+		if r.isReady(edgeRef) {
 			if err := r.walk(spec, edgeRef); err != nil {
 				errs = append(errs, err)
 			}
@@ -215,7 +236,7 @@ func (r *Runner) buildInput(capability workflows.StepDefinition) (*values.Map, e
 	return values.NewMap(val.(map[string]any))
 }
 
-func (r *Runner) iReady(ref string) bool {
+func (r *Runner) isReady(ref string) bool {
 	for _, dep := range r.dependencies[ref] {
 		if _, ok := r.results[dep]; !ok {
 			return false

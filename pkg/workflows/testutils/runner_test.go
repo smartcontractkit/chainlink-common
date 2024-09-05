@@ -17,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3test"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritertest"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
 )
@@ -27,7 +28,7 @@ func TestRunner(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
 
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 
 		triggerMock, actionMock, consensusMock, targetMock := setupAllRunnerMocks(t, runner)
 
@@ -84,7 +85,7 @@ func TestRunner(t *testing.T) {
 			Schedule:   "oneAtATime",
 		}.New(workflow, "chainwriter@1.0.0", chainwriter.TargetInput{SignedReport: consensus})
 
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 		_, _, _, targetMock := setupAllRunnerMocks(t, runner)
 
 		require.NoError(t, runner.Run(workflow))
@@ -95,7 +96,7 @@ func TestRunner(t *testing.T) {
 	t.Run("Run returns errors if capabilities were registered multiple times", func(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 		setupAllRunnerMocks(t, runner)
 		setupAllRunnerMocks(t, runner)
 
@@ -108,7 +109,7 @@ func TestRunner(t *testing.T) {
 			return false, expectedErr
 		})
 
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 
 		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
@@ -131,7 +132,7 @@ func TestRunner(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
 
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 
 		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
@@ -159,7 +160,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns the mock for a step", func(t *testing.T) {
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 		expected := basicactiontest.ActionForStep(runner, "action", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -174,7 +175,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns a default mock if step wasn't specified", func(t *testing.T) {
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 		expected := basicactiontest.Action(runner, func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -183,7 +184,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns nil if no mock was registered", func(t *testing.T) {
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 		referenceactiontest.Action(runner, func(input referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
 			return referenceaction.SomeOutputs{}, nil
 		})
@@ -191,7 +192,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns nil if no mock was registered for a step", func(t *testing.T) {
-		runner := testutils.NewRunner()
+		runner := testutils.NewRunner(tests.Context(t))
 		differentStep := basicactiontest.ActionForStep(runner, "step", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})

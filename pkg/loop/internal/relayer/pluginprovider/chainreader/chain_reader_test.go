@@ -297,13 +297,13 @@ func (it *fakeChainReaderInterfaceTester) GetChainWriter(_ *testing.T) types.Cha
 
 func (it *fakeChainReaderInterfaceTester) DirtyContracts() {}
 
-func (it *fakeChainReaderInterfaceTester) Start(t *testing.T) {
+func (it *fakeChainReaderInterfaceTester) StartChainReader(t *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	require.NoError(t, fake.Start(context.Background()))
 }
 
-func (it *fakeChainReaderInterfaceTester) Close(t *testing.T) {
+func (it *fakeChainReaderInterfaceTester) CloseChainReader(t *testing.T) {
 	fake, ok := it.impl.(*fakeChainReader)
 	assert.True(t, ok)
 	require.NoError(t, fake.Close())

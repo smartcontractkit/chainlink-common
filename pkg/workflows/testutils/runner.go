@@ -92,6 +92,8 @@ func (r *Runner) setupSteps(factory *workflows.WorkflowSpecFactory, spec workflo
 		}
 
 		r.idToStep[step.Ref] = step
+
+		// if the factory has a method, it's custom compute, we'll run that compute.
 		if run := factory.GetFn(step.Ref); run != nil {
 			compute := &computeCapability{
 				sdk:      r.sdk,

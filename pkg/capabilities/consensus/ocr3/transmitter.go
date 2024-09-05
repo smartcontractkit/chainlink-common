@@ -31,7 +31,7 @@ var _ (ocr3types.ContractTransmitter[[]byte]) = (*ContractTransmitter)(nil)
 type ContractTransmitter struct {
 	lggr        logger.Logger
 	registry    core.CapabilitiesRegistry
-	capability  capabilities.CallbackCapability
+	capability  capabilities.ExecutableCapability
 	fromAccount string
 }
 
@@ -113,7 +113,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 			return fmt.Errorf("failed to fetch ocr3 capability from registry: %w", innerErr)
 		}
 
-		c.capability = cp.(capabilities.CallbackCapability)
+		c.capability = cp.(capabilities.ExecutableCapability)
 	}
 
 	_, err = c.capability.Execute(ctx, capabilities.CapabilityRequest{

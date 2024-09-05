@@ -145,26 +145,26 @@ type TriggerCapability interface {
 	TriggerExecutable
 }
 
-// CallbackCapability is the interface implemented by action, consensus and target
+// ExecutableCapability is the interface implemented by action, consensus and target
 // capabilities. This interface is useful when trying to capture capabilities of varying types.
-type CallbackCapability interface {
+type ExecutableCapability interface {
 	BaseCapability
 	Executable
 }
 
 // ActionCapability interface needs to be implemented by all action capabilities.
 type ActionCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // ConsensusCapability interface needs to be implemented by all consensus capabilities.
 type ConsensusCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // TargetsCapability interface needs to be implemented by all target capabilities.
 type TargetCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // DON represents a network of connected nodes.

@@ -641,12 +641,13 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				ctx := tests.Context(t)
 				cr := tester.GetChainReader(t)
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				contracts := tester.GetBindings(t)
 				ts1 := CreateTestStruct[T](0, tester)
-				tester.TriggerEvent(t, &ts1)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, contracts[0], types.Unconfirmed)
 				ts2 := CreateTestStruct[T](15, tester)
-				tester.TriggerEvent(t, &ts2)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, contracts[0], types.Unconfirmed)
 				ts3 := CreateTestStruct[T](35, tester)
-				tester.TriggerEvent(t, &ts3)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts3, contracts[0], types.Unconfirmed)
 
 				ts := &TestStruct{}
 				assert.Eventually(t, func() bool {

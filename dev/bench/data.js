@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725548439100,
+  "lastUpdate": 1725629037988,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -252,6 +252,48 @@ window.BENCHMARK_DATA = {
             "value": 28288,
             "unit": "ns/op",
             "extra": "42452 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "14a5c7af361f61afb7e02360e286012770edf8f0",
+          "message": "Change the Execute Capability API to sync (#748)\n\nChange capability API to synchronous call",
+          "timestamp": "2024-09-06T14:22:54+01:00",
+          "tree_id": "9c08cc7ef26d9c983ffa136950a9a73cb1993eb6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/14a5c7af361f61afb7e02360e286012770edf8f0"
+        },
+        "date": 1725629037009,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 466.9,
+            "unit": "ns/op",
+            "extra": "2593006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 521.3,
+            "unit": "ns/op",
+            "extra": "2304212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28584,
+            "unit": "ns/op",
+            "extra": "42316 times\n4 procs"
           }
         ]
       }

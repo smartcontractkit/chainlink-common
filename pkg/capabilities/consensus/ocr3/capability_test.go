@@ -132,6 +132,9 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	rea := time.Second
 	s := requests.NewStore()
 	cp := newCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
@@ -163,7 +166,10 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 		Inputs: inputs,
 	}
 
+	done := make(chan struct{})
+	t.Cleanup(func() { <-done })
 	go func() {
+		defer close(done)
 		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
 		for {
@@ -193,6 +199,8 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	// This is the default expired at
 	rea := time.Hour
 	s := requests.NewStore()
@@ -228,7 +236,10 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 
 	// 1 minute is more than the config timeout we provided, but less than
 	// the hardcoded timeout.
+	done := make(chan struct{})
+	t.Cleanup(func() { <-done })
 	go func() {
+		defer close(done)
 		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
 		for {

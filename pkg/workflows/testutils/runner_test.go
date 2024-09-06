@@ -149,16 +149,6 @@ func TestRunner(t *testing.T) {
 		require.Equal(t, "no mock found for capability basic-test-action@1.0.0 on step action", err.Error())
 	})
 
-	t.Run("Fails build if workflow spec generation fails", func(t *testing.T) {
-		t.Skip("TODO https://smartcontract-it.atlassian.net/browse/KS-442")
-		assert.Fail(t, "Not implemented")
-	})
-
-	t.Run("Fails build if not all leafs are targets", func(t *testing.T) {
-		t.Skip("TODO https://smartcontract-it.atlassian.net/browse/KS-442")
-		assert.Fail(t, "Not implemented")
-	})
-
 	t.Run("GetRegisteredMock returns the mock for a step", func(t *testing.T) {
 		runner := testutils.NewRunner(tests.Context(t))
 		expected := basicactiontest.ActionForStep(runner, "action", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {

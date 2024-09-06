@@ -114,8 +114,8 @@ func TestCompute(t *testing.T) {
 		require.NotNil(t, fn)
 
 		req := capabilities.CapabilityRequest{Inputs: nsf}
-		actual := fn(struct{}{}, req)
-		require.NoError(t, actual.Err)
+		actual, err := fn(struct{}{}, req)
+		require.NoError(t, err)
 
 		expected, err := convertFeed(nil, anyNotStreamsInput)
 		require.NoError(t, err)
@@ -137,8 +137,8 @@ func TestCompute(t *testing.T) {
 		require.NotNil(t, fn)
 
 		req := capabilities.CapabilityRequest{Inputs: nsf}
-		actual := fn(struct{}{}, req)
-		require.Equal(t, anyErr, actual.Err)
+		_, err := fn(struct{}{}, req)
+		require.Equal(t, anyErr, err)
 	})
 }
 

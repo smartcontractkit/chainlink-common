@@ -16,7 +16,7 @@ import (
 func NewRunner(ctx context.Context) *Runner {
 	return &Runner{
 		ctx:          ctx,
-		registry:     map[string]capabilities.CallbackCapability{},
+		registry:     map[string]capabilities.ExecutableCapability{},
 		results:      runnerResults{},
 		idToStep:     map[string]workflows.StepDefinition{},
 		dependencies: map[string][]string{},
@@ -35,7 +35,7 @@ type Runner struct {
 	// nolint
 	ctx          context.Context
 	trigger      capabilities.TriggerCapability
-	registry     map[string]capabilities.CallbackCapability
+	registry     map[string]capabilities.ExecutableCapability
 	am           map[string]map[string]graph.Edge[string]
 	results      runnerResults
 	idToStep     map[string]workflows.StepDefinition
@@ -118,7 +118,7 @@ func (r *Runner) setupSteps(factory *workflows.WorkflowSpecFactory, spec workflo
 // If a step is explicitly mocked, that will take priority over a mock of the entire capability.
 // This is best used with generated code to ensure correctness
 // Note that mocks of custom compute will not be used in place of the user's code
-func (r *Runner) MockCapability(name string, step *string, capability capabilities.CallbackCapability) {
+func (r *Runner) MockCapability(name string, step *string, capability capabilities.ExecutableCapability) {
 	fullName := getFullName(name, step)
 	if r.registry[fullName] != nil {
 		forSuffix := ""
@@ -162,24 +162,14 @@ func (r *Runner) walk(spec workflows.WorkflowSpec, ref string) error {
 		}
 	}
 
-	resultCh, err := mock.Execute(r.ctx, request)
+	results, err := mock.Execute(r.ctx, request)
 	if err != nil {
 		return err
-	}
-
-	results, ok := <-resultCh
-	if !ok {
-		return nil
 	}
 
 	r.results[ref] = &exec.Result{
 		Inputs:  request.Inputs,
 		Outputs: results.Value,
-		Error:   results.Err,
-	}
-
-	if results.Err != nil {
-		return results.Err
 	}
 
 	edges, ok := r.am[ref]

@@ -57,14 +57,16 @@ func TestTransmitter(t *testing.T) {
 		"report_id":          hex.EncodeToString(repID),
 	})
 	require.NoError(t, err)
-	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
+
+	gotCh := executeAsync(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
 			WorkflowID:          wid,
 		},
 		Config: config,
 		Inputs: payload,
-	})
+	}, cp.Execute)
+
 	require.NoError(t, err)
 
 	r := mocks.NewCapabilitiesRegistry(t)
@@ -141,15 +143,15 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 		"report_id":          "aaff",
 	})
 	require.NoError(t, err)
-	gotCh, err := cp.Execute(ctx, capabilities.CapabilityRequest{
+
+	gotCh := executeAsync(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: weid,
 			WorkflowID:          wid,
 		},
 		Inputs: payload,
 		Config: config,
-	})
-	require.NoError(t, err)
+	}, cp.Execute)
 
 	r := mocks.NewCapabilitiesRegistry(t)
 	r.On("Get", mock.Anything, ocrCapabilityID).Return(cp, nil)

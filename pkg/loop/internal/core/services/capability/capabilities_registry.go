@@ -502,8 +502,8 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddReq
 	switch request.Type {
 	case pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER:
 		client = NewTriggerCapabilityClient(c.BrokerExt, conn)
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_CALLBACK:
-		client = NewCallbackCapabilityClient(c.BrokerExt, conn)
+	case pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE:
+		client = NewExecutableCapabilityClient(c.BrokerExt, conn)
 	default:
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
@@ -563,7 +563,7 @@ func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.Ba
 	case capabilities.CapabilityTypeAction:
 		i, _ := impl.(capabilities.ActionCapability)
 
-		capabilitiespb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
+		capabilitiespb.RegisterExecutableServer(s, &executableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},
@@ -571,14 +571,14 @@ func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.Ba
 	case capabilities.CapabilityTypeConsensus:
 		i, _ := impl.(capabilities.ConsensusCapability)
 
-		capabilitiespb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
+		capabilitiespb.RegisterExecutableServer(s, &executableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},
 		})
 	case capabilities.CapabilityTypeTarget:
 		i, _ := impl.(capabilities.TargetCapability)
-		capabilitiespb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
+		capabilitiespb.RegisterExecutableServer(s, &executableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},

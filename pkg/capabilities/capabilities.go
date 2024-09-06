@@ -2,7 +2,6 @@ package capabilities
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -57,7 +56,6 @@ func (c CapabilityType) IsValid() error {
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
 	Value *values.Map
-	Err   error
 }
 
 type RequestMetadata struct {
@@ -101,17 +99,11 @@ type UnregisterFromWorkflowRequest struct {
 	Config   *values.Map
 }
 
-// CallbackExecutable is an interface for executing a capability.
-type CallbackExecutable interface {
+// Executable is an interface for executing a capability.
+type Executable interface {
 	RegisterToWorkflow(ctx context.Context, request RegisterToWorkflowRequest) error
 	UnregisterFromWorkflow(ctx context.Context, request UnregisterFromWorkflowRequest) error
-	// Capability must respect context.Done and cleanup any request specific resources
-	// when the context is cancelled. When a request has been completed the capability
-	// is also expected to close the callback channel.
-	// Request specific configuration is passed in via the request parameter.
-	// A successful response must always return a value. An error is assumed otherwise.
-	// The intent is to make the API explicit.
-	Execute(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
+	Execute(ctx context.Context, request CapabilityRequest) (CapabilityResponse, error)
 }
 
 type Validatable interface {
@@ -153,26 +145,26 @@ type TriggerCapability interface {
 	TriggerExecutable
 }
 
-// CallbackCapability is the interface implemented by action, consensus and target
+// ExecutableCapability is the interface implemented by action, consensus and target
 // capabilities. This interface is useful when trying to capture capabilities of varying types.
-type CallbackCapability interface {
+type ExecutableCapability interface {
 	BaseCapability
-	CallbackExecutable
+	Executable
 }
 
 // ActionCapability interface needs to be implemented by all action capabilities.
 type ActionCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // ConsensusCapability interface needs to be implemented by all consensus capabilities.
 type ConsensusCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // TargetsCapability interface needs to be implemented by all target capabilities.
 type TargetCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // DON represents a network of connected nodes.
@@ -330,60 +322,6 @@ func MustNewRemoteCapabilityInfo(
 	}
 
 	return c
-}
-
-// TODO: this timeout was largely picked arbitrarily.
-// Consider what a realistic/desirable value should be.
-// See: https://smartcontract-it.atlassian.net/jira/software/c/projects/KS/boards/182
-var maximumExecuteTimeout = 60 * time.Second
-
-// ExecuteSync executes a capability synchronously.
-// We are not handling a case where a capability panics and crashes.
-// There is default timeout of 10 seconds. If a capability takes longer than
-// that then it should be executed asynchronously.
-func ExecuteSync(ctx context.Context, c CallbackExecutable, request CapabilityRequest) (*values.List, error) {
-	return ExecuteSyncWithTimeout(ctx, c, request, maximumExecuteTimeout)
-}
-
-// ExecuteSyncWithTimeout allows explicitly passing in a timeout to customise the desired duration.
-func ExecuteSyncWithTimeout(ctx context.Context, c CallbackExecutable, request CapabilityRequest, timeout time.Duration) (*values.List, error) {
-	ctxWithT, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	responseCh, err := c.Execute(ctxWithT, request)
-	if err != nil {
-		return nil, fmt.Errorf("error executing capability: %w", err)
-	}
-
-	vs := make([]values.Value, 0)
-outerLoop:
-	for {
-		select {
-		case response, isOpen := <-responseCh:
-			if !isOpen {
-				break outerLoop
-			}
-			// An error means execution has been interrupted.
-			// We'll return the value discarding values received
-			// until now.
-			if response.Err != nil {
-				return nil, response.Err
-			}
-
-			vs = append(vs, response.Value)
-		// Timeout when a capability exceeds maximum permitted execution time or the caller cancels the context and does not close the channel.
-		case <-ctxWithT.Done():
-			return nil, fmt.Errorf("context timed out after %f seconds", maximumExecuteTimeout.Seconds())
-		}
-	}
-
-	// If the capability did not return any values, we deem it as an error.
-	// The intent is for the API to be explicit.
-	if len(vs) == 0 {
-		return nil, errors.New("capability did not return any values")
-	}
-
-	return &values.List{Underlying: vs}, nil
 }
 
 const (

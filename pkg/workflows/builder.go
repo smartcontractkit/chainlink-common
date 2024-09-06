@@ -14,10 +14,10 @@ type WorkflowSpecFactory struct {
 	duplicateNames map[string]bool
 	emptyNames     bool
 	badCapTypes    []string
-	fns            map[string]func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse
+	fns            map[string]func(sdk SDK, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
 }
 
-func (w *WorkflowSpecFactory) GetFn(name string) func(sdk SDK, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+func (w *WorkflowSpecFactory) GetFn(name string) func(sdk SDK, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	return w.fns[name]
 }
 

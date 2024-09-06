@@ -30,7 +30,7 @@ type mockBase[I, O any] struct {
 	fn      func(I) (O, error)
 }
 
-var _ capabilities.CallbackCapability = &Mock[any, any]{}
+var _ capabilities.ExecutableCapability = &Mock[any, any]{}
 
 func (m *mockBase[I, O]) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	return capabilities.CapabilityInfo{ID: m.id, IsLocal: true}, nil
@@ -44,15 +44,12 @@ func (m *mockBase[I, O]) UnregisterFromWorkflow(ctx context.Context, request cap
 	return nil
 }
 
-func (m *mockBase[I, O]) Execute(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (m *mockBase[I, O]) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	var i I
-	responseCh := make(chan capabilities.CapabilityResponse, 1)
-	defer close(responseCh)
 
 	if err := request.Inputs.UnwrapTo(&i); err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		responseCh <- capabilities.CapabilityResponse{Err: err}
-		return responseCh, nil
+		return capabilities.CapabilityResponse{}, err
 	}
 
 	m.inputs[request.Metadata.ReferenceID] = i
@@ -62,21 +59,18 @@ func (m *mockBase[I, O]) Execute(ctx context.Context, request capabilities.Capab
 	b, err := json.Marshal(i)
 	if err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		responseCh <- capabilities.CapabilityResponse{Err: err}
-		return responseCh, nil
+		return capabilities.CapabilityResponse{}, err
 	}
 
 	if err = json.Unmarshal(b, &tmp); err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		responseCh <- capabilities.CapabilityResponse{Err: err}
-		return responseCh, nil
+		return capabilities.CapabilityResponse{}, err
 	}
 
 	result, err := m.fn(i)
 	if err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		responseCh <- capabilities.CapabilityResponse{Err: err}
-		return responseCh, nil
+		return capabilities.CapabilityResponse{}, err
 	}
 
 	m.outputs[request.Metadata.ReferenceID] = result
@@ -84,12 +78,10 @@ func (m *mockBase[I, O]) Execute(ctx context.Context, request capabilities.Capab
 	wrapped, err := values.CreateMapFromStruct(result)
 	if err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		responseCh <- capabilities.CapabilityResponse{Err: err}
-		return responseCh, nil
+		return capabilities.CapabilityResponse{}, err
 	}
 
-	responseCh <- capabilities.CapabilityResponse{Value: wrapped}
-	return responseCh, nil
+	return capabilities.CapabilityResponse{Value: wrapped}, nil
 }
 
 func (m *mockBase[I, O]) ID() string {

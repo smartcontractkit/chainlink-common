@@ -98,133 +98,46 @@ func Test_CapabilityInfo_Invalid(t *testing.T) {
 }
 
 type mockCapabilityWithExecute struct {
-	CallbackExecutable
+	Executable
 	CapabilityInfo
-	ExecuteFn func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error)
+	ExecuteFn func(ctx context.Context, req CapabilityRequest) (CapabilityResponse, error)
 }
 
-func (m *mockCapabilityWithExecute) Execute(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
+func (m *mockCapabilityWithExecute) Execute(ctx context.Context, req CapabilityRequest) (CapabilityResponse, error) {
 	return m.ExecuteFn(ctx, req)
 }
 
-func Test_ExecuteSyncReturnSingleValue(t *testing.T) {
+func Test_ExecuteSyncReturnValue(t *testing.T) {
 	v := map[string]any{"hello": "world"}
 	mcwe := &mockCapabilityWithExecute{
-		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
-			ch := make(chan CapabilityResponse, 10)
-
+		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (CapabilityResponse, error) {
 			val, err := values.NewMap(v)
 			if err != nil {
-				return nil, err
+				return CapabilityResponse{}, err
 			}
 
-			ch <- CapabilityResponse{val, nil}
-
-			close(ch)
-
-			return ch, nil
+			return CapabilityResponse{val}, nil
 		},
 	}
 	req := CapabilityRequest{}
-	val, err := ExecuteSync(tests.Context(t), mcwe, req)
+	resp, err := mcwe.Execute(tests.Context(t), req)
 
-	assert.NoError(t, err, val)
-	gotList, err := val.Unwrap()
 	require.NoError(t, err)
-	assert.Equal(t, v, gotList.([]any)[0])
-}
-
-func Test_ExecuteSyncReturnMultipleValues(t *testing.T) {
-	v := map[string]any{"hello": "world"}
-	val, err := values.NewMap(v)
+	unwrappedValue, err := resp.Value.Unwrap()
 	require.NoError(t, err)
-
-	expectedList := []values.Value{val, val, val}
-	mcwe := &mockCapabilityWithExecute{
-		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
-			ch := make(chan CapabilityResponse, 10)
-
-			ch <- CapabilityResponse{val, nil}
-			ch <- CapabilityResponse{val, nil}
-			ch <- CapabilityResponse{val, nil}
-
-			close(ch)
-
-			return ch, nil
-		},
-	}
-	req := CapabilityRequest{}
-	gotVal, err := ExecuteSync(tests.Context(t), mcwe, req)
-
-	assert.NoError(t, err, val)
-	assert.ElementsMatch(t, expectedList, gotVal.Underlying)
+	assert.Equal(t, v, unwrappedValue)
 }
 
 func Test_ExecuteSyncCapabilitySetupErrors(t *testing.T) {
 	expectedErr := errors.New("something went wrong during setup")
 	mcwe := &mockCapabilityWithExecute{
-		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
-			return nil, expectedErr
+		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (CapabilityResponse, error) {
+			return CapabilityResponse{}, expectedErr
 		},
 	}
 	req := CapabilityRequest{}
-	val, err := ExecuteSync(tests.Context(t), mcwe, req)
-
+	_, err := mcwe.Execute(tests.Context(t), req)
 	assert.ErrorContains(t, err, expectedErr.Error())
-	assert.Nil(t, val)
-}
-
-func Test_ExecuteSyncTimeout(t *testing.T) {
-	ctxWithTimeout := tests.Context(t)
-	ctxWithTimeout, cancel := context.WithCancel(ctxWithTimeout)
-	cancel()
-
-	mcwe := &mockCapabilityWithExecute{
-		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
-			ch := make(chan CapabilityResponse, 10)
-			return ch, nil
-		},
-	}
-	req := CapabilityRequest{}
-	val, err := ExecuteSync(ctxWithTimeout, mcwe, req)
-
-	assert.ErrorContains(t, err, "context timed out after")
-	assert.Nil(t, val)
-}
-
-func Test_ExecuteSyncCapabilityErrors(t *testing.T) {
-	expectedErr := errors.New("something went wrong during execution")
-	mcwe := &mockCapabilityWithExecute{
-		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
-			ch := make(chan CapabilityResponse, 10)
-
-			ch <- CapabilityResponse{nil, expectedErr}
-
-			close(ch)
-
-			return ch, nil
-		},
-	}
-	req := CapabilityRequest{}
-	val, err := ExecuteSync(tests.Context(t), mcwe, req)
-
-	assert.ErrorContains(t, err, expectedErr.Error())
-	assert.Nil(t, val)
-}
-
-func Test_ExecuteSyncDoesNotReturnValues(t *testing.T) {
-	mcwe := &mockCapabilityWithExecute{
-		ExecuteFn: func(ctx context.Context, req CapabilityRequest) (<-chan CapabilityResponse, error) {
-			ch := make(chan CapabilityResponse, 10)
-			close(ch)
-			return ch, nil
-		},
-	}
-	req := CapabilityRequest{}
-	val, err := ExecuteSync(tests.Context(t), mcwe, req)
-
-	assert.ErrorContains(t, err, "capability did not return any values")
-	assert.Nil(t, val)
 }
 
 func Test_MustNewCapabilityInfo(t *testing.T) {

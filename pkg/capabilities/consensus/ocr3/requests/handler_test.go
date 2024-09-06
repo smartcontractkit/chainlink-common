@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
@@ -23,7 +22,7 @@ func Test_Handler_SendsResponse(t *testing.T) {
 	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
 
-	responseCh := make(chan capabilities.CapabilityResponse, 10)
+	responseCh := make(chan requests.Response, 10)
 	h.SendRequest(ctx, &requests.Request{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
@@ -33,12 +32,10 @@ func Test_Handler_SendsResponse(t *testing.T) {
 	testVal, err := values.NewMap(map[string]any{"result": "testval"})
 	require.NoError(t, err)
 
-	h.SendResponse(ctx, &requests.Response{
+	h.SendResponse(ctx, requests.Response{
 		WorkflowExecutionID: "test",
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: testVal,
-			Err:   nil,
-		},
+		Value:               testVal,
+		Err:                 nil,
 	})
 
 	resp := <-responseCh
@@ -54,15 +51,13 @@ func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
 
 	testVal, err := values.NewMap(map[string]any{"result": "testval"})
 	require.NoError(t, err)
-	h.SendResponse(ctx, &requests.Response{
+	h.SendResponse(ctx, requests.Response{
 		WorkflowExecutionID: "test",
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: testVal,
-			Err:   nil,
-		},
+		Value:               testVal,
+		Err:                 nil,
 	})
 
-	responseCh := make(chan capabilities.CapabilityResponse, 10)
+	responseCh := make(chan requests.Response, 10)
 	h.SendRequest(ctx, &requests.Request{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
@@ -83,15 +78,13 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 	testVal, err := values.NewMap(map[string]any{"result": "testval"})
 	require.NoError(t, err)
 
-	h.SendResponse(ctx, &requests.Response{
+	h.SendResponse(ctx, requests.Response{
 		WorkflowExecutionID: "test",
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: testVal,
-			Err:   nil,
-		},
+		Value:               testVal,
+		Err:                 nil,
 	})
 
-	responseCh := make(chan capabilities.CapabilityResponse, 10)
+	responseCh := make(chan requests.Response, 10)
 	h.SendRequest(ctx, &requests.Request{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
@@ -103,7 +96,7 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 	resp := <-responseCh
 	require.Equal(t, testVal, resp.Value)
 
-	responseCh = make(chan capabilities.CapabilityResponse, 10)
+	responseCh = make(chan requests.Response, 10)
 	h.SendRequest(ctx, &requests.Request{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
@@ -125,7 +118,7 @@ func Test_Handler_PendingRequestsExpiry(t *testing.T) {
 	h := requests.NewHandler(lggr, requests.NewStore(), clock, 1*time.Second)
 	servicetest.Run(t, h)
 
-	responseCh := make(chan capabilities.CapabilityResponse, 10)
+	responseCh := make(chan requests.Response, 10)
 	h.SendRequest(ctx, &requests.Request{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,

@@ -9,7 +9,7 @@ import (
 // they can be registered for a particular reference or entirely
 // Note that registrations for a step are taken over registrations for a capability when there are both.
 type CapabilityMock interface {
-	Run(request capabilities.CapabilityRequest) capabilities.CapabilityResponse
+	Run(request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
 	ID() string
 }
 
@@ -33,11 +33,11 @@ type Mock[I, O any] struct {
 
 var _ CapabilityMock = &Mock[any, any]{}
 
-func (m *Mock[I, O]) Run(request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+func (m *Mock[I, O]) Run(request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	var i I
 	if err := request.Inputs.UnwrapTo(&i); err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		return capabilities.CapabilityResponse{Err: err}
+		return capabilities.CapabilityResponse{}, err
 	}
 
 	m.inputs[request.Metadata.ReferenceID] = i
@@ -45,7 +45,7 @@ func (m *Mock[I, O]) Run(request capabilities.CapabilityRequest) capabilities.Ca
 	result, err := m.fn(i)
 	if err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		return capabilities.CapabilityResponse{Err: err}
+		return capabilities.CapabilityResponse{}, err
 	}
 
 	m.outputs[request.Metadata.ReferenceID] = result
@@ -53,10 +53,10 @@ func (m *Mock[I, O]) Run(request capabilities.CapabilityRequest) capabilities.Ca
 	wrapped, err := values.CreateMapFromStruct(result)
 	if err != nil {
 		m.errors[request.Metadata.ReferenceID] = err
-		return capabilities.CapabilityResponse{Err: err}
+		return capabilities.CapabilityResponse{}, err
 	}
 
-	return capabilities.CapabilityResponse{Value: wrapped}
+	return capabilities.CapabilityResponse{Value: wrapped}, nil
 }
 
 func (m *Mock[I, O]) ID() string {
@@ -100,7 +100,7 @@ type TriggerMock[O any] struct {
 	mock *Mock[struct{}, O]
 }
 
-func (t *TriggerMock[O]) Run(request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+func (t *TriggerMock[O]) Run(request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	return t.mock.Run(request)
 }
 
@@ -127,7 +127,7 @@ func MockTarget[I any](id string, fn func(I) error) *TargetMock[I] {
 	}
 }
 
-func (t *TargetMock[I]) Run(request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+func (t *TargetMock[I]) Run(request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	return t.mock.Run(request)
 }
 

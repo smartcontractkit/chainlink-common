@@ -337,20 +337,12 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 		return fmt.Errorf("could not unmarshal capability request: %w", err)
 	}
 
-	var responseMessage *capabilitiespb.ResponseMessage
+	var responseMessage *capabilitiespb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		responseMessage = &capabilitiespb.ResponseMessage{
-			Message: &capabilitiespb.ResponseMessage_Response{
-				Response: &capabilitiespb.CapabilityResponse{Error: err.Error()},
-			},
-		}
+		responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
 	} else {
-		responseMessage = &capabilitiespb.ResponseMessage{
-			Message: &capabilitiespb.ResponseMessage_Response{
-				Response: pb.CapabilityResponseToProto(response),
-			},
-		}
+		responseMessage = pb.CapabilityResponseToProto(response)
 	}
 
 	if err = server.Send(responseMessage); err != nil {
@@ -380,14 +372,9 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 		return capabilities.CapabilityResponse{}, fmt.Errorf("error executing capability request: %w", err)
 	}
 
-	message, err := responseStream.Recv()
+	resp, err := responseStream.Recv()
 	if err != nil {
 		return capabilities.CapabilityResponse{}, fmt.Errorf("error waiting for response message: %w", err)
-	}
-
-	resp := message.GetResponse()
-	if resp == nil {
-		return capabilities.CapabilityResponse{}, fmt.Errorf("nil message when receiving response")
 	}
 
 	if resp.Error != "" {

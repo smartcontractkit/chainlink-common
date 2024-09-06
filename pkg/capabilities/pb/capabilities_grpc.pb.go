@@ -321,7 +321,7 @@ func (c *executableClient) Execute(ctx context.Context, in *CapabilityRequest, o
 }
 
 type Executable_ExecuteClient interface {
-	Recv() (*ResponseMessage, error)
+	Recv() (*CapabilityResponse, error)
 	grpc.ClientStream
 }
 
@@ -329,8 +329,8 @@ type executableExecuteClient struct {
 	grpc.ClientStream
 }
 
-func (x *executableExecuteClient) Recv() (*ResponseMessage, error) {
-	m := new(ResponseMessage)
+func (x *executableExecuteClient) Recv() (*CapabilityResponse, error) {
+	m := new(CapabilityResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -418,7 +418,7 @@ func _Executable_Execute_Handler(srv interface{}, stream grpc.ServerStream) erro
 }
 
 type Executable_ExecuteServer interface {
-	Send(*ResponseMessage) error
+	Send(*CapabilityResponse) error
 	grpc.ServerStream
 }
 
@@ -426,7 +426,7 @@ type executableExecuteServer struct {
 	grpc.ServerStream
 }
 
-func (x *executableExecuteServer) Send(m *ResponseMessage) error {
+func (x *executableExecuteServer) Send(m *CapabilityResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

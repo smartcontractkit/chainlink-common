@@ -73,13 +73,6 @@ service TriggerExecutable {
   rpc UnregisterTrigger (TriggerRegistrationRequest) returns (google.protobuf.Empty) {}
 }
 
-message ResponseMessage {
-  oneof message {
-    google.protobuf.Empty ack = 1;
-    CapabilityResponse response = 2;
-  }
-}
-
 message CapabilityResponse {
   values.Map value = 1;
   string error = 2;
@@ -102,7 +95,7 @@ message UnregisterFromWorkflowRequest {
 service Executable {
   rpc RegisterToWorkflow (RegisterToWorkflowRequest) returns (google.protobuf.Empty) {}
   rpc UnregisterFromWorkflow (UnregisterFromWorkflowRequest) returns (google.protobuf.Empty) {}
-  rpc Execute(CapabilityRequest) returns (stream ResponseMessage) {}
+  rpc Execute(CapabilityRequest) returns (stream CapabilityResponse) {}
 }
 
 service StandardCapabilities {

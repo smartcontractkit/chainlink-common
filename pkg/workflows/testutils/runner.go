@@ -30,6 +30,9 @@ type ConsensusMock interface {
 }
 
 type Runner struct {
+	// Context is held in this runner because it's for testing and capability calls are made by it.
+	// The real SDK implementation will be for the WASM guest and will make host calls, and callbacks to the program.
+	// nolint
 	ctx          context.Context
 	trigger      capabilities.TriggerCapability
 	registry     map[string]capabilities.CallbackCapability

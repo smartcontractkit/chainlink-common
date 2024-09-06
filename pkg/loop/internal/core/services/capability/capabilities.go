@@ -382,7 +382,7 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 
 	message, err := responseStream.Recv()
 	if err != nil {
-		return capabilities.CapabilityResponse{}, fmt.Errorf("error waiting for ack: %w", err)
+		return capabilities.CapabilityResponse{}, fmt.Errorf("error waiting for response message: %w", err)
 	}
 
 	resp := message.GetResponse()

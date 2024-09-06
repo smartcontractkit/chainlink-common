@@ -13,7 +13,11 @@ type computeCapability struct {
 }
 
 func (c *computeCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
-	return capabilities.CapabilityInfo{ID: "__internal__custom_compute@1.0.0", IsLocal: true}, nil
+	info := capabilities.MustNewCapabilityInfo(
+		"__internal__custom_compute@1.0.0", capabilities.CapabilityTypeAction, "Custom compute capability",
+	)
+	info.IsLocal = true
+	return info, nil
 }
 
 func (c *computeCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

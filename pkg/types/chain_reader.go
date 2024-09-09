@@ -17,10 +17,11 @@ const (
 	ErrNotFound                 = NotFoundError("not found")
 )
 
-type ContractReader = ChainReader
+// Deprecated: Use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
+type ChainReader = ContractReader
 
-// Deprecated: use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
-type ChainReader interface {
+// ContractReader defines essential read operations a chain should implement for reading contract values and events.
+type ContractReader interface {
 	services.Service
 	// GetLatestValue gets the latest value with a certain confidence level that maps to blockchain finality....
 	// The params argument can be any object which maps a set of generic parameters into chain specific parameters defined in RelayConfig.
@@ -45,7 +46,7 @@ type ChainReader interface {
 	// Note that implementations should ignore extra fields in params that are not expected in the call to allow easier
 	// use across chains and contract versions.
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
-	GetLatestValue(ctx context.Context, contractName, method string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
+	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
@@ -53,16 +54,19 @@ type ChainReader interface {
 	// Contract call errors are returned in the Err field of BatchGetLatestValuesResult.
 	BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error)
 
-	// Bind will override current bindings for the same contract, if one has been set and will return an error if the
-	// contract is not known by the ChainReader, or if the Address is invalid
+	// Bind will add provided bindings and will return an error if the contract is not known by the ContractReader, or if
+	// the Address is invalid. Any provided binding that already exists should result in a noop.
 	Bind(ctx context.Context, bindings []BoundContract) error
 
+	// Unbind will remove all provided bindings.
+	Unbind(ctx context.Context, bindings []BoundContract) error
+
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
-	QueryKey(ctx context.Context, contractName string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+	QueryKey(ctx context.Context, contract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 }
 
 // BatchGetLatestValuesRequest string is contract name.
-type BatchGetLatestValuesRequest map[string]ContractBatch
+type BatchGetLatestValuesRequest map[BoundContract]ContractBatch
 type ContractBatch []BatchRead
 type BatchRead struct {
 	ReadName  string
@@ -70,7 +74,7 @@ type BatchRead struct {
 	ReturnVal any
 }
 
-type BatchGetLatestValuesResult map[string]ContractBatchResults
+type BatchGetLatestValuesResult map[BoundContract]ContractBatchResults
 type ContractBatchResults []BatchReadResult
 type BatchReadResult struct {
 	ReadName    string
@@ -109,6 +113,10 @@ type BoundContract struct {
 	Name    string
 }
 
-func (bc BoundContract) Key() string {
+func (bc BoundContract) ReadIdentifier(method string) string {
+	return bc.Address + "-" + bc.Name + "-" + method
+}
+
+func (bc BoundContract) String() string {
 	return bc.Address + "-" + bc.Name
 }

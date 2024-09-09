@@ -27,6 +27,7 @@ var (
 	MedianFactoryServer = staticMedianFactoryServer{
 		staticPluginMedianConfig: staticPluginMedianConfig{
 			provider:                   MedianProvider,
+			contractID:                 MedianContractID,
 			dataSource:                 DataSource,
 			juelsPerFeeCoinDataSource:  JuelsPerFeeCoinDataSource,
 			gasPriceSubunitsDataSource: GasPriceSubunitsDataSource,
@@ -54,6 +55,8 @@ var (
 			chainReader:        chaincomponentstest.ChainReader,
 		},
 	}
+
+	MedianContractID = "0x42"
 )
 
 var (

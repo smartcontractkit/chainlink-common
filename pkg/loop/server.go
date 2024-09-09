@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -68,16 +69,43 @@ func (s *Server) start() error {
 		return fmt.Errorf("error getting environment configuration: %w", err)
 	}
 
-	if err := SetupTracing(TracingConfig{
+	tracingConfig := TracingConfig{
 		Enabled:         envCfg.TracingEnabled,
 		CollectorTarget: envCfg.TracingCollectorTarget,
 		SamplingRatio:   envCfg.TracingSamplingRatio,
 		TLSCertPath:     envCfg.TracingTLSCertPath,
 		NodeAttributes:  envCfg.TracingAttributes,
 		OnDialError:     func(err error) { s.Logger.Errorw("Failed to dial", "err", err) },
-	}); err != nil {
-		// non blocking to server start
-		s.Logger.Errorf("Failed to setup tracing: %s", err)
+	}
+
+	if envCfg.TelemetryEndpoint == "" {
+		err := SetupTracing(tracingConfig)
+		if err != nil {
+			return fmt.Errorf("failed to setup tracing: %w", err)
+		}
+	} else {
+		beholderCfg := beholder.Config{
+			InsecureConnection:       envCfg.TelemetryInsecureConnection,
+			CACertFile:               envCfg.TelemetryCACertFile,
+			OtelExporterGRPCEndpoint: envCfg.TelemetryEndpoint,
+			ResourceAttributes:       append(tracingConfig.Attributes(), envCfg.TelemetryAttributes.AsStringAttributes()...),
+			TraceSampleRatio:         envCfg.TelemetryTraceSampleRatio,
+		}
+
+		if tracingConfig.Enabled {
+			exporter, err := tracingConfig.NewSpanExporter()
+			if err != nil {
+				return fmt.Errorf("failed to setup tracing exporter: %w", err)
+			}
+			beholderCfg.TraceSpanExporter = exporter
+		}
+
+		beholderClient, err := beholder.NewClient(beholderCfg)
+		if err != nil {
+			return fmt.Errorf("failed to create beholder client: %w", err)
+		}
+		beholder.SetClient(beholderClient)
+		beholder.SetGlobalOtelProviders()
 	}
 
 	s.promServer = NewPromServer(envCfg.PrometheusPort, s.Logger)

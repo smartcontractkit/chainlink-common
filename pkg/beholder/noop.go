@@ -3,12 +3,10 @@ package beholder
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"time"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -37,9 +35,7 @@ func NewNoopClient() *Client {
 	// MessageEmitter
 	messageEmitter := noopMessageEmitter{}
 
-	client := Client{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, noopOnClose}
-
-	return &client
+	return &Client{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, noopOnClose}
 }
 
 // NewStdoutClient creates a new Client with exporters which send telemetry data to standard output
@@ -62,9 +58,6 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 	}
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
 	logger := loggerProvider.Logger(defaultPackageName)
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		fmt.Printf("OTel error %s", err)
-	}))
 
 	// Tracer
 	traceExporter, err := stdouttrace.New(cfg.TraceOptions...)
@@ -101,9 +94,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		return
 	}
 
-	client := Client{cfg.Config, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, onClose}
-
-	return &client, nil
+	return &Client{Config: cfg.Config, Logger: logger, Tracer: tracer, Meter: meter, Emitter: emitter, LoggerProvider: loggerProvider, TracerProvider: tracerProvider, MeterProvider: meterProvider, MessageLoggerProvider: loggerProvider, OnClose: onClose}, nil
 }
 
 type noopMessageEmitter struct{}

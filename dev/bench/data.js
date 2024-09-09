@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725872196632,
+  "lastUpdate": 1725891244471,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -336,6 +336,48 @@ window.BENCHMARK_DATA = {
             "value": 28478,
             "unit": "ns/op",
             "extra": "42538 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "663388d38293604368eaf6c76508729e3659c259",
+          "message": "ContractReader Multiple Read Addresses (#603)\n\n* Contract Reader Multiple Address Support\r\n\r\nComplete support for multiple address bindings across all `ContractReader` methods.",
+          "timestamp": "2024-09-09T09:12:52-05:00",
+          "tree_id": "cecad331274333fdf830a8645200b685cc98c0c1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/663388d38293604368eaf6c76508729e3659c259"
+        },
+        "date": 1725891243459,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 478.6,
+            "unit": "ns/op",
+            "extra": "2494620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 520.9,
+            "unit": "ns/op",
+            "extra": "2318055 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28235,
+            "unit": "ns/op",
+            "extra": "42548 times\n4 procs"
           }
         ]
       }

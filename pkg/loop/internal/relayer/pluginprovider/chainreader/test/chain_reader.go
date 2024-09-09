@@ -16,6 +16,7 @@ var (
 	// ChainReader is a static implementation of [types.ContractReader], [testtypes.Evaluator] and [types.PluginProvider
 	// it is used for testing the [types.PluginProvider] interface
 	ChainReader = staticChainReader{
+		address:        "0x24",
 		contractName:   "anyContract",
 		contractMethod: "anyMethod",
 		latestValue:    map[string]any{"ret1": "latestValue1", "ret2": "latestValue2"},
@@ -25,6 +26,7 @@ var (
 
 // staticChainReader is a static implementation of ChainComponentsTester
 type staticChainReader struct {
+	address        string
 	contractName   string
 	contractMethod string
 	latestValue    map[string]any
@@ -48,13 +50,20 @@ func (c staticChainReader) Bind(_ context.Context, _ []types.BoundContract) erro
 	return nil
 }
 
-func (c staticChainReader) GetLatestValue(_ context.Context, contractName, method string, _ primitives.ConfidenceLevel, params, returnVal any) error {
-	if !assert.ObjectsAreEqual(contractName, c.contractName) {
-		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, c.contractName, contractName)
+func (c staticChainReader) Unbind(_ context.Context, _ []types.BoundContract) error {
+	return nil
+}
+
+func (c staticChainReader) GetLatestValue(_ context.Context, readName string, _ primitives.ConfidenceLevel, params, returnVal any) error {
+	comp := types.BoundContract{
+		Address: c.address,
+		Name:    c.contractName,
+	}.ReadIdentifier(c.contractMethod)
+
+	if !assert.ObjectsAreEqual(readName, comp) {
+		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, comp, readName)
 	}
-	if method != c.contractMethod {
-		return fmt.Errorf("%w: expected generic contract method %v but got %v", types.ErrInvalidType, c.contractMethod, method)
-	}
+
 	//gotParams, ok := params.(*map[string]string)
 	gotParams, ok := params.(*map[string]any)
 	if !ok {
@@ -79,19 +88,29 @@ func (c staticChainReader) BatchGetLatestValues(_ context.Context, _ types.Batch
 	return nil, nil
 }
 
-func (c staticChainReader) QueryKey(_ context.Context, _ string, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (c staticChainReader) QueryKey(_ context.Context, _ types.BoundContract, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
 func (c staticChainReader) Evaluate(ctx context.Context, cr types.ContractReader) error {
 	gotLatestValue := make(map[string]any)
-	err := cr.GetLatestValue(ctx, c.contractName, c.contractMethod, primitives.Unconfirmed, &c.params, &gotLatestValue)
-	if err != nil {
+
+	if err := cr.GetLatestValue(
+		ctx,
+		types.BoundContract{
+			Address: c.address,
+			Name:    c.contractName,
+		}.ReadIdentifier(c.contractMethod),
+		primitives.Unconfirmed,
+		&c.params,
+		&gotLatestValue,
+	); err != nil {
 		return fmt.Errorf("failed to call GetLatestValue(): %w", err)
 	}
 
 	if !assert.ObjectsAreEqual(gotLatestValue, c.latestValue) {
 		return fmt.Errorf("GetLatestValue: expected %v but got %v", c.latestValue, gotLatestValue)
 	}
+
 	return nil
 }

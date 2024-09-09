@@ -489,7 +489,7 @@ func (x *QueryKeyRequest) GetLimitAndSort() *LimitAndSort {
 	return nil
 }
 
-// BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind/Unbind].
+// BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind].
 type BindRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -537,7 +537,7 @@ func (x *BindRequest) GetBindings() []*BoundContract {
 	return nil
 }
 
-// UnbindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind/Unbind].
+// UnbindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Unbind].
 type UnbindRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

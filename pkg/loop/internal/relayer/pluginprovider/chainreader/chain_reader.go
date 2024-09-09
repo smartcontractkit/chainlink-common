@@ -360,9 +360,7 @@ func (c *Server) Unbind(ctx context.Context, bindings *pb.UnbindRequest) (*empty
 
 func getContractEncodedType(readIdentifier string, possibleTypeProvider any, forEncoding bool) (any, error) {
 	if ctp, ok := possibleTypeProvider.(types.ContractTypeProvider); ok {
-		val, err := ctp.CreateContractType(readIdentifier, forEncoding)
-
-		return val, err
+		return ctp.CreateContractType(readIdentifier, forEncoding)
 	}
 
 	return &map[string]any{}, nil
@@ -410,29 +408,27 @@ func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, enc
 func convertBatchGetLatestValuesRequestToProto(request types.BatchGetLatestValuesRequest, encodeWith EncodingVersion) (*pb.BatchGetLatestValuesRequest, error) {
 	requests := make([]*pb.ContractBatch, len(request))
 
-	var i int
+	var requestIdx int
 
 	for binding, nextBatch := range request {
-		reads := make([]*pb.BatchRead, len(nextBatch))
+		requests[requestIdx] = &pb.ContractBatch{
+			Contract: convertBoundContractToProto(binding),
+			Reads:    make([]*pb.BatchRead, len(nextBatch)),
+		}
 
-		for idx, batchCall := range nextBatch {
+		for readIdx, batchCall := range nextBatch {
 			versionedParams, err := EncodeVersionedBytes(batchCall.Params, encodeWith)
 			if err != nil {
 				return nil, err
 			}
 
-			reads[idx] = &pb.BatchRead{
+			requests[requestIdx].Reads[readIdx] = &pb.BatchRead{
 				ReadName: batchCall.ReadName,
 				Params:   versionedParams,
 			}
 		}
 
-		requests[i] = &pb.ContractBatch{
-			Contract: convertBoundContractToProto(binding),
-			Reads:    reads,
-		}
-
-		i++
+		requestIdx++
 	}
 
 	return &pb.BatchGetLatestValuesRequest{Requests: requests}, nil
@@ -643,21 +639,21 @@ func convertBatchGetLatestValuesRequestFromProto(pbRequest *pb.BatchGetLatestVal
 	}
 
 	request := make(types.BatchGetLatestValuesRequest)
-	for _, batch := range pbRequest.Requests {
-		binding := convertBoundContractFromProto(batch.Contract)
+	for _, pbBatch := range pbRequest.Requests {
+		binding := convertBoundContractFromProto(pbBatch.Contract)
 
 		if _, ok := request[binding]; !ok {
-			request[binding] = make([]types.BatchRead, len(batch.Reads))
+			request[binding] = make([]types.BatchRead, len(pbBatch.Reads))
 		}
 
-		for idx, readCall := range batch.Reads {
-			call := types.BatchRead{ReadName: readCall.ReadName}
-			params, err := getContractEncodedType(binding.ReadIdentifier(readCall.ReadName), impl, true)
+		for idx, pbReadCall := range pbBatch.Reads {
+			call := types.BatchRead{ReadName: pbReadCall.ReadName}
+			params, err := getContractEncodedType(binding.ReadIdentifier(pbReadCall.ReadName), impl, true)
 			if err != nil {
 				return nil, err
 			}
 
-			if err = DecodeVersionedBytes(params, readCall.Params); err != nil {
+			if err = DecodeVersionedBytes(params, pbReadCall.Params); err != nil {
 				return nil, err
 			}
 

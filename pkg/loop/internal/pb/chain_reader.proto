@@ -34,12 +34,12 @@ message QueryKeyRequest {
   LimitAndSort limit_and_sort = 3;
 }
 
-// BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind/Unbind].
+// BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind].
 message BindRequest {
   repeated BoundContract bindings = 1;
 }
 
-// UnbindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Bind/Unbind].
+// UnbindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ChainReader.Unbind].
 message UnbindRequest {
   repeated BoundContract bindings = 1;
 }

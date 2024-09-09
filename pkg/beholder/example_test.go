@@ -16,17 +16,15 @@ import (
 )
 
 func ExampleNewClient() {
-	ctx := context.Background()
-
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	client, err := beholder.NewClient(ctx, config)
+	client, err := beholder.NewClient(config)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Handle OTel errors
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(errorHandler))
+	otel.SetErrorHandler(otelErrPrinter)
 	// Set global client so it will be accessible from anywhere through beholder functions
 	beholder.SetClient(client)
 
@@ -64,13 +62,12 @@ func ExampleTracer() {
 	config := beholder.DefaultConfig()
 
 	// Initialize beholder otel client which sets up OTel components
-	client, err := beholder.NewClient(ctx, config)
+	client, err := beholder.NewClient(config)
 	if err != nil {
 		log.Fatalf("Error creating Beholder client: %v", err)
 	}
 	// Handle OTel errors
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(errorHandler))
-
+	otel.SetErrorHandler(otelErrPrinter)
 	// Set global client so it will be accessible from anywhere through beholder functions
 	beholder.SetClient(client)
 
@@ -117,8 +114,6 @@ func ExampleNewNoopClient() {
 	// Emitting custom message via noop otel client
 }
 
-func errorHandler(e error) {
-	if e != nil {
-		log.Printf("otel error: %v", e)
-	}
-}
+var otelErrPrinter = otel.ErrorHandlerFunc(func(err error) {
+	log.Printf("otel error: %v", err)
+})

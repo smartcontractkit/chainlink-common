@@ -11,13 +11,21 @@ import (
 )
 
 const (
-	envDatabaseURL            = "CL_DATABASE_URL"
-	envPromPort               = "CL_PROMETHEUS_PORT"
+	envDatabaseURL = "CL_DATABASE_URL"
+	envPromPort    = "CL_PROMETHEUS_PORT"
+
 	envTracingEnabled         = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
 	envTracingSamplingRatio   = "CL_TRACING_SAMPLING_RATIO"
 	envTracingAttribute       = "CL_TRACING_ATTRIBUTE_"
 	envTracingTLSCertPath     = "CL_TRACING_TLS_CERT_PATH"
+
+	envTelemetryEnabled          = "CL_TELEMETRY_ENABLED"
+	envTelemetryEndpoint         = "CL_TELEMETRY_ENDPOINT"
+	envTelemetryInsecureConn     = "CL_TELEMETRY_INSECURE_CONNECTION"
+	envTelemetryCACertFile       = "CL_TELEMETRY_CA_CERT_FILE"
+	envTelemetryAttribute        = "CL_TELEMETRY_ATTRIBUTE_"
+	envTelemetryTraceSampleRatio = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -32,30 +40,44 @@ type EnvConfig struct {
 	TracingSamplingRatio   float64
 	TracingTLSCertPath     string
 	TracingAttributes      map[string]string
+
+	TelemetryEnabled            bool
+	TelemetryEndpoint           string
+	TelemetryInsecureConnection bool
+	TelemetryCACertFile         string
+	TelemetryAttributes         OtelAttributes
+	TelemetryTraceSampleRatio   float64
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
 func (e *EnvConfig) AsCmdEnv() (env []string) {
-	injectEnv := map[string]string{
-		envPromPort:               strconv.Itoa(e.PrometheusPort),
-		envTracingEnabled:         strconv.FormatBool(e.TracingEnabled),
-		envTracingCollectorTarget: e.TracingCollectorTarget,
-		envTracingSamplingRatio:   strconv.FormatFloat(e.TracingSamplingRatio, 'f', -1, 64),
-		envTracingTLSCertPath:     e.TracingTLSCertPath,
-	}
-
-	// DatabaseURL is optional
-	if e.DatabaseURL != nil {
-		injectEnv[envDatabaseURL] = e.DatabaseURL.String()
-	}
-
-	for k, v := range e.TracingAttributes {
-		injectEnv[envTracingAttribute+k] = v
-	}
-
-	for k, v := range injectEnv {
+	add := func(k, v string) {
 		env = append(env, k+"="+v)
 	}
+
+	if e.DatabaseURL != nil { // optional
+		add(envDatabaseURL, e.DatabaseURL.String())
+	}
+	add(envPromPort, strconv.Itoa(e.PrometheusPort))
+
+	add(envTracingEnabled, strconv.FormatBool(e.TracingEnabled))
+	add(envTracingCollectorTarget, e.TracingCollectorTarget)
+	add(envTracingSamplingRatio, strconv.FormatFloat(e.TracingSamplingRatio, 'f', -1, 64))
+	add(envTracingTLSCertPath, e.TracingTLSCertPath)
+
+	for k, v := range e.TracingAttributes {
+		add(envTracingAttribute+k, v)
+	}
+
+	add(envTelemetryEnabled, strconv.FormatBool(e.TelemetryEnabled))
+	add(envTelemetryEndpoint, e.TelemetryEndpoint)
+	add(envTelemetryInsecureConn, strconv.FormatBool(e.TelemetryInsecureConnection))
+	add(envTelemetryCACertFile, e.TelemetryCACertFile)
+	add(envTelemetryTraceSampleRatio, strconv.FormatFloat(e.TelemetryTraceSampleRatio, 'f', -1, 64))
+	for k, v := range e.TelemetryAttributes {
+		add(envTelemetryAttribute+k, v)
+	}
+
 	return
 }
 
@@ -73,7 +95,7 @@ func (e *EnvConfig) parse() error {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
 	}
 
-	e.TracingEnabled, err = getTracingEnabled()
+	e.TracingEnabled, err = getBool(envTracingEnabled)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s: %w", envTracingEnabled, err)
 	}
@@ -83,9 +105,25 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
-		e.TracingAttributes = getTracingAttributes()
-		e.TracingSamplingRatio = getTracingSamplingRatio()
-		e.TracingTLSCertPath = getTLSCertPath()
+		e.TracingAttributes = getAttributes(envTracingAttribute)
+		e.TracingSamplingRatio = getFloat64OrZero(envTracingSamplingRatio)
+		e.TracingTLSCertPath = os.Getenv(envTracingTLSCertPath)
+	}
+
+	e.TelemetryEnabled, err = getBool(envTelemetryEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envTelemetryEnabled, err)
+	}
+
+	if e.TelemetryEnabled {
+		e.TelemetryEndpoint = os.Getenv(envTelemetryEndpoint)
+		e.TelemetryInsecureConnection, err = getBool(envTelemetryInsecureConn)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEndpoint, err)
+		}
+		e.TelemetryCACertFile = os.Getenv(envTelemetryCACertFile)
+		e.TelemetryAttributes = getAttributes(envTelemetryAttribute)
+		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
 	}
 	return nil
 }
@@ -102,13 +140,12 @@ func ManagedGRPCClientConfig(clientConfig *plugin.ClientConfig, c BrokerConfig) 
 	return clientConfig
 }
 
-// isTracingEnabled parses and validates the TRACING_ENABLED environment variable.
-func getTracingEnabled() (bool, error) {
-	tracingEnabledString := os.Getenv(envTracingEnabled)
-	if tracingEnabledString == "" {
+func getBool(envKey string) (bool, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
 		return false, nil
 	}
-	return strconv.ParseBool(tracingEnabledString)
+	return strconv.ParseBool(s)
 }
 
 // getValidCollectorTarget validates TRACING_COLLECTOR_TARGET as a URL.
@@ -121,34 +158,27 @@ func getValidCollectorTarget() (string, error) {
 	return tracingCollectorTarget, nil
 }
 
-// getTracingAttributes collects attributes prefixed with TRACING_ATTRIBUTE_.
-func getTracingAttributes() map[string]string {
+func getAttributes(envKeyPrefix string) map[string]string {
 	tracingAttributes := make(map[string]string)
 	for _, env := range os.Environ() {
-		if strings.HasPrefix(env, envTracingAttribute) {
-			tracingAttributes[strings.TrimPrefix(env, envTracingAttribute)] = os.Getenv(env)
+		if strings.HasPrefix(env, envKeyPrefix) {
+			tracingAttributes[strings.TrimPrefix(env, envKeyPrefix)] = os.Getenv(env)
 		}
 	}
 	return tracingAttributes
 }
 
-// getTracingSamplingRatio parses the TRACING_SAMPLING_RATIO environment variable.
 // Any errors in parsing result in a sampling ratio of 0.0.
-func getTracingSamplingRatio() float64 {
-	tracingSamplingRatio := os.Getenv(envTracingSamplingRatio)
-	if tracingSamplingRatio == "" {
+func getFloat64OrZero(envKey string) float64 {
+	s := os.Getenv(envKey)
+	if s == "" {
 		return 0.0
 	}
-	samplingRatio, err := strconv.ParseFloat(tracingSamplingRatio, 64)
+	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0.0
 	}
-	return samplingRatio
-}
-
-// getTLSCertPath parses the CL_TRACING_TLS_CERT_PATH environment variable.
-func getTLSCertPath() string {
-	return os.Getenv(envTracingTLSCertPath)
+	return f
 }
 
 // getDatabaseURL parses the CL_DATABASE_URL environment variable.

@@ -39,6 +39,7 @@ type MercuryTriggerService struct {
 	stopCh             services.StopChan
 	wg                 sync.WaitGroup
 	lggr               logger.Logger
+	metaOverride       datastreams.Metadata // usually empty, but set to a value in mock trigger
 }
 
 var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
@@ -64,6 +65,10 @@ func NewMercuryTriggerService(tickerResolutionMs int64, lggr logger.Logger) *Mer
 		latestReports:      make(map[datastreams.FeedID]datastreams.FeedReport),
 		stopCh:             make(services.StopChan),
 		lggr:               logger.Named(lggr, "MercuryTriggerService")}
+}
+
+func (o *MercuryTriggerService) SetMetaOverride(meta datastreams.Metadata) {
+	o.metaOverride = meta
 }
 
 func (o *MercuryTriggerService) ProcessReport(reports []datastreams.FeedReport) error {
@@ -181,7 +186,7 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 
 			// use 32-byte-padded timestamp as EventID (human-readable)
 			eventID := fmt.Sprintf("streams_%024s", strconv.FormatInt(timestamp, 10))
-			capabilityResponse, err := wrapReports(reportList, eventID, timestamp, datastreams.Metadata{})
+			capabilityResponse, err := wrapReports(reportList, eventID, timestamp, o.metaOverride)
 			if err != nil {
 				o.lggr.Errorw("error wrapping reports", "err", err)
 				continue

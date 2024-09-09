@@ -57,14 +57,14 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T
 	}
 
 	// For each contract in the batch call entry, submit the read entries to the chain
-	for contractName, contractBatch := range batchCallEntry {
-		require.Contains(t, nameToAddress, contractName)
+	for contract, contractBatch := range batchCallEntry {
+		require.Contains(t, nameToAddress, contract.Name)
 		for _, readEntry := range contractBatch {
 			val, isOk := readEntry.ReturnValue.(*TestStruct)
 			if !isOk {
-				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contractName, readEntry.Name, readEntry.ReturnValue)
+				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contract.Name, readEntry.Name, readEntry.ReturnValue)
 			}
-			SubmitTransactionToCW(t, tester, MethodSettingStruct, val, types.BoundContract{Name: contractName, Address: nameToAddress[contractName]}, types.Unconfirmed)
+			SubmitTransactionToCW(t, tester, MethodSettingStruct, val, types.BoundContract{Name: contract.Name, Address: nameToAddress[contract.Name]}, types.Unconfirmed)
 		}
 	}
 }
@@ -188,7 +188,7 @@ type FilterEventParams struct {
 	Field int32
 }
 
-type BatchCallEntry map[string]ContractBatchEntry
+type BatchCallEntry map[types.BoundContract]ContractBatchEntry
 type ContractBatchEntry []ReadEntry
 type ReadEntry struct {
 	Name        string

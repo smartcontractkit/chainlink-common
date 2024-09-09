@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725629037988,
+  "lastUpdate": 1725872196632,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -294,6 +294,48 @@ window.BENCHMARK_DATA = {
             "value": 28584,
             "unit": "ns/op",
             "extra": "42316 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "blaz@mxxn.io",
+            "name": "Blaž Hrastnik",
+            "username": "archseer"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b759a57ce2590354ec01a0fe0641cd6e813d8005",
+          "message": "capabilities: mercury_trigger: Expose meta so it can be set by mock-trigger (#692)",
+          "timestamp": "2024-09-09T17:55:00+09:00",
+          "tree_id": "e1fe0267ffcc382f8310b8182e9d7054cd54a803",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b759a57ce2590354ec01a0fe0641cd6e813d8005"
+        },
+        "date": 1725872196011,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.7,
+            "unit": "ns/op",
+            "extra": "2594806 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.5,
+            "unit": "ns/op",
+            "extra": "2315995 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28478,
+            "unit": "ns/op",
+            "extra": "42538 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725902579747,
+  "lastUpdate": 1725908102042,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -420,6 +420,48 @@ window.BENCHMARK_DATA = {
             "value": 28921,
             "unit": "ns/op",
             "extra": "42279 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c6df3a1efcec288c776d76310e74a68cc4ad8e5",
+          "message": "Add unit test runner for workflows (#751)",
+          "timestamp": "2024-09-09T14:53:56-04:00",
+          "tree_id": "f396dd500959f9c60fb0ce245617a2f9ccf006bd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3c6df3a1efcec288c776d76310e74a68cc4ad8e5"
+        },
+        "date": 1725908101399,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 456.4,
+            "unit": "ns/op",
+            "extra": "2627319 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508.6,
+            "unit": "ns/op",
+            "extra": "2204683 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28251,
+            "unit": "ns/op",
+            "extra": "42492 times\n4 procs"
           }
         ]
       }

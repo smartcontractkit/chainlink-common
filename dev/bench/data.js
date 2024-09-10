@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725968854229,
+  "lastUpdate": 1725979824873,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -546,6 +546,48 @@ window.BENCHMARK_DATA = {
             "value": 28316,
             "unit": "ns/op",
             "extra": "42470 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ce25c4b28676b90cd4467a02b36309b8b9df763a",
+          "message": "[KS-365] New config fields for trigger event batching (#757)\n\nmaxBatchSize + batchCollectionPeriod",
+          "timestamp": "2024-09-10T07:49:26-07:00",
+          "tree_id": "10f74c7d7ea6035f3dbd635c9f5a772a935efb89",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ce25c4b28676b90cd4467a02b36309b8b9df763a"
+        },
+        "date": 1725979824476,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 481.1,
+            "unit": "ns/op",
+            "extra": "2562690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.3,
+            "unit": "ns/op",
+            "extra": "2257256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28276,
+            "unit": "ns/op",
+            "extra": "42415 times\n4 procs"
           }
         ]
       }

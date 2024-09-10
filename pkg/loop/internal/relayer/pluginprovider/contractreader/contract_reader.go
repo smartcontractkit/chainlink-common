@@ -1,4 +1,4 @@
-package chainreader
+package contractreader
 
 import (
 	"bytes"
@@ -44,14 +44,14 @@ type ClientOpt func(*Client)
 
 type Client struct {
 	*goplugin.ServiceClient
-	grpc       pb.ChainReaderClient
+	grpc       pb.ContractReaderClient
 	encodeWith EncodingVersion
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		ServiceClient: goplugin.NewServiceClient(b, cc),
-		grpc:          pb.NewChainReaderClient(cc),
+		grpc:          pb.NewContractReaderClient(cc),
 		encodeWith:    DefaultEncodingVersion,
 	}
 
@@ -227,17 +227,17 @@ func (c *Client) Unbind(ctx context.Context, bindings []types.BoundContract) err
 	return net.WrapRPCErr(err)
 }
 
-var _ pb.ChainReaderServer = (*Server)(nil)
+var _ pb.ContractReaderServer = (*Server)(nil)
 
 type ServerOpt func(*Server)
 
 type Server struct {
-	pb.UnimplementedChainReaderServer
+	pb.UnimplementedContractReaderServer
 	impl       types.ContractReader
 	encodeWith EncodingVersion
 }
 
-func NewServer(impl types.ContractReader, opts ...ServerOpt) pb.ChainReaderServer {
+func NewServer(impl types.ContractReader, opts ...ServerOpt) pb.ContractReaderServer {
 	server := &Server{
 		impl:       impl,
 		encodeWith: DefaultEncodingVersion,

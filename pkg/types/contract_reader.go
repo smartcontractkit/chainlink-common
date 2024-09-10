@@ -10,15 +10,12 @@ import (
 
 // Errors exposed to product plugins
 const (
-	ErrInvalidType              = InvalidArgumentError("invalid type")
-	ErrInvalidConfig            = InvalidArgumentError("invalid configuration")
-	ErrChainReaderConfigMissing = UnimplementedError("ChainReader entry missing from RelayConfig")
-	ErrInternal                 = InternalError("internal error")
-	ErrNotFound                 = NotFoundError("not found")
+	ErrInvalidType                 = InvalidArgumentError("invalid type")
+	ErrInvalidConfig               = InvalidArgumentError("invalid configuration")
+	ErrContractReaderConfigMissing = UnimplementedError("ContractReader entry missing from RelayConfig")
+	ErrInternal                    = InternalError("internal error")
+	ErrNotFound                    = NotFoundError("not found")
 )
-
-// Deprecated: Use ContractReader. New naming should clear up confusion around the usage of this interface which should strictly be contract reading related.
-type ChainReader = ContractReader
 
 // ContractReader defines essential read operations a chain should implement for reading contract values and events.
 type ContractReader interface {
@@ -38,7 +35,7 @@ type ContractReader interface {
 	// 		Foo string `json:"foo"`
 	// 		Bar *big.Int `json:"bar"`
 	//  }
-	//  func do(ctx context.Context, cr ChainReader) (resp ProductReturn, err error) {
+	//  func do(ctx context.Context, cr ContractReader) (resp ProductReturn, err error) {
 	// 		err = cr.GetLatestValue(ctx, "FooContract", "GetProduct", primitives.Finalized, ProductParams{ID:1}, &resp)
 	// 		return
 	//  }

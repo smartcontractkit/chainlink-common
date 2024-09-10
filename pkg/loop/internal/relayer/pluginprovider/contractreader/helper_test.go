@@ -1,4 +1,4 @@
-package chainreader_test
+package contractreader_test
 
 import (
 	"errors"

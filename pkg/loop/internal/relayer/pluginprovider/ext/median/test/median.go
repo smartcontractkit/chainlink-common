@@ -193,7 +193,7 @@ type staticMedianProviderConfig struct {
 	reportCodec         staticReportCodec
 	medianContract      staticMedianContract
 	onchainConfigCodec  staticOnchainConfigCodec
-	chainReader         testtypes.ChainComponentsTester
+	contractReader      testtypes.ContractReaderTester
 	codec               testtypes.CodecEvaluator
 }
 
@@ -236,8 +236,8 @@ func (s staticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
 	return s.onchainConfigCodec
 }
 
-func (s staticMedianProvider) ChainReader() types.ContractReader {
-	return s.chainReader
+func (s staticMedianProvider) ContractReader() types.ContractReader {
+	return s.contractReader
 }
 
 func (s staticMedianProvider) Codec() types.Codec {
@@ -313,10 +313,10 @@ func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.Media
 		return fmt.Errorf("failed to evaluate onchain config codec: %w", err)
 	}
 
-	cr := provider.ChainReader()
-	err = s.chainReader.Evaluate(ctx, cr)
+	cr := provider.ContractReader()
+	err = s.contractReader.Evaluate(ctx, cr)
 	if err != nil {
-		return fmt.Errorf("providers chain reader does not equal static chain reader: %w", err)
+		return fmt.Errorf("providers contract reader does not equal static contract reader: %w", err)
 	}
 
 	return nil

@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
@@ -26,7 +26,7 @@ func (c *codecReaderLoopTester) Setup(t *testing.T) {
 	codec := c.CodecInterfaceTester.GetCodec(t)
 	c.lst.registerHook = func(server *grpc.Server) {
 		if codec != nil {
-			impl := chainreader.NewCodecServer(codec)
+			impl := contractreader.NewCodecServer(codec)
 			pb.RegisterCodecServer(server, impl)
 		}
 	}
@@ -38,7 +38,7 @@ func (c *codecReaderLoopTester) Name() string {
 }
 
 func (c *codecReaderLoopTester) GetCodec(t *testing.T) types.Codec {
-	return chainreader.NewCodecClient(nil, c.lst.GetConn(t))
+	return contractreader.NewCodecClient(nil, c.lst.GetConn(t))
 }
 
 func (c *codecReaderLoopTester) IncludeArrayEncodingSizeEnforcement() bool {

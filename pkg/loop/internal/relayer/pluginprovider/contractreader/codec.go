@@ -1,4 +1,4 @@
-package chainreader
+package contractreader
 
 import (
 	"context"

@@ -1,9 +1,9 @@
-package chainreader_test
+package contractreader_test
 
 import (
 	"testing"
 
-	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 

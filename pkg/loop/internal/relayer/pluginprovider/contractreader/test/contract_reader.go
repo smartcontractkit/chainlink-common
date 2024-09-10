@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	// ChainReader is a static implementation of [types.ContractReader], [testtypes.Evaluator] and [types.PluginProvider
+	// ContractReader is a static implementation of [types.ContractReader], [testtypes.Evaluator] and [types.PluginProvider
 	// it is used for testing the [types.PluginProvider] interface
-	ChainReader = staticChainReader{
+	ContractReader = staticContractReader{
 		address:        "0x24",
 		contractName:   "anyContract",
 		contractMethod: "anyMethod",
@@ -24,8 +24,8 @@ var (
 	}
 )
 
-// staticChainReader is a static implementation of ChainComponentsTester
-type staticChainReader struct {
+// staticContractReader is a static implementation of ContractReaderTester
+type staticContractReader struct {
 	address        string
 	contractName   string
 	contractMethod string
@@ -33,28 +33,28 @@ type staticChainReader struct {
 	params         map[string]any
 }
 
-var _ testtypes.Evaluator[types.ContractReader] = staticChainReader{}
-var _ types.ContractReader = staticChainReader{}
+var _ testtypes.Evaluator[types.ContractReader] = staticContractReader{}
+var _ types.ContractReader = staticContractReader{}
 
-func (c staticChainReader) Start(_ context.Context) error { return nil }
+func (c staticContractReader) Start(_ context.Context) error { return nil }
 
-func (c staticChainReader) Close() error { return nil }
+func (c staticContractReader) Close() error { return nil }
 
-func (c staticChainReader) Ready() error { panic("unimplemented") }
+func (c staticContractReader) Ready() error { panic("unimplemented") }
 
-func (c staticChainReader) Name() string { panic("unimplemented") }
+func (c staticContractReader) Name() string { panic("unimplemented") }
 
-func (c staticChainReader) HealthReport() map[string]error { panic("unimplemented") }
+func (c staticContractReader) HealthReport() map[string]error { panic("unimplemented") }
 
-func (c staticChainReader) Bind(_ context.Context, _ []types.BoundContract) error {
+func (c staticContractReader) Bind(_ context.Context, _ []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) Unbind(_ context.Context, _ []types.BoundContract) error {
+func (c staticContractReader) Unbind(_ context.Context, _ []types.BoundContract) error {
 	return nil
 }
 
-func (c staticChainReader) GetLatestValue(_ context.Context, readName string, _ primitives.ConfidenceLevel, params, returnVal any) error {
+func (c staticContractReader) GetLatestValue(_ context.Context, readName string, _ primitives.ConfidenceLevel, params, returnVal any) error {
 	comp := types.BoundContract{
 		Address: c.address,
 		Name:    c.contractName,
@@ -84,15 +84,15 @@ func (c staticChainReader) GetLatestValue(_ context.Context, readName string, _ 
 	return nil
 }
 
-func (c staticChainReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+func (c staticContractReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	return nil, nil
 }
 
-func (c staticChainReader) QueryKey(_ context.Context, _ types.BoundContract, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (c staticContractReader) QueryKey(_ context.Context, _ types.BoundContract, _ query.KeyFilter, _ query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	return nil, nil
 }
 
-func (c staticChainReader) Evaluate(ctx context.Context, cr types.ContractReader) error {
+func (c staticContractReader) Evaluate(ctx context.Context, cr types.ContractReader) error {
 	gotLatestValue := make(map[string]any)
 
 	if err := cr.GetLatestValue(

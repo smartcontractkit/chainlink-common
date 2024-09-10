@@ -4,7 +4,7 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 )
 
 const (
@@ -59,7 +59,7 @@ var (
 		offchainConfigDigester: OffchainConfigDigester,
 		contractConfigTracker:  ContractConfigTracker,
 		contractTransmitter:    ContractTransmitter,
-		chainReader:            chaincomponentstest.ChainReader,
+		contractReader:         chaincomponentstest.ContractReader,
 	}
 
 	configDigest       = libocr.ConfigDigest([32]byte{1: 7, 13: 11, 31: 23})

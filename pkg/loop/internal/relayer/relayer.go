@@ -304,6 +304,19 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
+func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
+	reply, err := r.relayer.LatestHead(ctx, &pb.LatestHeadRequest{})
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	return types.Head{
+		Identifier: reply.Head.Identifier,
+		Hash:       reply.Head.Hash,
+		Timestamp:  reply.Head.Timestamp,
+	}, nil
+}
+
 func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	reply, err := r.relayer.GetChainStatus(ctx, &pb.GetChainStatusRequest{})
 	if err != nil {
@@ -655,6 +668,21 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 	}
 
 	return id, err
+}
+
+func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest) (*pb.LatestHeadReply, error) {
+	head, err := r.impl.LatestHead(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.LatestHeadReply{
+		Head: &pb.Head{
+			Identifier: head.Identifier,
+			Hash:       head.Hash,
+			Timestamp:  head.Timestamp,
+		},
+	}, nil
 }
 
 func (r *relayerServer) GetChainStatus(ctx context.Context, request *pb.GetChainStatusRequest) (*pb.GetChainStatusReply, error) {

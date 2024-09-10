@@ -113,8 +113,8 @@ type BoundContract struct {
 	Name    string
 }
 
-func (bc BoundContract) ReadIdentifier(method string) string {
-	return bc.Address + "-" + bc.Name + "-" + method
+func (bc BoundContract) ReadIdentifier(readName string) string {
+	return bc.Address + "-" + bc.Name + "-" + readName
 }
 
 func (bc BoundContract) String() string {

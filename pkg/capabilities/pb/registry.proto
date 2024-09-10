@@ -12,6 +12,8 @@ message RemoteTriggerConfig {
   google.protobuf.Duration registrationExpiry = 2;
   uint32 minResponsesToAggregate = 3;
   google.protobuf.Duration messageExpiry = 4;
+  uint32 maxBatchSize = 5;
+  google.protobuf.Duration batchCollectionPeriod = 6;
 }
 
 message RemoteTargetConfig {

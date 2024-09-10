@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725982513816,
+  "lastUpdate": 1725982914686,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -630,6 +630,48 @@ window.BENCHMARK_DATA = {
             "value": 28283,
             "unit": "ns/op",
             "extra": "42408 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ed9f50de73222b8a2154366ce9a72c95aa2f97d8",
+          "message": "Rename Chain Reader to Contract Reader (#759)\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2024-09-10T17:40:10+02:00",
+          "tree_id": "10cadb482a66f669be55670e444d51262c232b53",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ed9f50de73222b8a2154366ce9a72c95aa2f97d8"
+        },
+        "date": 1725982914261,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 466.9,
+            "unit": "ns/op",
+            "extra": "2589003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.7,
+            "unit": "ns/op",
+            "extra": "2339268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29001,
+            "unit": "ns/op",
+            "extra": "42430 times\n4 procs"
           }
         ]
       }

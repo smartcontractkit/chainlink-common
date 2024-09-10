@@ -325,9 +325,11 @@ func MustNewRemoteCapabilityInfo(
 }
 
 const (
-	DefaultRegistrationRefresh = 30 * time.Second
-	DefaultRegistrationExpiry  = 2 * time.Minute
-	DefaultMessageExpiry       = 2 * time.Minute
+	DefaultRegistrationRefresh   = 30 * time.Second
+	DefaultRegistrationExpiry    = 2 * time.Minute
+	DefaultMessageExpiry         = 2 * time.Minute
+	DefaultBatchSize             = 100
+	DefaultBatchCollectionPeriod = 100 * time.Millisecond
 )
 
 type RemoteTriggerConfig struct {
@@ -335,6 +337,8 @@ type RemoteTriggerConfig struct {
 	RegistrationExpiry      time.Duration
 	MinResponsesToAggregate uint32
 	MessageExpiry           time.Duration
+	MaxBatchSize            uint32
+	BatchCollectionPeriod   time.Duration
 }
 
 type RemoteTargetConfig struct {
@@ -355,6 +359,12 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 	if c.MessageExpiry == 0 {
 		c.MessageExpiry = DefaultMessageExpiry
+	}
+	if c.MaxBatchSize == 0 {
+		c.MaxBatchSize = DefaultBatchSize
+	}
+	if c.BatchCollectionPeriod == 0 {
+		c.BatchCollectionPeriod = DefaultBatchCollectionPeriod
 	}
 }
 

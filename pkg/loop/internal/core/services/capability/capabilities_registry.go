@@ -103,6 +103,9 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
 		remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
 		remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
+		remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
+		remoteTriggerConfig.BatchCollectionPeriod = prtc.BatchCollectionPeriod.AsDuration()
+
 	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
 		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
 		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
@@ -316,6 +319,8 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
 				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
 				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
+				MaxBatchSize:            cc.RemoteTriggerConfig.MaxBatchSize,
+				BatchCollectionPeriod:   durationpb.New(cc.RemoteTriggerConfig.BatchCollectionPeriod),
 			},
 		}
 	}

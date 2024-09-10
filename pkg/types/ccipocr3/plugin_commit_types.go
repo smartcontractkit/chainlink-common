@@ -68,6 +68,8 @@ func NewMerkleRootChain(
 //     * max sequence number
 //     * the merkle root of the messages in the above range
 //     * the onramp address (in bytes, for EVM, abi-encoded)
+//
+// For more details see the contract here: https://github.com/smartcontractkit/chainlink/blob/7ba0f37134a618375542079ff1805fe2224d7916/contracts/src/v0.8/ccip/interfaces/IRMNV2.sol#L8-L12
 type RMNECDSASignature struct {
 	R Bytes32 `json:"r"`
 	S Bytes32 `json:"s"`

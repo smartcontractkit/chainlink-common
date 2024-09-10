@@ -1,10 +1,27 @@
 package ccipocr3
 
+// CommitPluginReport contains the necessary information to commit CCIP
+// messages from potentially many source chains, to a single destination chain.
+//
+// It must consist of either:
+//
+//  1. a non-empty MerkleRoots array, or
+//  2. a non-empty PriceUpdates array
+//
+// If neither of the above is provided the report is considered empty and should
+// not be transmitted on-chain.
+//
+// In the event the MerkleRoots array is non-empty, it may also contain
+// RMNSignatures, if RMN is configured for some lanes involved in the commitment.
+// A report with RMN signatures but without merkle roots is invalid.
 type CommitPluginReport struct {
-	MerkleRoots  []MerkleRootChain `json:"merkleRoots"`
-	PriceUpdates PriceUpdates      `json:"priceUpdates"`
+	MerkleRoots   []MerkleRootChain   `json:"merkleRoots"`
+	PriceUpdates  PriceUpdates        `json:"priceUpdates"`
+	RMNSignatures []RMNECDSASignature `json:"rmnSignatures"`
 }
 
+// Deprecated: don't use this constructor, just create a CommitPluginReport struct directly.
+// Will be removed in a future version once all uses have been replaced.
 func NewCommitPluginReport(merkleRoots []MerkleRootChain, tokenPriceUpdates []TokenPrice, gasPriceUpdate []GasPriceChain) CommitPluginReport {
 	return CommitPluginReport{
 		MerkleRoots:  merkleRoots,
@@ -16,7 +33,8 @@ func NewCommitPluginReport(merkleRoots []MerkleRootChain, tokenPriceUpdates []To
 func (r CommitPluginReport) IsEmpty() bool {
 	return len(r.MerkleRoots) == 0 &&
 		len(r.PriceUpdates.TokenPriceUpdates) == 0 &&
-		len(r.PriceUpdates.GasPriceUpdates) == 0
+		len(r.PriceUpdates.GasPriceUpdates) == 0 &&
+		len(r.RMNSignatures) == 0
 }
 
 type MerkleRootChain struct {
@@ -35,6 +53,24 @@ func NewMerkleRootChain(
 		SeqNumsRange: seqNumsRange,
 		MerkleRoot:   merkleRoot,
 	}
+}
+
+// RMNECDSASignature is the ECDSA signature from a single RMN node
+// on the RMN "Report" structure that consists of:
+//  1. the destination chain ID
+//  2. the destination chain selector
+//  3. the rmn remote contract address
+//  4. the offramp address
+//  5. the rmn home config digest
+//  6. the dest lane updates array, which is a struct that consists of:
+//     * source chain selector
+//     * min sequence number
+//     * max sequence number
+//     * the merkle root of the messages in the above range
+//     * the onramp address (in bytes, for EVM, abi-encoded)
+type RMNECDSASignature struct {
+	R Bytes32 `json:"r"`
+	S Bytes32 `json:"s"`
 }
 
 type PriceUpdates struct {

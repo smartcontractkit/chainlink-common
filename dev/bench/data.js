@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725979824873,
+  "lastUpdate": 1725982513816,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -588,6 +588,48 @@ window.BENCHMARK_DATA = {
             "value": 28276,
             "unit": "ns/op",
             "extra": "42415 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "makramkd@users.noreply.github.com",
+            "name": "Makram",
+            "username": "makramkd"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "33f91788deb60920bdd9a5fc930f3b7f487e066d",
+          "message": "pkg/types/ccipocr3: add rmn sigs to report (#758)\n\n* pkg/types/ccipocr3: add rmn sigs to report\r\n\r\nAdditionally, mark NewCommitPluginReport as deprecated.\r\n\r\n* add ccip-offchain as codeowners of ccip types\r\n\r\n* remove usage of deprecated func, update tests\r\n\r\n* bump doc",
+          "timestamp": "2024-09-10T19:34:10+04:00",
+          "tree_id": "8abb79eb727cabe2d55e2a16f57f78deb93bca66",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/33f91788deb60920bdd9a5fc930f3b7f487e066d"
+        },
+        "date": 1725982513437,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463,
+            "unit": "ns/op",
+            "extra": "2576943 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 538.9,
+            "unit": "ns/op",
+            "extra": "2346670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28283,
+            "unit": "ns/op",
+            "extra": "42408 times\n4 procs"
           }
         ]
       }

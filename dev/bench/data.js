@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726062622836,
+  "lastUpdate": 1726063193401,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -714,6 +714,48 @@ window.BENCHMARK_DATA = {
             "value": 28422,
             "unit": "ns/op",
             "extra": "42436 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "27a338bd3e60957e230c096234640b93f6b79b4c",
+          "message": "[BCF-3381] - Add LatestHead to ChainService (#760)\n\n* Add LatestHead to ChainService\r\n\r\n* Rename chain agnostic head struct Identifier field to height\r\n\r\n* Add comment for chain agnostic Head struct Timestamp field",
+          "timestamp": "2024-09-11T15:58:47+02:00",
+          "tree_id": "5397d61026300e94ee60125892090ee4d4c3a7f9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/27a338bd3e60957e230c096234640b93f6b79b4c"
+        },
+        "date": 1726063192723,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 484.8,
+            "unit": "ns/op",
+            "extra": "2533032 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.7,
+            "unit": "ns/op",
+            "extra": "2308606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28285,
+            "unit": "ns/op",
+            "extra": "42412 times\n4 procs"
           }
         ]
       }

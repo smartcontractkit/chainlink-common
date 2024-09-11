@@ -17,9 +17,12 @@ type PlatformOpts struct {
 
 type Props struct {
 	Name              string
+	Platform          grafana.TypePlatform
 	MetricsDataSource *grafana.DataSource
-	FolderUID         string
 	PlatformOpts      PlatformOpts
+	SlackChannel      string
+	SlackWebhookURL   string
+	AlertsTags        map[string]string
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms

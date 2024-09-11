@@ -12,28 +12,43 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
-func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error) {
-	props := &Props{
-		Name:              options.Name,
-		MetricsDataSource: options.MetricsDataSource,
-		PlatformOpts:      PlatformPanelOpts(options.Platform),
-		FolderUID:         options.FolderUID,
+func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+	if props.Name == "" {
+		return nil, fmt.Errorf("Name is required")
 	}
 
-	builder := grafana.NewBuilder(options, &grafana.BuilderOptions{
+	if props.Platform == "" {
+		return nil, fmt.Errorf("Platform is required")
+	}
+
+	if props.MetricsDataSource == nil {
+		return nil, fmt.Errorf("MetricsDataSource is required")
+	} else {
+		if props.MetricsDataSource.Name == "" {
+			return nil, fmt.Errorf("MetricsDataSource.Name is required")
+		}
+		if props.MetricsDataSource.UID == "" {
+			return nil, fmt.Errorf("MetricsDataSource.UID is required")
+		}
+	}
+
+	props.PlatformOpts = PlatformPanelOpts(props.Platform)
+
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{
+		Name:     props.Name,
 		Tags:     []string{"Core", "Node"},
 		Refresh:  "30s",
 		TimeFrom: "now-30m",
 		TimeTo:   "now",
 	})
 
-	if options.SlackChannel != "" && options.SlackWebhookURL != "" {
+	if props.SlackChannel != "" && props.SlackWebhookURL != "" {
 		builder.AddContactPoint(grafana.NewContactPoint(&grafana.ContactPointOptions{
 			Name: "chainlink-slack",
 			Type: "slack",
 			Settings: map[string]interface{}{
-				"url":       options.SlackWebhookURL,
-				"recipient": options.SlackChannel,
+				"url":       props.SlackWebhookURL,
+				"recipient": props.SlackChannel,
 				"username":  "Chainlink Alerts",
 				"title":     `{{ template "slack.chainlink.title" . }}`,
 				"text":      `{{ template "slack.chainlink.text" . }}`,
@@ -46,7 +61,7 @@ func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error)
 		Receiver: "chainlink-slack",
 		GroupBy:  []string{"grafana_folder", "alertname"},
 	}
-	for name, value := range options.AlertsTags {
+	for name, value := range props.AlertsTags {
 		notificationPolicyOptions.ObjectMatchers = append(notificationPolicyOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
 	}
 
@@ -351,8 +366,6 @@ func headlines(p *Props) []*grafana.Panel {
 				},
 			},
 			AlertOptions: &grafana.AlertOptions{
-				Group:       p.Name,
-				FolderUID:   p.FolderUID,
 				Summary:     `ETH Balance is lower than threshold`,
 				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.PlatformOpts.LegendString + `" }}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",

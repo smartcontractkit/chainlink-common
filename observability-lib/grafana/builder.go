@@ -19,26 +19,33 @@ type Builder struct {
 }
 
 type BuilderOptions struct {
-	Tags     []string
-	Refresh  string
-	TimeFrom string
-	TimeTo   string
-	TimeZone string
+	Name       string
+	Tags       []string
+	Refresh    string
+	TimeFrom   string
+	TimeTo     string
+	TimeZone   string
+	AlertsTags map[string]string
 }
 
-func NewBuilder(options *DashboardOptions, builderOptions *BuilderOptions) *Builder {
-	if builderOptions.TimeZone == "" {
-		builderOptions.TimeZone = common.TimeZoneBrowser
+func NewBuilder(options *BuilderOptions) *Builder {
+	if options.TimeZone == "" {
+		options.TimeZone = common.TimeZoneBrowser
 	}
 
-	return &Builder{
+	builder := &Builder{
 		dashboardBuilder: dashboard.NewDashboardBuilder(options.Name).
-			Tags(builderOptions.Tags).
-			Refresh(builderOptions.Refresh).
-			Time(builderOptions.TimeFrom, builderOptions.TimeTo).
-			Timezone(builderOptions.TimeZone),
-		alertsTags: options.AlertsTags,
+			Tags(options.Tags).
+			Refresh(options.Refresh).
+			Time(options.TimeFrom, options.TimeTo).
+			Timezone(options.TimeZone),
 	}
+
+	if options.AlertsTags != nil {
+		builder.alertsTags = options.AlertsTags
+	}
+
+	return builder
 }
 
 func (b *Builder) AddVars(items ...cog.Builder[dashboard.VariableModel]) {

@@ -1,6 +1,8 @@
 package k8sresources
 
 import (
+	"fmt"
+
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -10,20 +12,16 @@ import (
 
 type Props struct {
 	Name              string
-	FolderUID         string
 	MetricsDataSource *grafana.DataSource
-	LogsDataSource    *grafana.DataSource
 }
 
-func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error) {
-	props := &Props{
-		Name:              options.Name,
-		MetricsDataSource: options.MetricsDataSource,
-		LogsDataSource:    options.LogsDataSource,
-		FolderUID:         options.FolderUID,
+func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+	if props.Name == "" {
+		return nil, fmt.Errorf("Name is required")
 	}
 
-	builder := grafana.NewBuilder(options, &grafana.BuilderOptions{
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{
+		Name:     props.Name,
 		Tags:     []string{"Core", "Node", "Kubernetes", "Resources"},
 		Refresh:  "30s",
 		TimeFrom: "now-30m",

@@ -34,27 +34,42 @@
           "$ref": "#/$defs/feedId"
         },
         "FullReport": {
-          "type": "string",
-          "contentEncoding": "base64",
-          "description": "Full report represented as bytes encoded as base64 string."
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
         },
         "ReportContext": {
-          "type": "string",
-          "contentEncoding": "base64",
-          "description": "Report context represented as bytes encoded as base64 string. This is required to validate the signatures."
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255,
+            "description": "Report context represented as bytes. This is required to validate the signatures."
+          }
         },
         "Signatures": {
           "type": "array",
           "items": {
-            "type": "string",
-            "contentEncoding": "base64",
-            "description": "Signature over full report and report context represented as bytes encoded as base64 string."
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255,
+              "description": "Signature over full report and report context."
+            }
           }
         },
         "BenchmarkPrice": {
-          "type": "string",
-          "contentEncoding": "base64",
-          "description": "This value is extracted from the fullReport. Benchmark price represented as bytes encoded as base64 string."
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255,
+            "description": "This value is extracted from the fullReport."
+          }
         },
         "ObservationTimestamp": {
           "type": "integer"
@@ -72,14 +87,8 @@
     "Feed": {
       "type": "object",
       "properties": {
-        "TriggerType": {
-          "type": "string"
-        },
-        "ID": {
-          "type": "string"
-        },
         "Timestamp": {
-          "type": "string"
+          "type": "integer"
         },
         "Metadata": {
           "$ref": "#/$defs/SignersMetadata"
@@ -92,8 +101,6 @@
         }
       },
       "required": [
-        "TriggerType",
-        "ID",
         "Timestamp",
         "Metadata",
         "Payload"

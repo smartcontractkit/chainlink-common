@@ -8,9 +8,6 @@ import (
 )
 
 type Feed struct {
-	// ID corresponds to the JSON schema field "ID".
-	ID string `json:"ID" yaml:"ID" mapstructure:"ID"`
-
 	// Metadata corresponds to the JSON schema field "Metadata".
 	Metadata SignerMetadata `json:"Metadata" yaml:"Metadata" mapstructure:"Metadata"`
 
@@ -18,31 +15,28 @@ type Feed struct {
 	Payload FeedReport `json:"Payload" yaml:"Payload" mapstructure:"Payload"`
 
 	// Timestamp corresponds to the JSON schema field "Timestamp".
-	Timestamp string `json:"Timestamp" yaml:"Timestamp" mapstructure:"Timestamp"`
-
-	// TriggerType corresponds to the JSON schema field "TriggerType".
-	TriggerType string `json:"TriggerType" yaml:"TriggerType" mapstructure:"TriggerType"`
+	Timestamp int64 `json:"Timestamp" yaml:"Timestamp" mapstructure:"Timestamp"`
 }
 
 type FeedReport struct {
 	// BuyPrice corresponds to the JSON schema field "BuyPrice".
-	BuyPrice string `json:"BuyPrice" yaml:"BuyPrice" mapstructure:"BuyPrice"`
+	BuyPrice []uint8 `json:"BuyPrice" yaml:"BuyPrice" mapstructure:"BuyPrice"`
 
 	// FullReport corresponds to the JSON schema field "FullReport".
-	FullReport string `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
+	FullReport []uint8 `json:"FullReport" yaml:"FullReport" mapstructure:"FullReport"`
 
 	// ObservationTimestamp corresponds to the JSON schema field
 	// "ObservationTimestamp".
-	ObservationTimestamp int `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
+	ObservationTimestamp int64 `json:"ObservationTimestamp" yaml:"ObservationTimestamp" mapstructure:"ObservationTimestamp"`
 
 	// ReportContext corresponds to the JSON schema field "ReportContext".
-	ReportContext string `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
+	ReportContext []uint8 `json:"ReportContext" yaml:"ReportContext" mapstructure:"ReportContext"`
 
 	// SellPrice corresponds to the JSON schema field "SellPrice".
-	SellPrice string `json:"SellPrice" yaml:"SellPrice" mapstructure:"SellPrice"`
+	SellPrice []uint8 `json:"SellPrice" yaml:"SellPrice" mapstructure:"SellPrice"`
 
 	// Signature corresponds to the JSON schema field "Signature".
-	Signature string `json:"Signature" yaml:"Signature" mapstructure:"Signature"`
+	Signature []uint8 `json:"Signature" yaml:"Signature" mapstructure:"Signature"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -84,9 +78,6 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["ID"]; raw != nil && !ok {
-		return fmt.Errorf("field ID in Feed: required")
-	}
 	if _, ok := raw["Metadata"]; raw != nil && !ok {
 		return fmt.Errorf("field Metadata in Feed: required")
 	}
@@ -95,9 +86,6 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 	}
 	if _, ok := raw["Timestamp"]; raw != nil && !ok {
 		return fmt.Errorf("field Timestamp in Feed: required")
-	}
-	if _, ok := raw["TriggerType"]; raw != nil && !ok {
-		return fmt.Errorf("field TriggerType in Feed: required")
 	}
 	type Plain Feed
 	var plain Plain
@@ -142,7 +130,7 @@ type Trigger struct {
 
 type TriggerConfig struct {
 	// The interval in seconds after which a new trigger event is generated.
-	MaxFrequencyMs int `json:"maxFrequencyMs" yaml:"maxFrequencyMs" mapstructure:"maxFrequencyMs"`
+	MaxFrequencyMs uint64 `json:"maxFrequencyMs" yaml:"maxFrequencyMs" mapstructure:"maxFrequencyMs"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

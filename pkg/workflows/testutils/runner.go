@@ -46,6 +46,10 @@ type Runner struct {
 
 var _ workflows.Runner = &Runner{}
 
+func (r *Runner) Config() []byte {
+	return []byte("mock config")
+}
+
 func (r *Runner) Run(factory *workflows.WorkflowSpecFactory) error {
 	if len(r.errors) > 0 {
 		return fmt.Errorf("error registering capaiblities: %w", errors.Join(r.errors...))

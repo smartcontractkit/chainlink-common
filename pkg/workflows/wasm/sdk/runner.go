@@ -59,7 +59,6 @@ func (r *Runner) Run(factory *workflows.WorkflowSpecFactory) {
 	}
 
 	r.sendResponse(resp)
-	return
 }
 
 func (r *Runner) Config() []byte {

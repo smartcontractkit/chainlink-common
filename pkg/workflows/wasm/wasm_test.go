@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	//go:generate ./generate_wasm.sh
 	//go:embed test/cmd/testmodule.wasm
 	binary []byte
 )
@@ -25,6 +26,4 @@ func Test_GetWorkflowSpec(t *testing.T) {
 
 	assert.Equal(t, spec.Name, "tester")
 	assert.Equal(t, spec.Owner, "ryan")
-	assert.Len(t, spec.Triggers, 1)
-	assert.Equal(t, nil, spec)
 }

@@ -2,7 +2,6 @@ package wasm
 
 import (
 	"context"
-	_ "embed"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -68,23 +67,26 @@ func newModule(binary []byte) (*module, error) {
 		resp     wasmpb.Response
 		outerErr error
 	)
-	linker.FuncWrap(
+	err = linker.FuncWrap(
 		"env",
 		"sendResponse",
 		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
-			b, err := safeMem(caller, unsafe.Pointer(uintptr(ptr)), ptrlen)
+			b, innerErr := safeMem(caller, unsafe.Pointer(uintptr(ptr)), ptrlen)
 			if err != nil {
-				outerErr = err
+				outerErr = innerErr
 				return
 			}
 
-			err = proto.Unmarshal(b, &resp)
+			innerErr = proto.Unmarshal(b, &resp)
 			if err != nil {
-				outerErr = err
+				outerErr = innerErr
 				return
 			}
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	m := &module{
 		engine: engine,
@@ -170,7 +172,6 @@ func (m *module) run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	if err != nil {
 		if !strings.Contains(err.Error(), "exit status 0") {
 			return nil, err
-
 		}
 	}
 

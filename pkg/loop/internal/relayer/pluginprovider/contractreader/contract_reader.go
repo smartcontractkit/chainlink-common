@@ -581,9 +581,9 @@ func convertSequencesToProto(sequences []types.Sequence, version EncodingVersion
 		pbSequence := &pb.Sequence{
 			SequenceCursor: sequence.Cursor,
 			Head: &pb.Head{
-				Identifier: sequence.Identifier,
-				Hash:       sequence.Hash,
-				Timestamp:  sequence.Timestamp,
+				Height:    sequence.Height,
+				Hash:      sequence.Hash,
+				Timestamp: sequence.Timestamp,
 			},
 			Data: versionedSequenceDataType,
 		}
@@ -799,9 +799,9 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 		sequences[idx] = types.Sequence{
 			Cursor: pbSequences[idx].SequenceCursor,
 			Head: types.Head{
-				Identifier: pbSequences[idx].Head.Identifier,
-				Hash:       pbSequences[idx].Head.Hash,
-				Timestamp:  pbSequences[idx].Head.Timestamp,
+				Height:    pbSequences[idx].Head.Height,
+				Hash:      pbSequences[idx].Head.Hash,
+				Timestamp: pbSequences[idx].Head.Timestamp,
 			},
 			Data: cpy,
 		}

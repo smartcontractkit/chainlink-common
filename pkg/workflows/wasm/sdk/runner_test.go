@@ -198,6 +198,6 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 
 	// Do some massaging due to protos lossy conversion of types
 	gotSpec.Triggers[0].Inputs.Mapping = map[string]any{}
-	gotSpec.Triggers[0].Config["number"] = int64(gotSpec.Triggers[0].Config["number"].(int))
+	gotSpec.Triggers[0].Config["number"] = int64(gotSpec.Triggers[0].Config["number"].(uint64))
 	assert.Equal(t, &gotSpec, spc)
 }

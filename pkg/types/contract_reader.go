@@ -93,9 +93,10 @@ func (brr *BatchReadResult) SetResult(returnValue any, err error) {
 }
 
 type Head struct {
-	Identifier string
-	Hash       []byte
-	Timestamp  uint64
+	Height string
+	Hash   []byte
+	// Timestamp is in Unix time
+	Timestamp uint64
 }
 
 type Sequence struct {

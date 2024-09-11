@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725982914686,
+  "lastUpdate": 1726062622836,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -672,6 +672,48 @@ window.BENCHMARK_DATA = {
             "value": 29001,
             "unit": "ns/op",
             "extra": "42430 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9446397802fe4abcfa2ad1fe87e642d571f0506f",
+          "message": "[CAPPL-37] Implement Compute runner (#752)\n\n* [CAPPL-37] Add runner implementation\r\n\r\n* lint errors",
+          "timestamp": "2024-09-11T14:48:39+01:00",
+          "tree_id": "52e7528bf4aeaf7bfb66fd186bcd5f1c2e2c40bb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9446397802fe4abcfa2ad1fe87e642d571f0506f"
+        },
+        "date": 1726062622197,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 465.7,
+            "unit": "ns/op",
+            "extra": "2559214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.3,
+            "unit": "ns/op",
+            "extra": "2291344 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28422,
+            "unit": "ns/op",
+            "extra": "42436 times\n4 procs"
           }
         ]
       }

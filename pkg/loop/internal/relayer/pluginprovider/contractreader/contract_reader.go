@@ -712,7 +712,7 @@ func convertQueryFiltersFromProto(request *pb.QueryKeyRequest, impl types.Contra
 	pbQueryFilters := request.Filter
 	queryFilter := query.KeyFilter{Key: pbQueryFilters.Key}
 	for _, pbQueryFilter := range pbQueryFilters.Expression {
-		expression, err := convertExpressionFromProto(pbQueryFilter, request.ContractName, queryFilter.Key, impl)
+		expression, err := convertExpressionFromProto(pbQueryFilter, request.Contract.Name, queryFilter.Key, impl)
 		if err != nil {
 			return query.KeyFilter{}, err
 		}
@@ -741,7 +741,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression, contractName, key s
 		case *pb.Primitive_Comparator:
 			var valueComparators []primitives.ValueComparator
 			for _, pbValueComparator := range primitive.Comparator.ValueComparators {
-				val, err := getContractEncodedType(contractName, key+"."+primitive.Comparator.Name, impl, true)
+				val, err := getContractEncodedType(key+"."+primitive.Comparator.Name, impl, true)
 				if err != nil {
 					return query.Expression{}, err
 				}

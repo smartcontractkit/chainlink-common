@@ -94,7 +94,7 @@ func (fakeTypeProvider) CreateContractType(readName string, isEncode bool) (any,
 			return &FilterEventParams{}, nil
 		}
 		return &TestStruct{}, nil
-	case EventNameField:
+	case strings.HasSuffix(readName, EventNameField):
 		if isEncode {
 			var typ int32
 			return &typ, nil
@@ -107,22 +107,22 @@ func (fakeTypeProvider) CreateContractType(readName string, isEncode bool) (any,
 type testProtoConversionTypeProvider struct{}
 
 func (f testProtoConversionTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
-	return f.CreateContractType("", itemType, isEncode)
+	return f.CreateContractType(itemType, isEncode)
 }
 
 var _ types.ContractTypeProvider = (*testProtoConversionTypeProvider)(nil)
 
-func (testProtoConversionTypeProvider) CreateContractType(_, itemType string, isEncode bool) (any, error) {
-	switch itemType {
-	case ProtoTest:
+func (testProtoConversionTypeProvider) CreateContractType(itemType string, isEncode bool) (any, error) {
+	switch true {
+	case strings.HasSuffix(itemType, ProtoTest):
 		return &map[string]any{}, nil
-	case ProtoTestIntComparator:
+	case strings.HasSuffix(itemType, ProtoTestIntComparator):
 		if isEncode {
 			var typ int
 			return &typ, nil
 		}
 		return 0, errors.New("comparator types should only be encoded")
-	case ProtoTestStringComparator:
+	case strings.HasSuffix(itemType, ProtoTestStringComparator):
 		if isEncode {
 			var typ string
 			return &typ, nil

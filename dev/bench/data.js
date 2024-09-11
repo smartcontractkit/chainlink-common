@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726063193401,
+  "lastUpdate": 1726068594953,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -756,6 +756,48 @@ window.BENCHMARK_DATA = {
             "value": 28285,
             "unit": "ns/op",
             "extra": "42412 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4836d1d7f16bdd92d561c72bc5094ed2a412aeb2",
+          "message": "Update to a newer version of my go-jsonschema fork to support creating byte types. Also remove ID and TriggerType from streams, since it's not part of the payload. (#754)",
+          "timestamp": "2024-09-11T11:28:14-04:00",
+          "tree_id": "e5415e9031cf233de0b43fef6a29ad95be8c5fc9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4836d1d7f16bdd92d561c72bc5094ed2a412aeb2"
+        },
+        "date": 1726068594502,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458.1,
+            "unit": "ns/op",
+            "extra": "2639503 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.4,
+            "unit": "ns/op",
+            "extra": "2327658 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28475,
+            "unit": "ns/op",
+            "extra": "42519 times\n4 procs"
           }
         ]
       }

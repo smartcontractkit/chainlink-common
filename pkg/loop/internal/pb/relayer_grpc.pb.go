@@ -241,6 +241,7 @@ const (
 	Relayer_NewContractReader_FullMethodName = "/loop.Relayer/NewContractReader"
 	Relayer_NewConfigProvider_FullMethodName = "/loop.Relayer/NewConfigProvider"
 	Relayer_NewPluginProvider_FullMethodName = "/loop.Relayer/NewPluginProvider"
+	Relayer_LatestHead_FullMethodName        = "/loop.Relayer/LatestHead"
 	Relayer_GetChainStatus_FullMethodName    = "/loop.Relayer/GetChainStatus"
 	Relayer_ListNodeStatuses_FullMethodName  = "/loop.Relayer/ListNodeStatuses"
 	Relayer_Transact_FullMethodName          = "/loop.Relayer/Transact"
@@ -254,6 +255,7 @@ type RelayerClient interface {
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error)
 	NewConfigProvider(ctx context.Context, in *NewConfigProviderRequest, opts ...grpc.CallOption) (*NewConfigProviderReply, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderReply, error)
+	LatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadReply, error)
 	GetChainStatus(ctx context.Context, in *GetChainStatusRequest, opts ...grpc.CallOption) (*GetChainStatusReply, error)
 	ListNodeStatuses(ctx context.Context, in *ListNodeStatusesRequest, opts ...grpc.CallOption) (*ListNodeStatusesReply, error)
 	Transact(ctx context.Context, in *TransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -303,6 +305,15 @@ func (c *relayerClient) NewPluginProvider(ctx context.Context, in *NewPluginProv
 	return out, nil
 }
 
+func (c *relayerClient) LatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadReply, error) {
+	out := new(LatestHeadReply)
+	err := c.cc.Invoke(ctx, Relayer_LatestHead_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *relayerClient) GetChainStatus(ctx context.Context, in *GetChainStatusRequest, opts ...grpc.CallOption) (*GetChainStatusReply, error) {
 	out := new(GetChainStatusReply)
 	err := c.cc.Invoke(ctx, Relayer_GetChainStatus_FullMethodName, in, out, opts...)
@@ -338,6 +349,7 @@ type RelayerServer interface {
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error)
 	NewConfigProvider(context.Context, *NewConfigProviderRequest) (*NewConfigProviderReply, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderReply, error)
+	LatestHead(context.Context, *LatestHeadRequest) (*LatestHeadReply, error)
 	GetChainStatus(context.Context, *GetChainStatusRequest) (*GetChainStatusReply, error)
 	ListNodeStatuses(context.Context, *ListNodeStatusesRequest) (*ListNodeStatusesReply, error)
 	Transact(context.Context, *TransactionRequest) (*emptypb.Empty, error)
@@ -359,6 +371,9 @@ func (UnimplementedRelayerServer) NewConfigProvider(context.Context, *NewConfigP
 }
 func (UnimplementedRelayerServer) NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
+}
+func (UnimplementedRelayerServer) LatestHead(context.Context, *LatestHeadRequest) (*LatestHeadReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
 }
 func (UnimplementedRelayerServer) GetChainStatus(context.Context, *GetChainStatusRequest) (*GetChainStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChainStatus not implemented")
@@ -454,6 +469,24 @@ func _Relayer_NewPluginProvider_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Relayer_LatestHead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LatestHeadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerServer).LatestHead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Relayer_LatestHead_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerServer).LatestHead(ctx, req.(*LatestHeadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Relayer_GetChainStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetChainStatusRequest)
 	if err := dec(in); err != nil {
@@ -530,6 +563,10 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewPluginProvider",
 			Handler:    _Relayer_NewPluginProvider_Handler,
+		},
+		{
+			MethodName: "LatestHead",
+			Handler:    _Relayer_LatestHead_Handler,
 		},
 		{
 			MethodName: "GetChainStatus",

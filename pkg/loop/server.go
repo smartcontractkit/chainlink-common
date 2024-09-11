@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -84,11 +86,15 @@ func (s *Server) start() error {
 			return fmt.Errorf("failed to setup tracing: %w", err)
 		}
 	} else {
+		var attributes []attribute.KeyValue
+		if tracingConfig.Enabled {
+			attributes = tracingConfig.Attributes()
+		}
 		beholderCfg := beholder.Config{
 			InsecureConnection:       envCfg.TelemetryInsecureConnection,
 			CACertFile:               envCfg.TelemetryCACertFile,
 			OtelExporterGRPCEndpoint: envCfg.TelemetryEndpoint,
-			ResourceAttributes:       append(tracingConfig.Attributes(), envCfg.TelemetryAttributes.AsStringAttributes()...),
+			ResourceAttributes:       append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
 			TraceSampleRatio:         envCfg.TelemetryTraceSampleRatio,
 		}
 

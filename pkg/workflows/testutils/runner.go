@@ -50,23 +50,28 @@ func (r *Runner) Config() []byte {
 	return []byte("mock config")
 }
 
-func (r *Runner) Run(factory *workflows.WorkflowSpecFactory) error {
-	if len(r.errors) > 0 {
-		return fmt.Errorf("error registering capaiblities: %w", errors.Join(r.errors...))
-	}
-
+func (r *Runner) Run(factory *workflows.WorkflowSpecFactory) {
 	spec, err := factory.Spec()
 	if err != nil {
-		return err
+		r.errors = append(r.errors, err)
+		return
 	}
 
 	if err = r.ensureGraph(spec); err != nil {
-		return err
+		r.errors = append(r.errors, err)
+		return
 	}
 
 	r.setupSteps(factory, spec)
 
-	return r.walk(spec, workflows.KeywordTrigger)
+	err = r.walk(spec, workflows.KeywordTrigger)
+	if err != nil {
+		r.errors = append(r.errors, err)
+	}
+}
+
+func (r *Runner) Err() error {
+	return errors.Join(r.errors...)
 }
 
 func (r *Runner) ensureGraph(spec workflows.WorkflowSpec) error {

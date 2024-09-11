@@ -1,6 +1,6 @@
 package workflows
 
 type Runner interface {
-	Run(factory *WorkflowSpecFactory) error
+	Run(factory *WorkflowSpecFactory)
 	Config() []byte
 }

@@ -22,7 +22,7 @@ service CapabilitiesRegistry {
 enum ExecuteAPIType {
   EXECUTE_API_TYPE_UNKNOWN = 0;
   EXECUTE_API_TYPE_TRIGGER = 1;
-  EXECUTE_API_TYPE_CALLBACK = 2;
+  EXECUTE_API_TYPE_EXECUTE = 2;
 }
 
 

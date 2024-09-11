@@ -103,6 +103,9 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
 		remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
 		remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
+		remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
+		remoteTriggerConfig.BatchCollectionPeriod = prtc.BatchCollectionPeriod.AsDuration()
+
 	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
 		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
 		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
@@ -316,6 +319,8 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
 				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
 				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
+				MaxBatchSize:            cc.RemoteTriggerConfig.MaxBatchSize,
+				BatchCollectionPeriod:   durationpb.New(cc.RemoteTriggerConfig.BatchCollectionPeriod),
 			},
 		}
 	}
@@ -502,8 +507,8 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddReq
 	switch request.Type {
 	case pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER:
 		client = NewTriggerCapabilityClient(c.BrokerExt, conn)
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_CALLBACK:
-		client = NewCallbackCapabilityClient(c.BrokerExt, conn)
+	case pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE:
+		client = NewExecutableCapabilityClient(c.BrokerExt, conn)
 	default:
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
@@ -563,7 +568,7 @@ func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.Ba
 	case capabilities.CapabilityTypeAction:
 		i, _ := impl.(capabilities.ActionCapability)
 
-		capabilitiespb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
+		capabilitiespb.RegisterExecutableServer(s, &executableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},
@@ -571,14 +576,14 @@ func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.Ba
 	case capabilities.CapabilityTypeConsensus:
 		i, _ := impl.(capabilities.ConsensusCapability)
 
-		capabilitiespb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
+		capabilitiespb.RegisterExecutableServer(s, &executableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},
 		})
 	case capabilities.CapabilityTypeTarget:
 		i, _ := impl.(capabilities.TargetCapability)
-		capabilitiespb.RegisterCallbackExecutableServer(s, &callbackExecutableServer{
+		capabilitiespb.RegisterExecutableServer(s, &executableServer{
 			BrokerExt:   b,
 			impl:        i,
 			cancelFuncs: map[string]func(){},

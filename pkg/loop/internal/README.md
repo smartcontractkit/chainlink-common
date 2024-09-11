@@ -49,11 +49,11 @@ for details ensuring backward compatibility of protobufs.
 
 ### Relayer abstraction Development
 
-There are three kinds of abstractions with the relayer: common components, such as the `chainreader`, ocr-specific shared components, such as `offchain digester` and the ocr-specific, product-specific components, known as `Providers`. Note that the line between the latter two categories is blurry, ocr-specific shared component should be thought as component that have a well defined and reasonable default value; custom `Providers` clearly fall outside this domain, yet custom `Providers` may also implement OCR components that have a default implementation.
+There are three kinds of abstractions with the relayer: common components, such as the `contractreader`, ocr-specific shared components, such as `offchain digester` and the ocr-specific, product-specific components, known as `Providers`. Note that the line between the latter two categories is blurry, ocr-specific shared component should be thought as component that have a well defined and reasonable default value; custom `Providers` clearly fall outside this domain, yet custom `Providers` may also implement OCR components that have a default implementation.
 
 Go to [Production abstraction Development] for more information about custom `Provider` development.
 
-Developing common relayer components such as `chainreader` follows the same pattern as [Core node abstraction Development]. The primary difference is the package location. Instead of adding code to `chainlink-common/pkg/loop/internal/core/services` you will work in `chainlink-common/pkg/loop/internal/relayer` or `chainlink-common/pkg/loop/internal/relayer/pluginprovider` depending on the scope of your changes.
+Developing common relayer components such as `contractreader` follows the same pattern as [Core node abstraction Development]. The primary difference is the package location. Instead of adding code to `chainlink-common/pkg/loop/internal/core/services` you will work in `chainlink-common/pkg/loop/internal/relayer` or `chainlink-common/pkg/loop/internal/relayer/pluginprovider` depending on the scope of your changes.
 
 ### Product abstraction Development
 

@@ -13,7 +13,7 @@ os=$(uname)
 arch=$(uname -m)
 
 install_dir=$HOME/.local
-$install_dir/bin/protoc --version | grep $VERSION
+protoc --version | grep $VERSION
 rc=$?
 if [ $rc -eq 0 ]; then
     # we have the current VERSION

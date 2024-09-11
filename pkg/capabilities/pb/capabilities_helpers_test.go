@@ -1,7 +1,6 @@
 package pb_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,10 +63,10 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 
 	pr := pb.CapabilityResponse{
 		Value: values.ProtoMap(values.EmptyMap()),
-		Error: "error: bang!",
 	}
-	_, err = pb.CapabilityResponseFromProto(&pr)
+	resp, err := pb.CapabilityResponseFromProto(&pr)
 	require.NoError(t, err)
+	assert.Equal(t, capabilities.CapabilityResponse{Value: values.EmptyMap()}, resp)
 }
 
 func TestMarshalUnmarshalRequest(t *testing.T) {
@@ -111,7 +110,6 @@ func TestMarshalUnmarshalResponse(t *testing.T) {
 	require.NoError(t, err)
 	resp := capabilities.CapabilityResponse{
 		Value: v,
-		Err:   errors.New(testError),
 	}
 	raw, err := pb.MarshalCapabilityResponse(resp)
 	require.NoError(t, err)

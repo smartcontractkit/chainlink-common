@@ -18,7 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -34,7 +34,7 @@ type ProviderClient struct {
 	reportCodec        median.ReportCodec
 	medianContract     median.MedianContract
 	onchainConfigCodec median.OnchainConfigCodec
-	chainReader        types.ContractReader
+	contractReader     types.ContractReader
 	codec              types.Codec
 }
 
@@ -44,14 +44,16 @@ func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderC
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(cc)}
 	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(cc)}
 
-	maybeCr := chainreader.NewClient(b, cc)
+	maybeCr := contractreader.NewClient(b, cc)
 	var anyRetVal int
-	err := maybeCr.GetLatestValue(context.Background(), "", "", primitives.Unconfirmed, nil, &anyRetVal)
+
+	err := maybeCr.GetLatestValue(context.Background(), "", primitives.Unconfirmed, nil, &anyRetVal)
+
 	if status.Convert(err).Code() != codes.Unimplemented {
-		m.chainReader = maybeCr
+		m.contractReader = maybeCr
 	}
 
-	maybeCodec := chainreader.NewCodecClient(b, cc)
+	maybeCodec := contractreader.NewCodecClient(b, cc)
 	err = maybeCodec.Decode(context.Background(), []byte{}, &anyRetVal, "")
 	if status.Convert(err).Code() != codes.Unimplemented {
 		m.codec = maybeCodec
@@ -72,8 +74,8 @@ func (m *ProviderClient) OnchainConfigCodec() median.OnchainConfigCodec {
 	return m.onchainConfigCodec
 }
 
-func (m *ProviderClient) ChainReader() types.ContractReader {
-	return m.chainReader
+func (m *ProviderClient) ContractReader() types.ContractReader {
+	return m.contractReader
 }
 
 func (m *ProviderClient) Codec() types.Codec {

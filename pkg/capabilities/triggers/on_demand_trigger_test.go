@@ -20,7 +20,7 @@ func TestOnDemand(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
 	ctx := tests.Context(t)
 
-	req := capabilities.CapabilityRequest{
+	req := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: testID,
 		},
@@ -32,8 +32,10 @@ func TestOnDemand(t *testing.T) {
 	v, err := values.NewMap(map[string]any{"hello": "world"})
 	require.NoError(t, err)
 
-	er := capabilities.CapabilityResponse{
-		Value: v,
+	er := capabilities.TriggerResponse{
+		Event: capabilities.TriggerEvent{
+			Outputs: v,
+		},
 	}
 
 	err = tr.FanOutEvent(ctx, er)
@@ -48,8 +50,10 @@ func TestOnDemand_ChannelDoesntExist(t *testing.T) {
 	v, err := values.NewMap(map[string]any{"hello": "world"})
 	require.NoError(t, err)
 
-	er := capabilities.CapabilityResponse{
-		Value: v,
+	er := capabilities.TriggerResponse{
+		Event: capabilities.TriggerEvent{
+			Outputs: v,
+		},
 	}
 	err = tr.SendEvent(ctx, testID, er)
 	assert.ErrorContains(t, err, "no registration")
@@ -59,7 +63,7 @@ func TestOnDemand_(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
 	ctx := tests.Context(t)
 
-	req := capabilities.CapabilityRequest{
+	req := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID: "hello",
 		},
@@ -71,8 +75,10 @@ func TestOnDemand_(t *testing.T) {
 	v, err := values.NewMap(map[string]any{"hello": "world"})
 	require.NoError(t, err)
 
-	er := capabilities.CapabilityResponse{
-		Value: v,
+	er := capabilities.TriggerResponse{
+		Event: capabilities.TriggerEvent{
+			Outputs: v,
+		},
 	}
 	err = tr.SendEvent(ctx, "hello", er)
 	require.NoError(t, err)

@@ -9,7 +9,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
-	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 )
 
@@ -27,6 +27,7 @@ var (
 	MedianFactoryServer = staticMedianFactoryServer{
 		staticPluginMedianConfig: staticPluginMedianConfig{
 			provider:                   MedianProvider,
+			contractID:                 MedianContractID,
 			dataSource:                 DataSource,
 			juelsPerFeeCoinDataSource:  JuelsPerFeeCoinDataSource,
 			gasPriceSubunitsDataSource: GasPriceSubunitsDataSource,
@@ -51,9 +52,11 @@ var (
 				},
 			},
 			onchainConfigCodec: staticOnchainConfigCodec{},
-			chainReader:        chainreadertest.ChainReader,
+			contractReader:     chaincomponentstest.ContractReader,
 		},
 	}
+
+	MedianContractID = "0x42"
 )
 
 var (

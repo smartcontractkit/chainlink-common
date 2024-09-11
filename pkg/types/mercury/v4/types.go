@@ -16,8 +16,6 @@ type ReportFields struct {
 	LinkFee            *big.Int
 	ExpiresAt          uint32
 	BenchmarkPrice     *big.Int
-	Bid                *big.Int
-	Ask                *big.Int
 	MarketStatus       uint32
 }
 
@@ -65,8 +63,6 @@ type DataSource interface {
 
 type Observation struct {
 	BenchmarkPrice mercury.ObsResult[*big.Int]
-	Bid            mercury.ObsResult[*big.Int]
-	Ask            mercury.ObsResult[*big.Int]
 	MarketStatus   mercury.ObsResult[uint32]
 
 	MaxFinalizedTimestamp mercury.ObsResult[int64]

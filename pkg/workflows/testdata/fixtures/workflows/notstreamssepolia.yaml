@@ -11,7 +11,7 @@ ocr:
   report_id: '0001'
   encoder: EVM
   encoder_config:
-    abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
+    Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
 chainWriter:
   address: '0xE0082363396985ae2FdcC3a9F816A586Eed88416'
   deltaStage: 45s

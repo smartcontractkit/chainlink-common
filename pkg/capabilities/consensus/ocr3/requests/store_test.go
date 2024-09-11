@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -100,7 +99,7 @@ func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
 func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 	s := NewStore()
 	rid := uuid.New().String()
-	cb := make(chan capabilities.CapabilityResponse, 1)
+	cb := make(chan Response, 1)
 	stopCh := make(chan struct{}, 1)
 	obs, err := values.NewList(
 		[]any{"hello", 1},
@@ -171,7 +170,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 			gr.StopCh <- struct{}{}
 			<-stopCh
 
-			gr.CallbackCh <- capabilities.CapabilityResponse{}
+			gr.CallbackCh <- Response{}
 			<-cb
 		})
 	}

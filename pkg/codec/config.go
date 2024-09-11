@@ -10,7 +10,7 @@ import (
 	"unicode"
 
 	"github.com/fxamacker/cbor/v2"
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )

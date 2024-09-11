@@ -35,45 +35,43 @@ func (f *mockBaseCapability) Info(ctx context.Context) (capabilities.CapabilityI
 var _ capabilities.TriggerExecutable = (*mockTriggerExecutable)(nil)
 
 type mockTriggerExecutable struct {
-	callback chan capabilities.CapabilityResponse
+	callback chan capabilities.TriggerResponse
 }
 
-func (f *mockTriggerExecutable) XXXTestingPushToCallbackChan(cr capabilities.CapabilityResponse) {
+func (f *mockTriggerExecutable) XXXTestingPushToCallbackChan(cr capabilities.TriggerResponse) {
 	f.callback <- cr
 }
 
-func (f *mockTriggerExecutable) RegisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (f *mockTriggerExecutable) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return f.callback, nil
 }
 
-func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request capabilities.CapabilityRequest) error {
+func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	f.callback = nil
 	return nil
 }
 
-var _ capabilities.CallbackExecutable = (*mockCallbackExecutable)(nil)
+var _ capabilities.Executable = (*mockExecutableCapability)(nil)
 
-type mockCallbackExecutable struct {
+type mockExecutableCapability struct {
 	registeredWorkflowRequest *capabilities.RegisterToWorkflowRequest
 	callback                  chan capabilities.CapabilityResponse
 }
 
-func (f *mockCallbackExecutable) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (f *mockExecutableCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	f.registeredWorkflowRequest = &request
 	return nil
 }
 
-func (f *mockCallbackExecutable) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (f *mockExecutableCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	f.registeredWorkflowRequest = nil
 	return nil
 }
 
-func (f *mockCallbackExecutable) Execute(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
-	f.callback <- capabilities.CapabilityResponse{
+func (f *mockExecutableCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	return capabilities.CapabilityResponse{
 		Value: nil,
-		Err:   errors.New("some-error"),
-	}
-	return f.callback, nil
+	}, nil
 }
 
 var _ capabilities.TriggerCapability = (*mockTriggerCapability)(nil)
@@ -85,17 +83,17 @@ type mockTriggerCapability struct {
 
 type mockActionCapability struct {
 	*mockBaseCapability
-	*mockCallbackExecutable
+	*mockExecutableCapability
 }
 
 type mockConsensusCapability struct {
 	*mockBaseCapability
-	*mockCallbackExecutable
+	*mockExecutableCapability
 }
 
 type mockTargetCapability struct {
 	*mockBaseCapability
-	*mockCallbackExecutable
+	*mockExecutableCapability
 }
 
 type testRegistryPlugin struct {
@@ -122,7 +120,6 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	capabilityResponse := capabilities.CapabilityResponse{
 		Value: values.EmptyMap(),
-		Err:   errors.New("some-error"),
 	}
 
 	pluginName := "registry-test"
@@ -255,7 +252,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	}
 	testTrigger := mockTriggerCapability{
 		mockBaseCapability:    &mockBaseCapability{info: triggerInfo},
-		mockTriggerExecutable: &mockTriggerExecutable{callback: make(chan capabilities.CapabilityResponse, 10)},
+		mockTriggerExecutable: &mockTriggerExecutable{callback: make(chan capabilities.TriggerResponse, 10)},
 	}
 
 	// After adding the trigger, we'll expect something wrapped by the internal client type below.
@@ -271,19 +268,19 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	testCapabilityInfo(t, triggerInfo, triggerCap)
 
 	// Test TriggerExecutable
-	callbackChan, err := triggerCap.RegisterTrigger(tests.Context(t), capabilities.CapabilityRequest{
-		Inputs: &values.Map{},
-		Config: &values.Map{},
-	})
+	triggerChan, err := triggerCap.RegisterTrigger(tests.Context(t), capabilities.TriggerRegistrationRequest{})
 	require.NoError(t, err)
 
-	testTrigger.XXXTestingPushToCallbackChan(capabilityResponse)
-	require.Equal(t, capabilityResponse, <-callbackChan)
+	triggerResponse := capabilities.TriggerResponse{
+		Event: capabilities.TriggerEvent{
+			Outputs: values.EmptyMap(),
+		},
+		Err: errors.New("some-error"),
+	}
+	testTrigger.XXXTestingPushToCallbackChan(triggerResponse)
+	require.Equal(t, triggerResponse, <-triggerChan)
 
-	err = triggerCap.UnregisterTrigger(tests.Context(t), capabilities.CapabilityRequest{
-		Inputs: &values.Map{},
-		Config: &values.Map{},
-	})
+	err = triggerCap.UnregisterTrigger(tests.Context(t), capabilities.TriggerRegistrationRequest{})
 	require.NoError(t, err)
 	require.Nil(t, testTrigger.callback)
 
@@ -296,8 +293,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	actionCallbackChan := make(chan capabilities.CapabilityResponse, 10)
 	testAction := mockActionCapability{
-		mockBaseCapability:     &mockBaseCapability{info: actionInfo},
-		mockCallbackExecutable: &mockCallbackExecutable{callback: actionCallbackChan},
+		mockBaseCapability:       &mockBaseCapability{info: actionInfo},
+		mockExecutableCapability: &mockExecutableCapability{callback: actionCallbackChan},
 	}
 	reg.On("GetAction", mock.Anything, "action-1@2.0.0").Return(testAction, nil)
 	actionCap, err := rc.GetAction(tests.Context(t), "action-1@2.0.0")
@@ -316,9 +313,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.Equal(t, workflowRequest.Metadata.WorkflowID, testAction.registeredWorkflowRequest.Metadata.WorkflowID)
 
 	actionCallbackChan <- capabilityResponse
-	callbackChan, err = actionCap.Execute(tests.Context(t), capabilities.CapabilityRequest{})
+	callbackChan, err := actionCap.Execute(tests.Context(t), capabilities.CapabilityRequest{})
 	require.NoError(t, err)
-	require.Equal(t, capabilityResponse, <-callbackChan)
+	require.Equal(t, capabilityResponse, callbackChan)
 	err = actionCap.UnregisterFromWorkflow(tests.Context(t), capabilities.UnregisterFromWorkflowRequest{})
 	require.NoError(t, err)
 	require.Nil(t, testAction.registeredWorkflowRequest)
@@ -330,8 +327,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		Description:    "consensus-1-description",
 	}
 	testConsensus := mockConsensusCapability{
-		mockBaseCapability:     &mockBaseCapability{info: consensusInfo},
-		mockCallbackExecutable: &mockCallbackExecutable{},
+		mockBaseCapability:       &mockBaseCapability{info: consensusInfo},
+		mockExecutableCapability: &mockExecutableCapability{},
 	}
 	reg.On("GetConsensus", mock.Anything, "consensus-1@3.0.0").Return(testConsensus, nil)
 	consensusCap, err := rc.GetConsensus(tests.Context(t), "consensus-1@3.0.0")
@@ -346,8 +343,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		Description:    "target-1-description",
 	}
 	testTarget := mockTargetCapability{
-		mockBaseCapability:     &mockBaseCapability{info: targetInfo},
-		mockCallbackExecutable: &mockCallbackExecutable{},
+		mockBaseCapability:       &mockBaseCapability{info: targetInfo},
+		mockExecutableCapability: &mockExecutableCapability{},
 	}
 	reg.On("GetTarget", mock.Anything, "target-1@1.0.0").Return(testTarget, nil)
 	targetCap, err := rc.GetTarget(tests.Context(t), "target-1@1.0.0")

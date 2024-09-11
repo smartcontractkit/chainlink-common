@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
-	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
@@ -63,7 +63,7 @@ type staticPluginRelayerConfig struct {
 	commitProvider         cciptest.CommitProviderTester
 	configProvider         ocr2test.ConfigProviderTester
 	ocr3CapabilityProvider testtypes.OCR3CapabilityProviderTester
-	contractReaderProvider testtypes.ChainReaderTester
+	contractReaderProvider testtypes.ContractReaderTester
 	// Note: add other Provider testers here when we implement them
 	// eg Functions, Automation, etc
 	nodeRequest        nodeRequest
@@ -85,7 +85,7 @@ func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
 			agnosticProvider:       ocr2test.AgnosticProvider,
 			configProvider:         ocr2test.ConfigProvider,
 			ocr3CapabilityProvider: ocr3capabilitytest.OCR3CapabilityProvider,
-			contractReaderProvider: chainreadertest.ChainReader,
+			contractReaderProvider: chaincomponentstest.ContractReader,
 			nodeRequest: nodeRequest{
 				pageSize:  137,
 				pageToken: "",

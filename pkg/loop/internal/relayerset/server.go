@@ -13,8 +13,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset/inprocessprovider"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -147,7 +147,7 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 //
 // We could translate this to the GRPC world by having each call to RelayerSet.Get wrap the returned relayer in a server
 // and register that to the GRPC server. However this is actually pretty inefficient since a relayer object on its own
-// is not useful. Users will always want to use the relayer to instantiate a chainreader or chainwriter. So we can avoid
+// is not useful. Users will always want to use the relayer to instantiate a contractreader or chainwriter. So we can avoid
 // the intermediate server for the relayer by just storing a reference to the relayerSet client and the relayer we want
 // to fetch. I.e. the calls described above instead would become:
 //   - RelayerSet.Get -> (RelayerSetClient, RelayerID). Effectively this call just acts as check that Relayer exists
@@ -173,7 +173,7 @@ func (s *Server) NewContractReader(ctx context.Context, req *relayerset.NewContr
 	// Start gRPC service for the ContractReader service above
 	const name = "ContractReaderInRelayerSet"
 	id, _, err := s.broker.ServeNew(name, func(s *grpc.Server) {
-		chainreader.RegisterContractReaderService(s, contractReader)
+		contractreader.RegisterContractReaderService(s, contractReader)
 	}, net.Resource{Closer: contractReader, Name: name})
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (s *Server) NewContractReader(ctx context.Context, req *relayerset.NewContr
 //
 // We could translate this to the GRPC world by having each call to RelayerSet.Get wrap the returned relayer in a server
 // and register that to the GRPC server. However this is actually pretty inefficient since a relayer object on its own
-// is not useful. Users will always want to use the relayer to instantiate a chainreader or chainwriter. So we can avoid
+// is not useful. Users will always want to use the relayer to instantiate a contractreader or chainwriter. So we can avoid
 // the intermediate server for the relayer by just storing a reference to the relayerSet client and the relayer we want
 // to fetch. I.e. the calls described above instead would become:
 //   - RelayerSet.Get -> (RelayerSetClient, RelayerID). Effectively this call just acts as check that Relayer exists

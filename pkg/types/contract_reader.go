@@ -93,8 +93,9 @@ func (brr *BatchReadResult) SetResult(returnValue any, err error) {
 }
 
 type Head struct {
-	Height    string
-	Hash      []byte
+	Height string
+	Hash   []byte
+	// Timestamp is in Unix time
 	Timestamp uint64
 }
 

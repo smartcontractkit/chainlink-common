@@ -81,6 +81,8 @@ type NodeStatus struct {
 type ChainService interface {
 	Service
 
+	// LatestHead returns the latest head for the underlying chain.
+	LatestHead(ctx context.Context) (Head, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.

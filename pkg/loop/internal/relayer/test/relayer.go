@@ -233,6 +233,10 @@ func (s staticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayAr
 	return nil, errors.New("not implemented")
 }
 
+func (s staticPluginRelayer) LatestHead(ctx context.Context) (types.Head, error) {
+	return types.Head{}, errors.New("not implemented")
+}
+
 func (s staticPluginRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	return s.chainStatus, nil
 }

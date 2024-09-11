@@ -87,7 +87,7 @@ message BatchReadResult {
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Head].
 message Head {
-  string identifier = 1;
+  string height = 1;
   bytes hash = 2;
   uint64 timestamp = 3;
 }

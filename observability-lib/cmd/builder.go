@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/capabilities"
 
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 
@@ -23,6 +24,7 @@ const (
 	TypeDashboardDONOCR3            TypeDashboard = "don-ocr3"
 	TypeDashboardNOPOCR2            TypeDashboard = "nop-ocr2"
 	TypeDashboardNOPOCR3            TypeDashboard = "nop-ocr3"
+	TypeDashboardCapabilities       TypeDashboard = "capabilities"
 )
 
 type OCRVersion string
@@ -86,6 +88,9 @@ func Build(options *BuildOptions) (*grafana.Dashboard, error) {
 	case TypeDashboardNOPOCR3:
 		dashboardOptions.OCRVersion = string(OCRVersionOCR3)
 		db, err = nopocr.NewDashboard(dashboardOptions)
+	case TypeDashboardCapabilities:
+		dashboardOptions.OCRVersion = string(OCRVersionOCR3)
+		db, err = capabilities.NewDashboard(dashboardOptions)
 	default:
 		return nil, errors.New("invalid dashboard type")
 	}

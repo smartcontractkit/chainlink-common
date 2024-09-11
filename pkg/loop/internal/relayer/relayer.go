@@ -311,9 +311,9 @@ func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
 	}
 
 	return types.Head{
-		Identifier: reply.Head.Identifier,
-		Hash:       reply.Head.Hash,
-		Timestamp:  reply.Head.Timestamp,
+		Height:    reply.Head.Height,
+		Hash:      reply.Head.Hash,
+		Timestamp: reply.Head.Timestamp,
 	}, nil
 }
 
@@ -678,9 +678,9 @@ func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest)
 
 	return &pb.LatestHeadReply{
 		Head: &pb.Head{
-			Identifier: head.Identifier,
-			Hash:       head.Hash,
-			Timestamp:  head.Timestamp,
+			Height:    head.Height,
+			Hash:      head.Hash,
+			Timestamp: head.Timestamp,
 		},
 	}, nil
 }

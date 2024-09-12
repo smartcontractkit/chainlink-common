@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
-	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
@@ -38,8 +37,8 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 
 	builder.AddVars(vars(props)...)
 
-	builder.AddRow("Headlines")
-	builder.AddPanel(headlines(props)...)
+	builder.AddRow("Common indicators for capabilities")
+	builder.AddPanel(capabilitiesCommon(props)...)
 
 	return builder.Build()
 }
@@ -110,121 +109,109 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 	return variables
 }
 
-func headlines(p *Props) []*grafana.Panel {
+func capabilitiesCommon(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Execution Time",
+			Title:      "Cron Execution Time",
 			Span:       6,
 			Height:     4,
 			Decimals:   1,
 			Unit:       "ms",
 			Query: []grafana.Query{
 				{
-					Expr:    `capability_cron_execution_time_ms`,
-					Legend:  "{{capability}}",
-					Instant: true,
+					Expr:   `capability_cron_execution_time_ms`,
+					Legend: "{{capability}}",
 				},
 			},
 		},
-		Orientation: common.VizOrientationHorizontal,
 	}))
 
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Execution Time",
+			Title:      "Runs Count",
 			Span:       6,
 			Height:     4,
 			Decimals:   1,
 			Unit:       "ms",
 			Query: []grafana.Query{
 				{
-					Expr:    `capability_runs_count`,
-					Legend:  "{{capability}}",
-					Instant: true,
+					Expr:   `capability_runs_count`,
+					Legend: "{{capability}}",
 				},
 			},
 		},
-		Orientation: common.VizOrientationHorizontal,
 	}))
 
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Execution Time",
+			Title:      "Runs Fault Count",
 			Span:       6,
 			Height:     4,
 			Decimals:   1,
 			Unit:       "ms",
 			Query: []grafana.Query{
 				{
-					Expr:    `capability_runs_fault_count`,
-					Legend:  "{{capability}}",
-					Instant: true,
+					Expr:   `capability_runs_fault_count`,
+					Legend: "{{capability}}",
 				},
 			},
 		},
-		Orientation: common.VizOrientationHorizontal,
 	}))
 
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Execution Time",
+			Title:      "Runs Invalid Count",
 			Span:       6,
 			Height:     4,
 			Decimals:   1,
 			Unit:       "ms",
 			Query: []grafana.Query{
 				{
-					Expr:    `capability_runs_invalid_count`,
-					Legend:  "{{capability}}",
-					Instant: true,
+					Expr:   `capability_runs_invalid_count`,
+					Legend: "{{capability}}",
 				},
 			},
 		},
-		Orientation: common.VizOrientationHorizontal,
 	}))
 
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Execution Time",
+			Title:      "Runs Unauthorized Count",
 			Span:       6,
 			Height:     4,
 			Decimals:   1,
 			Unit:       "ms",
 			Query: []grafana.Query{
 				{
-					Expr:    `capability_runs_unauthorized_count`,
-					Legend:  "{{capability}}",
-					Instant: true,
+					Expr:   `capability_runs_unauthorized_count`,
+					Legend: "{{capability}}",
 				},
 			},
 		},
-		Orientation: common.VizOrientationHorizontal,
 	}))
 
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Execution Time",
+			Title:      "Runs No Resource Count",
 			Span:       6,
 			Height:     4,
 			Decimals:   1,
 			Unit:       "ms",
 			Query: []grafana.Query{
 				{
-					Expr:    `capability_runs_no_resource_count`,
-					Legend:  "{{capability}}",
-					Instant: true,
+					Expr:   `capability_runs_no_resource_count`,
+					Legend: "{{capability}}",
 				},
 			},
 		},
-		Orientation: common.VizOrientationHorizontal,
 	}))
 
 	return panels

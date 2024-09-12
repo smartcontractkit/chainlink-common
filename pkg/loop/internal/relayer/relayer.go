@@ -17,8 +17,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
@@ -207,7 +207,7 @@ func (r *relayerClient) NewChainWriter(_ context.Context, chainWriterConfig []by
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
-	cc := r.NewClientConn("ChainReader", func(ctx context.Context) (uint32, net.Resources, error) {
+	cc := r.NewClientConn("ContractReader", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewContractReader(ctx, &pb.NewContractReaderRequest{ContractReaderConfig: contractReaderConfig})
 		if err != nil {
 			return 0, nil, err
@@ -215,7 +215,7 @@ func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfi
 		return reply.ContractReaderID, nil, nil
 	})
 
-	return chainreader.NewClient(r.WithName("ChainReaderClient"), cc), nil
+	return contractreader.NewClient(r.WithName("ContractReaderClient"), cc), nil
 }
 
 func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {
@@ -302,6 +302,19 @@ func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterfa
 
 func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.LLOProvider, error) {
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
+}
+
+func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
+	reply, err := r.relayer.LatestHead(ctx, &pb.LatestHeadRequest{})
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	return types.Head{
+		Height:    reply.Head.Height,
+		Hash:      reply.Head.Hash,
+		Timestamp: reply.Head.Timestamp,
+	}, nil
 }
 
 func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
@@ -395,7 +408,7 @@ func (r *relayerServer) NewContractReader(ctx context.Context, request *pb.NewCo
 
 	const name = "ContractReader"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		chainreader.RegisterContractReaderService(s, cr)
+		contractreader.RegisterContractReaderService(s, cr)
 	}, net.Resource{Closer: cr, Name: name})
 	if err != nil {
 		return nil, err
@@ -655,6 +668,21 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 	}
 
 	return id, err
+}
+
+func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest) (*pb.LatestHeadReply, error) {
+	head, err := r.impl.LatestHead(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.LatestHeadReply{
+		Head: &pb.Head{
+			Height:    head.Height,
+			Hash:      head.Hash,
+			Timestamp: head.Timestamp,
+		},
+	}, nil
 }
 
 func (r *relayerServer) GetChainStatus(ctx context.Context, request *pb.GetChainStatusRequest) (*pb.GetChainStatusReply, error) {

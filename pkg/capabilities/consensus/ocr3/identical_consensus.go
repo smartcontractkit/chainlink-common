@@ -35,6 +35,10 @@ type IdenticalConsensusInput[T any] struct {
 	Observations workflows.CapDefinition[T]
 }
 
+type IdenticalConsensusMergedInput[T any] struct {
+	Observations []T
+}
+
 func (input IdenticalConsensusInput[T]) ToSteps() workflows.StepInputs {
 	return workflows.StepInputs{
 		Mapping: map[string]any{

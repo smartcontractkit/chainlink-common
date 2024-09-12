@@ -8,13 +8,12 @@ import (
 
 	"github.com/jonboulle/clockwork"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type responseCacheEntry struct {
-	response  *Response
+	response  Response
 	entryTime time.Time
 }
 
@@ -30,7 +29,7 @@ type Handler struct {
 	responseCache   map[string]*responseCacheEntry
 	cacheExpiryTime time.Duration
 
-	responseCh chan *Response
+	responseCh chan Response
 	requestCh  chan *Request
 
 	clock clockwork.Clock
@@ -45,7 +44,7 @@ func NewHandler(lggr logger.Logger, s *Store, clock clockwork.Clock, responseExp
 		store:           s,
 		pendingRequests: map[string]*Request{},
 		responseCache:   map[string]*responseCacheEntry{},
-		responseCh:      make(chan *Response),
+		responseCh:      make(chan Response),
 		requestCh:       make(chan *Request),
 		clock:           clock,
 		cacheExpiryTime: responseExpiryTime,
@@ -53,7 +52,7 @@ func NewHandler(lggr logger.Logger, s *Store, clock clockwork.Clock, responseExp
 	}
 }
 
-func (h *Handler) SendResponse(ctx context.Context, resp *Response) {
+func (h *Handler) SendResponse(ctx context.Context, resp Response) {
 	select {
 	case <-ctx.Done():
 		return
@@ -137,11 +136,11 @@ func (h *Handler) worker(ctx context.Context) {
 	}
 }
 
-func (h *Handler) sendResponse(ctx context.Context, req *Request, resp *Response) {
+func (h *Handler) sendResponse(ctx context.Context, req *Request, resp Response) {
 	select {
 	case <-ctx.Done():
 		return
-	case req.CallbackCh <- resp.CapabilityResponse:
+	case req.CallbackCh <- resp:
 		close(req.CallbackCh)
 		delete(h.pendingRequests, req.WorkflowExecutionID)
 	}
@@ -152,12 +151,9 @@ func (h *Handler) expirePendingRequests(ctx context.Context) {
 
 	for _, req := range h.pendingRequests {
 		if now.After(req.ExpiresAt) {
-			resp := &Response{
+			resp := Response{
 				WorkflowExecutionID: req.WorkflowExecutionID,
-				CapabilityResponse: capabilities.CapabilityResponse{
-					Err:   fmt.Errorf("timeout exceeded: could not process request before expiry %s", req.WorkflowExecutionID),
-					Value: nil,
-				},
+				Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry %s", req.WorkflowExecutionID),
 			}
 			h.store.evict(req.WorkflowExecutionID)
 			h.sendResponse(ctx, req, resp)

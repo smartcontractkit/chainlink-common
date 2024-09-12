@@ -35,7 +35,7 @@ type PluginMedianTest struct {
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -44,7 +44,7 @@ func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 	// when gasPriceSubunitsDataSource is meant to trigger a no-op
 	t.Run("PluginMedian (Zero GasPriceSubunitsDataSource)", func(t *testing.T) {
 		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog)
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -72,6 +72,7 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 
 type staticPluginMedianConfig struct {
 	provider                   staticMedianProvider
+	contractID                 string
 	dataSource                 staticDataSource
 	juelsPerFeeCoinDataSource  staticDataSource
 	gasPriceSubunitsDataSource staticDataSource
@@ -84,7 +85,7 @@ type staticMedianFactoryServer struct {
 
 var _ core.PluginMedian = staticMedianFactoryServer{}
 
-func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
 	// the provider may be a grpc client, so we can't compare it directly
 	// but in all of these static tests, the implementation of the provider is expected
 	// to be the same static implementation, so we can compare the expected values
@@ -92,6 +93,10 @@ func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provide
 	err := s.provider.Evaluate(ctx, provider)
 	if err != nil {
 		return nil, fmt.Errorf("NewMedianFactory: provider does not equal a static median provider implementation: %w", err)
+	}
+
+	if s.contractID != contractID {
+		return nil, errors.New("NewMedianFactory: contract address does not equal static median implementation")
 	}
 
 	err = s.dataSource.Evaluate(ctx, dataSource)
@@ -188,7 +193,7 @@ type staticMedianProviderConfig struct {
 	reportCodec         staticReportCodec
 	medianContract      staticMedianContract
 	onchainConfigCodec  staticOnchainConfigCodec
-	chainReader         testtypes.ChainComponentsTester
+	contractReader      testtypes.ContractReaderTester
 	codec               testtypes.CodecEvaluator
 }
 
@@ -231,8 +236,8 @@ func (s staticMedianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
 	return s.onchainConfigCodec
 }
 
-func (s staticMedianProvider) ChainReader() types.ContractReader {
-	return s.chainReader
+func (s staticMedianProvider) ContractReader() types.ContractReader {
+	return s.contractReader
 }
 
 func (s staticMedianProvider) Codec() types.Codec {
@@ -308,10 +313,10 @@ func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.Media
 		return fmt.Errorf("failed to evaluate onchain config codec: %w", err)
 	}
 
-	cr := provider.ChainReader()
-	err = s.chainReader.Evaluate(ctx, cr)
+	cr := provider.ContractReader()
+	err = s.contractReader.Evaluate(ctx, cr)
 	if err != nil {
-		return fmt.Errorf("providers chain reader does not equal static chain reader: %w", err)
+		return fmt.Errorf("providers contract reader does not equal static contract reader: %w", err)
 	}
 
 	return nil

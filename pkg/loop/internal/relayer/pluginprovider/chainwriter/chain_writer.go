@@ -10,7 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -21,14 +21,14 @@ type ClientOpt func(*Client)
 type Client struct {
 	*goplugin.ServiceClient
 	grpc       pb.ChainWriterClient
-	encodeWith chainreader.EncodingVersion
+	encodeWith contractreader.EncodingVersion
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		ServiceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewChainWriterClient(cc),
-		encodeWith:    chainreader.DefaultEncodingVersion,
+		encodeWith:    contractreader.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -38,14 +38,14 @@ func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt)
 	return client
 }
 
-func WithClientEncoding(version chainreader.EncodingVersion) ClientOpt {
+func WithClientEncoding(version contractreader.EncodingVersion) ClientOpt {
 	return func(client *Client) {
 		client.encodeWith = version
 	}
 }
 
 func (c *Client) SubmitTransaction(ctx context.Context, contractName, method string, params any, transactionID, toAddress string, meta *types.TxMeta, value *big.Int) error {
-	versionedParams, err := chainreader.EncodeVersionedBytes(params, c.encodeWith)
+	versionedParams, err := contractreader.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
 	}
@@ -98,13 +98,13 @@ type ServerOpt func(*Server)
 type Server struct {
 	pb.UnimplementedChainWriterServer
 	impl       types.ChainWriter
-	encodeWith chainreader.EncodingVersion
+	encodeWith contractreader.EncodingVersion
 }
 
 func NewServer(impl types.ChainWriter, opts ...ServerOpt) pb.ChainWriterServer {
 	server := &Server{
 		impl:       impl,
-		encodeWith: chainreader.DefaultEncodingVersion,
+		encodeWith: contractreader.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -114,7 +114,7 @@ func NewServer(impl types.ChainWriter, opts ...ServerOpt) pb.ChainWriterServer {
 	return server
 }
 
-func WithServerEncoding(version chainreader.EncodingVersion) ServerOpt {
+func WithServerEncoding(version contractreader.EncodingVersion) ServerOpt {
 	return func(server *Server) {
 		server.encodeWith = version
 	}

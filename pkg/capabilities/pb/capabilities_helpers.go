@@ -67,13 +67,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 }
 
 func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *CapabilityResponse {
-	errStr := ""
-	if resp.Err != nil {
-		errStr = resp.Err.Error()
-	}
-
 	return &CapabilityResponse{
-		Error: errStr,
 		Value: values.ProtoMap(resp.Value),
 	}
 }
@@ -124,16 +118,11 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 		return capabilities.CapabilityResponse{}, err
 	}
 
-	if pr.Error != "" {
-		err = errors.New(pr.Error)
-	}
-
 	resp := capabilities.CapabilityResponse{
-		Err:   err,
 		Value: val,
 	}
 
-	return resp, nil
+	return resp, err
 }
 
 func MarshalTriggerRegistrationRequest(req capabilities.TriggerRegistrationRequest) ([]byte, error) {

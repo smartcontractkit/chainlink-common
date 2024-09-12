@@ -4,6 +4,7 @@ import (
 	"time"
 
 	otelattr "go.opentelemetry.io/otel/attribute"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 type Config struct {
@@ -21,6 +22,7 @@ type Config struct {
 	// OTel Trace
 	TraceSampleRatio  float64
 	TraceBatchTimeout time.Duration
+	TraceSpanExporter sdktrace.SpanExporter // optional additional exporter
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	// OTel Log

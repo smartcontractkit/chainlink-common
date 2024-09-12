@@ -12,9 +12,8 @@ import (
 
 func TestNewBuilder(t *testing.T) {
 	t.Run("NewBuilder builds a dashboard", func(t *testing.T) {
-		builder := grafana.NewBuilder(&grafana.DashboardOptions{
-			Name: "Dashboard Name",
-		}, &grafana.BuilderOptions{
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name:     "Dashboard Name",
 			Tags:     []string{"foo", "bar"},
 			Refresh:  "1m",
 			TimeFrom: "now-1h",
@@ -33,9 +32,7 @@ func TestNewBuilder(t *testing.T) {
 
 func TestBuilder_AddVars(t *testing.T) {
 	t.Run("AddVars adds variables to the dashboard", func(t *testing.T) {
-		builder := grafana.NewBuilder(&grafana.DashboardOptions{
-			Name: "Dashboard Name",
-		}, &grafana.BuilderOptions{})
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
 
 		variable := grafana.NewQueryVariable(&grafana.QueryVariableOptions{
 			VariableOption: &grafana.VariableOption{
@@ -57,9 +54,7 @@ func TestBuilder_AddVars(t *testing.T) {
 
 func TestBuilder_AddRow(t *testing.T) {
 	t.Run("AddRow adds a row to the dashboard", func(t *testing.T) {
-		builder := grafana.NewBuilder(&grafana.DashboardOptions{
-			Name: "Dashboard Name",
-		}, &grafana.BuilderOptions{})
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
 
 		builder.AddRow("Row Title")
 		db, err := builder.Build()
@@ -72,9 +67,7 @@ func TestBuilder_AddRow(t *testing.T) {
 
 func TestBuilder_AddPanel(t *testing.T) {
 	t.Run("AddPanel adds a panel to the dashboard", func(t *testing.T) {
-		builder := grafana.NewBuilder(&grafana.DashboardOptions{
-			Name: "Dashboard Name",
-		}, &grafana.BuilderOptions{})
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
 
 		panel := grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{

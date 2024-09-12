@@ -21,7 +21,7 @@ type TriggerConfig struct {
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 
 	// The interval in seconds after which a new trigger event is generated.
-	Number int `json:"number" yaml:"number" mapstructure:"number"`
+	Number uint64 `json:"number" yaml:"number" mapstructure:"number"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -50,7 +50,25 @@ func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
 
 type TriggerOutputs struct {
 	// CoolOutput corresponds to the JSON schema field "cool_output".
-	CoolOutput *string `json:"cool_output,omitempty" yaml:"cool_output,omitempty" mapstructure:"cool_output,omitempty"`
+	CoolOutput string `json:"cool_output" yaml:"cool_output" mapstructure:"cool_output"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TriggerOutputs) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["cool_output"]; raw != nil && !ok {
+		return fmt.Errorf("field cool_output in TriggerOutputs: required")
+	}
+	type Plain TriggerOutputs
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = TriggerOutputs(plain)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

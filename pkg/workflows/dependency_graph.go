@@ -95,6 +95,10 @@ func ParseDependencyGraph(yamlWorkflow string) (*DependencyGraph, error) {
 		return nil, err
 	}
 
+	return BuildDependencyGraph(spec)
+}
+
+func BuildDependencyGraph(spec WorkflowSpec) (*DependencyGraph, error) {
 	// Construct and validate the graph. We instantiate an
 	// empty graph with just one starting entry: `trigger`.
 	// This provides the starting point for our graph and
@@ -110,7 +114,7 @@ func ParseDependencyGraph(yamlWorkflow string) (*DependencyGraph, error) {
 		graph.PreventCycles(),
 		graph.Directed(),
 	)
-	err = g.AddVertex(&Vertex{
+	err := g.AddVertex(&Vertex{
 		StepDefinition: StepDefinition{Ref: KeywordTrigger},
 	})
 	if err != nil {

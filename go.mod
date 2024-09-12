@@ -6,6 +6,7 @@ toolchain go1.22.5
 
 require (
 	github.com/atombender/go-jsonschema v0.16.0
+	github.com/bytecodealliance/wasmtime-go/v23 v23.0.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0
@@ -108,4 +109,4 @@ require (
 )
 
 // until merged upstream: https://github.com/omissis/go-jsonschema/pull/264
-replace github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-rtinianov
+replace github.com/atombender/go-jsonschema => github.com/nolag/go-jsonschema v0.16.0-smallSizedInts

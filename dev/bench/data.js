@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726078740171,
+  "lastUpdate": 1726131250937,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -840,6 +840,48 @@ window.BENCHMARK_DATA = {
             "value": 28272,
             "unit": "ns/op",
             "extra": "42433 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "36feb2504f38af28b633793d9b8d12fffb0b2a13",
+          "message": "feat(observability-lib): deploy logic in grafana module (#761)",
+          "timestamp": "2024-09-12T10:53:11+02:00",
+          "tree_id": "ba6628b61f9bb313e4ca00fe81a3351dcf0c8b13",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/36feb2504f38af28b633793d9b8d12fffb0b2a13"
+        },
+        "date": 1726131250526,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 457.8,
+            "unit": "ns/op",
+            "extra": "2566989 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 511.3,
+            "unit": "ns/op",
+            "extra": "2343920 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28245,
+            "unit": "ns/op",
+            "extra": "42501 times\n4 procs"
           }
         ]
       }

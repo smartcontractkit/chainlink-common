@@ -20,7 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	BaseCapability_Info_FullMethodName = "/loop.BaseCapability/Info"
+	BaseCapability_Info_FullMethodName = "/capabilities.BaseCapability/Info"
 )
 
 // BaseCapabilityClient is the client API for BaseCapability service.
@@ -97,7 +97,7 @@ func _BaseCapability_Info_Handler(srv interface{}, ctx context.Context, dec func
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var BaseCapability_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.BaseCapability",
+	ServiceName: "capabilities.BaseCapability",
 	HandlerType: (*BaseCapabilityServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -110,8 +110,8 @@ var BaseCapability_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	TriggerExecutable_RegisterTrigger_FullMethodName   = "/loop.TriggerExecutable/RegisterTrigger"
-	TriggerExecutable_UnregisterTrigger_FullMethodName = "/loop.TriggerExecutable/UnregisterTrigger"
+	TriggerExecutable_RegisterTrigger_FullMethodName   = "/capabilities.TriggerExecutable/RegisterTrigger"
+	TriggerExecutable_UnregisterTrigger_FullMethodName = "/capabilities.TriggerExecutable/UnregisterTrigger"
 )
 
 // TriggerExecutableClient is the client API for TriggerExecutable service.
@@ -246,7 +246,7 @@ func _TriggerExecutable_UnregisterTrigger_Handler(srv interface{}, ctx context.C
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.TriggerExecutable",
+	ServiceName: "capabilities.TriggerExecutable",
 	HandlerType: (*TriggerExecutableServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -265,9 +265,9 @@ var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Executable_RegisterToWorkflow_FullMethodName     = "/loop.Executable/RegisterToWorkflow"
-	Executable_UnregisterFromWorkflow_FullMethodName = "/loop.Executable/UnregisterFromWorkflow"
-	Executable_Execute_FullMethodName                = "/loop.Executable/Execute"
+	Executable_RegisterToWorkflow_FullMethodName     = "/capabilities.Executable/RegisterToWorkflow"
+	Executable_UnregisterFromWorkflow_FullMethodName = "/capabilities.Executable/UnregisterFromWorkflow"
+	Executable_Execute_FullMethodName                = "/capabilities.Executable/Execute"
 )
 
 // ExecutableClient is the client API for Executable service.
@@ -434,7 +434,7 @@ func (x *executableExecuteServer) Send(m *CapabilityResponse) error {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Executable_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.Executable",
+	ServiceName: "capabilities.Executable",
 	HandlerType: (*ExecutableServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -457,8 +457,8 @@ var Executable_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	StandardCapabilities_Initialise_FullMethodName = "/loop.StandardCapabilities/Initialise"
-	StandardCapabilities_Infos_FullMethodName      = "/loop.StandardCapabilities/Infos"
+	StandardCapabilities_Initialise_FullMethodName = "/capabilities.StandardCapabilities/Initialise"
+	StandardCapabilities_Infos_FullMethodName      = "/capabilities.StandardCapabilities/Infos"
 )
 
 // StandardCapabilitiesClient is the client API for StandardCapabilities service.
@@ -567,7 +567,7 @@ func _StandardCapabilities_Infos_Handler(srv interface{}, ctx context.Context, d
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var StandardCapabilities_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.StandardCapabilities",
+	ServiceName: "capabilities.StandardCapabilities",
 	HandlerType: (*StandardCapabilitiesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

@@ -24,11 +24,9 @@ func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory) FeedCap {
 
 type FeedCap interface {
 	workflows.CapDefinition[Feed]
-	ID() workflows.CapDefinition[string]
 	Metadata() SignerMetadataCap
 	Payload() FeedReportCap
-	Timestamp() workflows.CapDefinition[string]
-	TriggerType() workflows.CapDefinition[string]
+	Timestamp() workflows.CapDefinition[int64]
 	private()
 }
 
@@ -43,79 +41,59 @@ type feed struct {
 }
 
 func (*feed) private() {}
-func (c *feed) ID() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "ID")
-}
 func (c *feed) Metadata() SignerMetadataCap {
 	return &signerMetadata{CapDefinition: workflows.AccessField[Feed, SignerMetadata](c.CapDefinition, "Metadata")}
 }
 func (c *feed) Payload() FeedReportCap {
 	return &feedReport{CapDefinition: workflows.AccessField[Feed, FeedReport](c.CapDefinition, "Payload")}
 }
-func (c *feed) Timestamp() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "Timestamp")
-}
-func (c *feed) TriggerType() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "TriggerType")
+func (c *feed) Timestamp() workflows.CapDefinition[int64] {
+	return workflows.AccessField[Feed, int64](c.CapDefinition, "Timestamp")
 }
 
 func NewFeedFromFields(
-	iD workflows.CapDefinition[string],
 	metadata SignerMetadataCap,
 	payload FeedReportCap,
-	timestamp workflows.CapDefinition[string],
-	triggerType workflows.CapDefinition[string]) FeedCap {
+	timestamp workflows.CapDefinition[int64]) FeedCap {
 	return &simpleFeed{
 		CapDefinition: workflows.ComponentCapDefinition[Feed]{
-			"ID":          iD.Ref(),
-			"Metadata":    metadata.Ref(),
-			"Payload":     payload.Ref(),
-			"Timestamp":   timestamp.Ref(),
-			"TriggerType": triggerType.Ref(),
+			"Metadata":  metadata.Ref(),
+			"Payload":   payload.Ref(),
+			"Timestamp": timestamp.Ref(),
 		},
-		iD:          iD,
-		metadata:    metadata,
-		payload:     payload,
-		timestamp:   timestamp,
-		triggerType: triggerType,
+		metadata:  metadata,
+		payload:   payload,
+		timestamp: timestamp,
 	}
 }
 
 type simpleFeed struct {
 	workflows.CapDefinition[Feed]
-	iD          workflows.CapDefinition[string]
-	metadata    SignerMetadataCap
-	payload     FeedReportCap
-	timestamp   workflows.CapDefinition[string]
-	triggerType workflows.CapDefinition[string]
+	metadata  SignerMetadataCap
+	payload   FeedReportCap
+	timestamp workflows.CapDefinition[int64]
 }
 
-func (c *simpleFeed) ID() workflows.CapDefinition[string] {
-	return c.iD
-}
 func (c *simpleFeed) Metadata() SignerMetadataCap {
 	return c.metadata
 }
 func (c *simpleFeed) Payload() FeedReportCap {
 	return c.payload
 }
-func (c *simpleFeed) Timestamp() workflows.CapDefinition[string] {
+func (c *simpleFeed) Timestamp() workflows.CapDefinition[int64] {
 	return c.timestamp
-}
-func (c *simpleFeed) TriggerType() workflows.CapDefinition[string] {
-	return c.triggerType
 }
 
 func (c *simpleFeed) private() {}
 
 type FeedReportCap interface {
 	workflows.CapDefinition[FeedReport]
-	BuyPrice() workflows.CapDefinition[string]
-	FullReport() workflows.CapDefinition[string]
-	ObservationTimestamp() workflows.CapDefinition[int]
-	ReportContext() workflows.CapDefinition[string]
-	SellPrice() workflows.CapDefinition[string]
-	Signature() workflows.CapDefinition[string]
+	BuyPrice() workflows.CapDefinition[[]uint8]
+	FullReport() workflows.CapDefinition[[]uint8]
+	ObservationTimestamp() workflows.CapDefinition[int64]
+	ReportContext() workflows.CapDefinition[[]uint8]
+	SellPrice() workflows.CapDefinition[[]uint8]
+	Signature() workflows.CapDefinition[[]uint8]
 	private()
 }
 
@@ -130,32 +108,32 @@ type feedReport struct {
 }
 
 func (*feedReport) private() {}
-func (c *feedReport) BuyPrice() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "BuyPrice")
+func (c *feedReport) BuyPrice() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[FeedReport, []uint8](c.CapDefinition, "BuyPrice")
 }
-func (c *feedReport) FullReport() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "FullReport")
+func (c *feedReport) FullReport() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[FeedReport, []uint8](c.CapDefinition, "FullReport")
 }
-func (c *feedReport) ObservationTimestamp() workflows.CapDefinition[int] {
-	return workflows.AccessField[FeedReport, int](c.CapDefinition, "ObservationTimestamp")
+func (c *feedReport) ObservationTimestamp() workflows.CapDefinition[int64] {
+	return workflows.AccessField[FeedReport, int64](c.CapDefinition, "ObservationTimestamp")
 }
-func (c *feedReport) ReportContext() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "ReportContext")
+func (c *feedReport) ReportContext() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[FeedReport, []uint8](c.CapDefinition, "ReportContext")
 }
-func (c *feedReport) SellPrice() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "SellPrice")
+func (c *feedReport) SellPrice() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[FeedReport, []uint8](c.CapDefinition, "SellPrice")
 }
-func (c *feedReport) Signature() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "Signature")
+func (c *feedReport) Signature() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[FeedReport, []uint8](c.CapDefinition, "Signature")
 }
 
 func NewFeedReportFromFields(
-	buyPrice workflows.CapDefinition[string],
-	fullReport workflows.CapDefinition[string],
-	observationTimestamp workflows.CapDefinition[int],
-	reportContext workflows.CapDefinition[string],
-	sellPrice workflows.CapDefinition[string],
-	signature workflows.CapDefinition[string]) FeedReportCap {
+	buyPrice workflows.CapDefinition[[]uint8],
+	fullReport workflows.CapDefinition[[]uint8],
+	observationTimestamp workflows.CapDefinition[int64],
+	reportContext workflows.CapDefinition[[]uint8],
+	sellPrice workflows.CapDefinition[[]uint8],
+	signature workflows.CapDefinition[[]uint8]) FeedReportCap {
 	return &simpleFeedReport{
 		CapDefinition: workflows.ComponentCapDefinition[FeedReport]{
 			"BuyPrice":             buyPrice.Ref(),
@@ -176,30 +154,30 @@ func NewFeedReportFromFields(
 
 type simpleFeedReport struct {
 	workflows.CapDefinition[FeedReport]
-	buyPrice             workflows.CapDefinition[string]
-	fullReport           workflows.CapDefinition[string]
-	observationTimestamp workflows.CapDefinition[int]
-	reportContext        workflows.CapDefinition[string]
-	sellPrice            workflows.CapDefinition[string]
-	signature            workflows.CapDefinition[string]
+	buyPrice             workflows.CapDefinition[[]uint8]
+	fullReport           workflows.CapDefinition[[]uint8]
+	observationTimestamp workflows.CapDefinition[int64]
+	reportContext        workflows.CapDefinition[[]uint8]
+	sellPrice            workflows.CapDefinition[[]uint8]
+	signature            workflows.CapDefinition[[]uint8]
 }
 
-func (c *simpleFeedReport) BuyPrice() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) BuyPrice() workflows.CapDefinition[[]uint8] {
 	return c.buyPrice
 }
-func (c *simpleFeedReport) FullReport() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) FullReport() workflows.CapDefinition[[]uint8] {
 	return c.fullReport
 }
-func (c *simpleFeedReport) ObservationTimestamp() workflows.CapDefinition[int] {
+func (c *simpleFeedReport) ObservationTimestamp() workflows.CapDefinition[int64] {
 	return c.observationTimestamp
 }
-func (c *simpleFeedReport) ReportContext() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) ReportContext() workflows.CapDefinition[[]uint8] {
 	return c.reportContext
 }
-func (c *simpleFeedReport) SellPrice() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) SellPrice() workflows.CapDefinition[[]uint8] {
 	return c.sellPrice
 }
-func (c *simpleFeedReport) Signature() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) Signature() workflows.CapDefinition[[]uint8] {
 	return c.signature
 }
 

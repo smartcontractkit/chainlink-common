@@ -14,10 +14,10 @@ type ReportIdCap workflows.CapDefinition[ReportId]
 
 type SignedReportCap interface {
 	workflows.CapDefinition[SignedReport]
-	Context() workflows.CapDefinition[string]
-	ID() workflows.CapDefinition[string]
-	Report() workflows.CapDefinition[string]
-	Signatures() workflows.CapDefinition[[]string]
+	Context() workflows.CapDefinition[[]uint8]
+	ID() workflows.CapDefinition[[]uint8]
+	Report() workflows.CapDefinition[[]uint8]
+	Signatures() workflows.CapDefinition[[][]uint8]
 	private()
 }
 
@@ -32,24 +32,24 @@ type signedReport struct {
 }
 
 func (*signedReport) private() {}
-func (c *signedReport) Context() workflows.CapDefinition[string] {
-	return workflows.AccessField[SignedReport, string](c.CapDefinition, "Context")
+func (c *signedReport) Context() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[SignedReport, []uint8](c.CapDefinition, "Context")
 }
-func (c *signedReport) ID() workflows.CapDefinition[string] {
-	return workflows.AccessField[SignedReport, string](c.CapDefinition, "ID")
+func (c *signedReport) ID() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[SignedReport, []uint8](c.CapDefinition, "ID")
 }
-func (c *signedReport) Report() workflows.CapDefinition[string] {
-	return workflows.AccessField[SignedReport, string](c.CapDefinition, "Report")
+func (c *signedReport) Report() workflows.CapDefinition[[]uint8] {
+	return workflows.AccessField[SignedReport, []uint8](c.CapDefinition, "Report")
 }
-func (c *signedReport) Signatures() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[SignedReport, []string](c.CapDefinition, "Signatures")
+func (c *signedReport) Signatures() workflows.CapDefinition[[][]uint8] {
+	return workflows.AccessField[SignedReport, [][]uint8](c.CapDefinition, "Signatures")
 }
 
 func NewSignedReportFromFields(
-	context workflows.CapDefinition[string],
-	iD workflows.CapDefinition[string],
-	report workflows.CapDefinition[string],
-	signatures workflows.CapDefinition[[]string]) SignedReportCap {
+	context workflows.CapDefinition[[]uint8],
+	iD workflows.CapDefinition[[]uint8],
+	report workflows.CapDefinition[[]uint8],
+	signatures workflows.CapDefinition[[][]uint8]) SignedReportCap {
 	return &simpleSignedReport{
 		CapDefinition: workflows.ComponentCapDefinition[SignedReport]{
 			"Context":    context.Ref(),
@@ -66,22 +66,22 @@ func NewSignedReportFromFields(
 
 type simpleSignedReport struct {
 	workflows.CapDefinition[SignedReport]
-	context    workflows.CapDefinition[string]
-	iD         workflows.CapDefinition[string]
-	report     workflows.CapDefinition[string]
-	signatures workflows.CapDefinition[[]string]
+	context    workflows.CapDefinition[[]uint8]
+	iD         workflows.CapDefinition[[]uint8]
+	report     workflows.CapDefinition[[]uint8]
+	signatures workflows.CapDefinition[[][]uint8]
 }
 
-func (c *simpleSignedReport) Context() workflows.CapDefinition[string] {
+func (c *simpleSignedReport) Context() workflows.CapDefinition[[]uint8] {
 	return c.context
 }
-func (c *simpleSignedReport) ID() workflows.CapDefinition[string] {
+func (c *simpleSignedReport) ID() workflows.CapDefinition[[]uint8] {
 	return c.iD
 }
-func (c *simpleSignedReport) Report() workflows.CapDefinition[string] {
+func (c *simpleSignedReport) Report() workflows.CapDefinition[[]uint8] {
 	return c.report
 }
-func (c *simpleSignedReport) Signatures() workflows.CapDefinition[[]string] {
+func (c *simpleSignedReport) Signatures() workflows.CapDefinition[[][]uint8] {
 	return c.signatures
 }
 

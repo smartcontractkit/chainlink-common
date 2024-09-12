@@ -32,13 +32,13 @@
         "id": 0,
         "targets": [
           {
-            "expr": "capability_cron_execution_time_ms",
+            "expr": "capability_execution_time_ms",
             "format": "",
             "legendFormat": "{{capability}}",
             "refId": ""
           }
         ],
-        "title": "Cron Execution Time",
+        "title": "Execution Time",
         "description": "",
         "transparent": false,
         "datasource": {

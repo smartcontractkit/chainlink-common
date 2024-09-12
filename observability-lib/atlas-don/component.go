@@ -1,6 +1,8 @@
 package atlasdon
 
 import (
+	"fmt"
+
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -8,17 +10,20 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
-func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error) {
-	props := &Props{
-		Name:              options.Name,
-		MetricsDataSource: options.MetricsDataSource,
-		PlatformOpts:      PlatformPanelOpts(options.Platform, options.OCRVersion),
-		FolderUID:         options.FolderUID,
-		OCRVersion:        options.OCRVersion,
+func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+	if props.OCRVersion == "" {
+		return nil, fmt.Errorf("OCRVersion is required")
 	}
 
-	builder := grafana.NewBuilder(options, &grafana.BuilderOptions{
-		Tags:     []string{"DON", options.OCRVersion},
+	if props.Platform == "" {
+		return nil, fmt.Errorf("Platform is required")
+	}
+
+	props.PlatformOpts = PlatformPanelOpts(props.Platform, props.OCRVersion)
+
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{
+		Name:     props.Name,
+		Tags:     []string{"DON", props.OCRVersion},
 		Refresh:  "30s",
 		TimeFrom: "now-30m",
 		TimeTo:   "now",

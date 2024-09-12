@@ -174,9 +174,7 @@ func newConditionQuery(options *ConditionQuery) *alerting.QueryBuilder {
 
 type AlertOptions struct {
 	Name             string
-	FolderUID        string
 	Datasource       string
-	Group            string
 	Summary          string
 	Description      string
 	RunbookURL       string
@@ -202,8 +200,6 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 	}
 
 	rule := alerting.NewRuleBuilder(options.Name).
-		RuleGroup(options.Group).
-		FolderUID(options.FolderUID).
 		For(options.For).
 		Condition(options.Condition.RefID).
 		NoDataState(options.NoDataState).

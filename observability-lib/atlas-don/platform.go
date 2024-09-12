@@ -16,13 +16,13 @@ type PlatformOpts struct {
 
 type Props struct {
 	Name              string
+	Platform          grafana.TypePlatform
 	MetricsDataSource *grafana.DataSource
-	FolderUID         string
 	PlatformOpts      PlatformOpts
 	OCRVersion        string
 }
 
-// PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms
+// PlatformPanelOpts generate different queries depending on params
 func PlatformPanelOpts(platform grafana.TypePlatform, ocrVersion string) PlatformOpts {
 	po := PlatformOpts{
 		LabelFilters: map[string]string{

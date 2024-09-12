@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 	"github.com/spf13/cobra"
 )
 
@@ -12,25 +13,54 @@ var DeployCmd = &cobra.Command{
 		if errAlertsTags != nil {
 			return errAlertsTags
 		}
+		
+		metricsDataSource, errMetricsDataSource := grafana.GetDataSourceFromGrafana(
+			cmd.Flag("metrics-datasource").Value.String(),
+			cmd.Flag("grafana-url").Value.String(),
+			cmd.Flag("grafana-token").Value.String(),
+		)
 
-		err := NewDashboard(&CommandOptions{
-			GrafanaURL:            cmd.Flag("grafana-url").Value.String(),
-			GrafanaToken:          cmd.Flag("grafana-token").Value.String(),
-			Name:                  cmd.Flag("dashboard-name").Value.String(),
-			FolderName:            cmd.Flag("dashboard-folder").Value.String(),
-			Platform:              cmd.Flag("platform").Value.String(),
-			TypeDashboard:         cmd.Flag("type").Value.String(),
-			MetricsDataSourceName: cmd.Flag("metrics-datasource").Value.String(),
-			LogsDataSourceName:    cmd.Flag("logs-datasource").Value.String(),
-			EnableAlerts:          cmd.Flag("enable-alerts").Value.String() == "true",
-			AlertsTags:            alertsTags,
-			NotificationTemplates: cmd.Flag("notification-templates").Value.String(),
-			SlackChannel:          cmd.Flag("slack-channel").Value.String(),
-			SlackWebhookURL:       cmd.Flag("slack-webhook").Value.String(),
-			SlackToken:            cmd.Flag("slack-token").Value.String(),
+		if errMetricsDataSource != nil {
+			return errMetricsDataSource
+		}
+
+		var logsDataSource *grafana.DataSource
+		if cmd.Flag("logs-datasource").Value.String() != "" {
+			var errLogsDataSource error
+			logsDataSource, errLogsDataSource = grafana.GetDataSourceFromGrafana(
+				cmd.Flag("logs-datasource").Value.String(),
+				cmd.Flag("grafana-url").Value.String(),
+				cmd.Flag("grafana-token").Value.String(),
+			)
+
+			if errLogsDataSource != nil {
+				return errLogsDataSource
+			}
+		}
+
+		dashboard, err := BuildDashboardWithType(&BuildOptions{
+			Name:              cmd.Flag("dashboard-name").Value.String(),
+			Platform:          grafana.TypePlatform(cmd.Flag("platform").Value.String()),
+			TypeDashboard:     TypeDashboard(cmd.Flag("type").Value.String()),
+			MetricsDataSource: metricsDataSource,
+			LogsDataSource:    logsDataSource,
+			SlackChannel:      cmd.Flag("slack-channel").Value.String(),
+			SlackWebhookURL:   cmd.Flag("slack-webhook").Value.String(),
+			AlertsTags:        alertsTags,
 		})
 
 		if err != nil {
+			return err
+		}
+
+		errDeploy := dashboard.DeployToGrafana(&grafana.DeployOptions{
+			GrafanaURL:            cmd.Flag("grafana-url").Value.String(),
+			GrafanaToken:          cmd.Flag("grafana-token").Value.String(),
+			FolderName:            cmd.Flag("dashboard-folder").Value.String(),
+			EnableAlerts:          cmd.Flag("enable-alerts").Value.String() == "true",
+			NotificationTemplates: cmd.Flag("notification-templates").Value.String(),
+		})
+		if errDeploy != nil {
 			return err
 		}
 

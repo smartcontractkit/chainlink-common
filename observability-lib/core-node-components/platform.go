@@ -13,9 +13,9 @@ type PlatformOpts struct {
 
 type Props struct {
 	Name              string
+	Platform          grafana.TypePlatform
 	MetricsDataSource *grafana.DataSource
 	LogsDataSource    *grafana.DataSource
-	FolderUID         string
 	PlatformOpts      PlatformOpts
 }
 

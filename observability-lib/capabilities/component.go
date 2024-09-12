@@ -115,14 +115,14 @@ func capabilitiesCommon(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
-			Title:      "Cron Execution Time",
+			Title:      "Execution Time",
 			Span:       6,
 			Height:     4,
 			Decimals:   1,
 			Unit:       "ms",
 			Query: []grafana.Query{
 				{
-					Expr:   `capability_cron_execution_time_ms`,
+					Expr:   `capability_execution_time_ms`,
 					Legend: "{{capability}}",
 				},
 			},

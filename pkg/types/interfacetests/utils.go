@@ -1,6 +1,7 @@
 package interfacetests
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"math/big"
@@ -216,7 +217,7 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	}
 }
 
-func Compare[T int32](a, b T, op primitives.ComparisonOperator) bool {
+func Compare[T cmp.Ordered](a, b T, op primitives.ComparisonOperator) bool {
 	switch op {
 	case primitives.Eq:
 		return a == b

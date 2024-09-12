@@ -7,7 +7,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
-	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -18,7 +18,7 @@ var AgnosticProvider = staticPluginProvider{
 	offchainConfigDigester: OffchainConfigDigester,
 	contractConfigTracker:  ContractConfigTracker,
 	contractTransmitter:    ContractTransmitter,
-	chainReader:            chaincomponentstest.ChainReader,
+	contractReader:         chaincomponentstest.ContractReader,
 	codec:                  chaincomponentstest.Codec,
 }
 
@@ -27,7 +27,7 @@ type staticPluginProvider struct {
 	offchainConfigDigester staticOffchainConfigDigester
 	contractConfigTracker  staticContractConfigTracker
 	contractTransmitter    testtypes.ContractTransmitterEvaluator
-	chainReader            testtypes.ChainComponentsTester
+	contractReader         testtypes.ContractReaderTester
 	codec                  testtypes.CodecEvaluator
 }
 
@@ -55,8 +55,8 @@ func (s staticPluginProvider) ContractTransmitter() libocr.ContractTransmitter {
 	return s.contractTransmitter
 }
 
-func (s staticPluginProvider) ChainReader() types.ContractReader {
-	return s.chainReader
+func (s staticPluginProvider) ContractReader() types.ContractReader {
+	return s.contractReader
 }
 
 func (s staticPluginProvider) Codec() types.Codec {
@@ -79,9 +79,9 @@ func (s staticPluginProvider) AssertEqual(ctx context.Context, t *testing.T, pro
 		assert.NoError(t, s.contractTransmitter.Evaluate(ctx, provider.ContractTransmitter()))
 	})
 
-	t.Run("ChainReader", func(t *testing.T) {
+	t.Run("ContractReader", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.chainReader.Evaluate(ctx, provider.ChainReader()))
+		assert.NoError(t, s.contractReader.Evaluate(ctx, provider.ContractReader()))
 	})
 }
 
@@ -101,7 +101,7 @@ func (s staticPluginProvider) Evaluate(ctx context.Context, provider types.Plugi
 		return err
 	}
 
-	err = s.chainReader.Evaluate(ctx, provider.ChainReader())
+	err = s.contractReader.Evaluate(ctx, provider.ContractReader())
 	if err != nil {
 		return err
 	}

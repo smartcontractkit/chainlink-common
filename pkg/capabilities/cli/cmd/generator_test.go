@@ -235,7 +235,7 @@ func TestTypeGeneration(t *testing.T) {
 		spec, _ := workflow.Spec()
 		require.Len(t, spec.Actions, 1)
 		actual := spec.Actions[0]
-		require.Equal(t, 12, actual.Config["snake_case_in_schema_for_testing"])
+		require.Equal(t, uint64(12), actual.Config["snake_case_in_schema_for_testing"])
 		require.Equal(t, "foo", actual.Config["camelCaseInSchemaForTesting"])
 		require.True(t, actual.Inputs.Mapping["input_thing"].(bool))
 		require.Equal(t, "$(ref.outputs.adapted_thing)", ai.AdaptedThing().Ref())

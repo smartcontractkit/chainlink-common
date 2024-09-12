@@ -30,7 +30,7 @@ func (cfg DataFeedsConsensusConfig) New(w *workflows.WorkflowSpecFactory, ref st
 type FeedValueCap interface {
 	workflows.CapDefinition[FeedValue]
 	Deviation() workflows.CapDefinition[string]
-	Heartbeat() workflows.CapDefinition[int]
+	Heartbeat() workflows.CapDefinition[uint64]
 	RemappedID() workflows.CapDefinition[string]
 	private()
 }
@@ -49,8 +49,8 @@ func (*feedValue) private() {}
 func (c *feedValue) Deviation() workflows.CapDefinition[string] {
 	return workflows.AccessField[FeedValue, string](c.CapDefinition, "deviation")
 }
-func (c *feedValue) Heartbeat() workflows.CapDefinition[int] {
-	return workflows.AccessField[FeedValue, int](c.CapDefinition, "heartbeat")
+func (c *feedValue) Heartbeat() workflows.CapDefinition[uint64] {
+	return workflows.AccessField[FeedValue, uint64](c.CapDefinition, "heartbeat")
 }
 func (c *feedValue) RemappedID() workflows.CapDefinition[string] {
 	return workflows.AccessField[FeedValue, string](c.CapDefinition, "remappedID")
@@ -58,7 +58,7 @@ func (c *feedValue) RemappedID() workflows.CapDefinition[string] {
 
 func NewFeedValueFromFields(
 	deviation workflows.CapDefinition[string],
-	heartbeat workflows.CapDefinition[int],
+	heartbeat workflows.CapDefinition[uint64],
 	remappedID workflows.CapDefinition[string]) FeedValueCap {
 	return &simpleFeedValue{
 		CapDefinition: workflows.ComponentCapDefinition[FeedValue]{
@@ -75,14 +75,14 @@ func NewFeedValueFromFields(
 type simpleFeedValue struct {
 	workflows.CapDefinition[FeedValue]
 	deviation  workflows.CapDefinition[string]
-	heartbeat  workflows.CapDefinition[int]
+	heartbeat  workflows.CapDefinition[uint64]
 	remappedID workflows.CapDefinition[string]
 }
 
 func (c *simpleFeedValue) Deviation() workflows.CapDefinition[string] {
 	return c.deviation
 }
-func (c *simpleFeedValue) Heartbeat() workflows.CapDefinition[int] {
+func (c *simpleFeedValue) Heartbeat() workflows.CapDefinition[uint64] {
 	return c.heartbeat
 }
 func (c *simpleFeedValue) RemappedID() workflows.CapDefinition[string] {

@@ -19,18 +19,16 @@ import (
 
 func TestCompute(t *testing.T) {
 	anyNotStreamsInput := notstreams.Feed{
-		ID:       "id",
 		Metadata: notstreams.SignerMetadata{Signer: "signer1"},
 		Payload: notstreams.FeedReport{
-			BuyPrice:             "123",
-			FullReport:           "report",
+			BuyPrice:             []byte{1, 2, 3},
+			FullReport:           []byte("report"),
 			ObservationTimestamp: 2,
-			ReportContext:        "context",
-			SellPrice:            "124",
-			Signature:            "sig",
+			ReportContext:        []byte("context"),
+			SellPrice:            []byte{1, 2, 4},
+			Signature:            []byte("sig"),
 		},
-		Timestamp:   "2022-01-05",
-		TriggerType: "Type",
+		Timestamp: 1690838088,
 	}
 	nsf, err := values.CreateMapFromStruct(map[string]any{"Arg0": anyNotStreamsInput})
 	require.NoError(t, err)
@@ -181,7 +179,6 @@ func createWorkflow(fn func(_ workflows.SDK, inputFeed notstreams.Feed) ([]strea
 func convertFeed(_ workflows.SDK, inputFeed notstreams.Feed) ([]streams.Feed, error) {
 	return []streams.Feed{
 		{
-			ID:       inputFeed.ID,
 			Metadata: streams.SignersMetadata{Signers: []string{inputFeed.Metadata.Signer}},
 			Payload: []streams.FeedReport{
 				{
@@ -190,11 +187,10 @@ func convertFeed(_ workflows.SDK, inputFeed notstreams.Feed) ([]streams.Feed, er
 					FullReport:           inputFeed.Payload.FullReport,
 					ObservationTimestamp: inputFeed.Payload.ObservationTimestamp,
 					ReportContext:        inputFeed.Payload.ReportContext,
-					Signatures:           []string{inputFeed.Payload.Signature},
+					Signatures:           [][]byte{inputFeed.Payload.Signature},
 				},
 			},
-			Timestamp:   inputFeed.Timestamp,
-			TriggerType: inputFeed.TriggerType,
+			Timestamp: inputFeed.Timestamp,
 		},
 	}, nil
 }

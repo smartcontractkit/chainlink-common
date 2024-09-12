@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 	"github.com/spf13/cobra"
 )
 
@@ -8,7 +9,7 @@ var DeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete Grafana Dashboard",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return DeleteDashboard(&CommandOptions{
+		return grafana.DeleteDashboard(&grafana.DeleteOptions{
 			GrafanaURL:   cmd.Flag("grafana-url").Value.String(),
 			GrafanaToken: cmd.Flag("grafana-token").Value.String(),
 			Name:         cmd.Flag("dashboard-name").Value.String(),

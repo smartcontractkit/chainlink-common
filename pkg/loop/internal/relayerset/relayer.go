@@ -7,8 +7,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -46,7 +46,7 @@ func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfi
 		return contractReaderID, nil, nil
 	})
 
-	return chainreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ChainReaderClientInRelayerSet"), cc), nil
+	return contractreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ContractReaderClientInRelayerSet"), cc), nil
 }
 
 func (r *relayerClient) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {

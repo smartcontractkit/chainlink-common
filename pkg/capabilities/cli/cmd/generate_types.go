@@ -124,8 +124,9 @@ func generateHelpers(helpers []WorkflowHelperGenerator, structs GeneratedInfo, a
 func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 	configInfo := ConfigInfo{
 		Config: generator.Config{
-			Tags:   []string{"json", "yaml", "mapstructure"},
-			Warner: func(message string) { fmt.Printf("Warning: %s\n", message) },
+			Tags:         []string{"json", "yaml", "mapstructure"},
+			Warner:       func(message string) { fmt.Printf("Warning: %s\n", message) },
+			MinSizedInts: true,
 		},
 		SchemaToTypeInfo: map[string]TypeInfo{},
 	}

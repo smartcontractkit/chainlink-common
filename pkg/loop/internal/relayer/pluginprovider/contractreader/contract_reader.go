@@ -43,14 +43,15 @@ const DefaultEncodingVersion = CBOREncodingVersion
 type ClientOpt func(*Client)
 
 type Client struct {
-	*goplugin.ServiceClient
-	grpc       pb.ContractReaderClient
-	encodeWith EncodingVersion
+	types.UnimplementedContractReader
+	serviceClient *goplugin.ServiceClient
+	grpc          pb.ContractReaderClient
+	encodeWith    EncodingVersion
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
-		ServiceClient: goplugin.NewServiceClient(b, cc),
+		serviceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewContractReaderClient(cc),
 		encodeWith:    DefaultEncodingVersion,
 	}
@@ -225,6 +226,30 @@ func (c *Client) Unbind(ctx context.Context, bindings []types.BoundContract) err
 	_, err := c.grpc.Unbind(ctx, &pb.UnbindRequest{Bindings: pbBindings})
 
 	return net.WrapRPCErr(err)
+}
+
+func (c *Client) ClientConn() grpc.ClientConnInterface {
+	return c.serviceClient.ClientConn()
+}
+
+func (c *Client) Close() error {
+	return c.serviceClient.Close()
+}
+
+func (c *Client) HealthReport() map[string]error {
+	return c.serviceClient.HealthReport()
+}
+
+func (c *Client) Name() string {
+	return c.serviceClient.Name()
+}
+
+func (c *Client) Ready() error {
+	return c.serviceClient.Ready()
+}
+
+func (c *Client) Start(ctx context.Context) error {
+	return c.serviceClient.Start(ctx)
 }
 
 var _ pb.ContractReaderServer = (*Server)(nil)

@@ -5,7 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/timeutil"
 )
+
+const pollerJitter = 0.2
 
 // Poller implements Updater by periodically invoking a Source's Fetch() method.
 type Poller interface {
@@ -63,7 +67,7 @@ func (s *sourcePoller) Run(ctx context.Context) {
 		}
 	}
 
-	reusedTimer := time.NewTimer(s.pollInterval)
+	reusedTimer := time.NewTimer(timeutil.JitterPct(pollerJitter).Apply(s.pollInterval))
 	for {
 		select {
 		case <-reusedTimer.C:
@@ -71,13 +75,13 @@ func (s *sourcePoller) Run(ctx context.Context) {
 			if err != nil {
 				if errors.Is(err, ErrNoUpdate) {
 					s.log.Debugw("no update found")
-					reusedTimer.Reset(s.pollInterval)
+					reusedTimer.Reset(timeutil.JitterPct(pollerJitter).Apply(s.pollInterval))
 					continue
 				} else if errors.Is(err, context.Canceled) {
 					return
 				}
 				s.log.Errorw("failed to fetch from source", "error", err)
-				reusedTimer.Reset(s.pollInterval)
+				reusedTimer.Reset(timeutil.JitterPct(pollerJitter).Apply(s.pollInterval))
 				continue
 			}
 			select {
@@ -85,7 +89,7 @@ func (s *sourcePoller) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			}
-			reusedTimer.Reset(s.pollInterval)
+			reusedTimer.Reset(timeutil.JitterPct(pollerJitter).Apply(s.pollInterval))
 		case <-ctx.Done():
 			if !reusedTimer.Stop() {
 				<-reusedTimer.C

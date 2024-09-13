@@ -17,3 +17,14 @@ type ExecutePluginCodec interface {
 type MessageHasher interface {
 	Hash(context.Context, Message) (Bytes32, error)
 }
+
+type RMNCrypto interface {
+	// VerifyReportSignatures verifies each provided signature against the provided report and the signer addresses.
+	// If any signature is invalid (no matching signer address is found), an error is returned immediately.
+	VerifyReportSignatures(
+		ctx context.Context,
+		sigs []ECDSASignature,
+		report RMNReport,
+		signerAddresses [][]byte,
+	) error
+}

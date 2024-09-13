@@ -157,6 +157,34 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
+func (c *Client) GetLatestValueWithDefaultType(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (any, error) {
+	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
+	if err != nil {
+		return nil, err
+	}
+
+	pbConfidence, err := confidenceToProto(confidenceLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := c.grpc.GetLatestValueWithDefaultType(
+		ctx,
+		&pb.GetLatestValueWithDefaultTypeRequest{
+			ReadIdentifier: readIdentifier,
+			Confidence:     pbConfidence,
+			Params:         versionedParams,
+		},
+	)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	fmt.Printf("reply: %v\n", reply)
+
+	return nil, nil
+}
+
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	pbRequest, err := convertBatchGetLatestValuesRequestToProto(request, c.encodeWith)
 	if err != nil {
@@ -287,6 +315,10 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	}
 
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
+}
+
+func (c *Server) GetLatestValueWithDefaultType(ctx context.Context, request *pb.GetLatestValueWithDefaultTypeRequest) (*pb.GetLatestValueWithDefaultTypeReply, error) {
+	return nil, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {

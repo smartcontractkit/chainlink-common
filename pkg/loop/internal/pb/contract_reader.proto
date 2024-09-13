@@ -9,6 +9,7 @@ import "google/protobuf/empty.proto";
 
 service ContractReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc GetLatestValueWithDefaultType (GetLatestValueWithDefaultTypeRequest) returns (GetLatestValueWithDefaultTypeReply) {}
   rpc BatchGetLatestValues (BatchGetLatestValuesRequest) returns (BatchGetLatestValuesReply) {}
   rpc QueryKey(QueryKeyRequest) returns (QueryKeyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
@@ -17,6 +18,13 @@ service ContractReader {
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueRequest {
+  string read_identifier = 1;
+  Confidence confidence = 2;
+  VersionedBytes params = 3;
+}
+
+// GetLatestValueWithDefaultTypeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValueWithDefaultType].
+message GetLatestValueWithDefaultTypeRequest {
   string read_identifier = 1;
   Confidence confidence = 2;
   VersionedBytes params = 3;
@@ -46,6 +54,11 @@ message UnbindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
+  VersionedBytes ret_val = 1;
+}
+
+// GetLatestValueWithDefaultTypeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
+message GetLatestValueWithDefaultTypeReply {
   VersionedBytes ret_val = 1;
 }
 

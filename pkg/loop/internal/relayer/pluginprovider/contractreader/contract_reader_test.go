@@ -432,6 +432,10 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 	}
 }
 
+func (f *fakeContractReader) GetLatestValueWithDefaultType(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (any, error) {
+	return nil, nil
+}
+
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
 	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
 		r := returnVal.(*uint64)
@@ -622,6 +626,10 @@ func (e *errContractReader) GetLatestValue(_ context.Context, _ string, _ primit
 	return e.err
 }
 
+func (e *errContractReader) GetLatestValueWithDefaultType(_ context.Context, _ string, _ primitives.ConfidenceLevel, _ any) (any, error) {
+	return nil, e.err
+}
+
 func (e *errContractReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	return nil, e.err
 }
@@ -656,6 +664,10 @@ func (pc *protoConversionTestContractReader) HealthReport() map[string]error { p
 
 func (pc *protoConversionTestContractReader) GetLatestValue(_ context.Context, _ string, _ primitives.ConfidenceLevel, _, _ any) error {
 	return nil
+}
+
+func (pc *protoConversionTestContractReader) GetLatestValueWithDefaultType(_ context.Context, _ string, _ primitives.ConfidenceLevel, _ any) (any, error) {
+	return nil, nil
 }
 
 func (pc *protoConversionTestContractReader) BatchGetLatestValues(_ context.Context, _ types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {

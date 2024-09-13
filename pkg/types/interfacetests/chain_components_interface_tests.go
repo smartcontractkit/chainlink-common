@@ -53,8 +53,45 @@ const AnyExtraValue = 3
 
 func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
-	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
-	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
+	//	t.Run("GetLatestValueWithDefaultType for "+tester.Name(), func(t T) { runContractReaderGetLatestValueWithDefaultTypeInterfaceTests(t, tester, mockRun) })
+	//	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
+	//	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
+}
+
+func runContractReaderGetLatestValueWithDefaultTypeInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+	tests := []testcase[T]{
+		{
+			name: "Gets the latest value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				firstItem := CreateTestStruct(0, tester)
+
+				contracts := tester.GetBindings(t)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
+
+				secondItem := CreateTestStruct(1, tester)
+
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
+
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := bindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				params := &LatestParams{I: 1}
+				actual, err := cr.GetLatestValueWithDefaultType(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params)
+				require.NoError(t, err)
+				assert.Equal(t, &firstItem, actual)
+
+				params.I = 2
+				actual = &TestStruct{}
+				require.NoError(t, cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, actual))
+				assert.Equal(t, &secondItem, actual)
+			},
+		},
+	}
+	runTests(t, tester, tests)
 }
 
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {

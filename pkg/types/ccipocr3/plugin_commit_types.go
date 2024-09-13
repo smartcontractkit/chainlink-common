@@ -22,15 +22,6 @@ type CommitPluginReport struct {
 	RMNSignatures []RMNECDSASignature `json:"rmnSignatures"`
 }
 
-// Deprecated: don't use this constructor, just create a CommitPluginReport struct directly.
-// Will be removed in a future version once all uses have been replaced.
-func NewCommitPluginReport(merkleRoots []MerkleRootChain, tokenPriceUpdates []TokenPrice, gasPriceUpdate []GasPriceChain) CommitPluginReport {
-	return CommitPluginReport{
-		MerkleRoots:  merkleRoots,
-		PriceUpdates: PriceUpdates{TokenPriceUpdates: tokenPriceUpdates, GasPriceUpdates: gasPriceUpdate},
-	}
-}
-
 // IsEmpty returns true if the CommitPluginReport is empty
 func (r CommitPluginReport) IsEmpty() bool {
 	return len(r.MerkleRoots) == 0 &&

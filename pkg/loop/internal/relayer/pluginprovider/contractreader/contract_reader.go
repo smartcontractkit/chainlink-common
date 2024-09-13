@@ -157,7 +157,7 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *Client) GetLatestValueWithDefaultType(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (any, error) {
+func (c *Client) GetLatestValueAsJSON(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) ([]byte, error) {
 	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return nil, err
@@ -168,9 +168,9 @@ func (c *Client) GetLatestValueWithDefaultType(ctx context.Context, readIdentifi
 		return nil, err
 	}
 
-	reply, err := c.grpc.GetLatestValueWithDefaultType(
+	reply, err := c.grpc.GetLatestValueAsJSON(
 		ctx,
-		&pb.GetLatestValueWithDefaultTypeRequest{
+		&pb.GetLatestValueAsJSONRequest{
 			ReadIdentifier: readIdentifier,
 			Confidence:     pbConfidence,
 			Params:         versionedParams,
@@ -180,9 +180,7 @@ func (c *Client) GetLatestValueWithDefaultType(ctx context.Context, readIdentifi
 		return nil, net.WrapRPCErr(err)
 	}
 
-	fmt.Printf("reply: %v\n", reply)
-
-	return nil, nil
+	return reply.Json, nil
 }
 
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -318,7 +316,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }
 
-func (c *Server) GetLatestValueWithDefaultType(ctx context.Context, request *pb.GetLatestValueWithDefaultTypeRequest) (*pb.GetLatestValueWithDefaultTypeReply, error) {
+func (c *Server) GetLatestValueAsJSON(ctx context.Context, request *pb.GetLatestValueAsJSONRequest) (*pb.GetLatestValueAsJSONReply, error) {
 	params, err := getContractEncodedType(request.ReadIdentifier, c.impl, true)
 	if err != nil {
 		return nil, err
@@ -328,27 +326,17 @@ func (c *Server) GetLatestValueWithDefaultType(ctx context.Context, request *pb.
 		return nil, err
 	}
 
-	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
-	if err != nil {
-		return nil, err
-	}
-
 	confidenceLevel, err := confidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
 
-	retVal, err = c.impl.GetLatestValueWithDefaultType(ctx, request.ReadIdentifier, confidenceLevel, params)
+	valAsJson, err := c.impl.GetLatestValueAsJSON(ctx, request.ReadIdentifier, confidenceLevel, params)
 	if err != nil {
 		return nil, err
 	}
 
-	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.GetLatestValueWithDefaultTypeReply{RetVal: encodedRetVal}, nil
+	return &pb.GetLatestValueAsJSONReply{Json: valAsJson}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {

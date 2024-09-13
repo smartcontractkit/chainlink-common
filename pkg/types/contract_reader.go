@@ -46,7 +46,7 @@ type ContractReader interface {
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
 	// GetLatestValueAsJSON returns the latest value as JSON
-	GetLatestValueAsJSON(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (any, error)
+	GetLatestValueAsJSON(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) ([]byte, error)
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.

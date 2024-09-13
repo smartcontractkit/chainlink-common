@@ -25,6 +25,6 @@ type RMNCrypto interface {
 		ctx context.Context,
 		sigs []RMNECDSASignature,
 		report RMNReport,
-		signerAddresses [][]byte,
+		signerAddresses []Bytes,
 	) error
 }

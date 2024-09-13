@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726244439078,
+  "lastUpdate": 1726255260525,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -966,6 +966,48 @@ window.BENCHMARK_DATA = {
             "value": 28210,
             "unit": "ns/op",
             "extra": "40132 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50029043+aalu1418@users.noreply.github.com",
+            "name": "Aaron Lu",
+            "username": "aalu1418"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44d96950c886f211a184f18da973ea9baa4f88a1",
+          "message": "monitoring: add jitter to source polling (#768)\n\n* monitoring: add jitter to source polling\r\n\r\n* use services.TickerConfig\r\n\r\n* replace deprecated method",
+          "timestamp": "2024-09-13T13:19:49-06:00",
+          "tree_id": "156a86e2a2164b6dceabdd69f3f45f4bf0551569",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/44d96950c886f211a184f18da973ea9baa4f88a1"
+        },
+        "date": 1726255259965,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.4,
+            "unit": "ns/op",
+            "extra": "2518092 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513,
+            "unit": "ns/op",
+            "extra": "2354822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28247,
+            "unit": "ns/op",
+            "extra": "42488 times\n4 procs"
           }
         ]
       }

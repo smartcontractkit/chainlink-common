@@ -1,4 +1,4 @@
-package host
+package test
 
 import (
 	_ "embed"
@@ -8,17 +8,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host"
 )
 
-//go:generate ./test/generate_wasm.sh
+//go:generate ./generate_wasm.sh
 
 var (
-	//go:embed test/cmd/testmodule.wasm
+	//go:embed cmd/testmodule.wasm
 	binary []byte
 )
 
 func Test_GetWorkflowSpec(t *testing.T) {
-	spec, err := GetWorkflowSpec(
+	spec, err := host.GetWorkflowSpec(
 		tests.Context(t),
 		binary,
 		[]byte(""),

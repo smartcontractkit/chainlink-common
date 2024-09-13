@@ -1,5 +1,6 @@
 package ccipocr3
 
+// RMNReport is the payload that is signed by the RMN nodes, transmitted and verified onchain.
 type RMNReport struct {
 	ReportVersion               string // e.g. "RMN_V1_6_ANY2EVM_REPORT".
 	DestChainID                 BigInt // If applies, a chain specific id, e.g. evm chain id otherwise empty.
@@ -10,6 +11,8 @@ type RMNReport struct {
 	LaneUpdates                 []RMNLaneUpdate
 }
 
+// RMNLaneUpdate represents an interval that has been observed by an RMN node.
+// It is part of the payload that is signed and transmitted onchain.
 type RMNLaneUpdate struct {
 	SourceChainSelector ChainSelector
 	OnRampAddress       Bytes // (for EVM should be abi-encoded)
@@ -18,6 +21,7 @@ type RMNLaneUpdate struct {
 	MerkleRoot          Bytes32
 }
 
+// // RMNECDSASignature represents the signature provided by RMN on the RMNReport structure.
 type RMNECDSASignature struct {
 	R Bytes32 `json:"r"`
 	S Bytes32 `json:"s"`

@@ -60,6 +60,8 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 }
 
 func runContractReaderGetLatestValueAsJSONTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+	// TODO MORE TESTS HERE
+
 	tests := []testcase[T]{
 		{
 			name: "Gets the latest value",

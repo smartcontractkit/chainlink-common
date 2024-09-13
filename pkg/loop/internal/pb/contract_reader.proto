@@ -5,6 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "codec.proto";
+import "values/pb/values.proto";
 import "google/protobuf/empty.proto";
 
 service ContractReader {
@@ -20,6 +21,7 @@ message GetLatestValueRequest {
   string read_identifier = 1;
   Confidence confidence = 2;
   VersionedBytes params = 3;
+  bool as_value_type = 4;
 }
 
 // BatchGetLatestValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -32,6 +34,7 @@ message QueryKeyRequest {
   BoundContract contract = 1;
   QueryKeyFilter filter = 2;
   LimitAndSort limit_and_sort = 3;
+  bool as_value_type = 4;
 }
 
 // BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Bind].
@@ -46,7 +49,10 @@ message UnbindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
-  VersionedBytes ret_val = 1;
+  oneof ret_val {
+    VersionedBytes versioned_bytes = 1;
+    values.Value value = 2;
+  }
 }
 
 // BatchGetLatestValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -96,7 +102,10 @@ message Head {
 message Sequence {
   string sequence_cursor = 1;
   Head head = 2;
-  VersionedBytes data = 3;
+  oneof data {
+    VersionedBytes versioned_bytes = 3;
+    values.Value value = 4;
+  }
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

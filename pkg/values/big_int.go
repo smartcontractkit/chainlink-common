@@ -41,6 +41,8 @@ func (b *BigInt) UnwrapTo(to any) error {
 			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = *b.Underlying
+	case *uint64:
+		*tb = b.Underlying.Uint64()
 	case *any:
 		if tb == nil {
 			return errors.New("cannot unwrap to nil pointer")

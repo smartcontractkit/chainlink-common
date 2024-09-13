@@ -25,6 +25,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint
 )
@@ -434,77 +435,203 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 }
 
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
-	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
-		r := returnVal.(*uint64)
-		for i := len(f.vals) - 1; i >= 0; i-- {
-			if f.vals[i].confidenceLevel == confidenceLevel {
-				*r = f.vals[i].val
-				return nil
+	_, isValue := returnVal.(*values.Value)
+
+	if !isValue {
+		if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
+			r := returnVal.(*uint64)
+			for i := len(f.vals) - 1; i >= 0; i-- {
+				if f.vals[i].confidenceLevel == confidenceLevel {
+					*r = f.vals[i].val
+					return nil
+				}
 			}
-		}
-		return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
-	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64) {
-		r := returnVal.(*uint64)
+			return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
+		} else if strings.HasSuffix(readIdentifier, MethodReturningUint64) {
+			r := returnVal.(*uint64)
 
-		if strings.Contains(readIdentifier, "-"+AnyContractName+"-") {
-			*r = AnyValueToReadWithoutAnArgument
-		} else {
-			*r = AnyDifferentValueToReadWithoutAnArgument
-		}
+			if strings.Contains(readIdentifier, "-"+AnyContractName+"-") {
+				*r = AnyValueToReadWithoutAnArgument
+			} else {
+				*r = AnyDifferentValueToReadWithoutAnArgument
+			}
 
-		return nil
-	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
-		r := returnVal.(*[]uint64)
-		*r = AnySliceToReadWithoutAnArgument
-		return nil
-	} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
-		pv := params.(*TestStruct)
-		rv := returnVal.(*TestStructWithExtraField)
-		rv.TestStruct = *pv
-		rv.ExtraField = AnyExtraValue
-		rv.Account = anyAccountBytes
-		rv.BigField = big.NewInt(2)
-		return nil
-	} else if strings.HasSuffix(readIdentifier, EventName) {
-		f.lock.Lock()
-		defer f.lock.Unlock()
+			return nil
+		} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
+			r := returnVal.(*[]uint64)
+			*r = AnySliceToReadWithoutAnArgument
+			return nil
+		} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
+			pv := params.(*TestStruct)
+			rv := returnVal.(*TestStructWithExtraField)
+			rv.TestStruct = *pv
+			rv.ExtraField = AnyExtraValue
+			rv.Account = anyAccountBytes
+			rv.BigField = big.NewInt(2)
+			return nil
+		} else if strings.HasSuffix(readIdentifier, EventName) {
+			f.lock.Lock()
+			defer f.lock.Unlock()
 
-		if len(f.triggers) == 0 {
+			if len(f.triggers) == 0 {
+				return types.ErrNotFound
+			}
+
+			for i := len(f.triggers) - 1; i >= 0; i-- {
+				if f.triggers[i].confidenceLevel == confidenceLevel {
+					*returnVal.(*TestStruct) = f.triggers[i].testStruct
+					return nil
+				}
+			}
+
+			return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
+		} else if strings.HasSuffix(readIdentifier, EventWithFilterName) {
+			f.lock.Lock()
+			defer f.lock.Unlock()
+			param := params.(*FilterEventParams)
+			for i := len(f.triggers) - 1; i >= 0; i-- {
+				if *f.triggers[i].testStruct.Field == param.Field {
+					*returnVal.(*TestStruct) = f.triggers[i].testStruct
+					return nil
+				}
+			}
 			return types.ErrNotFound
+		} else if !strings.HasSuffix(readIdentifier, MethodTakingLatestParamsReturningTestStruct) {
+			return errors.New("unknown method " + readIdentifier)
 		}
 
-		for i := len(f.triggers) - 1; i >= 0; i-- {
-			if f.triggers[i].confidenceLevel == confidenceLevel {
-				*returnVal.(*TestStruct) = f.triggers[i].testStruct
-				return nil
-			}
-		}
-
-		return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
-	} else if strings.HasSuffix(readIdentifier, EventWithFilterName) {
 		f.lock.Lock()
 		defer f.lock.Unlock()
-		param := params.(*FilterEventParams)
-		for i := len(f.triggers) - 1; i >= 0; i-- {
-			if *f.triggers[i].testStruct.Field == param.Field {
-				*returnVal.(*TestStruct) = f.triggers[i].testStruct
-				return nil
+		lp := params.(*LatestParams)
+		rv := returnVal.(*TestStruct)
+		if lp.I-1 >= len(f.stored) {
+			return errors.New("latest params index out of bounds for stored test structs")
+		}
+		*rv = f.stored[lp.I-1]
+		return nil
+	} else {
+
+		ptrToVal := returnVal.(*values.Value)
+
+		if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
+			for i := len(f.vals) - 1; i >= 0; i-- {
+				if f.vals[i].confidenceLevel == confidenceLevel {
+					var err error
+					*ptrToVal, err = values.Wrap(f.vals[i].val)
+					if err != nil {
+						return err
+					}
+
+					return nil
+				}
+			}
+			return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
+		} else if strings.HasSuffix(readIdentifier, MethodReturningUint64) {
+			if strings.Contains(readIdentifier, "-"+AnyContractName+"-") {
+
+				var err error
+				*ptrToVal, err = values.Wrap(AnyValueToReadWithoutAnArgument)
+				if err != nil {
+					return err
+				}
+			} else {
+				var err error
+				*ptrToVal, err = values.Wrap(AnyDifferentValueToReadWithoutAnArgument)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
+
+			var err error
+			*ptrToVal, err = values.Wrap(AnySliceToReadWithoutAnArgument)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
+			pv := params.(*TestStruct)
+			rv := TestStructWithExtraField{}
+			rv.TestStruct = *pv
+			rv.ExtraField = AnyExtraValue
+			rv.Account = anyAccountBytes
+			rv.BigField = big.NewInt(2)
+
+			var err error
+			*ptrToVal, err = values.Wrap(rv)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		} else if strings.HasSuffix(readIdentifier, EventName) {
+			f.lock.Lock()
+			defer f.lock.Unlock()
+
+			if len(f.triggers) == 0 {
+				return types.ErrNotFound
+			}
+
+			for i := len(f.triggers) - 1; i >= 0; i-- {
+				if f.triggers[i].confidenceLevel == confidenceLevel {
+					var err error
+					*ptrToVal, err = values.Wrap(f.triggers[i].testStruct)
+					if err != nil {
+						return err
+					}
+
+					return nil
+				}
+			}
+
+			return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
+		} else if strings.HasSuffix(readIdentifier, EventWithFilterName) {
+			f.lock.Lock()
+			defer f.lock.Unlock()
+			param := params.(*FilterEventParams)
+			for i := len(f.triggers) - 1; i >= 0; i-- {
+				if *f.triggers[i].testStruct.Field == param.Field {
+
+					var err error
+					*ptrToVal, err = values.Wrap(f.triggers[i].testStruct)
+					if err != nil {
+						return err
+					}
+					return nil
+				}
+			}
+			return types.ErrNotFound
+		} else if !strings.HasSuffix(readIdentifier, MethodTakingLatestParamsReturningTestStruct) {
+			return errors.New("unknown method " + readIdentifier)
+		}
+
+		f.lock.Lock()
+		defer f.lock.Unlock()
+		lp := params.(*LatestParams)
+
+		switch returnVal.(type) {
+		case *TestStruct:
+			rv := returnVal.(*TestStruct)
+			if lp.I-1 >= len(f.stored) {
+				return errors.New("latest params index out of bounds for stored test structs")
+			}
+			*rv = f.stored[lp.I-1]
+		case *values.Value:
+			if lp.I-1 >= len(f.stored) {
+				return errors.New("latest params index out of bounds for stored test structs")
+			}
+			var err error
+			*ptrToVal, err = values.Wrap(f.stored[lp.I-1])
+			if err != nil {
+				return err
 			}
 		}
-		return types.ErrNotFound
-	} else if !strings.HasSuffix(readIdentifier, MethodTakingLatestParamsReturningTestStruct) {
-		return errors.New("unknown method " + readIdentifier)
-	}
 
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	lp := params.(*LatestParams)
-	rv := returnVal.(*TestStruct)
-	if lp.I-1 >= len(f.stored) {
-		return errors.New("latest params index out of bounds for stored test structs")
+		return nil
 	}
-	*rv = f.stored[lp.I-1]
-	return nil
 }
 
 func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -560,7 +687,9 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 	return result, nil
 }
 
-func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceType any) ([]types.Sequence, error) {
+	_, isValueType := sequenceType.(*values.Value)
+
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -584,17 +713,53 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 				}
 			}
 			if len(filter.Expressions) == 0 || doAppend {
-				sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
+
+				if isValueType {
+					value, err := values.Wrap(trigger.testStruct)
+					if err != nil {
+						return nil, err
+					}
+					sequences = append(sequences, types.Sequence{Data: value})
+				} else {
+					sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
+				}
 			}
 		}
 
-		if !limitAndSort.HasSequenceSort() {
-			sort.Slice(sequences, func(i, j int) bool {
-				if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
-					return false
-				}
-				return *sequences[i].Data.(TestStruct).Field > *sequences[j].Data.(TestStruct).Field
-			})
+		if isValueType {
+			if !limitAndSort.HasSequenceSort() {
+				sort.Slice(sequences, func(i, j int) bool {
+					mapI := sequences[i].Data.(*values.Map)
+					mapJ := sequences[j].Data.(*values.Map)
+
+					if mapI.Underlying["Field"] == nil || mapJ.Underlying["Field"] == nil {
+						return false
+					}
+					var iVal int32
+					err := mapI.Underlying["Field"].UnwrapTo(&iVal)
+					if err != nil {
+						panic(err)
+					}
+
+					var jVal int32
+					err = mapJ.Underlying["Field"].UnwrapTo(&jVal)
+					if err != nil {
+						panic(err)
+					}
+
+					return iVal > jVal
+				})
+			}
+
+		} else {
+			if !limitAndSort.HasSequenceSort() {
+				sort.Slice(sequences, func(i, j int) bool {
+					if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
+						return false
+					}
+					return *sequences[i].Data.(TestStruct).Field > *sequences[j].Data.(TestStruct).Field
+				})
+			}
 		}
 
 		return sequences, nil

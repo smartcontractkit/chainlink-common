@@ -23,7 +23,7 @@ type RMNCrypto interface {
 	// If any signature is invalid (no matching signer address is found), an error is returned immediately.
 	VerifyReportSignatures(
 		ctx context.Context,
-		sigs []ECDSASignature,
+		sigs []RMNECDSASignature,
 		report RMNReport,
 		signerAddresses [][]byte,
 	) error

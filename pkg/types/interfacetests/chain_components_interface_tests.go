@@ -1,6 +1,7 @@
 package interfacetests
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -52,13 +53,13 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 const AnyExtraValue = 3
 
 func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
-	//	t.Run("GetLatestValueWithDefaultType for "+tester.Name(), func(t T) { runContractReaderGetLatestValueWithDefaultTypeInterfaceTests(t, tester, mockRun) })
+	//t.Run("GetLatestValue for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
+	t.Run("GetLatestValueAsJSON for "+tester.Name(), func(t T) { runContractReaderGetLatestValueAsJSONTests(t, tester, mockRun) })
 	//	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
 	//	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
 }
 
-func runContractReaderGetLatestValueWithDefaultTypeInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+func runContractReaderGetLatestValueAsJSONTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	tests := []testcase[T]{
 		{
 			name: "Gets the latest value",
@@ -80,14 +81,23 @@ func runContractReaderGetLatestValueWithDefaultTypeInterfaceTests[T TestingT[T]]
 				require.NoError(t, cr.Bind(ctx, bindings))
 
 				params := &LatestParams{I: 1}
-				actual, err := cr.GetLatestValueWithDefaultType(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params)
+				jsonBytes, err := cr.GetLatestValueAsJSON(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params)
 				require.NoError(t, err)
-				assert.Equal(t, &firstItem, actual)
+				jsonActual := JSONCompatibleTestStruct{}
+				err = json.Unmarshal(jsonBytes, &jsonActual)
+				require.NoError(t, err)
+				actual, err := jsonActual.ToTestStruct()
+				require.NoError(t, err)
+				assert.Equal(t, &firstItem, &actual)
 
 				params.I = 2
-				actual = &TestStruct{}
-				require.NoError(t, cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, actual))
-				assert.Equal(t, &secondItem, actual)
+				jsonBytes, err = cr.GetLatestValueAsJSON(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params)
+				jsonActual = JSONCompatibleTestStruct{}
+				err = json.Unmarshal(jsonBytes, &jsonActual)
+				require.NoError(t, err)
+				actual, err = jsonActual.ToTestStruct()
+				require.NoError(t, err)
+				assert.Equal(t, &secondItem, &actual)
 			},
 		},
 	}

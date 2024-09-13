@@ -2,13 +2,16 @@ package interfacetests
 
 import (
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -139,6 +142,64 @@ type InnerTestStruct struct {
 type MidLevelTestStruct struct {
 	FixedBytes [2]byte
 	Inner      InnerTestStruct
+}
+
+type BigInt struct {
+	*big.Int
+}
+
+// UnmarshalJSON unmarshals the JSON string and sets it to the big.Int
+func (b *BigInt) UnmarshalJSON(data []byte) error {
+	var s *string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	if s == nil {
+		b.Int = nil
+		return nil
+	}
+	b.Int = new(big.Int)
+	b.SetString(*s, 10)
+	return nil
+}
+
+type JSONCompatibleTestStruct struct {
+	Field          *int32
+	DifferentField string
+	OracleID       commontypes.OracleID
+	OracleIDs      [32]commontypes.OracleID
+	Account        string
+	Accounts       []string
+	BigField       BigInt
+	NestedStruct   MidLevelTestStruct
+}
+
+func (j JSONCompatibleTestStruct) ToTestStruct() (TestStruct, error) {
+
+	account, err := hex.DecodeString(j.Account[2:])
+	if err != nil {
+		return TestStruct{}, err
+	}
+
+	var accounts [][]byte
+	for _, acc := range j.Accounts {
+		byteAcc, err := hex.DecodeString(acc[2:])
+		if err != nil {
+			return TestStruct{}, err
+		}
+		accounts = append(accounts, byteAcc)
+	}
+
+	return TestStruct{
+		Field:          j.Field,
+		DifferentField: j.DifferentField,
+		OracleID:       j.OracleID,
+		OracleIDs:      j.OracleIDs,
+		Account:        account,
+		Accounts:       accounts,
+		BigField:       j.BigField.Int,
+		NestedStruct:   j.NestedStruct,
+	}, nil
 }
 
 type TestStruct struct {

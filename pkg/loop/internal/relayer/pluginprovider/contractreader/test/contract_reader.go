@@ -83,8 +83,7 @@ func (c staticContractReader) GetLatestValue(_ context.Context, readName string,
 	return nil
 }
 
-func (c staticContractReader) GetLatestValueWithDefaultType(_ context.Context, readName string, _ primitives.ConfidenceLevel, params any) (any, error) {
-	// TODO
+func (c staticContractReader) GetLatestValueAsJSON(_ context.Context, readName string, _ primitives.ConfidenceLevel, params any) ([]byte, error) {
 	return nil, nil
 }
 

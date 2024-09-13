@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726131250937,
+  "lastUpdate": 1726221929536,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -882,6 +882,48 @@ window.BENCHMARK_DATA = {
             "value": 28245,
             "unit": "ns/op",
             "extra": "42501 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dimitrios.kouveris@smartcontract.com",
+            "name": "dimitris",
+            "username": "dimkouv"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aa383c8c46947660775549c480c937bf3e387bde",
+          "message": "ccip - Add RMNCrypto interface + Remove unused constructor (#766)\n\n* add RMNCrypto interface\r\n\r\n* re-use ecdsa sigs struct\r\n\r\n* use Bytes\r\n\r\n* add comments\r\n\r\n* rm unused constructor",
+          "timestamp": "2024-09-13T14:04:29+04:00",
+          "tree_id": "d000ac369f7044db965cbeb7e183c26149159791",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/aa383c8c46947660775549c480c937bf3e387bde"
+        },
+        "date": 1726221928950,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458.6,
+            "unit": "ns/op",
+            "extra": "2602830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 525.3,
+            "unit": "ns/op",
+            "extra": "2326138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28250,
+            "unit": "ns/op",
+            "extra": "42456 times\n4 procs"
           }
         ]
       }

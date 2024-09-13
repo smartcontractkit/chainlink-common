@@ -60,6 +60,8 @@ type ContractReader interface {
 
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+
+	mustEmbedUnimplementedContractReaderServer()
 }
 
 // BatchGetLatestValuesRequest string is contract name.
@@ -118,3 +120,49 @@ func (bc BoundContract) ReadIdentifier(readName string) string {
 func (bc BoundContract) String() string {
 	return bc.Address + "-" + bc.Name
 }
+
+type UnimplementedContractReader struct{}
+
+var _ ContractReader = UnimplementedContractReader{}
+
+func (UnimplementedContractReader) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	return UnimplementedError("ContractReader.GetLatestValue unimplemented")
+}
+
+func (UnimplementedContractReader) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error) {
+	return nil, UnimplementedError("ContractReader.BatchGetLatestValues unimplemented")
+}
+
+func (UnimplementedContractReader) Bind(ctx context.Context, bindings []BoundContract) error {
+	return UnimplementedError("ContractReader.Bind unimplemented")
+}
+
+func (UnimplementedContractReader) Unbind(ctx context.Context, bindings []BoundContract) error {
+	return UnimplementedError("ContractReader.Unbind unimplemented")
+}
+
+func (UnimplementedContractReader) QueryKey(ctx context.Context, boundContract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error) {
+	return nil, UnimplementedError("ContractReader.QueryKey unimplemented")
+}
+
+func (UnimplementedContractReader) Start(context.Context) error {
+	return UnimplementedError("ContractReader.Start unimplemented")
+}
+
+func (UnimplementedContractReader) Close() error {
+	return UnimplementedError("ContractReader.Close unimplemented")
+}
+
+func (UnimplementedContractReader) HealthReport() map[string]error {
+	panic(UnimplementedError("ContractReader.HealthReport unimplemented"))
+}
+
+func (UnimplementedContractReader) Name() string {
+	panic(UnimplementedError("ContractReader.Name unimplemented"))
+}
+
+func (UnimplementedContractReader) Ready() error {
+	return UnimplementedError("ContractReader.Ready unimplemented")
+}
+
+func (UnimplementedContractReader) mustEmbedUnimplementedContractReaderServer() {}

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/timeutil"
 )
 
 // Poller implements Updater by periodically invoking a Source's Fetch() method.
@@ -67,7 +67,7 @@ func (s *sourcePoller) Run(ctx context.Context) {
 	}
 
 	ticker := services.TickerConfig{
-		Initial:   utils.WithJitter(s.pollInterval),
+		Initial:   timeutil.JitterPct(0.1).Apply(s.pollInterval),
 		JitterPct: 0.2,
 	}.NewTicker(s.pollInterval)
 	defer ticker.Stop()

@@ -45,8 +45,8 @@ type ContractReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
-	// GetLatestValueWithDefaultType infers a default type for the return value.
-	GetLatestValueWithDefaultType(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (any, error)
+	// GetLatestValueAsJSON returns the latest value as JSON
+	GetLatestValueAsJSON(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (any, error)
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.

@@ -294,6 +294,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
+	// here want to check this
 	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
 	if err != nil {
 		return nil, err
@@ -318,7 +319,36 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 }
 
 func (c *Server) GetLatestValueWithDefaultType(ctx context.Context, request *pb.GetLatestValueWithDefaultTypeRequest) (*pb.GetLatestValueWithDefaultTypeReply, error) {
-	return nil, nil
+	params, err := getContractEncodedType(request.ReadIdentifier, c.impl, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = DecodeVersionedBytes(params, request.Params); err != nil {
+		return nil, err
+	}
+
+	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
+	if err != nil {
+		return nil, err
+	}
+
+	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	if err != nil {
+		return nil, err
+	}
+
+	retVal, err = c.impl.GetLatestValueWithDefaultType(ctx, request.ReadIdentifier, confidenceLevel, params)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetLatestValueWithDefaultTypeReply{RetVal: encodedRetVal}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {

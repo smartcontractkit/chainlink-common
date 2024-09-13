@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726221929536,
+  "lastUpdate": 1726244439078,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -924,6 +924,48 @@ window.BENCHMARK_DATA = {
             "value": 28250,
             "unit": "ns/op",
             "extra": "42456 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ce5d667907ce901f088b1ac04fb06ea6295b8c9f",
+          "message": "embeddable implementation of contract reader (#680)\n\n* embeddable implementation of contract reader that returns unimplemented errors\r\n\r\n* update with latest reader changes\r\n\r\n* added must embed to interface to enforce implementation\r\n\r\n* apply unimplemented to existing contract readers",
+          "timestamp": "2024-09-13T11:19:26-05:00",
+          "tree_id": "4046687768b599b6a242cfb243c34653b1aaa339",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ce5d667907ce901f088b1ac04fb06ea6295b8c9f"
+        },
+        "date": 1726244438042,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.7,
+            "unit": "ns/op",
+            "extra": "2595174 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.1,
+            "unit": "ns/op",
+            "extra": "2312088 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28210,
+            "unit": "ns/op",
+            "extra": "40132 times\n4 procs"
           }
         ]
       }

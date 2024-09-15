@@ -126,7 +126,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 
 type interfaceTesterBase struct{}
 
-func (*interfaceTesterBase) Setup(_ *testing.T) {}
+func (*interfaceTesterBase) Setup(_ *testing.T, _ bool) {}
 
 func (*interfaceTesterBase) GetAccountBytes(i int) []byte {
 	ib := byte(i)

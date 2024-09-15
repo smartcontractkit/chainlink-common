@@ -16,3 +16,5 @@ go1.22.7 download
 GOOS=wasip1 GOARCH=wasm \
 go1.22.7 build -trimpath -ldflags="-X 'main.buildTime=00000000' -X 'main.version=1.0.0' -w -s -buildid=" -tags "wasip1" -gcflags=all= -mod=readonly -a -p=1\
     -o testmodule.wasm github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/test/cmd
+
+shasum testmodule.wasm

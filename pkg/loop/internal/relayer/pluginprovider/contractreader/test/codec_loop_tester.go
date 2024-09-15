@@ -21,8 +21,8 @@ type codecReaderLoopTester struct {
 	lst loopServerTester
 }
 
-func (c *codecReaderLoopTester) Setup(t *testing.T) {
-	c.CodecInterfaceTester.Setup(t)
+func (c *codecReaderLoopTester) Setup(t *testing.T, _ bool) {
+	c.CodecInterfaceTester.Setup(t, false)
 	codec := c.CodecInterfaceTester.GetCodec(t)
 	c.lst.registerHook = func(server *grpc.Server) {
 		if codec != nil {

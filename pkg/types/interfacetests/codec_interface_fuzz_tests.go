@@ -18,7 +18,7 @@ func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester) {
 		// Cannot run more than one test or it hangs (currently a limit of fuzz testing), instead, just call it fuzz codec and do it all at once.
 		t.Run("Fuzz codec", func(t *testing.T) {
 			// Encode decode gets the same result
-			tester.Setup(t)
+			tester.Setup(t, false)
 			oids := [32]commontypes.OracleID{}
 			for index, id := range oracleIds {
 				if index == len(oids) {

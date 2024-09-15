@@ -100,7 +100,7 @@ func TestBind(t *testing.T) {
 				contractreadertest.WithContractReaderLoopEncoding(version),
 			)
 
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			for _, errorType := range errorTypes {
@@ -134,7 +134,7 @@ func TestGetLatestValue(t *testing.T) {
 				contractreadertest.WithContractReaderLoopEncoding(version),
 			)
 
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
@@ -143,7 +143,7 @@ func TestGetLatestValue(t *testing.T) {
 				ctx := tests.Context(t)
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
+				nilTester.Setup(t, false)
 				nilCr := nilTester.GetContractReader(t)
 
 				err := nilCr.GetLatestValue(ctx, "method", primitives.Unconfirmed, "anything", "anything")
@@ -183,7 +183,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 				contractreadertest.WithContractReaderLoopEncoding(version),
 			)
 
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
@@ -192,7 +192,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 				ctx := tests.Context(t)
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
+				nilTester.Setup(t, false)
 				nilCr := nilTester.GetContractReader(t)
 
 				_, err := nilCr.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
@@ -236,19 +236,19 @@ func TestQueryKey(t *testing.T) {
 
 			impl := &protoConversionTestContractReader{}
 			crTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: impl}, contractreadertest.WithContractReaderLoopEncoding(version))
-			crTester.Setup(t)
+			crTester.Setup(t, true)
 			cr := crTester.GetContractReader(t)
 
 			es := &errContractReader{}
 			errTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: es})
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
 				ctx := tests.Context(t)
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
+				nilTester.Setup(t, false)
 				nilCr := nilTester.GetContractReader(t)
 
 				_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
@@ -292,12 +292,16 @@ type fakeContractReaderInterfaceTester struct {
 	cw   fakeChainWriter
 }
 
-func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
+func (it *fakeContractReaderInterfaceTester) Setup(t *testing.T, started bool) {
 	fake, ok := it.impl.(*fakeContractReader)
 	if ok {
 		fake.vals = []valConfidencePair{}
 		fake.triggers = []eventConfidencePair{}
 		fake.stored = []TestStruct{}
+		if started {
+			require.NoError(t, it.impl.Start(context.Background()))
+			t.Cleanup(func() { require.NoError(t, it.impl.Close()) })
+		}
 	}
 }
 
@@ -311,18 +315,6 @@ func (it *fakeContractReaderInterfaceTester) GetChainWriter(_ *testing.T) types.
 }
 
 func (it *fakeContractReaderInterfaceTester) DirtyContracts() {}
-
-func (it *fakeContractReaderInterfaceTester) StartContractReader(t *testing.T) {
-	fake, ok := it.impl.(*fakeContractReader)
-	assert.True(t, ok)
-	require.NoError(t, fake.Start(context.Background()))
-}
-
-func (it *fakeContractReaderInterfaceTester) CloseContractReader(t *testing.T) {
-	fake, ok := it.impl.(*fakeContractReader)
-	assert.True(t, ok)
-	require.NoError(t, fake.Close())
-}
 
 func (it *fakeContractReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{

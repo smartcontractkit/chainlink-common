@@ -16,14 +16,15 @@ import (
 )
 
 type BasicTester[T any] interface {
-	Setup(t T)
+	Setup(t T, startCR bool)
 	Name() string
 	GetAccountBytes(i int) []byte
 }
 
 type testcase[T any] struct {
-	name string
-	test func(t T)
+	name    string
+	test    func(t T)
+	startCR bool
 }
 
 type TestingT[T any] interface {
@@ -35,7 +36,7 @@ type TestingT[T any] interface {
 func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
 	for _, test := range tests {
 		t.Run(test.name+" for "+tester.Name(), func(t T) {
-			tester.Setup(t)
+			tester.Setup(t, test.startCR)
 			test.test(t)
 		})
 	}

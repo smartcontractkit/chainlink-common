@@ -14,7 +14,7 @@ import (
 //go:generate ./test/generate_wasm.sh
 
 func Test_GetWorkflowSpec(t *testing.T) {
-	binary, err := os.ReadFile("test/cmd/testmodule.wasm")
+	binary, err := os.ReadFile("testmodule.wasm")
 	require.NoError(t, err)
 
 	spec, err := GetWorkflowSpec(

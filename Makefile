@@ -35,10 +35,10 @@ rm-builders:
 .PHONY: generate
 generate: mockery install-protoc gomods
 	gomods -w go generate -x ./...
+	mockery
 	# TL;DR this is needed for reproducible builds of the test WASM
 	# See pkg/workflows/wasm/host/test/generate_wasm.sh for more details
 	go generate github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/
-	mockery
 
 .PHONY: lint-workspace lint
 GOLANGCI_LINT_VERSION := 1.60.1

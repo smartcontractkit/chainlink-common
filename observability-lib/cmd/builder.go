@@ -3,6 +3,8 @@ package cmd
 import (
 	"errors"
 
+	"github.com/smartcontractkit/chainlink-common/observability-lib/capabilities"
+
 	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
 	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/core-node"
 	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
@@ -22,6 +24,7 @@ const (
 	TypeDashboardDONOCR3            TypeDashboard = "don-ocr3"
 	TypeDashboardNOPOCR2            TypeDashboard = "nop-ocr2"
 	TypeDashboardNOPOCR3            TypeDashboard = "nop-ocr3"
+	TypeDashboardCapabilities       TypeDashboard = "capabilities"
 )
 
 type OCRVersion string
@@ -101,6 +104,11 @@ func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
 			Name:              options.Name,
 			MetricsDataSource: options.MetricsDataSource,
 			OCRVersion:        string(OCRVersionOCR3),
+		})
+	case TypeDashboardCapabilities:
+		return capabilities.NewDashboard(&capabilities.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
 		})
 	default:
 		return nil, errors.New("invalid dashboard type")

@@ -34,13 +34,8 @@ rm-builders:
 
 .PHONY: generate
 generate: mockery install-protoc gomods
-	# TL;DR do not reorder for reproducible builds of the test WASM
-	# Otherwise, the file changes if you do rm-builders or rm-mocked first.
-	# This order assures that regardless of if rm-builders or rm-mocked was run,
-	# the test wasm file will be generated correctly with the same hash.
-	mockery
 	gomods -w go generate -x ./...
-	go generate pkg/workflows/wasm/host/wasm_test.go
+	mockery
 
 .PHONY: lint-workspace lint
 GOLANGCI_LINT_VERSION := 1.60.1

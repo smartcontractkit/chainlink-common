@@ -76,4 +76,6 @@ jobs:
           make rm-mocked
           make rm-builders
           make generate
-          git diff --stat --exit-code
+          # The wasm build includes the hash of the latest git commit.
+          # Builds are consistent, until you commit and that hash changes.
+          git diff --stat --exit-code -- . ':!pkg/workflows/wasm/host/test/cmd/testmodule.wasm'

@@ -59,6 +59,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+require github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/test/cmd v0.0.0-00010101000000-000000000000 // indirect
+
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

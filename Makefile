@@ -37,8 +37,8 @@ generate: mockery install-protoc gomods
 	gomods -w go generate -x ./...
 	mockery
 	# TL;DR this needs to be last for reproducible builds of the test WASM
-	# Otherwise, some files from mockery may not be created yet.
-	go generate github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/
+	# Otherwise, some files from mockery or other generators may not be created yet.
+	go generate pkg/workflows/wasm/host/wasm_test.go
 
 .PHONY: lint-workspace lint
 GOLANGCI_LINT_VERSION := 1.60.1

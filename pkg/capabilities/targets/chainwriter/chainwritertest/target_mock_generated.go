@@ -6,7 +6,7 @@ package chainwritertest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 
 // Target registers a new capability mock with the runner

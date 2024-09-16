@@ -4,12 +4,12 @@ package basictarget
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory, input TargetInput) {
+func (cfg TargetConfig) New(w *sdk.WorkflowSpecFactory, input TargetInput) {
 
-	def := workflows.StepDefinition{
+	def := sdk.StepDefinition{
 		ID:     "basic-test-target@1.0.0",
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -19,16 +19,16 @@ func (cfg TargetConfig) New(w *workflows.WorkflowSpecFactory, input TargetInput)
 		CapabilityType: capabilities.CapabilityTypeTarget,
 	}
 
-	step := workflows.Step[struct{}]{Definition: def}
+	step := sdk.Step[struct{}]{Definition: def}
 	step.AddTo(w)
 }
 
 type TargetInput struct {
-	CoolInput workflows.CapDefinition[string]
+	CoolInput sdk.CapDefinition[string]
 }
 
-func (input TargetInput) ToSteps() workflows.StepInputs {
-	return workflows.StepInputs{
+func (input TargetInput) ToSteps() sdk.StepInputs {
+	return sdk.StepInputs{
 		Mapping: map[string]any{
 			"cool_input": input.CoolInput.Ref(),
 		},

@@ -31,7 +31,7 @@
     "inputs": {
       "properties": {
         "signed_report": {
-          "$ref": "../../consensus/ocr3/ocr3_common-schema.json#/$defs/SignedReport"
+          "$ref": "../../consensus/ocr3/ocr3cap/ocr3cap_common-schema.json#/$defs/SignedReport"
         }
       },
       "additionalProperties": false,

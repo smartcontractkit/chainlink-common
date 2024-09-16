@@ -3,6 +3,7 @@ package host
 import (
 	_ "embed"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,10 +12,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-//go:generate ./test/generate_wasm.sh
-
 func Test_GetWorkflowSpec(t *testing.T) {
-	binary, err := os.ReadFile("test/cmd/testmodule.wasm")
+	binary, err := os.ReadFile(createTestBinary(t))
 	require.NoError(t, err)
 
 	spec, err := GetWorkflowSpec(
@@ -26,4 +25,16 @@ func Test_GetWorkflowSpec(t *testing.T) {
 
 	assert.Equal(t, spec.Name, "tester")
 	assert.Equal(t, spec.Owner, "ryan")
+}
+
+func createTestBinary(t *testing.T) string {
+	const testBinaryLocation = "test/cmd/testmodule.wasm"
+
+	cmd := exec.Command("go", "build", "-o", testBinaryLocation, "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/test/cmd")
+	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
+
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, output)
+
+	return testBinaryLocation
 }

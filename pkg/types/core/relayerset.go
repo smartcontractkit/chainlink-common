@@ -32,4 +32,5 @@ type Relayer interface {
 	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (types.PluginProvider, error)
 	NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error)
+	LatestHead(context.Context) (types.Head, error)
 }

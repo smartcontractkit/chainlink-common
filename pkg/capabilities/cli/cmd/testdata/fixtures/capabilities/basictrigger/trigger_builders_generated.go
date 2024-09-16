@@ -4,14 +4,14 @@ package basictrigger
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func (cfg TriggerConfig) New(w *sdk.WorkflowSpecFactory) TriggerOutputsCap {
+func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory) TriggerOutputsCap {
 	ref := "trigger"
-	def := sdk.StepDefinition{
+	def := workflows.StepDefinition{
 		ID: "basic-test-trigger@1.0.0", Ref: ref,
-		Inputs: sdk.StepInputs{},
+		Inputs: workflows.StepInputs{},
 		Config: map[string]any{
 			"name":   cfg.Name,
 			"number": cfg.Number,
@@ -19,35 +19,35 @@ func (cfg TriggerConfig) New(w *sdk.WorkflowSpecFactory) TriggerOutputsCap {
 		CapabilityType: capabilities.CapabilityTypeTrigger,
 	}
 
-	step := sdk.Step[TriggerOutputs]{Definition: def}
+	step := workflows.Step[TriggerOutputs]{Definition: def}
 	return TriggerOutputsCapFromStep(w, step)
 }
 
 type TriggerOutputsCap interface {
-	sdk.CapDefinition[TriggerOutputs]
-	CoolOutput() sdk.CapDefinition[string]
+	workflows.CapDefinition[TriggerOutputs]
+	CoolOutput() workflows.CapDefinition[string]
 	private()
 }
 
 // TriggerOutputsCapFromStep should only be called from generated code to assure type safety
-func TriggerOutputsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[TriggerOutputs]) TriggerOutputsCap {
+func TriggerOutputsCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[TriggerOutputs]) TriggerOutputsCap {
 	raw := step.AddTo(w)
 	return &triggerOutputs{CapDefinition: raw}
 }
 
 type triggerOutputs struct {
-	sdk.CapDefinition[TriggerOutputs]
+	workflows.CapDefinition[TriggerOutputs]
 }
 
 func (*triggerOutputs) private() {}
-func (c *triggerOutputs) CoolOutput() sdk.CapDefinition[string] {
-	return sdk.AccessField[TriggerOutputs, string](c.CapDefinition, "cool_output")
+func (c *triggerOutputs) CoolOutput() workflows.CapDefinition[string] {
+	return workflows.AccessField[TriggerOutputs, string](c.CapDefinition, "cool_output")
 }
 
 func NewTriggerOutputsFromFields(
-	coolOutput sdk.CapDefinition[string]) TriggerOutputsCap {
+	coolOutput workflows.CapDefinition[string]) TriggerOutputsCap {
 	return &simpleTriggerOutputs{
-		CapDefinition: sdk.ComponentCapDefinition[TriggerOutputs]{
+		CapDefinition: workflows.ComponentCapDefinition[TriggerOutputs]{
 			"cool_output": coolOutput.Ref(),
 		},
 		coolOutput: coolOutput,
@@ -55,11 +55,11 @@ func NewTriggerOutputsFromFields(
 }
 
 type simpleTriggerOutputs struct {
-	sdk.CapDefinition[TriggerOutputs]
-	coolOutput sdk.CapDefinition[string]
+	workflows.CapDefinition[TriggerOutputs]
+	coolOutput workflows.CapDefinition[string]
 }
 
-func (c *simpleTriggerOutputs) CoolOutput() sdk.CapDefinition[string] {
+func (c *simpleTriggerOutputs) CoolOutput() workflows.CapDefinition[string] {
 	return c.coolOutput
 }
 

@@ -76,16 +76,6 @@ message NewChainWriterResponse {
   uint32 chainWriterId = 1;
 }
 
-message LatestHeadRequest {
-  RelayerId relayerId = 1;
-}
-
-message LatestHeadResponse {
-  string height = 1;
-  bytes hash = 2;
-  uint64 timestamp = 3;
-}
-
 message RelayerHealthReportResponse {
   map<string, string> report = 1;
 }
@@ -106,7 +96,6 @@ service RelayerSet {
   rpc RelayerReady(RelayerId) returns (google.protobuf.Empty) {}
   rpc RelayerHealthReport(RelayerId) returns (RelayerHealthReportResponse) {}
   rpc RelayerName(RelayerId) returns (RelayerNameResponse) {}
-  rpc RelayerLatestHead(LatestHeadRequest) returns (LatestHeadResponse) {}
 }
 
 

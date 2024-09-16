@@ -6,7 +6,7 @@ package streamstest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
 )
 
 // Trigger registers a new capability mock with the runner

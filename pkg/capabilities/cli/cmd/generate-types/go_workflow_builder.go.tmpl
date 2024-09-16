@@ -4,7 +4,7 @@ import (
 {{- if not (.CapabilityType|IsCommon) }}
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 {{- end }}
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows"
 
     {{- range .ExtraImports }}
     {{.}}
@@ -14,12 +14,12 @@ import (
 {{ if .Config.Ref }}type {{.Config.Name}} {{.Config.Ref}} {{ end }}
 
 {{- if not (.CapabilityType|IsCommon) }}
-func (cfg {{.Config.Name}}) New(w *sdk.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType "target") (ne .CapabilityType "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType "target"}}{{- if eq .RootNumSlice 0}}{{.RootType.Name}}Cap{{- else }}sdk.CapDefinition[{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}}]{{- end }}{{- end }} {
+func (cfg {{.Config.Name}}) New(w *workflows.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType "target") (ne .CapabilityType "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType "target"}}{{- if eq .RootNumSlice 0}}{{.RootType.Name}}Cap{{- else }}workflows.CapDefinition[{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}}]{{- end }}{{- end }} {
     {{ if eq .CapabilityType "trigger" }} ref := "trigger" {{- end }}
-    def := sdk.StepDefinition{
+    def := workflows.StepDefinition{
        ID: {{- if .ID }} "{{.ID}}" {{- else }} id {{- end }},
        {{- if ne .CapabilityType "target"}}Ref: ref, {{- end }}
-       Inputs: {{- if .Input }} input.ToSteps() {{- else }} sdk.StepInputs{} {{ end }},
+       Inputs: {{- if .Input }} input.ToSteps() {{- else }} workflows.StepInputs{} {{ end }},
        Config: map[string]any{
 {{- range $fieldName, $type := .Config.Outputs }}
            "{{$type.ConfigName}}": cfg.{{$fieldName}},
@@ -29,7 +29,7 @@ func (cfg {{.Config.Name}}) New(w *sdk.WorkflowSpecFactory, {{- if not .ID }}id 
    }
 
 
-    step := sdk.Step[{{- if eq .CapabilityType "target"}}struct{}{{- else }}{{Repeat "[]" .RootNumSlice}}{{.RootOutput}} {{- end}}]{Definition: def}
+    step := workflows.Step[{{- if eq .CapabilityType "target"}}struct{}{{- else }}{{Repeat "[]" .RootNumSlice}}{{.RootOutput}} {{- end}}]{Definition: def}
     {{- if eq .CapabilityType "target" }}
     step.AddTo(w)
     {{- else if eq 0 .RootNumSlice }}
@@ -43,10 +43,10 @@ func (cfg {{.Config.Name}}) New(w *sdk.WorkflowSpecFactory, {{- if not .ID }}id 
 {{ range $key, $value := .Types }}
 {{- if .Outputs }}
 type {{$key}}Cap interface {
-    sdk.CapDefinition[{{ $key }}]
+    workflows.CapDefinition[{{ $key }}]
     {{- range $fieldName, $type := .Outputs }}
         {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-    {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+    {{$fieldName}}() workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
         {{- else }}
     {{$fieldName}}() {{ $type.Type }}Cap
         {{- end }}
@@ -56,29 +56,29 @@ type {{$key}}Cap interface {
 
 {{ if ne $.CapabilityType "target" }}
 // {{$key}}CapFromStep should only be called from generated code to assure type safety
-func {{$key}}CapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[{{$key}}]) {{$key}}Cap {
+func {{$key}}CapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[{{$key}}]) {{$key}}Cap {
     raw :=  step.AddTo(w)
     return &{{$key|LowerFirst}}{CapDefinition: raw}
 }
 {{ end }}
 
 type {{$key|LowerFirst}} struct {
-    sdk.CapDefinition[{{ $key }}]
+    workflows.CapDefinition[{{ $key }}]
 }
 
 func (*{{$key|LowerFirst}}) private() {}
 
     {{- range $fieldName, $type := .Outputs }}
         {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-func (c *{{$key|LowerFirst}}) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
-    return sdk.AccessField[{{$value.Name}}, {{Repeat "[]" $type.NumSlice}}{{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")
+func (c *{{$key|LowerFirst}}) {{$fieldName}}() workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
+    return workflows.AccessField[{{$value.Name}}, {{Repeat "[]" $type.NumSlice}}{{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")
 }
         {{- else }}
 func (c *{{$key|LowerFirst}}) {{$fieldName}}() {{ $type.Type }}Cap {
            {{- if $type.Type|HasOutputs }}
-     return &{{ $type.Type | LowerFirst }}{ CapDefinition: sdk.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")}
+     return &{{ $type.Type | LowerFirst }}{ CapDefinition: workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")}
            {{- else }}
-     return {{ $type.Type }}Cap(sdk.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}"))
+     return {{ $type.Type }}Cap(workflows.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}"))
            {{- end }}
 }
         {{- end }}
@@ -86,12 +86,12 @@ func (c *{{$key|LowerFirst}}) {{$fieldName}}() {{ $type.Type }}Cap {
 
 func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
                                                                             {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-                                                                        {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}],
+                                                                        {{$fieldName|LowerFirst}} workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}],
                                                                             {{- else }}
                                                                         {{$fieldName|LowerFirst}} {{ $type.Type }}Cap,
                                                                             {{- end }}                                                                        {{- end }}) {{$key}}Cap {
     return &simple{{$key}}{
-        CapDefinition: sdk.ComponentCapDefinition[{{$value.Name}}]{ {{- range $fieldName, $type := .Outputs }}
+        CapDefinition: workflows.ComponentCapDefinition[{{$value.Name}}]{ {{- range $fieldName, $type := .Outputs }}
         "{{$type.ConfigName}}": {{$fieldName|LowerFirst}}.Ref(),
         {{- end }}
         },
@@ -102,10 +102,10 @@ func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
 }
 
 type simple{{$key}} struct {
-    sdk.CapDefinition[{{ $key }}]
+    workflows.CapDefinition[{{ $key }}]
     {{- range $fieldName, $type := .Outputs }}
         {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-    {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+    {{$fieldName|LowerFirst}} workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
         {{- else }}
     {{$fieldName|LowerFirst}} {{ $type.Type }}Cap
         {{- end }}
@@ -114,7 +114,7 @@ type simple{{$key}} struct {
 
  {{- range $fieldName, $type := .Outputs }}
         {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-func (c *simple{{$key}}) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
+func (c *simple{{$key}}) {{$fieldName}}() workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
         {{- else }}
 func (c *simple{{$key}}) {{$fieldName}}() {{ $type.Type }}Cap {
         {{- end }}
@@ -124,7 +124,7 @@ func (c *simple{{$key}}) {{$fieldName}}() {{ $type.Type }}Cap {
 
 func (c *simple{{$key}}) private() {}
 {{- else }}
-type {{$key}}Cap sdk.CapDefinition[{{ $key }}]
+type {{$key}}Cap workflows.CapDefinition[{{ $key }}]
 {{- end }}
 
 {{ end }}
@@ -135,12 +135,12 @@ type {{InputAfterCapability}} = {{.Input.RefPkg}}.{{InputAfterCapability}}
     {{- else }}
 type {{InputAfterCapability}} struct {
 {{- range $fieldName, $type := .Input.Outputs }}
-    {{$fieldName}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+    {{$fieldName}} workflows.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
 {{- end }}
 }
 
-func (input {{InputAfterCapability}}) ToSteps() sdk.StepInputs {
-    return sdk.StepInputs{
+func (input {{InputAfterCapability}}) ToSteps() workflows.StepInputs {
+    return workflows.StepInputs{
        Mapping: map[string]any{
         {{- range $fieldName, $type := .Input.Outputs }}
         "{{$type.ConfigName}}": input.{{$fieldName}}.Ref(),

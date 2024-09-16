@@ -30,7 +30,6 @@ const (
 	RelayerSet_RelayerReady_FullMethodName        = "/loop.relayerset.RelayerSet/RelayerReady"
 	RelayerSet_RelayerHealthReport_FullMethodName = "/loop.relayerset.RelayerSet/RelayerHealthReport"
 	RelayerSet_RelayerName_FullMethodName         = "/loop.relayerset.RelayerSet/RelayerName"
-	RelayerSet_RelayerLatestHead_FullMethodName   = "/loop.relayerset.RelayerSet/RelayerLatestHead"
 )
 
 // RelayerSetClient is the client API for RelayerSet service.
@@ -47,7 +46,6 @@ type RelayerSetClient interface {
 	RelayerReady(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RelayerHealthReport(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerHealthReportResponse, error)
 	RelayerName(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerNameResponse, error)
-	RelayerLatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadResponse, error)
 }
 
 type relayerSetClient struct {
@@ -148,15 +146,6 @@ func (c *relayerSetClient) RelayerName(ctx context.Context, in *RelayerId, opts 
 	return out, nil
 }
 
-func (c *relayerSetClient) RelayerLatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadResponse, error) {
-	out := new(LatestHeadResponse)
-	err := c.cc.Invoke(ctx, RelayerSet_RelayerLatestHead_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // RelayerSetServer is the server API for RelayerSet service.
 // All implementations must embed UnimplementedRelayerSetServer
 // for forward compatibility
@@ -171,7 +160,6 @@ type RelayerSetServer interface {
 	RelayerReady(context.Context, *RelayerId) (*emptypb.Empty, error)
 	RelayerHealthReport(context.Context, *RelayerId) (*RelayerHealthReportResponse, error)
 	RelayerName(context.Context, *RelayerId) (*RelayerNameResponse, error)
-	RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error)
 	mustEmbedUnimplementedRelayerSetServer()
 }
 
@@ -208,9 +196,6 @@ func (UnimplementedRelayerSetServer) RelayerHealthReport(context.Context, *Relay
 }
 func (UnimplementedRelayerSetServer) RelayerName(context.Context, *RelayerId) (*RelayerNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RelayerName not implemented")
-}
-func (UnimplementedRelayerSetServer) RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RelayerLatestHead not implemented")
 }
 func (UnimplementedRelayerSetServer) mustEmbedUnimplementedRelayerSetServer() {}
 
@@ -405,24 +390,6 @@ func _RelayerSet_RelayerName_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RelayerSet_RelayerLatestHead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LatestHeadRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RelayerSetServer).RelayerLatestHead(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RelayerSet_RelayerLatestHead_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelayerSetServer).RelayerLatestHead(ctx, req.(*LatestHeadRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // RelayerSet_ServiceDesc is the grpc.ServiceDesc for RelayerSet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -469,10 +436,6 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RelayerName",
 			Handler:    _RelayerSet_RelayerName_Handler,
-		},
-		{
-			MethodName: "RelayerLatestHead",
-			Handler:    _RelayerSet_RelayerLatestHead_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

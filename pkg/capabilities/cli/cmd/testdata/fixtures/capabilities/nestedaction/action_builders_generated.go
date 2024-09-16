@@ -4,12 +4,12 @@ package nestedaction
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func (cfg ActionConfig) New(w *sdk.WorkflowSpecFactory, ref string, input ActionInput) ActionOutputsCap {
+func (cfg ActionConfig) New(w *workflows.WorkflowSpecFactory, ref string, input ActionInput) ActionOutputsCap {
 
-	def := sdk.StepDefinition{
+	def := workflows.StepDefinition{
 		ID: "nested-test-action@1.0.0", Ref: ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -18,35 +18,35 @@ func (cfg ActionConfig) New(w *sdk.WorkflowSpecFactory, ref string, input Action
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	step := sdk.Step[ActionOutputs]{Definition: def}
+	step := workflows.Step[ActionOutputs]{Definition: def}
 	return ActionOutputsCapFromStep(w, step)
 }
 
 type ActionOutputsCap interface {
-	sdk.CapDefinition[ActionOutputs]
+	workflows.CapDefinition[ActionOutputs]
 	Results() ActionOutputsResultsCap
 	private()
 }
 
 // ActionOutputsCapFromStep should only be called from generated code to assure type safety
-func ActionOutputsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[ActionOutputs]) ActionOutputsCap {
+func ActionOutputsCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[ActionOutputs]) ActionOutputsCap {
 	raw := step.AddTo(w)
 	return &actionOutputs{CapDefinition: raw}
 }
 
 type actionOutputs struct {
-	sdk.CapDefinition[ActionOutputs]
+	workflows.CapDefinition[ActionOutputs]
 }
 
 func (*actionOutputs) private() {}
 func (c *actionOutputs) Results() ActionOutputsResultsCap {
-	return &actionOutputsResults{CapDefinition: sdk.AccessField[ActionOutputs, ActionOutputsResults](c.CapDefinition, "results")}
+	return &actionOutputsResults{CapDefinition: workflows.AccessField[ActionOutputs, ActionOutputsResults](c.CapDefinition, "results")}
 }
 
 func NewActionOutputsFromFields(
 	results ActionOutputsResultsCap) ActionOutputsCap {
 	return &simpleActionOutputs{
-		CapDefinition: sdk.ComponentCapDefinition[ActionOutputs]{
+		CapDefinition: workflows.ComponentCapDefinition[ActionOutputs]{
 			"results": results.Ref(),
 		},
 		results: results,
@@ -54,7 +54,7 @@ func NewActionOutputsFromFields(
 }
 
 type simpleActionOutputs struct {
-	sdk.CapDefinition[ActionOutputs]
+	workflows.CapDefinition[ActionOutputs]
 	results ActionOutputsResultsCap
 }
 
@@ -65,30 +65,30 @@ func (c *simpleActionOutputs) Results() ActionOutputsResultsCap {
 func (c *simpleActionOutputs) private() {}
 
 type ActionOutputsResultsCap interface {
-	sdk.CapDefinition[ActionOutputsResults]
-	AdaptedThing() sdk.CapDefinition[string]
+	workflows.CapDefinition[ActionOutputsResults]
+	AdaptedThing() workflows.CapDefinition[string]
 	private()
 }
 
 // ActionOutputsResultsCapFromStep should only be called from generated code to assure type safety
-func ActionOutputsResultsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[ActionOutputsResults]) ActionOutputsResultsCap {
+func ActionOutputsResultsCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[ActionOutputsResults]) ActionOutputsResultsCap {
 	raw := step.AddTo(w)
 	return &actionOutputsResults{CapDefinition: raw}
 }
 
 type actionOutputsResults struct {
-	sdk.CapDefinition[ActionOutputsResults]
+	workflows.CapDefinition[ActionOutputsResults]
 }
 
 func (*actionOutputsResults) private() {}
-func (c *actionOutputsResults) AdaptedThing() sdk.CapDefinition[string] {
-	return sdk.AccessField[ActionOutputsResults, string](c.CapDefinition, "adapted_thing")
+func (c *actionOutputsResults) AdaptedThing() workflows.CapDefinition[string] {
+	return workflows.AccessField[ActionOutputsResults, string](c.CapDefinition, "adapted_thing")
 }
 
 func NewActionOutputsResultsFromFields(
-	adaptedThing sdk.CapDefinition[string]) ActionOutputsResultsCap {
+	adaptedThing workflows.CapDefinition[string]) ActionOutputsResultsCap {
 	return &simpleActionOutputsResults{
-		CapDefinition: sdk.ComponentCapDefinition[ActionOutputsResults]{
+		CapDefinition: workflows.ComponentCapDefinition[ActionOutputsResults]{
 			"adapted_thing": adaptedThing.Ref(),
 		},
 		adaptedThing: adaptedThing,
@@ -96,22 +96,22 @@ func NewActionOutputsResultsFromFields(
 }
 
 type simpleActionOutputsResults struct {
-	sdk.CapDefinition[ActionOutputsResults]
-	adaptedThing sdk.CapDefinition[string]
+	workflows.CapDefinition[ActionOutputsResults]
+	adaptedThing workflows.CapDefinition[string]
 }
 
-func (c *simpleActionOutputsResults) AdaptedThing() sdk.CapDefinition[string] {
+func (c *simpleActionOutputsResults) AdaptedThing() workflows.CapDefinition[string] {
 	return c.adaptedThing
 }
 
 func (c *simpleActionOutputsResults) private() {}
 
 type ActionInput struct {
-	Metadata sdk.CapDefinition[ActionInputsMetadata]
+	Metadata workflows.CapDefinition[ActionInputsMetadata]
 }
 
-func (input ActionInput) ToSteps() sdk.StepInputs {
-	return sdk.StepInputs{
+func (input ActionInput) ToSteps() workflows.StepInputs {
+	return workflows.StepInputs{
 		Mapping: map[string]any{
 			"metadata": input.Metadata.Ref(),
 		},

@@ -116,62 +116,6 @@ func (_c *Relayer_HealthReport_Call) RunAndReturn(run func() map[string]error) *
 	return _c
 }
 
-// LatestHead provides a mock function with given fields: _a0
-func (_m *Relayer) LatestHead(_a0 context.Context) (types.Head, error) {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for LatestHead")
-	}
-
-	var r0 types.Head
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (types.Head, error)); ok {
-		return rf(_a0)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) types.Head); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Get(0).(types.Head)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(_a0)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Relayer_LatestHead_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestHead'
-type Relayer_LatestHead_Call struct {
-	*mock.Call
-}
-
-// LatestHead is a helper method to define mock.On call
-//   - _a0 context.Context
-func (_e *Relayer_Expecter) LatestHead(_a0 interface{}) *Relayer_LatestHead_Call {
-	return &Relayer_LatestHead_Call{Call: _e.mock.On("LatestHead", _a0)}
-}
-
-func (_c *Relayer_LatestHead_Call) Run(run func(_a0 context.Context)) *Relayer_LatestHead_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *Relayer_LatestHead_Call) Return(_a0 types.Head, _a1 error) *Relayer_LatestHead_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Relayer_LatestHead_Call) RunAndReturn(run func(context.Context) (types.Head, error)) *Relayer_LatestHead_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Name provides a mock function with given fields:
 func (_m *Relayer) Name() string {
 	ret := _m.Called()

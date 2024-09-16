@@ -4,12 +4,12 @@ package basicconsensus
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 )
 
-func (cfg ConsensusConfig) New(w *sdk.WorkflowSpecFactory, ref string, input ConsensusInput) ConsensusOutputsCap {
+func (cfg ConsensusConfig) New(w *workflows.WorkflowSpecFactory, ref string, input ConsensusInput) ConsensusOutputsCap {
 
-	def := sdk.StepDefinition{
+	def := workflows.StepDefinition{
 		ID: "basic-test-consensus@1.0.0", Ref: ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -19,40 +19,40 @@ func (cfg ConsensusConfig) New(w *sdk.WorkflowSpecFactory, ref string, input Con
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 	}
 
-	step := sdk.Step[ConsensusOutputs]{Definition: def}
+	step := workflows.Step[ConsensusOutputs]{Definition: def}
 	return ConsensusOutputsCapFromStep(w, step)
 }
 
 type ConsensusOutputsCap interface {
-	sdk.CapDefinition[ConsensusOutputs]
-	Consensus() sdk.CapDefinition[[]string]
-	Sigs() sdk.CapDefinition[[]string]
+	workflows.CapDefinition[ConsensusOutputs]
+	Consensus() workflows.CapDefinition[[]string]
+	Sigs() workflows.CapDefinition[[]string]
 	private()
 }
 
 // ConsensusOutputsCapFromStep should only be called from generated code to assure type safety
-func ConsensusOutputsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[ConsensusOutputs]) ConsensusOutputsCap {
+func ConsensusOutputsCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[ConsensusOutputs]) ConsensusOutputsCap {
 	raw := step.AddTo(w)
 	return &consensusOutputs{CapDefinition: raw}
 }
 
 type consensusOutputs struct {
-	sdk.CapDefinition[ConsensusOutputs]
+	workflows.CapDefinition[ConsensusOutputs]
 }
 
 func (*consensusOutputs) private() {}
-func (c *consensusOutputs) Consensus() sdk.CapDefinition[[]string] {
-	return sdk.AccessField[ConsensusOutputs, []string](c.CapDefinition, "consensus")
+func (c *consensusOutputs) Consensus() workflows.CapDefinition[[]string] {
+	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "consensus")
 }
-func (c *consensusOutputs) Sigs() sdk.CapDefinition[[]string] {
-	return sdk.AccessField[ConsensusOutputs, []string](c.CapDefinition, "sigs")
+func (c *consensusOutputs) Sigs() workflows.CapDefinition[[]string] {
+	return workflows.AccessField[ConsensusOutputs, []string](c.CapDefinition, "sigs")
 }
 
 func NewConsensusOutputsFromFields(
-	consensus sdk.CapDefinition[[]string],
-	sigs sdk.CapDefinition[[]string]) ConsensusOutputsCap {
+	consensus workflows.CapDefinition[[]string],
+	sigs workflows.CapDefinition[[]string]) ConsensusOutputsCap {
 	return &simpleConsensusOutputs{
-		CapDefinition: sdk.ComponentCapDefinition[ConsensusOutputs]{
+		CapDefinition: workflows.ComponentCapDefinition[ConsensusOutputs]{
 			"consensus": consensus.Ref(),
 			"sigs":      sigs.Ref(),
 		},
@@ -62,26 +62,26 @@ func NewConsensusOutputsFromFields(
 }
 
 type simpleConsensusOutputs struct {
-	sdk.CapDefinition[ConsensusOutputs]
-	consensus sdk.CapDefinition[[]string]
-	sigs      sdk.CapDefinition[[]string]
+	workflows.CapDefinition[ConsensusOutputs]
+	consensus workflows.CapDefinition[[]string]
+	sigs      workflows.CapDefinition[[]string]
 }
 
-func (c *simpleConsensusOutputs) Consensus() sdk.CapDefinition[[]string] {
+func (c *simpleConsensusOutputs) Consensus() workflows.CapDefinition[[]string] {
 	return c.consensus
 }
-func (c *simpleConsensusOutputs) Sigs() sdk.CapDefinition[[]string] {
+func (c *simpleConsensusOutputs) Sigs() workflows.CapDefinition[[]string] {
 	return c.sigs
 }
 
 func (c *simpleConsensusOutputs) private() {}
 
 type ConsensusInput struct {
-	InputThing sdk.CapDefinition[bool]
+	InputThing workflows.CapDefinition[bool]
 }
 
-func (input ConsensusInput) ToSteps() sdk.StepInputs {
-	return sdk.StepInputs{
+func (input ConsensusInput) ToSteps() workflows.StepInputs {
+	return workflows.StepInputs{
 		Mapping: map[string]any{
 			"input_thing": input.InputThing.Ref(),
 		},

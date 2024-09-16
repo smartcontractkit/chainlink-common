@@ -2,7 +2,7 @@ module github.com/smartcontractkit/chainlink-common
 
 go 1.22
 
-toolchain go1.22.7
+toolchain go1.22.5
 
 require (
 	github.com/atombender/go-jsonschema v0.16.0

@@ -1,0 +1,77 @@
+package workflows
+
+import (
+    "encoding/json"
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+    "github.com/smartcontractkit/chainlink-common/pkg/values"
+)
+
+{{- range . }}
+type Compute{{.}}Inputs[{{range RangeNum . }}T{{.}} any,{{ end }}] struct {
+    {{- range RangeNum .}}
+    Arg{{.}} CapDefinition[T{{.}}]
+    {{- end }}
+}
+
+type runtime{{.}}Inputs[{{range RangeNum . }}T{{.}} any,{{ end }}] struct {
+    {{- range RangeNum .}}
+    Arg{{.}} T{{.}}
+    {{- end }}
+}
+
+
+func (input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]) ToSteps() StepInputs {
+    return StepInputs{
+       Mapping: map[string]any{
+        {{- range  RangeNum . }}
+        "Arg{{.}}" : input.Arg{{.}}.Ref(),
+        {{- end }}
+       },
+   }
+}
+
+func Compute{{.}}[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSpecFactory, ref string, input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}], compute func(SDK, {{range RangeNum . }}I{{.}},{{ end }})(O, error)) ComputeOutputCap[O] {
+    def := StepDefinition{
+       ID: "__internal__custom_compute@1.0.0",
+       Ref: ref,
+       Inputs: input.ToSteps(),
+       Config: map[string]any{},
+       CapabilityType: capabilities.CapabilityTypeAction,
+   }
+
+    capFn := func(sdk SDK, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+        var inputs runtime{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]
+        if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+            return capabilities.CapabilityResponse{}, err
+        }
+
+        // verify against any schema
+        ji, err := json.Marshal(inputs)
+        if err != nil {
+            return capabilities.CapabilityResponse{}, err
+        }
+        if err := json.Unmarshal(ji, &inputs); err != nil {
+            return capabilities.CapabilityResponse{}, err
+        }
+
+        output, err := compute(sdk, {{range RangeNum . }}inputs.Arg{{.}},{{ end }})
+        if err != nil {
+            return capabilities.CapabilityResponse{}, err
+        }
+
+        computeOutput := ComputeOutput[O]{Value: output}
+        wrapped, err := values.CreateMapFromStruct(computeOutput)
+        if err != nil {
+            return capabilities.CapabilityResponse{}, err
+        }
+
+        return capabilities.CapabilityResponse{Value: wrapped}, nil
+    }
+
+    if w.fns == nil {
+        w.fns = map[string]func(sdk SDK, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+    }
+    w.fns[ref] = capFn
+    return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+{{- end }}

@@ -365,7 +365,7 @@ targets:
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
 			//wf, err := workflows.Parse(tc.yaml)
-			wf, err := parseDependencyGraph(tc.yaml)
+			wf, err := workflows.ParseDependencyGraph(tc.yaml)
 			if tc.errMsg != "" {
 				assert.ErrorContains(st, err, tc.errMsg)
 			} else {
@@ -388,13 +388,4 @@ targets:
 			}
 		})
 	}
-}
-
-func parseDependencyGraph(yamlWorkflow string) (*workflows.DependencyGraph, error) {
-	spec, err := workflows.ParseWorkflowSpecYaml(yamlWorkflow)
-	if err != nil {
-		return nil, err
-	}
-
-	return workflows.BuildDependencyGraph(spec)
 }

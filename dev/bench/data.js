@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726485717442,
+  "lastUpdate": 1726499089791,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1092,6 +1092,48 @@ window.BENCHMARK_DATA = {
             "value": 28434,
             "unit": "ns/op",
             "extra": "41090 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "36cb47701edf36bcd8de8e32f0ade21f1e534971",
+          "message": "Seperate sdk from workflow to as part of an effort to shrink the WASM binary size (#765)",
+          "timestamp": "2024-09-16T11:03:42-04:00",
+          "tree_id": "dc3e9c455fded04167dfcbe91152e25ec89ed5f6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/36cb47701edf36bcd8de8e32f0ade21f1e534971"
+        },
+        "date": 1726499088728,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.8,
+            "unit": "ns/op",
+            "extra": "2595808 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.3,
+            "unit": "ns/op",
+            "extra": "2410183 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28386,
+            "unit": "ns/op",
+            "extra": "42262 times\n4 procs"
           }
         ]
       }

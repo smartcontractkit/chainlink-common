@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	codeMarshalErr = 222
-	codeRunnerErr  = 223
+	codeMarshalErr = 110
+	codeRunnerErr  = 111
 	codeSuccess    = 0
 )
 

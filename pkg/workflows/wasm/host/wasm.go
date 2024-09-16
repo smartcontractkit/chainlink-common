@@ -33,10 +33,22 @@ func safeMem(caller *wasmtime.Caller, ptr unsafe.Pointer, size int32) ([]byte, e
 	return cd, nil
 }
 
-type module struct {
+var (
+	defaultTickInterval = time.Duration(100 * time.Millisecond)
+	defaultTimeout      = time.Duration(300 * time.Millisecond)
+)
+
+type ModuleConfig struct {
+	TickInterval time.Duration
+	Timeout      *time.Duration
+}
+
+type Module struct {
 	engine *wasmtime.Engine
 	module *wasmtime.Module
 	linker *wasmtime.Linker
+
+	cfg ModuleConfig
 
 	wg     sync.WaitGroup
 	stopCh chan struct{}
@@ -45,7 +57,15 @@ type module struct {
 	err      error
 }
 
-func newModule(binary []byte) (*module, error) {
+func NewModule(modCfg ModuleConfig, binary []byte) (*Module, error) {
+	if modCfg.TickInterval == 0 {
+		modCfg.TickInterval = defaultTickInterval
+	}
+
+	if modCfg.Timeout == nil {
+		modCfg.Timeout = &defaultTimeout
+	}
+
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
 
@@ -88,10 +108,12 @@ func newModule(binary []byte) (*module, error) {
 		return nil, err
 	}
 
-	m := &module{
+	m := &Module{
 		engine: engine,
 		module: mod,
 		linker: linker,
+
+		cfg: modCfg,
 
 		stopCh: make(chan struct{}),
 
@@ -103,7 +125,7 @@ func newModule(binary []byte) (*module, error) {
 	go func() {
 		defer m.wg.Done()
 
-		ticker := time.NewTicker(1 * time.Second)
+		ticker := time.NewTicker(modCfg.TickInterval)
 		for {
 			select {
 			case <-m.stopCh:
@@ -117,7 +139,7 @@ func newModule(binary []byte) (*module, error) {
 	return m, nil
 }
 
-func (m *module) close() {
+func (m *Module) Close() {
 	close(m.stopCh)
 	m.wg.Wait()
 
@@ -126,7 +148,7 @@ func (m *module) close() {
 	m.module.Close()
 }
 
-func (m *module) run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
+func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
 	store := wasmtime.NewStore(m.engine)
 	defer store.Close()
 
@@ -153,10 +175,8 @@ func (m *module) run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 		1,
 	)
 
-	// set the deadline to be 5 relative to the current epoch
-	// this roughly translates to a timeout of 5 seconds, since the
-	// epoch goroutine ticks every second.
-	store.SetEpochDeadline(5)
+	deadline := *m.cfg.Timeout / m.cfg.TickInterval
+	store.SetEpochDeadline(uint64(deadline))
 
 	instance, err := m.linker.Instantiate(store, m.module)
 	if err != nil {
@@ -169,17 +189,24 @@ func (m *module) run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	}
 
 	_, err = start.Call(store)
-	if err != nil {
-		if !strings.Contains(err.Error(), "exit status 0") {
-			return nil, err
-		}
+	switch {
+	case containsCode(err, 0):
+		return m.response, m.err
+	case containsCode(err, 110):
+		return nil, fmt.Errorf("error marshaling response: %s: %w", m.response.ErrMsg, err)
+	case containsCode(err, 111):
+		return nil, fmt.Errorf("error executing runner: %s: %w", m.response.ErrMsg, err)
+	default:
+		return nil, err
 	}
-
-	return m.response, m.err
 }
 
-func GetWorkflowSpec(ctx context.Context, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
-	m, err := newModule(binary)
+func containsCode(err error, code int) bool {
+	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
+}
+
+func GetWorkflowSpec(ctx context.Context, modCfg ModuleConfig, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
+	m, err := NewModule(modCfg, binary)
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
 	}
@@ -192,7 +219,7 @@ func GetWorkflowSpec(ctx context.Context, binary []byte, config []byte) (*sdk.Wo
 			SpecRequest: &emptypb.Empty{},
 		},
 	}
-	resp, err := m.run(ctx, req)
+	resp, err := m.Run(req)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +229,7 @@ func GetWorkflowSpec(ctx context.Context, binary []byte, config []byte) (*sdk.Wo
 		return nil, errors.New("unexpected response from WASM binary: got nil spec response")
 	}
 
-	m.close()
+	m.Close()
 
 	return wasmpb.ProtoToWorkflowSpec(sr)
 }

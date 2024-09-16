@@ -15,8 +15,28 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-type ChainComponentsInterfaceTester[T TestingT[T]] interface {
+type ChainComponentsTester[T any] interface {
 	BasicTester[T]
+	Setup(t T, startCR bool)
+}
+
+type chainComponentsTestcase[T any] struct {
+	name    string
+	test    func(t T)
+	startCR bool
+}
+
+func runChainComponentsTests[T TestingT[T]](t T, tester ChainComponentsTester[T], tests []chainComponentsTestcase[T]) {
+	for _, test := range tests {
+		t.Run(test.name+" for "+tester.Name(), func(t T) {
+			tester.Setup(t, test.startCR)
+			test.test(t)
+		})
+	}
+}
+
+type ChainComponentsInterfaceTester[T TestingT[T]] interface {
+	ChainComponentsTester[T]
 	GetContractReader(t T) types.ContractReader
 	GetChainWriter(t T) types.ChainWriter
 	GetBindings(t T) []types.BoundContract
@@ -58,7 +78,7 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 }
 
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	tests := []testcase[T]{
+	tests := []chainComponentsTestcase[T]{
 		{
 			name:    "Get latest value without starting service returns error",
 			startCR: false,
@@ -76,12 +96,12 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			startCR: true,
 			test: func(t T) {
 				ctx := tests.Context(t)
-				firstItem := CreateTestStruct(0, tester)
+				firstItem := CreateTestStruct[T](0, tester)
 
 				contracts := tester.GetBindings(t)
 				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
 
-				secondItem := CreateTestStruct(1, tester)
+				secondItem := CreateTestStruct[T](1, tester)
 
 				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
 
@@ -199,7 +219,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			startCR: true,
 			test: func(t T) {
 				ctx := tests.Context(t)
-				testStruct := CreateTestStruct(0, tester)
+				testStruct := CreateTestStruct[T](0, tester)
 				testStruct.BigField = nil
 				testStruct.Account = nil
 
@@ -214,7 +234,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 
 				expected := &TestStructWithExtraField{
 					ExtraField: AnyExtraValue,
-					TestStruct: CreateTestStruct(0, tester),
+					TestStruct: CreateTestStruct[T](0, tester),
 				}
 
 				assert.Equal(t, expected, actual)
@@ -308,11 +328,11 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				bound := bindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
-				ts0 := CreateTestStruct(0, tester)
+				ts0 := CreateTestStruct[T](0, tester)
 
 				contracts := tester.GetBindings(t)
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts0, contracts[0], types.Unconfirmed)
-				ts1 := CreateTestStruct(1, tester)
+				ts1 := CreateTestStruct[T](1, tester)
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, contracts[0], types.Unconfirmed)
 
 				filterParams := &FilterEventParams{Field: *ts0.Field}
@@ -331,17 +351,17 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 	}
-	runTests(t, tester, tests)
+	runChainComponentsTests(t, tester, tests)
 }
 
 func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	testCases := []testcase[T]{
+	testCases := []chainComponentsTestcase[T]{
 		{
 			name:    "BatchGetLatestValues without starting service returns error",
 			startCR: false,
 			test: func(t T) {
 				// setup test data
-				firstItem := CreateTestStruct(1, tester)
+				firstItem := CreateTestStruct[T](1, tester)
 				bindings := tester.GetBindings(t)
 				bound := bindingsByName(bindings, AnyContractName)[0]
 
@@ -373,7 +393,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			startCR: true,
 			test: func(t T) {
 				// setup test data
-				firstItem := CreateTestStruct(1, tester)
+				firstItem := CreateTestStruct[T](1, tester)
 				bindings := tester.GetBindings(t)
 				bound := bindingsByName(bindings, AnyContractName)[0]
 
@@ -499,7 +519,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			startCR: true,
 			test: func(t T) {
 				// setup call data
-				testStruct := CreateTestStruct(0, tester)
+				testStruct := CreateTestStruct[T](0, tester)
 				testStruct.BigField = nil
 				testStruct.Account = nil
 				actual := &TestStructWithExtraField{}
@@ -522,7 +542,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				assert.Equal(t,
 					&TestStructWithExtraField{
 						ExtraField: AnyExtraValue,
-						TestStruct: CreateTestStruct(0, tester),
+						TestStruct: CreateTestStruct[T](0, tester),
 					},
 					returnValue)
 			},
@@ -538,7 +558,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 
 				for i := 0; i < 10; i++ {
 					// setup test data
-					ts := CreateTestStruct(i, tester)
+					ts := CreateTestStruct[T](i, tester)
 					batchCallEntry[bound] = append(batchCallEntry[bound], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts})
 					// setup call data
 					batchGetLatestValueRequest[bound] = append(
@@ -576,7 +596,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 
 				for i := 0; i < 10; i++ {
 					// setup test data
-					ts1, ts2 := CreateTestStruct(i, tester), CreateTestStruct(i+10, tester)
+					ts1, ts2 := CreateTestStruct[T](i, tester), CreateTestStruct[T](i+10, tester)
 					batchCallEntry[bound1] = append(batchCallEntry[bound1], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts1})
 					batchCallEntry[bound2] = append(batchCallEntry[bound2], ReadEntry{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &ts2})
 					// setup call data
@@ -649,11 +669,11 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 	}
-	runTests(t, tester, testCases)
+	runChainComponentsTests(t, tester, testCases)
 }
 
 func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T]) {
-	tests := []testcase[T]{
+	tests := []chainComponentsTestcase[T]{
 		{
 			name:    "QueryKey without starting service returns error",
 			startCR: false,
@@ -710,7 +730,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 		},
 	}
 
-	runTests(t, tester, tests)
+	runChainComponentsTests(t, tester, tests)
 }
 
 func bindingsByName(bindings []types.BoundContract, name string) []types.BoundContract {

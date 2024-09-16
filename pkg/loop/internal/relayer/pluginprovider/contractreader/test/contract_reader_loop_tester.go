@@ -59,8 +59,8 @@ type contractReaderLoopTester struct {
 	encodeWith contractreader.EncodingVersion
 }
 
-func (c *contractReaderLoopTester) Setup(t *testing.T, started bool) {
-	c.ChainComponentsInterfaceTester.Setup(t, started)
+func (c *contractReaderLoopTester) Setup(t *testing.T, startCR bool) {
+	c.ChainComponentsInterfaceTester.Setup(t, startCR)
 	contractReader := c.ChainComponentsInterfaceTester.GetContractReader(t)
 
 	c.lst.registerHook = func(server *grpc.Server) {

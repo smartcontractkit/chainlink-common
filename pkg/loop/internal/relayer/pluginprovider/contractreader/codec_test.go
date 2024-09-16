@@ -25,7 +25,7 @@ func TestCodecClient(t *testing.T) {
 
 	es := &errCodec{}
 	esTester := chaincomponentstest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: es})
-	esTester.Setup(t, false)
+	esTester.Setup(t)
 	esCodec := esTester.GetCodec(t)
 
 	anyObj := &interfacetests.TestStruct{}
@@ -55,14 +55,14 @@ func TestCodecClient(t *testing.T) {
 	// make sure that errors come from client directly
 	es.err = nil
 	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-		interfaceTester.Setup(t, false)
+		interfaceTester.Setup(t)
 		c := interfaceTester.GetCodec(t)
 		_, err := c.Encode(tests.Context(t), &cannotEncode{}, "doesnotmatter")
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
 	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
-		interfaceTester.Setup(t, false)
+		interfaceTester.Setup(t)
 		c := interfaceTester.GetCodec(t)
 		fv := int32(1)
 		toDecode, err := c.Encode(tests.Context(t), &interfacetests.TestStruct{Field: &fv}, interfacetests.TestItemType)
@@ -74,7 +74,7 @@ func TestCodecClient(t *testing.T) {
 	t.Run("Nil esCodec returns unimplemented", func(t *testing.T) {
 		ctx := tests.Context(t)
 		nilTester := chaincomponentstest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: nil})
-		nilTester.Setup(t, false)
+		nilTester.Setup(t)
 		nilCodec := nilTester.GetCodec(t)
 
 		item := &interfacetests.TestStruct{}
@@ -98,7 +98,7 @@ type fakeCodecInterfaceTester struct {
 	impl types.Codec
 }
 
-func (it *fakeCodecInterfaceTester) Setup(_ *testing.T, _ bool) {}
+func (it *fakeCodecInterfaceTester) Setup(_ *testing.T) {}
 
 func (it *fakeCodecInterfaceTester) GetCodec(_ *testing.T) types.Codec {
 	return it.impl

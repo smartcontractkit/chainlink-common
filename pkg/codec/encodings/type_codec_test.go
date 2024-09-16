@@ -33,7 +33,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 	RunCodecInterfaceTests(t, lbiit)
 
 	t.Run("Lenient encoding allows extra bits", func(t *testing.T) {
-		ts := CreateTestStruct(0, lbiit)
+		ts := CreateTestStruct[*testing.T](0, lbiit)
 		c := lbiit.GetCodec(t)
 		encoded, err := c.Encode(tests.Context(t), ts, TestItemType)
 		require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 
 type interfaceTesterBase struct{}
 
-func (*interfaceTesterBase) Setup(_ *testing.T, _ bool) {}
+func (*interfaceTesterBase) Setup(_ *testing.T) {}
 
 func (*interfaceTesterBase) GetAccountBytes(i int) []byte {
 	ib := byte(i)
@@ -249,7 +249,7 @@ func (b *bigEndianInterfaceTester) GetCodec(t *testing.T) types.Codec {
 	arr2, err := encodings.NewArray(2, testStruct)
 	require.NoError(t, err)
 
-	ts := CreateTestStruct(0, b)
+	ts := CreateTestStruct[*testing.T](0, b)
 
 	tc := &encodings.CodecFromTypeCodec{
 		TestItemType:            testStruct,

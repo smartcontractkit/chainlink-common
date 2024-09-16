@@ -22,6 +22,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	contractreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -236,7 +237,7 @@ func TestQueryKey(t *testing.T) {
 
 			impl := &protoConversionTestContractReader{}
 			crTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: impl}, contractreadertest.WithContractReaderLoopEncoding(version))
-			crTester.Setup(t, true)
+			crTester.Setup(t, false)
 			cr := crTester.GetContractReader(t)
 
 			es := &errContractReader{}
@@ -292,15 +293,15 @@ type fakeContractReaderInterfaceTester struct {
 	cw   fakeChainWriter
 }
 
-func (it *fakeContractReaderInterfaceTester) Setup(t *testing.T, started bool) {
+func (it *fakeContractReaderInterfaceTester) Setup(t *testing.T, startCR bool) {
 	fake, ok := it.impl.(*fakeContractReader)
 	if ok {
 		fake.vals = []valConfidencePair{}
 		fake.triggers = []eventConfidencePair{}
 		fake.stored = []TestStruct{}
-		if started {
-			require.NoError(t, it.impl.Start(context.Background()))
-			t.Cleanup(func() { require.NoError(t, it.impl.Close()) })
+
+		if startCR {
+			servicetest.Run(t, it.impl)
 		}
 	}
 }

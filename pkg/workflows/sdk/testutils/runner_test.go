@@ -31,7 +31,8 @@ func TestRunner(t *testing.T) {
 
 		triggerMock, actionMock, consensusMock, targetMock := setupAllRunnerMocks(t, runner)
 
-		require.NoError(t, runner.Run(workflow))
+		runner.Run(workflow)
+		require.NoError(t, runner.Err())
 
 		trigger := triggerMock.GetStep()
 		assert.NoError(t, trigger.Error)
@@ -87,7 +88,8 @@ func TestRunner(t *testing.T) {
 		runner := testutils.NewRunner(tests.Context(t))
 		_, _, _, targetMock := setupAllRunnerMocks(t, runner)
 
-		require.NoError(t, runner.Run(workflow))
+		runner.Run(workflow)
+		require.NoError(t, runner.Err())
 		target := targetMock.GetAllWrites()
 		assert.Len(t, target.Inputs, 1)
 	})
@@ -99,7 +101,8 @@ func TestRunner(t *testing.T) {
 		setupAllRunnerMocks(t, runner)
 		setupAllRunnerMocks(t, runner)
 
-		require.Error(t, runner.Run(workflow))
+		runner.Run(workflow)
+		require.Error(t, runner.Err())
 	})
 
 	t.Run("Run fails if MockCapability is not provided for a step that is run", func(t *testing.T) {
@@ -118,9 +121,9 @@ func TestRunner(t *testing.T) {
 			return nil
 		})
 
-		err := runner.Run(workflow)
-		require.Error(t, err)
-		require.Equal(t, "no mock found for capability basic-test-action@1.0.0 on step action", err.Error())
+		runner.Run(workflow)
+		require.Error(t, runner.Err())
+		require.Equal(t, "no mock found for capability basic-test-action@1.0.0 on step action", runner.Err().Error())
 	})
 
 	t.Run("GetRegisteredMock returns the mock for a step", func(t *testing.T) {

@@ -315,6 +315,23 @@ func (s *Server) RelayerName(ctx context.Context, relayID *relayerset.RelayerId)
 	return &relayerset.RelayerNameResponse{Name: relayer.Name()}, nil
 }
 
+func (s *Server) RelayerLatestHead(ctx context.Context, req *relayerset.LatestHeadRequest) (*relayerset.LatestHeadResponse, error) {
+	relayer, err := s.getRelayer(ctx, req.RelayerId)
+	if err != nil {
+		return nil, err
+	}
+
+	latestHead, err := relayer.LatestHead(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &relayerset.LatestHeadResponse{
+		Height:    latestHead.Height,
+		Hash:      latestHead.Hash,
+		Timestamp: latestHead.Timestamp,
+	}, nil
+}
+
 func (s *Server) getRelayer(ctx context.Context, relayerID *relayerset.RelayerId) (core.Relayer, error) {
 	relayer, err := s.impl.Get(ctx, types.RelayID{ChainID: relayerID.ChainId, Network: relayerID.Network})
 	if err != nil {

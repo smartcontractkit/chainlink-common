@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726499089791,
+  "lastUpdate": 1726504499114,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1134,6 +1134,48 @@ window.BENCHMARK_DATA = {
             "value": 28386,
             "unit": "ns/op",
             "extra": "42262 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1702865+kidambisrinivas@users.noreply.github.com",
+            "name": "Sri Kidambi",
+            "username": "kidambisrinivas"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b8f8ccc4ecb3f0f9ccebdafcddd3128ba680b076",
+          "message": "Add LatestHead relayer method to gRPC client and server implementations (#767)\n\n* Add LatestHead method to relayer interface\r\n\r\n* Add LatestHead implementation to relayerset server and clients\r\n\r\n* Fix error message",
+          "timestamp": "2024-09-16T17:33:59+01:00",
+          "tree_id": "a19bcb56fd532def16905f3b42fcf5f6f8b97c59",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b8f8ccc4ecb3f0f9ccebdafcddd3128ba680b076"
+        },
+        "date": 1726504498645,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 457.4,
+            "unit": "ns/op",
+            "extra": "2606354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 506.4,
+            "unit": "ns/op",
+            "extra": "2337867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28396,
+            "unit": "ns/op",
+            "extra": "42072 times\n4 procs"
           }
         ]
       }

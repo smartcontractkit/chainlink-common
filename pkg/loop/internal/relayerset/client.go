@@ -106,7 +106,7 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 	}
 	resp, err := k.relayerSetClient.RelayerLatestHead(ctx, req)
 	if err != nil {
-		return types.Head{}, fmt.Errorf("error getting new chain writer: %w", err)
+		return types.Head{}, fmt.Errorf("error getting latest head from relayerset client for relayer: %w", err)
 	}
 	return types.Head{
 		Height:    resp.Height,

@@ -1,0 +1,466 @@
+{
+  "Dashboard": {
+    "title": "Capabilities Dashboard",
+    "tags": [
+      "Capabilities"
+    ],
+    "timezone": "browser",
+    "graphTooltip": 0,
+    "time": {
+      "from": "now-7d",
+      "to": "now"
+    },
+    "fiscalYearStartMonth": 0,
+    "refresh": "30s",
+    "schemaVersion": 0,
+    "panels": [
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Common indicators for capabilities",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 0,
+        "targets": [
+          {
+            "expr": "capability_execution_time_ms",
+            "format": "",
+            "legendFormat": "{{capability}}",
+            "refId": ""
+          }
+        ],
+        "title": "Execution Time",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 1,
+        "targets": [
+          {
+            "expr": "capability_runs_count",
+            "format": "",
+            "legendFormat": "{{capability}}",
+            "refId": ""
+          }
+        ],
+        "title": "Runs Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 2,
+        "targets": [
+          {
+            "expr": "capability_runs_fault_count",
+            "format": "",
+            "legendFormat": "{{capability}}",
+            "refId": ""
+          }
+        ],
+        "title": "Runs Fault Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 3,
+        "targets": [
+          {
+            "expr": "capability_runs_invalid_count",
+            "format": "",
+            "legendFormat": "{{capability}}",
+            "refId": ""
+          }
+        ],
+        "title": "Runs Invalid Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 4,
+        "targets": [
+          {
+            "expr": "capability_runs_unauthorized_count",
+            "format": "",
+            "legendFormat": "{{capability}}",
+            "refId": ""
+          }
+        ],
+        "title": "Runs Unauthorized Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 5
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 5,
+        "targets": [
+          {
+            "expr": "capability_runs_no_resource_count",
+            "format": "",
+            "legendFormat": "{{capability}}",
+            "refId": ""
+          }
+        ],
+        "title": "Runs No Resource Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 5
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "type": "query",
+          "name": "env",
+          "label": "Environment",
+          "query": "label_values(up, env)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1,
+          "includeAll": true
+        },
+        {
+          "type": "query",
+          "name": "cluster",
+          "label": "Cluster",
+          "query": "label_values(up{env=\"$env\"}, cluster)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1,
+          "includeAll": true
+        },
+        {
+          "type": "query",
+          "name": "namespace",
+          "label": "Namespace",
+          "query": "label_values(up{env=\"$env\", cluster=\"$cluster\"}, namespace)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1,
+          "includeAll": true
+        },
+        {
+          "type": "query",
+          "name": "job",
+          "label": "Job",
+          "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\"}, job)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1,
+          "includeAll": true
+        },
+        {
+          "type": "query",
+          "name": "pod",
+          "label": "Pod",
+          "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\", job=\"$job\"}, pod)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1,
+          "includeAll": true
+        },
+        {
+          "type": "query",
+          "name": "capability",
+          "label": "Capability",
+          "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\", job=\"$job\"}, pod)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1,
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {}
+  },
+  "Alerts": null,
+  "ContactPoints": null,
+  "NotificationPolicies": null
+}

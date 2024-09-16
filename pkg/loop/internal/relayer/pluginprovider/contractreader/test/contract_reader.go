@@ -26,6 +26,7 @@ var (
 
 // staticContractReader is a static implementation of ContractReaderTester
 type staticContractReader struct {
+	types.UnimplementedContractReader
 	address        string
 	contractName   string
 	contractMethod string

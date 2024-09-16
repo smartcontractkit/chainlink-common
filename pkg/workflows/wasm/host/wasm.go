@@ -34,8 +34,8 @@ func safeMem(caller *wasmtime.Caller, ptr unsafe.Pointer, size int32) ([]byte, e
 }
 
 var (
-	defaultTickInterval = time.Duration(100 * time.Millisecond)
-	defaultTimeout      = time.Duration(300 * time.Millisecond)
+	defaultTickInterval = 100 * time.Millisecond
+	defaultTimeout      = 300 * time.Millisecond
 )
 
 type ModuleConfig struct {

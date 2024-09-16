@@ -2,6 +2,7 @@ package host
 
 import (
 	_ "embed"
+	"fmt"
 	"os"
 	"os/exec"
 	"testing"
@@ -18,11 +19,23 @@ import (
 
 const (
 	successBinaryLocation = "test/success/cmd/testmodule.wasm"
+	successBinaryCmd      = "test/success/cmd"
 	failureBinaryLocation = "test/fail/cmd/testmodule.wasm"
+	failureBinaryCmd      = "test/fail/cmd"
 )
 
+func createTestBinary(outputPath, path string, t *testing.T) string {
+	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
+	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
+
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+
+	return path
+}
+
 func Test_GetWorkflowSpec(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryLocation, t))
+	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
 	require.NoError(t, err)
 
 	spec, err := GetWorkflowSpec(
@@ -37,18 +50,8 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	assert.Equal(t, spec.Owner, "ryan")
 }
 
-func createTestBinary(path string, t *testing.T) string {
-	cmd := exec.Command("go", "build", "-o", path, "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/test/cmd")
-	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
-
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, output)
-
-	return path
-}
-
 func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
-	failBinary, err := os.ReadFile(createTestBinary(failureBinaryLocation, t))
+	failBinary, err := os.ReadFile(createTestBinary(failureBinaryCmd, failureBinaryLocation, t))
 	require.NoError(t, err)
 
 	_, err = GetWorkflowSpec(
@@ -62,7 +65,7 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_Timeout(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryLocation, t))
+	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
 	require.NoError(t, err)
 
 	d := time.Duration(0)
@@ -79,7 +82,7 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 }
 
 func TestModule_Errors(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryLocation, t))
+	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
 	require.NoError(t, err)
 
 	m, err := NewModule(ModuleConfig{}, binary)

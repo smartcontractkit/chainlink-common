@@ -60,8 +60,6 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 }
 
 func runContractReaderGetLatestValueAsJSONTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	// TODO MORE TESTS HERE
-
 	tests := []testcase[T]{
 		{
 			name: "Gets the latest value",
@@ -100,6 +98,45 @@ func runContractReaderGetLatestValueAsJSONTests[T TestingT[T]](t T, tester Chain
 				actual, err = jsonActual.ToTestStruct()
 				require.NoError(t, err)
 				assert.Equal(t, &secondItem, &actual)
+			},
+		},
+		{
+			name: "Get latest value without arguments and with primitive return",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := bindingsByName(bindings, AnyContractName)[0]
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				jsonBytes, err := cr.GetLatestValueAsJSON(ctx, bound.ReadIdentifier(MethodReturningUint64), primitives.Unconfirmed, nil)
+				require.NoError(t, err)
+
+				var prim uint64
+				err = json.Unmarshal(jsonBytes, &prim)
+				require.NoError(t, err)
+
+				assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
+			},
+		},
+
+		{
+			name: "Get latest value without arguments and with slice return",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := bindingsByName(bindings, AnyContractName)[0]
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				jsonBytes, err := cr.GetLatestValueAsJSON(ctx, bound.ReadIdentifier(MethodReturningUint64Slice), primitives.Unconfirmed, nil)
+				require.NoError(t, err)
+
+				var slice []uint64
+				err = json.Unmarshal(jsonBytes, &slice)
+				assert.Equal(t, AnySliceToReadWithoutAnArgument, slice)
 			},
 		},
 	}

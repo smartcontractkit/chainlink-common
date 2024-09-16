@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726360180887,
+  "lastUpdate": 1726485717442,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1050,6 +1050,48 @@ window.BENCHMARK_DATA = {
             "value": 28399,
             "unit": "ns/op",
             "extra": "42294 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96e50c64ed1173e3a0efb3c2c9a45225dc8b38f7",
+          "message": "[CAPPL-51] Remove error from Runner.Run (#764)",
+          "timestamp": "2024-09-16T12:20:56+01:00",
+          "tree_id": "5996846c0d14de4f75c857ba74d72799a1c8125b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/96e50c64ed1173e3a0efb3c2c9a45225dc8b38f7"
+        },
+        "date": 1726485717012,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 478.7,
+            "unit": "ns/op",
+            "extra": "2611305 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 502.2,
+            "unit": "ns/op",
+            "extra": "2384001 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28434,
+            "unit": "ns/op",
+            "extra": "41090 times\n4 procs"
           }
         ]
       }

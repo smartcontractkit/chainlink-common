@@ -16,7 +16,7 @@ const (
 	unknownID = "__UNKNOWN__"
 )
 
-var _ workflows.Runner = (*Runner)(nil)
+var _ sdk.Runner = (*Runner)(nil)
 
 type Runner struct {
 	sendResponse func(payload *wasmpb.Response)

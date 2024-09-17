@@ -57,3 +57,10 @@ lint:
 modgraph: gomods
 	go install github.com/jmank88/modgraph@v0.1.0
 	./modgraph > go.md
+
+GORELEASE_BASE ?= $(shell git rev-parse origin/main)
+
+.PHONY: gorelease
+gorelease:
+	go install golang.org/x/exp/cmd/gorelease@latest
+	gorelease -base=$(GORELEASE_BASE)

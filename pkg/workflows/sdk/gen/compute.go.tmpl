@@ -39,37 +39,37 @@ func Compute{{.}}[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSp
        CapabilityType: capabilities.CapabilityTypeAction,
    }
 
-    capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+    capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
         var inputs runtime{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]
         if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-            return capabilities.CapabilityResponse{}
+            return capabilities.CapabilityResponse{}, err
         }
 
         // verify against any schema
         ji, err := json.Marshal(inputs)
         if err != nil {
-            return capabilities.CapabilityResponse{}
+            return capabilities.CapabilityResponse{}, err
         }
         if err := json.Unmarshal(ji, &inputs); err != nil {
-            return capabilities.CapabilityResponse{}
+            return capabilities.CapabilityResponse{}, err
         }
 
         output, err := compute(runtime, {{range RangeNum . }}inputs.Arg{{.}},{{ end }})
         if err != nil {
-            return capabilities.CapabilityResponse{}
+            return capabilities.CapabilityResponse{}, err
         }
 
         computeOutput := ComputeOutput[O]{Value: output}
         wrapped, err := values.CreateMapFromStruct(computeOutput)
         if err != nil {
-            return capabilities.CapabilityResponse{}
+            return capabilities.CapabilityResponse{}, err
         }
 
-        return capabilities.CapabilityResponse{Value: wrapped}
+        return capabilities.CapabilityResponse{Value: wrapped}, nil
     }
 
     if w.fns == nil {
-        w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+        w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
     }
     w.fns[ref] = capFn
     return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}

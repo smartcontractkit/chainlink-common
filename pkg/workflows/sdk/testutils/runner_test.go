@@ -1,6 +1,7 @@
 package testutils_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -103,6 +104,31 @@ func TestRunner(t *testing.T) {
 
 		runner.Run(workflow)
 		require.Error(t, runner.Err())
+	})
+
+	t.Run("Run captures errors", func(t *testing.T) {
+		expectedErr := errors.New("nope")
+		wf := createBasicTestWorkflow(func(SDK sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
+			return false, expectedErr
+		})
+
+		runner := testutils.NewRunner(tests.Context(t))
+
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
+		})
+
+		basicactiontest.Action(runner, func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
+			return basicaction.ActionOutputs{AdaptedThing: "it was true"}, nil
+		})
+
+		consensusMock := ocr3captest.IdenticalConsensus[basicaction.ActionOutputs](runner)
+
+		runner.Run(wf)
+		assert.True(t, errors.Is(runner.Err(), expectedErr))
+
+		consensus := consensusMock.GetStep("consensus")
+		assert.False(t, consensus.WasRun)
 	})
 
 	t.Run("Run fails if MockCapability is not provided for a step that is run", func(t *testing.T) {

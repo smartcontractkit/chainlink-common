@@ -9,7 +9,7 @@ import (
 
 type computeCapability struct {
 	sdk      sdk.Runtime
-	callback func(sdk sdk.Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse
+	callback func(sdk sdk.Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
 }
 
 func (c *computeCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -29,7 +29,7 @@ func (c *computeCapability) UnregisterFromWorkflow(ctx context.Context, request 
 }
 
 func (c *computeCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
-	return c.callback(c.sdk, request), nil
+	return c.callback(c.sdk, request)
 }
 
 var _ capabilities.ActionCapability = &computeCapability{}

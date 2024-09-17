@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"reflect"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/shopspring/decimal"
 
@@ -37,6 +38,8 @@ func Wrap(v any) (Value, error) {
 		return NewMap(tv)
 	case string:
 		return NewString(tv), nil
+	case *string:
+		return NewString(*tv), nil
 	case bool:
 		return NewBool(tv), nil
 	case []byte:
@@ -55,8 +58,19 @@ func Wrap(v any) (Value, error) {
 		return NewInt64(int64(tv)), nil
 	case uint32:
 		return NewInt64(int64(tv)), nil
+	case *uint8:
+		return NewInt64(int64(*tv)), nil
+	case *int32:
+		return NewInt64(int64(*tv)), nil
+	case *int64:
+		return NewInt64(*tv), nil
+	case *common.Address:
+		return NewBytes(tv.Bytes()), nil
+	case common.Address:
+		return NewBytes(tv.Bytes()), nil
 	case *big.Int:
 		return NewBigInt(tv), nil
+
 	case nil:
 		return nil, nil
 
@@ -74,6 +88,22 @@ func Wrap(v any) (Value, error) {
 		return tv, nil
 	case *Int64:
 		return tv, nil
+	}
+
+	if isPointerToByteArray(v) {
+		arrayValue := reflect.ValueOf(v).Elem()
+		length := arrayValue.Len()
+
+		// Create a slice with the same length as the array
+		slice := make([]byte, length)
+
+		// Copy elements from the array to the slice
+		for i := 0; i < length; i++ {
+			thang := arrayValue.Index(i).Interface()
+			slice[i] = thang.(byte)
+		}
+
+		return NewBytes(slice), nil
 	}
 
 	// Handle slices, structs, and pointers to structs
@@ -103,18 +133,18 @@ func Wrap(v any) (Value, error) {
 		return NewMap(m)
 	// Better complex type support for slices
 	case reflect.Slice:
-		s := make([]any, val.Len())
-		for i := 0; i < val.Len(); i++ {
-			item := val.Index(i).Interface()
-			s[i] = item
-		}
-		return NewList(s)
+		return createListFromSlice(val)
 	case reflect.Struct:
 		return CreateMapFromStruct(v)
 	case reflect.Pointer:
 		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
 			return CreateMapFromStruct(reflect.Indirect(reflect.ValueOf(v)).Interface())
 		}
+
+		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Slice {
+			return createListFromSlice(reflect.Indirect(reflect.ValueOf(v)))
+		}
+
 	case reflect.String:
 		return Wrap(val.Convert(reflect.TypeOf("")).Interface())
 	case reflect.Bool:
@@ -124,6 +154,32 @@ func Wrap(v any) (Value, error) {
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
+}
+
+func createListFromSlice(val reflect.Value) (Value, error) {
+	s := make([]any, val.Len())
+	for i := 0; i < val.Len(); i++ {
+		item := val.Index(i).Interface()
+		s[i] = item
+	}
+	return NewList(s)
+}
+
+func isPointerToByteArray(v interface{}) bool {
+	t := reflect.TypeOf(v)
+	if t.Kind() != reflect.Ptr {
+		return false
+	}
+
+	if t.Elem().Kind() != reflect.Array {
+		return false
+	}
+
+	if t.Elem().Elem().Kind() != reflect.Uint8 {
+		return false
+	}
+
+	return true
 }
 
 func WrapMap(a any) (*Map, error) {

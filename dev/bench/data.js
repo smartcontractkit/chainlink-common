@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726588895239,
+  "lastUpdate": 1726591544561,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1260,6 +1260,48 @@ window.BENCHMARK_DATA = {
             "value": 28309,
             "unit": "ns/op",
             "extra": "42340 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fc3e154217dde977e93a7264a78108236ac86927",
+          "message": "Remove mustEmbed from ContractReader (#772)\n\nTemporarily removing mustEmbed from `ContractReader` interface due to complications\r\ninvolving mockery. To use the mustEmbed, a new interface mocking style must be implemented\r\nthat doesn't directly reference `ContractReader` in common. This would negatively impact\r\nthe timeline to CCIP at the current time.",
+          "timestamp": "2024-09-17T11:44:47-05:00",
+          "tree_id": "9c302e90e65919fca4a164cc3ab49768a32a602e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fc3e154217dde977e93a7264a78108236ac86927"
+        },
+        "date": 1726591544092,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.3,
+            "unit": "ns/op",
+            "extra": "2427393 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 498.5,
+            "unit": "ns/op",
+            "extra": "2419476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28541,
+            "unit": "ns/op",
+            "extra": "41846 times\n4 procs"
           }
         ]
       }

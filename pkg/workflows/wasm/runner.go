@@ -150,7 +150,10 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 		return nil, fmt.Errorf("invalid compute request: could not translate proto into capability request")
 	}
 
-	resp := fn(sdk, creq)
+	resp, err := fn(sdk, creq)
+	if err != nil {
+		return nil, fmt.Errorf("error executing custom compute: %w", err)
+	}
 
 	resppb := capabilitiespb.CapabilityResponseToProto(resp)
 

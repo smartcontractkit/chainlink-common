@@ -34,37 +34,37 @@ func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1I
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime1Inputs[I0]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -98,37 +98,37 @@ func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input C
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime2Inputs[I0, I1]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -165,37 +165,37 @@ func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string,
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime3Inputs[I0, I1, I2]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -235,37 +235,37 @@ func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime4Inputs[I0, I1, I2, I3]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -308,37 +308,37 @@ func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFact
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime5Inputs[I0, I1, I2, I3, I4]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -384,37 +384,37 @@ func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *Workflow
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime6Inputs[I0, I1, I2, I3, I4, I5]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -463,37 +463,37 @@ func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime7Inputs[I0, I1, I2, I3, I4, I5, I6]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -545,37 +545,37 @@ func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O 
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -630,37 +630,37 @@ func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
@@ -718,37 +718,37 @@ func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
 
-	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse {
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 		var inputs runtime10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]
 		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		// verify against any schema
 		ji, err := json.Marshal(inputs)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 		if err := json.Unmarshal(ji, &inputs); err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8, inputs.Arg9)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		computeOutput := ComputeOutput[O]{Value: output}
 		wrapped, err := values.CreateMapFromStruct(computeOutput)
 		if err != nil {
-			return capabilities.CapabilityResponse{}
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return capabilities.CapabilityResponse{Value: wrapped}
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
 	}
 
 	if w.fns == nil {
-		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) capabilities.CapabilityResponse{}
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
 	}
 	w.fns[ref] = capFn
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}

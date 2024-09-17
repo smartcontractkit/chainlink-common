@@ -20,12 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ContractReader_GetLatestValue_FullMethodName       = "/loop.ContractReader/GetLatestValue"
-	ContractReader_GetLatestValueAsJSON_FullMethodName = "/loop.ContractReader/GetLatestValueAsJSON"
-	ContractReader_BatchGetLatestValues_FullMethodName = "/loop.ContractReader/BatchGetLatestValues"
-	ContractReader_QueryKey_FullMethodName             = "/loop.ContractReader/QueryKey"
-	ContractReader_Bind_FullMethodName                 = "/loop.ContractReader/Bind"
-	ContractReader_Unbind_FullMethodName               = "/loop.ContractReader/Unbind"
+	ContractReader_GetLatestValue_FullMethodName        = "/loop.ContractReader/GetLatestValue"
+	ContractReader_GetLatestWrappedValue_FullMethodName = "/loop.ContractReader/GetLatestWrappedValue"
+	ContractReader_BatchGetLatestValues_FullMethodName  = "/loop.ContractReader/BatchGetLatestValues"
+	ContractReader_QueryKey_FullMethodName              = "/loop.ContractReader/QueryKey"
+	ContractReader_Bind_FullMethodName                  = "/loop.ContractReader/Bind"
+	ContractReader_Unbind_FullMethodName                = "/loop.ContractReader/Unbind"
 )
 
 // ContractReaderClient is the client API for ContractReader service.
@@ -33,7 +33,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ContractReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
-	GetLatestValueAsJSON(ctx context.Context, in *GetLatestValueAsJSONRequest, opts ...grpc.CallOption) (*GetLatestValueAsJSONReply, error)
+	GetLatestWrappedValue(ctx context.Context, in *GetLatestWrappedValueRequest, opts ...grpc.CallOption) (*GetLatestWrappedValueReply, error)
 	BatchGetLatestValues(ctx context.Context, in *BatchGetLatestValuesRequest, opts ...grpc.CallOption) (*BatchGetLatestValuesReply, error)
 	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -57,9 +57,9 @@ func (c *contractReaderClient) GetLatestValue(ctx context.Context, in *GetLatest
 	return out, nil
 }
 
-func (c *contractReaderClient) GetLatestValueAsJSON(ctx context.Context, in *GetLatestValueAsJSONRequest, opts ...grpc.CallOption) (*GetLatestValueAsJSONReply, error) {
-	out := new(GetLatestValueAsJSONReply)
-	err := c.cc.Invoke(ctx, ContractReader_GetLatestValueAsJSON_FullMethodName, in, out, opts...)
+func (c *contractReaderClient) GetLatestWrappedValue(ctx context.Context, in *GetLatestWrappedValueRequest, opts ...grpc.CallOption) (*GetLatestWrappedValueReply, error) {
+	out := new(GetLatestWrappedValueReply)
+	err := c.cc.Invoke(ctx, ContractReader_GetLatestWrappedValue_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (c *contractReaderClient) Unbind(ctx context.Context, in *UnbindRequest, op
 // for forward compatibility
 type ContractReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
-	GetLatestValueAsJSON(context.Context, *GetLatestValueAsJSONRequest) (*GetLatestValueAsJSONReply, error)
+	GetLatestWrappedValue(context.Context, *GetLatestWrappedValueRequest) (*GetLatestWrappedValueReply, error)
 	BatchGetLatestValues(context.Context, *BatchGetLatestValuesRequest) (*BatchGetLatestValuesReply, error)
 	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
@@ -122,8 +122,8 @@ type UnimplementedContractReaderServer struct {
 func (UnimplementedContractReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
 }
-func (UnimplementedContractReaderServer) GetLatestValueAsJSON(context.Context, *GetLatestValueAsJSONRequest) (*GetLatestValueAsJSONReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValueAsJSON not implemented")
+func (UnimplementedContractReaderServer) GetLatestWrappedValue(context.Context, *GetLatestWrappedValueRequest) (*GetLatestWrappedValueReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestWrappedValue not implemented")
 }
 func (UnimplementedContractReaderServer) BatchGetLatestValues(context.Context, *BatchGetLatestValuesRequest) (*BatchGetLatestValuesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BatchGetLatestValues not implemented")
@@ -168,20 +168,20 @@ func _ContractReader_GetLatestValue_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ContractReader_GetLatestValueAsJSON_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetLatestValueAsJSONRequest)
+func _ContractReader_GetLatestWrappedValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatestWrappedValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ContractReaderServer).GetLatestValueAsJSON(ctx, in)
+		return srv.(ContractReaderServer).GetLatestWrappedValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ContractReader_GetLatestValueAsJSON_FullMethodName,
+		FullMethod: ContractReader_GetLatestWrappedValue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ContractReaderServer).GetLatestValueAsJSON(ctx, req.(*GetLatestValueAsJSONRequest))
+		return srv.(ContractReaderServer).GetLatestWrappedValue(ctx, req.(*GetLatestWrappedValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -270,8 +270,8 @@ var ContractReader_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ContractReader_GetLatestValue_Handler,
 		},
 		{
-			MethodName: "GetLatestValueAsJSON",
-			Handler:    _ContractReader_GetLatestValueAsJSON_Handler,
+			MethodName: "GetLatestWrappedValue",
+			Handler:    _ContractReader_GetLatestWrappedValue_Handler,
 		},
 		{
 			MethodName: "BatchGetLatestValues",

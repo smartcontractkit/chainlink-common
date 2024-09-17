@@ -5,11 +5,12 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "codec.proto";
+import "values/pb/values.proto";
 import "google/protobuf/empty.proto";
 
 service ContractReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
-  rpc GetLatestValueAsJSON (GetLatestValueAsJSONRequest) returns (GetLatestValueAsJSONReply) {}
+  rpc GetLatestWrappedValue (GetLatestWrappedValueRequest) returns (GetLatestWrappedValueReply) {}
   rpc BatchGetLatestValues (BatchGetLatestValuesRequest) returns (BatchGetLatestValuesReply) {}
   rpc QueryKey(QueryKeyRequest) returns (QueryKeyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
@@ -23,8 +24,8 @@ message GetLatestValueRequest {
   VersionedBytes params = 3;
 }
 
-// GetLatestValueWithDefaultTypeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValueWithDefaultType].
-message GetLatestValueAsJSONRequest {
+// GetLatestWrappedValue has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestWrappedValue].
+message GetLatestWrappedValueRequest {
   string read_identifier = 1;
   Confidence confidence = 2;
   VersionedBytes params = 3;
@@ -57,9 +58,9 @@ message GetLatestValueReply {
   VersionedBytes ret_val = 1;
 }
 
-// GetLatestValueWithDefaultTypeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
-message GetLatestValueAsJSONReply {
-  bytes json = 1;
+// GetLatestWrappedValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestWrappedValue].
+message GetLatestWrappedValueReply {
+  values.Value value = 1;
 }
 
 // BatchGetLatestValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].

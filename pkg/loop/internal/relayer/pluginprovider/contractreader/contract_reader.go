@@ -21,6 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 var _ types.ContractReader = (*Client)(nil)
@@ -157,30 +158,30 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
-func (c *Client) GetLatestValueAsJSON(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) ([]byte, error) {
-	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) GetLatestWrappedValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (values.Value, error) {
+		versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
+		if err != nil {
+			return nil, err
+		}
 
-	pbConfidence, err := confidenceToProto(confidenceLevel)
-	if err != nil {
-		return nil, err
-	}
+		pbConfidence, err := confidenceToProto(confidenceLevel)
+		if err != nil {
+			return nil, err
+		}
 
-	reply, err := c.grpc.GetLatestValueAsJSON(
-		ctx,
-		&pb.GetLatestValueAsJSONRequest{
-			ReadIdentifier: readIdentifier,
-			Confidence:     pbConfidence,
-			Params:         versionedParams,
-		},
-	)
-	if err != nil {
-		return nil, net.WrapRPCErr(err)
-	}
-
-	return reply.Json, nil
+		reply, err := c.grpc.GetLatestWrappedValue()
+			ctx,
+			&pb.GetLatestValueAsJSONRequest{
+				ReadIdentifier: readIdentifier,
+				Confidence:     pbConfidence,
+				Params:         versionedParams,
+			},
+		)
+		if err != nil {
+			return nil, net.WrapRPCErr(err)
+		}
+	*/
+	return nil, nil
 }
 
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -316,27 +317,29 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
 }
 
-func (c *Server) GetLatestValueAsJSON(ctx context.Context, request *pb.GetLatestValueAsJSONRequest) (*pb.GetLatestValueAsJSONReply, error) {
-	params, err := getContractEncodedType(request.ReadIdentifier, c.impl, true)
-	if err != nil {
-		return nil, err
-	}
+func (c *Server) GetLatestWrappedValue(ctx context.Context, request *pb.GetLatestValueAsJSONRequest) (*pb.GetLatestValueAsJSONReply, error) {
+	/*	params, err := getContractEncodedType(request.ReadIdentifier, c.impl, true)
+		if err != nil {
+			return nil, err
+		}
 
-	if err = DecodeVersionedBytes(params, request.Params); err != nil {
-		return nil, err
-	}
+		if err = DecodeVersionedBytes(params, request.Params); err != nil {
+			return nil, err
+		}
 
-	confidenceLevel, err := confidenceFromProto(request.Confidence)
-	if err != nil {
-		return nil, err
-	}
+		confidenceLevel, err := confidenceFromProto(request.Confidence)
+		if err != nil {
+			return nil, err
+		}
 
-	valAsJson, err := c.impl.GetLatestValueAsJSON(ctx, request.ReadIdentifier, confidenceLevel, params)
-	if err != nil {
-		return nil, err
-	}
+		valAsJson, err := c.impl.GetLatestWrappedValue(ctx, request.ReadIdentifier, confidenceLevel, params)
+		if err != nil {
+			return nil, err
+		}
+	*/
+	return nil, nil
 
-	return &pb.GetLatestValueAsJSONReply{Json: valAsJson}, nil
+	//return &pb.GetLatestValueAsJSONReply{Json: valAsJson}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {

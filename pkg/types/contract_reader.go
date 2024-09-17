@@ -6,6 +6,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 // Errors exposed to product plugins
@@ -45,8 +46,8 @@ type ContractReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
-	// GetLatestValueAsJSON returns the latest value as JSON
-	GetLatestValueAsJSON(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) ([]byte, error)
+	// GetLatestWrappedValue returns the latest value wrapped in a values.Value instance.
+	GetLatestWrappedValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params any) (values.Value, error)
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.

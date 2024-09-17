@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 var (
@@ -83,7 +84,7 @@ func (c staticContractReader) GetLatestValue(_ context.Context, readName string,
 	return nil
 }
 
-func (c staticContractReader) GetLatestValueAsJSON(_ context.Context, readName string, _ primitives.ConfidenceLevel, params any) ([]byte, error) {
+func (c staticContractReader) GetLatestWrappedValue(_ context.Context, readName string, _ primitives.ConfidenceLevel, params any) (values.Value, error) {
 	return nil, nil
 }
 

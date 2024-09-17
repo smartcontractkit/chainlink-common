@@ -43,7 +43,7 @@ const DefaultEncodingVersion = CBOREncodingVersion
 type ClientOpt func(*Client)
 
 type Client struct {
-	types.UnimplementedContractReader
+	types.ContractReader
 	serviceClient *goplugin.ServiceClient
 	grpc          pb.ContractReaderClient
 	encodeWith    EncodingVersion

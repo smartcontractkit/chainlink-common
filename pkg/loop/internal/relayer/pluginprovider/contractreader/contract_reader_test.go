@@ -339,7 +339,7 @@ type eventConfidencePair struct {
 }
 
 type fakeContractReader struct {
-	types.UnimplementedContractReader
+	types.ContractReader
 	fakeTypeProvider
 	vals        []valConfidencePair
 	triggers    []eventConfidencePair
@@ -606,7 +606,7 @@ func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, 
 }
 
 type errContractReader struct {
-	types.UnimplementedContractReader
+	types.ContractReader
 	err error
 }
 
@@ -641,7 +641,7 @@ func (e *errContractReader) QueryKey(_ context.Context, _ types.BoundContract, _
 }
 
 type protoConversionTestContractReader struct {
-	types.UnimplementedContractReader
+	types.ContractReader
 	expectedBindings     types.BoundContract
 	expectedQueryFilter  query.KeyFilter
 	expectedLimitAndSort query.LimitAndSort

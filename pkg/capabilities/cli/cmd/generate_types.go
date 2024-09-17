@@ -22,13 +22,16 @@ var CapabilitySchemaFilePattern = regexp.MustCompile(`([^/]+)_(action|trigger|co
 
 const toolName = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli"
 
-func GenerateTypes(dir, localPrefix string, helpers []WorkflowHelperGenerator) error {
+func GenerateTypes(dir, localPrefix string, extraUrls []string, helpers []WorkflowHelperGenerator) error {
 	schemaPaths, err := schemaFilesFromDir(dir)
 	if err != nil {
 		return err
 	}
 
-	cfgInfo, err := ConfigFromSchemas(schemaPaths)
+	allPaths := make([]string, len(extraUrls)+len(schemaPaths))
+	copy(allPaths, schemaPaths)
+	copy(allPaths[len(schemaPaths):], extraUrls)
+	cfgInfo, err := ConfigFromSchemas(allPaths)
 	if err != nil {
 		return err
 	}
@@ -122,11 +125,14 @@ func generateHelpers(helpers []WorkflowHelperGenerator, structs GeneratedInfo, a
 }
 
 func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
+	loader := schemas.NewDefaultCacheLoader([]string{}, []string{".yaml", ".yml"})
 	configInfo := ConfigInfo{
 		Config: generator.Config{
-			Tags:         []string{"json", "yaml", "mapstructure"},
-			Warner:       func(message string) { fmt.Printf("Warning: %s\n", message) },
-			MinSizedInts: true,
+			Tags:           []string{"json", "yaml", "mapstructure"},
+			Warner:         func(message string) { fmt.Printf("Warning: %s\n", message) },
+			MinSizedInts:   true,
+			YAMLExtensions: []string{".yaml", ".yml"},
+			Loader:         loader,
 		},
 		SchemaToTypeInfo: map[string]TypeInfo{},
 	}
@@ -138,7 +144,7 @@ func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 				"invalid schema file path %v, does not match pattern %s", schemaFilePath, CapabilitySchemaFilePattern)
 		}
 
-		jsonSchema, err := schemas.FromJSONFile(schemaFilePath)
+		jsonSchema, err := loader.Load(schemaFilePath, "")
 		if err != nil {
 			return configInfo, err
 		}

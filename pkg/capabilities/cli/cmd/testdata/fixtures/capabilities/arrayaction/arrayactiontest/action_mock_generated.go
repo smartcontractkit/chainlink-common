@@ -6,7 +6,7 @@ package arrayactiontest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 
 // Action registers a new capability mock with the runner

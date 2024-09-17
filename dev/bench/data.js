@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726504499114,
+  "lastUpdate": 1726563699527,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1176,6 +1176,48 @@ window.BENCHMARK_DATA = {
             "value": 28396,
             "unit": "ns/op",
             "extra": "42072 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "47eac983684dde08adce4032eec5afe4280cdfb8",
+          "message": "[CAPPL-38] GetWorkflowSpec tidy up (#770)\n\n* [CAPPL-51] Remove error from Runner.Run (#764)\r\n\r\n* [CAPPL-38] Add more tests for GetWorkflowSpec",
+          "timestamp": "2024-09-17T10:00:32+01:00",
+          "tree_id": "874f726aaedd58445e0d0f5deb23369c9f82d1f6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/47eac983684dde08adce4032eec5afe4280cdfb8"
+        },
+        "date": 1726563698421,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458.9,
+            "unit": "ns/op",
+            "extra": "2236711 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 527.1,
+            "unit": "ns/op",
+            "extra": "2353958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28252,
+            "unit": "ns/op",
+            "extra": "42452 times\n4 procs"
           }
         ]
       }

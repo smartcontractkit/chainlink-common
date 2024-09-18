@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726655591488,
+  "lastUpdate": 1726693590874,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1344,6 +1344,48 @@ window.BENCHMARK_DATA = {
             "value": 29791,
             "unit": "ns/op",
             "extra": "42066 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "564164004d06594f1ae66adc9962fe8d82dbe442",
+          "message": "[BCFR-203] - Improve CR ValComparators to take in arbitrary value (#689)\n\n* Improve CR ValComparators to use any instead of string\r\n\r\n* Add interface tests for QueryKey value comparators\r\n\r\n* Remove CR querying for nested fields test case\r\n\r\n* Rearrange CR TestStruct fields for easier EVM testing\r\n\r\n* lint\r\n\r\n* Update QueryKey Val Comp test case to use Chain Writer\r\n\r\n* Minor fixes and lint\r\n\r\n* FIx testing helper ComparisonOperator Compare function\r\n\r\n* run generate\r\n\r\n* Fix QueryKey filter conversion from proto",
+          "timestamp": "2024-09-18T23:05:34+02:00",
+          "tree_id": "537964cd27966dbb221077bda09bab708cfb81e9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/564164004d06594f1ae66adc9962fe8d82dbe442"
+        },
+        "date": 1726693590401,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458.4,
+            "unit": "ns/op",
+            "extra": "2621308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 504.3,
+            "unit": "ns/op",
+            "extra": "2369784 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28544,
+            "unit": "ns/op",
+            "extra": "41917 times\n4 procs"
           }
         ]
       }

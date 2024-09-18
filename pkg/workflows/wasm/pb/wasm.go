@@ -6,10 +6,10 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-func toStepDefinition(sd workflows.StepDefinition) (*StepDefinition, error) {
+func toStepDefinition(sd sdk.StepDefinition) (*StepDefinition, error) {
 	var inputs *values.Map
 	if sd.Inputs.Mapping != nil {
 		i, err := values.WrapMap(sd.Inputs.Mapping)
@@ -36,7 +36,7 @@ func toStepDefinition(sd workflows.StepDefinition) (*StepDefinition, error) {
 	}, nil
 }
 
-func WorkflowSpecToProto(spec *workflows.WorkflowSpec) (*WorkflowSpec, error) {
+func WorkflowSpecToProto(spec *sdk.WorkflowSpec) (*WorkflowSpec, error) {
 	ws := &WorkflowSpec{
 		Name:      spec.Name,
 		Owner:     spec.Owner,
@@ -81,41 +81,41 @@ func WorkflowSpecToProto(spec *workflows.WorkflowSpec) (*WorkflowSpec, error) {
 	return ws, nil
 }
 
-func fromStepDefinition(sd *StepDefinition) (workflows.StepDefinition, error) {
+func fromStepDefinition(sd *StepDefinition) (sdk.StepDefinition, error) {
 	if sd.Inputs == nil {
-		return workflows.StepDefinition{}, errors.New("invalid step definition: inputs cannot be nil")
+		return sdk.StepDefinition{}, errors.New("invalid step definition: inputs cannot be nil")
 	}
 
 	var mapping map[string]any
 	if sd.Inputs.Mapping != nil {
 		v, err := values.FromMapValueProto(sd.Inputs.Mapping)
 		if err != nil {
-			return workflows.StepDefinition{}, fmt.Errorf("invalid step definition: could not convert inputs mapping to value: %w", err)
+			return sdk.StepDefinition{}, fmt.Errorf("invalid step definition: could not convert inputs mapping to value: %w", err)
 		}
 
 		err = v.UnwrapTo(&mapping)
 		if err != nil {
-			return workflows.StepDefinition{}, fmt.Errorf("invalid step definition: could not unwrap inputs mapping: %w", err)
+			return sdk.StepDefinition{}, fmt.Errorf("invalid step definition: could not unwrap inputs mapping: %w", err)
 		}
 	}
 
 	mvConfig, err := values.FromMapValueProto(sd.Config)
 	if err != nil {
-		return workflows.StepDefinition{}, fmt.Errorf("invalid step definition: could not unwrap config: %w", err)
+		return sdk.StepDefinition{}, fmt.Errorf("invalid step definition: could not unwrap config: %w", err)
 	}
 
 	cmapping := map[string]any{}
 	if mvConfig != nil {
 		err := mvConfig.UnwrapTo(&cmapping)
 		if err != nil {
-			return workflows.StepDefinition{}, fmt.Errorf("invalid step definition: could not unwrap config to map: %w", err)
+			return sdk.StepDefinition{}, fmt.Errorf("invalid step definition: could not unwrap config to map: %w", err)
 		}
 	}
 
-	return workflows.StepDefinition{
+	return sdk.StepDefinition{
 		ID:  sd.Id,
 		Ref: sd.Ref,
-		Inputs: workflows.StepInputs{
+		Inputs: sdk.StepInputs{
 			OutputRef: sd.Inputs.OutputRef,
 			Mapping:   mapping,
 		},
@@ -124,14 +124,14 @@ func fromStepDefinition(sd *StepDefinition) (workflows.StepDefinition, error) {
 	}, nil
 }
 
-func ProtoToWorkflowSpec(spec *WorkflowSpec) (*workflows.WorkflowSpec, error) {
-	ws := &workflows.WorkflowSpec{
+func ProtoToWorkflowSpec(spec *WorkflowSpec) (*sdk.WorkflowSpec, error) {
+	ws := &sdk.WorkflowSpec{
 		Name:      spec.Name,
 		Owner:     spec.Owner,
-		Triggers:  []workflows.StepDefinition{},
-		Actions:   []workflows.StepDefinition{},
-		Consensus: []workflows.StepDefinition{},
-		Targets:   []workflows.StepDefinition{},
+		Triggers:  []sdk.StepDefinition{},
+		Actions:   []sdk.StepDefinition{},
+		Consensus: []sdk.StepDefinition{},
+		Targets:   []sdk.StepDefinition{},
 	}
 
 	for _, t := range spec.Triggers {

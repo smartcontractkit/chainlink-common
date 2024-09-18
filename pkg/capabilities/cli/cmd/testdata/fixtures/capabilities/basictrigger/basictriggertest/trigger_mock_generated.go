@@ -6,7 +6,7 @@ package basictriggertest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 
 // Trigger registers a new capability mock with the runner

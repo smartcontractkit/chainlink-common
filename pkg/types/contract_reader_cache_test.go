@@ -46,7 +46,7 @@ func TestCachedContractReader_DefaultFallthrough(t *testing.T) {
 	require.ErrorIs(t, err, types.ErrInvalidEncoding)
 }
 
-func TestContractReader_FallthroughOnStale(t *testing.T) {
+func TestCachedContractReader_FallthroughOnStale(t *testing.T) {
 	t.Parallel()
 
 	mcr := newTestReader()
@@ -62,26 +62,25 @@ func TestContractReader_FallthroughOnStale(t *testing.T) {
 	// setting the cache strategy should not return an error
 	require.NoError(t, crCache.SetCacheStrategy(readIdentifier, primitives.Finalized, strategy))
 
-	callFunc := func(t *testing.T, val int64, callCount int) {
+	callFunc := func(t *testing.T, val map[string]any, callCount int) {
 		t.Helper()
 
-		var output map[string]any
-
+		output := make(map[string]any)
 		params := map[string]any{"param1": "value1"}
 
-		require.NoError(t, crCache.GetLatestValue(ctx, readIdentifier, primitives.Finalized, params, &output))
-		require.NoError(t, crCache.GetLatestValue(ctx, readIdentifier, primitives.Finalized, params, &output))
+		require.NoError(t, crCache.GetLatestValue(ctx, readIdentifier, primitives.Finalized, &params, &output))
+		require.NoError(t, crCache.GetLatestValue(ctx, readIdentifier, primitives.Finalized, &params, &output))
 		require.Equal(t, callCount, mcr.CallCount())
 
 		assert.Equal(t, val, output)
 	}
 
-	callFunc(t, 8, 1)
+	callFunc(t, map[string]any{"ret1": "latestValue1"}, 1)
 	time.Sleep(strategy.Staleness)
-	callFunc(t, 9, 2)
+	callFunc(t, map[string]any{"ret1": "latestValue1"}, 2)
 }
 
-func TestContractReader_PollAndCache(t *testing.T) {
+func TestCachedContractReader_PollAndCache(t *testing.T) {
 	t.Parallel()
 
 	mcr := newTestReader()
@@ -90,7 +89,7 @@ func TestContractReader_PollAndCache(t *testing.T) {
 
 	strategy := types.PollAndCache{
 		TriggerAndCache: types.TriggerAndCache{
-			Params: map[string]any{"param1": "value1"},
+			Params: &map[string]any{"param1": "value1"},
 			Value:  reflect.New(reflect.TypeOf(map[string]any{})).Interface(),
 		},
 		Interval: 5 * time.Second,
@@ -109,11 +108,11 @@ func TestContractReader_PollAndCache(t *testing.T) {
 	callAndAssert(ctx, t, crCache, mcr, 1, map[string]any{"ret1": "latestValue1"}, strategy.Params)
 
 	// request with different params falls through
-	callAndAssert(ctx, t, crCache, mcr, 2, map[string]any{"ret2": "latestValue2"}, map[string]any{"param2": "value2"})
+	callAndAssert(ctx, t, crCache, mcr, 2, map[string]any{"ret2": "latestValue2"}, &map[string]any{"param2": "value2"})
 	time.Sleep(strategy.Interval)
 
 	// after polling interval
-	callAndAssert(ctx, t, crCache, mcr, 3, map[string]any{"ret1": "latestValue1"}, strategy.Params)
+	callAndAssert(ctx, t, crCache, mcr, 2, map[string]any{"ret1": "latestValue1"}, strategy.Params)
 }
 
 func callAndAssert(
@@ -127,7 +126,7 @@ func callAndAssert(
 ) {
 	t.Helper()
 
-	var output map[string]any
+	output := make(map[string]any)
 
 	require.NoError(t, crCache.GetLatestValue(ctx, testBinding.ReadIdentifier(testReadName), primitives.Finalized, params, &output))
 	assert.Equal(t, expected, output)
@@ -195,21 +194,26 @@ func (c *staticContractReader) GetLatestValue(_ context.Context, readName string
 	if !ok {
 		return fmt.Errorf("%w: Invalid parameter type received in GetLatestValue. Expected %T but received %T", types.ErrInvalidEncoding, c.params, params)
 	}
-	if (*gotParams)["param1"] != c.params["param1"] || (*gotParams)["param2"] != c.params["param2"] {
-		return fmt.Errorf("%w: Wrong params value received in GetLatestValue. Expected %v but received %v", types.ErrInvalidEncoding, c.params, *gotParams)
-	}
 
 	ret, ok := returnVal.(*map[string]any)
 	if !ok {
 		return fmt.Errorf("%w: Wrong type passed for retVal param to GetLatestValue impl (expected %T instead of %T", types.ErrInvalidType, c.latestValue, returnVal)
 	}
 
-	if _, ok := (*gotParams)["param1"]; ok {
-		(*ret)["ret1"] = c.latestValue["ret1"]
+	if val, ok := (*gotParams)["param1"]; ok {
+		if val != c.params["param1"] {
+			return fmt.Errorf("%w: Wrong params value received in GetLatestValue. Expected %v but received %v", types.ErrInvalidEncoding, c.params, *gotParams)
+		}
+
+		*ret = map[string]any{"ret1": c.latestValue["ret1"]}
 	}
 
-	if _, ok := (*gotParams)["param2"]; ok {
-		(*ret)["ret2"] = c.latestValue["ret2"]
+	if val, ok := (*gotParams)["param2"]; ok {
+		if val != c.params["param2"] {
+			return fmt.Errorf("%w: Wrong params value received in GetLatestValue. Expected %v but received %v", types.ErrInvalidEncoding, c.params, *gotParams)
+		}
+
+		*ret = map[string]any{"ret2": c.latestValue["ret2"]}
 	}
 
 	return nil

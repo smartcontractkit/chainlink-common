@@ -58,9 +58,10 @@ type CachedContractReader struct {
 	triggers   []cacheKey
 
 	// active data
-	data     map[cacheKey]*cachedValue
-	subprocs []chan struct{}
-	state    services.StateMachine
+	data      map[string]*cachedValue
+	keyLookup map[string]cacheKey
+	subprocs  []chan struct{}
+	state     services.StateMachine
 
 	// properties for thread safety
 	strategyLock sync.RWMutex
@@ -72,7 +73,8 @@ func NewCachedContractReader(base ContractReader) *CachedContractReader {
 	return &CachedContractReader{
 		base:       base,
 		strategies: make(map[string]any),
-		data:       make(map[cacheKey]*cachedValue),
+		data:       make(map[string]*cachedValue),
+		keyLookup:  make(map[string]cacheKey),
 		polling:    make([]cacheKey, 0),
 		triggers:   make([]cacheKey, 0),
 		subprocs:   make([]chan struct{}, 0, 2),
@@ -208,7 +210,7 @@ func (c *CachedContractReader) TriggerWithContext(ctx context.Context) {
 
 func (c *CachedContractReader) getFromCache(key cacheKey, returnVal any) error {
 	c.dataLock.RLock()
-	data, hasData := c.data[key]
+	data, hasData := c.data[key.String()]
 	c.dataLock.RUnlock()
 
 	if !hasData {
@@ -286,17 +288,20 @@ func (c *CachedContractReader) startSubproc(fn func(), frequency time.Duration) 
 }
 
 func (c *CachedContractReader) clean() {
-	forRemoval := make([]cacheKey, 0)
+	forRemoval := make([]string, 0)
 
 	c.dataLock.RLock()
 
-	for key, data := range c.data {
-		if key.staleness == 0 {
-			continue
-		}
+	for keyStr, data := range c.data {
+		key, keyExists := c.keyLookup[keyStr]
+		if keyExists {
+			if key.staleness == 0 {
+				continue
+			}
 
-		if time.Since(data.LastUpdate()) > key.staleness {
-			forRemoval = append(forRemoval, key)
+			if time.Since(data.LastUpdate()) > key.staleness {
+				forRemoval = append(forRemoval, keyStr)
+			}
 		}
 	}
 
@@ -306,6 +311,7 @@ func (c *CachedContractReader) clean() {
 
 	for _, key := range forRemoval {
 		delete(c.data, key)
+		delete(c.keyLookup, key)
 	}
 
 	c.dataLock.Unlock()
@@ -358,14 +364,15 @@ func (c *CachedContractReader) setStrategy(readIdentifier string, strategy any) 
 
 func (c *CachedContractReader) mustGetData(key cacheKey) *cachedValue {
 	c.dataLock.RLock()
-	data, hasData := c.data[key]
+	data, hasData := c.data[key.String()]
 	c.dataLock.RUnlock()
 
 	if !hasData {
 		data = &cachedValue{}
 
 		c.dataLock.Lock()
-		c.data[key] = data
+		c.data[key.String()] = data
+		c.keyLookup[key.String()] = key
 		c.dataLock.Unlock()
 	}
 

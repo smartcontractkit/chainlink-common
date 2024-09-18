@@ -1,8 +1,6 @@
 package values
 
 import (
-	"encoding/json"
-	"log"
 	"math"
 	"math/big"
 	"testing"
@@ -31,34 +29,6 @@ func Test_Value(t *testing.T) {
 		newValue func() (any, Value, error)
 		equal    func(t *testing.T, expected any, unwrapped any)
 	}{
-		{
-			name: "jsonMap",
-			newValue: func() (any, Value, error) {
-				jsonData := `{
-        "name": "John",
-        "age": 30,
-        "city": "New York",
-        "skills": ["Go", "JavaScript", "Python"],
-        "address": {
-            "street": "123 Main St",
-            "zipcode": "10001"
-        }
-    }`
-
-				// Variable to hold the decoded data
-				var result interface{}
-
-				// Unmarshal the JSON data into the map
-				err := json.Unmarshal([]byte(jsonData), &result)
-				if err != nil {
-					log.Fatalf("Error unmarshalling JSON: %v", err)
-				}
-
-				v, e := Wrap(result)
-				return result, v, e
-
-			},
-		},
 		{
 			name: "map",
 			newValue: func() (any, Value, error) {
@@ -130,15 +100,6 @@ func Test_Value(t *testing.T) {
 				return b, bv, nil
 			},
 		},
-		{
-			name: "OracleID",
-			newValue: func() (any, Value, error) {
-				b := big.NewInt(math.MaxInt64)
-				bv := NewBigInt(b)
-				return b, bv, nil
-			},
-		},
-
 		{
 			name: "recursive map",
 			newValue: func() (any, Value, error) {

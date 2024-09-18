@@ -137,7 +137,7 @@ func TestModule_Errors(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid compute request: could not find compute function for id doesnt-exist")
 }
 
-func TestModule_Sandboxes_Memory(t *testing.T) {
+func TestModule_Sandbox_Memory(t *testing.T) {
 	binary, err := os.ReadFile(createTestBinary(oomBinaryCmd, oomBinaryLocation, t))
 	require.NoError(t, err)
 
@@ -154,7 +154,7 @@ func TestModule_Sandboxes_Memory(t *testing.T) {
 	assert.ErrorContains(t, err, "exit status 2")
 }
 
-func TestModule_Sandboxes_Timeout(t *testing.T) {
+func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	binary, err := os.ReadFile(createTestBinary(sleepBinaryCmd, sleepBinaryLocation, t))
 	require.NoError(t, err)
 
@@ -167,11 +167,39 @@ func TestModule_Sandboxes_Timeout(t *testing.T) {
 		Id:      uuid.New().String(),
 		Message: &wasmpb.Request_SpecRequest{},
 	}
+
+	start := time.Now()
 	_, err = m.Run(req)
-	assert.ErrorContains(t, err, "all fuel consumed by WebAssembly")
+	end := time.Now()
+
+	// The binary sleeps for 1 hour,
+	// but with our stubbed out functions,
+	// it should execute and return almost immediately.
+	assert.WithinDuration(t, start, end, 10*time.Second)
+	assert.NotNil(t, err)
 }
 
-func TestModule_Sandboxes_CantReadFiles(t *testing.T) {
+func TestModule_Sandbox_Timeout(t *testing.T) {
+	binary, err := os.ReadFile(createTestBinary(sleepBinaryCmd, sleepBinaryLocation, t))
+	require.NoError(t, err)
+
+	tmt := 10 * time.Millisecond
+	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t), Timeout: &tmt}, binary)
+	require.NoError(t, err)
+
+	m.Start()
+
+	req := &wasmpb.Request{
+		Id:      uuid.New().String(),
+		Message: &wasmpb.Request_SpecRequest{},
+	}
+
+	_, err = m.Run(req)
+
+	assert.ErrorContains(t, err, "interrupt")
+}
+
+func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	binary, err := os.ReadFile(createTestBinary(filesBinaryCmd, filesBinaryLocation, t))
 	require.NoError(t, err)
 
@@ -198,7 +226,7 @@ func TestModule_Sandboxes_CantReadFiles(t *testing.T) {
 	assert.ErrorContains(t, err, "open /tmp/file")
 }
 
-func TestModule_Sandboxes_CantCreateDir(t *testing.T) {
+func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	binary, err := os.ReadFile(createTestBinary(dirsBinaryCmd, dirsBinaryLocation, t))
 	require.NoError(t, err)
 
@@ -225,7 +253,7 @@ func TestModule_Sandboxes_CantCreateDir(t *testing.T) {
 	assert.ErrorContains(t, err, "mkdir")
 }
 
-func TestModule_Sandboxes_HTTPRequest(t *testing.T) {
+func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	binary, err := os.ReadFile(createTestBinary(httpBinaryCmd, httpBinaryLocation, t))
 	require.NoError(t, err)
 
@@ -252,7 +280,7 @@ func TestModule_Sandboxes_HTTPRequest(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestModule_Sandboxes_ReadEnv(t *testing.T) {
+func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	binary, err := os.ReadFile(createTestBinary(envBinaryCmd, envBinaryLocation, t))
 	require.NoError(t, err)
 

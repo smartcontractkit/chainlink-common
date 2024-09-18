@@ -19,8 +19,27 @@ type EncodeRequest struct {
 	TestOn       string
 }
 
+type codecTestcase[T any] struct {
+	name string
+	test func(t T)
+}
+
+type CodecTester[T any] interface {
+	BasicTester[T]
+	Setup(t T)
+}
+
+func runCodecTests[T TestingT[T]](t T, tester CodecTester[T], tests []codecTestcase[T]) {
+	for _, test := range tests {
+		t.Run(test.name+" for "+tester.Name(), func(t T) {
+			tester.Setup(t)
+			test.test(t)
+		})
+	}
+}
+
 type CodecInterfaceTester interface {
-	BasicTester[*testing.T]
+	CodecTester[*testing.T]
 	EncodeFields(t *testing.T, request *EncodeRequest) []byte
 	GetCodec(t *testing.T) types.Codec
 
@@ -38,7 +57,7 @@ const (
 )
 
 func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
-	tests := []testcase[*testing.T]{
+	tests := []codecTestcase[*testing.T]{
 		{
 			name: "Encodes and decodes a single item",
 			test: func(t *testing.T) {
@@ -362,7 +381,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 			},
 		},
 	}
-	runTests(t, tester, tests)
+	runCodecTests(t, tester, tests)
 }
 
 // RunCodecWithStrictArgsInterfaceTest is meant to be used by codecs that don't pad
@@ -372,7 +391,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 func RunCodecWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfaceTester) {
 	RunCodecInterfaceTests(t, tester)
 
-	tests := []testcase[*testing.T]{
+	tests := []codecTestcase[*testing.T]{
 		{
 			name: "Gives an error decoding extra fields on an item",
 			test: func(t *testing.T) {
@@ -439,5 +458,5 @@ func RunCodecWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfaceTest
 		},
 	}
 
-	runTests(t, tester, tests)
+	runCodecTests(t, tester, tests)
 }

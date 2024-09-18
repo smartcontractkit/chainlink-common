@@ -16,29 +16,14 @@ import (
 )
 
 type BasicTester[T any] interface {
-	Setup(t T)
 	Name() string
 	GetAccountBytes(i int) []byte
-}
-
-type testcase[T any] struct {
-	name string
-	test func(t T)
 }
 
 type TestingT[T any] interface {
 	tests.TestingT
 	Failed() bool
 	Run(name string, f func(t T)) bool
-}
-
-func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
-	for _, test := range tests {
-		t.Run(test.name+" for "+tester.Name(), func(t T) {
-			tester.Setup(t)
-			test.test(t)
-		})
-	}
 }
 
 // Batch chain write takes a batch call entry and writes it to the chain using the ChainWriter.

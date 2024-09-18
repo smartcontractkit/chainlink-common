@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	contractreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -99,7 +101,7 @@ func TestBind(t *testing.T) {
 				contractreadertest.WithContractReaderLoopEncoding(version),
 			)
 
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			for _, errorType := range errorTypes {
@@ -133,7 +135,7 @@ func TestGetLatestValue(t *testing.T) {
 				contractreadertest.WithContractReaderLoopEncoding(version),
 			)
 
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
@@ -142,7 +144,7 @@ func TestGetLatestValue(t *testing.T) {
 				ctx := tests.Context(t)
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
+				nilTester.Setup(t, false)
 				nilCr := nilTester.GetContractReader(t)
 
 				err := nilCr.GetLatestValue(ctx, "method", primitives.Unconfirmed, "anything", "anything")
@@ -182,7 +184,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 				contractreadertest.WithContractReaderLoopEncoding(version),
 			)
 
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
@@ -191,7 +193,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 				ctx := tests.Context(t)
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
+				nilTester.Setup(t, false)
 				nilCr := nilTester.GetContractReader(t)
 
 				_, err := nilCr.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
@@ -235,19 +237,19 @@ func TestQueryKey(t *testing.T) {
 
 			impl := &protoConversionTestContractReader{}
 			crTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: impl}, contractreadertest.WithContractReaderLoopEncoding(version))
-			crTester.Setup(t)
+			crTester.Setup(t, false)
 			cr := crTester.GetContractReader(t)
 
 			es := &errContractReader{}
 			errTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: es})
-			errTester.Setup(t)
+			errTester.Setup(t, false)
 			contractReader := errTester.GetContractReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
 				ctx := tests.Context(t)
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
+				nilTester.Setup(t, false)
 				nilCr := nilTester.GetContractReader(t)
 
 				_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
@@ -291,12 +293,16 @@ type fakeContractReaderInterfaceTester struct {
 	cw   fakeChainWriter
 }
 
-func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
+func (it *fakeContractReaderInterfaceTester) Setup(t *testing.T, startCR bool) {
 	fake, ok := it.impl.(*fakeContractReader)
 	if ok {
 		fake.vals = []valConfidencePair{}
 		fake.triggers = []eventConfidencePair{}
 		fake.stored = []TestStruct{}
+
+		if startCR {
+			servicetest.Run(t, it.impl)
+		}
 	}
 }
 
@@ -346,7 +352,10 @@ type fakeContractReader struct {
 	stored      []TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
+	isStarted   atomic.Bool
 }
+
+var errServiceNotStarted = errors.New("ContractReader service not started")
 
 type fakeChainWriter struct {
 	types.ChainWriter
@@ -394,9 +403,15 @@ func (f *fakeChainWriter) GetFeeComponents(ctx context.Context) (*types.ChainFee
 	return &types.ChainFeeComponents{}, nil
 }
 
-func (f *fakeContractReader) Start(_ context.Context) error { return nil }
+func (f *fakeContractReader) Start(_ context.Context) error {
+	f.isStarted.Store(true)
+	return nil
+}
 
-func (f *fakeContractReader) Close() error { return nil }
+func (f *fakeContractReader) Close() error {
+	f.isStarted.Store(false)
+	return nil
+}
 
 func (f *fakeContractReader) Ready() error { panic("unimplemented") }
 
@@ -434,6 +449,10 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 }
 
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	if !f.isStarted.Load() {
+		return errServiceNotStarted
+	}
+
 	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
 		r := returnVal.(*uint64)
 		for i := len(f.vals) - 1; i >= 0; i-- {
@@ -508,6 +527,10 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 }
 
 func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	if !f.isStarted.Load() {
+		return nil, errServiceNotStarted
+	}
+
 	result := make(types.BatchGetLatestValuesResult)
 	for requestContract, requestContractBatch := range request {
 		storedContractBatch := f.batchStored[requestContract]
@@ -561,6 +584,10 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 }
 
 func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+	if !f.isStarted.Load() {
+		return nil, errServiceNotStarted
+	}
+
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()

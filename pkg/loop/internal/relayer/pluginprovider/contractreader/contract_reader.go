@@ -173,7 +173,7 @@ func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGe
 }
 
 func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
-	pbQueryFilter, err := convertQueryFilterToProto(filter)
+	pbQueryFilter, err := convertQueryFilterToProto(filter, c.encodeWith)
 	if err != nil {
 		return nil, err
 	}
@@ -329,12 +329,12 @@ func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGe
 }
 
 func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
-	queryFilter, err := convertQueryFiltersFromProto(request.Filter)
+	contract := convertBoundContractFromProto(request.Contract)
+
+	queryFilter, err := convertQueryFiltersFromProto(request, contract, c.impl)
 	if err != nil {
 		return nil, err
 	}
-
-	contract := convertBoundContractFromProto(request.Contract)
 
 	sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
 	if err != nil {
@@ -466,10 +466,10 @@ func convertBoundContractToProto(contract types.BoundContract) *pb.BoundContract
 	}
 }
 
-func convertQueryFilterToProto(filter query.KeyFilter) (*pb.QueryKeyFilter, error) {
+func convertQueryFilterToProto(filter query.KeyFilter, encodeWith EncodingVersion) (*pb.QueryKeyFilter, error) {
 	pbQueryFilter := &pb.QueryKeyFilter{Key: filter.Key}
 	for _, expression := range filter.Expressions {
-		pbExpression, err := convertExpressionToProto(expression)
+		pbExpression, err := convertExpressionToProto(expression, encodeWith)
 		if err != nil {
 			return nil, err
 		}
@@ -479,7 +479,7 @@ func convertQueryFilterToProto(filter query.KeyFilter) (*pb.QueryKeyFilter, erro
 	return pbQueryFilter, nil
 }
 
-func convertExpressionToProto(expression query.Expression) (*pb.Expression, error) {
+func convertExpressionToProto(expression query.Expression, encodeWith EncodingVersion) (*pb.Expression, error) {
 	pbExpression := &pb.Expression{}
 	if expression.IsPrimitive() {
 		pbExpression.Evaluator = &pb.Expression_Primitive{Primitive: &pb.Primitive{}}
@@ -487,7 +487,12 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 		case *primitives.Comparator:
 			var pbValueComparators []*pb.ValueComparator
 			for _, valueComparator := range primitive.ValueComparators {
-				pbValueComparators = append(pbValueComparators, &pb.ValueComparator{Value: valueComparator.Value, Operator: pb.ComparisonOperator(valueComparator.Operator)})
+				versionedValue, err := EncodeVersionedBytes(valueComparator.Value, encodeWith)
+				if err != nil {
+					return nil, err
+				}
+
+				pbValueComparators = append(pbValueComparators, &pb.ValueComparator{Value: versionedValue, Operator: pb.ComparisonOperator(valueComparator.Operator)})
 			}
 			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Comparator{
 				Comparator: &pb.Comparator{
@@ -529,7 +534,7 @@ func convertExpressionToProto(expression query.Expression) (*pb.Expression, erro
 	pbExpression.Evaluator = &pb.Expression_BooleanExpression{BooleanExpression: &pb.BooleanExpression{}}
 	var expressions []*pb.Expression
 	for _, expr := range expression.BoolExpression.Expressions {
-		pbExpr, err := convertExpressionToProto(expr)
+		pbExpr, err := convertExpressionToProto(expr, encodeWith)
 		if err != nil {
 			return nil, err
 		}
@@ -703,10 +708,11 @@ func convertBoundContractFromProto(contract *pb.BoundContract) types.BoundContra
 	}
 }
 
-func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryKeyFilter) (query.KeyFilter, error) {
+func convertQueryFiltersFromProto(request *pb.QueryKeyRequest, contract types.BoundContract, impl types.ContractReader) (query.KeyFilter, error) {
+	pbQueryFilters := request.Filter
 	queryFilter := query.KeyFilter{Key: pbQueryFilters.Key}
 	for _, pbQueryFilter := range pbQueryFilters.Expression {
-		expression, err := convertExpressionFromProto(pbQueryFilter)
+		expression, err := convertExpressionFromProto(pbQueryFilter, contract, queryFilter.Key, impl)
 		if err != nil {
 			return query.KeyFilter{}, err
 		}
@@ -715,12 +721,12 @@ func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryKeyFilter) (query.KeyF
 	return queryFilter, nil
 }
 
-func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, error) {
+func convertExpressionFromProto(pbExpression *pb.Expression, contract types.BoundContract, key string, impl types.ContractReader) (query.Expression, error) {
 	switch pbEvaluatedExpr := pbExpression.Evaluator.(type) {
 	case *pb.Expression_BooleanExpression:
 		var expressions []query.Expression
 		for _, expression := range pbEvaluatedExpr.BooleanExpression.Expression {
-			convertedExpression, err := convertExpressionFromProto(expression)
+			convertedExpression, err := convertExpressionFromProto(expression, contract, key, impl)
 			if err != nil {
 				return query.Expression{}, err
 			}
@@ -735,7 +741,16 @@ func convertExpressionFromProto(pbExpression *pb.Expression) (query.Expression, 
 		case *pb.Primitive_Comparator:
 			var valueComparators []primitives.ValueComparator
 			for _, pbValueComparator := range primitive.Comparator.ValueComparators {
-				valueComparators = append(valueComparators, primitives.ValueComparator{Value: pbValueComparator.Value, Operator: primitives.ComparisonOperator(pbValueComparator.Operator)})
+				val, err := getContractEncodedType(contract.ReadIdentifier(key+"."+primitive.Comparator.Name), impl, true)
+				if err != nil {
+					return query.Expression{}, err
+				}
+
+				if err = DecodeVersionedBytes(val, pbValueComparator.Value); err != nil {
+					return query.Expression{}, err
+				}
+
+				valueComparators = append(valueComparators, primitives.ValueComparator{Value: val, Operator: primitives.ComparisonOperator(pbValueComparator.Operator)})
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 		case *pb.Primitive_Confidence:

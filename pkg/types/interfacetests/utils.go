@@ -1,6 +1,7 @@
 package interfacetests
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"math/big"
@@ -143,11 +144,11 @@ type MidLevelTestStruct struct {
 
 type TestStruct struct {
 	Field          *int32
-	DifferentField string
 	OracleID       commontypes.OracleID
 	OracleIDs      [32]commontypes.OracleID
 	Account        []byte
 	Accounts       [][]byte
+	DifferentField string
 	BigField       *big.Int
 	NestedStruct   MidLevelTestStruct
 }
@@ -200,11 +201,11 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	fv := int32(i)
 	return TestStruct{
 		Field:          &fv,
-		DifferentField: s,
 		OracleID:       commontypes.OracleID(i + 1),
 		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
 		Account:        tester.GetAccountBytes(i + 3),
 		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
+		DifferentField: s,
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
 		NestedStruct: MidLevelTestStruct{
 			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
@@ -214,4 +215,22 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 			},
 		},
 	}
+}
+
+func Compare[T cmp.Ordered](a, b T, op primitives.ComparisonOperator) bool {
+	switch op {
+	case primitives.Eq:
+		return a == b
+	case primitives.Neq:
+		return a != b
+	case primitives.Gt:
+		return a > b
+	case primitives.Lt:
+		return a < b
+	case primitives.Gte:
+		return a >= b
+	case primitives.Lte:
+		return a <= b
+	}
+	return false
 }

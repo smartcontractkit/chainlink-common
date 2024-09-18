@@ -45,11 +45,10 @@ func (b *Bytes) UnwrapTo(to any) error {
 			return nil
 		}
 
-		// Handle alias types first else
 		var oid commontypes.OracleID
 		if t.Elem().Elem() == reflect.TypeOf(oid) {
 			var oracleIDS []commontypes.OracleID
-			// TODO look into better way to convert []underlying to []alias that does not require a loop or unsafe package??
+			// TODO better way to convert []underlying to []alias that does not require a loop or unsafe package??
 			for _, v := range b.Underlying {
 				oracleIDS = append(oracleIDS, commontypes.OracleID(v))
 			}

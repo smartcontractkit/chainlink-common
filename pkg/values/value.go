@@ -64,6 +64,9 @@ func Wrap(v any) (Value, error) {
 		return NewInt64(int64(*tv)), nil
 	case *int64:
 		return NewInt64(*tv), nil
+	case *uint64:
+		// TODO, support a new type here?
+		return NewBigInt(new(big.Int).SetUint64(*tv)), nil
 	case *common.Address:
 		return NewBytes(tv.Bytes()), nil
 	case common.Address:
@@ -317,6 +320,7 @@ func CreateMapFromStruct(v any) (*Map, error) {
 }
 
 func unwrapTo[T any](underlying T, to any) error {
+
 	switch tb := to.(type) {
 	case *T:
 		if tb == nil {

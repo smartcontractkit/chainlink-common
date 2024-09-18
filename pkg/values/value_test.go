@@ -131,6 +131,15 @@ func Test_Value(t *testing.T) {
 			},
 		},
 		{
+			name: "OracleID",
+			newValue: func() (any, Value, error) {
+				b := big.NewInt(math.MaxInt64)
+				bv := NewBigInt(b)
+				return b, bv, nil
+			},
+		},
+
+		{
 			name: "recursive map",
 			newValue: func() (any, Value, error) {
 				m := map[string]any{

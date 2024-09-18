@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/libocr/commontypes"
 )
 
 type Int64 struct {
@@ -46,6 +47,16 @@ func (i *Int64) UnwrapTo(to any) error {
 	case *int64:
 		*tv = i.Underlying
 		return nil
+	case *int32:
+		if i.Underlying > math.MaxInt32 {
+			return fmt.Errorf("cannot unwrap int64 to int32: number would overflow %d", i)
+		}
+
+		if i.Underlying < math.MinInt32 {
+			return fmt.Errorf("cannot unwrap int64 to int32: number would underflow %d", i)
+		}
+		*tv = int32(i.Underlying)
+		return nil
 	case *int:
 		if i.Underlying > math.MaxInt {
 			return fmt.Errorf("cannot unwrap int64 to int: number would overflow %d", i)
@@ -68,6 +79,17 @@ func (i *Int64) UnwrapTo(to any) error {
 
 		*tv = uint(i.Underlying)
 		return nil
+	case *uint8:
+		if i.Underlying > math.MaxUint8 {
+			return fmt.Errorf("cannot unwrap int64 to uint8: number would overflow %d", i)
+		}
+
+		if i.Underlying < 0 {
+			return fmt.Errorf("cannot unwrap int64 to uint8: number would underflow %d", i)
+		}
+
+		*tv = uint8(i.Underlying)
+		return nil
 	case *uint32:
 		if i.Underlying > math.MaxInt {
 			return fmt.Errorf("cannot unwrap int64 to uint32: number would overflow %d", i)
@@ -85,6 +107,18 @@ func (i *Int64) UnwrapTo(to any) error {
 		}
 
 		*tv = uint64(i.Underlying)
+		return nil
+	case *commontypes.OracleID:
+		if i.Underlying > math.MaxUint8 {
+			return fmt.Errorf("cannot unwrap int64 to uint8: number would overflow %d", i)
+		}
+
+		if i.Underlying < 0 {
+			return fmt.Errorf("cannot unwrap int64 to uint8: number would underflow %d", i)
+		}
+
+		oi := commontypes.OracleID(uint8(i.Underlying))
+		*tv = oi
 		return nil
 	case *any:
 		*tv = i.Underlying

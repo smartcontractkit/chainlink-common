@@ -75,9 +75,11 @@ func TestReportingPlugin_Query(t *testing.T) {
 }
 
 type mockCapability struct {
+	t                   *testing.T
 	aggregator          *aggregator
 	encoder             *enc
 	registeredWorkflows map[string]bool
+	expectedEncoderName string
 }
 
 type aggregator struct {
@@ -114,7 +116,12 @@ func (mc *mockCapability) getAggregator(workflowID string) (pbtypes.Aggregator, 
 	return mc.aggregator, nil
 }
 
-func (mc *mockCapability) getEncoder(workflowID string) (pbtypes.Encoder, error) {
+func (mc *mockCapability) getEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error) {
+	return mc.encoder, nil
+}
+
+func (mc *mockCapability) getEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error) {
+	require.Equal(mc.t, mc.expectedEncoderName, encoderName)
 	return mc.encoder, nil
 }
 
@@ -460,10 +467,13 @@ func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
 
 func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	lggr := logger.Test(t)
+	dynamicEncoderName := "special_encoder"
 	s := requests.NewStore()
 	mcap := &mockCapability{
-		aggregator: &aggregator{},
-		encoder:    &enc{},
+		t:                   t,
+		aggregator:          &aggregator{},
+		encoder:             &enc{},
+		expectedEncoderName: dynamicEncoderName,
 	}
 	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
@@ -494,6 +504,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 				Outcome: &pbtypes.AggregationOutcome{
 					EncodableOutcome: nmp,
 					ShouldReport:     true,
+					EncoderName:      dynamicEncoderName,
 				},
 			},
 		},

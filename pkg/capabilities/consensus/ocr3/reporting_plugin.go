@@ -27,7 +27,8 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 
 type capabilityIface interface {
 	getAggregator(workflowID string) (pbtypes.Aggregator, error)
-	getEncoder(workflowID string) (pbtypes.Encoder, error)
+	getEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error)
+	getEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error)
 	getRegisteredWorkflowsIDs() []string
 	unregisterWorkflowID(workflowID string)
 }
@@ -390,7 +391,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			ShouldReport: outcome.ShouldReport,
 		}
 
-		var report []byte
+		var rawReport []byte
 		if info.ShouldReport {
 			meta := &pbtypes.Metadata{
 				Version:          1,
@@ -409,10 +410,26 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 				continue
 			}
 
-			enc, err := r.r.getEncoder(id.WorkflowId)
-			if err != nil {
-				lggr.Errorw("could not retrieve encoder for workflow", "error", err)
-				continue
+			var encoder pbtypes.Encoder
+			if newOutcome.EncoderName != "" {
+				lggr.Debugw("using encoder from outcome", "encoderName", newOutcome.EncoderName, "executionID", report.Id.WorkflowExecutionId)
+				encoderConfig, err2 := values.FromMapValueProto(newOutcome.EncoderConfig)
+				if err2 != nil {
+					lggr.Errorw("could not convert desired encoder config to values.Map", "error", err2, "executionID", report.Id.WorkflowExecutionId)
+				} else {
+					encoder, err2 = r.r.getEncoderByName(newOutcome.EncoderName, encoderConfig)
+					if err2 != nil {
+						lggr.Errorw("could not retrieve desired encoder, will use per-workflow default", "error", err2, "executionID", report.Id.WorkflowExecutionId)
+					}
+				}
+			}
+
+			if encoder == nil {
+				encoder, err = r.r.getEncoderByWorkflowID(id.WorkflowId)
+				if err != nil {
+					lggr.Errorw("could not retrieve encoder for workflow", "error", err)
+					continue
+				}
 			}
 
 			mv, err := values.FromMapValueProto(newOutcome.EncodableOutcome)
@@ -421,7 +438,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 				continue
 			}
 
-			report, err = enc.Encode(context.Background(), *mv)
+			rawReport, err = encoder.Encode(context.Background(), *mv)
 			if err != nil {
 				r.lggr.Errorw("could not encode report for workflow", "error", err)
 				continue
@@ -436,7 +453,7 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 
 		// Append every report, even if shouldReport = false, to let the transmitter mark the step as complete.
 		reports = append(reports, ocr3types.ReportWithInfo[[]byte]{
-			Report: report,
+			Report: rawReport,
 			Info:   infob,
 		})
 	}

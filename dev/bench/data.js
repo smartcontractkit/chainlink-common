@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726591544561,
+  "lastUpdate": 1726655591488,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1302,6 +1302,48 @@ window.BENCHMARK_DATA = {
             "value": 28541,
             "unit": "ns/op",
             "extra": "41846 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e78a0de3f6847845b18da1797e5dccf9521abed2",
+          "message": "[CAPPL-58] Some cleanup; add sandboxing tests (#773)",
+          "timestamp": "2024-09-18T11:32:07+01:00",
+          "tree_id": "7c8956a2cc2d0d463bf0b52d75a642a44c48a540",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e78a0de3f6847845b18da1797e5dccf9521abed2"
+        },
+        "date": 1726655590381,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 472.8,
+            "unit": "ns/op",
+            "extra": "2553610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 496.6,
+            "unit": "ns/op",
+            "extra": "2399362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29791,
+            "unit": "ns/op",
+            "extra": "42066 times\n4 procs"
           }
         ]
       }

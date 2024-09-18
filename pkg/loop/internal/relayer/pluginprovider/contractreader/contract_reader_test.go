@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -291,13 +292,21 @@ type fakeContractReaderInterfaceTester struct {
 	cw   fakeChainWriter
 }
 
-func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
+func (it *fakeContractReaderInterfaceTester) Setup(t *testing.T) {
 	fake, ok := it.impl.(*fakeContractReader)
 	if ok {
 		fake.vals = []valConfidencePair{}
 		fake.triggers = []eventConfidencePair{}
 		fake.stored = []TestStruct{}
 	}
+}
+
+func (it *fakeContractReaderInterfaceTester) StartServices(ctx context.Context, t *testing.T) {
+	require.NoError(t, it.impl.Start(ctx))
+}
+
+func (it *fakeContractReaderInterfaceTester) CloseServices(t *testing.T) {
+	require.NoError(t, it.impl.Close())
 }
 
 func (it *fakeContractReaderInterfaceTester) GetContractReader(_ *testing.T) types.ContractReader {
@@ -346,7 +355,10 @@ type fakeContractReader struct {
 	stored      []TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
+	isStarted   atomic.Bool
 }
+
+var errServiceNotStarted = errors.New("ContractReader service not started")
 
 type fakeChainWriter struct {
 	types.ChainWriter
@@ -394,9 +406,15 @@ func (f *fakeChainWriter) GetFeeComponents(ctx context.Context) (*types.ChainFee
 	return &types.ChainFeeComponents{}, nil
 }
 
-func (f *fakeContractReader) Start(_ context.Context) error { return nil }
+func (f *fakeContractReader) Start(_ context.Context) error {
+	f.isStarted.Store(true)
+	return nil
+}
 
-func (f *fakeContractReader) Close() error { return nil }
+func (f *fakeContractReader) Close() error {
+	f.isStarted.Store(false)
+	return nil
+}
 
 func (f *fakeContractReader) Ready() error { panic("unimplemented") }
 
@@ -434,6 +452,10 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 }
 
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	if !f.isStarted.Load() {
+		return errServiceNotStarted
+	}
+
 	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
 		r := returnVal.(*uint64)
 		for i := len(f.vals) - 1; i >= 0; i-- {
@@ -508,6 +530,10 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 }
 
 func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	if !f.isStarted.Load() {
+		return nil, errServiceNotStarted
+	}
+
 	result := make(types.BatchGetLatestValuesResult)
 	for requestContract, requestContractBatch := range request {
 		storedContractBatch := f.batchStored[requestContract]
@@ -561,6 +587,10 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 }
 
 func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+	if !f.isStarted.Load() {
+		return nil, errServiceNotStarted
+	}
+
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()

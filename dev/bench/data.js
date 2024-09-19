@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726693590874,
+  "lastUpdate": 1726737913216,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1386,6 +1386,48 @@ window.BENCHMARK_DATA = {
             "value": 28544,
             "unit": "ns/op",
             "extra": "41917 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dimitrios.kouveris@smartcontract.com",
+            "name": "dimitris",
+            "username": "dimkouv"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "53e784c2e420f838f9b8925ae81809e7fa8003ba",
+          "message": "add limit to seq num range (#781)",
+          "timestamp": "2024-09-19T12:24:17+03:00",
+          "tree_id": "ddf8392d15fe9f7ea428cc734ae337d5db603dfa",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/53e784c2e420f838f9b8925ae81809e7fa8003ba"
+        },
+        "date": 1726737912792,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 464.7,
+            "unit": "ns/op",
+            "extra": "2508822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 501.7,
+            "unit": "ns/op",
+            "extra": "2396382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28564,
+            "unit": "ns/op",
+            "extra": "42033 times\n4 procs"
           }
         ]
       }

@@ -382,3 +382,71 @@ func Test_Copy(t *testing.T) {
 		}
 	}
 }
+
+type aliasByte []byte
+type aliasString string
+type aliasInt int
+type aliasMap map[string]any
+
+func Test_Aliases(t *testing.T) {
+	testCases := []struct {
+		name    string
+		val     func() any
+		alias   func() any
+		convert func(any) any
+	}{
+		{
+			name:  "alias to []byte",
+			val:   func() any { return []byte("string") },
+			alias: func() any { return aliasByte([]byte{}) },
+		},
+		{
+			name:  "simple aliases",
+			val:   func() any { return "string" },
+			alias: func() any { return aliasByte("") },
+		},
+		{
+			name:    "int",
+			val:     func() any { return 2 },
+			alias:   func() any { return aliasInt(0) },
+			convert: func(a any) any { return int(a.(int64)) },
+		},
+		{
+			name:  "[][]byte -> []aliasByte",
+			val:   func() any { return [][]byte{[]byte("hello")} },
+			alias: func() any { return []aliasByte{} },
+			convert: func(a any) any {
+				to := [][]byte{}
+				for _, v := range a.([]interface{}) {
+					to = append(to, v.([]byte))
+				}
+
+				return to
+			},
+		},
+		{
+			name:    "aliasMap -> map[string]any",
+			val:     func() any { return map[string]any{} },
+			alias:   func() any { return aliasMap{} },
+			convert: func(a any) any { return map[string]any(a.(aliasMap)) },
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			v := tc.val()
+			wv, err := Wrap(v)
+			require.NoError(t, err)
+
+			a := tc.alias()
+			err = wv.UnwrapTo(&a)
+			require.NoError(t, err)
+
+			if tc.convert != nil {
+				assert.Equal(t, tc.convert(a), v)
+			} else {
+				assert.Equal(t, a, v)
+			}
+		})
+	}
+}

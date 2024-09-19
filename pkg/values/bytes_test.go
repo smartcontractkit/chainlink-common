@@ -43,3 +43,13 @@ func Test_BytesUnwrapTo(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, bp)
 }
+
+type alias uint8
+
+func Test_BytesUnwrapToAlias(t *testing.T) {
+	bn := &Bytes{Underlying: []byte("hello")}
+	var bp []alias
+	err := bn.UnwrapTo(&bp)
+	require.NoError(t, err)
+	assert.Nil(t, bp)
+}

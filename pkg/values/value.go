@@ -278,10 +278,36 @@ func unwrapTo[T any](underlying T, to any) error {
 		rTo := reflect.ValueOf(to)
 		rUnderlying := reflect.ValueOf(underlying)
 		underlyingPtr := reflect.PointerTo(rUnderlying.Type())
-		if rTo.Kind() != reflect.Pointer || !rTo.CanConvert(underlyingPtr) {
+		if rTo.Kind() != reflect.Pointer {
 			return fmt.Errorf("cannot unwrap to value of type: %T", to)
 		}
-		reflect.Indirect(rTo.Convert(underlyingPtr)).Set(rUnderlying)
+
+		if rTo.CanConvert(underlyingPtr) {
+			reflect.Indirect(rTo.Convert(underlyingPtr)).Set(rUnderlying)
+			return nil
+		}
+
+		rToVal := reflect.Indirect(rTo)
+		if rToVal.Kind() == reflect.Slice && rUnderlying.Kind() == reflect.Slice {
+			for i := 0; i < rUnderlying.Len(); i++ {
+				el := rUnderlying.Index(i)
+				toEl := reflect.New(rToVal.Type().Elem())
+				err := unwrapTo(el.Interface(), toEl.Interface())
+				if err != nil {
+					return err
+				}
+
+				if rToVal.Len() > i {
+					rToVal.Index(i).Set(reflect.Indirect(toEl))
+				} else {
+					rToVal = reflect.Append(rToVal, reflect.Indirect(toEl))
+				}
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("cannot unwrap to value of type: %T", to)
 	}
 
 	return nil

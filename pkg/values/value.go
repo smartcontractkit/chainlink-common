@@ -209,6 +209,8 @@ func FromProto(val *pb.Value) (Value, error) {
 		return FromMapValueProto(val.GetMapValue())
 	case *pb.Value_BigintValue:
 		return fromBigIntValueProto(val.GetBigintValue()), nil
+	case *pb.Value_TimeValue:
+		return NewTime(val.GetTimeValue().Time.AsTime()), nil
 	}
 
 	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)

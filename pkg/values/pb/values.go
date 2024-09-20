@@ -1,7 +1,10 @@
 package pb
 
 import (
+	"time"
+
 	"github.com/shopspring/decimal"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewBoolValue(b bool) *Value {
@@ -76,6 +79,16 @@ func NewBigIntValue(sign int, bib []byte) *Value {
 			BigintValue: &BigInt{
 				AbsVal: bib,
 				Sign:   int64(sign),
+			},
+		},
+	}
+}
+
+func NewTime(t time.Time) *Value {
+	return &Value{
+		Value: &Value_TimeValue{
+			TimeValue: &Time{
+				Time: timestamppb.New(t),
 			},
 		},
 	}

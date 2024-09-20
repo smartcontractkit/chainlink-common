@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726737913216,
+  "lastUpdate": 1726829402606,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1428,6 +1428,48 @@ window.BENCHMARK_DATA = {
             "value": 28564,
             "unit": "ns/op",
             "extra": "42033 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34e8551279c436bd44b91e11a531f06f475e7101",
+          "message": "[chore] Handle aliases in slices (#784)\n\n* [chore] Handle aliases in slices\r\n\r\n* More aliasing tests\r\n\r\n* Lint fix\r\n\r\n* Fix test\r\n\r\n---------\r\n\r\nCo-authored-by: Sri Kidambi <1702865+kidambisrinivas@users.noreply.github.com>",
+          "timestamp": "2024-09-20T11:49:03+01:00",
+          "tree_id": "b54f606437e8439cb2afd8e3c72e9db079a90f7e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/34e8551279c436bd44b91e11a531f06f475e7101"
+        },
+        "date": 1726829402160,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 464.9,
+            "unit": "ns/op",
+            "extra": "2650323 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 499.9,
+            "unit": "ns/op",
+            "extra": "2392999 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28584,
+            "unit": "ns/op",
+            "extra": "42037 times\n4 procs"
           }
         ]
       }

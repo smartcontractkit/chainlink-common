@@ -311,6 +311,12 @@ func unwrapTo[T any](underlying T, to any) error {
 			return nil
 		}
 
+		if rUnderlying.CanConvert(reflect.Indirect(rTo).Type()) {
+			conv := rUnderlying.Convert(reflect.Indirect(rTo).Type())
+			reflect.Indirect(rTo).Set(conv)
+			return nil
+		}
+
 		rToVal := reflect.Indirect(rTo)
 		if rUnderlying.Kind() == reflect.Slice {
 			var newList reflect.Value

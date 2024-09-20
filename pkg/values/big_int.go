@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -37,12 +38,12 @@ func (b *BigInt) UnwrapTo(to any) error {
 	switch tb := to.(type) {
 	case *big.Int:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = *b.Underlying
 	case *any:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 
 		*tb = b.Underlying

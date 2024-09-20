@@ -47,9 +47,15 @@ func Test_BytesUnwrapTo(t *testing.T) {
 type alias uint8
 
 func Test_BytesUnwrapToAlias(t *testing.T) {
-	bn := &Bytes{Underlying: []byte("hello")}
-	var bp []alias
+	underlying := []byte("hello")
+	bn := &Bytes{Underlying: underlying}
+	bp := []alias{}
 	err := bn.UnwrapTo(&bp)
 	require.NoError(t, err)
-	assert.Nil(t, bp)
+
+	got := []byte{}
+	for _, b := range bp {
+		got = append(got, byte(b))
+	}
+	assert.Equal(t, underlying, got)
 }

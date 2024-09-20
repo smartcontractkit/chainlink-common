@@ -289,21 +289,25 @@ func unwrapTo[T any](underlying T, to any) error {
 
 		rToVal := reflect.Indirect(rTo)
 		if rToVal.Kind() == reflect.Slice && rUnderlying.Kind() == reflect.Slice {
+			newList := reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
 			for i := 0; i < rUnderlying.Len(); i++ {
 				el := rUnderlying.Index(i)
-				toEl := reflect.New(rToVal.Type().Elem())
-				err := unwrapTo(el.Interface(), toEl.Interface())
-				if err != nil {
-					return err
-				}
+				toEl := newList.Index(i)
 
-				if rToVal.Len() > i {
-					rToVal.Index(i).Set(reflect.Indirect(toEl))
+				if toEl.Kind() == reflect.Ptr {
+					err := unwrapTo(el.Interface(), toEl.Interface())
+					if err != nil {
+						return err
+					}
 				} else {
-					rToVal = reflect.Append(rToVal, reflect.Indirect(toEl))
+					err := unwrapTo(el.Interface(), toEl.Addr().Interface())
+					if err != nil {
+						return err
+					}
 				}
 			}
 
+			rToVal.Set(newList)
 			return nil
 		}
 

@@ -384,8 +384,10 @@ func Test_Copy(t *testing.T) {
 }
 
 type aliasByte []byte
+type aliasString string
 type aliasInt int
 type aliasMap map[string]any
+type aliasSingleByte uint8
 
 func Test_Aliases(t *testing.T) {
 	testCases := []struct {
@@ -402,7 +404,17 @@ func Test_Aliases(t *testing.T) {
 		{
 			name:  "simple aliases",
 			val:   func() any { return "string" },
-			alias: func() any { return aliasByte("") },
+			alias: func() any { return aliasString("") },
+		},
+		{
+			name:  "aliasByte -> []byte",
+			val:   func() any { return []byte("string") },
+			alias: func() any { return aliasByte([]byte{}) },
+		},
+		{
+			name:  "[]aliasSingleByte -> []byte",
+			val:   func() any { return []byte("string") },
+			alias: func() any { return []aliasSingleByte{} },
 		},
 		{
 			name:    "int",

@@ -468,7 +468,6 @@ func Test_Capabilities(t *testing.T) {
 			expectedRequest)
 		require.NotNil(t, err)
 		assert.Equal(t, "bang", err.Error())
-
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {
@@ -494,7 +493,6 @@ func Test_Capabilities(t *testing.T) {
 			ctx,
 			expectedRequest)
 		require.NoError(t, err)
-
 	})
 
 	t.Run("calling execute should be synchronous", func(t *testing.T) {

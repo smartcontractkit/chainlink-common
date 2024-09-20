@@ -1,13 +1,16 @@
 package host
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,19 +40,33 @@ const (
 	envBinaryCmd          = "test/env/cmd"
 )
 
-func createTestBinary(outputPath, path string, t *testing.T) string {
+func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
 	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
 	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	return path
+	binary, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	if !compress {
+		return binary
+	}
+
+	var b bytes.Buffer
+	bwr := brotli.NewWriter(&b)
+	_, err = bwr.Write(binary)
+	require.NoError(t, err)
+	require.NoError(t, bwr.Close())
+
+	cb, err := io.ReadAll(&b)
+	require.NoError(t, err)
+	return cb
 }
 
 func Test_GetWorkflowSpec(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
@@ -64,11 +81,27 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	assert.Equal(t, spec.Owner, "ryan")
 }
 
-func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
-	failBinary, err := os.ReadFile(createTestBinary(failureBinaryCmd, failureBinaryLocation, t))
+func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
+
+	spec, err := GetWorkflowSpec(
+		&ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		},
+		binary,
+		[]byte(""),
+	)
 	require.NoError(t, err)
 
-	_, err = GetWorkflowSpec(
+	assert.Equal(t, spec.Name, "tester")
+	assert.Equal(t, spec.Owner, "ryan")
+}
+
+func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
+	failBinary := createTestBinary(failureBinaryCmd, failureBinaryLocation, true, t)
+
+	_, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger.Test(t),
 		},
@@ -80,11 +113,10 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_Timeout(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	d := time.Duration(0)
-	_, err = GetWorkflowSpec(
+	_, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Timeout: &d,
 			Logger:  logger.Test(t),
@@ -97,8 +129,7 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 }
 
 func TestModule_Errors(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -138,8 +169,7 @@ func TestModule_Errors(t *testing.T) {
 }
 
 func TestModule_Sandbox_Memory(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(oomBinaryCmd, oomBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -155,8 +185,7 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 }
 
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(sleepBinaryCmd, sleepBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -180,8 +209,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 }
 
 func TestModule_Sandbox_Timeout(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(sleepBinaryCmd, sleepBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t), Timeout: &tmt}, binary)
@@ -200,8 +228,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 }
 
 func TestModule_Sandbox_CantReadFiles(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(filesBinaryCmd, filesBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -227,8 +254,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 }
 
 func TestModule_Sandbox_CantCreateDir(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(dirsBinaryCmd, dirsBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -254,8 +280,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 }
 
 func TestModule_Sandbox_HTTPRequest(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(httpBinaryCmd, httpBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -281,8 +306,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 }
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(envBinaryCmd, envBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)

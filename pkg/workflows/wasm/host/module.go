@@ -1,14 +1,17 @@
 package host
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/bytecodealliance/wasmtime-go/v23"
 	"google.golang.org/protobuf/proto"
 
@@ -78,11 +81,12 @@ var (
 )
 
 type ModuleConfig struct {
-	TickInterval time.Duration
-	Timeout      *time.Duration
-	MaxMemoryMBs int64
-	InitialFuel  uint64
-	Logger       logger.Logger
+	TickInterval   time.Duration
+	Timeout        *time.Duration
+	MaxMemoryMBs   int64
+	InitialFuel    uint64
+	Logger         logger.Logger
+	IsUncompressed bool
 }
 
 type Module struct {
@@ -126,6 +130,16 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 	}
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
+
+	if !modCfg.IsUncompressed {
+		rdr := brotli.NewReader(bytes.NewBuffer(binary))
+		decompedBinary, err := io.ReadAll(rdr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress binary: %w", err)
+		}
+
+		binary = decompedBinary
+	}
 
 	mod, err := wasmtime.NewModule(engine, binary)
 	if err != nil {

@@ -259,7 +259,7 @@ func Test_IntTypes(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
-
+			tc.test(st)
 		})
 	}
 }

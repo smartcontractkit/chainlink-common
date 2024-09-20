@@ -117,6 +117,13 @@ func Wrap(v any) (Value, error) {
 			return NewBytes(val.Bytes()), nil
 		}
 		return createListFromSlice(val)
+	case reflect.Array:
+		arrayLen := val.Len()
+		slice := reflect.MakeSlice(reflect.SliceOf(val.Type().Elem()), arrayLen, arrayLen)
+		for i := 0; i < arrayLen; i++ {
+			slice.Index(i).Set(val.Index(i))
+		}
+		return Wrap(slice.Interface())
 	case reflect.Struct:
 		return CreateMapFromStruct(v)
 	case reflect.Pointer:

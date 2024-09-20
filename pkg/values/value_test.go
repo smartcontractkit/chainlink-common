@@ -384,7 +384,6 @@ func Test_Copy(t *testing.T) {
 }
 
 type aliasByte []byte
-type aliasString string
 type aliasInt int
 type aliasMap map[string]any
 

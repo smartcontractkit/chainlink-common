@@ -5,6 +5,7 @@
     {
       "ID": "on_mercury_report@1.0.0",
       "Ref": "report_data",
+      "Condition": "",
       "Inputs": {
         "OutputRef": "",
         "Mapping": null
@@ -18,6 +19,7 @@
     {
       "ID": "trigger_test:aaShouldBeFirst_true:chain_ethereum:network_mainnet@2.0.0",
       "Ref": "",
+      "Condition": "",
       "Inputs": {
         "OutputRef": "",
         "Mapping": {
@@ -34,6 +36,7 @@
     {
       "ID": "write_polygon_mainnet@1.0.0",
       "Ref": "",
+      "Condition": "",
       "Inputs": {
         "OutputRef": "",
         "Mapping": {

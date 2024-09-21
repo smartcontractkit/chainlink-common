@@ -15,10 +15,20 @@ type WorkflowSpecFactory struct {
 	emptyNames     bool
 	badCapTypes    []string
 	fns            map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
+	serialMode     bool
+	prevRefs       []string
 }
 
 func (w *WorkflowSpecFactory) GetFn(name string) func(sdk Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	return w.fns[name]
+}
+
+func (w *WorkflowSpecFactory) BeginSerial() {
+	w.serialMode = true
+}
+
+func (w *WorkflowSpecFactory) BeginAsync() {
+	w.serialMode = false
 }
 
 type CapDefinition[O any] interface {
@@ -107,6 +117,15 @@ type NewWorkflowParams struct {
 	Name  string
 }
 
+// NewSerialWorkflowSpecFactory returns a new WorkflowSpecFactory in Serial mode.
+// This is the same as calling NewWorkflowSpecFactory then WorkflowSpecFactory.BeginSerial.
+func NewSerialWorkflowSpecFactory(params NewWorkflowParams) *WorkflowSpecFactory {
+	f := NewWorkflowSpecFactory(params)
+	f.BeginSerial()
+	return f
+}
+
+// NewWorkflowSpecFactory returns a new NewWorkflowSpecFactory.
 func NewWorkflowSpecFactory(
 	params NewWorkflowParams,
 ) *WorkflowSpecFactory {
@@ -128,6 +147,16 @@ func NewWorkflowSpecFactory(
 // AddTo is meant to be called by generated code
 func (step *Step[O]) AddTo(w *WorkflowSpecFactory) CapDefinition[O] {
 	stepDefinition := step.Definition
+
+	if w.serialMode {
+		// ensure we depend on each previous step
+		for _, prevRef := range w.prevRefs {
+			if !stepDefinition.Inputs.HasRef(prevRef) {
+				stepDefinition.Condition = fmt.Sprintf("$(%s.success)", prevRef)
+			}
+		}
+	}
+
 	stepRef := stepDefinition.Ref
 	if w.names[stepRef] && stepDefinition.CapabilityType != capabilities.CapabilityTypeTarget {
 		w.duplicateNames[stepRef] = true
@@ -152,7 +181,14 @@ func (step *Step[O]) AddTo(w *WorkflowSpecFactory) CapDefinition[O] {
 		w.badCapTypes = append(w.badCapTypes, stepDefinition.ID)
 	}
 
-	return &capDefinitionImpl[O]{ref: fmt.Sprintf("$(%s.outputs)", step.Definition.Ref)}
+	c := &capDefinitionImpl[O]{ref: fmt.Sprintf("$(%s.outputs)", step.Definition.Ref)}
+
+	if w.serialMode {
+		w.prevRefs = []string{step.Definition.Ref}
+	} else {
+		w.prevRefs = append(w.prevRefs, step.Definition.Ref)
+	}
+	return c
 }
 
 // AccessField is meant to be used by generated code

@@ -68,8 +68,12 @@ func TestWorkflowSpecFormatChart(t *testing.T) {
 		{"notstreamssepolia", notStreamSepoliaWorkflowSpec},
 		{"serial", serialWorkflowSpec},
 		{"parallel", parallelWorkflowSpec},
+		{"parallel_serialized", parallelSerializedWorkflowSpec},
 		{"builder_parallel", buildSimpleWorkflowSpec(
 			sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Owner: "test", Name: "parallel"}),
+		).MustSpec(t)},
+		{"builder_serial", buildSimpleWorkflowSpec(
+			sdk.NewSerialWorkflowSpecFactory(sdk.NewWorkflowParams{Owner: "test", Name: "serial"}),
 		).MustSpec(t)},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -373,6 +377,89 @@ var parallelWorkflowSpec = sdk.WorkflowSpec{
 		{
 			ID:  "chain_reader@1.0.0",
 			Ref: "read-token-price",
+			Inputs: sdk.StepInputs{
+				Mapping: map[string]any{"Arg0": "$(trigger-chain-event.outputs)"},
+			},
+			CapabilityType: capabilities.CapabilityTypeAction,
+		},
+	},
+	Consensus: []sdk.StepDefinition{
+		{
+			ID:  "offchain_reporting@1.0.0",
+			Ref: "data-feeds-report",
+			Inputs: sdk.StepInputs{
+				Mapping: map[string]any{
+					"observations": []string{
+						"$(compute-foo.outputs.Value)",
+						"$(compute-bar.outputs.Value)",
+					},
+					"token_price": "$(read-token-price.outputs.Value)",
+				},
+			},
+			CapabilityType: capabilities.CapabilityTypeConsensus,
+		},
+	},
+	Targets: []sdk.StepDefinition{
+		{
+			ID: "write_ethereum-testnet-sepolia@1.0.0",
+			Inputs: sdk.StepInputs{
+				Mapping: map[string]any{"signed_report": "$(data-feeds-report.outputs)"},
+			},
+			CapabilityType: capabilities.CapabilityTypeTarget,
+		},
+	},
+}
+
+var parallelSerializedWorkflowSpec = sdk.WorkflowSpec{
+	Name:  "parallel-serialized",
+	Owner: "owner",
+	Triggers: []sdk.StepDefinition{
+		{
+			ID:             "chain_reader@1.0.0",
+			Ref:            "trigger-chain-event",
+			Inputs:         sdk.StepInputs{},
+			Config:         map[string]any{"maxFrequencyMs": 5000},
+			CapabilityType: capabilities.CapabilityTypeTrigger,
+		},
+	},
+	Actions: []sdk.StepDefinition{
+		{
+			ID:  "http@1.0.0",
+			Ref: "get-foo",
+			Inputs: sdk.StepInputs{
+				Mapping: map[string]any{"Arg0": "$(trigger-chain-event.outputs)"},
+			},
+			CapabilityType: capabilities.CapabilityTypeAction,
+		},
+		{
+			ID:  "custom_compute@1.0.0",
+			Ref: "compute-foo",
+			Inputs: sdk.StepInputs{
+				Mapping: map[string]any{"Arg0": "$(get-foo.outputs)"},
+			},
+			CapabilityType: capabilities.CapabilityTypeAction,
+		},
+		{
+			ID:        "http@1.0.0",
+			Ref:       "get-bar",
+			Condition: "$(compute-foo.success)",
+			Inputs: sdk.StepInputs{
+				Mapping: map[string]any{"Arg0": "$(trigger-chain-event.outputs)"},
+			},
+			CapabilityType: capabilities.CapabilityTypeAction,
+		},
+		{
+			ID:  "custom_compute@1.0.0",
+			Ref: "compute-bar",
+			Inputs: sdk.StepInputs{
+				Mapping: map[string]any{"Arg0": "$(get-bar.outputs)"},
+			},
+			CapabilityType: capabilities.CapabilityTypeAction,
+		},
+		{
+			ID:        "chain_reader@1.0.0",
+			Ref:       "read-token-price",
+			Condition: "$(compute-bar.success)",
 			Inputs: sdk.StepInputs{
 				Mapping: map[string]any{"Arg0": "$(trigger-chain-event.outputs)"},
 			},

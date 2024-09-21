@@ -128,10 +128,11 @@ func (os outputs) addOutput(s string) {
 //
 // Within the workflow spec, they are called "Capability Properties".
 type StepDefinition struct {
-	ID     string
-	Ref    string
-	Inputs StepInputs
-	Config map[string]any
+	ID        string
+	Ref       string
+	Condition string
+	Inputs    StepInputs
+	Config    map[string]any
 
 	CapabilityType capabilities.CapabilityType
 }
@@ -192,6 +193,10 @@ var tmpl = template.Must(template.New("").Funcs(map[string]any{
 	{{ $ref }}[/"{{$name}}"\]
 	{{ else -}}
 	{{ $ref }}["{{$name}}"]
+	{{ end -}}
+	{{ $condRef := parseRef .Condition -}}
+	{{ if $condRef -}}
+		{{ $condRef }} -..-> {{ $step.Ref }}
 	{{ end -}}
 	{{ if .Inputs.OutputRef -}}
 	{{ .Inputs.OutputRef }} --> {{ $step.Ref }}

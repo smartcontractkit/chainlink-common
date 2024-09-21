@@ -87,8 +87,12 @@ func InterpolateKey(key string, state Results) (any, error) {
 func FindAndInterpolateAllKeys(input any, state Results) (any, error) {
 	return workflows.DeepMap(
 		input,
-		func(el string) (any, error) {
-			matches := workflows.InterpolationTokenRe.FindStringSubmatch(el)
+		func(el any) (any, error) {
+			if _, ok := el.(string); !ok {
+				return el, nil
+			}
+
+			matches := workflows.InterpolationTokenRe.FindStringSubmatch(el.(string))
 			if len(matches) < 2 {
 				return el, nil
 			}
@@ -111,19 +115,23 @@ type Env struct {
 func FindAndInterpolateEnvVars(input any, env Env) (any, error) {
 	return workflows.DeepMap(
 		input,
-		func(el string) (any, error) {
-			matches := workflows.InterpolationTokenRe.FindStringSubmatch(el)
+		func(el any) (any, error) {
+			if _, ok := el.(string); !ok {
+				return el, nil
+			}
+
+			matches := workflows.InterpolationTokenRe.FindStringSubmatch(el.(string))
 			if len(matches) < 2 {
 				return el, nil
 			}
 
 			splitToken := strings.Split(matches[1], ".")
 			if len(splitToken) != 2 {
-				return "", fmt.Errorf("invalid env token: must be of the form $(ENV.<config|binary>): got %s", el)
+				return el, nil
 			}
 
 			if splitToken[0] != "ENV" {
-				return "", fmt.Errorf("invalid env token: must be of the form $(ENV.<config|binary>): got %s", el)
+				return el, nil
 			}
 
 			switch splitToken[1] {

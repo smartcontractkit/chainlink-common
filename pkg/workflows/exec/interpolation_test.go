@@ -237,7 +237,7 @@ func TestInterpolateEnv(t *testing.T) {
 		"binary": "$(something-else)",
 	}
 	_, err = exec.FindAndInterpolateEnvVars(c, exec.Env{})
-	assert.Error(t, err, "invalid env token")
+	assert.NoError(t, err)
 
 	c = map[string]any{
 		"binary": "something-else",

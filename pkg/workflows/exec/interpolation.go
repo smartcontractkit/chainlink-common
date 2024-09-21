@@ -98,3 +98,42 @@ func FindAndInterpolateAllKeys(input any, state Results) (any, error) {
 		},
 	)
 }
+
+type Env struct {
+	Binary []byte
+	Config []byte
+}
+
+// FindAndInterpolateEnv takes a `config` any value, and recursively
+// identifies any values that should be replaced from `env`.
+//
+// A value `v` should be replaced if it is wrapped as follows: `$(v)`.
+func FindAndInterpolateEnvVars(input any, env Env) (any, error) {
+	return workflows.DeepMap(
+		input,
+		func(el string) (any, error) {
+			matches := workflows.InterpolationTokenRe.FindStringSubmatch(el)
+			if len(matches) < 2 {
+				return el, nil
+			}
+
+			splitToken := strings.Split(matches[1], ".")
+			if len(splitToken) != 2 {
+				return "", fmt.Errorf("invalid env token: must be of the form $(ENV.<config|binary>): got %s", el)
+			}
+
+			if splitToken[0] != "ENV" {
+				return "", fmt.Errorf("invalid env token: must be of the form $(ENV.<config|binary>): got %s", el)
+			}
+
+			switch splitToken[1] {
+			case "config":
+				return env.Config, nil
+			case "binary":
+				return env.Binary, nil
+			default:
+				return "", fmt.Errorf("invalid env token: must be of the form $(ENV.<config|binary>): got %s", el)
+			}
+		},
+	)
+}

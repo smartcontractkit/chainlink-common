@@ -216,6 +216,37 @@ func TestInterpolateInputsFromState(t *testing.T) {
 	}
 }
 
+func TestInterpolateEnv(t *testing.T) {
+	c := map[string]any{
+		"binary": "$(ENV.binary)",
+		"config": "$(ENV.config)",
+	}
+	gc, err := exec.FindAndInterpolateEnvVars(
+		c, exec.Env{Binary: []byte("hello"), Config: []byte("world")})
+	require.NoError(t, err)
+	assert.Equal(t, gc.(map[string]any)["binary"].([]byte), []byte("hello"))
+	assert.Equal(t, gc.(map[string]any)["config"].([]byte), []byte("world"))
+
+	c = map[string]any{
+		"binary": "$(ENV.world)",
+	}
+	_, err = exec.FindAndInterpolateEnvVars(c, exec.Env{})
+	assert.Error(t, err, "invalid env token")
+
+	c = map[string]any{
+		"binary": "$(something-else)",
+	}
+	_, err = exec.FindAndInterpolateEnvVars(c, exec.Env{})
+	assert.Error(t, err, "invalid env token")
+
+	c = map[string]any{
+		"binary": "something-else",
+	}
+	gc, err = exec.FindAndInterpolateEnvVars(c, exec.Env{})
+	assert.Equal(t, c, gc)
+	assert.NoError(t, err)
+}
+
 type fakeResults map[string]*exec.Result
 
 func (f fakeResults) ResultForStep(s string) (*exec.Result, bool) {

@@ -81,10 +81,18 @@ func Test_IntUnwrapping(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 
-	t.Run("int64 -> int32; underflow", func(st *testing.T) {
+	t.Run("int64 -> uint32; underflow", func(st *testing.T) {
 		expected := int64(math.MinInt64)
 		v := NewInt64(expected)
 		got := uint32(0)
+		err := v.UnwrapTo(&got)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("int64 -> uint64; underflow", func(st *testing.T) {
+		expected := int64(math.MinInt64)
+		v := NewInt64(expected)
+		got := uint64(0)
 		err := v.UnwrapTo(&got)
 		assert.NotNil(t, err)
 	})

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727102683079,
+  "lastUpdate": 1727105853010,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1680,6 +1680,48 @@ window.BENCHMARK_DATA = {
             "value": 29936,
             "unit": "ns/op",
             "extra": "41856 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c01f105fa51a16b0e0777556ee7446063aa6c7c3",
+          "message": "chore(workflows): adds unit test to utils (#782)",
+          "timestamp": "2024-09-23T11:36:27-04:00",
+          "tree_id": "88bd993eaf29936a7d233bec65f1e3fecd3bb8ac",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c01f105fa51a16b0e0777556ee7446063aa6c7c3"
+        },
+        "date": 1727105851914,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.3,
+            "unit": "ns/op",
+            "extra": "2628511 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 502.2,
+            "unit": "ns/op",
+            "extra": "2377428 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28552,
+            "unit": "ns/op",
+            "extra": "41804 times\n4 procs"
           }
         ]
       }

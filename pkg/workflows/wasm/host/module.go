@@ -1,15 +1,17 @@
 package host
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
 
+	"github.com/andybalholm/brotli"
 	"github.com/bytecodealliance/wasmtime-go/v23"
 	"google.golang.org/protobuf/proto"
 
@@ -18,17 +20,27 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func safeMem(caller *wasmtime.Caller, ptr unsafe.Pointer, size int32) ([]byte, error) {
+func safeMem(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
 	mem := caller.GetExport("memory").Memory()
 	data := mem.UnsafeData(caller)
-	iptr := int32(uintptr(ptr))
-	if iptr+size > int32(len(data)) {
+	if ptr+size > int32(len(data)) {
 		return nil, errors.New("out of bounds memory access")
 	}
 
 	cd := make([]byte, size)
-	copy(cd, data[iptr:iptr+size])
+	copy(cd, data[ptr:ptr+size])
 	return cd, nil
+}
+func copyBuffer(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
+	mem := caller.GetExport("memory").Memory()
+	rawData := mem.UnsafeData(caller)
+	if int32(len(rawData)) < ptr+size {
+		return -1
+	}
+	buffer := rawData[ptr : ptr+size]
+	dataLen := int64(len(src))
+	copy(buffer, src)
+	return dataLen
 }
 
 type respStore struct {
@@ -65,15 +77,16 @@ var (
 	defaultTickInterval = 100 * time.Millisecond
 	defaultTimeout      = 300 * time.Millisecond
 	defaultMaxMemoryMBs = 64
-	defaultInitialFuel  = uint64(100_000_000)
+	DefaultInitialFuel  = uint64(100_000_000)
 )
 
 type ModuleConfig struct {
-	TickInterval time.Duration
-	Timeout      *time.Duration
-	MaxMemoryMBs int64
-	InitialFuel  uint64
-	Logger       logger.Logger
+	TickInterval   time.Duration
+	Timeout        *time.Duration
+	MaxMemoryMBs   int64
+	InitialFuel    uint64
+	Logger         logger.Logger
+	IsUncompressed bool
 }
 
 type Module struct {
@@ -104,10 +117,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 		modCfg.Timeout = &defaultTimeout
 	}
 
-	if modCfg.InitialFuel == 0 {
-		modCfg.InitialFuel = defaultInitialFuel
-	}
-
 	// Take the max of the default and the configured max memory mbs.
 	// We do this because Go requires a minimum of 16 megabytes to run,
 	// and local testing has shown that with less than 64 mbs, some
@@ -116,65 +125,60 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
-	cfg.SetConsumeFuel(true)
+	if modCfg.InitialFuel > 0 {
+		cfg.SetConsumeFuel(true)
+	}
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
+
+	if !modCfg.IsUncompressed {
+		rdr := brotli.NewReader(bytes.NewBuffer(binary))
+		decompedBinary, err := io.ReadAll(rdr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress binary: %w", err)
+		}
+
+		binary = decompedBinary
+	}
 
 	mod, err := wasmtime.NewModule(engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
 
-	linker := wasmtime.NewLinker(engine)
-	linker.AllowShadowing(true)
-
-	err = linker.DefineWasi()
+	linker, err := newWasiLinker(engine)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating wasi linker: %w", err)
 	}
 
 	r := &respStore{
 		m: map[string]*wasmpb.Response{},
 	}
 
-	// TODO: Stub out poll_oneoff correctly -- it's unclear what
-	// the effect of this naive stub is as this syscall powers
-	// notifications for time.Sleep, but will also effect other system notifications.
-	// We need this stub to prevent binaries from calling time.Sleep and
-	// starving our worker pool as a result.
-	err = linker.FuncWrap(
-		"wasi_snapshot_preview1",
-		"poll_oneoff",
-		func(caller *wasmtime.Caller, a int32, b int32, c int32, d int32) int32 {
-			return 0
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not wrap poll_oneoff: %w", err)
-	}
-
 	err = linker.FuncWrap(
 		"env",
 		"sendResponse",
-		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
-			b, innerErr := safeMem(caller, unsafe.Pointer(uintptr(ptr)), ptrlen)
+		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+			b, innerErr := safeMem(caller, ptr, ptrlen)
 			if innerErr != nil {
 				logger.Errorf("error calling sendResponse: %s", err)
-				return
+				return ErrnoFault
 			}
 
 			var resp wasmpb.Response
 			innerErr = proto.Unmarshal(b, &resp)
 			if innerErr != nil {
 				logger.Errorf("error calling sendResponse: %s", err)
-				return
+				return ErrnoFault
 			}
 
 			innerErr = r.add(resp.Id, &resp)
 			if innerErr != nil {
 				logger.Errorf("error calling sendResponse: %s", err)
-				return
+				return ErrnoFault
 			}
+
+			return ErrnoSuccess
 		},
 	)
 	if err != nil {
@@ -237,9 +241,12 @@ func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
 	wasi.SetArgv([]string{"wasi", reqstr})
 
 	store.SetWasi(wasi)
-	err = store.SetFuel(m.cfg.InitialFuel)
-	if err != nil {
-		return nil, fmt.Errorf("error setting fuel: %w", err)
+
+	if m.cfg.InitialFuel > 0 {
+		err = store.SetFuel(m.cfg.InitialFuel)
+		if err != nil {
+			return nil, fmt.Errorf("error setting fuel: %w", err)
+		}
 	}
 
 	// Limit memory to max memory megabytes per instance.
@@ -283,6 +290,8 @@ func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
 		}
 
 		return nil, fmt.Errorf("error executing runner: %s: %w", resp.ErrMsg, innerErr)
+	case containsCode(err, wasm.CodeHostErr):
+		return nil, fmt.Errorf("invariant violation: host errored during sendResponse")
 	default:
 		return nil, err
 	}

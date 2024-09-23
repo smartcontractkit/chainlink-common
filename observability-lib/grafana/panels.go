@@ -33,6 +33,28 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 	return res
 }
 
+type LegendOptions struct {
+	Placement   common.LegendPlacement
+	DisplayMode common.LegendDisplayMode
+}
+
+func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
+	if options.DisplayMode == "" {
+		options.DisplayMode = common.LegendDisplayModeList
+	}
+
+	if options.Placement == "" {
+		options.Placement = common.LegendPlacementBottom
+	}
+
+	builder := common.NewVizLegendOptionsBuilder().
+		ShowLegend(true).
+		Placement(options.Placement).
+		DisplayMode(options.DisplayMode)
+
+	return builder
+}
+
 type ThresholdOptions struct {
 	Mode  dashboard.ThresholdsMode
 	Steps []dashboard.Threshold
@@ -199,8 +221,8 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 type TimeSeriesPanelOptions struct {
 	*PanelOptions
 	FillOpacity       float64
-	ShowLegend        *bool
 	ScaleDistribution common.ScaleDistribution
+	LegendOptions     *LegendOptions
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
@@ -210,12 +232,12 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		options.FillOpacity = 2
 	}
 
-	if options.ShowLegend == nil {
-		options.ShowLegend = Pointer[bool](true)
-	}
-
 	if options.ScaleDistribution == "" {
 		options.ScaleDistribution = common.ScaleDistributionLinear
+	}
+
+	if options.LegendOptions == nil {
+		options.LegendOptions = &LegendOptions{}
 	}
 
 	newPanel := timeseries.NewPanelBuilder().
@@ -228,9 +250,7 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		Unit(options.Unit).
 		NoValue(options.NoValue).
 		FillOpacity(options.FillOpacity).
-		Legend(common.NewVizLegendOptionsBuilder().
-			ShowLegend(*options.ShowLegend),
-		).
+		Legend(newLegend(options.LegendOptions)).
 		ScaleDistribution(common.NewScaleDistributionConfigBuilder().
 			Type(options.ScaleDistribution),
 		)

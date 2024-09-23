@@ -31,20 +31,23 @@ func (b *BigInt) Unwrap() (any, error) {
 
 func (b *BigInt) UnwrapTo(to any) error {
 	if b == nil || b.Underlying == nil {
-		return errors.New("could not unwrap nil values.BigInt")
+		return fmt.Errorf("could not unwrap nil")
 	}
 
+	// check any here because unwrap to will make the *any point to a big.Int instead of *big.Int
 	switch tb := to.(type) {
 	case *big.Int:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = *b.Underlying
 	case *any:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
+
 		*tb = b.Underlying
+		return nil
 	default:
 		rto := reflect.ValueOf(to)
 		if rto.CanConvert(reflect.TypeOf(new(big.Int))) {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727086284076,
+  "lastUpdate": 1727091103498,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1512,6 +1512,48 @@ window.BENCHMARK_DATA = {
             "value": 28613,
             "unit": "ns/op",
             "extra": "41968 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "61c2ccba2f58d4124aae064bbb637f8af403ab13",
+          "message": "[CAPPL-58] Correctly stub out clock_time_get and poll_oneoff (#778)\n\n* [CAPPL-58] Further cleanup\r\n\r\n* [CAPPL-58] Add support for compression",
+          "timestamp": "2024-09-23T12:30:02+01:00",
+          "tree_id": "df00fa350dba5581f39c784494c813480af963e7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/61c2ccba2f58d4124aae064bbb637f8af403ab13"
+        },
+        "date": 1727091103085,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.2,
+            "unit": "ns/op",
+            "extra": "2634062 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 507,
+            "unit": "ns/op",
+            "extra": "2371747 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28790,
+            "unit": "ns/op",
+            "extra": "42038 times\n4 procs"
           }
         ]
       }

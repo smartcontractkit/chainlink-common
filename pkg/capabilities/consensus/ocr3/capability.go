@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/jonboulle/clockwork"
+	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
@@ -184,6 +187,22 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 // LOOPP is able to transmit responses back to the workflow engine. As a workaround to this, we've implemented a custom contract transmitter which fetches this capability from the
 // registry and calls Execute with the response, setting "method = `methodSendResponse`".
 func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	payload := &pb.Event{
+		Component: "OCR3 capability",
+		Event:     "Execute",
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
+	}
+	payloadBytes, err := proto.Marshal(payload)
+	if err != nil {
+		return capabilities.CapabilityResponse{}, err
+	}
+
+	beholder.GetEmitter().Emit(context.Background(), payloadBytes,
+		"beholder_data_schema", "/custom-message/versions/1", // required
+		"beholder_data_type", "custom_message",
+		"package_name", "capabilities_test",
+	)
+
 	m := struct {
 		Method       string
 		Transmission map[string]any
@@ -191,7 +210,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 	}{
 		Method: methodStartRequest,
 	}
-	err := r.Inputs.UnwrapTo(&m)
+	err = r.Inputs.UnwrapTo(&m)
 	if err != nil {
 		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
 	}

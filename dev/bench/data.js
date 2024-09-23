@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727109515270,
+  "lastUpdate": 1727114266842,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1764,6 +1764,48 @@ window.BENCHMARK_DATA = {
             "value": 28427,
             "unit": "ns/op",
             "extra": "42258 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "14086514727b667dc37edd4968b46c5a49222080",
+          "message": "Add binary + config to custom compute (#794)\n\n* Add binary + config to custom compute\r\n\r\n* Add binary + config to custom compute",
+          "timestamp": "2024-09-23T18:56:42+01:00",
+          "tree_id": "7900823c6362810e822119da3b8d59dc556a265d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/14086514727b667dc37edd4968b46c5a49222080"
+        },
+        "date": 1727114265784,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 456.3,
+            "unit": "ns/op",
+            "extra": "2455132 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 525.9,
+            "unit": "ns/op",
+            "extra": "2373352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28551,
+            "unit": "ns/op",
+            "extra": "41997 times\n4 procs"
           }
         ]
       }

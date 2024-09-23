@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726829402606,
+  "lastUpdate": 1727086284076,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1470,6 +1470,48 @@ window.BENCHMARK_DATA = {
             "value": 28584,
             "unit": "ns/op",
             "extra": "42037 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8f5c155769f5c4054d9ac35632b1d2e076ee607b",
+          "message": "feat(observability-lib): legendoptions + improvement on node general dashboard (#785)",
+          "timestamp": "2024-09-23T12:10:18+02:00",
+          "tree_id": "0b001896130f602d9f9168aad1b053e1e8fe61aa",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8f5c155769f5c4054d9ac35632b1d2e076ee607b"
+        },
+        "date": 1727086283637,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 456.3,
+            "unit": "ns/op",
+            "extra": "2626467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 523.4,
+            "unit": "ns/op",
+            "extra": "2403264 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28613,
+            "unit": "ns/op",
+            "extra": "41968 times\n4 procs"
           }
         ]
       }

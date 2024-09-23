@@ -147,8 +147,12 @@ func findRefs(inputs any) ([]string, error) {
 		// - if there are no matches, return no reference
 		// - if there is one match, return the reference
 		// - if there are multiple matches (in the case of a multi-part state reference), return just the step ref
-		func(el string) (any, error) {
-			matches := InterpolationTokenRe.FindStringSubmatch(el)
+		func(el any) (any, error) {
+			if _, ok := el.(string); !ok {
+				return el, nil
+			}
+
+			matches := InterpolationTokenRe.FindStringSubmatch(el.(string))
 			if len(matches) < 2 {
 				return el, nil
 			}
@@ -172,18 +176,11 @@ func findRefs(inputs any) ([]string, error) {
 //   - a map[string]any
 //   - a []any
 //   - a string
-func DeepMap(input any, transform func(el string) (any, error)) (any, error) {
+func DeepMap(input any, transform func(el any) (any, error)) (any, error) {
 	// in the case of a string, simply apply the transformation
 	// in the case of a map, recurse and apply the transformation to each value
 	// in the case of a list, recurse and apply the transformation to each element
 	switch tv := input.(type) {
-	case string:
-		nv, err := transform(tv)
-		if err != nil {
-			return nil, err
-		}
-
-		return nv, nil
 	case Mapping:
 		// coerce Mapping to map[string]any
 		mp := map[string]any(tv)
@@ -220,6 +217,13 @@ func DeepMap(input any, transform func(el string) (any, error)) (any, error) {
 			a = append(a, ne)
 		}
 		return a, nil
+	case any:
+		nv, err := transform(tv)
+		if err != nil {
+			return nil, err
+		}
+
+		return nv, nil
 	}
 
 	return nil, fmt.Errorf("cannot traverse item %+v of type %T", input, input)

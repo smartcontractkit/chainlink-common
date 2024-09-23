@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727101660334,
+  "lastUpdate": 1727102683079,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1638,6 +1638,48 @@ window.BENCHMARK_DATA = {
             "value": 28581,
             "unit": "ns/op",
             "extra": "41979 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d4cf7aff85cb3f2a0630bc2a11b42cfcbb80c40c",
+          "message": "Replace fmt.Errorf with errors.New where possible (#795)",
+          "timestamp": "2024-09-23T10:43:42-04:00",
+          "tree_id": "9b94ee205da2fa59988cc1834dc27df159edcd9b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d4cf7aff85cb3f2a0630bc2a11b42cfcbb80c40c"
+        },
+        "date": 1727102682635,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 466.5,
+            "unit": "ns/op",
+            "extra": "2671917 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 500.2,
+            "unit": "ns/op",
+            "extra": "2392772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29936,
+            "unit": "ns/op",
+            "extra": "41856 times\n4 procs"
           }
         ]
       }

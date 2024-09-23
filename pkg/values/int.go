@@ -55,6 +55,9 @@ func (i *Int64) UnwrapTo(to any) error {
 		if rToVal.OverflowUint(uint64(i.Underlying)) {
 			return fmt.Errorf("cannot unwrap int64 to %T: overflow", to)
 		}
+	case reflect.Interface:
+	default:
+		return fmt.Errorf("cannot unwrap to type %T", to)
 	}
 
 	return unwrapTo(i.Underlying, to)

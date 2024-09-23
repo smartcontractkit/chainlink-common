@@ -197,11 +197,13 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		return capabilities.CapabilityResponse{}, err
 	}
 
-	beholder.GetEmitter().Emit(context.Background(), payloadBytes,
+	if err := beholder.GetEmitter().Emit(context.Background(), payloadBytes,
 		"beholder_data_schema", "/custom-message/versions/1", // required
 		"beholder_data_type", "custom_message",
 		"package_name", "capabilities_test",
-	)
+	); err != nil {
+		return capabilities.CapabilityResponse{}, err
+	}
 
 	m := struct {
 		Method       string

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727091103498,
+  "lastUpdate": 1727092305371,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1554,6 +1554,48 @@ window.BENCHMARK_DATA = {
             "value": 28790,
             "unit": "ns/op",
             "extra": "42038 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1702865+kidambisrinivas@users.noreply.github.com",
+            "name": "Sri Kidambi",
+            "username": "kidambisrinivas"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5d125850fa8092d6d00a90ec06b020cd2c4890c7",
+          "message": "More alias handling in Unwrap functionality of Value  (#792)\n\n* Generic case to handle both pointer type and raw type and simplify int unwrap\r\n\r\n* Handling interface and default\r\n\r\n* Small test fix\r\n\r\n---------\r\n\r\nCo-authored-by: Cedric Cordenier <cedric.cordenier@smartcontract.com>",
+          "timestamp": "2024-09-23T12:50:45+01:00",
+          "tree_id": "cd5819f2d68d7491943bd77d1402c6da3dbdd05a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5d125850fa8092d6d00a90ec06b020cd2c4890c7"
+        },
+        "date": 1727092304952,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 471.6,
+            "unit": "ns/op",
+            "extra": "2600544 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 500.2,
+            "unit": "ns/op",
+            "extra": "2385236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28554,
+            "unit": "ns/op",
+            "extra": "42028 times\n4 procs"
           }
         ]
       }

@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -288,12 +289,12 @@ func unwrapTo[T any](underlying T, to any) error {
 	switch tb := to.(type) {
 	case *T:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = underlying
 	case *any:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = underlying
 	default:

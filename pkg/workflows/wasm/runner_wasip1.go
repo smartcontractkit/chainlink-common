@@ -9,12 +9,6 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-var (
-	codeMarshalErr = 110
-	codeRunnerErr  = 111
-	codeSuccess    = 0
-)
-
 //go:wasmimport env sendResponse
 func sendResponse(respptr unsafe.Pointer, respptrlen int32)
 
@@ -27,15 +21,24 @@ func NewRunner() *Runner {
 		sendResponse: func(response *wasmpb.Response) {
 			pb, err := proto.Marshal(response)
 			if err != nil {
-				os.Exit(codeMarshalErr)
+				// We somehow couldn't marshal the response, so let's
+				// exit with a special error code letting the host know
+				// what happened.
+				os.Exit(CodeInvalidResponse)
+			}
+
+			// unknownID will only be set when we've failed to parse
+			// the request. Like before, let's bubble this up.
+			if response.Id == unknownID {
+				os.Exit(CodeInvalidRequest)
 			}
 
 			ptr, ptrlen := bufferToPointerLen(pb)
 			sendResponse(ptr, ptrlen)
 
-			code := codeSuccess
+			code := CodeSuccess
 			if response.ErrMsg != "" {
-				code = codeRunnerErr
+				code = CodeRunnerErr
 			}
 
 			os.Exit(code)

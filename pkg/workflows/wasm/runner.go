@@ -14,6 +14,11 @@ import (
 
 const (
 	unknownID = "__UNKNOWN__"
+
+	CodeInvalidResponse = 110
+	CodeInvalidRequest  = 111
+	CodeRunnerErr       = 112
+	CodeSuccess         = 0
 )
 
 var _ sdk.Runner = (*Runner)(nil)

@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -47,13 +48,23 @@ func Wrap(v any) (Value, error) {
 		return NewDecimal(tv), nil
 	case int64:
 		return NewInt64(tv), nil
+	case int32:
+		return NewInt64(int64(tv)), nil
+	case int16:
+		return NewInt64(int64(tv)), nil
+	case int8:
+		return NewInt64(int64(tv)), nil
 	case int:
 		return NewInt64(int64(tv)), nil
 	case uint64:
 		return NewInt64(int64(tv)), nil
-	case uint:
-		return NewInt64(int64(tv)), nil
 	case uint32:
+		return NewInt64(int64(tv)), nil
+	case uint16:
+		return NewInt64(int64(tv)), nil
+	case uint8:
+		return NewInt64(int64(tv)), nil
+	case uint:
 		return NewInt64(int64(tv)), nil
 	case *big.Int:
 		return NewBigInt(tv), nil
@@ -103,20 +114,25 @@ func Wrap(v any) (Value, error) {
 		return NewMap(m)
 	// Better complex type support for slices
 	case reflect.Slice:
-		s := make([]any, val.Len())
-		for i := 0; i < val.Len(); i++ {
-			item := val.Index(i).Interface()
-			s[i] = item
+		if val.Type().Elem().Kind() == reflect.Uint8 {
+			return NewBytes(val.Bytes()), nil
 		}
-		return NewList(s)
+		return createListFromSlice(val)
+	case reflect.Array:
+		arrayLen := val.Len()
+		slice := reflect.MakeSlice(reflect.SliceOf(val.Type().Elem()), arrayLen, arrayLen)
+		for i := 0; i < arrayLen; i++ {
+			slice.Index(i).Set(val.Index(i))
+		}
+		return Wrap(slice.Interface())
 	case reflect.Struct:
 		return CreateMapFromStruct(v)
 	case reflect.Pointer:
-		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
-			return CreateMapFromStruct(reflect.Indirect(reflect.ValueOf(v)).Interface())
-		}
+		// pointer can't be null or the switch statement above would catch it.
+		return Wrap(val.Elem().Interface())
 	case reflect.String:
 		return Wrap(val.Convert(reflect.TypeOf("")).Interface())
+
 	case reflect.Bool:
 		return Wrap(val.Convert(reflect.TypeOf(true)).Interface())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -124,6 +140,15 @@ func Wrap(v any) (Value, error) {
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
+}
+
+func createListFromSlice(val reflect.Value) (Value, error) {
+	s := make([]any, val.Len())
+	for i := 0; i < val.Len(); i++ {
+		item := val.Index(i).Interface()
+		s[i] = item
+	}
+	return NewList(s)
 }
 
 func WrapMap(a any) (*Map, error) {
@@ -264,12 +289,12 @@ func unwrapTo[T any](underlying T, to any) error {
 	switch tb := to.(type) {
 	case *T:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = underlying
 	case *any:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = underlying
 	default:
@@ -277,19 +302,27 @@ func unwrapTo[T any](underlying T, to any) error {
 		// eg: type FeedId string allows verification of FeedId's shape while unmarshalling
 		rTo := reflect.ValueOf(to)
 		rUnderlying := reflect.ValueOf(underlying)
-		underlyingPtr := reflect.PointerTo(rUnderlying.Type())
 		if rTo.Kind() != reflect.Pointer {
 			return fmt.Errorf("cannot unwrap to value of type: %T", to)
 		}
 
-		if rTo.CanConvert(underlyingPtr) {
-			reflect.Indirect(rTo.Convert(underlyingPtr)).Set(rUnderlying)
+		if rUnderlying.Type().ConvertibleTo(rTo.Type().Elem()) {
+			reflect.Indirect(rTo).Set(rUnderlying.Convert(rTo.Type().Elem()))
 			return nil
 		}
 
 		rToVal := reflect.Indirect(rTo)
-		if rToVal.Kind() == reflect.Slice && rUnderlying.Kind() == reflect.Slice {
-			newList := reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
+		if rUnderlying.Kind() == reflect.Slice {
+			var newList reflect.Value
+			if rToVal.Kind() == reflect.Array {
+				newListPtr := reflect.New(reflect.ArrayOf(rUnderlying.Len(), rToVal.Type().Elem()))
+				newList = reflect.Indirect(newListPtr)
+			} else if rToVal.Kind() == reflect.Slice {
+				newList = reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
+			} else {
+				return fmt.Errorf("cannot unwrap slice to value of type: %T", to)
+			}
+
 			for i := 0; i < rUnderlying.Len(); i++ {
 				el := rUnderlying.Index(i)
 				toEl := newList.Index(i)

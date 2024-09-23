@@ -46,45 +46,70 @@ func (i *Int64) UnwrapTo(to any) error {
 	case *int64:
 		*tv = i.Underlying
 		return nil
-	case *int:
-		if i.Underlying > math.MaxInt {
-			return fmt.Errorf("cannot unwrap int64 to int: number would overflow %d", i)
+	case *int32:
+		if err := verifyBounds(math.MinInt32, math.MaxInt32, i.Underlying, "int32"); err != nil {
+			return err
 		}
 
-		if i.Underlying < math.MinInt {
-			return fmt.Errorf("cannot unwrap int64 to int: number would underflow %d", i)
+		*tv = int32(i.Underlying)
+		return nil
+	case *int16:
+		if err := verifyBounds(math.MinInt16, math.MaxInt16, i.Underlying, "int16"); err != nil {
+			return err
+		}
+
+		*tv = int16(i.Underlying)
+		return nil
+	case *int8:
+		if err := verifyBounds(math.MinInt8, math.MaxInt8, i.Underlying, "int8"); err != nil {
+			return err
+		}
+
+		*tv = int8(i.Underlying)
+		return nil
+	case *int:
+		if err := verifyBounds(math.MinInt, math.MaxInt, i.Underlying, "int"); err != nil {
+			return err
 		}
 
 		*tv = int(i.Underlying)
 		return nil
-	case *uint:
-		if i.Underlying > math.MaxInt {
-			return fmt.Errorf("cannot unwrap int64 to int: number would overflow %d", i)
-		}
-
+	case *uint64:
 		if i.Underlying < 0 {
-			return fmt.Errorf("cannot unwrap int64 to uint: number would underflow %d", i)
+			return fmt.Errorf("value %d is too small for uint64", i.Underlying)
 		}
 
-		*tv = uint(i.Underlying)
+		*tv = uint64(i.Underlying)
 		return nil
 	case *uint32:
-		if i.Underlying > math.MaxInt {
-			return fmt.Errorf("cannot unwrap int64 to uint32: number would overflow %d", i)
-		}
-
-		if i.Underlying < 0 {
-			return fmt.Errorf("cannot unwrap int64 to uint32: number would underflow %d", i)
+		if err := verifyBounds(0, math.MaxUint32, i.Underlying, "uint32"); err != nil {
+			return err
 		}
 
 		*tv = uint32(i.Underlying)
 		return nil
-	case *uint64:
-		if i.Underlying < 0 {
-			return fmt.Errorf("cannot unwrap int64 to uint: number would underflow %d", i)
+	case *uint16:
+		if err := verifyBounds(0, math.MaxUint16, i.Underlying, "uint16"); err != nil {
+			return err
 		}
 
-		*tv = uint64(i.Underlying)
+		*tv = uint16(i.Underlying)
+		return nil
+	case *uint8:
+		if err := verifyBounds(0, math.MaxUint8, i.Underlying, "uint8"); err != nil {
+			return err
+		}
+
+		*tv = uint8(i.Underlying)
+		return nil
+	case *uint:
+		if math.MaxUint == math.MaxUint64 {
+			if i.Underlying < 0 {
+				return fmt.Errorf("value %d is too small for uint64", i.Underlying)
+			}
+		}
+
+		*tv = uint(i.Underlying)
 		return nil
 	case *any:
 		*tv = i.Underlying
@@ -98,12 +123,20 @@ func (i *Int64) UnwrapTo(to any) error {
 			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int64(0)))).Interface())
 		case reflect.Int32:
 			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int32(0)))).Interface())
+		case reflect.Int16:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int16(0)))).Interface())
+		case reflect.Int8:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int8(0)))).Interface())
 		case reflect.Int:
-			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int(0)))).Interface())
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(0))).Interface())
 		case reflect.Uint64:
 			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint64(0)))).Interface())
 		case reflect.Uint32:
 			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint32(0)))).Interface())
+		case reflect.Uint16:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint16(0)))).Interface())
+		case reflect.Uint8:
+			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint8(0)))).Interface())
 		case reflect.Uint:
 			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint(0)))).Interface())
 		default:
@@ -112,4 +145,13 @@ func (i *Int64) UnwrapTo(to any) error {
 	}
 
 	return fmt.Errorf("cannot unwrap to type %T", to)
+}
+
+func verifyBounds(min, max, value int64, tpe string) error {
+	if value < min {
+		return fmt.Errorf("value %d is too large for %s", value, tpe)
+	} else if value > max {
+		return fmt.Errorf("value %d is too small for %s", value, tpe)
+	}
+	return nil
 }

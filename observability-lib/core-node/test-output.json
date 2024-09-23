@@ -135,7 +135,7 @@
         "id": 2,
         "targets": [
           {
-            "expr": "eth_balance{instance=~\"${instance}\", }",
+            "expr": "sum(eth_balance{instance=~\"${instance}\", }) by (instance, account)",
             "instant": true,
             "range": false,
             "format": "",
@@ -204,7 +204,7 @@
         "id": 3,
         "targets": [
           {
-            "expr": "solana_balance{instance=~\"${instance}\", }",
+            "expr": "sum(solana_balance{instance=~\"${instance}\", }) by (instance, account)",
             "instant": true,
             "range": false,
             "format": "",
@@ -344,7 +344,7 @@
         "id": 5,
         "targets": [
           {
-            "expr": "eth_balance{instance=~\"${instance}\", }",
+            "expr": "sum(eth_balance{instance=~\"${instance}\", }) by (instance, account)",
             "format": "",
             "legendFormat": "{{instance}} - {{account}}",
             "refId": ""
@@ -394,7 +394,7 @@
         "id": 6,
         "targets": [
           {
-            "expr": "solana_balance{instance=~\"${instance}\", }",
+            "expr": "sum(solana_balance{instance=~\"${instance}\", }) by (instance, account)",
             "format": "",
             "legendFormat": "{{instance}} - {{account}}",
             "refId": ""
@@ -498,7 +498,7 @@
             "instant": true,
             "range": false,
             "format": "",
-            "legendFormat": "{{version}}",
+            "legendFormat": "{{exported_version}}",
             "refId": ""
           }
         ],
@@ -559,25 +559,25 @@
         "id": 9,
         "targets": [
           {
-            "expr": "db_conns_max{instance=~\"${instance}\", }",
+            "expr": "sum(db_conns_max{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Max",
             "refId": ""
           },
           {
-            "expr": "db_conns_open{instance=~\"${instance}\", }",
+            "expr": "sum(db_conns_open{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Open",
             "refId": ""
           },
           {
-            "expr": "db_conns_used{instance=~\"${instance}\", }",
+            "expr": "sum(db_conns_used{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Used",
             "refId": ""
           },
           {
-            "expr": "db_conns_wait{instance=~\"${instance}\", }",
+            "expr": "sum(db_conns_wait{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Wait",
             "refId": ""
@@ -598,7 +598,7 @@
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -627,7 +627,7 @@
         "id": 10,
         "targets": [
           {
-            "expr": "db_wait_count{instance=~\"${instance}\", }",
+            "expr": "sum(db_wait_count{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -677,7 +677,7 @@
         "id": 11,
         "targets": [
           {
-            "expr": "db_wait_time_seconds{instance=~\"${instance}\", }",
+            "expr": "sum(db_wait_time_seconds{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -773,7 +773,7 @@
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -865,13 +865,13 @@
         "id": 14,
         "targets": [
           {
-            "expr": "avg by (query) (sum by (query, job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "expr": "avg by (query, instance) (sum by (query, job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
             "format": "",
-            "legendFormat": "{{query}} - {{job}}",
+            "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           },
           {
-            "expr": "avg (sum by(job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "expr": "avg (sum by(instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
             "format": "",
             "legendFormat": "Total",
             "refId": ""
@@ -892,7 +892,7 @@
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -921,9 +921,9 @@
         "id": 15,
         "targets": [
           {
-            "expr": "avg by (type) (sum by (type, job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "expr": "avg by (instance, type) (sum by (type, instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
             "format": "",
-            "legendFormat": "{{query}} - {{job}}",
+            "legendFormat": "{{instance}} - {{type}}",
             "refId": ""
           }
         ],
@@ -971,9 +971,9 @@
         "id": 16,
         "targets": [
           {
-            "expr": "avg by (query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "avg by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
             "format": "",
-            "legendFormat": "{{query}} - {{job}}",
+            "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           }
         ],
@@ -1021,9 +1021,9 @@
         "id": 17,
         "targets": [
           {
-            "expr": "max by (query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "max by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
             "format": "",
-            "legendFormat": "{{query}} - {{job}}",
+            "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           }
         ],
@@ -1121,13 +1121,13 @@
         "id": 19,
         "targets": [
           {
-            "expr": "histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, query)) / 1e6",
+            "expr": "histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
             "format": "",
-            "legendFormat": "{{query}}",
+            "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           }
         ],
-        "title": "Queries duration by type (0.5 perc)",
+        "title": "Queries duration by query 0.5 quantile",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -1135,14 +1135,14 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
+          "w": 24,
           "x": 0,
           "y": 62
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -1171,13 +1171,13 @@
         "id": 20,
         "targets": [
           {
-            "expr": "histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, query)) / 1e6",
+            "expr": "histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
             "format": "",
-            "legendFormat": "{{query}}",
+            "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           }
         ],
-        "title": "Queries duration by type (0.9 perc)",
+        "title": "Queries duration by query 0.9 quantile",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -1185,14 +1185,14 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 62
+          "w": 24,
+          "x": 0,
+          "y": 68
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -1221,13 +1221,13 @@
         "id": 21,
         "targets": [
           {
-            "expr": "histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, query)) / 1e6",
+            "expr": "histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
             "format": "",
-            "legendFormat": "{{query}}",
+            "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           }
         ],
-        "title": "Queries duration by type (0.99 perc)",
+        "title": "Queries duration by query 0.99 quantile",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -1235,14 +1235,14 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
+          "w": 24,
           "x": 0,
-          "y": 68
+          "y": 74
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -1286,8 +1286,8 @@
         "gridPos": {
           "h": 6,
           "w": 12,
-          "x": 12,
-          "y": 68
+          "x": 0,
+          "y": 80
         },
         "options": {
           "legend": {
@@ -1336,8 +1336,8 @@
         "gridPos": {
           "h": 6,
           "w": 12,
-          "x": 0,
-          "y": 74
+          "x": 12,
+          "y": 80
         },
         "options": {
           "legend": {
@@ -1386,8 +1386,8 @@
         "gridPos": {
           "h": 6,
           "w": 12,
-          "x": 12,
-          "y": 74
+          "x": 0,
+          "y": 86
         },
         "options": {
           "legend": {
@@ -1436,8 +1436,8 @@
         "gridPos": {
           "h": 6,
           "w": 12,
-          "x": 0,
-          "y": 80
+          "x": 12,
+          "y": 86
         },
         "options": {
           "legend": {
@@ -1474,7 +1474,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 86
+          "y": 92
         },
         "id": 0,
         "panels": null
@@ -1484,7 +1484,7 @@
         "id": 26,
         "targets": [
           {
-            "expr": "feeds_job_proposal_requests{instance=~\"${instance}\", }",
+            "expr": "sum(feeds_job_proposal_requests{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1500,7 +1500,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 87
+          "y": 93
         },
         "options": {
           "legend": {
@@ -1534,7 +1534,7 @@
         "id": 27,
         "targets": [
           {
-            "expr": "feeds_job_proposal_count{instance=~\"${instance}\", }",
+            "expr": "sum(feeds_job_proposal_count{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1550,7 +1550,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 87
+          "y": 93
         },
         "options": {
           "legend": {
@@ -1587,7 +1587,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 93
+          "y": 99
         },
         "id": 0,
         "panels": null
@@ -1597,9 +1597,9 @@
         "id": 28,
         "targets": [
           {
-            "expr": "mailbox_load_percent{instance=~\"${instance}\", }",
+            "expr": "sum(mailbox_load_percent{instance=~\"${instance}\", }) by (capacity, name, instance)",
             "format": "",
-            "legendFormat": "{{instance}} - {{name}}",
+            "legendFormat": "{{instance}} - Capacity: {{capacity}} - {{name}}",
             "refId": ""
           }
         ],
@@ -1613,12 +1613,12 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 94
+          "y": 100
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -1629,7 +1629,7 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "",
+            "unit": "percent",
             "decimals": 1,
             "noValue": "No data",
             "custom": {
@@ -1650,7 +1650,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 100
+          "y": 106
         },
         "id": 0,
         "panels": null
@@ -1660,7 +1660,7 @@
         "id": 29,
         "targets": [
           {
-            "expr": "unconfirmed_transactions{instance=~\"${instance}\", }",
+            "expr": "sum(unconfirmed_transactions{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1676,7 +1676,7 @@
           "h": 6,
           "w": 8,
           "x": 0,
-          "y": 101
+          "y": 107
         },
         "options": {
           "legend": {
@@ -1693,7 +1693,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "Tx",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1710,7 +1710,7 @@
         "id": 30,
         "targets": [
           {
-            "expr": "max_unconfirmed_tx_age{instance=~\"${instance}\", }",
+            "expr": "sum(max_unconfirmed_tx_age{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1726,7 +1726,7 @@
           "h": 6,
           "w": 8,
           "x": 8,
-          "y": 101
+          "y": 107
         },
         "options": {
           "legend": {
@@ -1743,7 +1743,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "s",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1760,7 +1760,7 @@
         "id": 31,
         "targets": [
           {
-            "expr": "max_unconfirmed_blocks{instance=~\"${instance}\", }",
+            "expr": "sum(max_unconfirmed_blocks{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1776,7 +1776,7 @@
           "h": 6,
           "w": 8,
           "x": 16,
-          "y": 101
+          "y": 107
         },
         "options": {
           "legend": {
@@ -1793,7 +1793,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "Blocks",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1813,7 +1813,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 107
+          "y": 113
         },
         "id": 0,
         "panels": null
@@ -1823,13 +1823,13 @@
         "id": 32,
         "targets": [
           {
-            "expr": "tx_manager_time_until_tx_broadcast{instance=~\"${instance}\", }",
+            "expr": "sum(tx_manager_gas_bump_exceeds_limit{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Time Until TX Broadcast",
+        "title": "TX Manager Gas Bump Exceeds Limit",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -1837,57 +1837,7 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 108
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 33,
-        "targets": [
-          {
-            "expr": "tx_manager_num_gas_bumps{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "TX Manager Num Gas Bumps",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
+          "w": 6,
           "x": 0,
           "y": 114
         },
@@ -1906,7 +1856,57 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 33,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_num_confirmed_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Confirmed",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 114
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1923,13 +1923,13 @@
         "id": 34,
         "targets": [
           {
-            "expr": "tx_manager_gas_bump_exceeds_limit{instance=~\"${instance}\", }",
+            "expr": "sum(tx_manager_num_successful_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Num Gas Bumps Exceeds Limit",
+        "title": "TX Manager Successful",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -1937,7 +1937,7 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
+          "w": 6,
           "x": 12,
           "y": 114
         },
@@ -1956,7 +1956,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1973,13 +1973,63 @@
         "id": 35,
         "targets": [
           {
-            "expr": "tx_manager_num_confirmed_transactions{instance=~\"${instance}\", }",
+            "expr": "sum(tx_manager_num_tx_reverted{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Num Confirmed Transactions",
+        "title": "TX Manager Reverted",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 114
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 36,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_num_gas_bumps{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Gas Bumps",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -2006,7 +2056,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2020,16 +2070,16 @@
       },
       {
         "type": "timeseries",
-        "id": 36,
+        "id": 37,
         "targets": [
           {
-            "expr": "tx_manager_num_successful_transactions{instance=~\"${instance}\", }",
+            "expr": "sum(tx_manager_fwd_tx_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Num Successful Transactions",
+        "title": "TX Manager Forwarded",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -2056,7 +2106,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2070,16 +2120,16 @@
       },
       {
         "type": "timeseries",
-        "id": 37,
+        "id": 38,
         "targets": [
           {
-            "expr": "tx_manager_num_tx_reverted{instance=~\"${instance}\", }",
+            "expr": "sum(tx_manager_tx_attempt_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Num Reverted Transactions",
+        "title": "TX Manager Attempts",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -2106,7 +2156,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2120,17 +2170,17 @@
       },
       {
         "type": "timeseries",
-        "id": 38,
+        "id": 39,
         "targets": [
           {
-            "expr": "tx_manager_fwd_tx_count{instance=~\"${instance}\", }",
+            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Num Fwd Transactions",
-        "description": "",
+        "title": "TX Manager Time Until broadcast",
+        "description": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
@@ -2155,57 +2205,7 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 39,
-        "targets": [
-          {
-            "expr": "tx_manager_tx_attempt_count{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "TX Manager Num Transactions Attempts",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 126
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
+            "unit": "ms",
             "decimals": 1,
             "noValue": "No data",
             "custom": {
@@ -2223,23 +2223,23 @@
         "id": 40,
         "targets": [
           {
-            "expr": "tx_manager_time_until_tx_confirmed{instance=~\"${instance}\", }",
+            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Time Until TX Confirmed",
-        "description": "",
+        "title": "TX Manager Time Until confirmed",
+        "description": "The amount of time elapsed from a transaction being broadcast to being included in a block",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
         },
         "gridPos": {
           "h": 6,
-          "w": 24,
+          "w": 6,
           "x": 0,
-          "y": 132
+          "y": 126
         },
         "options": {
           "legend": {
@@ -2255,57 +2255,7 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 41,
-        "targets": [
-          {
-            "expr": "tx_manager_blocks_until_tx_confirmed{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "TX Manager Block Until TX Confirmed",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 138
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
+            "unit": "ms",
             "decimals": 1,
             "noValue": "No data",
             "custom": {
@@ -2326,17 +2276,17 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 144
+          "y": 132
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 42,
+        "id": 41,
         "targets": [
           {
-            "expr": "head_tracker_current_head{instance=~\"${instance}\", }",
+            "expr": "sum(head_tracker_current_head{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -2350,9 +2300,9 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
+          "w": 18,
           "x": 0,
-          "y": 145
+          "y": 133
         },
         "options": {
           "legend": {
@@ -2369,7 +2319,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "Block",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2382,8 +2332,162 @@
         }
       },
       {
+        "type": "stat",
+        "id": 42,
+        "targets": [
+          {
+            "expr": "head_tracker_current_head{instance=~\"${instance}\", }",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Current Head",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 133
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
+          "justifyMode": "auto",
+          "textMode": "value",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
         "type": "timeseries",
         "id": 43,
+        "targets": [
+          {
+            "expr": "sum(head_tracker_heads_received{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Heads Received",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 18,
+          "x": 0,
+          "y": 139
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 44,
+        "targets": [
+          {
+            "expr": "head_tracker_heads_received{instance=~\"${instance}\", }",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Current Received",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 139
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
+          "justifyMode": "auto",
+          "textMode": "value",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 45,
         "targets": [
           {
             "expr": "head_tracker_very_old_head{instance=~\"${instance}\", }",
@@ -2401,7 +2505,7 @@
         "gridPos": {
           "h": 6,
           "w": 12,
-          "x": 12,
+          "x": 0,
           "y": 145
         },
         "options": {
@@ -2419,7 +2523,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "Block",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2433,57 +2537,7 @@
       },
       {
         "type": "timeseries",
-        "id": 44,
-        "targets": [
-          {
-            "expr": "head_tracker_heads_received{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Head Tracker Heads Received",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 0,
-          "y": 151
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "Block",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 45,
+        "id": 46,
         "targets": [
           {
             "expr": "head_tracker_connection_errors{instance=~\"${instance}\", }",
@@ -2502,7 +2556,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 151
+          "y": 145
         },
         "options": {
           "legend": {
@@ -2539,47 +2593,23 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 157
+          "y": 151
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 46,
+        "id": 47,
         "targets": [
           {
-            "expr": "log_panic_count{instance=~\"${instance}\", }",
+            "expr": "sum(log_panic_count{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - panic",
             "refId": ""
-          },
-          {
-            "expr": "log_fatal_count{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}} - fatal",
-            "refId": ""
-          },
-          {
-            "expr": "log_critical_count{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}} - critical",
-            "refId": ""
-          },
-          {
-            "expr": "log_warn_count{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}} - warn",
-            "refId": ""
-          },
-          {
-            "expr": "log_error_count{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}} - error",
-            "refId": ""
           }
         ],
-        "title": "Logs Counter",
+        "title": "Logs Counter - panic",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -2587,7 +2617,157 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 24,
+          "w": 8,
+          "x": 0,
+          "y": 152
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 48,
+        "targets": [
+          {
+            "expr": "sum(log_fatal_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - fatal",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - fatal",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 152
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 49,
+        "targets": [
+          {
+            "expr": "sum(log_critical_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - critical",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - critical",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 152
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 50,
+        "targets": [
+          {
+            "expr": "sum(log_warn_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - warn",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - warn",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
           "x": 0,
           "y": 158
         },
@@ -2606,7 +2786,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2620,40 +2800,16 @@
       },
       {
         "type": "timeseries",
-        "id": 47,
+        "id": 51,
         "targets": [
           {
-            "expr": "sum(rate(log_panic_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}} - panic",
-            "refId": ""
-          },
-          {
-            "expr": "sum(rate(log_fatal_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}} - fatal",
-            "refId": ""
-          },
-          {
-            "expr": "sum(rate(log_critical_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}} - critical",
-            "refId": ""
-          },
-          {
-            "expr": "sum(rate(log_warn_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}} - warn",
-            "refId": ""
-          },
-          {
-            "expr": "sum(rate(log_error_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "sum(log_error_count{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - error",
             "refId": ""
           }
         ],
-        "title": "Logs Rate",
+        "title": "Logs Counter - error",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -2661,9 +2817,9 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 164
+          "w": 8,
+          "x": 8,
+          "y": 158
         },
         "options": {
           "legend": {
@@ -2680,7 +2836,270 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Logs Rate",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 164
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 52,
+        "targets": [
+          {
+            "expr": "sum(rate(log_panic_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - panic",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 165
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 53,
+        "targets": [
+          {
+            "expr": "sum(rate(log_fatal_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - fatal",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 165
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 54,
+        "targets": [
+          {
+            "expr": "sum(rate(log_critical_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - critical",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 165
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 55,
+        "targets": [
+          {
+            "expr": "sum(rate(log_warn_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - warn",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 171
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 56,
+        "targets": [
+          {
+            "expr": "sum(rate(log_error_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - error",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 171
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2700,14 +3119,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 170
+          "y": 177
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 48,
+        "id": 57,
         "targets": [
           {
             "expr": "evm_pool_rpc_node_highest_seen_block{instance=~\"${instance}\", }",
@@ -2726,7 +3145,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 171
+          "y": 178
         },
         "options": {
           "legend": {
@@ -2757,7 +3176,7 @@
       },
       {
         "type": "timeseries",
-        "id": 49,
+        "id": 58,
         "targets": [
           {
             "expr": "evm_pool_rpc_node_num_seen_blocks{instance=~\"${instance}\", }",
@@ -2776,7 +3195,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 171
+          "y": 178
         },
         "options": {
           "legend": {
@@ -2807,7 +3226,7 @@
       },
       {
         "type": "timeseries",
-        "id": 50,
+        "id": 59,
         "targets": [
           {
             "expr": "evm_pool_rpc_node_polls_total{instance=~\"${instance}\", }",
@@ -2826,7 +3245,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 177
+          "y": 184
         },
         "options": {
           "legend": {
@@ -2857,7 +3276,7 @@
       },
       {
         "type": "timeseries",
-        "id": 51,
+        "id": 60,
         "targets": [
           {
             "expr": "evm_pool_rpc_node_polls_failed{instance=~\"${instance}\", }",
@@ -2876,7 +3295,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 177
+          "y": 184
         },
         "options": {
           "legend": {
@@ -2907,7 +3326,7 @@
       },
       {
         "type": "timeseries",
-        "id": 52,
+        "id": 61,
         "targets": [
           {
             "expr": "evm_pool_rpc_node_polls_success{instance=~\"${instance}\", }",
@@ -2926,7 +3345,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 183
+          "y": 190
         },
         "options": {
           "legend": {
@@ -2963,14 +3382,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 189
+          "y": 196
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "stat",
-        "id": 53,
+        "id": 62,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Alive\"}) by (instance, chainId)",
@@ -2989,7 +3408,7 @@
           "h": 6,
           "w": 6,
           "x": 0,
-          "y": 190
+          "y": 197
         },
         "options": {
           "graphMode": "none",
@@ -3020,7 +3439,7 @@
       },
       {
         "type": "stat",
-        "id": 54,
+        "id": 63,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Closed\"}) by (instance, chainId)",
@@ -3039,7 +3458,7 @@
           "h": 6,
           "w": 6,
           "x": 6,
-          "y": 190
+          "y": 197
         },
         "options": {
           "graphMode": "none",
@@ -3070,7 +3489,7 @@
       },
       {
         "type": "stat",
-        "id": 55,
+        "id": 64,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Dialed\"}) by (instance, chainId)",
@@ -3089,7 +3508,7 @@
           "h": 6,
           "w": 6,
           "x": 12,
-          "y": 190
+          "y": 197
         },
         "options": {
           "graphMode": "none",
@@ -3120,7 +3539,7 @@
       },
       {
         "type": "stat",
-        "id": 56,
+        "id": 65,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"InvalidChainID\"}) by (instance, chainId)",
@@ -3139,7 +3558,7 @@
           "h": 6,
           "w": 6,
           "x": 18,
-          "y": 190
+          "y": 197
         },
         "options": {
           "graphMode": "none",
@@ -3170,7 +3589,7 @@
       },
       {
         "type": "stat",
-        "id": 57,
+        "id": 66,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"OutOfSync\"}) by (instance, chainId)",
@@ -3189,7 +3608,7 @@
           "h": 6,
           "w": 6,
           "x": 0,
-          "y": 196
+          "y": 203
         },
         "options": {
           "graphMode": "none",
@@ -3220,7 +3639,7 @@
       },
       {
         "type": "stat",
-        "id": 58,
+        "id": 67,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Undialed\"}) by (instance, chainId)",
@@ -3229,7 +3648,7 @@
             "refId": ""
           }
         ],
-        "title": "Node RPC UnDialed",
+        "title": "Node RPC Undialed",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -3239,7 +3658,7 @@
           "h": 6,
           "w": 6,
           "x": 6,
-          "y": 196
+          "y": 203
         },
         "options": {
           "graphMode": "none",
@@ -3270,7 +3689,7 @@
       },
       {
         "type": "stat",
-        "id": 59,
+        "id": 68,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Unreachable\"}) by (instance, chainId)",
@@ -3289,7 +3708,7 @@
           "h": 6,
           "w": 6,
           "x": 12,
-          "y": 196
+          "y": 203
         },
         "options": {
           "graphMode": "none",
@@ -3320,7 +3739,7 @@
       },
       {
         "type": "stat",
-        "id": 60,
+        "id": 69,
         "targets": [
           {
             "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Unusable\"}) by (instance, chainId)",
@@ -3339,7 +3758,7 @@
           "h": 6,
           "w": 6,
           "x": 18,
-          "y": 196
+          "y": 203
         },
         "options": {
           "graphMode": "none",
@@ -3376,14 +3795,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 202
+          "y": 209
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 61,
+        "id": 70,
         "targets": [
           {
             "expr": "sum(increase(evm_pool_rpc_node_calls_success{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName)",
@@ -3402,12 +3821,12 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 203
+          "y": 210
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -3419,7 +3838,8 @@
         "fieldConfig": {
           "defaults": {
             "unit": "percentunit",
-            "decimals": 1,
+            "decimals": 0,
+            "max": 1,
             "thresholds": {
               "mode": "absolute",
               "steps": [
@@ -3454,7 +3874,7 @@
       },
       {
         "type": "timeseries",
-        "id": 62,
+        "id": 71,
         "targets": [
           {
             "expr": "sum(increase(evm_pool_rpc_node_dials_failed{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName)",
@@ -3473,12 +3893,12 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 209
+          "y": 216
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -3490,7 +3910,8 @@
         "fieldConfig": {
           "defaults": {
             "unit": "percentunit",
-            "decimals": 1,
+            "decimals": 0,
+            "max": 1,
             "thresholds": {
               "mode": "absolute",
               "steps": [
@@ -3525,7 +3946,7 @@
       },
       {
         "type": "timeseries",
-        "id": 63,
+        "id": 72,
         "targets": [
           {
             "expr": "evm_pool_rpc_node_num_transitions_to_alive{instance=~\"${instance}\", }",
@@ -3574,7 +3995,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 215
+          "y": 222
         },
         "options": {
           "legend": {
@@ -3605,7 +4026,7 @@
       },
       {
         "type": "timeseries",
-        "id": 64,
+        "id": 73,
         "targets": [
           {
             "expr": "evm_pool_rpc_node_states{instance=~\"${instance}\", }",
@@ -3624,7 +4045,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 215
+          "y": 222
         },
         "options": {
           "legend": {
@@ -3655,7 +4076,7 @@
       },
       {
         "type": "timeseries",
-        "id": 65,
+        "id": 74,
         "targets": [
           {
             "expr": "sum(increase(evm_pool_rpc_node_verifies_success{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
@@ -3674,7 +4095,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 221
+          "y": 228
         },
         "options": {
           "legend": {
@@ -3705,7 +4126,7 @@
       },
       {
         "type": "timeseries",
-        "id": 66,
+        "id": 75,
         "targets": [
           {
             "expr": "sum(increase(evm_pool_rpc_node_verifies_failed{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
@@ -3724,7 +4145,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 221
+          "y": 228
         },
         "options": {
           "legend": {
@@ -3761,14 +4182,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 227
+          "y": 234
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 67,
+        "id": 76,
         "targets": [
           {
             "expr": "histogram_quantile(0.90, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
@@ -3787,12 +4208,12 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 228
+          "y": 235
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -3818,7 +4239,7 @@
       },
       {
         "type": "timeseries",
-        "id": 68,
+        "id": 77,
         "targets": [
           {
             "expr": "histogram_quantile(0.95, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
@@ -3837,12 +4258,12 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 234
+          "y": 241
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -3868,7 +4289,7 @@
       },
       {
         "type": "timeseries",
-        "id": 69,
+        "id": 78,
         "targets": [
           {
             "expr": "histogram_quantile(0.99, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
@@ -3887,12 +4308,12 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 240
+          "y": 247
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -3924,17 +4345,17 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 246
+          "y": 253
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 70,
+        "id": 79,
         "targets": [
           {
-            "expr": "gas_updater_all_gas_price_percentiles{instance=~\"${instance}\", }",
+            "expr": "sum(gas_updater_all_gas_price_percentiles{instance=~\"${instance}\", }) by (instance, percentile)",
             "format": "",
             "legendFormat": "{{instance}} - {{percentile}}",
             "refId": ""
@@ -3948,14 +4369,14 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
+          "w": 24,
           "x": 0,
-          "y": 247
+          "y": 254
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -3967,7 +4388,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -3981,10 +4402,10 @@
       },
       {
         "type": "timeseries",
-        "id": 71,
+        "id": 80,
         "targets": [
           {
-            "expr": "gas_updater_all_tip_cap_percentiles{instance=~\"${instance}\", }",
+            "expr": "sum(gas_updater_all_tip_cap_percentiles{instance=~\"${instance}\", }) by (instance, percentile)",
             "format": "",
             "legendFormat": "{{instance}} - {{percentile}}",
             "refId": ""
@@ -3998,14 +4419,14 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 247
+          "w": 24,
+          "x": 0,
+          "y": 260
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -4017,7 +4438,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -4031,10 +4452,10 @@
       },
       {
         "type": "timeseries",
-        "id": 72,
+        "id": 81,
         "targets": [
           {
-            "expr": "gas_updater_set_gas_price{instance=~\"${instance}\", }",
+            "expr": "sum(gas_updater_set_gas_price{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4050,7 +4471,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 253
+          "y": 266
         },
         "options": {
           "legend": {
@@ -4067,7 +4488,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -4081,10 +4502,10 @@
       },
       {
         "type": "timeseries",
-        "id": 73,
+        "id": 82,
         "targets": [
           {
-            "expr": "gas_updater_set_tip_cap{instance=~\"${instance}\", }",
+            "expr": "sum(gas_updater_set_tip_cap{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4100,7 +4521,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 253
+          "y": 266
         },
         "options": {
           "legend": {
@@ -4117,7 +4538,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -4131,10 +4552,10 @@
       },
       {
         "type": "timeseries",
-        "id": 74,
+        "id": 83,
         "targets": [
           {
-            "expr": "gas_updater_current_base_fee{instance=~\"${instance}\", }",
+            "expr": "sum(gas_updater_current_base_fee{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4150,7 +4571,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 259
+          "y": 272
         },
         "options": {
           "legend": {
@@ -4167,7 +4588,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -4181,10 +4602,10 @@
       },
       {
         "type": "timeseries",
-        "id": 75,
+        "id": 84,
         "targets": [
           {
-            "expr": "block_history_estimator_connectivity_failure_count{instance=~\"${instance}\", }",
+            "expr": "sum(block_history_estimator_connectivity_failure_count{instance=~\"${instance}\", }) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4200,7 +4621,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 259
+          "y": 272
         },
         "options": {
           "legend": {
@@ -4217,7 +4638,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -4237,14 +4658,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 265
+          "y": 278
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 76,
+        "id": 85,
         "targets": [
           {
             "expr": "pipeline_task_execution_time{instance=~\"${instance}\", } / 1e6",
@@ -4263,7 +4684,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 266
+          "y": 279
         },
         "options": {
           "legend": {
@@ -4294,7 +4715,7 @@
       },
       {
         "type": "timeseries",
-        "id": 77,
+        "id": 86,
         "targets": [
           {
             "expr": "pipeline_run_errors{instance=~\"${instance}\", }",
@@ -4313,7 +4734,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 272
+          "y": 285
         },
         "options": {
           "legend": {
@@ -4344,7 +4765,7 @@
       },
       {
         "type": "timeseries",
-        "id": 78,
+        "id": 87,
         "targets": [
           {
             "expr": "pipeline_run_total_time_to_completion{instance=~\"${instance}\", } / 1e6",
@@ -4354,119 +4775,6 @@
           }
         ],
         "title": "Pipeline Run Total Time to Completion",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 278
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "s",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 79,
-        "targets": [
-          {
-            "expr": "pipeline_tasks_total_finished{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}} JobID: {{job_id}}",
-            "refId": ""
-          }
-        ],
-        "title": "Pipeline Tasks Total Finished",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 284
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "row",
-        "collapsed": false,
-        "title": "HTTP API",
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 290
-        },
-        "id": 0,
-        "panels": null
-      },
-      {
-        "type": "timeseries",
-        "id": 80,
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, sum(rate(service_gonic_request_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, path, method))",
-            "format": "",
-            "legendFormat": "{{instance}} - {{method}} - {{path}}",
-            "refId": ""
-          }
-        ],
-        "title": "Request Duration p95",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -4507,16 +4815,16 @@
       },
       {
         "type": "timeseries",
-        "id": 81,
+        "id": 88,
         "targets": [
           {
-            "expr": "sum(rate(service_gonic_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, path, method, code)",
+            "expr": "pipeline_tasks_total_finished{instance=~\"${instance}\", }",
             "format": "",
-            "legendFormat": "{{instance}} - {{method}} - {{path}} - {{code}}",
+            "legendFormat": "{{instance}} JobID: {{job_id}}",
             "refId": ""
           }
         ],
-        "title": "Request Total Rate over interval",
+        "title": "Pipeline Tasks Total Finished",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -4556,130 +4864,80 @@
         }
       },
       {
-        "type": "timeseries",
-        "id": 82,
-        "targets": [
-          {
-            "expr": "avg(rate(service_gonic_request_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_request_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Average Request Size",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 0,
-          "y": 303
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "bytes",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 83,
-        "targets": [
-          {
-            "expr": "avg(rate(service_gonic_response_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_response_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Response Size",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 303
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "bytes",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
         "type": "row",
         "collapsed": false,
-        "title": "PromHTTP",
+        "title": "HTTP API",
         "gridPos": {
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 309
+          "y": 303
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 84,
+        "id": 89,
         "targets": [
           {
-            "expr": "sum(rate(promhttp_metric_handler_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, code)",
+            "expr": "histogram_quantile(0.95, sum(rate(service_gonic_request_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, path, method))",
             "format": "",
-            "legendFormat": "{{instance}} - {{code}}",
+            "legendFormat": "{{instance}} - {{method}} - {{path}}",
             "refId": ""
           }
         ],
-        "title": "HTTP rate by return code",
+        "title": "Request Duration p95",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 304
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 90,
+        "targets": [
+          {
+            "expr": "sum(rate(service_gonic_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, path, method, code)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{method}} - {{path}} - {{code}}",
+            "refId": ""
+          }
+        ],
+        "title": "Request Total Rate over interval",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -4719,6 +4977,169 @@
         }
       },
       {
+        "type": "timeseries",
+        "id": 91,
+        "targets": [
+          {
+            "expr": "avg(rate(service_gonic_request_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_request_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Average Request Size",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 316
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 92,
+        "targets": [
+          {
+            "expr": "avg(rate(service_gonic_response_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_response_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Response Size",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 316
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "PromHTTP",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 322
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 93,
+        "targets": [
+          {
+            "expr": "sum(rate(promhttp_metric_handler_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, code)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{code}}",
+            "refId": ""
+          }
+        ],
+        "title": "HTTP rate by return code",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 323
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
         "type": "row",
         "collapsed": false,
         "title": "Go Metrics",
@@ -4726,14 +5147,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 316
+          "y": 329
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 85,
+        "id": 94,
         "targets": [
           {
             "expr": "sum(go_threads{instance=~\"${instance}\", }) by (instance)",
@@ -4752,7 +5173,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 317
+          "y": 330
         },
         "options": {
           "legend": {
@@ -4783,7 +5204,7 @@
       },
       {
         "type": "stat",
-        "id": 86,
+        "id": 95,
         "targets": [
           {
             "expr": "sum(go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }) by (instance)",
@@ -4802,7 +5223,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 323
+          "y": 336
         },
         "options": {
           "graphMode": "none",
@@ -4833,7 +5254,7 @@
       },
       {
         "type": "timeseries",
-        "id": 87,
+        "id": 96,
         "targets": [
           {
             "expr": "sum(go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }) by (instance)",
@@ -4852,7 +5273,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 329
+          "y": 342
         },
         "options": {
           "legend": {
@@ -4883,7 +5304,7 @@
       },
       {
         "type": "timeseries",
-        "id": 88,
+        "id": 97,
         "targets": [
           {
             "expr": "go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }",
@@ -4926,7 +5347,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 335
+          "y": 348
         },
         "options": {
           "legend": {
@@ -4957,7 +5378,7 @@
       },
       {
         "type": "timeseries",
-        "id": 89,
+        "id": 98,
         "targets": [
           {
             "expr": "go_memstats_mspan_inuse_bytes{instance=~\"${instance}\", }",
@@ -5018,7 +5439,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 335
+          "y": 348
         },
         "options": {
           "legend": {
@@ -5049,7 +5470,7 @@
       },
       {
         "type": "timeseries",
-        "id": 90,
+        "id": 99,
         "targets": [
           {
             "expr": "go_memstats_stack_inuse_bytes{instance=~\"${instance}\", }",
@@ -5074,7 +5495,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 341
+          "y": 354
         },
         "options": {
           "legend": {
@@ -5105,7 +5526,7 @@
       },
       {
         "type": "timeseries",
-        "id": 91,
+        "id": 100,
         "targets": [
           {
             "expr": "go_memstats_sys_bytes{instance=~\"${instance}\", }",
@@ -5124,7 +5545,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 341
+          "y": 354
         },
         "options": {
           "legend": {
@@ -5155,7 +5576,7 @@
       },
       {
         "type": "timeseries",
-        "id": 92,
+        "id": 101,
         "targets": [
           {
             "expr": "go_memstats_mallocs_total{instance=~\"${instance}\", } - go_memstats_frees_total{instance=~\"${instance}\", }",
@@ -5174,7 +5595,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 347
+          "y": 360
         },
         "options": {
           "legend": {
@@ -5205,7 +5626,7 @@
       },
       {
         "type": "timeseries",
-        "id": 93,
+        "id": 102,
         "targets": [
           {
             "expr": "rate(go_memstats_mallocs_total{instance=~\"${instance}\", }[1m])",
@@ -5224,7 +5645,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 347
+          "y": 360
         },
         "options": {
           "legend": {
@@ -5255,7 +5676,7 @@
       },
       {
         "type": "timeseries",
-        "id": 94,
+        "id": 103,
         "targets": [
           {
             "expr": "rate(go_memstats_lookups_total{instance=~\"${instance}\", }[1m])",
@@ -5274,7 +5695,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 353
+          "y": 366
         },
         "options": {
           "legend": {
@@ -5305,7 +5726,7 @@
       },
       {
         "type": "timeseries",
-        "id": 95,
+        "id": 104,
         "targets": [
           {
             "expr": "go_goroutines{instance=~\"${instance}\", }",
@@ -5324,7 +5745,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 353
+          "y": 366
         },
         "options": {
           "legend": {

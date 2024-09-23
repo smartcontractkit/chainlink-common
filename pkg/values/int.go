@@ -3,7 +3,6 @@ package values
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -42,74 +41,27 @@ func (i *Int64) UnwrapTo(to any) error {
 		return fmt.Errorf("cannot unwrap to nil pointer: %+v", to)
 	}
 
-	switch tv := to.(type) {
-	case *int64:
-		*tv = i.Underlying
-		return nil
-	case *int:
-		if i.Underlying > math.MaxInt {
-			return fmt.Errorf("cannot unwrap int64 to int: number would overflow %d", i)
-		}
-
-		if i.Underlying < math.MinInt {
-			return fmt.Errorf("cannot unwrap int64 to int: number would underflow %d", i)
-		}
-
-		*tv = int(i.Underlying)
-		return nil
-	case *uint:
-		if i.Underlying > math.MaxInt {
-			return fmt.Errorf("cannot unwrap int64 to int: number would overflow %d", i)
-		}
-
-		if i.Underlying < 0 {
-			return fmt.Errorf("cannot unwrap int64 to uint: number would underflow %d", i)
-		}
-
-		*tv = uint(i.Underlying)
-		return nil
-	case *uint32:
-		if i.Underlying > math.MaxInt {
-			return fmt.Errorf("cannot unwrap int64 to uint32: number would overflow %d", i)
-		}
-
-		if i.Underlying < 0 {
-			return fmt.Errorf("cannot unwrap int64 to uint32: number would underflow %d", i)
-		}
-
-		*tv = uint32(i.Underlying)
-		return nil
-	case *uint64:
-		if i.Underlying < 0 {
-			return fmt.Errorf("cannot unwrap int64 to uint: number would underflow %d", i)
-		}
-
-		*tv = uint64(i.Underlying)
-		return nil
-	case *any:
-		*tv = i.Underlying
-		return nil
+	if reflect.ValueOf(to).Kind() != reflect.Pointer {
+		return fmt.Errorf("cannot unwrap to non-pointer value: %+v", to)
 	}
 
-	rv := reflect.ValueOf(to)
-	if rv.Kind() == reflect.Ptr {
-		switch rv.Elem().Kind() {
-		case reflect.Int64:
-			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int64(0)))).Interface())
-		case reflect.Int32:
-			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int32(0)))).Interface())
-		case reflect.Int:
-			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(int(0)))).Interface())
-		case reflect.Uint64:
-			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint64(0)))).Interface())
-		case reflect.Uint32:
-			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint32(0)))).Interface())
-		case reflect.Uint:
-			return i.UnwrapTo(rv.Convert(reflect.PointerTo(reflect.TypeOf(uint(0)))).Interface())
-		default:
-			// fall through to the error, default is required by lint
+	rToVal := reflect.Indirect(reflect.ValueOf(to))
+	switch rToVal.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if rToVal.OverflowInt(i.Underlying) {
+			return fmt.Errorf("cannot unwrap int64 to %T: overflow", to)
 		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if i.Underlying < 0 {
+			return fmt.Errorf("cannot unwrap int64 to %T: underflow", to)
+		}
+		if rToVal.OverflowUint(uint64(i.Underlying)) {
+			return fmt.Errorf("cannot unwrap int64 to %T: overflow", to)
+		}
+	case reflect.Interface:
+	default:
+		return fmt.Errorf("cannot unwrap to type %T", to)
 	}
 
-	return fmt.Errorf("cannot unwrap to type %T", to)
+	return unwrapTo(i.Underlying, to)
 }

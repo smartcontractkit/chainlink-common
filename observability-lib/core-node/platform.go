@@ -35,6 +35,7 @@ func PlatformPanelOpts(platform grafana.TypePlatform) PlatformOpts {
 	case grafana.TypePlatformKubernetes:
 		po.LabelFilters["namespace"] = `=~"${namespace}"`
 		po.LabelFilters["job"] = `=~"${job}"`
+		po.LabelFilters["pod"] = `=~"${pod}"`
 		po.LabelFilter = "job"
 		po.LegendString = "pod"
 	case grafana.TypePlatformDocker:

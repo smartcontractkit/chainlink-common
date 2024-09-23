@@ -306,18 +306,22 @@ func unwrapTo[T any](underlying T, to any) error {
 		}
 
 		if rUnderlying.Type().ConvertibleTo(rTo.Type().Elem()) {
-			// special case, don't unwrap bytes to string and vice versa
-			if rUnderlying.Kind() != rTo.Type().Elem().Kind() {
-				return fmt.Errorf("cannot unwrap to value of type: %T", to)
-			}
-
 			reflect.Indirect(rTo).Set(rUnderlying.Convert(rTo.Type().Elem()))
 			return nil
 		}
 
 		rToVal := reflect.Indirect(rTo)
-		if rToVal.Kind() == reflect.Slice && rUnderlying.Kind() == reflect.Slice {
-			newList := reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
+		if rUnderlying.Kind() == reflect.Slice {
+			var newList reflect.Value
+			if rToVal.Kind() == reflect.Array {
+				newListPtr := reflect.New(reflect.ArrayOf(rUnderlying.Len(), rToVal.Type().Elem()))
+				newList = reflect.Indirect(newListPtr)
+			} else if rToVal.Kind() == reflect.Slice {
+				newList = reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
+			} else {
+				return fmt.Errorf("cannot unwrap slice to value of type: %T", to)
+			}
+
 			for i := 0; i < rUnderlying.Len(); i++ {
 				el := rUnderlying.Index(i)
 				toEl := newList.Index(i)

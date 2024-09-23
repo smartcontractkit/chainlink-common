@@ -99,6 +99,9 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	builder.AddRow("Logs Counters")
 	builder.AddPanel(logsCounters(props)...)
 
+	builder.AddRow("Logs Rate")
+	builder.AddPanel(logsRate(props)...)
+
 	builder.AddRow("EvmPoolLifecycle")
 	builder.AddPanel(evmPoolLifecycle(props)...)
 
@@ -194,6 +197,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			},
 			Datasource: p.MetricsDataSource.Name,
 			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product", network_type="$network_type"}, job)`,
+			Multi:      true,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -274,8 +278,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:    `eth_balance{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend:  `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+					Expr:    `sum(eth_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
+					Legend:  `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
 					Instant: true,
 				},
 			},
@@ -302,8 +306,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:    `solana_balance{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend:  `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+					Expr:    `sum(solana_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
+					Legend:  `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
 					Instant: true,
 				},
 			},
@@ -361,8 +365,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `eth_balance{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+					Expr:   `sum(eth_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
 			AlertOptions: &grafana.AlertOptions{
@@ -406,8 +410,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `solana_balance{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{account}}`,
+					Expr:   `sum(solana_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
 		},
@@ -491,7 +495,7 @@ func headlines(p *Props) []*grafana.Panel {
 				Datasource: p.MetricsDataSource.Name,
 				Title:      "CPU Usage",
 				Span:       12,
-				Height:     6,
+				Height:     8,
 				Decimals:   3,
 				Query: []grafana.Query{
 					{
@@ -516,7 +520,7 @@ func headlines(p *Props) []*grafana.Panel {
 				Datasource: p.MetricsDataSource.Name,
 				Title:      "Memory Usage",
 				Span:       12,
-				Height:     6,
+				Height:     8,
 				Unit:       "bytes",
 				Query: []grafana.Query{
 					{
@@ -564,7 +568,7 @@ func headlines(p *Props) []*grafana.Panel {
 			Query: []grafana.Query{
 				{
 					Expr:    `go_info{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend:  "{{version}}",
+					Legend:  "{{exported_version}}",
 					Instant: true,
 				},
 			},
@@ -589,22 +593,26 @@ func appDBConnections(p *Props) []*grafana.Panel {
 			Unit:       "Conn",
 			Query: []grafana.Query{
 				{
-					Expr:   `db_conns_max{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Max`,
+					Expr:   `sum(db_conns_max{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Max`,
 				},
 				{
-					Expr:   `db_conns_open{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Open`,
+					Expr:   `sum(db_conns_open{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Open`,
 				},
 				{
-					Expr:   `db_conns_used{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Used`,
+					Expr:   `sum(db_conns_used{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Used`,
 				},
 				{
-					Expr:   `db_conns_wait{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Wait`,
+					Expr:   `sum(db_conns_wait{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Wait`,
 				},
 			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -616,8 +624,8 @@ func appDBConnections(p *Props) []*grafana.Panel {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:   `db_wait_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(db_wait_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -632,8 +640,8 @@ func appDBConnections(p *Props) []*grafana.Panel {
 			Unit:       "Sec",
 			Query: []grafana.Query{
 				{
-					Expr:   `db_wait_time_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(db_wait_time_seconds{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -667,6 +675,10 @@ func sqlQueries(p *Props) []*grafana.Panel {
 					Legend: "p99",
 				},
 			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -708,14 +720,18 @@ func logPoller(p *Props) []*grafana.Panel {
 			Unit:        "reqps",
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (query) (sum by (query, job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
-					Legend: "{{query}} - {{job}}",
+					Expr:   `avg by (query, ` + p.PlatformOpts.LabelFilter + `) (sum by (query, job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
 				},
 				{
-					Expr:   `avg (sum by(job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
+					Expr:   `avg (sum by(` + p.PlatformOpts.LabelFilter + `) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
 					Legend: "Total",
 				},
 			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -729,8 +745,8 @@ func logPoller(p *Props) []*grafana.Panel {
 			Unit:       "reqps",
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (type) (sum by (type, job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
-					Legend: "{{query}} - {{job}}",
+					Expr:   `avg by (` + p.PlatformOpts.LabelFilter + `, type) (sum by (type, ` + p.PlatformOpts.LabelFilter + `) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{type}}`,
 				},
 			},
 		},
@@ -745,8 +761,8 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
-					Legend: "{{query}} - {{job}}",
+					Expr:   `avg by (` + p.PlatformOpts.LabelFilter + `, query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
 				},
 			},
 		},
@@ -761,8 +777,8 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `max by (query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
-					Legend: "{{query}} - {{job}}",
+					Expr:   `max by (` + p.PlatformOpts.LabelFilter + `, query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
 				},
 			},
 		},
@@ -784,56 +800,29 @@ func logPoller(p *Props) []*grafana.Panel {
 		},
 	}))
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Queries duration by type (0.5 perc)",
-			Span:       12,
-			Height:     6,
-			Decimals:   2,
-			Unit:       "ms",
-			Query: []grafana.Query{
-				{
-					Expr:   `histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, query)) / 1e6`,
-					Legend: "{{query}}",
+	quantiles := []string{"0.5", "0.9", "0.99"}
+	for _, quantile := range quantiles {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource: p.MetricsDataSource.Name,
+				Title:      `Queries duration by query ` + quantile + ` quantile`,
+				Span:       24,
+				Height:     6,
+				Decimals:   2,
+				Unit:       "ms",
+				Query: []grafana.Query{
+					{
+						Expr:   `histogram_quantile(` + quantile + `, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.PlatformOpts.LabelFilter + `, query)) / 1e6`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
+					},
 				},
 			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Queries duration by type (0.9 perc)",
-			Span:       12,
-			Height:     6,
-			Decimals:   2,
-			Unit:       "ms",
-			Query: []grafana.Query{
-				{
-					Expr:   `histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, query)) / 1e6`,
-					Legend: "{{query}}",
-				},
+			LegendOptions: &grafana.LegendOptions{
+				DisplayMode: common.LegendDisplayModeList,
+				Placement:   common.LegendPlacementRight,
 			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Queries duration by type (0.99 perc)",
-			Span:       12,
-			Height:     6,
-			Decimals:   2,
-			Unit:       "ms",
-			Query: []grafana.Query{
-				{
-					Expr:   `histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, query)) / 1e6`,
-					Legend: "{{query}}",
-				},
-			},
-		},
-	}))
+		}))
+	}
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
@@ -914,7 +903,7 @@ func feedsJobs(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `feeds_job_proposal_requests{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `sum(feeds_job_proposal_requests{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
 					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 				},
 			},
@@ -931,7 +920,7 @@ func feedsJobs(p *Props) []*grafana.Panel {
 			Decimals:    1,
 			Query: []grafana.Query{
 				{
-					Expr:   `feeds_job_proposal_count{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `sum(feeds_job_proposal_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
 					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 				},
 			},
@@ -951,12 +940,17 @@ func mailbox(p *Props) []*grafana.Panel {
 			Span:       24,
 			Height:     6,
 			Decimals:   1,
+			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `mailbox_load_percent{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{name}}`,
+					Expr:   `sum(mailbox_load_percent{` + p.PlatformOpts.LabelQuery + `}) by (capacity, name, ` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Capacity: {{capacity}} - {{name}}`,
 				},
 			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -972,11 +966,10 @@ func promReporter(p *Props) []*grafana.Panel {
 			Title:      "Unconfirmed Transactions",
 			Span:       8,
 			Height:     6,
-			Decimals:   1,
 			Unit:       "Tx",
 			Query: []grafana.Query{
 				{
-					Expr:   `unconfirmed_transactions{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `sum(unconfirmed_transactions{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
 					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 				},
 			},
@@ -989,11 +982,10 @@ func promReporter(p *Props) []*grafana.Panel {
 			Title:      "Unconfirmed TX Age",
 			Span:       8,
 			Height:     6,
-			Decimals:   1,
 			Unit:       "s",
 			Query: []grafana.Query{
 				{
-					Expr:   `max_unconfirmed_tx_age{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `sum(max_unconfirmed_tx_age{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
 					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 				},
 			},
@@ -1006,11 +998,10 @@ func promReporter(p *Props) []*grafana.Panel {
 			Title:      "Unconfirmed TX Blocks",
 			Span:       8,
 			Height:     6,
-			Decimals:   1,
 			Unit:       "Blocks",
 			Query: []grafana.Query{
 				{
-					Expr:   `max_unconfirmed_blocks{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `sum(max_unconfirmed_blocks{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
 					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 				},
 			},
@@ -1023,165 +1014,57 @@ func promReporter(p *Props) []*grafana.Panel {
 func txManager(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Time Until TX Broadcast",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_time_until_tx_broadcast{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
+	txStatus := map[string]string{
+		"num_confirmed_transactions":  "Confirmed",
+		"num_successful_transactions": "Successful",
+		"num_tx_reverted":             "Reverted",
+		"num_gas_bumps":               "Gas Bumps",
+		"fwd_tx_count":                "Forwarded",
+		"tx_attempt_count":            "Attempts",
+		"gas_bump_exceeds_limit":      "Gas Bump Exceeds Limit",
+	}
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Num Gas Bumps",
-			Span:       12,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_num_gas_bumps{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+	for status, title := range txStatus {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource: p.MetricsDataSource.Name,
+				Title:      "TX Manager " + title,
+				Span:       6,
+				Height:     6,
+				Query: []grafana.Query{
+					{
+						Expr:   `sum(tx_manager_` + status + `{` + p.PlatformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.PlatformOpts.LabelFilter + `)`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+					},
 				},
 			},
-		},
-	}))
+		}))
+	}
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Num Gas Bumps Exceeds Limit",
-			Span:       12,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_gas_bump_exceeds_limit{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
+	txUntilStatus := map[string]string{
+		"broadcast": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
+		"confirmed": "The amount of time elapsed from a transaction being broadcast to being included in a block",
+	}
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Num Confirmed Transactions",
-			Span:       6,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_num_confirmed_transactions{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+	for status, description := range txUntilStatus {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource:  p.MetricsDataSource.Name,
+				Title:       "TX Manager Time Until " + status,
+				Description: description,
+				Span:        6,
+				Height:      6,
+				Decimals:    1,
+				Unit:        "ms",
+				Query: []grafana.Query{
+					{
+						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.PlatformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+					},
 				},
 			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Num Successful Transactions",
-			Span:       6,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_num_successful_transactions{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Num Reverted Transactions",
-			Span:       6,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_num_tx_reverted{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Num Fwd Transactions",
-			Span:       6,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_fwd_tx_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Num Transactions Attempts",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_tx_attempt_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Time Until TX Confirmed",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_time_until_tx_confirmed{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "TX Manager Block Until TX Confirmed",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `tx_manager_blocks_until_tx_confirmed{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
+		}))
+	}
 
 	return panels
 }
@@ -1193,17 +1076,66 @@ func headTracker(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Head Tracker Current Head",
-			Span:       12,
+			Span:       18,
 			Height:     6,
-			Decimals:   1,
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `sum(head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
 					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 				},
 			},
 		},
+	}))
+
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Current Head",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:    `head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend:  `{{` + p.PlatformOpts.LegendString + `}}`,
+					Instant: true,
+				},
+			},
+		},
+		ColorMode: common.BigValueColorModeNone,
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Heads Received",
+			Span:       18,
+			Height:     6,
+			Unit:       "Block",
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(head_tracker_heads_received{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Current Received",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:    `head_tracker_heads_received{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend:  `{{` + p.PlatformOpts.LegendString + `}}`,
+					Instant: true,
+				},
+			},
+		},
+		ColorMode: common.BigValueColorModeNone,
 	}))
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
@@ -1212,28 +1144,10 @@ func headTracker(p *Props) []*grafana.Panel {
 			Title:      "Head Tracker Very Old Head",
 			Span:       12,
 			Height:     6,
-			Decimals:   1,
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
 					Expr:   `head_tracker_very_old_head{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Head Tracker Heads Received",
-			Span:       12,
-			Height:     6,
-			Decimals:   1,
-			Unit:       "Block",
-			Query: []grafana.Query{
-				{
-					Expr:   `head_tracker_heads_received{` + p.PlatformOpts.LabelQuery + `}`,
 					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
 				},
 			},
@@ -1263,69 +1177,47 @@ func headTracker(p *Props) []*grafana.Panel {
 func logsCounters(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Logs Counter",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `log_panic_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - panic`,
-				},
-				{
-					Expr:   `log_fatal_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - fatal`,
-				},
-				{
-					Expr:   `log_critical_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - critical`,
-				},
-				{
-					Expr:   `log_warn_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - warn`,
-				},
-				{
-					Expr:   `log_error_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - error`,
+	logStatuses := []string{"panic", "fatal", "critical", "warn", "error"}
+	for _, status := range logStatuses {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource: p.MetricsDataSource.Name,
+				Title:      "Logs Counter - " + status,
+				Span:       8,
+				Height:     6,
+				Query: []grafana.Query{
+					{
+						Expr:   `sum(log_` + status + `_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - ` + status,
+					},
 				},
 			},
-		},
-	}))
+		}))
+	}
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Logs Rate",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(rate(log_panic_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - panic`,
-				},
-				{
-					Expr:   `sum(rate(log_fatal_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - fatal`,
-				},
-				{
-					Expr:   `sum(rate(log_critical_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - critical`,
-				},
-				{
-					Expr:   `sum(rate(log_warn_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - warn`,
-				},
-				{
-					Expr:   `sum(rate(log_error_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - error`,
+	return panels
+}
+
+func logsRate(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
+
+	logStatuses := []string{"panic", "fatal", "critical", "warn", "error"}
+	for _, status := range logStatuses {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource: p.MetricsDataSource.Name,
+				Title:      "Logs Rate - " + status,
+				Span:       8,
+				Height:     6,
+				Query: []grafana.Query{
+					{
+						Expr:   `sum(rate(log_` + status + `_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `)`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - error`,
+					},
 				},
 			},
-		},
-	}))
+		}))
+	}
 
 	return panels
 }
@@ -1424,156 +1316,26 @@ func evmPoolLifecycle(p *Props) []*grafana.Panel {
 func nodesRPC(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Node RPC Alive",
-			Span:       6,
-			Height:     6,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Alive"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
+	nodeRPCStates := []string{"Alive", "Closed", "Dialed", "InvalidChainID", "OutOfSync", "Undialed", "Unreachable", "Unusable"}
+	for _, state := range nodeRPCStates {
+		panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource: p.MetricsDataSource.Name,
+				Title:      "Node RPC " + state,
+				Span:       6,
+				Height:     6,
+				Decimals:   1,
+				Query: []grafana.Query{
+					{
+						Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="` + state + `"}) by (` + p.PlatformOpts.LabelFilter + `, chainId)`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{chainId}}`,
+					},
 				},
 			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Node RPC Closed",
-			Description: "",
-			Span:        6,
-			Height:      6,
-			Decimals:    1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Closed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
-				},
-			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Node RPC Dialed",
-			Description: "",
-			Span:        6,
-			Height:      6,
-			Decimals:    1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Dialed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
-				},
-			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Node RPC InvalidChainID",
-			Description: "",
-			Span:        6,
-			Height:      6,
-			Decimals:    1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="InvalidChainID"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
-				},
-			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Node RPC OutOfSync",
-			Description: "",
-			Span:        6,
-			Height:      6,
-			Decimals:    1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="OutOfSync"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
-				},
-			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Node RPC UnDialed",
-			Description: "",
-			Span:        6,
-			Height:      6,
-			Decimals:    1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Undialed"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
-				},
-			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Node RPC Unreachable",
-			Description: "",
-			Span:        6,
-			Height:      6,
-			Decimals:    1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Unreachable"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
-				},
-			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Node RPC Unusable",
-			Description: "",
-			Span:        6,
-			Height:      6,
-			Decimals:    1,
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="Unusable"}) by (` + p.PlatformOpts.LegendString + `, chainId)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{chainId}}`,
-				},
-			},
-		},
-		TextMode:    common.BigValueTextModeValueAndName,
-		Orientation: common.VizOrientationHorizontal,
-	}))
+			TextMode:    common.BigValueTextModeValueAndName,
+			Orientation: common.VizOrientationHorizontal,
+		}))
+	}
 
 	return panels
 }
@@ -1587,12 +1349,12 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Title:      "EVM Pool RPC Node Calls Success Rate",
 			Span:       24,
 			Height:     6,
-			Decimals:   1,
 			Unit:       "percentunit",
+			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(increase(evm_pool_rpc_node_calls_success{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{evmChainID}} - {{nodeName}}`,
+					Expr:   `sum(increase(evm_pool_rpc_node_calls_success{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{nodeName}}`,
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -1605,6 +1367,10 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 				},
 			},
 		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
+		},
 	}))
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
@@ -1613,12 +1379,12 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Title:      "EVM Pool RPC Node Dials Failure Rate",
 			Span:       24,
 			Height:     6,
-			Decimals:   1,
 			Unit:       "percentunit",
+			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(increase(evm_pool_rpc_node_dials_failed{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{evmChainID}} - {{nodeName}}`,
+					Expr:   `sum(increase(evm_pool_rpc_node_dials_failed{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{nodeName}}`,
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -1630,6 +1396,10 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 					{Value: grafana.Pointer[float64](0.99), Color: "green"},
 				},
 			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -1725,56 +1495,29 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 func evmPoolRPCNodeLatencies(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "EVM Pool RPC Node Calls Latency 0.90 quantile",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Unit:       "ms",
-			Query: []grafana.Query{
-				{
-					Expr:   `histogram_quantile(0.90, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, le, rpcCallName)) / 1e6`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{rpcCallName}}`,
+	quantiles := []string{"0.90", "0.95", "0.99"}
+	for _, quantile := range quantiles {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource: p.MetricsDataSource.Name,
+				Title:      `EVM Pool RPC Node Calls Latency ` + quantile + ` quantile`,
+				Span:       24,
+				Height:     6,
+				Decimals:   1,
+				Unit:       "ms",
+				Query: []grafana.Query{
+					{
+						Expr:   `histogram_quantile(` + quantile + `, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, le, rpcCallName)) / 1e6`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{rpcCallName}}`,
+					},
 				},
 			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "EVM Pool RPC Node Calls Latency 0.95 quantile",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Unit:       "ms",
-			Query: []grafana.Query{
-				{
-					Expr:   `histogram_quantile(0.95, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, le, rpcCallName)) / 1e6`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{rpcCallName}}`,
-				},
+			LegendOptions: &grafana.LegendOptions{
+				DisplayMode: common.LegendDisplayModeList,
+				Placement:   common.LegendPlacementRight,
 			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "EVM Pool RPC Node Calls Latency 0.99 quantile",
-			Span:       24,
-			Height:     6,
-			Decimals:   1,
-			Unit:       "ms",
-			Query: []grafana.Query{
-				{
-					Expr:   `histogram_quantile(0.99, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, le, rpcCallName)) / 1e6`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{rpcCallName}}`,
-				},
-			},
-		},
-	}))
+		}))
+	}
 
 	return panels
 }
@@ -1786,15 +1529,18 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Gas Updater All Gas Price Percentiles",
-			Span:       12,
+			Span:       24,
 			Height:     6,
-			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `gas_updater_all_gas_price_percentiles{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{percentile}}`,
+					Expr:   `sum(gas_updater_all_gas_price_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, percentile)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{percentile}}`,
 				},
 			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -1802,15 +1548,18 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Gas Updater All Tip Cap Percentiles",
-			Span:       12,
+			Span:       24,
 			Height:     6,
-			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `gas_updater_all_tip_cap_percentiles{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{percentile}}`,
+					Expr:   `sum(gas_updater_all_tip_cap_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, percentile)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{percentile}}`,
 				},
 			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -1820,11 +1569,10 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Title:      "Gas Updater Set Gas Price",
 			Span:       12,
 			Height:     6,
-			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `gas_updater_set_gas_price{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(gas_updater_set_gas_price{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -1836,11 +1584,10 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Title:      "Gas Updater Set Tip Cap",
 			Span:       12,
 			Height:     6,
-			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `gas_updater_set_tip_cap{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(gas_updater_set_tip_cap{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -1852,11 +1599,10 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Title:      "Gas Updater Current Base Fee",
 			Span:       12,
 			Height:     6,
-			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `gas_updater_current_base_fee{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(gas_updater_current_base_fee{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -1868,11 +1614,10 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Title:      "Block History Estimator Connectivity Failure Count",
 			Span:       12,
 			Height:     6,
-			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `block_history_estimator_connectivity_failure_count{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(block_history_estimator_connectivity_failure_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
 				},
 			},
 		},

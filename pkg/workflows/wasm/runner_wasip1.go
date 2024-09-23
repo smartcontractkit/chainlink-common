@@ -10,7 +10,7 @@ import (
 )
 
 //go:wasmimport env sendResponse
-func sendResponse(respptr unsafe.Pointer, respptrlen int32)
+func sendResponse(respptr unsafe.Pointer, respptrlen int32) (errno int32)
 
 func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
 	return unsafe.Pointer(&buf[0]), int32(len(buf))
@@ -34,7 +34,10 @@ func NewRunner() *Runner {
 			}
 
 			ptr, ptrlen := bufferToPointerLen(pb)
-			sendResponse(ptr, ptrlen)
+			errno := sendResponse(ptr, ptrlen)
+			if errno != 0 {
+				os.Exit(CodeHostErr)
+			}
 
 			code := CodeSuccess
 			if response.ErrMsg != "" {

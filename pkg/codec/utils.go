@@ -1,6 +1,8 @@
 package codec
 
 import (
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -364,4 +366,57 @@ func addr(value reflect.Value) reflect.Value {
 	tmp := reflect.New(value.Type())
 	tmp.Elem().Set(value)
 	return tmp
+}
+
+func addressToStringHook(length AddressLength, checksum func([]byte) []byte) func(from reflect.Type, to reflect.Type, data any) (any, error) {
+	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
+		byteArrTyp, err := typeFromAddressLength(length)
+		if err != nil {
+			return nil, err
+		}
+
+		strTyp := reflect.TypeOf("")
+
+		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
+			// convert the string to a byte array
+			addr := data.(string)
+
+			bts, err := hex.DecodeString(addr[2:])
+			if err != nil {
+				return nil, err
+			}
+
+			if len(bts) != int(length) {
+				return nil, errors.New("lengths do not match")
+			}
+
+			val := reflect.Indirect(reflect.New(reflect.ArrayOf(byteArrTyp.Len(), byteArrTyp.Elem())))
+
+			for idx, bValue := range bts {
+				val.Index(idx).Set(reflect.ValueOf(bValue))
+			}
+
+			return val.Interface(), nil
+		} else if from.ConvertibleTo(byteArrTyp) && to == strTyp {
+			val := reflect.Indirect(reflect.New(reflect.ArrayOf(byteArrTyp.Len(), byteArrTyp.Elem())))
+			val.Set(reflect.ValueOf(data))
+
+			sliceVal := val.Slice(0, int(length))
+			bts := sliceVal.Interface().([]byte)
+			encoded := []byte("0x" + hex.EncodeToString(bts[:]))
+
+			return string(checksum(encoded)), nil
+		}
+
+		return data, nil
+	}
+}
+
+func typeFromAddressLength(length AddressLength) (reflect.Type, error) {
+	switch length {
+	case Byte20Address:
+		return reflect.TypeOf([Byte20Address]byte{}), nil
+	default:
+		return nil, errors.New("address length not available")
+	}
 }

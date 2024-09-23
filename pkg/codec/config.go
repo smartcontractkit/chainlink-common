@@ -3,6 +3,7 @@ package codec
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -52,6 +53,8 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &EpochToTimeModifierConfig{}
 		case ModifierExtractProperty:
 			(*m)[i] = &PropertyExtractorConfig{}
+		case ModifierAddressToString:
+			(*m)[i] = &AddressBytesToStringModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -84,6 +87,7 @@ const (
 	ModifierExtractElement  ModifierType = "extract element"
 	ModifierEpochToTime     ModifierType = "epoch to time"
 	ModifierExtractProperty ModifierType = "extract property"
+	ModifierAddressToString ModifierType = "address to string"
 )
 
 type ModifierConfig interface {
@@ -221,6 +225,41 @@ func (c *PropertyExtractorConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (
 func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[PropertyExtractorConfig]{
 		Type: ModifierExtractProperty,
+		T:    c,
+	})
+}
+
+type AddressBytesToStringModifierConfig struct {
+	Fields   []string
+	Length   int
+	Checksum string
+}
+
+func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	for i, f := range c.Fields {
+		c.Fields[i] = upperFirstCharacter(f)
+	}
+
+	var checksum AddressChecksum
+	switch c.Checksum {
+	case "eip55":
+		checksum = EIP55AddressChecksum
+	case "none":
+		checksum = NoChecksum
+	}
+
+	switch AddressLength(c.Length) {
+	case Byte20Address:
+	default:
+		return nil, errors.New("address length unavailable")
+	}
+
+	return NewAddressBytesToStringModifier(AddressLength(c.Length), checksum, c.Fields), nil
+}
+
+func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[AddressBytesToStringModifierConfig]{
+		Type: ModifierAddressToString,
 		T:    c,
 	})
 }

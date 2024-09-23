@@ -62,6 +62,27 @@ func (s *SeqNumRange) SetEnd(v SeqNum) {
 	s[1] = v
 }
 
+// Limit returns a range limited up to n elements by truncating the end if necessary.
+// Example: [1 -> 10].Limit(5) => [1 -> 5]
+func (s *SeqNumRange) Limit(n uint64) SeqNumRange {
+	limitedRange := NewSeqNumRange(s.Start(), s.End())
+
+	numElems := s.End() - s.Start() + 1
+	if numElems <= 0 {
+		return limitedRange
+	}
+
+	if uint64(numElems) > n {
+		newEnd := limitedRange.Start() + SeqNum(n) - 1
+		if newEnd > limitedRange.End() { // overflow - do nothing
+			return limitedRange
+		}
+		limitedRange.SetEnd(newEnd)
+	}
+
+	return limitedRange
+}
+
 // Overlaps returns true if the two ranges overlap.
 func (s SeqNumRange) Overlaps(other SeqNumRange) bool {
 	return s.Start() <= other.End() && other.Start() <= s.End()

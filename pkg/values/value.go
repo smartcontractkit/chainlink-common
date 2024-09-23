@@ -277,19 +277,28 @@ func unwrapTo[T any](underlying T, to any) error {
 		// eg: type FeedId string allows verification of FeedId's shape while unmarshalling
 		rTo := reflect.ValueOf(to)
 		rUnderlying := reflect.ValueOf(underlying)
-		underlyingPtr := reflect.PointerTo(rUnderlying.Type())
 		if rTo.Kind() != reflect.Pointer {
 			return fmt.Errorf("cannot unwrap to value of type: %T", to)
 		}
 
-		if rTo.CanConvert(underlyingPtr) {
-			reflect.Indirect(rTo.Convert(underlyingPtr)).Set(rUnderlying)
+		if rUnderlying.CanConvert(reflect.Indirect(rTo).Type()) {
+			conv := rUnderlying.Convert(reflect.Indirect(rTo).Type())
+			reflect.Indirect(rTo).Set(conv)
 			return nil
 		}
 
 		rToVal := reflect.Indirect(rTo)
-		if rToVal.Kind() == reflect.Slice && rUnderlying.Kind() == reflect.Slice {
-			newList := reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
+		if rUnderlying.Kind() == reflect.Slice {
+			var newList reflect.Value
+			if rToVal.Kind() == reflect.Array {
+				newListPtr := reflect.New(reflect.ArrayOf(rUnderlying.Len(), rToVal.Type().Elem()))
+				newList = reflect.Indirect(newListPtr)
+			} else if rToVal.Kind() == reflect.Slice {
+				newList = reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
+			} else {
+				return fmt.Errorf("cannot unwrap slice to value of type: %T", to)
+			}
+
 			for i := 0; i < rUnderlying.Len(); i++ {
 				el := rUnderlying.Index(i)
 				toEl := newList.Index(i)

@@ -58,8 +58,8 @@ const AnyExtraValue = 3
 
 func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
-	// t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
-	// t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
+	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
+	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
 }
 
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
@@ -142,6 +142,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 
 				var slice []uint64
 				err = value.UnwrapTo(&slice)
+				require.NoError(t, err)
 				assert.Equal(t, AnySliceToReadWithoutAnArgument, slice)
 			},
 		},
@@ -741,14 +742,16 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 						return false
 					}
 
-					data1 := sequences[1].Data.(values.Value)
+					data1 := *sequences[1].Data.(*values.Value)
 					ts := TestStruct{}
 					err = data1.UnwrapTo(&ts)
+					require.NoError(t, err)
 					assert.Equal(t, &ts1, &ts)
 
-					data2 := sequences[0].Data.(values.Value)
+					data2 := *sequences[0].Data.(*values.Value)
 					ts = TestStruct{}
 					err = data2.UnwrapTo(&ts)
+					require.NoError(t, err)
 					assert.Equal(t, &ts2, &ts)
 
 					return true

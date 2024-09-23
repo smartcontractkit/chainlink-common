@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -22,6 +23,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var _ types.ContractReader = (*Client)(nil)
@@ -37,6 +39,7 @@ const (
 	JSONEncodingVersion1 EncodingVersion = iota
 	JSONEncodingVersion2
 	CBOREncodingVersion
+	ValuesEncodingVersion
 )
 
 const DefaultEncodingVersion = CBOREncodingVersion
@@ -97,6 +100,21 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
+	case ValuesEncodingVersion:
+		switch val := data.(type) {
+		case values.Value:
+			bytes, err = proto.Marshal(values.Proto(val))
+			if err != nil {
+				return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			}
+		case *values.Value:
+			bytes, err = proto.Marshal(values.Proto(*val))
+			if err != nil {
+				return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			}
+		default:
+			return nil, fmt.Errorf("%w: data is not of Value type", types.ErrInvalidType)
+		}
 	default:
 		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
 	}
@@ -122,6 +140,22 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 			return fmt.Errorf("%w: %w", types.ErrInternal, err)
 		}
 		err = dec.Unmarshal(vData.Data, res)
+	case ValuesEncodingVersion:
+		protoValue := &valuespb.Value{}
+		err = proto.Unmarshal(vData.Data, protoValue)
+		if err != nil {
+			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
+		value, err2 := values.FromProto(protoValue)
+		if err2 != nil {
+			return fmt.Errorf("%w: %w", types.ErrInvalidType, err2)
+		}
+		valuePtr, ok := res.(*values.Value)
+		if !ok {
+			return fmt.Errorf("%w: result is not of Value type", types.ErrInvalidType)
+		}
+
+		*valuePtr = value
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
 	}
@@ -134,6 +168,8 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 }
 
 func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, retVal any) error {
+	_, asValueType := retVal.(*values.Value)
+
 	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
@@ -143,8 +179,6 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 	if err != nil {
 		return err
 	}
-
-	_, asValueType := retVal.(*values.Value)
 
 	reply, err := c.grpc.GetLatestValue(
 		ctx,
@@ -159,28 +193,7 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 		return net.WrapRPCErr(err)
 	}
 
-	switch v := retVal.(type) {
-	case *values.Value:
-		switch replyValue := reply.RetVal.(type) {
-		case *pb.GetLatestValueReply_Value:
-			val, err := values.FromProto(replyValue.Value)
-			if err != nil {
-				return err
-			}
-			*v = val
-		default:
-			return fmt.Errorf("unexpected reply type for value %T", retVal)
-		}
-	default:
-		switch replyValue := reply.RetVal.(type) {
-		case *pb.GetLatestValueReply_VersionedBytes:
-			return DecodeVersionedBytes(retVal, replyValue.VersionedBytes)
-		default:
-			return fmt.Errorf("unexpected reply type for versioned bytes %T", retVal)
-		}
-	}
-
-	return nil
+	return DecodeVersionedBytes(retVal, reply.VersionedBytes)
 }
 
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -198,6 +211,8 @@ func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGe
 }
 
 func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+	_, asValueType := sequenceDataType.(*values.Value)
+
 	pbQueryFilter, err := convertQueryFilterToProto(filter, c.encodeWith)
 	if err != nil {
 		return nil, err
@@ -207,8 +222,6 @@ func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, fil
 	if err != nil {
 		return nil, err
 	}
-
-	_, asValueType := sequenceDataType.(*values.Value)
 
 	reply, err := c.grpc.QueryKey(
 		ctx,
@@ -331,25 +344,30 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 			return nil, err
 		}
 
-		return &pb.GetLatestValueReply{RetVal: &pb.GetLatestValueReply_Value{Value: values.Proto(retVal)}}, nil
-	} else {
-		retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
-		if err != nil {
-			return nil, err
+		encodedRetVal, err2 := EncodeVersionedBytes(retVal, ValuesEncodingVersion)
+		if err2 != nil {
+			return nil, err2
 		}
 
-		err = c.impl.GetLatestValue(ctx, request.ReadIdentifier, confidenceLevel, params, retVal)
-		if err != nil {
-			return nil, err
-		}
-
-		encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
-		if err != nil {
-			return nil, err
-		}
-
-		return &pb.GetLatestValueReply{RetVal: &pb.GetLatestValueReply_VersionedBytes{VersionedBytes: encodedRetVal}}, nil
+		return &pb.GetLatestValueReply{VersionedBytes: encodedRetVal}, nil
 	}
+
+	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.impl.GetLatestValue(ctx, request.ReadIdentifier, confidenceLevel, params, retVal)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetLatestValueReply{VersionedBytes: encodedRetVal}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
@@ -381,35 +399,36 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 
 	if request.AsValueType {
 		var sequenceDataType values.Value
-		sequences, err := c.impl.QueryKey(ctx, contract, queryFilter, limitAndSort, &sequenceDataType)
-		if err != nil {
-			return nil, err
+		sequences, err2 := c.impl.QueryKey(ctx, contract, queryFilter, limitAndSort, &sequenceDataType)
+		if err2 != nil {
+			return nil, err2
 		}
 
-		pbSequences, err := convertSequencesToValueProto(sequences)
-		if err != nil {
-			return nil, err
-		}
-
-		return &pb.QueryKeyReply{Sequences: pbSequences}, nil
-	} else {
-		sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
-		if err != nil {
-			return nil, err
-		}
-
-		sequences, err := c.impl.QueryKey(ctx, contract, queryFilter, limitAndSort, sequenceDataType)
-		if err != nil {
-			return nil, err
-		}
-
-		pbSequences, err := convertSequencesToVersionedBytesProto(sequences, c.encodeWith)
-		if err != nil {
-			return nil, err
+		pbSequences, err2 := convertSequencesToVersionedBytesProto(sequences, ValuesEncodingVersion)
+		if err2 != nil {
+			return nil, err2
 		}
 
 		return &pb.QueryKeyReply{Sequences: pbSequences}, nil
 	}
+
+	sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
+	if err != nil {
+		return nil, err
+	}
+
+	sequences, err := c.impl.QueryKey(ctx, contract, queryFilter, limitAndSort, sequenceDataType)
+	if err != nil {
+		return nil, err
+	}
+
+	pbSequences, err := convertSequencesToVersionedBytesProto(sequences, c.encodeWith)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.QueryKeyReply{Sequences: pbSequences}, nil
+
 }
 
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
@@ -654,28 +673,6 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 	return pbLimitAndSort, nil
 }
 
-func convertSequencesToValueProto(sequences []types.Sequence) ([]*pb.Sequence, error) {
-	var pbSequences []*pb.Sequence
-	for _, sequence := range sequences {
-		value, ok := sequence.Data.(values.Value)
-		if !ok {
-			return nil, errors.New("data is not of Value type")
-		}
-
-		pbSequence := &pb.Sequence{
-			SequenceCursor: sequence.Cursor,
-			Head: &pb.Head{
-				Height:    sequence.Height,
-				Hash:      sequence.Hash,
-				Timestamp: sequence.Timestamp,
-			},
-			Data: &pb.Sequence_Value{Value: values.Proto(value)},
-		}
-		pbSequences = append(pbSequences, pbSequence)
-	}
-	return pbSequences, nil
-}
-
 func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version EncodingVersion) ([]*pb.Sequence, error) {
 	var pbSequences []*pb.Sequence
 	for _, sequence := range sequences {
@@ -690,7 +687,7 @@ func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version E
 				Hash:      sequence.Hash,
 				Timestamp: sequence.Timestamp,
 			},
-			Data: &pb.Sequence_VersionedBytes{VersionedBytes: versionedSequenceDataType},
+			VersionedBytes: versionedSequenceDataType,
 		}
 		pbSequences = append(pbSequences, pbSequence)
 	}
@@ -888,67 +885,37 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
 	sequences := make([]types.Sequence, len(pbSequences))
 
-	_, asValueType := sequenceDataType.(*values.Value)
-	if !asValueType {
-		seqTypeOf := reflect.TypeOf(sequenceDataType)
+	seqTypeOf := reflect.TypeOf(sequenceDataType)
 
-		// get the non-pointer data type for the sequence data
-		nonPointerType := seqTypeOf
-		if seqTypeOf.Kind() == reflect.Pointer {
-			nonPointerType = seqTypeOf.Elem()
+	// get the non-pointer data type for the sequence data
+	nonPointerType := seqTypeOf
+	if seqTypeOf.Kind() == reflect.Pointer {
+		nonPointerType = seqTypeOf.Elem()
+	}
+
+	if nonPointerType.Kind() == reflect.Pointer {
+		return nil, fmt.Errorf("%w: sequenceDataType does not support pointers to pointers", types.ErrInvalidType)
+	}
+
+	for idx, pbSequence := range pbSequences {
+		cpy := reflect.New(nonPointerType).Interface()
+		if err := DecodeVersionedBytes(cpy, pbSequence.VersionedBytes); err != nil {
+			return nil, err
 		}
 
-		if nonPointerType.Kind() == reflect.Pointer {
-			return nil, fmt.Errorf("%w: sequenceDataType does not support pointers to pointers", types.ErrInvalidType)
+		// match provided data type either as pointer or non-pointer
+		if seqTypeOf.Kind() != reflect.Pointer {
+			cpy = reflect.Indirect(reflect.ValueOf(cpy)).Interface()
 		}
 
-		for idx, pbSequence := range pbSequences {
-			cpy := reflect.New(nonPointerType).Interface()
-			data, ok := pbSequence.Data.(*pb.Sequence_VersionedBytes)
-			if !ok {
-				return nil, fmt.Errorf("expected versioned byte")
-			}
-
-			if err := DecodeVersionedBytes(cpy, data.VersionedBytes); err != nil {
-				return nil, err
-			}
-
-			// match provided data type either as pointer or non-pointer
-			if seqTypeOf.Kind() != reflect.Pointer {
-				cpy = reflect.Indirect(reflect.ValueOf(cpy)).Interface()
-			}
-
-			sequences[idx] = types.Sequence{
-				Cursor: pbSequences[idx].SequenceCursor,
-				Head: types.Head{
-					Height:    pbSequences[idx].Head.Height,
-					Hash:      pbSequences[idx].Head.Hash,
-					Timestamp: pbSequences[idx].Head.Timestamp,
-				},
-				Data: cpy,
-			}
-		}
-	} else {
-		for idx, pbSequence := range pbSequences {
-			data, ok := pbSequence.Data.(*pb.Sequence_Value)
-			if !ok {
-				return nil, fmt.Errorf("expected value")
-			}
-
-			value, err := values.FromProto(data.Value)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert value from proto: %w", err)
-			}
-
-			sequences[idx] = types.Sequence{
-				Cursor: pbSequences[idx].SequenceCursor,
-				Head: types.Head{
-					Height:    pbSequences[idx].Head.Height,
-					Hash:      pbSequences[idx].Head.Hash,
-					Timestamp: pbSequences[idx].Head.Timestamp,
-				},
-				Data: value,
-			}
+		sequences[idx] = types.Sequence{
+			Cursor: pbSequences[idx].SequenceCursor,
+			Head: types.Head{
+				Height:    pbSequences[idx].Head.Height,
+				Hash:      pbSequences[idx].Head.Hash,
+				Timestamp: pbSequences[idx].Head.Timestamp,
+			},
+			Data: cpy,
 		}
 	}
 

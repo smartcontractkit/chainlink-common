@@ -509,129 +509,124 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 		}
 		*rv = f.stored[lp.I-1]
 		return nil
-	} else {
+	}
 
-		ptrToVal := returnVal.(*values.Value)
+	ptrToVal := returnVal.(*values.Value)
 
-		if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
-			for i := len(f.vals) - 1; i >= 0; i-- {
-				if f.vals[i].confidenceLevel == confidenceLevel {
-					var err error
-					*ptrToVal, err = values.Wrap(f.vals[i].val)
-					if err != nil {
-						return err
-					}
-
-					return nil
-				}
-			}
-			return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
-		} else if strings.HasSuffix(readIdentifier, MethodReturningUint64) {
-			if strings.Contains(readIdentifier, "-"+AnyContractName+"-") {
-
+	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
+		for i := len(f.vals) - 1; i >= 0; i-- {
+			if f.vals[i].confidenceLevel == confidenceLevel {
 				var err error
-				*ptrToVal, err = values.Wrap(AnyValueToReadWithoutAnArgument)
+				*ptrToVal, err = values.Wrap(f.vals[i].val)
 				if err != nil {
 					return err
 				}
-			} else {
-				var err error
-				*ptrToVal, err = values.Wrap(AnyDifferentValueToReadWithoutAnArgument)
-				if err != nil {
-					return err
-				}
+
+				return nil
 			}
-
-			return nil
-		} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
-
-			var err error
-			*ptrToVal, err = values.Wrap(AnySliceToReadWithoutAnArgument)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
-			pv := params.(*TestStruct)
-			rv := TestStructWithExtraField{}
-			rv.TestStruct = *pv
-			rv.ExtraField = AnyExtraValue
-			rv.Account = anyAccountBytes
-			rv.BigField = big.NewInt(2)
-
-			var err error
-			*ptrToVal, err = values.Wrap(rv)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		} else if strings.HasSuffix(readIdentifier, EventName) {
-			f.lock.Lock()
-			defer f.lock.Unlock()
-
-			if len(f.triggers) == 0 {
-				return types.ErrNotFound
-			}
-
-			for i := len(f.triggers) - 1; i >= 0; i-- {
-				if f.triggers[i].confidenceLevel == confidenceLevel {
-					var err error
-					*ptrToVal, err = values.Wrap(f.triggers[i].testStruct)
-					if err != nil {
-						return err
-					}
-
-					return nil
-				}
-			}
-
-			return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
-		} else if strings.HasSuffix(readIdentifier, EventWithFilterName) {
-			f.lock.Lock()
-			defer f.lock.Unlock()
-			param := params.(*FilterEventParams)
-			for i := len(f.triggers) - 1; i >= 0; i-- {
-				if *f.triggers[i].testStruct.Field == param.Field {
-
-					var err error
-					*ptrToVal, err = values.Wrap(f.triggers[i].testStruct)
-					if err != nil {
-						return err
-					}
-					return nil
-				}
-			}
-			return types.ErrNotFound
-		} else if !strings.HasSuffix(readIdentifier, MethodTakingLatestParamsReturningTestStruct) {
-			return errors.New("unknown method " + readIdentifier)
 		}
-
-		f.lock.Lock()
-		defer f.lock.Unlock()
-		lp := params.(*LatestParams)
-
-		switch returnVal.(type) {
-		case *TestStruct:
-			rv := returnVal.(*TestStruct)
-			if lp.I-1 >= len(f.stored) {
-				return errors.New("latest params index out of bounds for stored test structs")
-			}
-			*rv = f.stored[lp.I-1]
-		case *values.Value:
-			if lp.I-1 >= len(f.stored) {
-				return errors.New("latest params index out of bounds for stored test structs")
-			}
+		return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
+	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64) {
+		if strings.Contains(readIdentifier, "-"+AnyContractName+"-") {
 			var err error
-			*ptrToVal, err = values.Wrap(f.stored[lp.I-1])
+			*ptrToVal, err = values.Wrap(AnyValueToReadWithoutAnArgument)
+			if err != nil {
+				return err
+			}
+		} else {
+			var err error
+			*ptrToVal, err = values.Wrap(AnyDifferentValueToReadWithoutAnArgument)
 			if err != nil {
 				return err
 			}
 		}
 
 		return nil
+	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
+		var err error
+		*ptrToVal, err = values.Wrap(AnySliceToReadWithoutAnArgument)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
+		pv := params.(*TestStruct)
+		rv := TestStructWithExtraField{}
+		rv.TestStruct = *pv
+		rv.ExtraField = AnyExtraValue
+		rv.Account = anyAccountBytes
+		rv.BigField = big.NewInt(2)
+
+		var err error
+		*ptrToVal, err = values.Wrap(rv)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	} else if strings.HasSuffix(readIdentifier, EventName) {
+		f.lock.Lock()
+		defer f.lock.Unlock()
+
+		if len(f.triggers) == 0 {
+			return types.ErrNotFound
+		}
+
+		for i := len(f.triggers) - 1; i >= 0; i-- {
+			if f.triggers[i].confidenceLevel == confidenceLevel {
+				var err error
+				*ptrToVal, err = values.Wrap(f.triggers[i].testStruct)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}
+		}
+
+		return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
+	} else if strings.HasSuffix(readIdentifier, EventWithFilterName) {
+		f.lock.Lock()
+		defer f.lock.Unlock()
+		param := params.(*FilterEventParams)
+		for i := len(f.triggers) - 1; i >= 0; i-- {
+			if *f.triggers[i].testStruct.Field == param.Field {
+				var err error
+				*ptrToVal, err = values.Wrap(f.triggers[i].testStruct)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+		return types.ErrNotFound
+	} else if !strings.HasSuffix(readIdentifier, MethodTakingLatestParamsReturningTestStruct) {
+		return errors.New("unknown method " + readIdentifier)
 	}
+
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	lp := params.(*LatestParams)
+
+	switch rv := returnVal.(type) {
+	case *TestStruct:
+		if lp.I-1 >= len(f.stored) {
+			return errors.New("latest params index out of bounds for stored test structs")
+		}
+		*rv = f.stored[lp.I-1]
+	case *values.Value:
+		if lp.I-1 >= len(f.stored) {
+			return errors.New("latest params index out of bounds for stored test structs")
+		}
+		var err error
+		*ptrToVal, err = values.Wrap(f.stored[lp.I-1])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -719,7 +714,7 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 					if err != nil {
 						return nil, err
 					}
-					sequences = append(sequences, types.Sequence{Data: value})
+					sequences = append(sequences, types.Sequence{Data: &value})
 				} else {
 					sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
 				}
@@ -729,8 +724,11 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 		if isValueType {
 			if !limitAndSort.HasSequenceSort() {
 				sort.Slice(sequences, func(i, j int) bool {
-					mapI := sequences[i].Data.(*values.Map)
-					mapJ := sequences[j].Data.(*values.Map)
+					valI := *sequences[i].Data.(*values.Value)
+					valJ := *sequences[j].Data.(*values.Value)
+
+					mapI := valI.(*values.Map)
+					mapJ := valJ.(*values.Map)
 
 					if mapI.Underlying["Field"] == nil || mapJ.Underlying["Field"] == nil {
 						return false
@@ -750,7 +748,6 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 					return iVal > jVal
 				})
 			}
-
 		} else {
 			if !limitAndSort.HasSequenceSort() {
 				sort.Slice(sequences, func(i, j int) bool {

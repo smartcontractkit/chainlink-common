@@ -5,7 +5,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "codec.proto";
-import "values/pb/values.proto";
 import "google/protobuf/empty.proto";
 
 service ContractReader {
@@ -49,10 +48,7 @@ message UnbindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
-  oneof ret_val {
     VersionedBytes versioned_bytes = 1;
-    values.Value value = 2;
-  }
 }
 
 // BatchGetLatestValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -102,10 +98,7 @@ message Head {
 message Sequence {
   string sequence_cursor = 1;
   Head head = 2;
-  oneof data {
-    VersionedBytes versioned_bytes = 3;
-    values.Value value = 4;
-  }
+  VersionedBytes versioned_bytes = 3;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

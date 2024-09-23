@@ -31,7 +31,7 @@ func (b *BigInt) Unwrap() (any, error) {
 
 func (b *BigInt) UnwrapTo(to any) error {
 	if b == nil || b.Underlying == nil {
-		return fmt.Errorf("could not unwrap nil")
+		return errors.New("could not unwrap nil")
 	}
 
 	// check any here because unwrap to will make the *any point to a big.Int instead of *big.Int

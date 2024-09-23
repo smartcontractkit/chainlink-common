@@ -18,6 +18,7 @@ const (
 	CodeInvalidResponse = 110
 	CodeInvalidRequest  = 111
 	CodeRunnerErr       = 112
+	CodeHostErr         = 113
 	CodeSuccess         = 0
 )
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727092305371,
+  "lastUpdate": 1727101660334,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1596,6 +1596,48 @@ window.BENCHMARK_DATA = {
             "value": 28554,
             "unit": "ns/op",
             "extra": "42028 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "26df9abc1e1a7d70afc2e010258991c5d86aae45",
+          "message": "Fix alias typing and tests (#788)\n\n* Fix alias typing and tests\r\n\r\n* Fix ints\r\n\r\n* errors.new instead of fmt\r\n\r\n* Add array support to slice (#789)",
+          "timestamp": "2024-09-23T15:26:41+01:00",
+          "tree_id": "6493dc5dd53b99b65bfcdd2361ae709965543c81",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/26df9abc1e1a7d70afc2e010258991c5d86aae45"
+        },
+        "date": 1727101659842,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.9,
+            "unit": "ns/op",
+            "extra": "2651382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 500.6,
+            "unit": "ns/op",
+            "extra": "2399055 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28581,
+            "unit": "ns/op",
+            "extra": "41979 times\n4 procs"
           }
         ]
       }

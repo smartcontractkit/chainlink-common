@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727105853010,
+  "lastUpdate": 1727109515270,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1722,6 +1722,48 @@ window.BENCHMARK_DATA = {
             "value": 28552,
             "unit": "ns/op",
             "extra": "41804 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9f7db4ed0dfc383ecb602473f75a3d869bf0b7b2",
+          "message": "Have the mock runner register with capabilites (#783)",
+          "timestamp": "2024-09-23T12:37:38-04:00",
+          "tree_id": "a61538be47fa0de09c75b128810b5581444536f6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9f7db4ed0dfc383ecb602473f75a3d869bf0b7b2"
+        },
+        "date": 1727109514824,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 470.4,
+            "unit": "ns/op",
+            "extra": "2622174 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508.9,
+            "unit": "ns/op",
+            "extra": "2339164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28427,
+            "unit": "ns/op",
+            "extra": "42258 times\n4 procs"
           }
         ]
       }

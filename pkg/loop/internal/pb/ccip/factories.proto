@@ -27,7 +27,11 @@ service ExecutionCustomHandlers {
 
 // NewExecutionFactoryRequest is a gRPC adapter to the factory configuration [https://github.com/smartcontractkit/ccip/core/services/ocr2/plugins/ccip/ccipexec/ExecutionPluginStaticConfig]
 message NewExecutionFactoryRequest {
-    uint32 provider_service_id = 1;
+    uint32 src_provider_service_id = 1;
+    uint32 dst_provider_service_id = 2;
+    uint32 src_chain = 3;
+    uint32 dst_chain = 4;
+    string src_token_address = 5;
 }
 
 // NewExecutionFactoryResponse is a contains the id of the created execution factory

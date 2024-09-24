@@ -48,7 +48,7 @@ message UnbindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
-    VersionedBytes ret_val = 1;
+  VersionedBytes ret_val = 1;
 }
 
 // BatchGetLatestValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -98,7 +98,7 @@ message Head {
 message Sequence {
   string sequence_cursor = 1;
   Head head = 2;
-  VersionedBytes versioned_bytes = 3;
+  VersionedBytes data = 3;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

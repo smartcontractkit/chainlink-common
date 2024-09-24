@@ -332,12 +332,12 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
 	if err != nil {
 		return nil, err
 	}
 
-	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
+	confidenceLevel, err := confidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -382,12 +382,12 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
+	sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
 	if err != nil {
 		return nil, err
 	}
 
-	sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
+	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +666,7 @@ func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version E
 				Hash:      sequence.Hash,
 				Timestamp: sequence.Timestamp,
 			},
-			VersionedBytes: versionedSequenceDataType,
+			Data: versionedSequenceDataType,
 		}
 		pbSequences = append(pbSequences, pbSequence)
 	}
@@ -878,7 +878,7 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 
 	for idx, pbSequence := range pbSequences {
 		cpy := reflect.New(nonPointerType).Interface()
-		if err := DecodeVersionedBytes(cpy, pbSequence.VersionedBytes); err != nil {
+		if err := DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
 			return nil, err
 		}
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727114266842,
+  "lastUpdate": 1727188806475,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1806,6 +1806,48 @@ window.BENCHMARK_DATA = {
             "value": 28551,
             "unit": "ns/op",
             "extra": "41997 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2cc8993e6fe8809cee06394669bcebaff4a13c89",
+          "message": "fix lint issues (#786)",
+          "timestamp": "2024-09-24T09:39:09-05:00",
+          "tree_id": "c313a2c5e79de90878af1fe4546562309827dfa0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2cc8993e6fe8809cee06394669bcebaff4a13c89"
+        },
+        "date": 1727188805978,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 468.3,
+            "unit": "ns/op",
+            "extra": "2620765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508.5,
+            "unit": "ns/op",
+            "extra": "2380339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28532,
+            "unit": "ns/op",
+            "extra": "41853 times\n4 procs"
           }
         ]
       }

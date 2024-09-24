@@ -120,6 +120,13 @@ func (c *CachedContractReader) GetLatestValue(
 	return c.base.GetLatestValue(ctx, readIdentifier, confidenceLevel, params, returnVal)
 }
 
+func (c *CachedContractReader) BatchGetLatestValues(
+	ctx context.Context,
+	request BatchGetLatestValuesRequest,
+) (BatchGetLatestValuesResult, error) {
+	return c.base.BatchGetLatestValues(ctx, request)
+}
+
 // QueryKey method implements the ContractReader interface and passes through the cache.
 func (c *CachedContractReader) QueryKey(
 	ctx context.Context,

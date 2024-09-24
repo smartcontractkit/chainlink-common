@@ -20,16 +20,14 @@ type ContractReaderByIDs interface {
 
 func WrapContractReaderByIDs(contractReader types.ContractReader) ContractReaderByIDs {
 	return &contractReaderByIDs{
-		ContractReader: contractReader,
+		cr: contractReader,
 	}
 }
 
 type contractReaderByIDs struct {
 	bindings sync.Map
-	types.ContractReader
+	cr       types.ContractReader
 }
-
-var _ types.ContractReader = (*contractReaderByIDs)(nil)
 
 type BatchGetLatestValuesRequestByCustomID map[string]types.ContractBatch
 type BatchGetLatestValuesResultByCustomID map[string]types.ContractBatchResults
@@ -40,7 +38,7 @@ func (crByIds *contractReaderByIDs) Bind(ctx context.Context, bindings map[strin
 		crByIds.bindings.Store(customContractID, boundContract)
 		toBind = append(toBind, boundContract)
 	}
-	return crByIds.ContractReader.Bind(ctx, toBind)
+	return crByIds.cr.Bind(ctx, toBind)
 }
 
 func (crByIds *contractReaderByIDs) Unbind(ctx context.Context, bindings map[string]types.BoundContract) error {
@@ -49,7 +47,7 @@ func (crByIds *contractReaderByIDs) Unbind(ctx context.Context, bindings map[str
 		crByIds.bindings.Delete(customContractID)
 		toUnbind = append(toUnbind, boundContract)
 	}
-	return crByIds.ContractReader.Unbind(ctx, toUnbind)
+	return crByIds.cr.Unbind(ctx, toUnbind)
 }
 
 func (crByIds *contractReaderByIDs) GetLatestValue(ctx context.Context, contractID, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
@@ -58,7 +56,7 @@ func (crByIds *contractReaderByIDs) GetLatestValue(ctx context.Context, contract
 		return err
 	}
 
-	return crByIds.ContractReader.GetLatestValue(ctx, boundContract.ReadIdentifier(readName), confidenceLevel, params, returnVal)
+	return crByIds.cr.GetLatestValue(ctx, boundContract.ReadIdentifier(readName), confidenceLevel, params, returnVal)
 }
 
 func (crByIds *contractReaderByIDs) QueryKey(ctx context.Context, contractID string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
@@ -67,7 +65,7 @@ func (crByIds *contractReaderByIDs) QueryKey(ctx context.Context, contractID str
 		return nil, err
 	}
 
-	return crByIds.ContractReader.QueryKey(ctx, boundContract, filter, limitAndSort, sequenceDataType)
+	return crByIds.cr.QueryKey(ctx, boundContract, filter, limitAndSort, sequenceDataType)
 }
 
 func (crByIds *contractReaderByIDs) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequestByCustomID) (BatchGetLatestValuesResultByCustomID, error) {
@@ -83,7 +81,7 @@ func (crByIds *contractReaderByIDs) BatchGetLatestValues(ctx context.Context, re
 		bcToID[boundContract.String()] = contractID
 	}
 
-	res, err := crByIds.ContractReader.BatchGetLatestValues(ctx, req)
+	res, err := crByIds.cr.BatchGetLatestValues(ctx, req)
 	if err != nil {
 		return nil, err
 	}

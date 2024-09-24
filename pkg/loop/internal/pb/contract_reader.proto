@@ -48,7 +48,7 @@ message UnbindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
-    VersionedBytes versioned_bytes = 1;
+    VersionedBytes ret_val = 1;
 }
 
 // BatchGetLatestValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].

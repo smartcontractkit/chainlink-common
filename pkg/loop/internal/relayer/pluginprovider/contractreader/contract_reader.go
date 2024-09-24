@@ -141,14 +141,20 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 
-		valuePtr, ok := res.(*values.Value)
-		if !ok {
-			return fmt.Errorf("%w: result is not of Value type", types.ErrInvalidType)
-		}
-
-		*valuePtr, err = values.FromProto(protoValue)
+		var value values.Value
+		value, err = values.FromProto(protoValue)
 		if err != nil {
 			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
+
+		valuePtr, ok := res.(*values.Value)
+		if ok {
+			*valuePtr = value
+		} else {
+			err = value.UnwrapTo(res)
+			if err != nil {
+				return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			}
 		}
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
@@ -187,7 +193,7 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 		return net.WrapRPCErr(err)
 	}
 
-	return DecodeVersionedBytes(retVal, reply.VersionedBytes)
+	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -341,20 +347,17 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	var versionedBytes *pb.VersionedBytes
+	encodeWith := EncodingVersion(request.Params.Version)
 	if request.AsValueType {
-		versionedBytes, err = EncodeVersionedBytes(retVal, ValuesEncodingVersion)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		versionedBytes, err = EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
-		if err != nil {
-			return nil, err
-		}
+		encodeWith = ValuesEncodingVersion
 	}
 
-	return &pb.GetLatestValueReply{VersionedBytes: versionedBytes}, nil
+	versionedBytes, err := EncodeVersionedBytes(retVal, encodeWith)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetLatestValueReply{RetVal: versionedBytes}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
@@ -394,21 +397,17 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	var pbSequences []*pb.Sequence
+	encodeWith := c.encodeWith
 	if request.AsValueType {
-		pbSequences, err = convertSequencesToVersionedBytesProto(sequences, ValuesEncodingVersion)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		pbSequences, err = convertSequencesToVersionedBytesProto(sequences, c.encodeWith)
-		if err != nil {
-			return nil, err
-		}
+		encodeWith = ValuesEncodingVersion
+	}
+
+	pbSequences, err := convertSequencesToVersionedBytesProto(sequences, encodeWith)
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.QueryKeyReply{Sequences: pbSequences}, nil
-
 }
 
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {

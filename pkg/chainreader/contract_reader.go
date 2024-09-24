@@ -11,11 +11,11 @@ import (
 )
 
 type ContractReaderByIDs interface {
-	BindByIDs(ctx context.Context, bindings map[string]types.BoundContract) error
-	UnbindByIDs(ctx context.Context, bindings map[string]types.BoundContract) error
-	GetLatestValueByID(ctx context.Context, contractID, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
-	BatchGetLatestValuesByIDs(ctx context.Context, request BatchGetLatestValuesRequestByCustomID) (BatchGetLatestValuesResultByCustomID, error)
-	QueryKeyByID(ctx context.Context, contractID string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error)
+	Bind(ctx context.Context, bindings map[string]types.BoundContract) error
+	Unbind(ctx context.Context, bindings map[string]types.BoundContract) error
+	GetLatestValue(ctx context.Context, contractID, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
+	BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequestByCustomID) (BatchGetLatestValuesResultByCustomID, error)
+	QueryKey(ctx context.Context, contractID string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error)
 }
 
 func WrapContractReaderByIDs(contractReader types.ContractReader) ContractReaderByIDs {
@@ -34,7 +34,7 @@ var _ types.ContractReader = (*contractReaderByIDs)(nil)
 type BatchGetLatestValuesRequestByCustomID map[string]types.ContractBatch
 type BatchGetLatestValuesResultByCustomID map[string]types.ContractBatchResults
 
-func (crByIds *contractReaderByIDs) BindByIDs(ctx context.Context, bindings map[string]types.BoundContract) error {
+func (crByIds *contractReaderByIDs) Bind(ctx context.Context, bindings map[string]types.BoundContract) error {
 	var toBind []types.BoundContract
 	for customContractID, boundContract := range bindings {
 		crByIds.bindings.Store(customContractID, boundContract)
@@ -43,7 +43,7 @@ func (crByIds *contractReaderByIDs) BindByIDs(ctx context.Context, bindings map[
 	return crByIds.ContractReader.Bind(ctx, toBind)
 }
 
-func (crByIds *contractReaderByIDs) UnbindByIDs(ctx context.Context, bindings map[string]types.BoundContract) error {
+func (crByIds *contractReaderByIDs) Unbind(ctx context.Context, bindings map[string]types.BoundContract) error {
 	var toUnbind []types.BoundContract
 	for customContractID, boundContract := range bindings {
 		crByIds.bindings.Delete(customContractID)
@@ -52,7 +52,7 @@ func (crByIds *contractReaderByIDs) UnbindByIDs(ctx context.Context, bindings ma
 	return crByIds.ContractReader.Unbind(ctx, toUnbind)
 }
 
-func (crByIds *contractReaderByIDs) GetLatestValueByID(ctx context.Context, contractID, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+func (crByIds *contractReaderByIDs) GetLatestValue(ctx context.Context, contractID, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
 	boundContract, err := crByIds.getBoundContract(contractID)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (crByIds *contractReaderByIDs) GetLatestValueByID(ctx context.Context, cont
 	return crByIds.ContractReader.GetLatestValue(ctx, boundContract.ReadIdentifier(readName), confidenceLevel, params, returnVal)
 }
 
-func (crByIds *contractReaderByIDs) QueryKeyByID(ctx context.Context, contractID string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+func (crByIds *contractReaderByIDs) QueryKey(ctx context.Context, contractID string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
 	boundContract, err := crByIds.getBoundContract(contractID)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (crByIds *contractReaderByIDs) QueryKeyByID(ctx context.Context, contractID
 	return crByIds.ContractReader.QueryKey(ctx, boundContract, filter, limitAndSort, sequenceDataType)
 }
 
-func (crByIds *contractReaderByIDs) BatchGetLatestValuesByIDs(ctx context.Context, request BatchGetLatestValuesRequestByCustomID) (BatchGetLatestValuesResultByCustomID, error) {
+func (crByIds *contractReaderByIDs) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequestByCustomID) (BatchGetLatestValuesResultByCustomID, error) {
 	bcToID := make(map[string]string)
 	req := make(types.BatchGetLatestValuesRequest)
 	for contractID, batch := range request {

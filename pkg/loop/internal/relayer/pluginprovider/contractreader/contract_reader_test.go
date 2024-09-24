@@ -113,11 +113,11 @@ func TestContractReaderByIDGetLatestValue(t *testing.T) {
 
 			toBind[anySecondContractID] = anySecondContract
 			toBind[anyContractID] = anyContract
-			require.NoError(t, cr.BindByIDs(ctx, toBind))
+			require.NoError(t, cr.Bind(ctx, toBind))
 
 			var primAnyContract, primAnySecondContract uint64
-			require.NoError(t, cr.GetLatestValueByID(ctx, anyContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract))
-			require.NoError(t, cr.GetLatestValueByID(ctx, anySecondContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract))
+			require.NoError(t, cr.GetLatestValue(ctx, anyContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract))
+			require.NoError(t, cr.GetLatestValue(ctx, anySecondContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract))
 
 			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract)
 			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract)
@@ -140,13 +140,13 @@ func TestContractReaderByIDGetLatestValue(t *testing.T) {
 			contractID3, contractID4 := "1"+"-"+anySecondContract1.String(), "2"+"-"+anySecondContract2.String()
 			toBind[contractID3], toBind[contractID4] = anySecondContract1, anySecondContract2
 
-			require.NoError(t, cr.BindByIDs(ctx, toBind))
+			require.NoError(t, cr.Bind(ctx, toBind))
 
 			var primAnyContract1, primAnyContract2, primAnySecondContract1, primAnySecondContract2 uint64
-			require.NoError(t, cr.GetLatestValueByID(ctx, contractID1, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract1))
-			require.NoError(t, cr.GetLatestValueByID(ctx, contractID2, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract2))
-			require.NoError(t, cr.GetLatestValueByID(ctx, contractID3, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract1))
-			require.NoError(t, cr.GetLatestValueByID(ctx, contractID4, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract2))
+			require.NoError(t, cr.GetLatestValue(ctx, contractID1, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract1))
+			require.NoError(t, cr.GetLatestValue(ctx, contractID2, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract2))
+			require.NoError(t, cr.GetLatestValue(ctx, contractID3, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract1))
+			require.NoError(t, cr.GetLatestValue(ctx, contractID4, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract2))
 
 			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract1)
 			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract2)
@@ -173,7 +173,7 @@ func TestContractReaderByIDBatchGetLatestValues(t *testing.T) {
 			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
 			anySecondContractID := "1-" + anySecondContract.String()
 			toBind[anySecondContractID] = anySecondContract
-			require.NoError(t, cr.BindByIDs(ctx, toBind))
+			require.NoError(t, cr.Bind(ctx, toBind))
 
 			var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
 			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
@@ -181,7 +181,7 @@ func TestContractReaderByIDBatchGetLatestValues(t *testing.T) {
 			batchGetLatestValuesRequest[anyContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
 			batchGetLatestValuesRequest[anySecondContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
 
-			result, err := cr.BatchGetLatestValuesByIDs(ctx, batchGetLatestValuesRequest)
+			result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
 			require.NoError(t, err)
 
 			anyContractBatch, anySecondContractBatch := result[anyContractID], result[anySecondContractID]
@@ -212,7 +212,7 @@ func TestContractReaderByIDBatchGetLatestValues(t *testing.T) {
 			anySecondContractID1, anySecondContractID2 := "1-"+anySecondContract1.String(), "2-"+anySecondContract2.String()
 			toBind[anySecondContractID1], toBind[anySecondContractID2] = anySecondContract1, anySecondContract2
 
-			require.NoError(t, cr.BindByIDs(ctx, toBind))
+			require.NoError(t, cr.Bind(ctx, toBind))
 
 			var primitiveReturnValueAnyContract1, primitiveReturnValueAnyContract2, primitiveReturnValueAnySecondContract1, primitiveReturnValueAnySecondContract2 uint64
 			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
@@ -224,7 +224,7 @@ func TestContractReaderByIDBatchGetLatestValues(t *testing.T) {
 			batchGetLatestValuesRequest[anyContractID1], batchGetLatestValuesRequest[anyContractID2] = anyContract1Req, anyContract2Req
 			batchGetLatestValuesRequest[anySecondContractID1], batchGetLatestValuesRequest[anySecondContractID2] = anySecondContract1Req, anySecondContract2Req
 
-			result, err := cr.BatchGetLatestValuesByIDs(ctx, batchGetLatestValuesRequest)
+			result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
 			require.NoError(t, err)
 
 			anyContract1Batch, anyContract2Batch := result[anyContractID1], result[anyContractID2]

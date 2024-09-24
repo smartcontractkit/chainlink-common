@@ -87,9 +87,7 @@ func NewBigIntValue(sign int, bib []byte) *Value {
 func NewTime(t time.Time) *Value {
 	return &Value{
 		Value: &Value_TimeValue{
-			TimeValue: &Time{
-				Time: timestamppb.New(t),
-			},
+			TimeValue: timestamppb.New(t),
 		},
 	}
 }

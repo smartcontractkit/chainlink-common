@@ -210,7 +210,7 @@ func FromProto(val *pb.Value) (Value, error) {
 	case *pb.Value_BigintValue:
 		return fromBigIntValueProto(val.GetBigintValue()), nil
 	case *pb.Value_TimeValue:
-		return NewTime(val.GetTimeValue().Time.AsTime()), nil
+		return NewTime(val.GetTimeValue().AsTime()), nil
 	}
 
 	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)

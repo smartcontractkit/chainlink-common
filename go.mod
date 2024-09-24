@@ -5,6 +5,7 @@ go 1.22.0
 toolchain go1.22.7
 
 require (
+	github.com/andybalholm/brotli v1.1.0
 	github.com/atombender/go-jsonschema v0.16.1-0.20240916205339-a74cd4e2851c
 	github.com/bytecodealliance/wasmtime-go/v23 v23.0.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0

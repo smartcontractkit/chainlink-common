@@ -1,12 +1,15 @@
 package testutils_test
 
 import (
+	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction/basicactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
@@ -18,6 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritertest"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
@@ -152,6 +156,61 @@ func TestRunner(t *testing.T) {
 		require.Equal(t, "no mock found for capability basic-test-action@1.0.0 on step action", runner.Err().Error())
 	})
 
+	t.Run("Run registers and unregisters from capabilities", func(t *testing.T) {
+		runner := testutils.NewRunner(tests.Context(t))
+
+		workflow, testTriggerConfig, testTargetConfig := registrationWorkflow()
+
+		triggerMock := &mockRegistrationTester{t: t, expected: testTriggerConfig}
+		executableMock := &mockRegistrationTester{t: t, expected: testTargetConfig}
+
+		runner.MockCapability("trigger@1.0.0", nil, triggerMock)
+		runner.MockCapability("target@1.0.0", nil, executableMock)
+
+		runner.Run(workflow)
+
+		assert.True(t, triggerMock.wasRegistered)
+		assert.True(t, triggerMock.wasUnregistered)
+		assert.True(t, executableMock.wasRegistered)
+		assert.True(t, executableMock.wasUnregistered)
+	})
+
+	t.Run("Run captures register errors", func(t *testing.T) {
+		runner := testutils.NewRunner(tests.Context(t))
+
+		workflow, _, _ := registrationWorkflow()
+
+		triggerMock := &mockRegistrationTester{t: t, regErr: errors.New("foo")}
+		executableMock := &mockRegistrationTester{t: t, regErr: errors.New("bar")}
+
+		runner.MockCapability("trigger@1.0.0", nil, triggerMock)
+		runner.MockCapability("target@1.0.0", nil, executableMock)
+
+		runner.Run(workflow)
+
+		actualErr := runner.Err()
+		assert.True(t, errors.Is(actualErr, triggerMock.regErr))
+		assert.True(t, errors.Is(actualErr, executableMock.regErr))
+	})
+
+	t.Run("Run captures unregister errors", func(t *testing.T) {
+		runner := testutils.NewRunner(tests.Context(t))
+
+		workflow, _, _ := registrationWorkflow()
+
+		triggerMock := &mockRegistrationTester{t: t, unregErr: errors.New("foo")}
+		executableMock := &mockRegistrationTester{t: t, unregErr: errors.New("bar")}
+
+		runner.MockCapability("trigger@1.0.0", nil, triggerMock)
+		runner.MockCapability("target@1.0.0", nil, executableMock)
+
+		runner.Run(workflow)
+
+		actualErr := runner.Err()
+		assert.True(t, errors.Is(actualErr, triggerMock.unregErr))
+		assert.True(t, errors.Is(actualErr, executableMock.unregErr))
+	})
+
 	t.Run("GetRegisteredMock returns the mock for a step", func(t *testing.T) {
 		runner := testutils.NewRunner(tests.Context(t))
 		expected := basicactiontest.ActionForStep(runner, "action", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
@@ -192,6 +251,34 @@ func TestRunner(t *testing.T) {
 		actual := runner.GetRegisteredMock(differentStep.ID(), "action")
 		assert.Nil(t, actual)
 	})
+}
+
+func registrationWorkflow() (*sdk.WorkflowSpecFactory, map[string]any, map[string]any) {
+	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+	testTriggerConfig := map[string]any{"something": "from nothing"}
+	trigger := sdk.Step[int]{
+		Definition: sdk.StepDefinition{
+			ID:             "trigger@1.0.0",
+			Ref:            "trigger",
+			Inputs:         sdk.StepInputs{},
+			Config:         testTriggerConfig,
+			CapabilityType: capabilities.CapabilityTypeTrigger,
+		},
+	}
+	trigger.AddTo(workflow)
+
+	testTargetConfig := map[string]any{"nothing": "from something"}
+	target := sdk.Step[int]{
+		Definition: sdk.StepDefinition{
+			ID:             "target@1.0.0",
+			Ref:            "target",
+			Inputs:         sdk.StepInputs{Mapping: map[string]any{"foo": "$(trigger.outputs)"}},
+			Config:         testTargetConfig,
+			CapabilityType: capabilities.CapabilityTypeTarget,
+		},
+	}
+	target.AddTo(workflow)
+	return workflow, testTriggerConfig, testTargetConfig
 }
 
 func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.TriggerMock[basictrigger.TriggerOutputs], *testutils.Mock[basicaction.ActionInputs, basicaction.ActionOutputs], *ocr3captest.IdenticalConsensusMock[basicaction.ActionOutputs], *testutils.TargetMock[chainwriter.TargetInputs]) {
@@ -250,4 +337,73 @@ func (helper *testHelper) transformTrigger(runtime sdk.Runtime, outputs basictri
 	assert.False(helper.t, helper.transformTriggerCalled)
 	helper.transformTriggerCalled = true
 	return true, nil
+}
+
+type mockRegistrationTester struct {
+	t               *testing.T
+	wasRegistered   bool
+	wasUnregistered bool
+	regErr          error
+	unregErr        error
+	expected        map[string]any
+}
+
+var _ capabilities.TriggerCapability = &mockRegistrationTester{}
+var _ capabilities.ExecutableCapability = &mockRegistrationTester{}
+
+func (m *mockRegistrationTester) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+	return m.register(request.Config)
+}
+
+func (m *mockRegistrationTester) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+	return m.unregister(request.Config)
+}
+
+func (m *mockRegistrationTester) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	assert.False(m.t, m.wasUnregistered)
+	val, err := values.NewMap(map[string]any{"foo": "bar"})
+	require.NoError(m.t, err)
+	return capabilities.CapabilityResponse{Value: val}, nil
+}
+
+func (m *mockRegistrationTester) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	return capabilities.CapabilityInfo{}, nil
+}
+
+func (m *mockRegistrationTester) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ch := make(chan capabilities.TriggerResponse)
+	ch <- capabilities.TriggerResponse{Event: capabilities.TriggerEvent{
+		TriggerType: "test",
+		ID:          "test@1.0.0",
+		Outputs:     &values.Map{Underlying: map[string]values.Value{"foo": values.NewString("bar")}},
+	}}
+
+	return ch, m.register(request.Config)
+}
+
+func (m *mockRegistrationTester) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	return m.unregister(request.Config)
+}
+
+func (m *mockRegistrationTester) register(wrappedConfig *values.Map) error {
+	m.wasRegistered = true
+	m.verifyConfig(wrappedConfig)
+	return m.regErr
+}
+
+func (m *mockRegistrationTester) unregister(wrappedConfig *values.Map) error {
+	m.wasUnregistered = true
+	m.verifyConfig(wrappedConfig)
+	return m.unregErr
+}
+
+func (m *mockRegistrationTester) verifyConfig(wrappedConfig *values.Map) {
+	if m.expected == nil {
+		return
+	}
+
+	var actual map[string]any
+	err := wrappedConfig.UnwrapTo(&actual)
+	require.NoError(m.t, err)
+	assert.True(m.t, reflect.DeepEqual(m.expected, actual))
 }

@@ -80,6 +80,61 @@ func TestSeqNumRange_Contains(t *testing.T) {
 	}
 }
 
+func TestSeqNumRangeLimit(t *testing.T) {
+	testCases := []struct {
+		name string
+		rng  SeqNumRange
+		n    uint64
+		want SeqNumRange
+	}{
+		{
+			name: "no truncation",
+			rng:  NewSeqNumRange(0, 10),
+			n:    11,
+			want: NewSeqNumRange(0, 10),
+		},
+		{
+			name: "no truncation 2",
+			rng:  NewSeqNumRange(100, 110),
+			n:    11,
+			want: NewSeqNumRange(100, 110),
+		},
+		{
+			name: "truncation",
+			rng:  NewSeqNumRange(0, 10),
+			n:    10,
+			want: NewSeqNumRange(0, 9),
+		},
+		{
+			name: "truncation 2",
+			rng:  NewSeqNumRange(100, 110),
+			n:    10,
+			want: NewSeqNumRange(100, 109),
+		},
+		{
+			name: "empty",
+			rng:  NewSeqNumRange(0, 0),
+			n:    0,
+			want: NewSeqNumRange(0, 0),
+		},
+		{
+			name: "wrong range",
+			rng:  NewSeqNumRange(20, 15),
+			n:    3,
+			want: NewSeqNumRange(20, 15),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.rng.Limit(tc.n)
+			if got != tc.want {
+				t.Errorf("SeqNumRangeLimit(%v, %v) = %v; want %v", tc.rng, tc.n, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestCCIPMsg_String(t *testing.T) {
 	tests := []struct {
 		name     string

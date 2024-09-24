@@ -2,8 +2,12 @@
 
 package main
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 func main() {
-	time.Sleep(10 * time.Second)
+	time.Sleep(1 * time.Hour)
+	fmt.Printf("hello")
 }

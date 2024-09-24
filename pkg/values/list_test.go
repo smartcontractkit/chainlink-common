@@ -70,6 +70,33 @@ func Test_ListUnwrapTo(t *testing.T) {
 		sliceTest[any](t, expected, got)
 	})
 
+	t.Run("arrays", func(t *testing.T) {
+		v, err := Wrap([2]string{"foo", "bar"})
+		require.NoError(t, err)
+
+		var got [2]string
+		err = v.UnwrapTo(&got)
+		require.NoError(t, err)
+
+		require.Equal(t, [2]string{"foo", "bar"}, got)
+	})
+
+	t.Run("arrays too many elements return error", func(t *testing.T) {
+		wrapped, err := Wrap([]string{"foo", "bar", "baz"})
+		require.NoError(t, err)
+		to := [2]string{}
+		err = wrapped.UnwrapTo(&to)
+		assert.ErrorContains(t, err, "too many elements to unwrap")
+	})
+
+	t.Run("arrays too few elements return error", func(t *testing.T) {
+		wrapped, err := Wrap([]string{"foo", "bar", "baz"})
+		require.NoError(t, err)
+		to := [4]string{}
+		err = wrapped.UnwrapTo(&to)
+		assert.ErrorContains(t, err, "too few elements to unwrap")
+	})
+
 	t.Run("cant be assigned to passed in var", func(t *testing.T) {
 		a := struct{}{}
 		l, err := Wrap([]int{1, 2, 3})

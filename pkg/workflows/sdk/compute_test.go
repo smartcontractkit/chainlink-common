@@ -53,12 +53,15 @@ func TestCompute(t *testing.T) {
 			},
 			Actions: []sdk.StepDefinition{
 				{
-					ID:  "__internal__custom_compute@1.0.0",
+					ID:  "custom_compute@1.0.0",
 					Ref: "Compute",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs)"},
 					},
-					Config:         map[string]any{},
+					Config: map[string]any{
+						"binary": "$(ENV.binary)",
+						"config": "$(ENV.config)",
+					},
 					CapabilityType: capabilities.CapabilityTypeAction,
 				},
 			},

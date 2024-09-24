@@ -3,6 +3,7 @@ package values
 import (
 	"math"
 	"math/big"
+	"reflect"
 	"testing"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -228,6 +229,41 @@ func Test_Value(t *testing.T) {
 	}
 }
 
+func Test_WrapPointers(t *testing.T) {
+	underlying := "foo"
+	actual, err := Wrap(&underlying)
+	require.NoError(t, err)
+
+	expected, err := Wrap("foo")
+	require.NoError(t, err)
+
+	assert.True(t, reflect.DeepEqual(expected, actual))
+}
+
+func Test_IntTypes(t *testing.T) {
+	anyValue := int64(100)
+	testCases := []struct {
+		name string
+		test func(tt *testing.T)
+	}{
+		{name: "int32", test: func(tt *testing.T) { wrappableTest[int64, int32](tt, anyValue) }},
+		{name: "int16", test: func(tt *testing.T) { wrappableTest[int64, int16](tt, anyValue) }},
+		{name: "int8", test: func(tt *testing.T) { wrappableTest[int64, int8](tt, anyValue) }},
+		{name: "int", test: func(tt *testing.T) { wrappableTest[int64, int](tt, anyValue) }},
+		{name: "uint64", test: func(tt *testing.T) { wrappableTest[int64, uint64](tt, anyValue) }},
+		{name: "uint32", test: func(tt *testing.T) { wrappableTest[int64, uint32](tt, anyValue) }},
+		{name: "uint16", test: func(tt *testing.T) { wrappableTest[int64, uint16](tt, anyValue) }},
+		{name: "uint8", test: func(tt *testing.T) { wrappableTest[int64, uint8](tt, anyValue) }},
+		{name: "uint", test: func(tt *testing.T) { wrappableTest[int64, uint](tt, anyValue) }},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			tc.test(st)
+		})
+	}
+}
+
 func Test_StructWrapUnwrap(t *testing.T) {
 	// TODO: https://smartcontract-it.atlassian.net/browse/KS-439 decimal.Decimal is broken when encoded.
 	type sStruct struct {
@@ -381,4 +417,112 @@ func Test_Copy(t *testing.T) {
 			assert.Equal(t, tc.value, copied)
 		}
 	}
+}
+
+type aliasBytes []byte
+type aliasString string
+type aliasInt int
+type aliasMap map[string]any
+type aliasByte uint8
+type decimalAlias decimal.Decimal
+type bigIntAlias big.Int
+type bigIntPtrAlias *big.Int
+
+func Test_Aliases(t *testing.T) {
+	testCases := []struct {
+		name string
+		test func(t *testing.T)
+	}{
+		{
+			name: "[]byte alias",
+			test: func(t *testing.T) { wrappableTest[[]byte, aliasBytes](t, []byte("hello")) },
+		},
+		{
+			name: "byte alias in slice",
+			test: func(tt *testing.T) {
+				wrappableTestWithConversion[[]byte, []aliasByte](tt, []byte("hello"), func(native []aliasByte) []byte {
+					converted := make([]byte, len(native))
+					for i, b := range native {
+						converted[i] = byte(b)
+					}
+					return converted
+				})
+			},
+		},
+		{
+			name: "basic alias",
+			test: func(tt *testing.T) { wrappableTest[string, aliasString](tt, "hello") },
+		},
+		{
+			name: "integer",
+			test: func(tt *testing.T) { wrappableTest[int, aliasInt](tt, 1) },
+		},
+		{
+			name: "map",
+			test: func(tt *testing.T) { wrappableTest[map[string]any, aliasMap](tt, map[string]any{"hello": "world"}) },
+		},
+		{
+			name: "decimal alias",
+			test: func(tt *testing.T) { wrappableTest[decimal.Decimal, decimalAlias](tt, decimal.NewFromFloat(1.0)) },
+		},
+		{
+			name: "big int alias",
+			test: func(tt *testing.T) {
+				testBigIntType[*bigIntAlias](tt, big.NewInt(1), func() *bigIntAlias {
+					return new(bigIntAlias)
+				})
+			},
+		},
+		{
+			name: "big int pointer alias",
+			test: func(tt *testing.T) {
+				testBigIntType[bigIntPtrAlias](tt, big.NewInt(1), func() bigIntPtrAlias {
+					return new(big.Int)
+				})
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			tc.test(st)
+		})
+	}
+}
+
+func wrappableTest[Native, Alias any](t *testing.T, native Native) {
+	wrappableTestWithConversion(t, native, func(alias Alias) Native {
+		return reflect.ValueOf(alias).Convert(reflect.TypeOf(native)).Interface().(Native)
+	})
+}
+
+func testBigIntType[Alias any](t *testing.T, native *big.Int, create func() Alias) {
+	wv, err := Wrap(native)
+	require.NoError(t, err)
+
+	a := create()
+
+	err = wv.UnwrapTo(a)
+	require.NoError(t, err)
+
+	assert.Equal(t, native, reflect.ValueOf(a).Convert(reflect.TypeOf(native)).Interface())
+
+	aliasWrapped, err := Wrap(a)
+	require.NoError(t, err)
+	assert.Equal(t, wv, aliasWrapped)
+}
+
+func wrappableTestWithConversion[Native, Alias any](t *testing.T, native Native, convert func(native Alias) Native) {
+	wv, err := Wrap(native)
+	require.NoError(t, err)
+
+	var a Alias
+	err = wv.UnwrapTo(&a)
+	require.NoError(t, err)
+
+	assert.Equal(t, native, convert(a))
+
+	aliasWrapped, err := Wrap(a)
+	require.NoError(t, err)
+	assert.Equal(t, wv, aliasWrapped)
 }

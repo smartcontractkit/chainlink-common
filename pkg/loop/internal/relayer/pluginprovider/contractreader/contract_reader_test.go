@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chainreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	contractreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
@@ -84,6 +85,171 @@ func TestContractReaderInterfaceTests(t *testing.T) {
 			)
 		}
 	})
+}
+
+func TestContractReaderByID(t *testing.T) {
+	t.Parallel()
+
+	TestContractReaderByIDGetLatestValue(t)
+	TestContractReaderByIDBatchGetLatestValues(t)
+}
+
+func TestContractReaderByIDGetLatestValue(t *testing.T) {
+	fake := &fakeContractReader{}
+	tester := &fakeContractReaderInterfaceTester{impl: fake}
+
+	t.Run(
+		"Get latest value works with multiple custom contract IDs",
+		func(t *testing.T) {
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+
+			anyContractID := "1-" + anyContract.String()
+			anySecondContractID := "1-" + anySecondContract.String()
+
+			toBind[anySecondContractID] = anySecondContract
+			toBind[anyContractID] = anyContract
+			require.NoError(t, cr.BindByIDs(ctx, toBind))
+
+			var primAnyContract, primAnySecondContract uint64
+			require.NoError(t, cr.GetLatestValueByID(ctx, anyContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract))
+			require.NoError(t, cr.GetLatestValueByID(ctx, anySecondContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract))
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract)
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract)
+		})
+
+	t.Run(
+		"Get latest value works with multiple custom contract IDs and supports same contracts on different addresses",
+		func(t *testing.T) {
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract1 := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anyContract2 := types.BoundContract{Address: "new-" + anyContract1.Address, Name: anyContract1.Name}
+			contractID1, contractID2 := "1-"+anyContract2.String(), "2-"+anyContract2.String()
+			toBind[contractID1], toBind[contractID2] = anyContract1, anyContract2
+
+			anySecondContract1 := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+			anySecondContract2 := types.BoundContract{Address: "new-" + anySecondContract1.Address, Name: anySecondContract1.Name}
+			contractID3, contractID4 := "1"+"-"+anySecondContract1.String(), "2"+"-"+anySecondContract2.String()
+			toBind[contractID3], toBind[contractID4] = anySecondContract1, anySecondContract2
+
+			require.NoError(t, cr.BindByIDs(ctx, toBind))
+
+			var primAnyContract1, primAnyContract2, primAnySecondContract1, primAnySecondContract2 uint64
+			require.NoError(t, cr.GetLatestValueByID(ctx, contractID1, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract1))
+			require.NoError(t, cr.GetLatestValueByID(ctx, contractID2, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract2))
+			require.NoError(t, cr.GetLatestValueByID(ctx, contractID3, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract1))
+			require.NoError(t, cr.GetLatestValueByID(ctx, contractID4, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract2))
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract1)
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract2)
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract1)
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract2)
+		})
+}
+
+func TestContractReaderByIDBatchGetLatestValues(t *testing.T) {
+	fake := &fakeContractReader{}
+	tester := &fakeContractReaderInterfaceTester{impl: fake}
+
+	t.Run(
+		"BatchGetLatestValueByIDs works with multiple custom contract IDs",
+		func(t *testing.T) {
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anyContractID := "1-" + anyContract.String()
+			toBind[anyContractID] = anyContract
+
+			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+			anySecondContractID := "1-" + anySecondContract.String()
+			toBind[anySecondContractID] = anySecondContract
+			require.NoError(t, cr.BindByIDs(ctx, toBind))
+
+			var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
+			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
+
+			batchGetLatestValuesRequest[anyContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
+			batchGetLatestValuesRequest[anySecondContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
+
+			result, err := cr.BatchGetLatestValuesByIDs(ctx, batchGetLatestValuesRequest)
+			require.NoError(t, err)
+
+			anyContractBatch, anySecondContractBatch := result[anyContractID], result[anySecondContractID]
+			returnValueAnyContract, errAnyContract := anyContractBatch[0].GetResult()
+			returnValueAnySecondContract, errAnySecondContract := anySecondContractBatch[0].GetResult()
+			require.NoError(t, errAnyContract)
+			require.NoError(t, errAnySecondContract)
+			assert.Contains(t, anyContractBatch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anySecondContractBatch[0].ReadName, MethodReturningUint64)
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract.(*uint64))
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract.(*uint64))
+		})
+
+	t.Run(
+		"BatchGetLatestValueByIDs works with multiple custom contract IDs and supports same contracts on different addresses",
+		func(t *testing.T) {
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract1 := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anyContract2 := types.BoundContract{Address: "new-" + anyContract1.Address, Name: anyContract1.Name}
+			anyContractID1, anyContractID2 := "1-"+anyContract1.String(), "2-"+anyContract2.String()
+			toBind[anyContractID1], toBind[anyContractID2] = anyContract1, anyContract2
+
+			anySecondContract1 := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+			anySecondContract2 := types.BoundContract{Address: "new-" + anySecondContract1.Address, Name: anySecondContract1.Name}
+			anySecondContractID1, anySecondContractID2 := "1-"+anySecondContract1.String(), "2-"+anySecondContract2.String()
+			toBind[anySecondContractID1], toBind[anySecondContractID2] = anySecondContract1, anySecondContract2
+
+			require.NoError(t, cr.BindByIDs(ctx, toBind))
+
+			var primitiveReturnValueAnyContract1, primitiveReturnValueAnyContract2, primitiveReturnValueAnySecondContract1, primitiveReturnValueAnySecondContract2 uint64
+			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
+
+			anyContract1Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract1}}
+			anyContract2Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract2}}
+			anySecondContract1Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract1}}
+			anySecondContract2Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract2}}
+			batchGetLatestValuesRequest[anyContractID1], batchGetLatestValuesRequest[anyContractID2] = anyContract1Req, anyContract2Req
+			batchGetLatestValuesRequest[anySecondContractID1], batchGetLatestValuesRequest[anySecondContractID2] = anySecondContract1Req, anySecondContract2Req
+
+			result, err := cr.BatchGetLatestValuesByIDs(ctx, batchGetLatestValuesRequest)
+			require.NoError(t, err)
+
+			anyContract1Batch, anyContract2Batch := result[anyContractID1], result[anyContractID2]
+			anySecondContract1Batch, anySecondContract2Batch := result[anySecondContractID1], result[anySecondContractID2]
+
+			returnValueAnyContract1, errAnyContract1 := anyContract1Batch[0].GetResult()
+			returnValueAnyContract2, errAnyContract2 := anyContract2Batch[0].GetResult()
+			returnValueAnySecondContract1, errAnySecondContract := anySecondContract1Batch[0].GetResult()
+			returnValueAnySecondContract2, errAnySecondContract2 := anySecondContract2Batch[0].GetResult()
+
+			require.NoError(t, errAnyContract1)
+			require.NoError(t, errAnyContract2)
+			require.NoError(t, errAnySecondContract)
+			require.NoError(t, errAnySecondContract2)
+
+			assert.Contains(t, anyContract1Batch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anyContract2Batch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anySecondContract1Batch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anySecondContract2Batch[0].ReadName, MethodReturningUint64)
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract1.(*uint64))
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract2.(*uint64))
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract1.(*uint64))
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract2.(*uint64))
+		})
 }
 
 func TestBind(t *testing.T) {

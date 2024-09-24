@@ -101,19 +101,13 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	case ValuesEncodingVersion:
-		switch val := data.(type) {
-		case values.Value:
-			bytes, err = proto.Marshal(values.Proto(val))
-			if err != nil {
-				return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-			}
-		case *values.Value:
-			bytes, err = proto.Marshal(values.Proto(*val))
-			if err != nil {
-				return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-			}
-		default:
-			return nil, fmt.Errorf("%w: data is not of Value type", types.ErrInvalidType)
+		val, err := values.Wrap(data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
+		bytes, err = proto.Marshal(values.Proto(val))
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
 	default:
 		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
@@ -146,16 +140,16 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 		if err != nil {
 			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
-		value, err2 := values.FromProto(protoValue)
-		if err2 != nil {
-			return fmt.Errorf("%w: %w", types.ErrInvalidType, err2)
-		}
+
 		valuePtr, ok := res.(*values.Value)
 		if !ok {
 			return fmt.Errorf("%w: result is not of Value type", types.ErrInvalidType)
 		}
 
-		*valuePtr = value
+		*valuePtr, err = values.FromProto(protoValue)
+		if err != nil {
+			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
 	}
@@ -337,21 +331,6 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	if request.AsValueType {
-		var retVal values.Value
-		err = c.impl.GetLatestValue(ctx, request.ReadIdentifier, confidenceLevel, params, &retVal)
-		if err != nil {
-			return nil, err
-		}
-
-		encodedRetVal, err2 := EncodeVersionedBytes(retVal, ValuesEncodingVersion)
-		if err2 != nil {
-			return nil, err2
-		}
-
-		return &pb.GetLatestValueReply{VersionedBytes: encodedRetVal}, nil
-	}
-
 	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
 	if err != nil {
 		return nil, err
@@ -362,12 +341,20 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
-	if err != nil {
-		return nil, err
+	var versionedBytes *pb.VersionedBytes
+	if request.AsValueType {
+		versionedBytes, err = EncodeVersionedBytes(retVal, ValuesEncodingVersion)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		versionedBytes, err = EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return &pb.GetLatestValueReply{VersionedBytes: encodedRetVal}, nil
+	return &pb.GetLatestValueReply{VersionedBytes: versionedBytes}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
@@ -397,21 +384,6 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	if request.AsValueType {
-		var sequenceDataType values.Value
-		sequences, err2 := c.impl.QueryKey(ctx, contract, queryFilter, limitAndSort, &sequenceDataType)
-		if err2 != nil {
-			return nil, err2
-		}
-
-		pbSequences, err2 := convertSequencesToVersionedBytesProto(sequences, ValuesEncodingVersion)
-		if err2 != nil {
-			return nil, err2
-		}
-
-		return &pb.QueryKeyReply{Sequences: pbSequences}, nil
-	}
-
 	sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
 	if err != nil {
 		return nil, err
@@ -422,9 +394,17 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	pbSequences, err := convertSequencesToVersionedBytesProto(sequences, c.encodeWith)
-	if err != nil {
-		return nil, err
+	var pbSequences []*pb.Sequence
+	if request.AsValueType {
+		pbSequences, err = convertSequencesToVersionedBytesProto(sequences, ValuesEncodingVersion)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		pbSequences, err = convertSequencesToVersionedBytesProto(sequences, c.encodeWith)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &pb.QueryKeyReply{Sequences: pbSequences}, nil

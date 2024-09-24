@@ -65,6 +65,54 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	tests := []testcase[T]{
 		{
+			name: "Gets the latest value as a values.Value using values.Value as parameters",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				firstItem := CreateTestStruct(0, tester)
+
+				contracts := tester.GetBindings(t)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
+
+				secondItem := CreateTestStruct(1, tester)
+
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
+
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				params := &LatestParams{I: 1}
+				valueParams, err := values.Wrap(params)
+
+				valuemap := valueParams.(*values.Map)
+
+				paramMap := map[string]any{}
+				err = valuemap.UnwrapTo(&paramMap)
+				require.NoError(t, err)
+
+				var value values.Value
+
+				err = cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, paramMap, &value)
+				require.NoError(t, err)
+
+				actual := TestStruct{}
+				err = value.UnwrapTo(&actual)
+				require.NoError(t, err)
+				assert.Equal(t, &firstItem, &actual)
+
+				params = &LatestParams{I: 2}
+				err = cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, &value)
+				require.NoError(t, err)
+
+				actual = TestStruct{}
+				err = value.UnwrapTo(&actual)
+				require.NoError(t, err)
+				assert.Equal(t, &secondItem, &actual)
+			},
+		},
+		{
 			name: "Gets the latest value as a values.Value",
 			test: func(t T) {
 				ctx := tests.Context(t)

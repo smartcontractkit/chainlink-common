@@ -1,9 +1,11 @@
 package values
 
 import (
+	"errors"
 	"reflect"
+	"strings"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
@@ -52,7 +54,28 @@ func (m *Map) Unwrap() (any, error) {
 	return nm, m.UnwrapTo(&nm)
 }
 
+func (m *Map) copy() Value {
+	return m.CopyMap()
+}
+
+func (m *Map) CopyMap() *Map {
+	if m == nil {
+		return nil
+	}
+
+	dest := map[string]Value{}
+	for k, v := range m.Underlying {
+		dest[k] = Copy(v)
+	}
+
+	return &Map{Underlying: dest}
+}
+
 func (m *Map) UnwrapTo(to any) error {
+	if m == nil {
+		return errors.New("cannot unwrap nil values.Map")
+	}
+
 	c := &mapstructure.DecoderConfig{
 		Result: to,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
@@ -69,11 +92,37 @@ func (m *Map) UnwrapTo(to any) error {
 	return d.Decode(m.Underlying)
 }
 
+// DeleteAtPath deletes a value from a map at a given dot separated path.  Returns true if an element at the given
+// path was found and deleted, false otherwise.
+func (m *Map) DeleteAtPath(path string) bool {
+	pathSegments := strings.Split(path, ".")
+	underlying := m.Underlying
+	for segmentIdx, pathSegment := range pathSegments {
+		if segmentIdx == len(pathSegments)-1 {
+			_, ok := underlying[pathSegment]
+			if !ok {
+				return false
+			}
+
+			delete(underlying, pathSegment)
+			return true
+		}
+
+		value := underlying[pathSegment]
+		mv, ok := value.(*Map)
+		if !ok {
+			return false
+		}
+		underlying = mv.Underlying
+	}
+
+	return false
+}
+
 func mapValueToMap(f reflect.Type, t reflect.Type, data any) (any, error) {
 	if f != reflect.TypeOf(map[string]Value{}) {
 		return data, nil
 	}
-
 	switch t {
 	// If the destination type is `map[string]any` or `any`,
 	// fully unwrap the values.Map.
@@ -93,6 +142,7 @@ func mapValueToMap(f reflect.Type, t reflect.Type, data any) (any, error) {
 
 		return d, nil
 	}
+
 	return data, nil
 }
 
@@ -135,7 +185,9 @@ func unwrapsValues(f reflect.Type, t reflect.Type, data any) (any, error) {
 		n := reflect.New(t).Interface()
 		err := dv.UnwrapTo(n)
 		if err != nil {
-			return nil, err
+			// Do not return the error to allow mapstructure to retry with different types
+			// Eg: mapstructure will attempt **big.Int before *big.Int if the field is a *big.Int.
+			return data, nil
 		}
 
 		if reflect.TypeOf(n).Elem() == t {

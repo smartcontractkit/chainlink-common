@@ -1,0 +1,27 @@
+name: Run Benchmarks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Go Benchmark Action
+        uses: patrickhuie19/benchmark-action@b46d0ce6c3b4bd423380f7d3c6abed389e38ea4a
+        with:
+          benchmarks-pr: 'BenchmarkKeystore_Sign'  # Use benchmarks specified in PR, or default benchmarks
+          benchmarks-merge: 'BenchmarkKeystore_Sign' # Default list of benchmarks to run on merges
+          trigger-branches: 'main'  # Comma-separated list of branches for merging
+          use-gh-pages: 'true'  # Enable or disable GitHub Pages
+          github-token: ${{ secrets.GITHUB_TOKEN }}  # Use the built-in GitHub token
+          gh-pages-branch: 'gh-pages'  # GitHub Pages branch (if use-gh-pages is true)
+          alert-comment-cc-users: '@patrickhuie19'

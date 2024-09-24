@@ -1,76 +1,34 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
-
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 	"github.com/spf13/cobra"
-
-	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
-	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/core-node"
-	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
-	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/k8s-resources"
-	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
 )
 
 var GenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate Grafana Dashboard JSON",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dataSources, errDataSources := cmd.Flags().GetStringArray("grafana-data-sources")
-		if errDataSources != nil || len(dataSources) < 1 {
-			return errDataSources
-		}
+		dashboard, err := BuildDashboardWithType(&BuildOptions{
+			Name:              cmd.Flag("dashboard-name").Value.String(),
+			Platform:          grafana.TypePlatform(cmd.Flag("platform").Value.String()),
+			TypeDashboard:     TypeDashboard(cmd.Flag("type").Value.String()),
+			MetricsDataSource: grafana.NewDataSource(cmd.Flag("metrics-datasource").Value.String(), ""),
+			LogsDataSource:    grafana.NewDataSource(cmd.Flag("logs-datasource").Value.String(), ""),
+		})
 
-		dataSourcesType := SetDataSources(dataSources)
-		name := cmd.Flag("dashboard-name").Value.String()
-		platform := cmd.Flag("platform").Value.String()
-		typeDashboard := cmd.Flag("type").Value.String()
-
-		var builder dashboard.Dashboard
-		var err error
-
-		switch typeDashboard {
-		case "core-node":
-			builder, err = corenode.BuildDashboard(name, dataSourcesType.Metrics, platform)
-		case "core-node-components":
-			builder, err = corenodecomponents.BuildDashboard(name, dataSourcesType.Metrics, dataSourcesType.Logs)
-		case "core-node-resources":
-			builder, err = k8sresources.BuildDashboard(name, dataSourcesType.Metrics, dataSourcesType.Logs)
-		case "ocr":
-			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
-		case "ocr2":
-			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
-		case "ocr3":
-			builder, err = atlasdon.BuildDashboard(name, dataSourcesType.Metrics, platform, typeDashboard)
-		default:
-			return errors.New("invalid dashboard type")
-		}
 		if err != nil {
-			utils.Logger.Error().
-				Str("Name", name).
-				Str("Type", typeDashboard).
-				Msg("Could not build dashboard")
 			return err
 		}
 
-		dashboard := NewDashboard(
-			name,
-			"",
-			"",
-			"",
-			dataSourcesType,
-			platform,
-			builder,
-		)
-		jsonDashboard, errGenerate := dashboard.GetJSON()
-		if errGenerate != nil {
-			return errGenerate
+		dashboardJSON, errDashboardJSON := dashboard.GenerateJSON()
+		if errDashboardJSON != nil {
+			return err
 		}
 
-		fmt.Print(string(jsonDashboard))
+		fmt.Print(string(dashboardJSON))
 
 		return nil
 	},
@@ -82,7 +40,8 @@ func init() {
 	if errName != nil {
 		panic(errName)
 	}
-	GenerateCmd.Flags().StringArray("grafana-data-sources", []string{"Prometheus"}, "Data sources to add to the dashboard, at least one required")
+	GenerateCmd.Flags().String("metrics-datasource", "Prometheus", "Metrics datasource name")
+	GenerateCmd.Flags().String("logs-datasource", "", "Logs datasource name")
 	GenerateCmd.Flags().String("platform", "docker", "Platform where the dashboard is deployed (docker or kubernetes)")
-	GenerateCmd.Flags().String("type", "core-node", "Dashboard type can be either core-node | core-node-components")
+	GenerateCmd.Flags().String("type", "core-node", "Dashboard type can be either core-node | core-node-components | core-node-resources | don-ocr | don-ocr2 | don-ocr3")
 }

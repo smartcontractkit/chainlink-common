@@ -13,8 +13,56 @@ import (
 	mercuryv1test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1/test"
 	mercuryv2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2/test"
 	mercuryv3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3/test"
+	mercuryv4test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v4/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
+
+func TestMercuryV4Service(t *testing.T) {
+	t.Parallel()
+
+	mercuryV4 := loop.NewMercuryV4Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
+	}, mercurytest.MercuryProvider, mercuryv4test.DataSource)
+	hook := mercuryV4.PluginService.XXXTestHook()
+	servicetest.Run(t, mercuryV4)
+
+	t.Run("control", func(t *testing.T) {
+		mercurytest.MercuryPluginFactory(t, mercuryV4)
+	})
+
+	t.Run("Kill", func(t *testing.T) {
+		hook.Kill()
+
+		// wait for relaunch
+		time.Sleep(2 * goplugin.KeepAliveTickDuration)
+
+		mercurytest.MercuryPluginFactory(t, mercuryV4)
+	})
+
+	t.Run("Reset", func(t *testing.T) {
+		hook.Reset()
+
+		// wait for relaunch
+		time.Sleep(2 * goplugin.KeepAliveTickDuration)
+
+		mercurytest.MercuryPluginFactory(t, mercuryV4)
+	})
+}
+
+func TestMercuryV4Service_recovery(t *testing.T) {
+	t.Parallel()
+	var limit atomic.Int32
+	mercury := loop.NewMercuryV4Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		h := HelperProcessCommand{
+			Command: loop.PluginMercuryName,
+			Limit:   int(limit.Add(1)),
+		}
+		return h.New()
+	}, mercurytest.MercuryProvider, mercuryv4test.DataSource)
+	servicetest.Run(t, mercury)
+
+	mercurytest.MercuryPluginFactory(t, mercury)
+}
 
 func TestMercuryV3Service(t *testing.T) {
 	t.Parallel()

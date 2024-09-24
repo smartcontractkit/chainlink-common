@@ -2,6 +2,7 @@ package llo
 
 import (
 	"bytes"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -271,6 +272,27 @@ func formatJSON(input []byte) ([]byte, error) {
 }
 
 type ChannelDefinitions map[ChannelID]ChannelDefinition
+
+func (c *ChannelDefinitions) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to scan Data: value is not []byte")
+	}
+	if bytes == nil {
+		*c = nil
+		return nil
+	}
+	if len(bytes) == 0 {
+		*c = ChannelDefinitions{}
+		return nil
+	}
+
+	return json.Unmarshal(bytes, c)
+}
+
+func (c ChannelDefinitions) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
 
 // It is recommended not to use 0 as a channel ID to avoid confusion with
 // uninitialized values

@@ -1,11 +1,12 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -19,7 +20,16 @@ type Unwrappable interface {
 type Value interface {
 	proto() *pb.Value
 
+	copy() Value
 	Unwrappable
+}
+
+func Copy(v Value) Value {
+	if v == nil {
+		return v
+	}
+
+	return v.copy()
 }
 
 func Wrap(v any) (Value, error) {
@@ -38,13 +48,23 @@ func Wrap(v any) (Value, error) {
 		return NewDecimal(tv), nil
 	case int64:
 		return NewInt64(tv), nil
+	case int32:
+		return NewInt64(int64(tv)), nil
+	case int16:
+		return NewInt64(int64(tv)), nil
+	case int8:
+		return NewInt64(int64(tv)), nil
 	case int:
 		return NewInt64(int64(tv)), nil
 	case uint64:
 		return NewInt64(int64(tv)), nil
-	case uint:
-		return NewInt64(int64(tv)), nil
 	case uint32:
+		return NewInt64(int64(tv)), nil
+	case uint16:
+		return NewInt64(int64(tv)), nil
+	case uint8:
+		return NewInt64(int64(tv)), nil
+	case uint:
 		return NewInt64(int64(tv)), nil
 	case *big.Int:
 		return NewBigInt(tv), nil
@@ -69,6 +89,13 @@ func Wrap(v any) (Value, error) {
 
 	// Handle slices, structs, and pointers to structs
 	val := reflect.ValueOf(v)
+
+	if val.CanConvert(reflect.TypeOf(decimal.Decimal{})) {
+		return Wrap(val.Convert(reflect.TypeOf(decimal.Decimal{})).Interface())
+	} else if val.CanConvert(reflect.TypeOf(new(big.Int))) {
+		return Wrap(val.Convert(reflect.TypeOf(new(big.Int))).Interface())
+	}
+
 	// nolint
 	switch val.Kind() {
 	// Better complex type support for maps
@@ -87,21 +114,41 @@ func Wrap(v any) (Value, error) {
 		return NewMap(m)
 	// Better complex type support for slices
 	case reflect.Slice:
-		s := make([]any, val.Len())
-		for i := 0; i < val.Len(); i++ {
-			item := val.Index(i).Interface()
-			s[i] = item
+		if val.Type().Elem().Kind() == reflect.Uint8 {
+			return NewBytes(val.Bytes()), nil
 		}
-		return NewList(s)
+		return createListFromSlice(val)
+	case reflect.Array:
+		arrayLen := val.Len()
+		slice := reflect.MakeSlice(reflect.SliceOf(val.Type().Elem()), arrayLen, arrayLen)
+		for i := 0; i < arrayLen; i++ {
+			slice.Index(i).Set(val.Index(i))
+		}
+		return Wrap(slice.Interface())
 	case reflect.Struct:
-		return createMapFromStruct(v)
+		return CreateMapFromStruct(v)
 	case reflect.Pointer:
-		if reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct {
-			return createMapFromStruct(reflect.Indirect(reflect.ValueOf(v)).Interface())
-		}
+		// pointer can't be null or the switch statement above would catch it.
+		return Wrap(val.Elem().Interface())
+	case reflect.String:
+		return Wrap(val.Convert(reflect.TypeOf("")).Interface())
+
+	case reflect.Bool:
+		return Wrap(val.Convert(reflect.TypeOf(true)).Interface())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return Wrap(val.Convert(reflect.TypeOf(int64(0))).Interface())
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
+}
+
+func createListFromSlice(val reflect.Value) (Value, error) {
+	s := make([]any, val.Len())
+	for i := 0; i < val.Len(); i++ {
+		item := val.Index(i).Interface()
+		s[i] = item
+	}
+	return NewList(s)
 }
 
 func WrapMap(a any) (*Map, error) {
@@ -134,61 +181,86 @@ func Proto(v Value) *pb.Value {
 	return v.proto()
 }
 
-func FromProto(val *pb.Value) Value {
+func ProtoMap(v *Map) *pb.Map {
+	return Proto(v).GetMapValue()
+}
+
+func FromProto(val *pb.Value) (Value, error) {
 	if val == nil {
-		return nil
+		return nil, nil
 	}
 
 	switch val.Value.(type) {
 	case nil:
-		return nil
+		return nil, nil
 	case *pb.Value_StringValue:
-		return NewString(val.GetStringValue())
+		return NewString(val.GetStringValue()), nil
 	case *pb.Value_BoolValue:
-		return NewBool(val.GetBoolValue())
+		return NewBool(val.GetBoolValue()), nil
 	case *pb.Value_DecimalValue:
-		return fromDecimalValueProto(val.GetDecimalValue())
+		return fromDecimalValueProto(val.GetDecimalValue()), nil
 	case *pb.Value_Int64Value:
-		return NewInt64(val.GetInt64Value())
+		return NewInt64(val.GetInt64Value()), nil
 	case *pb.Value_BytesValue:
-		return NewBytes(val.GetBytesValue())
+		return NewBytes(val.GetBytesValue()), nil
 	case *pb.Value_ListValue:
 		return FromListValueProto(val.GetListValue())
 	case *pb.Value_MapValue:
 		return FromMapValueProto(val.GetMapValue())
 	case *pb.Value_BigintValue:
-		return fromBigIntValueProto(val.GetBigintValue())
+		return fromBigIntValueProto(val.GetBigintValue()), nil
 	}
 
-	panic(fmt.Errorf("unsupported type %T: %+v", val, val))
+	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)
 }
 
-func FromMapValueProto(mv *pb.Map) *Map {
+func FromMapValueProto(mv *pb.Map) (*Map, error) {
+	if mv == nil {
+		return nil, nil
+	}
+
 	nm := map[string]Value{}
 	for k, v := range mv.Fields {
-		nm[k] = FromProto(v)
+		inner, err := FromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		nm[k] = inner
 	}
-	return &Map{Underlying: nm}
+	return &Map{Underlying: nm}, nil
 }
 
-func FromListValueProto(lv *pb.List) *List {
+func FromListValueProto(lv *pb.List) (*List, error) {
+	if lv == nil {
+		return nil, nil
+	}
+
 	nl := []Value{}
 	for _, el := range lv.Fields {
-		nl = append(nl, FromProto(el))
+		inner, err := FromProto(el)
+		if err != nil {
+			return nil, err
+		}
+
+		nl = append(nl, inner)
 	}
-	return &List{Underlying: nl}
+	return &List{Underlying: nl}, nil
 }
 
-func fromDecimalValueProto(decStr string) *Decimal {
-	dec, err := decimal.NewFromString(decStr)
-	if err != nil {
-		panic(err)
+func fromDecimalValueProto(dec *pb.Decimal) *Decimal {
+	if dec == nil {
+		return nil
 	}
 
-	return NewDecimal(dec)
+	dc := decimal.NewFromBigInt(protoToBigInt(dec.Coefficient), dec.Exponent)
+	return NewDecimal(dc)
 }
 
-func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
+func protoToBigInt(biv *pb.BigInt) *big.Int {
+	if biv == nil {
+		return nil
+	}
+
 	av := &big.Int{}
 	av = av.SetBytes(biv.AbsVal)
 
@@ -196,11 +268,16 @@ func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
 		av.Neg(av)
 	}
 
-	return NewBigInt(av)
+	return av
 }
 
-func createMapFromStruct(v any) (Value, error) {
+func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
+	return NewBigInt(protoToBigInt(biv))
+}
+
+func CreateMapFromStruct(v any) (*Map, error) {
 	var resultMap map[string]interface{}
+
 	err := mapstructure.Decode(v, &resultMap)
 	if err != nil {
 		return nil, err
@@ -212,15 +289,61 @@ func unwrapTo[T any](underlying T, to any) error {
 	switch tb := to.(type) {
 	case *T:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = underlying
 	case *any:
 		if tb == nil {
-			return fmt.Errorf("cannot unwrap to nil pointer")
+			return errors.New("cannot unwrap to nil pointer")
 		}
 		*tb = underlying
 	default:
+		// Don't break for custom types that are the same underlying type
+		// eg: type FeedId string allows verification of FeedId's shape while unmarshalling
+		rTo := reflect.ValueOf(to)
+		rUnderlying := reflect.ValueOf(underlying)
+		if rTo.Kind() != reflect.Pointer {
+			return fmt.Errorf("cannot unwrap to value of type: %T", to)
+		}
+
+		if rUnderlying.Type().ConvertibleTo(rTo.Type().Elem()) {
+			reflect.Indirect(rTo).Set(rUnderlying.Convert(rTo.Type().Elem()))
+			return nil
+		}
+
+		rToVal := reflect.Indirect(rTo)
+		if rUnderlying.Kind() == reflect.Slice {
+			var newList reflect.Value
+			if rToVal.Kind() == reflect.Array {
+				newListPtr := reflect.New(reflect.ArrayOf(rUnderlying.Len(), rToVal.Type().Elem()))
+				newList = reflect.Indirect(newListPtr)
+			} else if rToVal.Kind() == reflect.Slice {
+				newList = reflect.MakeSlice(rToVal.Type(), rUnderlying.Len(), rUnderlying.Len())
+			} else {
+				return fmt.Errorf("cannot unwrap slice to value of type: %T", to)
+			}
+
+			for i := 0; i < rUnderlying.Len(); i++ {
+				el := rUnderlying.Index(i)
+				toEl := newList.Index(i)
+
+				if toEl.Kind() == reflect.Ptr {
+					err := unwrapTo(el.Interface(), toEl.Interface())
+					if err != nil {
+						return err
+					}
+				} else {
+					err := unwrapTo(el.Interface(), toEl.Addr().Interface())
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			rToVal.Set(newList)
+			return nil
+		}
+
 		return fmt.Errorf("cannot unwrap to value of type: %T", to)
 	}
 

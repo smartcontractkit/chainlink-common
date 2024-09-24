@@ -2,7 +2,6 @@ package workflows
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,55 +15,52 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
 func GenerateJSONSchema() ([]byte, error) {
-	schema := jsonschema.Reflect(&workflowSpecYaml{})
+	schema := jsonschema.Reflect(&WorkflowSpecYaml{})
 
 	return json.MarshalIndent(schema, "", "  ")
 }
 
-func ParseWorkflowSpecYaml(data string) (WorkflowSpec, error) {
+func ParseWorkflowSpecYaml(data string) (sdk.WorkflowSpec, error) {
 	var url = "https://github.com/smartcontractkit/chainlink/"
-	w := workflowSpecYaml{}
+	w := WorkflowSpecYaml{}
 	err := yaml.Unmarshal([]byte(data), &w)
 	if err != nil {
-		return WorkflowSpec{}, err
+		return sdk.WorkflowSpec{}, err
 	}
 	schemaStr, err := GenerateJSONSchema()
 	if err != nil {
-		return WorkflowSpec{}, err
+		return sdk.WorkflowSpec{}, err
 	}
 
 	schema, err := validate.CompileString(url, string(schemaStr))
 	if err != nil {
-		return WorkflowSpec{}, err
+		return sdk.WorkflowSpec{}, err
 	}
 
 	var jsonToValidate any
 	err = yaml.Unmarshal([]byte(data), &jsonToValidate)
 	if err != nil {
-		return WorkflowSpec{}, err
+		return sdk.WorkflowSpec{}, err
 	}
 
 	err = schema.Validate(jsonToValidate)
 	if err != nil {
-		return WorkflowSpec{}, err
+		return sdk.WorkflowSpec{}, err
 	}
-
-	sha256Hash := sha256.New()
-	sha256Hash.Write([]byte(data))
-	w.cid = fmt.Sprintf("%x", sha256Hash.Sum(nil))
 	w.yaml = data
 
-	return w.toWorkflowSpec(), nil
+	return w.ToWorkflowSpec(), nil
 }
 
-// workflowSpecYaml is the YAML representation of a workflow spec.
+// WorkflowSpecYaml is the YAML representation of a workflow spec.
 //
 // It allows for multiple ways of defining a workflow spec, which we later
 // convert to a single representation, `WorkflowSpec`.
-type workflowSpecYaml struct {
+type WorkflowSpecYaml struct {
 	// NOTE: Name and Owner are constrained the onchain representation in [github.com/smartcontractkit/chainlink-common/blob/main/pkg/capabilities/consensus/ocr3/types/Metadata]
 
 	Name string `json:"name,omitempty" jsonschema:"pattern=^[0-9A-Za-z_\\-]+$,maxLength=10"` // plain text string exactly 10 characters long, or  empty name allowed for anonymous workflows
@@ -75,63 +71,59 @@ type workflowSpecYaml struct {
 	// Actions represent a discrete operation within the workflow, potentially transforming input data.
 	Actions []stepDefinitionYaml `json:"actions,omitempty"`
 	// Consensus encapsulates the logic for aggregating and validating the results from various nodes.
-	Consensus []stepDefinitionYaml `json:"consensus" jsonschema:"required"`
+	Consensus []stepDefinitionYaml `json:"consensus,omitempty"`
 	// Targets represents the final step of the workflow, delivering the processed data to a specified location.
 	Targets []stepDefinitionYaml `json:"targets" jsonschema:"required"`
 
-	// computed hash of the original workflow yaml spec
-	cid  string
 	yaml string // original yaml spec
 }
 
-// toWorkflowSpec converts a workflowSpecYaml to a WorkflowSpec.
+// ToWorkflowSpec converts a WorkflowSpecYaml to a WorkflowSpec.
 //
 // We support multiple ways of defining a workflow spec yaml,
 // but internally we want to work with a single representation.
-func (w workflowSpecYaml) toWorkflowSpec() WorkflowSpec {
-	triggers := make([]StepDefinition, 0, len(w.Triggers))
+func (w WorkflowSpecYaml) ToWorkflowSpec() sdk.WorkflowSpec {
+	triggers := make([]sdk.StepDefinition, 0, len(w.Triggers))
 	for _, t := range w.Triggers {
 		sd := t.toStepDefinition()
 		sd.CapabilityType = capabilities.CapabilityTypeTrigger
 		triggers = append(triggers, sd)
 	}
 
-	actions := make([]StepDefinition, 0, len(w.Actions))
+	actions := make([]sdk.StepDefinition, 0, len(w.Actions))
 	for _, a := range w.Actions {
 		sd := a.toStepDefinition()
 		sd.CapabilityType = capabilities.CapabilityTypeAction
 		actions = append(actions, sd)
 	}
 
-	consensus := make([]StepDefinition, 0, len(w.Consensus))
+	consensus := make([]sdk.StepDefinition, 0, len(w.Consensus))
 	for _, c := range w.Consensus {
 		sd := c.toStepDefinition()
 		sd.CapabilityType = capabilities.CapabilityTypeConsensus
 		consensus = append(consensus, sd)
 	}
 
-	targets := make([]StepDefinition, 0, len(w.Targets))
+	targets := make([]sdk.StepDefinition, 0, len(w.Targets))
 	for _, t := range w.Targets {
 		sd := t.toStepDefinition()
 		sd.CapabilityType = capabilities.CapabilityTypeTarget
 		targets = append(targets, sd)
 	}
 
-	return WorkflowSpec{
+	return sdk.WorkflowSpec{
 		Triggers:  triggers,
 		Actions:   actions,
 		Consensus: consensus,
 		Targets:   targets,
 		Name:      w.Name,
 		Owner:     w.Owner,
-		cid:       w.cid,
-		yaml:      w.yaml,
 	}
 }
 
-type mapping map[string]any
+type Mapping map[string]any
 
-func (m *mapping) UnmarshalJSON(b []byte) error {
+func (m *Mapping) UnmarshalJSON(b []byte) error {
 	mp := map[string]any{}
 
 	d := json.NewDecoder(bytes.NewReader(b))
@@ -147,7 +139,7 @@ func (m *mapping) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	*m = (mapping)(nm)
+	*m = (Mapping)(nm)
 	return err
 }
 
@@ -208,13 +200,13 @@ func convertNumbers(m map[string]any) (map[string]any, error) {
 	return nm, nil
 }
 
-func (m mapping) MarshalJSON() ([]byte, error) {
+func (m Mapping) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]any(m))
 }
 
 // triggerDefinitionYaml is the YAML representation of a trigger step in a workflow.
 // Like `stepDefinitionYaml`, this will get reduced to a single representation for
-// all steps, `StepDefinition`.
+// all steps, `sdk.StepDefinition`.
 // NOTE: unlike stepDefinitionYaml, this omits the `inputs` field, which isn't used
 // for triggers.
 type triggerDefinitionYaml struct {
@@ -276,14 +268,14 @@ type triggerDefinitionYaml struct {
 	//        address: "0xaabbcc"
 	//        method: "updateFeedValues(report bytes, role uint8)"
 	//        params: [$(inputs.report), 1]
-	Config mapping `json:"config" jsonschema:"required"`
+	Config Mapping `json:"config" jsonschema:"required"`
 }
 
-// toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
+// toStepDefinition converts a stepDefinitionYaml to a sdk.StepDefinition.
 //
-// `StepDefinition` is the converged representation of a step in a workflow.
-func (s triggerDefinitionYaml) toStepDefinition() StepDefinition {
-	return StepDefinition{
+// `sdk.StepDefinition` is the converged representation of a step in a workflow.
+func (s triggerDefinitionYaml) toStepDefinition() sdk.StepDefinition {
+	return sdk.StepDefinition{
 		Ref:    s.Ref,
 		ID:     s.ID.String(),
 		Config: s.Config,
@@ -293,7 +285,7 @@ func (s triggerDefinitionYaml) toStepDefinition() StepDefinition {
 // stepDefinitionYaml is the YAML representation of a step in a workflow.
 //
 // It allows for multiple ways of defining a step, which we later
-// convert to a single representation, `StepDefinition`.
+// convert to a single representation, `sdk.StepDefinition`.
 type stepDefinitionYaml struct {
 	// A universally unique name for a capability will be defined under the “id” property. The uniqueness will, eventually, be enforced in the Capability Registry.
 	//
@@ -365,17 +357,17 @@ type stepDefinitionYaml struct {
 	//        address: "0xaabbcc"
 	//        method: "updateFeedValues(report bytes, role uint8)"
 	//        params: [$(inputs.report), 1]
-	Config mapping `json:"config" jsonschema:"required"`
+	Config Mapping `json:"config" jsonschema:"required"`
 }
 
-// toStepDefinition converts a stepDefinitionYaml to a StepDefinition.
+// toStepDefinition converts a stepDefinitionYaml to a sdk.StepDefinition.
 //
-// `StepDefinition` is the converged representation of a step in a workflow.
-func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
-	return StepDefinition{
+// `sdk.StepDefinition` is the converged representation of a step in a workflow.
+func (s stepDefinitionYaml) toStepDefinition() sdk.StepDefinition {
+	return sdk.StepDefinition{
 		Ref: s.Ref,
 		ID:  s.ID.String(),
-		Inputs: StepInputs{
+		Inputs: sdk.StepInputs{
 			OutputRef: s.Inputs.outputRef,
 			Mapping:   s.Inputs.mapping,
 		},
@@ -383,11 +375,11 @@ func (s stepDefinitionYaml) toStepDefinition() StepDefinition {
 	}
 }
 
-// input is the mapping or interpolation-style representation of the "inputs" field in a StepDefinition.
+// input is the Mapping or interpolation-style representation of the "inputs" field in a sdk.StepDefinition.
 // If an interpolation value is provided, it must obey the following rules be a valid interpolation string,
 // of the form "$(<REF>.outputs)", where ref is either "trigger" or a ref in the workflow.
 type inputs struct {
-	mapping   mapping
+	mapping   Mapping
 	outputRef string
 }
 
@@ -405,7 +397,7 @@ func (i *inputs) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	var m mapping
+	var m Mapping
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		return err
@@ -425,10 +417,10 @@ func (i *inputs) MarshalJSON() ([]byte, error) {
 
 // JSONSchema returns the JSON schema for a inputs
 //
-// The schema is a oneOf schema that allows either a string or a mapping.
+// The schema is a oneOf schema that allows either a string or a Mapping.
 func (inputs) JSONSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{DoNotReference: true, ExpandedStruct: true}
-	var m mapping
+	var m Mapping
 	mappingSchema := reflector.Reflect(&m)
 	mappingSchema.ID = ""
 	mappingSchema.Version = ""
@@ -449,7 +441,7 @@ func (inputs) JSONSchema() *jsonschema.Schema {
 	}
 }
 
-// stepDefinitionID represents both the string and table representations of the "id" field in a StepDefinition.
+// stepDefinitionID represents both the string and table representations of the "id" field in a sdk.StepDefinition.
 type stepDefinitionID struct {
 	idStr   string
 	idTable *stepDefinitionTableID

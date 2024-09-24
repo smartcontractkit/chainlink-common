@@ -1,6 +1,7 @@
 package ocr3
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -25,7 +26,7 @@ const workflowTestID2 = "consensus-workflow-test-id-2"
 const workflowTestID3 = "consensus-workflow-test-id-3"
 const workflowExecutionTestID = "consensus-workflow-execution-test-id-1"
 const workflowTestName = "consensus-workflow-test-name-1"
-const reportTestId = "rep-id-1"
+const reportTestID = "rep-id-1"
 
 type mockAggregator struct {
 	types.Aggregator
@@ -105,27 +106,24 @@ func TestOCR3Capability(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	callback, err := cp.Execute(ctx, executeReq)
-	require.NoError(t, err)
+
+	respCh := executeAsync(ctx, executeReq, cp.Execute)
 
 	obsv, err := values.NewList(obs)
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response
 	mresp, err := values.NewMap(map[string]any{"observations": obsv})
-	cp.reqHandler.SendResponse(ctx, &requests.Response{
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: mresp,
-		},
+	cp.reqHandler.SendResponse(ctx, requests.Response{
+		Value:               mresp,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
 
-	expectedCapabilityResponse := capabilities.CapabilityResponse{
-		Value: mresp,
-	}
+	resp := <-respCh
+	assert.Nil(t, resp.Err)
 
-	assert.Equal(t, expectedCapabilityResponse, <-callback)
+	assert.Equal(t, mresp, resp.Value)
 }
 
 func TestOCR3Capability_Eviction(t *testing.T) {
@@ -134,6 +132,9 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	rea := time.Second
 	s := requests.NewStore()
 	cp := newCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
@@ -165,11 +166,25 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 		Inputs: inputs,
 	}
 
-	callback, err := cp.Execute(ctx, executeReq)
-	require.NoError(t, err)
+	done := make(chan struct{})
+	t.Cleanup(func() { <-done })
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				fc.Advance(1 * time.Hour)
+			}
+		}
+	}()
 
-	fc.Advance(1 * time.Hour)
-	resp := <-callback
+	respCh := executeAsync(ctx, executeReq, cp.Execute)
+
+	resp := <-respCh
 	assert.ErrorContains(t, resp.Err, "timeout exceeded: could not process request before expiry")
 
 	request := s.Get(rid)
@@ -184,6 +199,8 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	lggr := logger.Test(t)
 
 	ctx := tests.Context(t)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	// This is the default expired at
 	rea := time.Hour
 	s := requests.NewStore()
@@ -217,16 +234,31 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 		Inputs: inputs,
 	}
 
-	callback, err := cp.Execute(ctx, executeReq)
-	require.NoError(t, err)
-
 	// 1 minute is more than the config timeout we provided, but less than
 	// the hardcoded timeout.
-	fc.Advance(1 * time.Minute)
-	resp := <-callback
-	assert.ErrorContains(t, resp.Err, "timeout exceeded: could not process request before expiry")
+	done := make(chan struct{})
+	t.Cleanup(func() { <-done })
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				// 1 minute is more than the config timeout we provided, but less than
+				// the hardcoded timeout.
+				fc.Advance(1 * time.Minute)
+			}
+		}
+	}()
 
-	reqs := s.GetN(ctx, []string{rid})
+	_, err = cp.Execute(ctx, executeReq)
+
+	assert.ErrorContains(t, err, "timeout exceeded: could not process request before expiry")
+
+	reqs := s.GetByIDs([]string{rid})
 
 	assert.Equal(t, 0, len(reqs))
 }
@@ -366,10 +398,8 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent
-	cp.reqHandler.SendResponse(ctx, &requests.Response{
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: obsv,
-		},
+	cp.reqHandler.SendResponse(ctx, requests.Response{
+		Value:               obsv,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
@@ -382,14 +412,14 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 		Config: config,
 		Inputs: inputs,
 	}
-	callback, err := cp.Execute(ctx, executeReq)
+	response, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	expectedCapabilityResponse := capabilities.CapabilityResponse{
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, <-callback)
+	assert.Equal(t, expectedCapabilityResponse, response)
 }
 
 func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsumer(t *testing.T) {
@@ -427,10 +457,8 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent
-	cp.reqHandler.SendResponse(ctx, &requests.Response{
-		CapabilityResponse: capabilities.CapabilityResponse{
-			Value: obsv,
-		},
+	cp.reqHandler.SendResponse(ctx, requests.Response{
+		Value:               obsv,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
 	require.NoError(t, err)
@@ -443,12 +471,28 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 		Config: config,
 		Inputs: inputs,
 	}
-	callback, err := cp.Execute(ctx, executeReq)
+	resp, err := cp.Execute(ctx, executeReq)
 	require.NoError(t, err)
 
 	expectedCapabilityResponse := capabilities.CapabilityResponse{
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, <-callback)
+	assert.Equal(t, expectedCapabilityResponse, resp)
+}
+
+type asyncCapabilityResponse struct {
+	capabilities.CapabilityResponse
+	Err error
+}
+
+func executeAsync(ctx context.Context, request capabilities.CapabilityRequest, toExecute func(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)) <-chan asyncCapabilityResponse {
+	respCh := make(chan asyncCapabilityResponse, 1)
+	go func() {
+		resp, err := toExecute(ctx, request)
+		respCh <- asyncCapabilityResponse{CapabilityResponse: capabilities.CapabilityResponse{Value: resp.Value}, Err: err}
+		close(respCh)
+	}()
+
+	return respCh
 }

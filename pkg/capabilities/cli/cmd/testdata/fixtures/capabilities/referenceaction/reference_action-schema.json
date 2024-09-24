@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction/reference-test-action@1.0.0",
+  "description": "Basic Test Action",
+  "$defs": {
+    "SomeConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "number": {
+          "type": "integer",
+          "description": "The interval in seconds after which a new trigger event is generated.",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "required": ["name", "number"]
+    },
+    "SomeInputs": {
+      "type": "object",
+      "properties": {
+        "input_thing": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["input_thing"]
+    },
+    "SomeOutputs": {
+      "type": "object",
+      "properties": {
+        "adapted_thing": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["adapted_thing"]
+    }
+  },
+  "properties": {
+    "config": {
+      "$ref": "#/$defs/SomeConfig"
+    },
+    "inputs": {
+      "$ref": "#/$defs/SomeInputs"
+    },
+    "outputs": {
+      "$ref": "#/$defs/SomeOutputs"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

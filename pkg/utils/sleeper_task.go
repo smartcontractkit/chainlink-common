@@ -61,8 +61,8 @@ func (s *SleeperTask) Stop() error {
 	})
 }
 
-func (s *SleeperTask) WakeUpIfStarted() {
-	s.IfStarted(func() {
+func (s *SleeperTask) WakeUpIfStarted() bool {
+	return s.IfStarted(func() {
 		select {
 		case s.chQueue <- struct{}{}:
 		default:

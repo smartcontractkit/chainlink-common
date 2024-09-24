@@ -3,7 +3,7 @@ package median
 import (
 	"context"
 
-	"github.com/mwitkow/grpc-proxy/proxy"
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	"google.golang.org/grpc"
 
@@ -34,7 +34,7 @@ func NewPluginMedianClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *
 	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
-func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
 	cc := m.NewClientConn("MedianPluginFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		dataSourceID, dsRes, err := m.ServeNew("DataSource", func(s *grpc.Server) {
 			pb.RegisterDataSourceServer(s, newDataSourceServer(dataSource))
@@ -86,6 +86,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 
 		reply, err := m.median.NewMedianFactory(ctx, &pb.NewMedianFactoryRequest{
 			MedianProviderID:             providerID,
+			ContractID:                   contractID,
 			DataSourceID:                 dataSourceID,
 			JuelsPerFeeCoinDataSourceID:  juelsPerFeeCoinDataSourceID,
 			GasPriceSubunitsDataSourceID: gasPriceSubunitsDataSourceID,
@@ -157,7 +158,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
 	errorLog := errorlog.NewClient(errorLogConn)
 
-	factory, err := m.impl.NewMedianFactory(ctx, provider, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog)
+	factory, err := m.impl.NewMedianFactory(ctx, provider, request.ContractID, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog)
 	if err != nil {
 		m.CloseAll(dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
 		return nil, err

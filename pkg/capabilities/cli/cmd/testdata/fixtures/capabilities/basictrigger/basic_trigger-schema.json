@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger/basic-test-trigger@1.0.0",
+  "description": "Basic Test Trigger",
+  "properties": {
+    "config": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "number": {
+          "type": "integer",
+          "description": "The interval in seconds after which a new trigger event is generated.",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["name", "number"]
+    },
+    "outputs": {
+      "properties": {
+        "cool_output": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["cool_output"]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

@@ -1,10 +1,14 @@
 package corenode
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+)
 
 type PlatformOpts struct {
 	// Platform is infrastructure deployment platform: docker or k8s
-	Platform     string
+	Platform     grafana.TypePlatform
 	LabelFilters map[string]string
 	LabelFilter  string
 	LegendString string
@@ -12,23 +16,29 @@ type PlatformOpts struct {
 }
 
 type Props struct {
-	MetricsDataSource string
+	Name              string
+	Platform          grafana.TypePlatform
+	MetricsDataSource *grafana.DataSource
 	PlatformOpts      PlatformOpts
+	SlackChannel      string
+	SlackWebhookURL   string
+	AlertsTags        map[string]string
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms
-func PlatformPanelOpts(platform string) PlatformOpts {
+func PlatformPanelOpts(platform grafana.TypePlatform) PlatformOpts {
 	po := PlatformOpts{
 		LabelFilters: map[string]string{},
 		Platform:     platform,
 	}
 	switch platform {
-	case "kubernetes":
+	case grafana.TypePlatformKubernetes:
 		po.LabelFilters["namespace"] = `=~"${namespace}"`
 		po.LabelFilters["job"] = `=~"${job}"`
+		po.LabelFilters["pod"] = `=~"${pod}"`
 		po.LabelFilter = "job"
 		po.LegendString = "pod"
-	case "docker":
+	case grafana.TypePlatformDocker:
 		po.LabelFilters["instance"] = `=~"${instance}"`
 		po.LabelFilter = "instance"
 		po.LegendString = "instance"

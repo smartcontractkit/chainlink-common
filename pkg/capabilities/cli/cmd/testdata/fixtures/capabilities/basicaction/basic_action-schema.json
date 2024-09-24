@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction/basic-test-action@1.0.0",
+  "description": "Basic Test Action",
+  "properties": {
+    "config": {
+      "properties": {
+        "camelCaseInSchemaForTesting": {
+          "type": "string"
+        },
+        "snake_case_in_schema_for_testing": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["camelCaseInSchemaForTesting", "snake_case_in_schema_for_testing"]
+    },
+    "inputs" : {
+        "properties": {
+            "input_thing": {
+            "type": "boolean"
+            }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["input_thing"]
+    },
+    "outputs": {
+      "properties": {
+        "adapted_thing": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["adapted_thing"]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

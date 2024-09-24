@@ -70,7 +70,7 @@ func TestInt{{.}}(t *testing.T) {
 
     t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
         i := bi.Int{{.}}()
-        bytes := make([]byte, {{div . 8}} - 1)
+        bytes := make([]byte, {{div . 8}} - 1) // nolint
         _, _, err := i.Decode(bytes)
         require.True(t, errors.Is(err, types.ErrInvalidEncoding))
     })
@@ -154,7 +154,7 @@ func TestUint{{.}}(t *testing.T) {
 
     t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
         i := bi.Uint{{.}}()
-        bytes := make([]byte, {{div . 8}} - 1)
+        bytes := make([]byte, {{div . 8}} - 1) // nolint
         _, _, err := i.Decode(bytes)
         require.True(t, errors.Is(err, types.ErrInvalidEncoding))
     })

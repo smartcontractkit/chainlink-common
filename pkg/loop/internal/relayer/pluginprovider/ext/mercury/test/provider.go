@@ -10,12 +10,14 @@ import (
 	mercuryv1test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1/test"
 	mercuryv2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2/test"
 	mercuryv3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3/test"
+	mercuryv4test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v4/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 
 	mercurytypes "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
 	mercuryv1types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercuryv2types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
 	mercuryv3types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v3"
+	mercuryv4types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v4"
 
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
@@ -29,6 +31,7 @@ var MercuryProvider = staticMercuryProvider{
 		reportCodecV1:       mercuryv1test.ReportCodec,
 		reportCodecV2:       mercuryv2test.ReportCodec,
 		reportCodecV3:       mercuryv3test.ReportCodec,
+		reportCodecV4:       mercuryv4test.ReportCodec,
 		onchainConfigCodec:  OnchainConfigCodec,
 		mercuryChainReader:  ChainReader,
 		serviceFetcher:      ServerFetcher,
@@ -50,6 +53,7 @@ type staticMercuryProviderConfig struct {
 	reportCodecV1       mercuryv1test.ReportCodecEvaluator
 	reportCodecV2       mercuryv2test.ReportCodecEvaluator
 	reportCodecV3       mercuryv3test.ReportCodecEvaluator
+	reportCodecV4       mercuryv4test.ReportCodecEvaluator
 	onchainConfigCodec  OnchainConfigCodecEvaluator
 	mercuryChainReader  MercuryChainReaderEvaluator
 	serviceFetcher      ServerFetcherEvaluator
@@ -95,6 +99,10 @@ func (s staticMercuryProvider) ReportCodecV3() mercuryv3types.ReportCodec {
 	return s.reportCodecV3
 }
 
+func (s staticMercuryProvider) ReportCodecV4() mercuryv4types.ReportCodec {
+	return s.reportCodecV4
+}
+
 func (s staticMercuryProvider) OnchainConfigCodec() mercurytypes.OnchainConfigCodec {
 	return s.onchainConfigCodec
 }
@@ -103,8 +111,8 @@ func (s staticMercuryProvider) MercuryChainReader() mercurytypes.ChainReader {
 	return s.mercuryChainReader
 }
 
-func (s staticMercuryProvider) ChainReader() types.ContractReader {
-	//panic("mercury does not use the general ChainReader interface yet")
+func (s staticMercuryProvider) ContractReader() types.ContractReader {
+	// panic("mercury does not use the general ContractReader interface yet")
 	return nil
 }
 
@@ -140,6 +148,10 @@ func (s staticMercuryProvider) AssertEqual(ctx context.Context, t *testing.T, ot
 	t.Run("ReportCodecV3", func(t *testing.T) {
 		t.Parallel()
 		assert.NoError(t, s.reportCodecV3.Evaluate(ctx, other.ReportCodecV3()))
+	})
+	t.Run("ReportCodecV4", func(t *testing.T) {
+		t.Parallel()
+		assert.NoError(t, s.reportCodecV4.Evaluate(ctx, other.ReportCodecV4()))
 	})
 	t.Run("OnchainConfigCodec", func(t *testing.T) {
 		t.Parallel()

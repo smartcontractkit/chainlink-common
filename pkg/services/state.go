@@ -23,7 +23,11 @@ var (
 	ErrCannotStopUnstarted = errors.New("cannot stop unstarted service")
 )
 
-// StateMachine contains a state integer
+// StateMachine is a low-level primitive designed to be embedded in Service implementations.
+// Default implementations of Ready() and Healthy() are included, as well as StartOnce and StopOnce helpers for
+// implementing Service.Start and Service.Close.
+//
+// See Config for a higher-level wrapper that extends StateMachine and that should be preferred when applicable.
 type StateMachine struct {
 	state        atomic.Int32
 	sync.RWMutex // lock is held during startup/shutdown, RLock is held while executing functions dependent on a particular state

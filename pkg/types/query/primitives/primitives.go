@@ -25,8 +25,27 @@ const (
 	Lte
 )
 
+func (cmpOp ComparisonOperator) String() string {
+	switch cmpOp {
+	case Eq:
+		return "=="
+	case Neq:
+		return "!="
+	case Gt:
+		return ">"
+	case Lt:
+		return "<"
+	case Gte:
+		return ">="
+	case Lte:
+		return "<="
+	default:
+		return "Unknown"
+	}
+}
+
 type ValueComparator struct {
-	Value    string
+	Value    any
 	Operator ComparisonOperator
 }
 
@@ -42,7 +61,7 @@ func (f *Comparator) Accept(visitor Visitor) {
 
 // Block is a primitive of KeyFilter that filters search in comparison to block number.
 type Block struct {
-	Block    uint64
+	Block    string
 	Operator ComparisonOperator
 }
 

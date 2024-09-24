@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicconsensus/basic-test-consensus@1.0.0",
+  "description": "Basic Test Consensus",
+  "properties": {
+    "config": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "number": {
+          "type": "integer",
+          "description": "The interval in seconds after which a new trigger event is generated.",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["name", "number"]
+    },
+    "inputs": {
+      "properties": {
+        "input_thing": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["input_thing"]
+    },
+    "outputs": {
+      "properties": {
+        "consensus": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sigs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "NOTE, OCR3 is the consensus we support that has output as signed report, this is simply testing that generation is right",
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["consensus", "sigs"]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

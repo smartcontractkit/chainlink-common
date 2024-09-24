@@ -1,44 +1,38 @@
 package corenodecomponents_test
 
 import (
+	"os"
 	"testing"
 
-	"github.com/grafana/grafana-foundation-sdk/go/cog"
-	"github.com/grafana/grafana-foundation-sdk/go/common"
-	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
-
-	"github.com/smartcontractkit/chainlink-common/observability-lib/utils"
-
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+
+	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
 )
 
-func TestBuildDashboard(t *testing.T) {
-	t.Run("BuildDashboard creates a dashboard", func(t *testing.T) {
-		builder := dashboard.NewDashboardBuilder("test")
-		utils.AddPanels(builder, []cog.Builder[dashboard.Panel]{
-			utils.StatPanel(
-				"Prometheus",
-				"Test",
-				"Test",
-				1,
-				1,
-				1,
-				"",
-				common.BigValueColorModeNone,
-				common.BigValueGraphModeNone,
-				common.BigValueTextModeName,
-				common.VizOrientationHorizontal,
-				utils.PrometheusQuery{
-					Query:  `test`,
-					Legend: "{{test}}",
-				}),
+func TestNewDashboard(t *testing.T) {
+	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
+		testDashboard, err := corenodecomponents.NewDashboard(&corenodecomponents.Props{
+			Name:              "Core Node Components Dashboard",
+			MetricsDataSource: grafana.NewDataSource("Prometheus", ""),
+			LogsDataSource:    grafana.NewDataSource("Loki", ""),
 		})
-
-		testBuild, err := builder.Build()
 		if err != nil {
-			t.Errorf("Error building dashboard: %v", err)
+			t.Errorf("Error creating dashboard: %v", err)
+		}
+		require.IsType(t, grafana.Dashboard{}, *testDashboard)
+		require.Equal(t, "Core Node Components Dashboard", *testDashboard.Dashboard.Title)
+		json, errJSON := testDashboard.GenerateJSON()
+		if errJSON != nil {
+			t.Errorf("Error generating JSON: %v", errJSON)
 		}
 
-		require.IsType(t, dashboard.Dashboard{}, testBuild)
+		jsonCompared, errCompared := os.ReadFile("test-output.json")
+		if errCompared != nil {
+			t.Errorf("Error reading file: %v", errCompared)
+		}
+
+		require.ElementsMatch(t, jsonCompared, json)
 	})
 }

@@ -39,20 +39,20 @@ func Test_AndOrEdgeCases(t *testing.T) {
 		},
 		{
 			name:        "And with multiple expressions",
-			expressions: []Expression{TxHash("txHash"), Block(123, primitives.Eq)},
+			expressions: []Expression{TxHash("txHash"), Block("123", primitives.Eq)},
 			constructor: And,
 			expected: And(
 				TxHash("txHash"),
-				Block(123, primitives.Eq),
+				Block("123", primitives.Eq),
 			),
 		},
 		{
 			name:        "Or with multiple expressions",
-			expressions: []Expression{TxHash("txHash"), Block(123, primitives.Eq)},
+			expressions: []Expression{TxHash("txHash"), Block("123", primitives.Eq)},
 			constructor: Or,
 			expected: Or(
 				TxHash("txHash"),
-				Block(123, primitives.Eq),
+				Block("123", primitives.Eq),
 			),
 		},
 	}

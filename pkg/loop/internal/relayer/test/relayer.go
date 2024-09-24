@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
-	chainreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader/test"
+	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
@@ -63,7 +63,7 @@ type staticPluginRelayerConfig struct {
 	commitProvider         cciptest.CommitProviderTester
 	configProvider         ocr2test.ConfigProviderTester
 	ocr3CapabilityProvider testtypes.OCR3CapabilityProviderTester
-	contractReaderProvider testtypes.ChainReaderTester
+	contractReaderProvider testtypes.ContractReaderTester
 	// Note: add other Provider testers here when we implement them
 	// eg Functions, Automation, etc
 	nodeRequest        nodeRequest
@@ -85,7 +85,7 @@ func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
 			agnosticProvider:       ocr2test.AgnosticProvider,
 			configProvider:         ocr2test.ConfigProvider,
 			ocr3CapabilityProvider: ocr3capabilitytest.OCR3CapabilityProvider,
-			contractReaderProvider: chainreadertest.ChainReader,
+			contractReaderProvider: chaincomponentstest.ContractReader,
 			nodeRequest: nodeRequest{
 				pageSize:  137,
 				pageToken: "",
@@ -231,6 +231,10 @@ func (s staticPluginRelayer) NewCommitProvider(ctx context.Context, r types.Rela
 
 func (s staticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (s staticPluginRelayer) LatestHead(ctx context.Context) (types.Head, error) {
+	return types.Head{}, errors.New("not implemented")
 }
 
 func (s staticPluginRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
@@ -526,7 +530,7 @@ type fuzzerKeystore struct {
 
 func (k fuzzerKeystore) Accounts(ctx context.Context) ([]string, error) {
 	if k.acctErr {
-		err := fmt.Errorf(k.errStr)
+		err := errors.New(k.errStr)
 
 		if k.valuesWithErr {
 			return k.accounts, err
@@ -542,7 +546,7 @@ func (k fuzzerKeystore) Accounts(ctx context.Context) ([]string, error) {
 // nil data can be used as a no-op to check for account existence.
 func (k fuzzerKeystore) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
 	if k.signErr {
-		err := fmt.Errorf(k.errStr)
+		err := errors.New(k.errStr)
 
 		if k.valuesWithErr {
 			return k.signed, err

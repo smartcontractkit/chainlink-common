@@ -26,9 +26,18 @@ import (
 
 type GRPCOpts = loopnet.GRPCOpts
 
+type OtelAttributes map[string]string
+
+func (a OtelAttributes) AsStringAttributes() (attributes []attribute.KeyValue) {
+	for k, v := range a {
+		attributes = append(attributes, attribute.String(k, v))
+	}
+	return attributes
+}
+
 type TracingConfig struct {
 	// NodeAttributes are the attributes to attach to traces.
-	NodeAttributes map[string]string
+	NodeAttributes OtelAttributes
 
 	// Enables tracing; requires a collector to be provided
 	Enabled bool
@@ -57,44 +66,37 @@ func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
 
 // SetupTracing initializes open telemetry with the provided config.
 // It sets the global trace provider and opens a connection to the configured collector.
-func SetupTracing(config TracingConfig) (err error) {
+func SetupTracing(config TracingConfig) error {
 	if !config.Enabled {
 		return nil
 	}
 
-	ctx := context.Background()
-
-	var creds credentials.TransportCredentials
-	if config.TLSCertPath != "" {
-		creds, err = credentials.NewClientTLSFromFile(config.TLSCertPath, "")
-		if err != nil {
-			return err
-		}
-	} else {
-		creds = insecure.NewCredentials()
-	}
-
-	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-	//nolint:staticcheck
-	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
-		// Note the potential use of insecure transport here. TLS is recommended in production.
-		grpc.WithTransportCredentials(creds),
-		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-			conn, err2 := net.Dial("tcp", s)
-			if err2 != nil {
-				config.OnDialError(err2)
-			}
-			return conn, err2
-		}))
+	traceExporter, err := config.NewSpanExporter()
 	if err != nil {
 		return err
 	}
 
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
-	if err != nil {
-		return err
-	}
+	resource := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		config.Attributes()...,
+	)
 
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(traceExporter),
+		sdktrace.WithResource(resource),
+		sdktrace.WithSampler(
+			sdktrace.ParentBased(
+				sdktrace.TraceIDRatioBased(config.SamplingRatio),
+			),
+		),
+	)
+
+	otel.SetTracerProvider(tracerProvider)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return nil
+}
+
+func (config TracingConfig) Attributes() []attribute.KeyValue {
 	var version string
 	var service string
 	buildInfo, ok := debug.ReadBuildInfo()
@@ -115,25 +117,44 @@ func SetupTracing(config TracingConfig) (err error) {
 	for k, v := range config.NodeAttributes {
 		attributes = append(attributes, attribute.String(k, v))
 	}
+	return attributes
+}
 
-	resource := resource.NewWithAttributes(
-		semconv.SchemaURL,
-		attributes...,
-	)
+func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
+	ctx := context.Background()
 
-	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(traceExporter),
-		sdktrace.WithResource(resource),
-		sdktrace.WithSampler(
-			sdktrace.ParentBased(
-				sdktrace.TraceIDRatioBased(config.SamplingRatio),
-			),
-		),
-	)
+	var creds credentials.TransportCredentials
+	if config.TLSCertPath != "" {
+		var err error
+		creds, err = credentials.NewClientTLSFromFile(config.TLSCertPath, "")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		creds = insecure.NewCredentials()
+	}
 
-	otel.SetTracerProvider(tracerProvider)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	return nil
+	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
+	//nolint:staticcheck
+	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
+		// Note the potential use of insecure transport here. TLS is recommended in production.
+		grpc.WithTransportCredentials(creds),
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			conn, err2 := net.Dial("tcp", s)
+			if err2 != nil {
+				config.OnDialError(err2)
+			}
+			return conn, err2
+		}))
+	if err != nil {
+		return nil, err
+	}
+
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	if err != nil {
+		return nil, err
+	}
+	return traceExporter, nil
 }
 
 var grpcpromBuckets = []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}

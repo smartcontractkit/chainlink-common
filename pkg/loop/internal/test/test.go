@@ -20,7 +20,7 @@ var (
 	GetTargetID    = "get-target-id"
 	CapabilityInfo = capabilities.CapabilityInfo{
 		ID:             "capability-info-id@1.0.0",
-		CapabilityType: 2,
+		CapabilityType: capabilities.CapabilityTypeAction,
 		Description:    "capability-info-description",
 	}
 )

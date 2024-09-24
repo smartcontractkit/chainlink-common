@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb";
 
-package loop;
+package capabilities;
 
 import "values/pb/values.proto";
 import "google/protobuf/empty.proto";
@@ -24,6 +24,7 @@ message CapabilityInfoReply {
   CapabilityType capability_type = 2;
   string description = 3;
   string version = 4;
+  bool isLocal = 5;
 }
 
 message RequestMetadata {
@@ -33,28 +34,47 @@ message RequestMetadata {
   string workflow_owner = 3;
   string workflow_name = 4;
   uint32 workflow_don_id = 6;
+  uint32 workflow_don_config_version = 7;
+  string reference_id = 8;
 }
 
 message CapabilityRequest {
   RequestMetadata metadata = 1;
-  values.Value config = 2;
-  values.Value inputs = 3;
+  values.Map config = 2;
+  values.Map inputs = 3;
 }
 
-service TriggerExecutable {
-  rpc RegisterTrigger (CapabilityRequest) returns (stream ResponseMessage) {}
-  rpc UnregisterTrigger (CapabilityRequest) returns (google.protobuf.Empty) {}
+message TriggerRegistrationRequest {
+  string triggerId = 1;
+  RequestMetadata metadata = 2;
+  values.Map config = 3;
 }
 
-message ResponseMessage {
+message TriggerEvent {
+  string triggerType = 1;
+  string id = 2;
+  values.Map outputs = 4;
+}
+
+message TriggerResponse {
+  TriggerEvent event = 1;
+  string error = 2;
+}
+
+message TriggerResponseMessage {
   oneof message {
     google.protobuf.Empty ack = 1;
-    CapabilityResponse response = 2;
+    TriggerResponse response = 2;
   }
 }
 
+service TriggerExecutable {
+  rpc RegisterTrigger (TriggerRegistrationRequest) returns (stream TriggerResponseMessage) {}
+  rpc UnregisterTrigger (TriggerRegistrationRequest) returns (google.protobuf.Empty) {}
+}
+
 message CapabilityResponse {
-  values.Value value = 1;
+  values.Map value = 1;
   string error = 2;
 }
 
@@ -64,18 +84,18 @@ message RegistrationMetadata {
 
 message RegisterToWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Value config = 2;
+  values.Map config = 2;
 }
 
 message UnregisterFromWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Value config = 2;
+  values.Map config = 2;
 }
 
-service CallbackExecutable {
+service Executable {
   rpc RegisterToWorkflow (RegisterToWorkflowRequest) returns (google.protobuf.Empty) {}
   rpc UnregisterFromWorkflow (UnregisterFromWorkflowRequest) returns (google.protobuf.Empty) {}
-  rpc Execute(CapabilityRequest) returns (stream ResponseMessage) {}
+  rpc Execute(CapabilityRequest) returns (stream CapabilityResponse) {}
 }
 
 service StandardCapabilities {

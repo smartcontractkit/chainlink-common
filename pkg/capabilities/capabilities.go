@@ -2,7 +2,6 @@ package capabilities
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,7 +13,7 @@ import (
 )
 
 // CapabilityType is an enum for the type of capability.
-type CapabilityType int
+type CapabilityType string
 
 var ErrStopExecution = &errStopExecution{}
 
@@ -32,28 +31,12 @@ func (e errStopExecution) Is(err error) bool {
 
 // CapabilityType enum values.
 const (
-	CapabilityTypeTrigger CapabilityType = iota
-	CapabilityTypeAction
-	CapabilityTypeConsensus
-	CapabilityTypeTarget
+	CapabilityTypeUnknown   CapabilityType = "unknown"
+	CapabilityTypeTrigger   CapabilityType = "trigger"
+	CapabilityTypeAction    CapabilityType = "action"
+	CapabilityTypeConsensus CapabilityType = "consensus"
+	CapabilityTypeTarget    CapabilityType = "target"
 )
-
-// String returns a string representation of CapabilityType
-func (c CapabilityType) String() string {
-	switch c {
-	case CapabilityTypeTrigger:
-		return "trigger"
-	case CapabilityTypeAction:
-		return "action"
-	case CapabilityTypeConsensus:
-		return "consensus"
-	case CapabilityTypeTarget:
-		return "target"
-	}
-
-	// Panic as this should be unreachable.
-	panic("unknown capability type")
-}
 
 // IsValid checks if the capability type is valid.
 func (c CapabilityType) IsValid() error {
@@ -63,6 +46,8 @@ func (c CapabilityType) IsValid() error {
 		CapabilityTypeConsensus,
 		CapabilityTypeTarget:
 		return nil
+	case CapabilityTypeUnknown:
+		return fmt.Errorf("invalid capability type: %s", c)
 	}
 
 	return fmt.Errorf("invalid capability type: %s", c)
@@ -71,7 +56,6 @@ func (c CapabilityType) IsValid() error {
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
 	Value *values.Map
-	Err   error
 }
 
 type RequestMetadata struct {
@@ -81,6 +65,7 @@ type RequestMetadata struct {
 	WorkflowName             string
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
+	ReferenceID              string
 }
 
 type RegistrationMetadata struct {
@@ -96,12 +81,12 @@ type CapabilityRequest struct {
 }
 
 type TriggerEvent struct {
+	// The ID of the trigger capability
 	TriggerType string
-	ID          string
-	Timestamp   string
-	// Trigger-specific payload+metadata
-	Metadata values.Value
-	Payload  values.Value
+	// The ID of the trigger event
+	ID string
+	// Trigger-specific payload
+	Outputs *values.Map
 }
 
 type RegisterToWorkflowRequest struct {
@@ -114,17 +99,11 @@ type UnregisterFromWorkflowRequest struct {
 	Config   *values.Map
 }
 
-// CallbackExecutable is an interface for executing a capability.
-type CallbackExecutable interface {
+// Executable is an interface for executing a capability.
+type Executable interface {
 	RegisterToWorkflow(ctx context.Context, request RegisterToWorkflowRequest) error
 	UnregisterFromWorkflow(ctx context.Context, request UnregisterFromWorkflowRequest) error
-	// Capability must respect context.Done and cleanup any request specific resources
-	// when the context is cancelled. When a request has been completed the capability
-	// is also expected to close the callback channel.
-	// Request specific configuration is passed in via the request parameter.
-	// A successful response must always return a value. An error is assumed otherwise.
-	// The intent is to make the API explicit.
-	Execute(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
+	Execute(ctx context.Context, request CapabilityRequest) (CapabilityResponse, error)
 }
 
 type Validatable interface {
@@ -141,9 +120,23 @@ type BaseCapability interface {
 	Info(ctx context.Context) (CapabilityInfo, error)
 }
 
+type TriggerRegistrationRequest struct {
+	// TriggerID uniquely identifies the trigger by concatenating
+	// the workflow ID and the trigger's index in the spec.
+	TriggerID string
+
+	Metadata RequestMetadata
+	Config   *values.Map
+}
+
+type TriggerResponse struct {
+	Event TriggerEvent
+	Err   error
+}
+
 type TriggerExecutable interface {
-	RegisterTrigger(ctx context.Context, request CapabilityRequest) (<-chan CapabilityResponse, error)
-	UnregisterTrigger(ctx context.Context, request CapabilityRequest) error
+	RegisterTrigger(ctx context.Context, request TriggerRegistrationRequest) (<-chan TriggerResponse, error)
+	UnregisterTrigger(ctx context.Context, request TriggerRegistrationRequest) error
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.
@@ -152,26 +145,26 @@ type TriggerCapability interface {
 	TriggerExecutable
 }
 
-// CallbackCapability is the interface implemented by action, consensus and target
+// ExecutableCapability is the interface implemented by action, consensus and target
 // capabilities. This interface is useful when trying to capture capabilities of varying types.
-type CallbackCapability interface {
+type ExecutableCapability interface {
 	BaseCapability
-	CallbackExecutable
+	Executable
 }
 
 // ActionCapability interface needs to be implemented by all action capabilities.
 type ActionCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // ConsensusCapability interface needs to be implemented by all consensus capabilities.
 type ConsensusCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // TargetsCapability interface needs to be implemented by all target capabilities.
 type TargetCapability interface {
-	CallbackCapability
+	ExecutableCapability
 }
 
 // DON represents a network of connected nodes.
@@ -218,6 +211,7 @@ type CapabilityInfo struct {
 	CapabilityType CapabilityType
 	Description    string
 	DON            *DON
+	IsLocal        bool
 }
 
 // Parse out the version from the ID.
@@ -250,24 +244,12 @@ const (
 	idMaxLength = 128
 )
 
-// NewCapabilityInfo returns a new CapabilityInfo.
-func NewCapabilityInfo(
-	id string,
-	capabilityType CapabilityType,
-	description string,
-) (CapabilityInfo, error) {
-	return NewRemoteCapabilityInfo(id, capabilityType, description, nil)
-}
-
-// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
-// This is largely intended for internal use by the registry syncer.
-// Capability developers should use `NewCapabilityInfo` instead as this
-// omits the requirement to pass in the DON Info.
-func NewRemoteCapabilityInfo(
+func newCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
+	isLocal bool,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
@@ -285,7 +267,30 @@ func NewRemoteCapabilityInfo(
 		CapabilityType: capabilityType,
 		Description:    description,
 		DON:            don,
+		IsLocal:        isLocal,
 	}, nil
+}
+
+// NewCapabilityInfo returns a new CapabilityInfo.
+func NewCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, nil, true)
+}
+
+// NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
+// This is largely intended for internal use by the registry syncer.
+// Capability developers should use `NewCapabilityInfo` instead as this
+// omits the requirement to pass in the DON Info.
+func NewRemoteCapabilityInfo(
+	id string,
+	capabilityType CapabilityType,
+	description string,
+	don *DON,
+) (CapabilityInfo, error) {
+	return newCapabilityInfo(id, capabilityType, description, don, false)
 }
 
 // MustNewCapabilityInfo returns a new CapabilityInfo,
@@ -295,7 +300,12 @@ func MustNewCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 ) CapabilityInfo {
-	return MustNewRemoteCapabilityInfo(id, capabilityType, description, nil)
+	c, err := NewCapabilityInfo(id, capabilityType, description)
+	if err != nil {
+		panic(err)
+	}
+
+	return c
 }
 
 // MustNewRemoteCapabilityInfo returns a new CapabilityInfo,
@@ -314,56 +324,52 @@ func MustNewRemoteCapabilityInfo(
 	return c
 }
 
-// TODO: this timeout was largely picked arbitrarily.
-// Consider what a realistic/desirable value should be.
-// See: https://smartcontract-it.atlassian.net/jira/software/c/projects/KS/boards/182
-var maximumExecuteTimeout = 60 * time.Second
+const (
+	DefaultRegistrationRefresh   = 30 * time.Second
+	DefaultRegistrationExpiry    = 2 * time.Minute
+	DefaultMessageExpiry         = 2 * time.Minute
+	DefaultBatchSize             = 100
+	DefaultBatchCollectionPeriod = 100 * time.Millisecond
+)
 
-// ExecuteSync executes a capability synchronously.
-// We are not handling a case where a capability panics and crashes.
-// There is default timeout of 10 seconds. If a capability takes longer than
-// that then it should be executed asynchronously.
-func ExecuteSync(ctx context.Context, c CallbackExecutable, request CapabilityRequest) (*values.List, error) {
-	return ExecuteSyncWithTimeout(ctx, c, request, maximumExecuteTimeout)
+type RemoteTriggerConfig struct {
+	RegistrationRefresh     time.Duration
+	RegistrationExpiry      time.Duration
+	MinResponsesToAggregate uint32
+	MessageExpiry           time.Duration
+	MaxBatchSize            uint32
+	BatchCollectionPeriod   time.Duration
 }
 
-// ExecuteSyncWithTimeout allows explicitly passing in a timeout to customise the desired duration.
-func ExecuteSyncWithTimeout(ctx context.Context, c CallbackExecutable, request CapabilityRequest, timeout time.Duration) (*values.List, error) {
-	ctxWithT, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+type RemoteTargetConfig struct {
+	RequestHashExcludedAttributes []string
+}
 
-	responseCh, err := c.Execute(ctxWithT, request)
-	if err != nil {
-		return nil, fmt.Errorf("error executing capability: %w", err)
+// NOTE: consider splitting this config into values stored in Registry (KS-118)
+// and values defined locally by Capability owners.
+func (c *RemoteTriggerConfig) ApplyDefaults() {
+	if c == nil {
+		return
 	}
-
-	vs := make([]values.Value, 0)
-outerLoop:
-	for {
-		select {
-		case response, isOpen := <-responseCh:
-			if !isOpen {
-				break outerLoop
-			}
-			// An error means execution has been interrupted.
-			// We'll return the value discarding values received
-			// until now.
-			if response.Err != nil {
-				return nil, response.Err
-			}
-
-			vs = append(vs, response.Value)
-		// Timeout when a capability exceeds maximum permitted execution time or the caller cancels the context and does not close the channel.
-		case <-ctxWithT.Done():
-			return nil, fmt.Errorf("context timed out after %f seconds", maximumExecuteTimeout.Seconds())
-		}
+	if c.RegistrationRefresh == 0 {
+		c.RegistrationRefresh = DefaultRegistrationRefresh
 	}
-
-	// If the capability did not return any values, we deem it as an error.
-	// The intent is for the API to be explicit.
-	if len(vs) == 0 {
-		return nil, errors.New("capability did not return any values")
+	if c.RegistrationExpiry == 0 {
+		c.RegistrationExpiry = DefaultRegistrationExpiry
 	}
+	if c.MessageExpiry == 0 {
+		c.MessageExpiry = DefaultMessageExpiry
+	}
+	if c.MaxBatchSize == 0 {
+		c.MaxBatchSize = DefaultBatchSize
+	}
+	if c.BatchCollectionPeriod == 0 {
+		c.BatchCollectionPeriod = DefaultBatchCollectionPeriod
+	}
+}
 
-	return &values.List{Underlying: vs}, nil
+type CapabilityConfiguration struct {
+	DefaultConfig       *values.Map
+	RemoteTriggerConfig *RemoteTriggerConfig
+	RemoteTargetConfig  *RemoteTargetConfig
 }

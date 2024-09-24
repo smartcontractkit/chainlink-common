@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727188806475,
+  "lastUpdate": 1727221227033,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1848,6 +1848,48 @@ window.BENCHMARK_DATA = {
             "value": 28532,
             "unit": "ns/op",
             "extra": "41853 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96611a2a09bde9a84d464611cb946cbd0d1c6160",
+          "message": "execution factory constructor updated to take two providers, chainIDs, and source token address (#641)\n\n* execution factory constructor updated to take two providers and chain IDs\r\n\r\n(cherry picked from commit 6ad1f08d26810df5eaeed76a0f74e20be1908658)\r\n\r\n* Adding source token address to execution factory constructor",
+          "timestamp": "2024-09-24T19:39:14-04:00",
+          "tree_id": "0b600fd335943a0a5766a7f0909ae87dd9161d27",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/96611a2a09bde9a84d464611cb946cbd0d1c6160"
+        },
+        "date": 1727221225930,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 465.1,
+            "unit": "ns/op",
+            "extra": "2575639 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 550.4,
+            "unit": "ns/op",
+            "extra": "2138781 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28808,
+            "unit": "ns/op",
+            "extra": "41583 times\n4 procs"
           }
         ]
       }

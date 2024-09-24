@@ -42,9 +42,8 @@ type managerImpl struct {
 	currentDataMu sync.Mutex
 }
 
-func (m *managerImpl) Run(backgroundCtx context.Context, managed ...ManagedFunc) {
-	var localCtx context.Context
-	var localCtxCancel context.CancelFunc
+func (m *managerImpl) Run(ctx context.Context, managed ...ManagedFunc) {
+	var cancel context.CancelFunc
 	var localSubs *utils.Subprocesses
 	for {
 		select {
@@ -68,23 +67,24 @@ func (m *managerImpl) Run(backgroundCtx context.Context, managed ...ManagedFunc)
 			}
 			m.log.Infow("change in feeds configuration detected", "feeds", fmt.Sprintf("%#v", updatedData))
 			// Terminate previous managed function if not the first run.
-			if localCtxCancel != nil && localSubs != nil {
-				localCtxCancel()
+			if cancel != nil && localSubs != nil {
+				cancel()
 				localSubs.Wait()
 			}
-			// Start new managed function
-			localCtx, localCtxCancel = context.WithCancel(backgroundCtx)
-			localSubs = &utils.Subprocesses{}
-			m.log.Infow("starting managed funcs", "count", len(managed))
-			for i := range managed {
-				i := i // copy i to prevent race
-				localSubs.Go(func() {
-					managed[i](localCtx, updatedData)
-				})
-			}
-		case <-backgroundCtx.Done():
-			if localCtxCancel != nil {
-				localCtxCancel()
+			func(ctx context.Context) {
+				ctx, cancel = context.WithCancel(ctx)
+				localSubs = &utils.Subprocesses{}
+				m.log.Infow("starting managed funcs", "count", len(managed))
+				for i := range managed {
+					i := i // copy i to prevent race
+					localSubs.Go(func() {
+						managed[i](ctx, updatedData)
+					})
+				}
+			}(ctx)
+		case <-ctx.Done():
+			if cancel != nil {
+				cancel()
 			}
 			if localSubs != nil {
 				localSubs.Wait()

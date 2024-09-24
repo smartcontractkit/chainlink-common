@@ -14,7 +14,7 @@ type computeCapability struct {
 
 func (c *computeCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	info := capabilities.MustNewCapabilityInfo(
-		"__internal__custom_compute@1.0.0", capabilities.CapabilityTypeAction, "Custom compute capability",
+		"custom_compute@1.0.0", capabilities.CapabilityTypeAction, "Custom compute capability",
 	)
 	info.IsLocal = true
 	return info, nil

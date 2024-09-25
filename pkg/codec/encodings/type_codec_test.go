@@ -183,9 +183,9 @@ func (b *bigEndianInterfaceTester) encode(t *testing.T, bytes []byte, ts TestStr
 	bytes = rawbin.BigEndian.AppendUint32(bytes, uint32(len(ts.NestedDynamicStruct.Inner.S)))
 	bytes = append(bytes, []byte(ts.NestedDynamicStruct.Inner.S)...)
 	bytes = append(bytes, ts.NestedStaticStruct.FixedBytes[:]...)
-	bytes = rawbin.BigEndian.AppendUint64(bytes, uint64(ts.NestedStaticStruct.Inner.Int))
+	bytes = rawbin.BigEndian.AppendUint64(bytes, uint64(ts.NestedStaticStruct.Inner.I))
 	bytes = rawbin.BigEndian.AppendUint32(bytes, uint32(len(ts.NestedStaticStruct.Inner.A)))
-	bytes = append(bytes, []byte(ts.NestedStaticStruct.Inner.A)...)
+	bytes = append(bytes, ts.NestedStaticStruct.Inner.A...)
 	if request.ExtraField {
 		bytes = append(bytes, 5)
 	}
@@ -201,13 +201,12 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 	sCodec, err := builder.String(math.MaxInt32)
 	require.NoError(t, err)
 
-	require.NoError(t, err)
 	arr2, err := encodings.NewArray(2, builder.Uint8())
+	require.NoError(t, err)
 
 	size, err := builder.Int(1)
 	require.NoError(t, err)
 
-	require.NoError(t, err)
 	acc, err := encodings.NewSlice(builder.Uint8(), size)
 	require.NoError(t, err)
 
@@ -215,15 +214,20 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 		{Name: "I", Codec: builder.Int64()},
 		{Name: "S", Codec: sCodec},
 	})
+	require.NoError(t, err)
+
 	innerStaticTestStruct, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
 		{Name: "I", Codec: builder.Int64()},
 		{Name: "A", Codec: acc},
 	})
+	require.NoError(t, err)
 
 	midDyanmicCodec, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
 		{Name: "FixedBytes", Codec: arr2},
 		{Name: "Inner", Codec: innerDynamicTestStruct},
 	})
+	require.NoError(t, err)
+
 	midStaticCodec, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
 		{Name: "FixedBytes", Codec: arr2},
 		{Name: "Inner", Codec: innerStaticTestStruct},

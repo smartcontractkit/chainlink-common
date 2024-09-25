@@ -139,7 +139,7 @@ type InnerDynamicTestStruct struct {
 
 type InnerStaticTestStruct struct {
 	I int
-	A  []byte
+	A []byte
 }
 
 type MidLevelDynamicTestStruct struct {
@@ -231,7 +231,7 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
 			Inner: InnerStaticTestStruct{
 				I: i,
-				A:  tester.GetAccountBytes(i + 6),
+				A: tester.GetAccountBytes(i + 6),
 			},
 		},
 	}

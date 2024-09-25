@@ -435,7 +435,6 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 }
 
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
-
 	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
 		r := returnVal.(*uint64)
 		for i := len(f.vals) - 1; i >= 0; i-- {
@@ -520,7 +519,6 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 	}
 
 	return nil
-
 }
 
 func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -602,7 +600,6 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 				}
 			}
 			if len(filter.Expressions) == 0 || doAppend {
-
 				if isValueType {
 					value, err := values.Wrap(trigger.testStruct)
 					if err != nil {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727221227033,
+  "lastUpdate": 1727254397745,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -1890,6 +1890,48 @@ window.BENCHMARK_DATA = {
             "value": 28808,
             "unit": "ns/op",
             "extra": "41583 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aded1b263ecc96050483a55502793d3fe666783d",
+          "message": "Support passing in a values.Value to the chainreader GetLatestValue method (#779)\n\n* add support for passing in a values.Value type to the contract readers GetLatestValue and QueryKey methods\r\n\r\n---------\r\n\r\nCo-authored-by: Sri Kidambi <1702865+kidambisrinivas@users.noreply.github.com>\r\nCo-authored-by: Cedric Cordenier <cedric.cordenier@smartcontract.com>",
+          "timestamp": "2024-09-25T09:52:18+01:00",
+          "tree_id": "e186a04c051e452541ca7e07dc7c816da2f2d003",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/aded1b263ecc96050483a55502793d3fe666783d"
+        },
+        "date": 1727254397320,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 477,
+            "unit": "ns/op",
+            "extra": "2485322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 546.7,
+            "unit": "ns/op",
+            "extra": "2127074 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28477,
+            "unit": "ns/op",
+            "extra": "42250 times\n4 procs"
           }
         ]
       }

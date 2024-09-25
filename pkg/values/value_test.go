@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/shopspring/decimal"
@@ -99,6 +100,14 @@ func Test_Value(t *testing.T) {
 				b := big.NewInt(math.MaxInt64)
 				bv := NewBigInt(b)
 				return b, bv, nil
+			},
+		},
+		{
+			name: "time",
+			newValue: func() (any, Value, error) {
+				t, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+				tv := NewTime(t)
+				return t, tv, err
 			},
 		},
 		{
@@ -380,6 +389,9 @@ func Test_Copy(t *testing.T) {
 			value: mp,
 		},
 		{
+			value: NewTime(time.Time{}),
+		},
+		{
 			value: (*String)(nil),
 			isNil: true,
 		},
@@ -405,6 +417,10 @@ func Test_Copy(t *testing.T) {
 		},
 		{
 			value: (*Map)(nil),
+			isNil: true,
+		},
+		{
+			value: (*Time)(nil),
 			isNil: true,
 		},
 	}

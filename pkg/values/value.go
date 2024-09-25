@@ -211,6 +211,8 @@ func FromProto(val *pb.Value) (Value, error) {
 		return fromBigIntValueProto(val.GetBigintValue()), nil
 	case *pb.Value_TimeValue:
 		return NewTime(val.GetTimeValue().AsTime()), nil
+	case *pb.Value_Float64Value:
+		return NewFloat64(val.GetFloat64Value()), nil
 	}
 
 	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)

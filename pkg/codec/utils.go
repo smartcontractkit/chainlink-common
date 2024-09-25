@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"reflect"
 	"strconv"
@@ -370,12 +371,20 @@ func addr(value reflect.Value) reflect.Value {
 
 func addressToStringHook(length AddressLength, checksum func([]byte) []byte) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
+		log.Printf("addressToStringHook called with from: %v, to: %v, data: %v", from, to, data)
+
 		byteArrTyp, err := typeFromAddressLength(length)
 		if err != nil {
 			return nil, err
 		}
 
 		strTyp := reflect.TypeOf("")
+
+		// Handle case where 'from' is *byte
+		if from.Kind() == reflect.Ptr && from.Elem() == byteArrTyp {
+			data = reflect.ValueOf(data).Elem().Interface()
+			from = from.Elem()
+		}
 
 		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
 			// convert the string to a byte array

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -21,6 +22,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var _ types.ContractReader = (*Client)(nil)
@@ -36,6 +39,7 @@ const (
 	JSONEncodingVersion1 EncodingVersion = iota
 	JSONEncodingVersion2
 	CBOREncodingVersion
+	ValuesEncodingVersion
 )
 
 const DefaultEncodingVersion = CBOREncodingVersion
@@ -96,6 +100,15 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 		}
+	case ValuesEncodingVersion:
+		val, err := values.Wrap(data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
+		bytes, err = proto.Marshal(values.Proto(val))
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
 	default:
 		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
 	}
@@ -121,6 +134,28 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 			return fmt.Errorf("%w: %w", types.ErrInternal, err)
 		}
 		err = dec.Unmarshal(vData.Data, res)
+	case ValuesEncodingVersion:
+		protoValue := &valuespb.Value{}
+		err = proto.Unmarshal(vData.Data, protoValue)
+		if err != nil {
+			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
+
+		var value values.Value
+		value, err = values.FromProto(protoValue)
+		if err != nil {
+			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		}
+
+		valuePtr, ok := res.(*values.Value)
+		if ok {
+			*valuePtr = value
+		} else {
+			err = value.UnwrapTo(res)
+			if err != nil {
+				return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			}
+		}
 	default:
 		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
 	}
@@ -133,6 +168,8 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 }
 
 func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, retVal any) error {
+	_, asValueType := retVal.(*values.Value)
+
 	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
@@ -149,6 +186,7 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 			ReadIdentifier: readIdentifier,
 			Confidence:     pbConfidence,
 			Params:         versionedParams,
+			AsValueType:    asValueType,
 		},
 	)
 	if err != nil {
@@ -173,6 +211,8 @@ func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGe
 }
 
 func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
+	_, asValueType := sequenceDataType.(*values.Value)
+
 	pbQueryFilter, err := convertQueryFilterToProto(filter, c.encodeWith)
 	if err != nil {
 		return nil, err
@@ -192,6 +232,7 @@ func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, fil
 			},
 			Filter:       pbQueryFilter,
 			LimitAndSort: pbLimitAndSort,
+			AsValueType:  asValueType,
 		},
 	)
 	if err != nil {
@@ -306,12 +347,17 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	encodedRetVal, err := EncodeVersionedBytes(retVal, EncodingVersion(request.Params.Version))
+	encodeWith := EncodingVersion(request.Params.Version)
+	if request.AsValueType {
+		encodeWith = ValuesEncodingVersion
+	}
+
+	versionedBytes, err := EncodeVersionedBytes(retVal, encodeWith)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetLatestValueReply{RetVal: encodedRetVal}, nil
+	return &pb.GetLatestValueReply{RetVal: versionedBytes}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
@@ -351,7 +397,12 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	pbSequences, err := convertSequencesToProto(sequences, c.encodeWith)
+	encodeWith := c.encodeWith
+	if request.AsValueType {
+		encodeWith = ValuesEncodingVersion
+	}
+
+	pbSequences, err := convertSequencesToVersionedBytesProto(sequences, encodeWith)
 	if err != nil {
 		return nil, err
 	}
@@ -601,7 +652,7 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 	return pbLimitAndSort, nil
 }
 
-func convertSequencesToProto(sequences []types.Sequence, version EncodingVersion) ([]*pb.Sequence, error) {
+func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version EncodingVersion) ([]*pb.Sequence, error) {
 	var pbSequences []*pb.Sequence
 	for _, sequence := range sequences {
 		versionedSequenceDataType, err := EncodeVersionedBytes(sequence.Data, version)
@@ -811,6 +862,8 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 }
 
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
+	sequences := make([]types.Sequence, len(pbSequences))
+
 	seqTypeOf := reflect.TypeOf(sequenceDataType)
 
 	// get the non-pointer data type for the sequence data
@@ -822,8 +875,6 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 	if nonPointerType.Kind() == reflect.Pointer {
 		return nil, fmt.Errorf("%w: sequenceDataType does not support pointers to pointers", types.ErrInvalidType)
 	}
-
-	sequences := make([]types.Sequence, len(pbSequences))
 
 	for idx, pbSequence := range pbSequences {
 		cpy := reflect.New(nonPointerType).Interface()

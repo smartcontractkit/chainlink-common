@@ -20,6 +20,7 @@ message GetLatestValueRequest {
   string read_identifier = 1;
   Confidence confidence = 2;
   VersionedBytes params = 3;
+  bool as_value_type = 4;
 }
 
 // BatchGetLatestValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -32,6 +33,7 @@ message QueryKeyRequest {
   BoundContract contract = 1;
   QueryKeyFilter filter = 2;
   LimitAndSort limit_and_sort = 3;
+  bool as_value_type = 4;
 }
 
 // BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Bind].

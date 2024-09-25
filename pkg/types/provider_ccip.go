@@ -35,7 +35,7 @@ type CCIPCommitFactoryGenerator interface {
 }
 
 type CCIPExecutionFactoryGenerator interface {
-	NewExecutionFactory(ctx context.Context, provider CCIPExecProvider) (ReportingPluginFactory, error)
+	NewExecutionFactory(ctx context.Context, srcProvider CCIPExecProvider, dstProvider CCIPExecProvider, srcChainID int64, dstChainID int64, sourceTokenAddress string) (ReportingPluginFactory, error)
 }
 type CCIPFactoryGenerator interface {
 	CCIPCommitFactoryGenerator

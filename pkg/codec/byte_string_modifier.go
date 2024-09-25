@@ -78,7 +78,7 @@ type bytesToStringModifier struct {
 	modifierBase[bool]
 }
 
-func (m *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemType string) (tpe reflect.Type, err error) {
+func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemType string) (tpe reflect.Type, err error) {
 	defer func() {
 		// StructOf can panic if the fields are not valid
 		if r := recover(); r != nil {
@@ -87,48 +87,48 @@ func (m *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 		}
 	}()
 
-	if len(m.fields) == 0 {
-		m.offToOnChainType[onChainType] = onChainType
-		m.onToOffChainType[onChainType] = onChainType
+	if len(t.fields) == 0 {
+		t.offToOnChainType[onChainType] = onChainType
+		t.onToOffChainType[onChainType] = onChainType
 		return onChainType, nil
 	}
 
-	if cached, ok := m.onToOffChainType[onChainType]; ok {
+	if cached, ok := t.onToOffChainType[onChainType]; ok {
 		return cached, nil
 	}
 
-	addrType, err := typeFromAddressLength(m.length)
+	addrType, err := typeFromAddressLength(t.length)
 	if err != nil {
 		return nil, err
 	}
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
-		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
+		elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
 			return nil, err
 		}
 
 		ptr := reflect.PointerTo(elm)
-		m.onToOffChainType[onChainType] = ptr
-		m.offToOnChainType[ptr] = onChainType
+		t.onToOffChainType[onChainType] = ptr
+		t.offToOnChainType[ptr] = onChainType
 		return ptr, nil
 	case reflect.Slice:
-		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
+		elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
 			return nil, err
 		}
 
 		sliceType := reflect.SliceOf(elm)
-		m.onToOffChainType[onChainType] = sliceType
-		m.offToOnChainType[sliceType] = onChainType
+		t.onToOffChainType[onChainType] = sliceType
+		t.offToOnChainType[sliceType] = onChainType
 		return sliceType, nil
 	case reflect.Array:
 		var offChainType reflect.Type
 		if onChainType == addrType {
 			offChainType = reflect.TypeOf("")
 		} else {
-			elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
+			elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
 			if err != nil {
 				return nil, err
 			}
@@ -136,12 +136,12 @@ func (m *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 			offChainType = reflect.ArrayOf(onChainType.Len(), elm)
 		}
 
-		m.onToOffChainType[onChainType] = offChainType
-		m.offToOnChainType[offChainType] = onChainType
+		t.onToOffChainType[onChainType] = offChainType
+		t.offToOnChainType[offChainType] = onChainType
 
 		return offChainType, nil
 	case reflect.Struct:
-		return m.getStructType(onChainType)
+		return t.getStructType(onChainType)
 	default:
 		return nil, fmt.Errorf("%w: cannot retype the kind %v", types.ErrInvalidType, onChainType.Kind())
 	}

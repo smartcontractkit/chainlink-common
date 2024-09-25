@@ -10,7 +10,6 @@ require (
 	github.com/bytecodealliance/wasmtime-go/v23 v23.0.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/dominikbraun/graph v0.23.0
-	github.com/ethereum/go-ethereum v1.13.8
 	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
 	github.com/go-playground/validator/v10 v10.4.1
@@ -60,8 +59,6 @@ require (
 	google.golang.org/protobuf v1.34.2
 	sigs.k8s.io/yaml v1.4.0
 )
-
-require github.com/holiman/uint256 v1.2.4 // indirect
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect

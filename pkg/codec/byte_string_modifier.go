@@ -2,6 +2,7 @@ package codec
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 
 	"golang.org/x/crypto/sha3"
@@ -87,6 +88,8 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 		}
 	}()
 
+	log.Printf("RetypeToOffChain called with type: %v, itemType: %T", onChainType, itemType)
+
 	if len(t.fields) == 0 {
 		t.offToOnChainType[onChainType] = onChainType
 		t.onToOffChainType[onChainType] = onChainType
@@ -104,12 +107,18 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
+		log.Printf("Pointer detected: %v, element type: %v", onChainType, onChainType.Elem())
+
+		// Recursively call RetypeToOffChain on the element type
 		elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
+			log.Printf("Error while processing pointer element type: %v", err)
 			return nil, err
 		}
 
 		ptr := reflect.PointerTo(elm)
+		log.Printf("Pointer transformed: %v -> %v", onChainType, ptr)
+
 		t.onToOffChainType[onChainType] = ptr
 		t.offToOnChainType[ptr] = onChainType
 		return ptr, nil
@@ -157,11 +166,36 @@ func (t *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType s
 
 func convertBytesToString(t reflect.Type, field string) (reflect.Type, error) {
 	switch t.Kind() {
-	case reflect.Pointer:
-		return reflect.PointerTo(reflect.TypeOf("")), nil
 	case reflect.Array:
+		log.Printf("Array detected: %v, field: %s", t, field)
+		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == 20 {
+			log.Printf("Converting array of [20]byte to array of strings: %v", t)
+			return reflect.ArrayOf(t.Len(), reflect.TypeOf("")), nil
+		}
+		log.Printf("Converting [20]byte to string: %v", t)
 		return reflect.TypeOf(""), nil
+
+	case reflect.Pointer:
+		log.Printf("Pointer detected: %v, field: %s", t, field)
+		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == 20 {
+			log.Printf("Converting pointer to [20]byte to string: %v", t)
+			return reflect.TypeOf(""), nil
+		}
+		log.Printf("Pointer is not pointing to an array of [20]byte, returning error")
+		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
+
+	case reflect.Slice:
+		log.Printf("Slice detected: %v, field: %s", t, field)
+		// Handle slices of [20]byte
+		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == 20 {
+			log.Printf("Converting slice of [20]byte to slice of strings: %v", t)
+			return reflect.SliceOf(reflect.TypeOf("")), nil
+		}
+		log.Printf("Slice does not contain [20]byte elements, returning error")
+		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
+
 	default:
+		log.Printf("Unsupported type detected: %v, field: %s", t, field)
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 	}
 }

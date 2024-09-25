@@ -222,7 +222,7 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 	})
 	require.NoError(t, err)
 
-	midDyanmicCodec, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
+	midDynamicCodec, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
 		{Name: "FixedBytes", Codec: arr2},
 		{Name: "Inner", Codec: innerDynamicTestStruct},
 	})

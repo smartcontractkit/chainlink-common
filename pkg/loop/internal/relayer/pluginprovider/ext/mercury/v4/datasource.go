@@ -61,8 +61,6 @@ func (d *DataSourceServer) Observe(ctx context.Context, request *mercury_v4_pb.O
 func observation(resp *mercury_v4_pb.ObserveResponse) v4.Observation {
 	return v4.Observation{
 		BenchmarkPrice:        mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.BenchmarkPrice.Int()},
-		Bid:                   mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.Bid.Int()},
-		Ask:                   mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.Ask.Int()},
 		MaxFinalizedTimestamp: mercury_common_types.ObsResult[int64]{Val: resp.Observation.MaxFinalizedTimestamp},
 		LinkPrice:             mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.LinkPrice.Int()},
 		NativePrice:           mercury_common_types.ObsResult[*big.Int]{Val: resp.Observation.NativePrice.Int()},
@@ -73,8 +71,6 @@ func observation(resp *mercury_v4_pb.ObserveResponse) v4.Observation {
 func pbObservation(obs v4.Observation) *mercury_v4_pb.Observation {
 	return &mercury_v4_pb.Observation{
 		BenchmarkPrice:        pb.NewBigIntFromInt(obs.BenchmarkPrice.Val),
-		Bid:                   pb.NewBigIntFromInt(obs.Bid.Val),
-		Ask:                   pb.NewBigIntFromInt(obs.Ask.Val),
 		MaxFinalizedTimestamp: obs.MaxFinalizedTimestamp.Val,
 		LinkPrice:             pb.NewBigIntFromInt(obs.LinkPrice.Val),
 		NativePrice:           pb.NewBigIntFromInt(obs.NativePrice.Val),

@@ -39,7 +39,7 @@ type TypeProvider interface {
 }
 
 type ContractTypeProvider interface {
-	CreateContractType(contractName, itemType string, forEncoding bool) (any, error)
+	CreateContractType(readName string, forEncoding bool) (any, error)
 }
 
 type RemoteCodec interface {

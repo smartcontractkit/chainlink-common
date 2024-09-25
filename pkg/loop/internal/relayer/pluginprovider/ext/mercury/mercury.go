@@ -6,7 +6,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	mercury_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 
 	mercury_v1_internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1"
@@ -51,7 +51,7 @@ func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderC
 	m.serverFetcher = newServerFetcherClient(cc)
 	m.mercuryChainReader = newChainReaderClient(cc)
 
-	m.chainReader = chainreader.NewClient(b, cc)
+	m.chainReader = contractreader.NewClient(b, cc)
 	return m
 }
 

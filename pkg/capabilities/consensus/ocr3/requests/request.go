@@ -3,7 +3,6 @@ package requests
 import (
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -14,7 +13,7 @@ type Request struct {
 
 	// CallbackCh is a channel to send a response back to the requester
 	// after the request has been processed or timed out.
-	CallbackCh chan capabilities.CapabilityResponse
+	CallbackCh chan Response
 	StopCh     services.StopChan
 
 	WorkflowExecutionID      string
@@ -51,5 +50,6 @@ func (r *Request) Copy() *Request {
 
 type Response struct {
 	WorkflowExecutionID string
-	capabilities.CapabilityResponse
+	Value               *values.Map
+	Err                 error
 }

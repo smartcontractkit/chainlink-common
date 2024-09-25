@@ -4,14 +4,14 @@ package streams
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory) FeedCap {
+func (cfg TriggerConfig) New(w *sdk.WorkflowSpecFactory) FeedCap {
 	ref := "trigger"
-	def := workflows.StepDefinition{
+	def := sdk.StepDefinition{
 		ID: "streams-trigger@1.0.0", Ref: ref,
-		Inputs: workflows.StepInputs{},
+		Inputs: sdk.StepInputs{},
 		Config: map[string]any{
 			"feedIds":        cfg.FeedIds,
 			"maxFrequencyMs": cfg.MaxFrequencyMs,
@@ -19,148 +19,126 @@ func (cfg TriggerConfig) New(w *workflows.WorkflowSpecFactory) FeedCap {
 		CapabilityType: capabilities.CapabilityTypeTrigger,
 	}
 
-	step := workflows.Step[Feed]{Definition: def}
+	step := sdk.Step[Feed]{Definition: def}
 	return FeedCapFromStep(w, step)
 }
 
 type FeedCap interface {
-	workflows.CapDefinition[Feed]
-	ID() workflows.CapDefinition[string]
+	sdk.CapDefinition[Feed]
 	Metadata() SignersMetadataCap
-	Payload() workflows.CapDefinition[[]FeedReport]
-	Timestamp() workflows.CapDefinition[string]
-	TriggerType() workflows.CapDefinition[string]
+	Payload() sdk.CapDefinition[[]FeedReport]
+	Timestamp() sdk.CapDefinition[int64]
 	private()
 }
 
 // FeedCapFromStep should only be called from generated code to assure type safety
-func FeedCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[Feed]) FeedCap {
+func FeedCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[Feed]) FeedCap {
 	raw := step.AddTo(w)
 	return &feed{CapDefinition: raw}
 }
 
 type feed struct {
-	workflows.CapDefinition[Feed]
+	sdk.CapDefinition[Feed]
 }
 
 func (*feed) private() {}
-func (c *feed) ID() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "ID")
-}
 func (c *feed) Metadata() SignersMetadataCap {
-	return &signersMetadata{CapDefinition: workflows.AccessField[Feed, SignersMetadata](c.CapDefinition, "Metadata")}
+	return &signersMetadata{CapDefinition: sdk.AccessField[Feed, SignersMetadata](c.CapDefinition, "Metadata")}
 }
-func (c *feed) Payload() workflows.CapDefinition[[]FeedReport] {
-	return workflows.AccessField[Feed, []FeedReport](c.CapDefinition, "Payload")
+func (c *feed) Payload() sdk.CapDefinition[[]FeedReport] {
+	return sdk.AccessField[Feed, []FeedReport](c.CapDefinition, "Payload")
 }
-func (c *feed) Timestamp() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "Timestamp")
-}
-func (c *feed) TriggerType() workflows.CapDefinition[string] {
-	return workflows.AccessField[Feed, string](c.CapDefinition, "TriggerType")
+func (c *feed) Timestamp() sdk.CapDefinition[int64] {
+	return sdk.AccessField[Feed, int64](c.CapDefinition, "Timestamp")
 }
 
 func NewFeedFromFields(
-	iD workflows.CapDefinition[string],
 	metadata SignersMetadataCap,
-	payload workflows.CapDefinition[[]FeedReport],
-	timestamp workflows.CapDefinition[string],
-	triggerType workflows.CapDefinition[string]) FeedCap {
+	payload sdk.CapDefinition[[]FeedReport],
+	timestamp sdk.CapDefinition[int64]) FeedCap {
 	return &simpleFeed{
-		CapDefinition: workflows.ComponentCapDefinition[Feed]{
-			"ID":          iD.Ref(),
-			"Metadata":    metadata.Ref(),
-			"Payload":     payload.Ref(),
-			"Timestamp":   timestamp.Ref(),
-			"TriggerType": triggerType.Ref(),
+		CapDefinition: sdk.ComponentCapDefinition[Feed]{
+			"Metadata":  metadata.Ref(),
+			"Payload":   payload.Ref(),
+			"Timestamp": timestamp.Ref(),
 		},
-		iD:          iD,
-		metadata:    metadata,
-		payload:     payload,
-		timestamp:   timestamp,
-		triggerType: triggerType,
+		metadata:  metadata,
+		payload:   payload,
+		timestamp: timestamp,
 	}
 }
 
 type simpleFeed struct {
-	workflows.CapDefinition[Feed]
-	iD          workflows.CapDefinition[string]
-	metadata    SignersMetadataCap
-	payload     workflows.CapDefinition[[]FeedReport]
-	timestamp   workflows.CapDefinition[string]
-	triggerType workflows.CapDefinition[string]
+	sdk.CapDefinition[Feed]
+	metadata  SignersMetadataCap
+	payload   sdk.CapDefinition[[]FeedReport]
+	timestamp sdk.CapDefinition[int64]
 }
 
-func (c *simpleFeed) ID() workflows.CapDefinition[string] {
-	return c.iD
-}
 func (c *simpleFeed) Metadata() SignersMetadataCap {
 	return c.metadata
 }
-func (c *simpleFeed) Payload() workflows.CapDefinition[[]FeedReport] {
+func (c *simpleFeed) Payload() sdk.CapDefinition[[]FeedReport] {
 	return c.payload
 }
-func (c *simpleFeed) Timestamp() workflows.CapDefinition[string] {
+func (c *simpleFeed) Timestamp() sdk.CapDefinition[int64] {
 	return c.timestamp
-}
-func (c *simpleFeed) TriggerType() workflows.CapDefinition[string] {
-	return c.triggerType
 }
 
 func (c *simpleFeed) private() {}
 
-type FeedIdCap workflows.CapDefinition[FeedId]
+type FeedIdCap sdk.CapDefinition[FeedId]
 
 type FeedReportCap interface {
-	workflows.CapDefinition[FeedReport]
-	BenchmarkPrice() workflows.CapDefinition[string]
+	sdk.CapDefinition[FeedReport]
+	BenchmarkPrice() sdk.CapDefinition[[]uint8]
 	FeedID() FeedIdCap
-	FullReport() workflows.CapDefinition[string]
-	ObservationTimestamp() workflows.CapDefinition[int]
-	ReportContext() workflows.CapDefinition[string]
-	Signatures() workflows.CapDefinition[[]string]
+	FullReport() sdk.CapDefinition[[]uint8]
+	ObservationTimestamp() sdk.CapDefinition[int64]
+	ReportContext() sdk.CapDefinition[[]uint8]
+	Signatures() sdk.CapDefinition[[][]uint8]
 	private()
 }
 
 // FeedReportCapFromStep should only be called from generated code to assure type safety
-func FeedReportCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[FeedReport]) FeedReportCap {
+func FeedReportCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[FeedReport]) FeedReportCap {
 	raw := step.AddTo(w)
 	return &feedReport{CapDefinition: raw}
 }
 
 type feedReport struct {
-	workflows.CapDefinition[FeedReport]
+	sdk.CapDefinition[FeedReport]
 }
 
 func (*feedReport) private() {}
-func (c *feedReport) BenchmarkPrice() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "BenchmarkPrice")
+func (c *feedReport) BenchmarkPrice() sdk.CapDefinition[[]uint8] {
+	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "BenchmarkPrice")
 }
 func (c *feedReport) FeedID() FeedIdCap {
-	return FeedIdCap(workflows.AccessField[FeedReport, FeedId](c.CapDefinition, "FeedID"))
+	return FeedIdCap(sdk.AccessField[FeedReport, FeedId](c.CapDefinition, "FeedID"))
 }
-func (c *feedReport) FullReport() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "FullReport")
+func (c *feedReport) FullReport() sdk.CapDefinition[[]uint8] {
+	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "FullReport")
 }
-func (c *feedReport) ObservationTimestamp() workflows.CapDefinition[int] {
-	return workflows.AccessField[FeedReport, int](c.CapDefinition, "ObservationTimestamp")
+func (c *feedReport) ObservationTimestamp() sdk.CapDefinition[int64] {
+	return sdk.AccessField[FeedReport, int64](c.CapDefinition, "ObservationTimestamp")
 }
-func (c *feedReport) ReportContext() workflows.CapDefinition[string] {
-	return workflows.AccessField[FeedReport, string](c.CapDefinition, "ReportContext")
+func (c *feedReport) ReportContext() sdk.CapDefinition[[]uint8] {
+	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "ReportContext")
 }
-func (c *feedReport) Signatures() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[FeedReport, []string](c.CapDefinition, "Signatures")
+func (c *feedReport) Signatures() sdk.CapDefinition[[][]uint8] {
+	return sdk.AccessField[FeedReport, [][]uint8](c.CapDefinition, "Signatures")
 }
 
 func NewFeedReportFromFields(
-	benchmarkPrice workflows.CapDefinition[string],
+	benchmarkPrice sdk.CapDefinition[[]uint8],
 	feedID FeedIdCap,
-	fullReport workflows.CapDefinition[string],
-	observationTimestamp workflows.CapDefinition[int],
-	reportContext workflows.CapDefinition[string],
-	signatures workflows.CapDefinition[[]string]) FeedReportCap {
+	fullReport sdk.CapDefinition[[]uint8],
+	observationTimestamp sdk.CapDefinition[int64],
+	reportContext sdk.CapDefinition[[]uint8],
+	signatures sdk.CapDefinition[[][]uint8]) FeedReportCap {
 	return &simpleFeedReport{
-		CapDefinition: workflows.ComponentCapDefinition[FeedReport]{
+		CapDefinition: sdk.ComponentCapDefinition[FeedReport]{
 			"BenchmarkPrice":       benchmarkPrice.Ref(),
 			"FeedID":               feedID.Ref(),
 			"FullReport":           fullReport.Ref(),
@@ -178,66 +156,66 @@ func NewFeedReportFromFields(
 }
 
 type simpleFeedReport struct {
-	workflows.CapDefinition[FeedReport]
-	benchmarkPrice       workflows.CapDefinition[string]
+	sdk.CapDefinition[FeedReport]
+	benchmarkPrice       sdk.CapDefinition[[]uint8]
 	feedID               FeedIdCap
-	fullReport           workflows.CapDefinition[string]
-	observationTimestamp workflows.CapDefinition[int]
-	reportContext        workflows.CapDefinition[string]
-	signatures           workflows.CapDefinition[[]string]
+	fullReport           sdk.CapDefinition[[]uint8]
+	observationTimestamp sdk.CapDefinition[int64]
+	reportContext        sdk.CapDefinition[[]uint8]
+	signatures           sdk.CapDefinition[[][]uint8]
 }
 
-func (c *simpleFeedReport) BenchmarkPrice() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) BenchmarkPrice() sdk.CapDefinition[[]uint8] {
 	return c.benchmarkPrice
 }
 func (c *simpleFeedReport) FeedID() FeedIdCap {
 	return c.feedID
 }
-func (c *simpleFeedReport) FullReport() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) FullReport() sdk.CapDefinition[[]uint8] {
 	return c.fullReport
 }
-func (c *simpleFeedReport) ObservationTimestamp() workflows.CapDefinition[int] {
+func (c *simpleFeedReport) ObservationTimestamp() sdk.CapDefinition[int64] {
 	return c.observationTimestamp
 }
-func (c *simpleFeedReport) ReportContext() workflows.CapDefinition[string] {
+func (c *simpleFeedReport) ReportContext() sdk.CapDefinition[[]uint8] {
 	return c.reportContext
 }
-func (c *simpleFeedReport) Signatures() workflows.CapDefinition[[]string] {
+func (c *simpleFeedReport) Signatures() sdk.CapDefinition[[][]uint8] {
 	return c.signatures
 }
 
 func (c *simpleFeedReport) private() {}
 
 type SignersMetadataCap interface {
-	workflows.CapDefinition[SignersMetadata]
-	MinRequiredSignatures() workflows.CapDefinition[int]
-	Signers() workflows.CapDefinition[[]string]
+	sdk.CapDefinition[SignersMetadata]
+	MinRequiredSignatures() sdk.CapDefinition[int64]
+	Signers() sdk.CapDefinition[[]string]
 	private()
 }
 
 // SignersMetadataCapFromStep should only be called from generated code to assure type safety
-func SignersMetadataCapFromStep(w *workflows.WorkflowSpecFactory, step workflows.Step[SignersMetadata]) SignersMetadataCap {
+func SignersMetadataCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[SignersMetadata]) SignersMetadataCap {
 	raw := step.AddTo(w)
 	return &signersMetadata{CapDefinition: raw}
 }
 
 type signersMetadata struct {
-	workflows.CapDefinition[SignersMetadata]
+	sdk.CapDefinition[SignersMetadata]
 }
 
 func (*signersMetadata) private() {}
-func (c *signersMetadata) MinRequiredSignatures() workflows.CapDefinition[int] {
-	return workflows.AccessField[SignersMetadata, int](c.CapDefinition, "MinRequiredSignatures")
+func (c *signersMetadata) MinRequiredSignatures() sdk.CapDefinition[int64] {
+	return sdk.AccessField[SignersMetadata, int64](c.CapDefinition, "MinRequiredSignatures")
 }
-func (c *signersMetadata) Signers() workflows.CapDefinition[[]string] {
-	return workflows.AccessField[SignersMetadata, []string](c.CapDefinition, "Signers")
+func (c *signersMetadata) Signers() sdk.CapDefinition[[]string] {
+	return sdk.AccessField[SignersMetadata, []string](c.CapDefinition, "Signers")
 }
 
 func NewSignersMetadataFromFields(
-	minRequiredSignatures workflows.CapDefinition[int],
-	signers workflows.CapDefinition[[]string]) SignersMetadataCap {
+	minRequiredSignatures sdk.CapDefinition[int64],
+	signers sdk.CapDefinition[[]string]) SignersMetadataCap {
 	return &simpleSignersMetadata{
-		CapDefinition: workflows.ComponentCapDefinition[SignersMetadata]{
+		CapDefinition: sdk.ComponentCapDefinition[SignersMetadata]{
 			"MinRequiredSignatures": minRequiredSignatures.Ref(),
 			"Signers":               signers.Ref(),
 		},
@@ -247,15 +225,15 @@ func NewSignersMetadataFromFields(
 }
 
 type simpleSignersMetadata struct {
-	workflows.CapDefinition[SignersMetadata]
-	minRequiredSignatures workflows.CapDefinition[int]
-	signers               workflows.CapDefinition[[]string]
+	sdk.CapDefinition[SignersMetadata]
+	minRequiredSignatures sdk.CapDefinition[int64]
+	signers               sdk.CapDefinition[[]string]
 }
 
-func (c *simpleSignersMetadata) MinRequiredSignatures() workflows.CapDefinition[int] {
+func (c *simpleSignersMetadata) MinRequiredSignatures() sdk.CapDefinition[int64] {
 	return c.minRequiredSignatures
 }
-func (c *simpleSignersMetadata) Signers() workflows.CapDefinition[[]string] {
+func (c *simpleSignersMetadata) Signers() sdk.CapDefinition[[]string] {
 	return c.signers
 }
 

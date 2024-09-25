@@ -172,6 +172,62 @@ func (_c *Relayer_HealthReport_Call) RunAndReturn(run func() map[string]error) *
 	return _c
 }
 
+// LatestHead provides a mock function with given fields: ctx
+func (_m *Relayer) LatestHead(ctx context.Context) (types.Head, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestHead")
+	}
+
+	var r0 types.Head
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (types.Head, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) types.Head); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(types.Head)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_LatestHead_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestHead'
+type Relayer_LatestHead_Call struct {
+	*mock.Call
+}
+
+// LatestHead is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Relayer_Expecter) LatestHead(ctx interface{}) *Relayer_LatestHead_Call {
+	return &Relayer_LatestHead_Call{Call: _e.mock.On("LatestHead", ctx)}
+}
+
+func (_c *Relayer_LatestHead_Call) Run(run func(ctx context.Context)) *Relayer_LatestHead_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Relayer_LatestHead_Call) Return(_a0 types.Head, _a1 error) *Relayer_LatestHead_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_LatestHead_Call) RunAndReturn(run func(context.Context) (types.Head, error)) *Relayer_LatestHead_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListNodeStatuses provides a mock function with given fields: ctx, pageSize, pageToken
 func (_m *Relayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
 	ret := _m.Called(ctx, pageSize, pageToken)
@@ -410,23 +466,23 @@ func (_c *Relayer_NewConfigProvider_Call) RunAndReturn(run func(context.Context,
 }
 
 // NewContractReader provides a mock function with given fields: ctx, contractReaderConfig
-func (_m *Relayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ChainReader, error) {
+func (_m *Relayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	ret := _m.Called(ctx, contractReaderConfig)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewContractReader")
 	}
 
-	var r0 types.ChainReader
+	var r0 types.ContractReader
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ChainReader, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ContractReader, error)); ok {
 		return rf(ctx, contractReaderConfig)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ChainReader); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ContractReader); ok {
 		r0 = rf(ctx, contractReaderConfig)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(types.ChainReader)
+			r0 = ret.Get(0).(types.ContractReader)
 		}
 	}
 
@@ -458,12 +514,12 @@ func (_c *Relayer_NewContractReader_Call) Run(run func(ctx context.Context, cont
 	return _c
 }
 
-func (_c *Relayer_NewContractReader_Call) Return(_a0 types.ChainReader, _a1 error) *Relayer_NewContractReader_Call {
+func (_c *Relayer_NewContractReader_Call) Return(_a0 types.ContractReader, _a1 error) *Relayer_NewContractReader_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Relayer_NewContractReader_Call) RunAndReturn(run func(context.Context, []byte) (types.ChainReader, error)) *Relayer_NewContractReader_Call {
+func (_c *Relayer_NewContractReader_Call) RunAndReturn(run func(context.Context, []byte) (types.ContractReader, error)) *Relayer_NewContractReader_Call {
 	_c.Call.Return(run)
 	return _c
 }

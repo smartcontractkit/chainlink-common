@@ -100,6 +100,21 @@ func (k *Client) RelayerName(ctx context.Context, relayID types.RelayID) (string
 	return resp.Name, nil
 }
 
+func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (types.Head, error) {
+	req := &relayerset.LatestHeadRequest{
+		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+	}
+	resp, err := k.relayerSetClient.RelayerLatestHead(ctx, req)
+	if err != nil {
+		return types.Head{}, fmt.Errorf("error getting latest head from relayerset client for relayer: %w", err)
+	}
+	return types.Head{
+		Height:    resp.Height,
+		Hash:      resp.Hash,
+		Timestamp: resp.Timestamp,
+	}, nil
+}
+
 func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {
 	// TODO at a later phase these credentials should be set as part of the relay config and not as a separate field
 	var mercuryCredentials *relayerset.MercuryCredentials
@@ -123,4 +138,28 @@ func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, r
 		return 0, fmt.Errorf("error getting new plugin provider: %w", err)
 	}
 	return resp.PluginProviderId, nil
+}
+
+func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, contractReaderConfig []byte) (uint32, error) {
+	req := &relayerset.NewContractReaderRequest{
+		RelayerId:            &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+		ContractReaderConfig: contractReaderConfig,
+	}
+	resp, err := k.relayerSetClient.NewContractReader(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("error getting new contract reader: %w", err)
+	}
+	return resp.ContractReaderId, nil
+}
+
+func (k *Client) NewChainWriter(ctx context.Context, relayID types.RelayID, chainWriterConfig []byte) (uint32, error) {
+	req := &relayerset.NewChainWriterRequest{
+		RelayerId:         &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+		ChainWriterConfig: chainWriterConfig,
+	}
+	resp, err := k.relayerSetClient.NewChainWriter(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("error getting new chain writer: %w", err)
+	}
+	return resp.ChainWriterId, nil
 }

@@ -63,8 +63,8 @@ type staticCommitProvider struct {
 	staticCommitProviderConfig
 }
 
-// ChainReader implements CommitProviderEvaluator.
-func (s staticCommitProvider) ChainReader() types.ContractReader {
+// ContractReader implements CommitProviderEvaluator.
+func (s staticCommitProvider) ContractReader() types.ContractReader {
 	return nil
 }
 

@@ -12,7 +12,9 @@ import (
 )
 
 // Pointer to the global Beholder Client
-var globalClient = defaultClient()
+var globalClient atomic.Pointer[Client]
+
+func init() { globalClient.Store(NewNoopClient()) }
 
 // SetClient sets the global Beholder Client
 func SetClient(client *Client) {
@@ -39,13 +41,6 @@ func GetMeter() otelmetric.Meter {
 
 func GetEmitter() Emitter {
 	return GetClient().Emitter
-}
-
-func defaultClient() *atomic.Pointer[Client] {
-	ptr := &atomic.Pointer[Client]{}
-	client := NewNoopClient()
-	ptr.Store(client)
-	return ptr
 }
 
 // Sets global OTel logger, tracer, meter providers from Client.

@@ -78,31 +78,37 @@ func mustMockTrigger(t *testing.T) *mockTrigger {
 	}
 }
 
-type mockCallback struct {
+type mockExecutable struct {
 	capabilities.BaseCapability
-	callback     chan capabilities.CapabilityResponse
+	callback      chan capabilities.CapabilityResponse
+	responseError error
+
 	regRequest   capabilities.RegisterToWorkflowRequest
 	unregRequest capabilities.UnregisterFromWorkflowRequest
 }
 
-func (m *mockCallback) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (m *mockExecutable) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	m.regRequest = request
 	return nil
 }
 
-func (m *mockCallback) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (m *mockExecutable) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	m.unregRequest = request
 	return nil
 }
 
-func (m *mockCallback) Execute(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
-	return m.callback, nil
+func (m *mockExecutable) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	if m.responseError != nil {
+		return capabilities.CapabilityResponse{}, m.responseError
+	}
+
+	return <-m.callback, nil
 }
 
-func mustMockCallback(t *testing.T, _type capabilities.CapabilityType) *mockCallback {
-	return &mockCallback{
+func mustMockExecutable(t *testing.T, _type capabilities.CapabilityType) *mockExecutable {
+	return &mockExecutable{
 		BaseCapability: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback-%s@1.0.0", _type), _type, fmt.Sprintf("a mock %s", _type)),
-		callback:       make(chan capabilities.CapabilityResponse),
+		callback:       make(chan capabilities.CapabilityResponse, 10),
 	}
 }
 
@@ -120,8 +126,8 @@ func (c *capabilityPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBr
 	switch c.capability.(type) {
 	case capabilities.TriggerExecutable:
 		return NewTriggerCapabilityClient(bext, client), nil
-	case capabilities.CallbackExecutable:
-		return NewCallbackCapabilityClient(bext, client), nil
+	case capabilities.Executable:
+		return NewExecutableCapabilityClient(bext, client), nil
 	}
 
 	panic(fmt.Sprintf("unexpected capability type %T", c.capability))
@@ -131,8 +137,8 @@ func (c *capabilityPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Se
 	switch tc := c.capability.(type) {
 	case capabilities.TriggerCapability:
 		return RegisterTriggerCapabilityServer(server, broker, c.brokerCfg, tc)
-	case CallbackCapability:
-		return RegisterCallbackCapabilityServer(server, broker, c.brokerCfg, tc)
+	case ExecutableCapability:
+		return RegisterExecutableCapabilityServer(server, broker, c.brokerCfg, tc)
 	}
 
 	return nil
@@ -376,7 +382,7 @@ func Test_Capabilities(t *testing.T) {
 		ctx, cancel := context.WithCancel(testContext)
 		defer cancel()
 
-		ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
@@ -409,7 +415,7 @@ func Test_Capabilities(t *testing.T) {
 		ctx, cancel := context.WithCancel(testContext)
 		defer cancel()
 
-		ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
@@ -423,26 +429,52 @@ func Test_Capabilities(t *testing.T) {
 			Inputs: imap,
 		}
 
-		ch, err := c.(capabilities.ActionCapability).Execute(
-			ctx,
-			expectedRequest)
-		require.NoError(t, err)
-
-		expectedErr := errors.New("an error")
 		expectedResp := capabilities.CapabilityResponse{
-			Err:   expectedErr,
 			Value: values.EmptyMap(),
 		}
 
 		ma.callback <- expectedResp
-		assert.Equal(t, expectedResp, <-ch)
+
+		resp, err := c.(capabilities.ActionCapability).Execute(
+			ctx,
+			expectedRequest)
+		require.NoError(t, err)
+
+		assert.Equal(t, expectedResp, resp)
+	})
+
+	t.Run("fetching an action capability, and executing it with error", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(testContext)
+		defer cancel()
+
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = errors.New("bang")
+
+		_, err = c.(capabilities.ActionCapability).Execute(
+			ctx,
+			expectedRequest)
+		require.NotNil(t, err)
+		assert.Equal(t, "bang", err.Error())
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(testContext)
 		defer cancel()
 
-		ma := mustMockCallback(t, capabilities.CapabilityTypeAction)
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
@@ -456,14 +488,11 @@ func Test_Capabilities(t *testing.T) {
 			Inputs: imap,
 		}
 
-		ch, err := c.(capabilities.ActionCapability).Execute(
+		ma.callback <- capabilities.CapabilityResponse{}
+		_, err = c.(capabilities.ActionCapability).Execute(
 			ctx,
 			expectedRequest)
 		require.NoError(t, err)
-
-		close(ma.callback)
-		_, isOpen := <-ch
-		assert.False(t, isOpen)
 	})
 
 	t.Run("calling execute should be synchronous", func(t *testing.T) {
@@ -471,7 +500,8 @@ func Test_Capabilities(t *testing.T) {
 		defer cancel()
 
 		ma := mustSynchronousCallback(t, capabilities.CapabilityTypeAction)
-		defer close(ma.callback)
+		ma.callback <- capabilities.CapabilityResponse{}
+
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
@@ -510,15 +540,15 @@ func (m *synchronousCallback) UnregisterFromWorkflow(ctx context.Context, reques
 	return nil
 }
 
-func (m *synchronousCallback) Execute(ctx context.Context, request capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (m *synchronousCallback) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	m.executeCalled = true
-	return m.callback, nil
+	return <-m.callback, nil
 }
 
 func mustSynchronousCallback(t *testing.T, _type capabilities.CapabilityType) *synchronousCallback {
 	return &synchronousCallback{
 		BaseCapability: capabilities.MustNewCapabilityInfo(fmt.Sprintf("callback-%s@1.0.0", _type), _type, fmt.Sprintf("a mock %s", _type)),
-		callback:       make(chan capabilities.CapabilityResponse),
+		callback:       make(chan capabilities.CapabilityResponse, 10),
 		executeCalled:  false,
 	}
 }

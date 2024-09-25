@@ -26,7 +26,7 @@ type ActionConfig struct {
 
 	// SnakeCaseInSchemaForTesting corresponds to the JSON schema field
 	// "snake_case_in_schema_for_testing".
-	SnakeCaseInSchemaForTesting int `json:"snake_case_in_schema_for_testing" yaml:"snake_case_in_schema_for_testing" mapstructure:"snake_case_in_schema_for_testing"`
+	SnakeCaseInSchemaForTesting uint64 `json:"snake_case_in_schema_for_testing" yaml:"snake_case_in_schema_for_testing" mapstructure:"snake_case_in_schema_for_testing"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

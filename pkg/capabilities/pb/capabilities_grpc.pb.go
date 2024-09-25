@@ -20,7 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	BaseCapability_Info_FullMethodName = "/loop.BaseCapability/Info"
+	BaseCapability_Info_FullMethodName = "/capabilities.BaseCapability/Info"
 )
 
 // BaseCapabilityClient is the client API for BaseCapability service.
@@ -97,7 +97,7 @@ func _BaseCapability_Info_Handler(srv interface{}, ctx context.Context, dec func
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var BaseCapability_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.BaseCapability",
+	ServiceName: "capabilities.BaseCapability",
 	HandlerType: (*BaseCapabilityServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -110,8 +110,8 @@ var BaseCapability_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	TriggerExecutable_RegisterTrigger_FullMethodName   = "/loop.TriggerExecutable/RegisterTrigger"
-	TriggerExecutable_UnregisterTrigger_FullMethodName = "/loop.TriggerExecutable/UnregisterTrigger"
+	TriggerExecutable_RegisterTrigger_FullMethodName   = "/capabilities.TriggerExecutable/RegisterTrigger"
+	TriggerExecutable_UnregisterTrigger_FullMethodName = "/capabilities.TriggerExecutable/UnregisterTrigger"
 )
 
 // TriggerExecutableClient is the client API for TriggerExecutable service.
@@ -246,7 +246,7 @@ func _TriggerExecutable_UnregisterTrigger_Handler(srv interface{}, ctx context.C
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.TriggerExecutable",
+	ServiceName: "capabilities.TriggerExecutable",
 	HandlerType: (*TriggerExecutableServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -265,52 +265,52 @@ var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	CallbackExecutable_RegisterToWorkflow_FullMethodName     = "/loop.CallbackExecutable/RegisterToWorkflow"
-	CallbackExecutable_UnregisterFromWorkflow_FullMethodName = "/loop.CallbackExecutable/UnregisterFromWorkflow"
-	CallbackExecutable_Execute_FullMethodName                = "/loop.CallbackExecutable/Execute"
+	Executable_RegisterToWorkflow_FullMethodName     = "/capabilities.Executable/RegisterToWorkflow"
+	Executable_UnregisterFromWorkflow_FullMethodName = "/capabilities.Executable/UnregisterFromWorkflow"
+	Executable_Execute_FullMethodName                = "/capabilities.Executable/Execute"
 )
 
-// CallbackExecutableClient is the client API for CallbackExecutable service.
+// ExecutableClient is the client API for Executable service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type CallbackExecutableClient interface {
+type ExecutableClient interface {
 	RegisterToWorkflow(ctx context.Context, in *RegisterToWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterFromWorkflow(ctx context.Context, in *UnregisterFromWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Execute(ctx context.Context, in *CapabilityRequest, opts ...grpc.CallOption) (CallbackExecutable_ExecuteClient, error)
+	Execute(ctx context.Context, in *CapabilityRequest, opts ...grpc.CallOption) (Executable_ExecuteClient, error)
 }
 
-type callbackExecutableClient struct {
+type executableClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewCallbackExecutableClient(cc grpc.ClientConnInterface) CallbackExecutableClient {
-	return &callbackExecutableClient{cc}
+func NewExecutableClient(cc grpc.ClientConnInterface) ExecutableClient {
+	return &executableClient{cc}
 }
 
-func (c *callbackExecutableClient) RegisterToWorkflow(ctx context.Context, in *RegisterToWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *executableClient) RegisterToWorkflow(ctx context.Context, in *RegisterToWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, CallbackExecutable_RegisterToWorkflow_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Executable_RegisterToWorkflow_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *callbackExecutableClient) UnregisterFromWorkflow(ctx context.Context, in *UnregisterFromWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *executableClient) UnregisterFromWorkflow(ctx context.Context, in *UnregisterFromWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, CallbackExecutable_UnregisterFromWorkflow_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Executable_UnregisterFromWorkflow_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *callbackExecutableClient) Execute(ctx context.Context, in *CapabilityRequest, opts ...grpc.CallOption) (CallbackExecutable_ExecuteClient, error) {
-	stream, err := c.cc.NewStream(ctx, &CallbackExecutable_ServiceDesc.Streams[0], CallbackExecutable_Execute_FullMethodName, opts...)
+func (c *executableClient) Execute(ctx context.Context, in *CapabilityRequest, opts ...grpc.CallOption) (Executable_ExecuteClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Executable_ServiceDesc.Streams[0], Executable_Execute_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &callbackExecutableExecuteClient{stream}
+	x := &executableExecuteClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -320,136 +320,136 @@ func (c *callbackExecutableClient) Execute(ctx context.Context, in *CapabilityRe
 	return x, nil
 }
 
-type CallbackExecutable_ExecuteClient interface {
-	Recv() (*ResponseMessage, error)
+type Executable_ExecuteClient interface {
+	Recv() (*CapabilityResponse, error)
 	grpc.ClientStream
 }
 
-type callbackExecutableExecuteClient struct {
+type executableExecuteClient struct {
 	grpc.ClientStream
 }
 
-func (x *callbackExecutableExecuteClient) Recv() (*ResponseMessage, error) {
-	m := new(ResponseMessage)
+func (x *executableExecuteClient) Recv() (*CapabilityResponse, error) {
+	m := new(CapabilityResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-// CallbackExecutableServer is the server API for CallbackExecutable service.
-// All implementations must embed UnimplementedCallbackExecutableServer
+// ExecutableServer is the server API for Executable service.
+// All implementations must embed UnimplementedExecutableServer
 // for forward compatibility
-type CallbackExecutableServer interface {
+type ExecutableServer interface {
 	RegisterToWorkflow(context.Context, *RegisterToWorkflowRequest) (*emptypb.Empty, error)
 	UnregisterFromWorkflow(context.Context, *UnregisterFromWorkflowRequest) (*emptypb.Empty, error)
-	Execute(*CapabilityRequest, CallbackExecutable_ExecuteServer) error
-	mustEmbedUnimplementedCallbackExecutableServer()
+	Execute(*CapabilityRequest, Executable_ExecuteServer) error
+	mustEmbedUnimplementedExecutableServer()
 }
 
-// UnimplementedCallbackExecutableServer must be embedded to have forward compatible implementations.
-type UnimplementedCallbackExecutableServer struct {
+// UnimplementedExecutableServer must be embedded to have forward compatible implementations.
+type UnimplementedExecutableServer struct {
 }
 
-func (UnimplementedCallbackExecutableServer) RegisterToWorkflow(context.Context, *RegisterToWorkflowRequest) (*emptypb.Empty, error) {
+func (UnimplementedExecutableServer) RegisterToWorkflow(context.Context, *RegisterToWorkflowRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterToWorkflow not implemented")
 }
-func (UnimplementedCallbackExecutableServer) UnregisterFromWorkflow(context.Context, *UnregisterFromWorkflowRequest) (*emptypb.Empty, error) {
+func (UnimplementedExecutableServer) UnregisterFromWorkflow(context.Context, *UnregisterFromWorkflowRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterFromWorkflow not implemented")
 }
-func (UnimplementedCallbackExecutableServer) Execute(*CapabilityRequest, CallbackExecutable_ExecuteServer) error {
+func (UnimplementedExecutableServer) Execute(*CapabilityRequest, Executable_ExecuteServer) error {
 	return status.Errorf(codes.Unimplemented, "method Execute not implemented")
 }
-func (UnimplementedCallbackExecutableServer) mustEmbedUnimplementedCallbackExecutableServer() {}
+func (UnimplementedExecutableServer) mustEmbedUnimplementedExecutableServer() {}
 
-// UnsafeCallbackExecutableServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CallbackExecutableServer will
+// UnsafeExecutableServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ExecutableServer will
 // result in compilation errors.
-type UnsafeCallbackExecutableServer interface {
-	mustEmbedUnimplementedCallbackExecutableServer()
+type UnsafeExecutableServer interface {
+	mustEmbedUnimplementedExecutableServer()
 }
 
-func RegisterCallbackExecutableServer(s grpc.ServiceRegistrar, srv CallbackExecutableServer) {
-	s.RegisterService(&CallbackExecutable_ServiceDesc, srv)
+func RegisterExecutableServer(s grpc.ServiceRegistrar, srv ExecutableServer) {
+	s.RegisterService(&Executable_ServiceDesc, srv)
 }
 
-func _CallbackExecutable_RegisterToWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Executable_RegisterToWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterToWorkflowRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CallbackExecutableServer).RegisterToWorkflow(ctx, in)
+		return srv.(ExecutableServer).RegisterToWorkflow(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CallbackExecutable_RegisterToWorkflow_FullMethodName,
+		FullMethod: Executable_RegisterToWorkflow_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CallbackExecutableServer).RegisterToWorkflow(ctx, req.(*RegisterToWorkflowRequest))
+		return srv.(ExecutableServer).RegisterToWorkflow(ctx, req.(*RegisterToWorkflowRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CallbackExecutable_UnregisterFromWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Executable_UnregisterFromWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UnregisterFromWorkflowRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CallbackExecutableServer).UnregisterFromWorkflow(ctx, in)
+		return srv.(ExecutableServer).UnregisterFromWorkflow(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CallbackExecutable_UnregisterFromWorkflow_FullMethodName,
+		FullMethod: Executable_UnregisterFromWorkflow_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CallbackExecutableServer).UnregisterFromWorkflow(ctx, req.(*UnregisterFromWorkflowRequest))
+		return srv.(ExecutableServer).UnregisterFromWorkflow(ctx, req.(*UnregisterFromWorkflowRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CallbackExecutable_Execute_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Executable_Execute_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(CapabilityRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(CallbackExecutableServer).Execute(m, &callbackExecutableExecuteServer{stream})
+	return srv.(ExecutableServer).Execute(m, &executableExecuteServer{stream})
 }
 
-type CallbackExecutable_ExecuteServer interface {
-	Send(*ResponseMessage) error
+type Executable_ExecuteServer interface {
+	Send(*CapabilityResponse) error
 	grpc.ServerStream
 }
 
-type callbackExecutableExecuteServer struct {
+type executableExecuteServer struct {
 	grpc.ServerStream
 }
 
-func (x *callbackExecutableExecuteServer) Send(m *ResponseMessage) error {
+func (x *executableExecuteServer) Send(m *CapabilityResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-// CallbackExecutable_ServiceDesc is the grpc.ServiceDesc for CallbackExecutable service.
+// Executable_ServiceDesc is the grpc.ServiceDesc for Executable service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var CallbackExecutable_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.CallbackExecutable",
-	HandlerType: (*CallbackExecutableServer)(nil),
+var Executable_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "capabilities.Executable",
+	HandlerType: (*ExecutableServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "RegisterToWorkflow",
-			Handler:    _CallbackExecutable_RegisterToWorkflow_Handler,
+			Handler:    _Executable_RegisterToWorkflow_Handler,
 		},
 		{
 			MethodName: "UnregisterFromWorkflow",
-			Handler:    _CallbackExecutable_UnregisterFromWorkflow_Handler,
+			Handler:    _Executable_UnregisterFromWorkflow_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Execute",
-			Handler:       _CallbackExecutable_Execute_Handler,
+			Handler:       _Executable_Execute_Handler,
 			ServerStreams: true,
 		},
 	},
@@ -457,8 +457,8 @@ var CallbackExecutable_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	StandardCapabilities_Initialise_FullMethodName = "/loop.StandardCapabilities/Initialise"
-	StandardCapabilities_Infos_FullMethodName      = "/loop.StandardCapabilities/Infos"
+	StandardCapabilities_Initialise_FullMethodName = "/capabilities.StandardCapabilities/Initialise"
+	StandardCapabilities_Infos_FullMethodName      = "/capabilities.StandardCapabilities/Infos"
 )
 
 // StandardCapabilitiesClient is the client API for StandardCapabilities service.
@@ -567,7 +567,7 @@ func _StandardCapabilities_Infos_Handler(srv interface{}, ctx context.Context, d
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var StandardCapabilities_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.StandardCapabilities",
+	ServiceName: "capabilities.StandardCapabilities",
 	HandlerType: (*StandardCapabilitiesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

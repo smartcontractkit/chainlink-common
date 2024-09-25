@@ -11,7 +11,7 @@ import (
 )
 
 type TemplateWorkflowGeneratorHelper struct {
-	Templates map[string]string
+	Templates map[string]TemplateAndCondition
 }
 
 func (t *TemplateWorkflowGeneratorHelper) Generate(info GeneratedInfo) (map[string]string, error) {
@@ -20,8 +20,12 @@ func (t *TemplateWorkflowGeneratorHelper) Generate(info GeneratedInfo) (map[stri
 		return files, nil
 	}
 
-	for file, t := range t.Templates {
-		content, err := genFromTemplate(file, t, info)
+	for file, templateAndCondition := range t.Templates {
+		if !templateAndCondition.ShouldGenerate(info) {
+			continue
+		}
+
+		content, err := genFromTemplate(file, templateAndCondition.Template(), info)
 		if err != nil {
 			return nil, err
 		}

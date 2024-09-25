@@ -17,9 +17,12 @@ type PlatformOpts struct {
 
 type Props struct {
 	Name              string
+	Platform          grafana.TypePlatform
 	MetricsDataSource *grafana.DataSource
-	FolderUID         string
 	PlatformOpts      PlatformOpts
+	SlackChannel      string
+	SlackWebhookURL   string
+	AlertsTags        map[string]string
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms
@@ -32,6 +35,7 @@ func PlatformPanelOpts(platform grafana.TypePlatform) PlatformOpts {
 	case grafana.TypePlatformKubernetes:
 		po.LabelFilters["namespace"] = `=~"${namespace}"`
 		po.LabelFilters["job"] = `=~"${job}"`
+		po.LabelFilters["pod"] = `=~"${pod}"`
 		po.LabelFilter = "job"
 		po.LegendString = "pod"
 	case grafana.TypePlatformDocker:

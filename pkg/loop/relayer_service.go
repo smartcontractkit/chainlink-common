@@ -76,6 +76,13 @@ func (r *RelayerService) NewLLOProvider(ctx context.Context, rargs types.RelayAr
 	return r.Service.NewLLOProvider(ctx, rargs, pargs)
 }
 
+func (r *RelayerService) LatestHead(ctx context.Context) (types.Head, error) {
+	if err := r.WaitCtx(ctx); err != nil {
+		return types.Head{}, err
+	}
+	return r.Service.LatestHead(ctx)
+}
+
 func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.ChainStatus{}, err

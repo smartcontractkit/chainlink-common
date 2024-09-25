@@ -116,6 +116,62 @@ func (_c *Relayer_HealthReport_Call) RunAndReturn(run func() map[string]error) *
 	return _c
 }
 
+// LatestHead provides a mock function with given fields: _a0
+func (_m *Relayer) LatestHead(_a0 context.Context) (types.Head, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestHead")
+	}
+
+	var r0 types.Head
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (types.Head, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) types.Head); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(types.Head)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_LatestHead_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestHead'
+type Relayer_LatestHead_Call struct {
+	*mock.Call
+}
+
+// LatestHead is a helper method to define mock.On call
+//   - _a0 context.Context
+func (_e *Relayer_Expecter) LatestHead(_a0 interface{}) *Relayer_LatestHead_Call {
+	return &Relayer_LatestHead_Call{Call: _e.mock.On("LatestHead", _a0)}
+}
+
+func (_c *Relayer_LatestHead_Call) Run(run func(_a0 context.Context)) *Relayer_LatestHead_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Relayer_LatestHead_Call) Return(_a0 types.Head, _a1 error) *Relayer_LatestHead_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_LatestHead_Call) RunAndReturn(run func(context.Context) (types.Head, error)) *Relayer_LatestHead_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Name provides a mock function with given fields:
 func (_m *Relayer) Name() string {
 	ret := _m.Called()
@@ -157,6 +213,124 @@ func (_c *Relayer_Name_Call) Return(_a0 string) *Relayer_Name_Call {
 }
 
 func (_c *Relayer_Name_Call) RunAndReturn(run func() string) *Relayer_Name_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// NewChainWriter provides a mock function with given fields: _a0, chainWriterConfig
+func (_m *Relayer) NewChainWriter(_a0 context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+	ret := _m.Called(_a0, chainWriterConfig)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewChainWriter")
+	}
+
+	var r0 types.ChainWriter
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ChainWriter, error)); ok {
+		return rf(_a0, chainWriterConfig)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ChainWriter); ok {
+		r0 = rf(_a0, chainWriterConfig)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.ChainWriter)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
+		r1 = rf(_a0, chainWriterConfig)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_NewChainWriter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewChainWriter'
+type Relayer_NewChainWriter_Call struct {
+	*mock.Call
+}
+
+// NewChainWriter is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - chainWriterConfig []byte
+func (_e *Relayer_Expecter) NewChainWriter(_a0 interface{}, chainWriterConfig interface{}) *Relayer_NewChainWriter_Call {
+	return &Relayer_NewChainWriter_Call{Call: _e.mock.On("NewChainWriter", _a0, chainWriterConfig)}
+}
+
+func (_c *Relayer_NewChainWriter_Call) Run(run func(_a0 context.Context, chainWriterConfig []byte)) *Relayer_NewChainWriter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewChainWriter_Call) Return(_a0 types.ChainWriter, _a1 error) *Relayer_NewChainWriter_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewChainWriter_Call) RunAndReturn(run func(context.Context, []byte) (types.ChainWriter, error)) *Relayer_NewChainWriter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// NewContractReader provides a mock function with given fields: _a0, contractReaderConfig
+func (_m *Relayer) NewContractReader(_a0 context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
+	ret := _m.Called(_a0, contractReaderConfig)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewContractReader")
+	}
+
+	var r0 types.ContractReader
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ContractReader, error)); ok {
+		return rf(_a0, contractReaderConfig)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ContractReader); ok {
+		r0 = rf(_a0, contractReaderConfig)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.ContractReader)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
+		r1 = rf(_a0, contractReaderConfig)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_NewContractReader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewContractReader'
+type Relayer_NewContractReader_Call struct {
+	*mock.Call
+}
+
+// NewContractReader is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - contractReaderConfig []byte
+func (_e *Relayer_Expecter) NewContractReader(_a0 interface{}, contractReaderConfig interface{}) *Relayer_NewContractReader_Call {
+	return &Relayer_NewContractReader_Call{Call: _e.mock.On("NewContractReader", _a0, contractReaderConfig)}
+}
+
+func (_c *Relayer_NewContractReader_Call) Run(run func(_a0 context.Context, contractReaderConfig []byte)) *Relayer_NewContractReader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewContractReader_Call) Return(_a0 types.ContractReader, _a1 error) *Relayer_NewContractReader_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewContractReader_Call) RunAndReturn(run func(context.Context, []byte) (types.ContractReader, error)) *Relayer_NewContractReader_Call {
 	_c.Call.Return(run)
 	return _c
 }

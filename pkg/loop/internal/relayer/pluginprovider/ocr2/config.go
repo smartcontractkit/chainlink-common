@@ -10,7 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -260,12 +260,12 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 	pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
 	// although these are part of the plugin provider interface, they are not actually implemented by all plugin providers (ie median)
 	// once we transition all plugins to the core node api, we can remove these checks
-	if provider.ChainReader() != nil {
-		pb.RegisterChainReaderServer(s, chainreader.NewServer(provider.ChainReader()))
+	if provider.ContractReader() != nil {
+		pb.RegisterContractReaderServer(s, contractreader.NewServer(provider.ContractReader()))
 	}
 
 	if provider.Codec() != nil {
-		pb.RegisterCodecServer(s, chainreader.NewCodecServer(provider.Codec()))
+		pb.RegisterCodecServer(s, contractreader.NewCodecServer(provider.Codec()))
 	}
 }
 

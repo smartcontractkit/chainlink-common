@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"regexp"
 
-	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
+	ocr3cap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 )
 
 // Writes to a blockchain
@@ -92,7 +92,7 @@ func (j *TargetConfig) UnmarshalJSON(b []byte) error {
 
 type TargetInputs struct {
 	// SignedReport corresponds to the JSON schema field "signed_report".
-	SignedReport ocr3.SignedReport `json:"signed_report" yaml:"signed_report" mapstructure:"signed_report"`
+	SignedReport ocr3cap.SignedReport `json:"signed_report" yaml:"signed_report" mapstructure:"signed_report"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

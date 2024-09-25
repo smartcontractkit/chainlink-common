@@ -1,6 +1,8 @@
 package nopocr
 
 import (
+	"fmt"
+
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -10,21 +12,18 @@ import (
 
 type Props struct {
 	Name              string
-	FolderUID         string
 	MetricsDataSource *grafana.DataSource
 	OCRVersion        string
 }
 
-func NewDashboard(options *grafana.DashboardOptions) (*grafana.Dashboard, error) {
-	props := &Props{
-		Name:              options.Name,
-		MetricsDataSource: options.MetricsDataSource,
-		FolderUID:         options.FolderUID,
-		OCRVersion:        options.OCRVersion,
+func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+	if props.Name == "" {
+		return nil, fmt.Errorf("Name is required")
 	}
 
-	builder := grafana.NewBuilder(options, &grafana.BuilderOptions{
-		Tags:     []string{"NOP", "Health", options.OCRVersion},
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{
+		Name:     props.Name,
+		Tags:     []string{"NOP", "Health", props.OCRVersion},
 		Refresh:  "30s",
 		TimeFrom: "now-1d",
 		TimeTo:   "now",

@@ -183,7 +183,7 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 // in a separate process to the reporting plugin LOOPP. However, only the reporting plugin
 // LOOPP is able to transmit responses back to the workflow engine. As a workaround to this, we've implemented a custom contract transmitter which fetches this capability from the
 // registry and calls Execute with the response, setting "method = `methodSendResponse`".
-func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityRequest) (<-chan capabilities.CapabilityResponse, error) {
+func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	m := struct {
 		Method       string
 		Transmission map[string]any
@@ -200,7 +200,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 	case methodSendResponse:
 		inputs, err := values.NewMap(m.Transmission)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create map for response inputs: %w", err)
+			return capabilities.CapabilityResponse{}, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}
 		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
 		var responseErr error
@@ -208,44 +208,43 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			o.lggr.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
 			responseErr = capabilities.ErrStopExecution
 		}
-		out := &requests.Response{
+		out := requests.Response{
 			WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
-			CapabilityResponse: capabilities.CapabilityResponse{
-				Value: inputs,
-				Err:   responseErr,
-			},
+			Value:               inputs,
+			Err:                 responseErr,
 		}
 		o.reqHandler.SendResponse(ctx, out)
 
 		// Return a dummy response back to the caller
 		// This allows the transmitter to block on a response before
 		// returning from Transmit()
-		// TODO(cedric): our current stream-based implementation for the Execute
-		// returns immediately without waiting for the server-side to complete. This
-		// breaks the API since callers can no longer rely on a non-error response
-		// from Execute() serving as an acknowledgement that the request in being handled.
-		callbackCh := make(chan capabilities.CapabilityResponse, 1)
-		callbackCh <- capabilities.CapabilityResponse{}
-		close(callbackCh)
-		return callbackCh, nil
+		return capabilities.CapabilityResponse{}, nil
 	case methodStartRequest:
 		// Receives and stores an observation to do consensus on
 		// Receives an aggregation method; at this point the method has been validated
 		// Returns the consensus result over a channel
 		inputs, err := o.ValidateInputs(r.Inputs)
 		if err != nil {
-			return nil, err
+			return capabilities.CapabilityResponse{}, err
 		}
 
 		config, err := o.ValidateConfig(r.Config)
 		if err != nil {
-			return nil, err
+			return capabilities.CapabilityResponse{}, err
 		}
 
-		return o.queueRequestForProcessing(ctx, r.Metadata, inputs, config)
+		ch, err := o.queueRequestForProcessing(ctx, r.Metadata, inputs, config)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		response := <-ch
+		return capabilities.CapabilityResponse{
+			Value: response.Value,
+		}, response.Err
 	}
 
-	return nil, fmt.Errorf("unknown method: %s", m.Method)
+	return capabilities.CapabilityResponse{}, fmt.Errorf("unknown method: %s", m.Method)
 }
 
 // queueRequestForProcessing queues a request for processing by the worker
@@ -257,8 +256,8 @@ func (o *capability) queueRequestForProcessing(
 	metadata capabilities.RequestMetadata,
 	i *inputs,
 	c *config,
-) (<-chan capabilities.CapabilityResponse, error) {
-	callbackCh := make(chan capabilities.CapabilityResponse, o.callbackChannelBufferSize)
+) (<-chan requests.Response, error) {
+	callbackCh := make(chan requests.Response, o.callbackChannelBufferSize)
 
 	// Use the capability-level request timeout unless the request's config specifies
 	// its own timeout, in which case we'll use that instead. This allows the workflow spec

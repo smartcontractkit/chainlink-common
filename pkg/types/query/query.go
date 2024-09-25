@@ -9,7 +9,7 @@ import (
 // KeyFilter is used to filter down chain specific data related to a key.
 type KeyFilter struct {
 	// Key points to the underlying chain contract address and some data that belongs to that contract.
-	// Depending on the underlying Chain Reader blockchain implementation key can map to different onchain concepts, but should be able to map differing onchain data to same offchain data if they belong to the same key.
+	// Depending on the underlying Contract Reader blockchain implementation key can map to different onchain concepts, but should be able to map differing onchain data to same offchain data if they belong to the same key.
 	Key string
 	// The base Expressions slice indicates AND logical operation over expressions, which can be primitives or nested boolean expressions.
 	// For eg. []Expression{primitive, primitive, BoolExpression{AND, primitive, BoolExpression{OR, primitive, primitive}} is primitive AND primitive AND (primitive AND (primitive OR primitive)).

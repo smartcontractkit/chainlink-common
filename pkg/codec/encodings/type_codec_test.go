@@ -251,7 +251,7 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 		{Name: "Account", Codec: acc},
 		{Name: "Accounts", Codec: accs},
 		{Name: "BigField", Codec: bi},
-		{Name: "NestedDynamicStruct", Codec: midDyanmicCodec},
+		{Name: "NestedDynamicStruct", Codec: midDynamicCodec},
 		{Name: "NestedStaticStruct", Codec: midStaticCodec},
 	})
 	require.NoError(t, err)

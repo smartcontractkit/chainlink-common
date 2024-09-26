@@ -35,11 +35,12 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	props.PlatformOpts = PlatformPanelOpts(props.Platform)
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
-		Name:     props.Name,
-		Tags:     []string{"Core", "Node"},
-		Refresh:  "30s",
-		TimeFrom: "now-30m",
-		TimeTo:   "now",
+		Name:       props.Name,
+		Tags:       []string{"Core", "Node"},
+		Refresh:    "30s",
+		TimeFrom:   "now-30m",
+		TimeTo:     "now",
+		AlertsTags: props.AlertsTags,
 	})
 
 	if props.SlackChannel != "" && props.SlackWebhookURL != "" {
@@ -78,6 +79,15 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	builder.AddRow("SQLQueries")
 	builder.AddPanel(sqlQueries(props)...)
 
+	builder.AddRow("HeadTracker")
+	builder.AddPanel(headTracker(props)...)
+
+	builder.AddRow("HeadReporter")
+	builder.AddPanel(headReporter(props)...)
+
+	builder.AddRow("TxManager")
+	builder.AddPanel(txManager(props)...)
+
 	builder.AddRow("LogPoller")
 	builder.AddPanel(logPoller(props)...)
 
@@ -86,15 +96,6 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 
 	builder.AddRow("Mailbox")
 	builder.AddPanel(mailbox(props)...)
-
-	builder.AddRow("PromReporter")
-	builder.AddPanel(promReporter(props)...)
-
-	builder.AddRow("TxManager")
-	builder.AddPanel(txManager(props)...)
-
-	builder.AddRow("HeadTracker")
-	builder.AddPanel(headTracker(props)...)
 
 	builder.AddRow("Logs Counters")
 	builder.AddPanel(logsCounters(props)...)
@@ -325,19 +326,86 @@ func headlines(p *Props) []*grafana.Panel {
 		Orientation: common.VizOrientationHorizontal,
 	}))
 
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Health Avg by Service over 15m",
+			Span:       16,
+			Height:     6,
+			Decimals:   1,
+			Unit:       "percent",
+			Query: []grafana.Query{
+				{
+					Expr:   `100 * (avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `}[15m])) by (` + p.PlatformOpts.LabelFilter + `, service_id, version, service, cluster, env))`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{service_id}}`,
+				},
+			},
+			Min: grafana.Pointer[float64](0),
+			Max: grafana.Pointer[float64](100),
+			AlertOptions: &grafana.AlertOptions{
+				Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
+				Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "15m",
+				Tags: map[string]string{
+					"severity": "warning",
+				},
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `health{` + p.AlertsFilters + `}`,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "D",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ReduceExpression: &grafana.ReduceExpression{
+							Expression: "A",
+							Reducer:    expr.TypeReduceReducerMean,
+						},
+					},
+					{
+						RefID: "C",
+						MathExpression: &grafana.MathExpression{
+							Expression: "$B * 100",
+						},
+					},
+					{
+						RefID: "D",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "C",
+							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+								{
+									Params: []float64{90, 0},
+									Type:   expr.TypeThresholdTypeLt,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
+		},
+	}))
+
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Components Health Avg by Service over 15m",
+			Title:       "Health Avg by Service over 15m with health < 90%",
 			Description: "Only displays services with health average < 90%",
-			Span:        24,
-			Height:      4,
+			Span:        8,
+			Height:      6,
 			Decimals:    1,
 			Unit:        "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `}[15m])) by (service_id, version, service, cluster, env) < 90`,
-					Legend: "{{service_id}}",
+					Expr:   `100 * avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `}[15m])) by (` + p.PlatformOpts.LabelFilter + `, service_id, version, service, cluster, env) < 90`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{service_id}}`,
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -371,28 +439,32 @@ func headlines(p *Props) []*grafana.Panel {
 			},
 			AlertOptions: &grafana.AlertOptions{
 				Summary:     `ETH Balance is lower than threshold`,
-				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.PlatformOpts.LegendString + `" }}`,
+				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.PlatformOpts.LabelFilter + `" }}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "1m",
+				For:         "15m",
+				NoDataState: alerting.RuleNoDataStateOK,
 				Tags: map[string]string{
-					"severity": "warning",
+					"severity": "critical",
 				},
 				Query: []grafana.RuleQuery{
 					{
-						Expr:       `eth_balance`,
+						Expr:       `eth_balance{` + p.AlertsFilters + `}`,
 						Instant:    true,
 						RefID:      "A",
 						Datasource: p.MetricsDataSource.UID,
 					},
 				},
-				Condition: &grafana.ConditionQuery{
-					RefID: "B",
-					ThresholdExpression: &grafana.ThresholdExpression{
-						Expression: "A",
-						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-							{
-								Params: []float64{2, 0},
-								Type:   expr.TypeThresholdTypeLt,
+				QueryRefCondition: "B",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "A",
+							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+								{
+									Params: []float64{1, 0},
+									Type:   expr.TypeThresholdTypeLt,
+								},
 							},
 						},
 					},
@@ -412,6 +484,39 @@ func headlines(p *Props) []*grafana.Panel {
 				{
 					Expr:   `sum(solana_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
 					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
+				},
+			},
+			AlertOptions: &grafana.AlertOptions{
+				Summary:     `Solana Balance is lower than threshold`,
+				Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.PlatformOpts.LabelFilter + `" }}`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "15m",
+				NoDataState: alerting.RuleNoDataStateOK,
+				Tags: map[string]string{
+					"severity": "critical",
+				},
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `solana_balance{` + p.AlertsFilters + `}`,
+						Instant:    true,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "B",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "A",
+							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+								{
+									Params: []float64{1, 0},
+									Type:   expr.TypeThresholdTypeLt,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -681,6 +786,238 @@ func sqlQueries(p *Props) []*grafana.Panel {
 			Placement:   common.LegendPlacementRight,
 		},
 	}))
+
+	return panels
+}
+
+func headTracker(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Current Head",
+			Span:       18,
+			Height:     6,
+			Unit:       "Block",
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Current Head Summary",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:    `head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend:  `{{` + p.PlatformOpts.LegendString + `}}`,
+					Instant: true,
+				},
+			},
+		},
+		ColorMode: common.BigValueColorModeNone,
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Heads Received Rate",
+			Span:       24,
+			Height:     6,
+			Unit:       "Block",
+			Query: []grafana.Query{
+				{
+					Expr:   `rate(head_tracker_heads_received{` + p.PlatformOpts.LabelQuery + `}[1m])`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+				},
+			},
+			AlertOptions: &grafana.AlertOptions{
+				Summary:     `No Headers Received`,
+				Description: `{{ index $labels "` + p.PlatformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "10m",
+				NoDataState: alerting.RuleNoDataStateOK,
+				Tags: map[string]string{
+					"severity": "critical",
+				},
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `increase(head_tracker_heads_received{` + p.AlertsFilters + `}[10m])`,
+						Instant:    true,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "B",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "A",
+							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+								{
+									Params: []float64{1, 0},
+									Type:   expr.TypeThresholdTypeLt,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Very Old Head",
+			Span:       12,
+			Height:     6,
+			Unit:       "Block",
+			Query: []grafana.Query{
+				{
+					Expr:   `head_tracker_very_old_head{` + p.PlatformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Head Tracker Connection Errors Rate",
+			Span:       12,
+			Height:     6,
+			Decimals:   1,
+			Query: []grafana.Query{
+				{
+					Expr:   `rate(head_tracker_connection_errors{` + p.PlatformOpts.LabelQuery + `}[1m])`,
+					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+				},
+			},
+		},
+	}))
+
+	return panels
+}
+
+func headReporter(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Unconfirmed Transactions",
+			Span:       8,
+			Height:     6,
+			Unit:       "Tx",
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(unconfirmed_transactions{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Unconfirmed TX Age",
+			Span:       8,
+			Height:     6,
+			Unit:       "s",
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(max_unconfirmed_tx_age{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "Unconfirmed TX Blocks",
+			Span:       8,
+			Height:     6,
+			Unit:       "Blocks",
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(max_unconfirmed_blocks{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+				},
+			},
+		},
+	}))
+
+	return panels
+}
+
+func txManager(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
+
+	txStatus := map[string]string{
+		"num_confirmed_transactions":  "Confirmed",
+		"num_successful_transactions": "Successful",
+		"num_tx_reverted":             "Reverted",
+		"num_gas_bumps":               "Gas Bumps",
+		"fwd_tx_count":                "Forwarded",
+		"tx_attempt_count":            "Attempts",
+		"gas_bump_exceeds_limit":      "Gas Bump Exceeds Limit",
+	}
+
+	for status, title := range txStatus {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource: p.MetricsDataSource.Name,
+				Title:      "TX Manager " + title,
+				Span:       6,
+				Height:     6,
+				Query: []grafana.Query{
+					{
+						Expr:   `sum(tx_manager_` + status + `{` + p.PlatformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.PlatformOpts.LabelFilter + `)`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+					},
+				},
+			},
+		}))
+	}
+
+	txUntilStatus := map[string]string{
+		"broadcast": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
+		"confirmed": "The amount of time elapsed from a transaction being broadcast to being included in a block",
+	}
+
+	for status, description := range txUntilStatus {
+		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Datasource:  p.MetricsDataSource.Name,
+				Title:       "TX Manager Time Until " + status,
+				Description: description,
+				Span:        6,
+				Height:      6,
+				Decimals:    1,
+				Unit:        "ms",
+				Query: []grafana.Query{
+					{
+						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.PlatformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+					},
+				},
+			},
+		}))
+	}
 
 	return panels
 }
@@ -957,223 +1294,6 @@ func mailbox(p *Props) []*grafana.Panel {
 	return panels
 }
 
-func promReporter(p *Props) []*grafana.Panel {
-	var panels []*grafana.Panel
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Unconfirmed Transactions",
-			Span:       8,
-			Height:     6,
-			Unit:       "Tx",
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(unconfirmed_transactions{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Unconfirmed TX Age",
-			Span:       8,
-			Height:     6,
-			Unit:       "s",
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(max_unconfirmed_tx_age{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Unconfirmed TX Blocks",
-			Span:       8,
-			Height:     6,
-			Unit:       "Blocks",
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(max_unconfirmed_blocks{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	return panels
-}
-
-func txManager(p *Props) []*grafana.Panel {
-	var panels []*grafana.Panel
-
-	txStatus := map[string]string{
-		"num_confirmed_transactions":  "Confirmed",
-		"num_successful_transactions": "Successful",
-		"num_tx_reverted":             "Reverted",
-		"num_gas_bumps":               "Gas Bumps",
-		"fwd_tx_count":                "Forwarded",
-		"tx_attempt_count":            "Attempts",
-		"gas_bump_exceeds_limit":      "Gas Bump Exceeds Limit",
-	}
-
-	for status, title := range txStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource: p.MetricsDataSource.Name,
-				Title:      "TX Manager " + title,
-				Span:       6,
-				Height:     6,
-				Query: []grafana.Query{
-					{
-						Expr:   `sum(tx_manager_` + status + `{` + p.PlatformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.PlatformOpts.LabelFilter + `)`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
-				},
-			},
-		}))
-	}
-
-	txUntilStatus := map[string]string{
-		"broadcast": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
-		"confirmed": "The amount of time elapsed from a transaction being broadcast to being included in a block",
-	}
-
-	for status, description := range txUntilStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource:  p.MetricsDataSource.Name,
-				Title:       "TX Manager Time Until " + status,
-				Description: description,
-				Span:        6,
-				Height:      6,
-				Decimals:    1,
-				Unit:        "ms",
-				Query: []grafana.Query{
-					{
-						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.PlatformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
-				},
-			},
-		}))
-	}
-
-	return panels
-}
-
-func headTracker(p *Props) []*grafana.Panel {
-	var panels []*grafana.Panel
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Head Tracker Current Head",
-			Span:       18,
-			Height:     6,
-			Unit:       "Block",
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Head Tracker Current Head",
-			Span:       6,
-			Height:     6,
-			Query: []grafana.Query{
-				{
-					Expr:    `head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend:  `{{` + p.PlatformOpts.LegendString + `}}`,
-					Instant: true,
-				},
-			},
-		},
-		ColorMode: common.BigValueColorModeNone,
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Head Tracker Heads Received",
-			Span:       18,
-			Height:     6,
-			Unit:       "Block",
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(head_tracker_heads_received{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Head Tracker Current Received",
-			Span:       6,
-			Height:     6,
-			Query: []grafana.Query{
-				{
-					Expr:    `head_tracker_heads_received{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend:  `{{` + p.PlatformOpts.LegendString + `}}`,
-					Instant: true,
-				},
-			},
-		},
-		ColorMode: common.BigValueColorModeNone,
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Head Tracker Very Old Head",
-			Span:       12,
-			Height:     6,
-			Unit:       "Block",
-			Query: []grafana.Query{
-				{
-					Expr:   `head_tracker_very_old_head{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Head Tracker Connection Errors",
-			Span:       12,
-			Height:     6,
-			Decimals:   1,
-			Unit:       "Block",
-			Query: []grafana.Query{
-				{
-					Expr:   `head_tracker_connection_errors{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
-				},
-			},
-		},
-	}))
-
-	return panels
-}
-
 func logsCounters(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
@@ -1354,7 +1474,7 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Query: []grafana.Query{
 				{
 					Expr:   `sum(increase(evm_pool_rpc_node_calls_success{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{nodeName}}`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{nodeName}}`,
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -1527,14 +1647,16 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Gas Updater All Gas Price Percentiles",
-			Span:       24,
-			Height:     6,
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Gas Updater All Gas Price Percentiles",
+			Description: "Gas price at given percentile",
+			Span:        24,
+			Height:      6,
+			Unit:        "gwei",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(gas_updater_all_gas_price_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, percentile)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{percentile}}`,
+					Expr:   `sum(gas_updater_all_gas_price_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, percentile)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{percentile}}`,
 				},
 			},
 		},
@@ -1546,14 +1668,15 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Gas Updater All Tip Cap Percentiles",
-			Span:       24,
-			Height:     6,
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Gas Updater All Tip Cap Percentiles",
+			Description: "Tip cap at given percentile",
+			Span:        24,
+			Height:      6,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(gas_updater_all_tip_cap_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, percentile)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{percentile}}`,
+					Expr:   `sum(gas_updater_all_tip_cap_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, percentile)`,
+					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{percentile}}`,
 				},
 			},
 		},

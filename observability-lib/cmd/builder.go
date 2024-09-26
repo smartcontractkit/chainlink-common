@@ -44,6 +44,7 @@ type BuildOptions struct {
 	SlackChannel      string
 	SlackWebhookURL   string
 	AlertsTags        map[string]string
+	AlertsFilters     string
 }
 
 func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
@@ -56,6 +57,7 @@ func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
 			SlackChannel:      options.SlackChannel,
 			SlackWebhookURL:   options.SlackWebhookURL,
 			AlertsTags:        options.AlertsTags,
+			AlertsFilters:     options.AlertsFilters,
 		})
 	case TypeDashboardCoreNodeComponents:
 		return corenodecomponents.NewDashboard(&corenodecomponents.Props{

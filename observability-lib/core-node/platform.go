@@ -23,6 +23,7 @@ type Props struct {
 	SlackChannel      string
 	SlackWebhookURL   string
 	AlertsTags        map[string]string
+	AlertsFilters     string
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms

@@ -48,14 +48,17 @@ func TestGenerateJSON(t *testing.T) {
 							Datasource: "datasource-uid",
 						},
 					},
-					Condition: &grafana.ConditionQuery{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{2, 0},
-									Type:   expr.TypeThresholdTypeLt,
+					QueryRefCondition: "B",
+					Condition: []grafana.ConditionQuery{
+						{
+							RefID: "B",
+							ThresholdExpression: &grafana.ThresholdExpression{
+								Expression: "A",
+								ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+									{
+										Params: []float64{2, 0},
+										Type:   expr.TypeThresholdTypeLt,
+									},
 								},
 							},
 						},

@@ -87,169 +87,11 @@ func TestContractReaderInterfaceTests(t *testing.T) {
 	})
 }
 
-func TestContractReaderByID(t *testing.T) {
+func TestContractReaderByIDWrapper(t *testing.T) {
 	t.Parallel()
-
-	TestContractReaderByIDGetLatestValue(t)
-	TestContractReaderByIDBatchGetLatestValues(t)
-}
-
-func TestContractReaderByIDGetLatestValue(t *testing.T) {
-	fake := &fakeContractReader{}
-	tester := &fakeContractReaderInterfaceTester{impl: fake}
-
-	t.Run(
-		"Get latest value works with multiple custom contract IDs",
-		func(t *testing.T) {
-			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
-			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
-
-			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
-			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
-
-			anyContractID := "1-" + anyContract.String()
-			anySecondContractID := "1-" + anySecondContract.String()
-
-			toBind[anySecondContractID] = anySecondContract
-			toBind[anyContractID] = anyContract
-			require.NoError(t, cr.Bind(ctx, toBind))
-
-			var primAnyContract, primAnySecondContract uint64
-			require.NoError(t, cr.GetLatestValue(ctx, anyContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract))
-			require.NoError(t, cr.GetLatestValue(ctx, anySecondContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract))
-
-			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract)
-			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract)
-		})
-
-	t.Run(
-		"Get latest value works with multiple custom contract IDs and supports same contracts on different addresses",
-		func(t *testing.T) {
-			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
-			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
-
-			anyContract1 := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
-			anyContract2 := types.BoundContract{Address: "new-" + anyContract1.Address, Name: anyContract1.Name}
-			contractID1, contractID2 := "1-"+anyContract2.String(), "2-"+anyContract2.String()
-			toBind[contractID1], toBind[contractID2] = anyContract1, anyContract2
-
-			anySecondContract1 := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
-			anySecondContract2 := types.BoundContract{Address: "new-" + anySecondContract1.Address, Name: anySecondContract1.Name}
-			contractID3, contractID4 := "1"+"-"+anySecondContract1.String(), "2"+"-"+anySecondContract2.String()
-			toBind[contractID3], toBind[contractID4] = anySecondContract1, anySecondContract2
-
-			require.NoError(t, cr.Bind(ctx, toBind))
-
-			var primAnyContract1, primAnyContract2, primAnySecondContract1, primAnySecondContract2 uint64
-			require.NoError(t, cr.GetLatestValue(ctx, contractID1, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract1))
-			require.NoError(t, cr.GetLatestValue(ctx, contractID2, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract2))
-			require.NoError(t, cr.GetLatestValue(ctx, contractID3, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract1))
-			require.NoError(t, cr.GetLatestValue(ctx, contractID4, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract2))
-
-			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract1)
-			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract2)
-			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract1)
-			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract2)
-		})
-}
-
-func TestContractReaderByIDBatchGetLatestValues(t *testing.T) {
-	fake := &fakeContractReader{}
-	tester := &fakeContractReaderInterfaceTester{impl: fake}
-
-	t.Run(
-		"BatchGetLatestValueByIDs works with multiple custom contract IDs",
-		func(t *testing.T) {
-			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
-			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
-
-			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
-			anyContractID := "1-" + anyContract.String()
-			toBind[anyContractID] = anyContract
-
-			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
-			anySecondContractID := "1-" + anySecondContract.String()
-			toBind[anySecondContractID] = anySecondContract
-			require.NoError(t, cr.Bind(ctx, toBind))
-
-			var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
-			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
-
-			batchGetLatestValuesRequest[anyContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
-			batchGetLatestValuesRequest[anySecondContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
-
-			result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
-			require.NoError(t, err)
-
-			anyContractBatch, anySecondContractBatch := result[anyContractID], result[anySecondContractID]
-			returnValueAnyContract, errAnyContract := anyContractBatch[0].GetResult()
-			returnValueAnySecondContract, errAnySecondContract := anySecondContractBatch[0].GetResult()
-			require.NoError(t, errAnyContract)
-			require.NoError(t, errAnySecondContract)
-			assert.Contains(t, anyContractBatch[0].ReadName, MethodReturningUint64)
-			assert.Contains(t, anySecondContractBatch[0].ReadName, MethodReturningUint64)
-			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract.(*uint64))
-			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract.(*uint64))
-		})
-
-	t.Run(
-		"BatchGetLatestValueByIDs works with multiple custom contract IDs and supports same contracts on different addresses",
-		func(t *testing.T) {
-			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
-			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
-
-			anyContract1 := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
-			anyContract2 := types.BoundContract{Address: "new-" + anyContract1.Address, Name: anyContract1.Name}
-			anyContractID1, anyContractID2 := "1-"+anyContract1.String(), "2-"+anyContract2.String()
-			toBind[anyContractID1], toBind[anyContractID2] = anyContract1, anyContract2
-
-			anySecondContract1 := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
-			anySecondContract2 := types.BoundContract{Address: "new-" + anySecondContract1.Address, Name: anySecondContract1.Name}
-			anySecondContractID1, anySecondContractID2 := "1-"+anySecondContract1.String(), "2-"+anySecondContract2.String()
-			toBind[anySecondContractID1], toBind[anySecondContractID2] = anySecondContract1, anySecondContract2
-
-			require.NoError(t, cr.Bind(ctx, toBind))
-
-			var primitiveReturnValueAnyContract1, primitiveReturnValueAnyContract2, primitiveReturnValueAnySecondContract1, primitiveReturnValueAnySecondContract2 uint64
-			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
-
-			anyContract1Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract1}}
-			anyContract2Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract2}}
-			anySecondContract1Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract1}}
-			anySecondContract2Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract2}}
-			batchGetLatestValuesRequest[anyContractID1], batchGetLatestValuesRequest[anyContractID2] = anyContract1Req, anyContract2Req
-			batchGetLatestValuesRequest[anySecondContractID1], batchGetLatestValuesRequest[anySecondContractID2] = anySecondContract1Req, anySecondContract2Req
-
-			result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
-			require.NoError(t, err)
-
-			anyContract1Batch, anyContract2Batch := result[anyContractID1], result[anyContractID2]
-			anySecondContract1Batch, anySecondContract2Batch := result[anySecondContractID1], result[anySecondContractID2]
-
-			returnValueAnyContract1, errAnyContract1 := anyContract1Batch[0].GetResult()
-			returnValueAnyContract2, errAnyContract2 := anyContract2Batch[0].GetResult()
-			returnValueAnySecondContract1, errAnySecondContract := anySecondContract1Batch[0].GetResult()
-			returnValueAnySecondContract2, errAnySecondContract2 := anySecondContract2Batch[0].GetResult()
-
-			require.NoError(t, errAnyContract1)
-			require.NoError(t, errAnyContract2)
-			require.NoError(t, errAnySecondContract)
-			require.NoError(t, errAnySecondContract2)
-
-			assert.Contains(t, anyContract1Batch[0].ReadName, MethodReturningUint64)
-			assert.Contains(t, anyContract2Batch[0].ReadName, MethodReturningUint64)
-			assert.Contains(t, anySecondContract1Batch[0].ReadName, MethodReturningUint64)
-			assert.Contains(t, anySecondContract2Batch[0].ReadName, MethodReturningUint64)
-
-			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract1.(*uint64))
-			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract2.(*uint64))
-			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract1.(*uint64))
-			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract2.(*uint64))
-		})
+	t.Run("Contract Reader by ID GetLatestValue", runContractReaderByIDGetLatestValue)
+	t.Run("Contract Reader by ID BatchGetLatestValues", runContractReaderByIDBatchGetLatestValues)
+	t.Run("Contract Reader by ID QueryKey", runContractReaderByIDQueryKey)
 }
 
 func TestBind(t *testing.T) {
@@ -460,9 +302,9 @@ type fakeContractReaderInterfaceTester struct {
 func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
 	fake, ok := it.impl.(*fakeContractReader)
 	if ok {
-		fake.vals = []valConfidencePair{}
-		fake.triggers = []eventConfidencePair{}
-		fake.stored = []TestStruct{}
+		fake.vals = make(map[string][]valConfidencePair)
+		fake.triggers = make(map[string][]eventConfidencePair)
+		fake.stored = make(map[string][]TestStruct)
 	}
 }
 
@@ -480,14 +322,16 @@ func (it *fakeContractReaderInterfaceTester) DirtyContracts() {}
 func (it *fakeContractReaderInterfaceTester) GetBindings(_ *testing.T) []types.BoundContract {
 	return []types.BoundContract{
 		{Name: AnyContractName, Address: AnyContractName},
+		{Name: AnyContractName, Address: AnyContractName + "-2"},
 		{Name: AnySecondContractName, Address: AnySecondContractName},
+		{Name: AnySecondContractName, Address: AnySecondContractName + "-2"},
 	}
 }
 
-func (it *fakeContractReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readIdentifier string, confidenceLevel primitives.ConfidenceLevel) {
+func (it *fakeContractReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractID, readIdentifier string, confidenceLevel primitives.ConfidenceLevel) {
 	fake, ok := it.impl.(*fakeContractReader)
 	assert.True(t, ok)
-	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readIdentifier, confidenceLevel)
+	fake.GenerateBlocksTillConfidenceLevel(t, contractID, readIdentifier, confidenceLevel)
 }
 
 func (it *fakeContractReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
@@ -507,9 +351,9 @@ type eventConfidencePair struct {
 type fakeContractReader struct {
 	types.UnimplementedContractReader
 	fakeTypeProvider
-	vals        []valConfidencePair
-	triggers    []eventConfidencePair
-	stored      []TestStruct
+	vals        map[string][]valConfidencePair
+	triggers    map[string][]eventConfidencePair
+	stored      map[string][]TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
 }
@@ -519,26 +363,27 @@ type fakeChainWriter struct {
 	cr *fakeContractReader
 }
 
-func (f *fakeChainWriter) SubmitTransaction(ctx context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
+func (f *fakeChainWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
+	contractID := toAddress + "-" + contractName
 	switch method {
 	case MethodSettingStruct:
 		v, ok := args.(TestStruct)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)
 		}
-		f.cr.SetTestStructLatestValue(&v)
+		f.cr.SetTestStructLatestValue(contractID, &v)
 	case MethodSettingUint64:
 		v, ok := args.(PrimitiveArgs)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)
 		}
-		f.cr.SetUintLatestValue(v.Value, ExpectedGetLatestValueArgs{})
+		f.cr.SetUintLatestValue(contractID, v.Value, ExpectedGetLatestValueArgs{})
 	case MethodTriggeringEvent:
 		v, ok := args.(TestStruct)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)
 		}
-		f.cr.SetTrigger(&v)
+		f.cr.SetTrigger(contractID, &v)
 	case "batchChainWrite":
 		v, ok := args.(BatchCallEntry)
 		if !ok {
@@ -578,16 +423,22 @@ func (f *fakeContractReader) Unbind(_ context.Context, _ []types.BoundContract) 
 	return nil
 }
 
-func (f *fakeContractReader) SetTestStructLatestValue(ts *TestStruct) {
+func (f *fakeContractReader) SetTestStructLatestValue(contractID string, ts *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.stored = append(f.stored, *ts)
+	if _, ok := f.stored[contractID]; !ok {
+		f.stored[contractID] = []TestStruct{}
+	}
+	f.stored[contractID] = append(f.stored[contractID], *ts)
 }
 
-func (f *fakeContractReader) SetUintLatestValue(val uint64, _ ExpectedGetLatestValueArgs) {
+func (f *fakeContractReader) SetUintLatestValue(contractID string, val uint64, _ ExpectedGetLatestValueArgs) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.vals = append(f.vals, valConfidencePair{val: val, confidenceLevel: primitives.Unconfirmed})
+	if _, ok := f.vals[contractID]; !ok {
+		f.vals[contractID] = []valConfidencePair{}
+	}
+	f.vals[contractID] = append(f.vals[contractID], valConfidencePair{val: val, confidenceLevel: primitives.Unconfirmed})
 }
 
 func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry) {
@@ -600,11 +451,14 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 }
 
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	split := strings.Split(readIdentifier, "-")
+	contractName := strings.Join([]string{split[0], split[1]}, "-")
 	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
 		r := returnVal.(*uint64)
-		for i := len(f.vals) - 1; i >= 0; i-- {
-			if f.vals[i].confidenceLevel == confidenceLevel {
-				*r = f.vals[i].val
+		vals := f.vals[contractName]
+		for i := len(vals) - 1; i >= 0; i-- {
+			if vals[i].confidenceLevel == confidenceLevel {
+				*r = vals[i].val
 				return nil
 			}
 		}
@@ -635,13 +489,14 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 		f.lock.Lock()
 		defer f.lock.Unlock()
 
-		if len(f.triggers) == 0 {
+		triggers := f.triggers[contractName]
+		if len(triggers) == 0 {
 			return types.ErrNotFound
 		}
 
-		for i := len(f.triggers) - 1; i >= 0; i-- {
-			if f.triggers[i].confidenceLevel == confidenceLevel {
-				*returnVal.(*TestStruct) = f.triggers[i].testStruct
+		for i := len(triggers) - 1; i >= 0; i-- {
+			if triggers[i].confidenceLevel == confidenceLevel {
+				*returnVal.(*TestStruct) = triggers[i].testStruct
 				return nil
 			}
 		}
@@ -651,9 +506,10 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 		f.lock.Lock()
 		defer f.lock.Unlock()
 		param := params.(*FilterEventParams)
-		for i := len(f.triggers) - 1; i >= 0; i-- {
-			if *f.triggers[i].testStruct.Field == param.Field {
-				*returnVal.(*TestStruct) = f.triggers[i].testStruct
+		triggers := f.triggers[contractName]
+		for i := len(triggers) - 1; i >= 0; i-- {
+			if *triggers[i].testStruct.Field == param.Field {
+				*returnVal.(*TestStruct) = triggers[i].testStruct
 				return nil
 			}
 		}
@@ -664,12 +520,13 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 
 	f.lock.Lock()
 	defer f.lock.Unlock()
+	stored := f.stored[contractName]
 	lp := params.(*LatestParams)
 	rv := returnVal.(*TestStruct)
-	if lp.I-1 >= len(f.stored) {
+	if lp.I-1 >= len(stored) {
 		return errors.New("latest params index out of bounds for stored test structs")
 	}
-	*rv = f.stored[lp.I-1]
+	*rv = stored[lp.I-1]
 	return nil
 }
 
@@ -726,7 +583,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 	return result, nil
 }
 
-func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -735,7 +592,7 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 		}
 
 		var sequences []types.Sequence
-		for _, trigger := range f.triggers {
+		for _, trigger := range f.triggers[bc.String()] {
 			doAppend := true
 			for _, expr := range filter.Expressions {
 				if primitive, ok := expr.Primitive.(*primitives.Comparator); ok {
@@ -768,21 +625,30 @@ func (f *fakeContractReader) QueryKey(_ context.Context, _ types.BoundContract, 
 	return nil, nil
 }
 
-func (f *fakeContractReader) SetTrigger(testStruct *TestStruct) {
+func (f *fakeContractReader) SetTrigger(contractID string, testStruct *TestStruct) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.triggers = append(f.triggers, eventConfidencePair{testStruct: *testStruct, confidenceLevel: primitives.Unconfirmed})
+	if _, ok := f.triggers[contractID]; !ok {
+		f.triggers[contractID] = []eventConfidencePair{}
+	}
+
+	f.triggers[contractID] = append(f.triggers[contractID], eventConfidencePair{testStruct: *testStruct, confidenceLevel: primitives.Unconfirmed})
 }
 
 func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, _ string, confidenceLevel primitives.ConfidenceLevel) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	for i, val := range f.vals {
-		f.vals[i] = valConfidencePair{val: val.val, confidenceLevel: confidenceLevel}
+
+	for contractID, vals := range f.vals {
+		for i, val := range vals {
+			f.vals[contractID][i] = valConfidencePair{val: val.val, confidenceLevel: confidenceLevel}
+		}
 	}
 
-	for i, trigger := range f.triggers {
-		f.triggers[i] = eventConfidencePair{testStruct: trigger.testStruct, confidenceLevel: confidenceLevel}
+	for contractID, triggers := range f.triggers {
+		for i, trigger := range triggers {
+			f.triggers[contractID][i] = eventConfidencePair{testStruct: trigger.testStruct, confidenceLevel: confidenceLevel}
+		}
 	}
 }
 
@@ -887,4 +753,277 @@ func (pc *protoConversionTestContractReader) QueryKey(_ context.Context, _ types
 	}
 
 	return nil, nil
+}
+
+func runContractReaderByIDGetLatestValue(t *testing.T) {
+	t.Parallel()
+	fake := &fakeContractReader{}
+	tester := &fakeContractReaderInterfaceTester{impl: fake}
+	tester.Setup(t)
+	t.Run(
+		"Get latest value works with multiple custom contract IDs",
+		func(t *testing.T) {
+			t.Parallel()
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+
+			anyContractID := "1-" + anyContract.String()
+			anySecondContractID := "1-" + anySecondContract.String()
+
+			toBind[anySecondContractID] = anySecondContract
+			toBind[anyContractID] = anyContract
+			require.NoError(t, cr.Bind(ctx, toBind))
+
+			var primAnyContract, primAnySecondContract uint64
+			require.NoError(t, cr.GetLatestValue(ctx, anyContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract))
+			require.NoError(t, cr.GetLatestValue(ctx, anySecondContractID, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract))
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract)
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract)
+		})
+
+	t.Run(
+		"Get latest value works with multiple custom contract IDs and supports same contracts on different addresses",
+		func(t *testing.T) {
+			t.Parallel()
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContracts := BindingsByName(tester.GetBindings(t), AnyContractName)
+			anyContract1, anyContract2 := anyContracts[0], anyContracts[1]
+			anyContractID1, anyContractID2 := "1-"+anyContract1.String(), "2-"+anyContract2.String()
+			toBind[anyContractID1], toBind[anyContractID2] = anyContract1, anyContract2
+
+			anySecondContracts := BindingsByName(tester.GetBindings(t), AnySecondContractName)
+			anySecondContract1, anySecondContract2 := anySecondContracts[0], anySecondContracts[1]
+			anySecondContractID1, anySecondContractID2 := "1-"+anySecondContract1.String(), "2-"+anySecondContract2.String()
+			toBind[anySecondContractID1], toBind[anySecondContractID2] = anySecondContract1, anySecondContract2
+
+			require.NoError(t, cr.Bind(ctx, toBind))
+
+			var primAnyContract1, primAnyContract2, primAnySecondContract1, primAnySecondContract2 uint64
+			require.NoError(t, cr.GetLatestValue(ctx, anyContractID1, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract1))
+			require.NoError(t, cr.GetLatestValue(ctx, anyContractID2, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnyContract2))
+			require.NoError(t, cr.GetLatestValue(ctx, anySecondContractID1, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract1))
+			require.NoError(t, cr.GetLatestValue(ctx, anySecondContractID2, MethodReturningUint64, primitives.Unconfirmed, nil, &primAnySecondContract2))
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract1)
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, primAnyContract2)
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract1)
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, primAnySecondContract2)
+		})
+}
+
+func runContractReaderByIDBatchGetLatestValues(t *testing.T) {
+	t.Parallel()
+	fake := &fakeContractReader{}
+	tester := &fakeContractReaderInterfaceTester{impl: fake}
+	tester.Setup(t)
+
+	t.Run(
+		"BatchGetLatestValueByIDs works with multiple custom contract IDs",
+		func(t *testing.T) {
+			t.Parallel()
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anyContractID := "1-" + anyContract.String()
+			toBind[anyContractID] = anyContract
+
+			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+			anySecondContractID := "1-" + anySecondContract.String()
+			toBind[anySecondContractID] = anySecondContract
+			require.NoError(t, cr.Bind(ctx, toBind))
+
+			var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
+			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
+
+			batchGetLatestValuesRequest[anyContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
+			batchGetLatestValuesRequest[anySecondContractID] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
+
+			result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
+			require.NoError(t, err)
+
+			anyContractBatch, anySecondContractBatch := result[anyContractID], result[anySecondContractID]
+			returnValueAnyContract, errAnyContract := anyContractBatch[0].GetResult()
+			returnValueAnySecondContract, errAnySecondContract := anySecondContractBatch[0].GetResult()
+			require.NoError(t, errAnyContract)
+			require.NoError(t, errAnySecondContract)
+			assert.Contains(t, anyContractBatch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anySecondContractBatch[0].ReadName, MethodReturningUint64)
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract.(*uint64))
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract.(*uint64))
+		})
+
+	t.Run(
+		"BatchGetLatestValueByIDs works with multiple custom contract IDs and supports same contracts on different addresses",
+		func(t *testing.T) {
+			t.Parallel()
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContracts := BindingsByName(tester.GetBindings(t), AnyContractName)
+			anyContract1, anyContract2 := anyContracts[0], anyContracts[1]
+			anyContractID1, anyContractID2 := "1-"+anyContract1.String(), "2-"+anyContract2.String()
+			toBind[anyContractID1], toBind[anyContractID2] = anyContract1, anyContract2
+
+			anySecondContracts := BindingsByName(tester.GetBindings(t), AnySecondContractName)
+			anySecondContract1, anySecondContract2 := anySecondContracts[0], anySecondContracts[1]
+			anySecondContractID1, anySecondContractID2 := "1-"+anySecondContract1.String(), "2-"+anySecondContract2.String()
+			toBind[anySecondContractID1], toBind[anySecondContractID2] = anySecondContract1, anySecondContract2
+
+			require.NoError(t, cr.Bind(ctx, toBind))
+
+			var primitiveReturnValueAnyContract1, primitiveReturnValueAnyContract2, primitiveReturnValueAnySecondContract1, primitiveReturnValueAnySecondContract2 uint64
+			batchGetLatestValuesRequest := make(chainreader.BatchGetLatestValuesRequestByCustomID)
+
+			anyContract1Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract1}}
+			anyContract2Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract2}}
+			anySecondContract1Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract1}}
+			anySecondContract2Req := []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract2}}
+			batchGetLatestValuesRequest[anyContractID1], batchGetLatestValuesRequest[anyContractID2] = anyContract1Req, anyContract2Req
+			batchGetLatestValuesRequest[anySecondContractID1], batchGetLatestValuesRequest[anySecondContractID2] = anySecondContract1Req, anySecondContract2Req
+
+			result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
+			require.NoError(t, err)
+
+			anyContract1Batch, anyContract2Batch := result[anyContractID1], result[anyContractID2]
+			anySecondContract1Batch, anySecondContract2Batch := result[anySecondContractID1], result[anySecondContractID2]
+
+			returnValueAnyContract1, errAnyContract1 := anyContract1Batch[0].GetResult()
+			returnValueAnyContract2, errAnyContract2 := anyContract2Batch[0].GetResult()
+			returnValueAnySecondContract1, errAnySecondContract := anySecondContract1Batch[0].GetResult()
+			returnValueAnySecondContract2, errAnySecondContract2 := anySecondContract2Batch[0].GetResult()
+
+			require.NoError(t, errAnyContract1)
+			require.NoError(t, errAnyContract2)
+			require.NoError(t, errAnySecondContract)
+			require.NoError(t, errAnySecondContract2)
+
+			assert.Contains(t, anyContract1Batch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anyContract2Batch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anySecondContract1Batch[0].ReadName, MethodReturningUint64)
+			assert.Contains(t, anySecondContract2Batch[0].ReadName, MethodReturningUint64)
+
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract1.(*uint64))
+			assert.Equal(t, AnyValueToReadWithoutAnArgument, *returnValueAnyContract2.(*uint64))
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract1.(*uint64))
+			assert.Equal(t, AnyDifferentValueToReadWithoutAnArgument, *returnValueAnySecondContract2.(*uint64))
+		})
+}
+
+func runContractReaderByIDQueryKey(t *testing.T) {
+	t.Parallel()
+	t.Run(
+		"QueryKey works with multiple custom contract IDs",
+		func(t *testing.T) {
+			t.Parallel()
+			fake := &fakeContractReader{}
+			tester := &fakeContractReaderInterfaceTester{impl: fake}
+			tester.Setup(t)
+
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anyContractID := "1-" + anyContract.String()
+			toBind[anyContractID] = anyContract
+
+			anySecondContract := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+			anySecondContractID := "1-" + anySecondContract.String()
+			toBind[anySecondContractID] = anySecondContract
+			require.NoError(t, cr.Bind(ctx, toBind))
+
+			ts1AnyContract := CreateTestStruct(0, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract, anyContract, types.Unconfirmed)
+			ts2AnyContract := CreateTestStruct(1, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract, anyContract, types.Unconfirmed)
+
+			ts1AnySecondContract := CreateTestStruct(0, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract, anySecondContract, types.Unconfirmed)
+			ts2AnySecondContract := CreateTestStruct(1, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract, anySecondContract, types.Unconfirmed)
+
+			tsAnyContractType := &TestStruct{}
+			assert.Eventually(t, func() bool {
+				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract, sequences[0].Data)
+			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+
+			assert.Eventually(t, func() bool {
+				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract, sequences[0].Data)
+			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+		})
+
+	t.Run(
+		"QueryKey works with multiple custom contract IDs and supports same contracts on different addresses",
+		func(t *testing.T) {
+			t.Parallel()
+			fake := &fakeContractReader{}
+			tester := &fakeContractReaderInterfaceTester{impl: fake}
+			tester.Setup(t)
+
+			toBind := make(map[string]types.BoundContract)
+			ctx := tests.Context(t)
+			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
+
+			anyContract1 := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
+			anyContract2 := types.BoundContract{Address: "new-" + anyContract1.Address, Name: anyContract1.Name}
+			anyContractID1, anyContractID2 := "1-"+anyContract1.String(), "2-"+anyContract2.String()
+			toBind[anyContractID1], toBind[anyContractID2] = anyContract1, anyContract2
+
+			anySecondContract1 := BindingsByName(tester.GetBindings(t), AnySecondContractName)[0]
+			anySecondContract2 := types.BoundContract{Address: "new-" + anySecondContract1.Address, Name: anySecondContract1.Name}
+			anySecondContractID1, anySecondContractID2 := "1"+"-"+anySecondContract1.String(), "2"+"-"+anySecondContract2.String()
+			toBind[anySecondContractID1], toBind[anySecondContractID2] = anySecondContract1, anySecondContract2
+
+			require.NoError(t, cr.Bind(ctx, toBind))
+
+			ts1AnyContract1 := CreateTestStruct(0, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract1, anyContract1, types.Unconfirmed)
+			ts2AnyContract1 := CreateTestStruct(1, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract1, anyContract1, types.Unconfirmed)
+			ts1AnyContract2 := CreateTestStruct(2, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract2, anyContract2, types.Unconfirmed)
+			ts2AnyContract2 := CreateTestStruct(3, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract2, anyContract2, types.Unconfirmed)
+
+			ts1AnySecondContract1 := CreateTestStruct(4, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract1, anySecondContract1, types.Unconfirmed)
+			ts2AnySecondContract1 := CreateTestStruct(5, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract1, anySecondContract1, types.Unconfirmed)
+			ts1AnySecondContract2 := CreateTestStruct(6, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract2, anySecondContract2, types.Unconfirmed)
+			ts2AnySecondContract2 := CreateTestStruct(7, tester)
+			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract2, anySecondContract2, types.Unconfirmed)
+
+			tsAnyContractType := &TestStruct{}
+			assert.Eventually(t, func() bool {
+				sequences, err := cr.QueryKey(ctx, anyContractID1, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract1, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract1, sequences[0].Data)
+			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			assert.Eventually(t, func() bool {
+				sequences, err := cr.QueryKey(ctx, anyContractID2, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract2, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract2, sequences[0].Data)
+			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+
+			assert.Eventually(t, func() bool {
+				sequences, err := cr.QueryKey(ctx, anySecondContractID1, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract1, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract1, sequences[0].Data)
+			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			assert.Eventually(t, func() bool {
+				sequences, err := cr.QueryKey(ctx, anySecondContractID2, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract2, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract2, sequences[0].Data)
+			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+		})
 }

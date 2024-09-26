@@ -65,14 +65,15 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
 				resp := tester.EncodeFields(t, req)
 				compatibleItem := compatibleTestStruct{
-					Account:        item.Account,
-					Accounts:       item.Accounts,
-					BigField:       item.BigField,
-					DifferentField: item.DifferentField,
-					Field:          *item.Field,
-					NestedStruct:   item.NestedStruct,
-					OracleID:       item.OracleID,
-					OracleIDs:      item.OracleIDs,
+					Account:             item.Account,
+					Accounts:            item.Accounts,
+					BigField:            item.BigField,
+					DifferentField:      item.DifferentField,
+					Field:               *item.Field,
+					NestedDynamicStruct: item.NestedDynamicStruct,
+					NestedStaticStruct:  item.NestedStaticStruct,
+					OracleID:            item.OracleID,
+					OracleIDs:           item.OracleIDs,
 				}
 
 				codec := tester.GetCodec(t)
@@ -98,12 +99,20 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 					"BigField":       item.BigField,
 					"DifferentField": item.DifferentField,
 					"Field":          item.Field,
-					"NestedStruct": map[string]any{
+					"NestedDynamicStruct": map[string]any{
 						// since we're testing compatibility, also use slice instead of array
-						"FixedBytes": item.NestedStruct.FixedBytes[:],
+						"FixedBytes": item.NestedDynamicStruct.FixedBytes[:],
 						"Inner": map[string]any{
-							"I": item.NestedStruct.Inner.I,
-							"S": item.NestedStruct.Inner.S,
+							"I": item.NestedDynamicStruct.Inner.I,
+							"S": item.NestedDynamicStruct.Inner.S,
+						},
+					},
+					"NestedStaticStruct": map[string]any{
+						// since we're testing compatibility, also use slice instead of array
+						"FixedBytes": item.NestedStaticStruct.FixedBytes[:],
+						"Inner": map[string]any{
+							"I": item.NestedStaticStruct.Inner.I,
+							"A": item.NestedStaticStruct.Inner.A,
 						},
 					},
 					"OracleID":  item.OracleID,
@@ -126,13 +135,14 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				ctx := tests.Context(t)
 				ts := CreateTestStruct[*testing.T](0, tester)
 				item := &TestStructMissingField{
-					DifferentField: ts.DifferentField,
-					OracleID:       ts.OracleID,
-					OracleIDs:      ts.OracleIDs,
-					Account:        ts.Account,
-					Accounts:       ts.Accounts,
-					BigField:       ts.BigField,
-					NestedStruct:   ts.NestedStruct,
+					DifferentField:      ts.DifferentField,
+					OracleID:            ts.OracleID,
+					OracleIDs:           ts.OracleIDs,
+					Account:             ts.Account,
+					Accounts:            ts.Accounts,
+					BigField:            ts.BigField,
+					NestedDynamicStruct: ts.NestedDynamicStruct,
+					NestedStaticStruct:  ts.NestedStaticStruct,
 				}
 
 				codec := tester.GetCodec(t)
@@ -338,14 +348,15 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				ctx := tests.Context(t)
 				cr := tester.GetCodec(t)
 				nilArgs := &TestStruct{
-					Field:          nil,
-					DifferentField: "",
-					OracleID:       0,
-					OracleIDs:      [32]commontypes.OracleID{},
-					Account:        nil,
-					Accounts:       nil,
-					BigField:       nil,
-					NestedStruct:   MidLevelTestStruct{},
+					Field:               nil,
+					DifferentField:      "",
+					OracleID:            0,
+					OracleIDs:           [32]commontypes.OracleID{},
+					Account:             nil,
+					Accounts:            nil,
+					BigField:            nil,
+					NestedDynamicStruct: MidLevelDynamicTestStruct{},
+					NestedStaticStruct:  MidLevelStaticTestStruct{},
 				}
 				// Assure no panic, use _,_ to tell the compiler we don't care about the error
 				_, _ = cr.Encode(ctx, nilArgs, TestItemType)
@@ -356,7 +367,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 			test: func(t *testing.T) {
 				ctx := tests.Context(t)
 				cr := tester.GetCodec(t)
-				notTestStruct := &MidLevelTestStruct{}
+				notTestStruct := &MidLevelDynamicTestStruct{}
 				_, err := cr.Encode(ctx, notTestStruct, TestItemType)
 				assert.True(t, errors.Is(err, types.ErrInvalidType))
 			},

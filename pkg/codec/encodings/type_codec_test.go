@@ -184,7 +184,7 @@ func (b *bigEndianInterfaceTester) encode(t *testing.T, bytes []byte, ts TestStr
 	bytes = append(bytes, []byte(ts.NestedDynamicStruct.Inner.S)...)
 	bytes = append(bytes, ts.NestedStaticStruct.FixedBytes[:]...)
 	bytes = rawbin.BigEndian.AppendUint64(bytes, uint64(ts.NestedStaticStruct.Inner.I))
-	bytes = rawbin.BigEndian.AppendUint32(bytes, uint32(len(ts.NestedStaticStruct.Inner.A)))
+	bytes = append(bytes, byte(len(ts.NestedStaticStruct.Inner.A)))
 	bytes = append(bytes, ts.NestedStaticStruct.Inner.A...)
 	if request.ExtraField {
 		bytes = append(bytes, 5)

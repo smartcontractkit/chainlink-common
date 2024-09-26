@@ -26,6 +26,7 @@ var _ sdk.Runner = (*Runner)(nil)
 
 type Runner struct {
 	sendResponse func(payload *wasmpb.Response)
+	SDK          Runtime
 	args         []string
 	req          *wasmpb.Request
 }
@@ -149,14 +150,12 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 		return nil, fmt.Errorf("invalid compute request: could not find compute function for id %s", req.Metadata.ReferenceId)
 	}
 
-	sdk := &Runtime{}
-
 	creq, err := capabilitiespb.CapabilityRequestFromProto(req)
 	if err != nil {
 		return nil, fmt.Errorf("invalid compute request: could not translate proto into capability request")
 	}
 
-	resp, err := fn(sdk, creq)
+	resp, err := fn(r.SDK, creq)
 	if err != nil {
 		return nil, fmt.Errorf("error executing custom compute: %w", err)
 	}

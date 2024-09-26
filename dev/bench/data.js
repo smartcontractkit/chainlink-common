@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727352778456,
+  "lastUpdate": 1727362039917,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2100,6 +2100,48 @@ window.BENCHMARK_DATA = {
             "value": 28575,
             "unit": "ns/op",
             "extra": "42057 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7a9a88aee28f9948d7c9fcc74a615f9b5552ca88",
+          "message": "Add MustEmbed Constraint to Contract Reader (#801)\n\nReintroducing the must embed constraint to `ContractReader` implementations to\r\nensure that all implementations of `ContractReader` embed the `UnimplementedContractReader`.\r\n\r\nIf an implementation contains the unemplemented struct, changes to the interface\r\nwill flow down to all implementations without introducing breaking changes.",
+          "timestamp": "2024-09-26T09:46:09-05:00",
+          "tree_id": "dc50c9b45a8a9b6153d7717b11a205137334198c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7a9a88aee28f9948d7c9fcc74a615f9b5552ca88"
+        },
+        "date": 1727362038865,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 468.4,
+            "unit": "ns/op",
+            "extra": "2404717 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 526.2,
+            "unit": "ns/op",
+            "extra": "2212948 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28894,
+            "unit": "ns/op",
+            "extra": "40987 times\n4 procs"
           }
         ]
       }

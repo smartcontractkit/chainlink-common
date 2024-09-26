@@ -158,7 +158,7 @@ type TestStruct struct {
 	OracleID            commontypes.OracleID
 	OracleIDs           [32]commontypes.OracleID
 	Account             []byte
-	AccountStr          string // represent address types as string
+	AccountStr          string
 	Accounts            [][]byte
 	DifferentField      string
 	BigField            *big.Int

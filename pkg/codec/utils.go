@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"reflect"
 	"strconv"
@@ -371,8 +370,9 @@ func addr(value reflect.Value) reflect.Value {
 
 func addressToStringHook(length AddressLength, checksum func([]byte) []byte) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		log.Printf("addressToStringHook called with from: %v, to: %v, data: %v", from, to, data)
+		fmt.Printf("\naddressToStringHook called with from: %v, to: %v, data: %v", from, to, data)
 
+		// Define the type of the byte array based on the AddressLength (e.g., [20]byte for Byte20Address)
 		byteArrTyp, err := typeFromAddressLength(length)
 		if err != nil {
 			return nil, err
@@ -380,25 +380,29 @@ func addressToStringHook(length AddressLength, checksum func([]byte) []byte) fun
 
 		strTyp := reflect.TypeOf("")
 
-		// Handle case where 'from' is *byte
+		// Handle case where 'from' is a pointer to the byte array (e.g., *[20]byte)
 		if from.Kind() == reflect.Ptr && from.Elem() == byteArrTyp {
 			data = reflect.ValueOf(data).Elem().Interface()
 			from = from.Elem()
 		}
 
+		// Convert from string to byte array (e.g., string -> [20]byte)
 		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
 			// convert the string to a byte array
 			addr := data.(string)
 
+			// Decode the hex string to bytes, skipping the '0x' prefix
 			bts, err := hex.DecodeString(addr[2:])
 			if err != nil {
 				return nil, err
 			}
 
+			// Ensure the byte length matches the expected AddressLength
 			if len(bts) != int(length) {
 				return nil, errors.New("lengths do not match")
 			}
 
+			// Create a new array of the specified length and fill it with the decoded bytes
 			val := reflect.Indirect(reflect.New(reflect.ArrayOf(byteArrTyp.Len(), byteArrTyp.Elem())))
 
 			for idx, bValue := range bts {
@@ -406,10 +410,14 @@ func addressToStringHook(length AddressLength, checksum func([]byte) []byte) fun
 			}
 
 			return val.Interface(), nil
-		} else if from.ConvertibleTo(byteArrTyp) && to == strTyp {
+		}
+
+		// Convert from byte array to string (e.g., [20]byte -> string)
+		if from.ConvertibleTo(byteArrTyp) && to == strTyp {
 			val := reflect.Indirect(reflect.New(reflect.ArrayOf(byteArrTyp.Len(), byteArrTyp.Elem())))
 			val.Set(reflect.ValueOf(data))
 
+			// Slice the array to get the byte array and encode it as a hex string
 			sliceVal := val.Slice(0, int(length))
 			bts := sliceVal.Interface().([]byte)
 			encoded := []byte("0x" + hex.EncodeToString(bts[:]))

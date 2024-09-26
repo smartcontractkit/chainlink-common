@@ -43,7 +43,13 @@ func TestAddressBytesToString(t *testing.T) {
 		A string
 		T addressType
 	}
+
+	type pointerOtherIntegerType struct {
+		A string
+		T *addressType
+	}
 	oit := reflect.TypeOf(&otherIntegerType{})
+	oitpt := reflect.TypeOf(&pointerOtherIntegerType{})
 
 	testAddrBytes := [codec.Byte20Address]byte{}
 	testAddrStr := "0x" + hex.EncodeToString(testAddrBytes[:])
@@ -57,6 +63,7 @@ func TestAddressBytesToString(t *testing.T) {
 			{"[20]byte", concretest},
 			{"typed address", oit},
 			{"[20]byte pointer", pointertst},
+			{"*typed address", oitpt},
 		} {
 			t.Run(test.name, func(t *testing.T) {
 				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
@@ -111,6 +118,7 @@ func TestAddressBytesToString(t *testing.T) {
 			{"[20]byte", concretest, &concreteStruct{A: anyString, T: [codec.Byte20Address]byte{}}},
 			{"typed address", oit, &otherIntegerType{A: anyString, T: addressType{}}},
 			{"[20]byte pointer", pointertst, &pointerStruct{A: anyString, T: &[codec.Byte20Address]byte{}}},
+			{"*typed address", oitpt, &pointerOtherIntegerType{A: anyString, T: &addressType{}}},
 		} {
 			t.Run(test.name, func(t *testing.T) {
 				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})

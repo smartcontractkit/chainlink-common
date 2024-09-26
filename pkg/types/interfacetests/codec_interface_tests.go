@@ -356,6 +356,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 					OracleID:            0,
 					OracleIDs:           [32]commontypes.OracleID{},
 					Account:             nil,
+					AccountStr:          "",
 					Accounts:            nil,
 					BigField:            nil,
 					NestedDynamicStruct: MidLevelDynamicTestStruct{},

@@ -41,10 +41,10 @@ func (s *server) Close() error {
 	return nil
 }
 
-func (s *server) OracleClose(ctx context.Context, e *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *server) CloseOracle(ctx context.Context, e *emptypb.Empty) (*emptypb.Empty, error) {
 	return e, s.impl.Close(ctx)
 }
 
-func (s *server) OracleStart(ctx context.Context, e *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *server) StartOracle(ctx context.Context, e *emptypb.Empty) (*emptypb.Empty, error) {
 	return e, s.impl.Start(ctx)
 }

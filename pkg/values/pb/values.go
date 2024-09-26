@@ -91,3 +91,11 @@ func NewTime(t time.Time) *Value {
 		},
 	}
 }
+
+func NewFloat64(f float64) *Value {
+	return &Value{
+		Value: &Value_Float64Value{
+			Float64Value: f,
+		},
+	}
+}

@@ -14,6 +14,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -38,6 +40,8 @@ const (
 	httpBinaryCmd         = "test/http/cmd"
 	envBinaryLocation     = "test/env/cmd/testmodule.wasm"
 	envBinaryCmd          = "test/env/cmd"
+	logBinaryLocation     = "test/log/cmd/testmodule.wasm"
+	logBinaryCmd          = "test/log/cmd"
 )
 
 func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
@@ -126,6 +130,42 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	)
 	// panic
 	assert.ErrorContains(t, err, "wasm trap: interrupt")
+}
+
+func Test_GetWorkflowSpec_Logs(t *testing.T) {
+	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
+
+	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
+	spec, err := GetWorkflowSpec(
+		&ModuleConfig{
+			Logger: logger,
+		},
+		binary,
+		[]byte(""),
+	)
+	require.NoError(t, err)
+
+	assert.Equal(t, spec.Name, "tester")
+	assert.Equal(t, spec.Owner, "ryan")
+
+	expectedEntries := []Entry{
+		{
+			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
+			Fields: []zapcore.Field{
+				zap.String("test-string-field-key", "this is a test field content"),
+				zap.Float64("test-numeric-field-key", 6400000),
+			},
+		},
+		{
+			Log:    zapcore.Entry{Level: zapcore.InfoLevel, Message: "running workflow..."},
+			Fields: []zapcore.Field{},
+		},
+	}
+	for i := range expectedEntries {
+		assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
+	}
 }
 
 func TestModule_Errors(t *testing.T) {
@@ -333,4 +373,9 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	// This will return an error if FOO == BAR in the WASM binary
 	_, err = m.Run(req)
 	assert.Nil(t, err)
+}
+
+type Entry struct {
+	Log    zapcore.Entry
+	Fields []zapcore.Field
 }

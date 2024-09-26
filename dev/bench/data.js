@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727348757533,
+  "lastUpdate": 1727352778456,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2058,6 +2058,48 @@ window.BENCHMARK_DATA = {
             "value": 28588,
             "unit": "ns/op",
             "extra": "42008 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eb2be16689074105a4b540a246c70394cfc41303",
+          "message": "feat: implement sdk logger (#762)",
+          "timestamp": "2024-09-26T14:11:50+02:00",
+          "tree_id": "cf6fe0b2b684aed9c2520ff35159865762138575",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eb2be16689074105a4b540a246c70394cfc41303"
+        },
+        "date": 1727352777354,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.6,
+            "unit": "ns/op",
+            "extra": "2434596 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 527.7,
+            "unit": "ns/op",
+            "extra": "2147551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28575,
+            "unit": "ns/op",
+            "extra": "42057 times\n4 procs"
           }
         ]
       }

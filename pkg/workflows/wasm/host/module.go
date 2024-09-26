@@ -3,6 +3,7 @@ package host
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -179,6 +180,56 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 			}
 
 			return ErrnoSuccess
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = linker.FuncWrap(
+		"env",
+		"log",
+		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+			b, innerErr := safeMem(caller, ptr, ptrlen)
+			if innerErr != nil {
+				logger.Errorf("error calling log: %s", err)
+				return
+			}
+
+			var raw map[string]interface{}
+			innerErr = json.Unmarshal(b, &raw)
+			if innerErr != nil {
+				return
+			}
+
+			level := raw["level"]
+			delete(raw, "level")
+
+			msg := raw["msg"].(string)
+			delete(raw, "msg")
+			delete(raw, "ts")
+
+			var args []interface{}
+			for k, v := range raw {
+				args = append(args, k, v)
+			}
+
+			switch level {
+			case "debug":
+				logger.Debugw(msg, args...)
+			case "info":
+				logger.Infow(msg, args...)
+			case "warn":
+				logger.Warnw(msg, args...)
+			case "error":
+				logger.Errorw(msg, args...)
+			case "panic":
+				logger.Panicw(msg, args...)
+			case "fatal":
+				logger.Fatalw(msg, args...)
+			default:
+				logger.Infow(msg, args...)
+			}
 		},
 	)
 	if err != nil {

@@ -111,6 +111,14 @@ func Test_Value(t *testing.T) {
 			},
 		},
 		{
+			name: "float64",
+			newValue: func() (any, Value, error) {
+				f := 1.0
+				fv := NewFloat64(f)
+				return f, fv, nil
+			},
+		},
+		{
 			name: "recursive map",
 			newValue: func() (any, Value, error) {
 				m := map[string]any{

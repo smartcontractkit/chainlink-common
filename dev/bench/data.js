@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727362039917,
+  "lastUpdate": 1727364789818,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2142,6 +2142,48 @@ window.BENCHMARK_DATA = {
             "value": 28894,
             "unit": "ns/op",
             "extra": "40987 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "84ed150bf0bc4353cfd246518113c9a8e800d0bf",
+          "message": "[CAPPL-60] Dynamic encoder selection in OCR consensus aggregator (#780)\n\nCo-authored-by: Cedric <cedric.cordenier@smartcontract.com>",
+          "timestamp": "2024-09-26T16:32:11+01:00",
+          "tree_id": "5ec512ba9b28c0a8ab3805dbed5646f25abb867d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/84ed150bf0bc4353cfd246518113c9a8e800d0bf"
+        },
+        "date": 1727364789402,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 465.3,
+            "unit": "ns/op",
+            "extra": "2442145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 519.7,
+            "unit": "ns/op",
+            "extra": "2307429 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28553,
+            "unit": "ns/op",
+            "extra": "41988 times\n4 procs"
           }
         ]
       }

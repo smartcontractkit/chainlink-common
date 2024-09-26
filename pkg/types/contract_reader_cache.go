@@ -244,7 +244,7 @@ func (c *CachedContractReader) getFromCache(key cacheKey, returnVal any) error {
 }
 
 func (c *CachedContractReader) fallThroughAndCache(ctx context.Context, key cacheKey, returnVal any) error {
-	data := c.mustGetData(key)
+	data := c.getOrCreate(key)
 
 	data.SetLastUpdate(time.Now())
 
@@ -341,7 +341,7 @@ func (c *CachedContractReader) pollAndCache() {
 		}
 
 		pollConfig := config.(PollAndCache)
-		data := c.mustGetData(key)
+		data := c.getOrCreate(key)
 
 		if time.Since(data.LastUpdate()) < pollConfig.Interval {
 			continue
@@ -369,7 +369,7 @@ func (c *CachedContractReader) setStrategy(readIdentifier string, strategy any) 
 	c.strategies[readIdentifier] = strategy
 }
 
-func (c *CachedContractReader) mustGetData(key cacheKey) *cachedValue {
+func (c *CachedContractReader) getOrCreate(key cacheKey) *cachedValue {
 	c.dataLock.RLock()
 	data, hasData := c.data[key.String()]
 	c.dataLock.RUnlock()

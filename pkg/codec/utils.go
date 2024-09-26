@@ -370,7 +370,7 @@ func addr(value reflect.Value) reflect.Value {
 
 func addressToStringHook(length AddressLength, checksum func([]byte) []byte) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		fmt.Printf("\naddressToStringHook called with from: %v, to: %v, data: %v", from, to, data)
+		//fmt.Printf("\naddressToStringHook called with from: %v, to: %v, data: %v", from, to, data)
 
 		// Define the type of the byte array based on the AddressLength (e.g., [20]byte for Byte20Address)
 		byteArrTyp, err := typeFromAddressLength(length)
@@ -388,8 +388,12 @@ func addressToStringHook(length AddressLength, checksum func([]byte) []byte) fun
 
 		// Convert from string to byte array (e.g., string -> [20]byte)
 		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
-			// convert the string to a byte array
 			addr := data.(string)
+
+			// To avoid potential panic, just return the data.
+			if len(addr) < 2 {
+				return data, nil
+			}
 
 			// Decode the hex string to bytes, skipping the '0x' prefix
 			bts, err := hex.DecodeString(addr[2:])

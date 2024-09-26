@@ -2,7 +2,6 @@ package codec
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 
 	"golang.org/x/crypto/sha3"
@@ -62,7 +61,7 @@ func NewAddressBytesToStringModifier(length AddressLength, checksum AddressCheck
 	}
 
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, _ bool) error {
-		t, err := convertBytesToString(field.Type, field.Name)
+		t, err := convertBytesToString(field.Type, field.Name, int(m.length))
 		if err != nil {
 			return err
 		}
@@ -88,7 +87,7 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 		}
 	}()
 
-	log.Printf("RetypeToOffChain called with type: %v, itemType: %T", onChainType, itemType)
+	fmt.Printf("\nRetypeToOffChain called with type: %v, itemType: %T", onChainType, itemType)
 
 	if len(t.fields) == 0 {
 		t.offToOnChainType[onChainType] = onChainType
@@ -107,17 +106,17 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
-		log.Printf("Pointer detected: %v, element type: %v", onChainType, onChainType.Elem())
+		fmt.Printf("\nPointer detected: %v, element type: %v", onChainType, onChainType.Elem())
 
 		// Recursively call RetypeToOffChain on the element type
 		elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
-			log.Printf("Error while processing pointer element type: %v", err)
+			fmt.Printf("\nError while processing pointer element type: %v", err)
 			return nil, err
 		}
 
 		ptr := reflect.PointerTo(elm)
-		log.Printf("Pointer transformed: %v -> %v", onChainType, ptr)
+		fmt.Printf("\nPointer transformed: %v -> %v", onChainType, ptr)
 
 		t.onToOffChainType[onChainType] = ptr
 		t.offToOnChainType[ptr] = onChainType
@@ -161,41 +160,133 @@ func (t *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType s
 }
 
 func (t *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
-	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields, noop, addressToStringHook(t.length, t.checksum))
+	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields,
+		addressTransformationAction[bool](t.length),
+		addressToStringHook(t.length, t.checksum),
+	)
 }
 
-func convertBytesToString(t reflect.Type, field string) (reflect.Type, error) {
+func addressTransformationAction[T any](length AddressLength) mapAction[T] {
+	return func(em map[string]any, fieldName string, value T) error {
+		// Check if the field exists in the map
+		if val, ok := em[fieldName]; ok {
+			// Use reflection to extract the underlying value
+			rVal := reflect.ValueOf(val)
+			if rVal.Kind() == reflect.Ptr {
+				// Dereference the pointer if necessary
+				rVal = reflect.Indirect(rVal)
+			}
+
+			// Get the expected type from the AddressLength (e.g., [length]byte)
+			expectedType, err := typeFromAddressLength(length)
+			if err != nil {
+				return err
+			}
+
+			//	Handle type alias that are convertible to the expected type
+			// eg. type addressType [codec.Byte20Address]byte converts to [20]byte
+			if rVal.Type().ConvertibleTo(expectedType) {
+				rVal = rVal.Convert(expectedType)
+			}
+
+			switch rVal.Kind() {
+			case reflect.Array:
+				// Handle outer arrays (e.g., [n][length]byte)
+				if rVal.Type().Elem().Kind() == reflect.Array && rVal.Type().Elem().Len() == int(length) {
+					// Create a new array of the correct size to store the converted elements
+					addressArray := reflect.New(reflect.ArrayOf(rVal.Len(), expectedType)).Elem()
+
+					// Convert each element from [length]byte to the expected type
+					for i := 0; i < rVal.Len(); i++ {
+						elem := rVal.Index(i)
+						if elem.Len() != int(length) {
+							return fmt.Errorf("expected [%v]byte but got length %d for element %d", length, elem.Len(), i)
+						}
+						reflect.Copy(addressArray.Index(i), elem)
+					}
+
+					// Replace the field in the map with the converted array
+					em[fieldName] = addressArray.Interface()
+					fmt.Printf("Converted field '%s' to array of %s: %v\n", fieldName, expectedType, addressArray.Interface())
+				} else if rVal.Type() == expectedType {
+					// Handle a single array (e.g., [length]byte)
+					fmt.Printf("Single array detected: %v\n", rVal.Type())
+					addressVal := reflect.New(expectedType).Elem()
+					reflect.Copy(addressVal, rVal)
+
+					// Replace the field in the map with the converted array
+					em[fieldName] = addressVal.Interface()
+					fmt.Printf("Converted field '%s' to %s: %x\n", fieldName, expectedType, addressVal.Interface())
+				} else {
+					fmt.Printf("Unexpected array type: %v, expected: %v\n", rVal.Type(), expectedType)
+					return fmt.Errorf("expected [%v]byte or array of [%v]byte but got %v for field %s", length, length, rVal.Type(), fieldName)
+				}
+
+			case reflect.Slice:
+				fmt.Printf("Slice detected: %v\n", rVal.Type())
+
+				// Handle slices of byte arrays (e.g., [][][length]byte)
+				if rVal.Len() > 0 && rVal.Index(0).Type() == expectedType {
+					// Create a slice of the expected type
+					addressSlice := reflect.MakeSlice(reflect.SliceOf(expectedType), rVal.Len(), rVal.Len())
+
+					// Convert each element of the slice
+					for i := 0; i < rVal.Len(); i++ {
+						elem := rVal.Index(i)
+						if elem.Len() != int(length) {
+							return fmt.Errorf("expected element of [%v]byte but got length %d at index %d", length, elem.Len(), i)
+						}
+
+						// Copy the element to the new slice
+						reflect.Copy(addressSlice.Index(i), elem)
+					}
+
+					// Replace the field in the map with the converted slice
+					em[fieldName] = addressSlice.Interface()
+					fmt.Printf("Converted field '%s' to slice of %v: %v\n", fieldName, expectedType, addressSlice.Interface())
+				} else {
+					return fmt.Errorf("expected slice of [%v]byte arrays but got %v for field %s", length, rVal.Type(), fieldName)
+				}
+
+			default:
+				return fmt.Errorf("unexpected type %v for field %s", rVal.Kind(), fieldName)
+			}
+		}
+		return nil
+	}
+}
+
+func convertBytesToString(t reflect.Type, field string, length int) (reflect.Type, error) {
 	switch t.Kind() {
 	case reflect.Array:
-		log.Printf("Array detected: %v, field: %s", t, field)
-		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == 20 {
-			log.Printf("Converting array of [20]byte to array of strings: %v", t)
+		fmt.Printf("\nArray detected: %v, field: %s", t, field)
+		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
+			fmt.Printf("\nConverting array of [%v]byte to array of strings: %v", length, t)
 			return reflect.ArrayOf(t.Len(), reflect.TypeOf("")), nil
 		}
-		log.Printf("Converting [20]byte to string: %v", t)
+		fmt.Printf("\nConverting [20]byte to string: %v", t)
 		return reflect.TypeOf(""), nil
 
 	case reflect.Pointer:
-		log.Printf("Pointer detected: %v, field: %s", t, field)
-		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == 20 {
-			log.Printf("Converting pointer to [20]byte to string: %v", t)
+		fmt.Printf("\nPointer detected: %v, field: %s", t, field)
+		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
+			fmt.Printf("\nConverting pointer to [%v]byte to string: %v", length, t)
 			return reflect.TypeOf(""), nil
 		}
-		log.Printf("Pointer is not pointing to an array of [20]byte, returning error")
+		fmt.Printf("\nPointer is not pointing to an array of [%v]byte, returning error", length)
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
 	case reflect.Slice:
-		log.Printf("Slice detected: %v, field: %s", t, field)
-		// Handle slices of [20]byte
-		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == 20 {
-			log.Printf("Converting slice of [20]byte to slice of strings: %v", t)
+		fmt.Printf("\nSlice detected: %v, field: %s", t, field)
+		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
+			fmt.Printf("\nConverting slice of [%v]byte to slice of strings: %v", length, t)
 			return reflect.SliceOf(reflect.TypeOf("")), nil
 		}
-		log.Printf("Slice does not contain [20]byte elements, returning error")
+		fmt.Printf("\nSlice does not contain [%v]byte elements, returning error", length)
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
 	default:
-		log.Printf("Unsupported type detected: %v, field: %s", t, field)
+		fmt.Printf("\nUnsupported type detected: %v, field: %s", t, field)
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 	}
 }

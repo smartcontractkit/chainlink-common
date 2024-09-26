@@ -10,7 +10,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
+// ContractReaderByIDs wraps types.ContractReader to allow the caller to set custom contractIDs with Bind.
 type ContractReaderByIDs interface {
+	// Bind accepts a map of bound contracts where map keys are custom contractIDs to be used for calling the interface.
 	Bind(ctx context.Context, bindings map[string]types.BoundContract) error
 	Unbind(ctx context.Context, bindings map[string]types.BoundContract) error
 	GetLatestValue(ctx context.Context, contractID, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
@@ -18,6 +20,7 @@ type ContractReaderByIDs interface {
 	QueryKey(ctx context.Context, contractID string, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error)
 }
 
+// WrapContractReaderByIDs returns types.ContractReader behind ContractReaderByIDs interface.
 func WrapContractReaderByIDs(contractReader types.ContractReader) ContractReaderByIDs {
 	return &contractReaderByIDs{
 		cr: contractReader,

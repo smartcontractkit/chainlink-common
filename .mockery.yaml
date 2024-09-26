@@ -3,6 +3,11 @@ mockname: "{{ .InterfaceName }}"
 outpkg: mocks
 filename: "{{ .InterfaceName | snakecase }}.go"
 packages:
+  github.com/smartcontractkit/chainlink-common/pkg/types:
+    interfaces:
+      ContractReader:
+        config:
+          dir: "{{ .InterfaceDir }}/../../mocks"
   github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams:
     interfaces:
       ReportCodec:

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727364789818,
+  "lastUpdate": 1727373733581,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2184,6 +2184,48 @@ window.BENCHMARK_DATA = {
             "value": 28553,
             "unit": "ns/op",
             "extra": "41988 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "32529249+silaslenihan@users.noreply.github.com",
+            "name": "Silas Lenihan",
+            "username": "silaslenihan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0784a13b25368ec80ba621094477102839f2069b",
+          "message": "Updated TestStruct to enable advanced querying (#798)\n\n* Updated TestStruct to enable advanced querying\r\n\r\n* linting fixes\r\n\r\n* Update pkg/codec/encodings/type_codec_test.go\r\n\r\nCo-authored-by: Clement <clement.erena78@gmail.com>\r\n\r\n* Update pkg/codec/encodings/type_codec_test.go\r\n\r\nCo-authored-by: Clement <clement.erena78@gmail.com>\r\n\r\n* Fixed codec tests\r\n\r\n---------\r\n\r\nCo-authored-by: Clement <clement.erena78@gmail.com>",
+          "timestamp": "2024-09-26T14:01:10-04:00",
+          "tree_id": "bba4411bd757b4ffb49ec6da1c30b9f91eb230e3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0784a13b25368ec80ba621094477102839f2069b"
+        },
+        "date": 1727373732892,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.5,
+            "unit": "ns/op",
+            "extra": "2445597 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.5,
+            "unit": "ns/op",
+            "extra": "2269346 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28603,
+            "unit": "ns/op",
+            "extra": "42001 times\n4 procs"
           }
         ]
       }

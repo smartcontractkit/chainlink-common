@@ -12,14 +12,14 @@ import (
 // sequence values are the individual values to search for in the provided property.
 func IndexedSequencesKeyFilter(
 	readName string,
-	propertyName string,
+	comparatorName string,
 	values []string,
 	confidence primitives.ConfidenceLevel,
 ) KeyFilter {
 	return KeyFilter{
 		Key: readName,
 		Expressions: []Expression{
-			filtersForValues(propertyName, values),
+			filtersForValues(comparatorName, values),
 			Confidence(confidence),
 		},
 	}
@@ -32,13 +32,13 @@ func IndexedSequencesKeyFilter(
 func IndexedSequencesByBlockRangeKeyFilter(
 	readName string,
 	start, end string,
-	propertyName string,
+	comparatorName string,
 	values []string,
 ) KeyFilter {
 	return KeyFilter{
 		Key: readName,
 		Expressions: []Expression{
-			filtersForValues(propertyName, values),
+			filtersForValues(comparatorName, values),
 			Block(start, primitives.Gte),
 			Block(end, primitives.Lte),
 		},
@@ -51,13 +51,13 @@ func IndexedSequencesByBlockRangeKeyFilter(
 // search for in the provided property.
 func IndexedSequencesValueGreaterThanKeyFilter(
 	readName string,
-	propertyName, value string,
+	comparatorName, value string,
 	confidence primitives.ConfidenceLevel,
 ) KeyFilter {
 	return KeyFilter{
 		Key: readName,
 		Expressions: []Expression{
-			valueComparator(propertyName, value, primitives.Gte),
+			valueComparator(comparatorName, value, primitives.Gte),
 			Confidence(confidence),
 		},
 	}
@@ -67,15 +67,15 @@ func IndexedSequencesValueGreaterThanKeyFilter(
 // the provided min and max, endpoints inclusive. A sequence read name is the value that identifies the sequence type.
 func IndexedSequencesValueRangeKeyFilter(
 	readName string,
-	propertyName string,
+	comparatorName string,
 	min, max string,
 	confidence primitives.ConfidenceLevel,
 ) KeyFilter {
 	return KeyFilter{
 		Key: readName,
 		Expressions: []Expression{
-			valueComparator(propertyName, min, primitives.Gte),
-			valueComparator(propertyName, max, primitives.Lte),
+			valueComparator(comparatorName, min, primitives.Gte),
+			valueComparator(comparatorName, max, primitives.Lte),
 			Confidence(confidence),
 		},
 	}
@@ -128,7 +128,7 @@ func SequencesCreatedAfterKeyFilter(
 // that identifies the sequence type.
 func IndexedSequencesCreatedAfterKeyFilter(
 	readName string,
-	propertyName string,
+	comparatorName string,
 	values []string,
 	timestamp time.Time,
 	confidence primitives.ConfidenceLevel,
@@ -136,28 +136,28 @@ func IndexedSequencesCreatedAfterKeyFilter(
 	return KeyFilter{
 		Key: readName,
 		Expressions: []Expression{
-			filtersForValues(propertyName, values),
+			filtersForValues(comparatorName, values),
 			Timestamp(uint64(timestamp.Unix()), primitives.Gt),
 			Confidence(confidence),
 		},
 	}
 }
 
-func valueComparator(propertyName, value string, op primitives.ComparisonOperator) Expression {
-	return Comparator(propertyName, primitives.ValueComparator{
+func valueComparator(comparatorName, value string, op primitives.ComparisonOperator) Expression {
+	return Comparator(comparatorName, primitives.ValueComparator{
 		Value:    value,
 		Operator: op,
 	})
 }
 
-func filtersForValues(propertyName string, values []string) Expression {
+func filtersForValues(comparatorName string, values []string) Expression {
 	valueFilters := BoolExpression{
 		Expressions:  make([]Expression, len(values)),
 		BoolOperator: OR,
 	}
 
 	for idx, value := range values {
-		valueFilters.Expressions[idx] = valueComparator(propertyName, value, primitives.Eq)
+		valueFilters.Expressions[idx] = valueComparator(comparatorName, value, primitives.Eq)
 	}
 
 	return Expression{BoolExpression: valueFilters}

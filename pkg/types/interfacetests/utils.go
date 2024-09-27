@@ -20,11 +20,30 @@ type BasicTester[T any] interface {
 	Setup(t T)
 	Name() string
 	GetAccountBytes(i int) []byte
+	IsDisabled(testId string) bool
+	DisableTests(testIds []string)
 }
 
-type testcase[T any] struct {
-	name string
-	test func(t T)
+type TestSelectionSupport struct {
+	enabledTests map[string]bool
+}
+
+func (t TestSelectionSupport) IsDisabled(testId string) bool {
+	return t.enabledTests[testId]
+}
+
+func (t *TestSelectionSupport) DisableTests(testIds []string) {
+	if t.enabledTests == nil {
+		t.enabledTests = map[string]bool{}
+	}
+	for _, testId := range testIds {
+		t.enabledTests[testId] = true
+	}
+}
+
+type Testcase[T any] struct {
+	Name string
+	Test func(t T)
 }
 
 type TestingT[T any] interface {
@@ -33,12 +52,16 @@ type TestingT[T any] interface {
 	Run(name string, f func(t T)) bool
 }
 
-func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
+// Tests execution utility function that will consider enabled / disabled test cases according to
+// Basic Tester configuration.
+func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
 	for _, test := range tests {
-		t.Run(test.name+" for "+tester.Name(), func(t T) {
-			tester.Setup(t)
-			test.test(t)
-		})
+		if !tester.IsDisabled(test.Name) {
+			t.Run(test.Name+" for "+tester.Name(), func(t T) {
+				tester.Setup(t)
+				test.Test(t)
+			})
+		}
 	}
 }
 

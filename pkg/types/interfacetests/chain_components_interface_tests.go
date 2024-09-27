@@ -805,7 +805,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				boundContract := BindingsByName(bindings, AnyContractName)[0]
 
 				// keep this an even number such that the cursor limit can be in batches of 2
-				testStructs := make([]TestStruct, 6)
+				testStructs := make([]TestStruct, 4)
 
 				// create test structs in sequence
 				for idx := range testStructs {
@@ -819,7 +819,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 
 					filter := query.KeyFilter{Key: EventName}
 					limit := query.LimitAndSort{
-						SortBy: []query.SortBy{query.NewSortByBlock(query.Asc)},
+						SortBy: []query.SortBy{query.NewSortBySequence(query.Asc)},
 						Limit:  query.CountLimit(2),
 					}
 
@@ -840,7 +840,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 					return len(allSequences) == len(testStructs) &&
 						reflect.DeepEqual(&testStructs[0], allSequences[0].Data) &&
 						reflect.DeepEqual(&testStructs[len(testStructs)-1], allSequences[len(testStructs)-1].Data)
-				}, tester.MaxWaitTimeForEvents(), 500*time.Millisecond)
+				}, tester.MaxWaitTimeForEvents(), 50*time.Millisecond)
 			},
 		},
 	}

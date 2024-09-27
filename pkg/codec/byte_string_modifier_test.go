@@ -5,15 +5,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 )
 
-type addressType [codec.Byte20Address]byte
-
-func TestAddressBytesToString(t *testing.T) {
+func TestAddress20BytesToString(t *testing.T) {
 	type concreteStruct struct {
 		A string
 		T [codec.Byte20Address]byte
@@ -39,14 +38,16 @@ func TestAddressBytesToString(t *testing.T) {
 	arrayst := reflect.TypeOf(&arrayStruct{})
 	slicest := reflect.TypeOf(&sliceStruct{})
 
+	type evmAddressType [codec.Byte20Address]byte
+
 	type otherIntegerType struct {
 		A string
-		T addressType
+		T evmAddressType
 	}
 
 	type pointerOtherIntegerType struct {
 		A string
-		T *addressType
+		T *evmAddressType
 	}
 	oit := reflect.TypeOf(&otherIntegerType{})
 	oitpt := reflect.TypeOf(&pointerOtherIntegerType{})
@@ -66,7 +67,7 @@ func TestAddressBytesToString(t *testing.T) {
 			{"*typed address", oitpt},
 		} {
 			t.Run(test.name, func(t *testing.T) {
-				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 				convertedType, err := converter.RetypeToOffChain(test.tp, "")
 
 				require.NoError(t, err)
@@ -82,7 +83,7 @@ func TestAddressBytesToString(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain converts converts arrays of fixed length bytes to array of string", func(t *testing.T) {
-		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 
 		convertedType, err := converter.RetypeToOffChain(arrayst, "")
 
@@ -96,7 +97,7 @@ func TestAddressBytesToString(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain converts slices of fixed length bytes to slices of string", func(t *testing.T) {
-		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 
 		convertedType, err := converter.RetypeToOffChain(slicest, "")
 
@@ -116,12 +117,12 @@ func TestAddressBytesToString(t *testing.T) {
 			expected any
 		}{
 			{"[20]byte", concretest, &concreteStruct{A: anyString, T: [codec.Byte20Address]byte{}}},
-			{"typed address", oit, &otherIntegerType{A: anyString, T: addressType{}}},
+			{"typed address", oit, &otherIntegerType{A: anyString, T: evmAddressType{}}},
 			{"[20]byte pointer", pointertst, &pointerStruct{A: anyString, T: &[codec.Byte20Address]byte{}}},
-			{"*typed address", oitpt, &pointerOtherIntegerType{A: anyString, T: &addressType{}}},
+			{"*typed address", oitpt, &pointerOtherIntegerType{A: anyString, T: &evmAddressType{}}},
 		} {
 			t.Run(test.name, func(t *testing.T) {
-				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 				convertedType, err := converter.RetypeToOffChain(test.t, "")
 				require.NoError(t, err)
 
@@ -139,7 +140,7 @@ func TestAddressBytesToString(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain converts string array to array of fixed length bytes", func(t *testing.T) {
-		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 
 		convertedType, err := converter.RetypeToOffChain(arrayst, "")
 		require.NoError(t, err)
@@ -159,7 +160,7 @@ func TestAddressBytesToString(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain converts string slice to slice of [20]byte", func(t *testing.T) {
-		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 
 		convertedType, err := converter.RetypeToOffChain(slicest, "")
 		require.NoError(t, err)
@@ -190,11 +191,11 @@ func TestAddressBytesToString(t *testing.T) {
 			offChain any
 		}{
 			{"[20]byte", concretest, &concreteStruct{A: anyString, T: [codec.Byte20Address]byte{}}},
-			{"typed address", oit, &otherIntegerType{A: anyString, T: addressType{}}},
+			{"typed address", oit, &otherIntegerType{A: anyString, T: evmAddressType{}}},
 			{"[20]byte pointer", pointertst, &pointerStruct{A: anyString, T: &[codec.Byte20Address]byte{}}},
 		} {
 			t.Run(test.name, func(t *testing.T) {
-				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+				converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 				convertedType, err := converter.RetypeToOffChain(test.t, "")
 				require.NoError(t, err)
 
@@ -211,7 +212,7 @@ func TestAddressBytesToString(t *testing.T) {
 	})
 
 	t.Run("TransformToOffChain converts array of bytes to string array", func(t *testing.T) {
-		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 
 		convertedType, err := converter.RetypeToOffChain(arrayst, "")
 		require.NoError(t, err)
@@ -232,7 +233,7 @@ func TestAddressBytesToString(t *testing.T) {
 	})
 
 	t.Run("TransformToOffChain converts slice bytes to string slice", func(t *testing.T) {
-		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"})
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte20Address, codec.NoChecksum, []string{"T"}, codec.HexEncoding)
 
 		convertedType, err := converter.RetypeToOffChain(slicest, "")
 		require.NoError(t, err)
@@ -245,6 +246,252 @@ func TestAddressBytesToString(t *testing.T) {
 		actual, err := converter.TransformToOffChain(&sliceStruct{
 			A: anyString,
 			T: [][codec.Byte20Address]byte{testAddrBytes, testAddrBytes},
+		}, "")
+		require.NoError(t, err)
+
+		expected := reflect.New(convertedType.Elem())
+		iExpected := reflect.Indirect(expected)
+		iExpected.FieldByName("A").SetString(anyString)
+		iExpected.FieldByName("T").Set(reflect.ValueOf(expectedAddrs))
+		assert.Equal(t, expected.Interface(), actual)
+	})
+}
+
+func TestAddress32BytesToString(t *testing.T) {
+	type concreteStruct struct {
+		A string
+		T [codec.Byte32Address]byte
+	}
+
+	type pointerStruct struct {
+		A string
+		T *[codec.Byte32Address]byte
+	}
+
+	type arrayStruct struct {
+		A string
+		T [2][codec.Byte32Address]byte
+	}
+
+	type sliceStruct struct {
+		A string
+		T [][codec.Byte32Address]byte
+	}
+
+	concretest := reflect.TypeOf(&concreteStruct{})
+	pointertst := reflect.TypeOf(&pointerStruct{})
+	arrayst := reflect.TypeOf(&arrayStruct{})
+	slicest := reflect.TypeOf(&sliceStruct{})
+
+	type solanaAddressType [codec.Byte32Address]byte
+
+	type otherIntegerType struct {
+		A string
+		T solanaAddressType
+	}
+
+	type pointerOtherIntegerType struct {
+		A string
+		T *solanaAddressType
+	}
+
+	oit := reflect.TypeOf(&otherIntegerType{})
+	oitpt := reflect.TypeOf(&pointerOtherIntegerType{})
+
+	testAddrBytes := [codec.Byte32Address]byte{}
+	testAddrStr := base58.Encode(testAddrBytes[:])
+	anyString := "test"
+
+	t.Run("RetypeToOffChain converts fixed length bytes to string", func(t *testing.T) {
+		for _, test := range []struct {
+			name string
+			tp   reflect.Type
+		}{
+			{"[32]byte", concretest},
+			{"typed address", oit},
+			{"[32]byte pointer", pointertst},
+			{"*typed address", oitpt},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+				convertedType, err := converter.RetypeToOffChain(test.tp, "")
+
+				require.NoError(t, err)
+				assert.Equal(t, reflect.Pointer, convertedType.Kind())
+				convertedType = convertedType.Elem()
+
+				require.Equal(t, 2, convertedType.NumField())
+				assert.Equal(t, test.tp.Elem().Field(0), convertedType.Field(0))
+				assert.Equal(t, test.tp.Elem().Field(1).Name, convertedType.Field(1).Name)
+				assert.Equal(t, reflect.TypeOf(""), convertedType.Field(1).Type)
+			})
+		}
+	})
+
+	t.Run("RetypeToOffChain converts arrays of fixed length bytes to array of strings", func(t *testing.T) {
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+
+		convertedType, err := converter.RetypeToOffChain(arrayst, "")
+
+		require.NoError(t, err)
+		assert.Equal(t, reflect.Pointer, convertedType.Kind())
+		convertedType = convertedType.Elem()
+
+		require.Equal(t, 2, convertedType.NumField())
+		assert.Equal(t, arrayst.Elem().Field(0), convertedType.Field(0))
+		assert.Equal(t, reflect.TypeOf([2]string{}), convertedType.Field(1).Type)
+	})
+
+	t.Run("RetypeToOffChain converts slices of fixed length bytes to slices of strings", func(t *testing.T) {
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+
+		convertedType, err := converter.RetypeToOffChain(slicest, "")
+
+		require.NoError(t, err)
+		assert.Equal(t, reflect.Pointer, convertedType.Kind())
+		convertedType = convertedType.Elem()
+
+		require.Equal(t, 2, convertedType.NumField())
+		assert.Equal(t, slicest.Elem().Field(0), convertedType.Field(0))
+		assert.Equal(t, reflect.TypeOf([]string{}), convertedType.Field(1).Type)
+	})
+
+	t.Run("TransformToOnChain converts string to 32 bytes", func(t *testing.T) {
+		for _, test := range []struct {
+			name     string
+			t        reflect.Type
+			expected any
+		}{
+			{"[32]byte", concretest, &concreteStruct{A: anyString, T: [codec.Byte32Address]byte{}}},
+			{"typed address", oit, &otherIntegerType{A: anyString, T: solanaAddressType{}}},
+			{"[32]byte pointer", pointertst, &pointerStruct{A: anyString, T: &[codec.Byte32Address]byte{}}},
+			{"*typed address", oitpt, &pointerOtherIntegerType{A: anyString, T: &solanaAddressType{}}},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+				convertedType, err := converter.RetypeToOffChain(test.t, "")
+				require.NoError(t, err)
+
+				rOffchain := reflect.New(convertedType.Elem())
+				iOffChain := reflect.Indirect(rOffchain)
+				iOffChain.FieldByName("A").SetString(anyString)
+				iOffChain.FieldByName("T").Set(reflect.ValueOf(testAddrStr))
+
+				actual, err := converter.TransformToOnChain(rOffchain.Interface(), "")
+				require.NoError(t, err)
+
+				assert.Equal(t, test.expected, actual)
+			})
+		}
+	})
+
+	t.Run("TransformToOnChain converts string array to array of 32-byte", func(t *testing.T) {
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+
+		convertedType, err := converter.RetypeToOffChain(arrayst, "")
+		require.NoError(t, err)
+
+		rOffchain := reflect.New(convertedType.Elem())
+		iOffChain := reflect.Indirect(rOffchain)
+
+		arrayValue := [2]string{testAddrStr, testAddrStr}
+
+		iOffChain.FieldByName("T").Set(reflect.ValueOf(arrayValue))
+
+		actual, err := converter.TransformToOnChain(rOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		expected := &arrayStruct{A: "", T: [2][codec.Byte32Address]byte{}}
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("TransformToOnChain converts string slice to slice of [32]byte", func(t *testing.T) {
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+
+		convertedType, err := converter.RetypeToOffChain(slicest, "")
+		require.NoError(t, err)
+
+		rOffchain := reflect.New(convertedType.Elem())
+		iOffChain := reflect.Indirect(rOffchain)
+
+		iOffChain.FieldByName("T").Set(reflect.ValueOf([]string{testAddrStr, testAddrStr}))
+
+		actual, err := converter.TransformToOnChain(rOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		expected := &sliceStruct{
+			A: "",
+			T: [][codec.Byte32Address]byte{
+				testAddrBytes,
+				testAddrBytes,
+			},
+		}
+
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("TransformToOffChain converts 32 bytes to string", func(t *testing.T) {
+		for _, test := range []struct {
+			name     string
+			t        reflect.Type
+			offChain any
+		}{
+			{"[32]byte", concretest, &concreteStruct{A: anyString, T: [codec.Byte32Address]byte{}}},
+			{"typed address", oit, &otherIntegerType{A: anyString, T: solanaAddressType{}}},
+			{"[32]byte pointer", pointertst, &pointerStruct{A: anyString, T: &[codec.Byte32Address]byte{}}},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+				convertedType, err := converter.RetypeToOffChain(test.t, "")
+				require.NoError(t, err)
+
+				actual, err := converter.TransformToOffChain(test.offChain, "")
+				require.NoError(t, err)
+
+				expected := reflect.New(convertedType.Elem())
+				iOffChain := reflect.Indirect(expected)
+				iOffChain.FieldByName("A").SetString(anyString)
+				iOffChain.FieldByName("T").Set(reflect.ValueOf(testAddrStr))
+				assert.Equal(t, expected.Interface(), actual)
+			})
+		}
+	})
+
+	t.Run("TransformToOffChain converts array of 32-byte to string array", func(t *testing.T) {
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+
+		convertedType, err := converter.RetypeToOffChain(arrayst, "")
+		require.NoError(t, err)
+
+		rOffchain := reflect.New(convertedType.Elem())
+		iOffChain := reflect.Indirect(rOffchain)
+		expectedAddrs := [2]string{testAddrStr, testAddrStr}
+		iOffChain.FieldByName("T").Set(reflect.ValueOf(expectedAddrs))
+
+		actual, err := converter.TransformToOffChain(&arrayStruct{A: anyString, T: [2][codec.Byte32Address]byte{}}, "")
+		require.NoError(t, err)
+
+		expected := reflect.New(convertedType.Elem())
+		iExpected := reflect.Indirect(expected)
+		iExpected.FieldByName("A").SetString(anyString)
+		iExpected.FieldByName("T").Set(reflect.ValueOf(expectedAddrs))
+		assert.Equal(t, expected.Interface(), actual)
+	})
+
+	t.Run("TransformToOffChain converts slice of 32-byte to string slice", func(t *testing.T) {
+		converter := codec.NewAddressBytesToStringModifier(codec.Byte32Address, codec.NoChecksum, []string{"T"}, codec.Base58Encoding)
+
+		convertedType, err := converter.RetypeToOffChain(slicest, "")
+		require.NoError(t, err)
+
+		rOffchain := reflect.New(convertedType.Elem())
+		iOffChain := reflect.Indirect(rOffchain)
+		expectedAddrs := []string{testAddrStr, testAddrStr}
+		iOffChain.FieldByName("T").Set(reflect.ValueOf(expectedAddrs))
+
+		actual, err := converter.TransformToOffChain(&sliceStruct{
+			A: anyString,
+			T: [][codec.Byte32Address]byte{testAddrBytes, testAddrBytes},
 		}, "")
 		require.NoError(t, err)
 

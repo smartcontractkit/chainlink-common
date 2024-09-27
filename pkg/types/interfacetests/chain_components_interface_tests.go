@@ -794,6 +794,55 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},
+		{
+			name: "QueryKey can limit results with cursor",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				// keep this an even number such that the cursor limit can be in batches of 2
+				testStructs := make([]TestStruct, 6)
+
+				// create test structs in sequence
+				for idx := range testStructs {
+					testStructs[idx] = CreateTestStruct(idx*2, tester)
+
+					_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, testStructs[idx], boundContract, types.Unconfirmed)
+				}
+
+				assert.Eventually(t, func() bool {
+					var allSequences []types.Sequence
+
+					filter := query.KeyFilter{Key: EventName}
+					limit := query.LimitAndSort{
+						SortBy: []query.SortBy{query.NewSortByBlock(query.Asc)},
+						Limit:  query.CountLimit(2),
+					}
+
+					for idx := 0; idx < len(testStructs)/2; idx++ {
+						// sequences from queryKey without limit and sort should be in descending order
+						sequences, err := cr.QueryKey(ctx, boundContract, filter, limit, &TestStruct{})
+
+						require.NoError(t, err)
+
+						if len(sequences) == 0 {
+							continue
+						}
+
+						limit.Limit = query.CursorLimit(sequences[len(sequences)-1].Cursor, query.CursorFollowing, 2)
+						allSequences = append(allSequences, sequences...)
+					}
+
+					return len(allSequences) == len(testStructs) &&
+						reflect.DeepEqual(&testStructs[0], allSequences[0].Data) &&
+						reflect.DeepEqual(&testStructs[len(testStructs)-1], allSequences[len(testStructs)-1].Data)
+				}, tester.MaxWaitTimeForEvents(), 500*time.Millisecond)
+			},
+		},
 	}
 
 	runTests(t, tester, tests)

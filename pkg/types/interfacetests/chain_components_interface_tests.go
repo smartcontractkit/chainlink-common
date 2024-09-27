@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 type ChainComponentsInterfaceTester[T TestingT[T]] interface {
@@ -63,6 +64,88 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	tests := []testcase[T]{
+		{
+			name: "Gets the latest value as a values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				firstItem := CreateTestStruct(0, tester)
+
+				contracts := tester.GetBindings(t)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
+
+				secondItem := CreateTestStruct(1, tester)
+
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
+
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				params := &LatestParams{I: 1}
+				var value values.Value
+
+				err := cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, &value)
+				require.NoError(t, err)
+
+				actual := TestStruct{}
+				err = value.UnwrapTo(&actual)
+				require.NoError(t, err)
+				assert.Equal(t, &firstItem, &actual)
+
+				params = &LatestParams{I: 2}
+				err = cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, &value)
+				require.NoError(t, err)
+
+				actual = TestStruct{}
+				err = value.UnwrapTo(&actual)
+				require.NoError(t, err)
+				assert.Equal(t, &secondItem, &actual)
+			},
+		},
+
+		{
+			name: "Get latest value without arguments and with primitive return as a values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0]
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				var value values.Value
+				err := cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodReturningUint64), primitives.Unconfirmed, nil, &value)
+				require.NoError(t, err)
+
+				var prim uint64
+				err = value.UnwrapTo(&prim)
+				require.NoError(t, err)
+
+				assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
+			},
+		},
+		{
+			name: "Get latest value without arguments and with slice return as a values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0]
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				var value values.Value
+				err := cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodReturningUint64Slice), primitives.Unconfirmed, nil, &value)
+				require.NoError(t, err)
+
+				var slice []uint64
+				err = value.UnwrapTo(&slice)
+				require.NoError(t, err)
+				assert.Equal(t, AnySliceToReadWithoutAnArgument, slice)
+			},
+		},
 		{
 			name: "Gets the latest value",
 			test: func(t T) {
@@ -632,6 +715,46 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, boundContract, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
 					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+		{
+			name: "QueryKey returns sequence data properly as values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				bound := BindingsByName(bindings, AnyContractName)[0]
+
+				ts1 := CreateTestStruct[T](0, tester)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, bindings[0], types.Unconfirmed)
+				ts2 := CreateTestStruct[T](1, tester)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, bindings[0], types.Unconfirmed)
+
+				var value values.Value
+
+				assert.Eventually(t, func() bool {
+					// sequences from queryKey without limit and sort should be in descending order
+					sequences, err := cr.QueryKey(ctx, bound, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &value)
+					if err != nil || len(sequences) != 2 {
+						return false
+					}
+
+					data1 := *sequences[1].Data.(*values.Value)
+					ts := TestStruct{}
+					err = data1.UnwrapTo(&ts)
+					require.NoError(t, err)
+					assert.Equal(t, &ts1, &ts)
+
+					data2 := *sequences[0].Data.(*values.Value)
+					ts = TestStruct{}
+					err = data2.UnwrapTo(&ts)
+					require.NoError(t, err)
+					assert.Equal(t, &ts2, &ts)
+
+					return true
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},

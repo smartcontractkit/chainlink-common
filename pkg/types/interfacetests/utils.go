@@ -132,25 +132,36 @@ func (e ExpectedGetLatestValueArgs) String() string {
 		e.ContractName, e.ReadName, e.ConfidenceLevel, e.Params, e.ReturnVal)
 }
 
-type InnerTestStruct struct {
+type InnerDynamicTestStruct struct {
 	I int
 	S string
 }
 
-type MidLevelTestStruct struct {
+type InnerStaticTestStruct struct {
+	I int
+	A []byte
+}
+
+type MidLevelDynamicTestStruct struct {
 	FixedBytes [2]byte
-	Inner      InnerTestStruct
+	Inner      InnerDynamicTestStruct
+}
+
+type MidLevelStaticTestStruct struct {
+	FixedBytes [2]byte
+	Inner      InnerStaticTestStruct
 }
 
 type TestStruct struct {
-	Field          *int32
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
-	Account        []byte
-	Accounts       [][]byte
-	DifferentField string
-	BigField       *big.Int
-	NestedStruct   MidLevelTestStruct
+	Field               *int32
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
+	Account             []byte
+	Accounts            [][]byte
+	DifferentField      string
+	BigField            *big.Int
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
 }
 
 type TestStructWithExtraField struct {
@@ -159,25 +170,27 @@ type TestStructWithExtraField struct {
 }
 
 type TestStructMissingField struct {
-	DifferentField string
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
-	Account        []byte
-	Accounts       [][]byte
-	BigField       *big.Int
-	NestedStruct   MidLevelTestStruct
+	DifferentField      string
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
+	Account             []byte
+	Accounts            [][]byte
+	BigField            *big.Int
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
 }
 
 // compatibleTestStruct has fields in a different order
 type compatibleTestStruct struct {
-	Account        []byte
-	Accounts       [][]byte
-	BigField       *big.Int
-	DifferentField string
-	Field          int32
-	NestedStruct   MidLevelTestStruct
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
+	Account             []byte
+	Accounts            [][]byte
+	BigField            *big.Int
+	DifferentField      string
+	Field               int32
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
 }
 
 type LatestParams struct {
@@ -207,11 +220,18 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
 		DifferentField: s,
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
-		NestedStruct: MidLevelTestStruct{
+		NestedDynamicStruct: MidLevelDynamicTestStruct{
 			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
-			Inner: InnerTestStruct{
+			Inner: InnerDynamicTestStruct{
 				I: i,
 				S: s,
+			},
+		},
+		NestedStaticStruct: MidLevelStaticTestStruct{
+			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
+			Inner: InnerStaticTestStruct{
+				I: i,
+				A: tester.GetAccountBytes(i + 6),
 			},
 		},
 	}

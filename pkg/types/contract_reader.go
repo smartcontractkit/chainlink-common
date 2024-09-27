@@ -43,6 +43,7 @@ type ContractReader interface {
 	// Note that implementations should ignore extra fields in params that are not expected in the call to allow easier
 	// use across chains and contract versions.
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
+	// Passing in a *values.Value as the returnVal will encode the return value as an appropriate value.Value instance.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
@@ -60,6 +61,8 @@ type ContractReader interface {
 
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+
+	mustEmbedUnimplementedContractReader()
 }
 
 // BatchGetLatestValuesRequest string is contract name.
@@ -162,3 +165,5 @@ func (UnimplementedContractReader) Name() string {
 func (UnimplementedContractReader) Ready() error {
 	return UnimplementedError("ContractReader.Ready unimplemented")
 }
+
+func (UnimplementedContractReader) mustEmbedUnimplementedContractReader() {}

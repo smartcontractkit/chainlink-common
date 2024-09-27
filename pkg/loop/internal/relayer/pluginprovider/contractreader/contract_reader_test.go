@@ -26,6 +26,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint
 )
@@ -522,11 +523,24 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 	defer f.lock.Unlock()
 	stored := f.stored[contractName]
 	lp := params.(*LatestParams)
-	rv := returnVal.(*TestStruct)
+
 	if lp.I-1 >= len(stored) {
 		return errors.New("latest params index out of bounds for stored test structs")
 	}
-	*rv = stored[lp.I-1]
+
+	_, isValue := returnVal.(*values.Value)
+	if isValue {
+		var err error
+		ptrToVal := returnVal.(*values.Value)
+		*ptrToVal, err = values.Wrap(stored[lp.I-1])
+		if err != nil {
+			return err
+		}
+	} else {
+		rv := returnVal.(*TestStruct)
+		*rv = stored[lp.I-1]
+	}
+
 	return nil
 }
 
@@ -583,7 +597,8 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 	return result, nil
 }
 
-func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
+func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceType any) ([]types.Sequence, error) {
+	_, isValueType := sequenceType.(*values.Value)
 	if filter.Key == EventName {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -607,17 +622,54 @@ func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract,
 				}
 			}
 			if len(filter.Expressions) == 0 || doAppend {
-				sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
+				if isValueType {
+					value, err := values.Wrap(trigger.testStruct)
+					if err != nil {
+						return nil, err
+					}
+					sequences = append(sequences, types.Sequence{Data: &value})
+				} else {
+					sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
+				}
 			}
 		}
 
-		if !limitAndSort.HasSequenceSort() {
-			sort.Slice(sequences, func(i, j int) bool {
-				if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
-					return false
-				}
-				return *sequences[i].Data.(TestStruct).Field > *sequences[j].Data.(TestStruct).Field
-			})
+		if isValueType {
+			if !limitAndSort.HasSequenceSort() {
+				sort.Slice(sequences, func(i, j int) bool {
+					valI := *sequences[i].Data.(*values.Value)
+					valJ := *sequences[j].Data.(*values.Value)
+
+					mapI := valI.(*values.Map)
+					mapJ := valJ.(*values.Map)
+
+					if mapI.Underlying["Field"] == nil || mapJ.Underlying["Field"] == nil {
+						return false
+					}
+					var iVal int32
+					err := mapI.Underlying["Field"].UnwrapTo(&iVal)
+					if err != nil {
+						panic(err)
+					}
+
+					var jVal int32
+					err = mapJ.Underlying["Field"].UnwrapTo(&jVal)
+					if err != nil {
+						panic(err)
+					}
+
+					return iVal > jVal
+				})
+			}
+		} else {
+			if !limitAndSort.HasSequenceSort() {
+				sort.Slice(sequences, func(i, j int) bool {
+					if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
+						return false
+					}
+					return *sequences[i].Data.(TestStruct).Field > *sequences[j].Data.(TestStruct).Field
+				})
+			}
 		}
 
 		return sequences, nil

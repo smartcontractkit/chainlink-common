@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -125,20 +126,19 @@ func TestExpirableCache_StatsCollector(t *testing.T) {
 	cache.Add(id, value)
 
 	// Check addition count
-	assert.Equal(t, 1, stats.additions)
+	assert.Equal(t, 1, stats.Additions())
 
 	// Fetch the item to increment hit counter
 	_, ok := cache.Get(id)
 	assert.True(t, ok)
-	assert.Equal(t, 1, stats.hits)
+	assert.Equal(t, 1, stats.Hits())
 
 	// Fetch a non-existent item to increment miss counter
 	_, ok = cache.Get("non-existent")
 	assert.False(t, ok)
-	assert.Equal(t, 1, stats.misses)
+	assert.Equal(t, 1, stats.Misses())
 
 	// Advance time to trigger eviction
-
 	assert.Eventually(t, func() bool {
 		clock.Advance(15 * time.Second)
 		_, ok := cache.Get(id)
@@ -146,10 +146,11 @@ func TestExpirableCache_StatsCollector(t *testing.T) {
 	}, 100*time.Second, 100*time.Millisecond)
 
 	// Check eviction count
-	assert.Equal(t, 1, stats.evictions)
+	assert.Equal(t, 1, stats.Evictions())
 }
 
 type mockStatsCollector struct {
+	mu        sync.Mutex
 	hits      int
 	misses    int
 	evictions int
@@ -157,17 +158,49 @@ type mockStatsCollector struct {
 }
 
 func (m *mockStatsCollector) OnCacheHit() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.hits++
 }
 
 func (m *mockStatsCollector) OnCacheMiss() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.misses++
 }
 
 func (m *mockStatsCollector) OnCacheEviction(count int) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.evictions += count
 }
 
 func (m *mockStatsCollector) OnCacheAddition() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.additions++
+}
+
+func (m *mockStatsCollector) Hits() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.hits
+}
+
+func (m *mockStatsCollector) Misses() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.misses
+}
+
+func (m *mockStatsCollector) Evictions() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.evictions
+}
+
+func (m *mockStatsCollector) Additions() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.additions
 }

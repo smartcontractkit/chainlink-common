@@ -135,6 +135,7 @@ func (*interfaceTesterBase) GetAccountBytes(i int) []byte {
 
 type bigEndianInterfaceTester struct {
 	interfaceTesterBase
+	TestSelectionSupport
 	lenient bool
 }
 

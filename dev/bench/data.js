@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727373733581,
+  "lastUpdate": 1727454350619,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2226,6 +2226,48 @@ window.BENCHMARK_DATA = {
             "value": 28603,
             "unit": "ns/op",
             "extra": "42001 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "20630b333f5737d23e1bad362900a27c1a22d680",
+          "message": "Properly support the range of uint64 and allow big int to unwrap into smaller integer types (#810)",
+          "timestamp": "2024-09-27T12:24:47-04:00",
+          "tree_id": "8a4c28b8e67841211bd4c228749dd08d00af8543",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/20630b333f5737d23e1bad362900a27c1a22d680"
+        },
+        "date": 1727454349963,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.4,
+            "unit": "ns/op",
+            "extra": "2235145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 531.6,
+            "unit": "ns/op",
+            "extra": "2184152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28673,
+            "unit": "ns/op",
+            "extra": "41961 times\n4 procs"
           }
         ]
       }

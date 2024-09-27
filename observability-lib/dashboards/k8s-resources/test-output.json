@@ -885,8 +885,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -906,8 +905,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -927,8 +925,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -948,8 +945,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -969,8 +965,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         }
       ]
     },

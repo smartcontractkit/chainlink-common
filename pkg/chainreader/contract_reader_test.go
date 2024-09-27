@@ -174,6 +174,7 @@ func TestContractReaderByIDsQueryKey(t *testing.T) {
 	// Test that bc2 still works
 	sequences2, err = crByIDs.QueryKey(ctx, bc2CustomID, filter, limitAndSort, sequenceDataType)
 	assert.NoError(t, err)
+	assert.Equal(t, []types.Sequence{{Data: "sequenceData2"}}, sequences2)
 
 	// Unbind bc2 and test error case
 	require.NoError(t, crByIDs.Unbind(ctx, map[string]types.BoundContract{bc2CustomID: bc2}))

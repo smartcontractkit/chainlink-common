@@ -35,11 +35,18 @@ func (crByIds *ContractReaderByIDs) Bind(ctx context.Context, bindings map[strin
 
 func (crByIds *ContractReaderByIDs) Unbind(ctx context.Context, bindings map[string]types.BoundContract) error {
 	var toUnbind []types.BoundContract
-	for customContractID, boundContract := range bindings {
-		crByIds.bindings.Delete(customContractID)
+	for _, boundContract := range bindings {
 		toUnbind = append(toUnbind, boundContract)
 	}
-	return crByIds.cr.Unbind(ctx, toUnbind)
+
+	err := crByIds.cr.Unbind(ctx, toUnbind)
+	if err == nil {
+		for customContractID := range bindings {
+			crByIds.bindings.Delete(customContractID)
+		}
+	}
+
+	return err
 }
 
 func (crByIds *ContractReaderByIDs) GetLatestValue(ctx context.Context, contractID, readName string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {

@@ -272,6 +272,34 @@ func Test_IntTypes(t *testing.T) {
 		{name: "uint16", test: func(tt *testing.T) { wrappableTest[int64, uint16](tt, anyValue) }},
 		{name: "uint8", test: func(tt *testing.T) { wrappableTest[int64, uint8](tt, anyValue) }},
 		{name: "uint", test: func(tt *testing.T) { wrappableTest[int64, uint](tt, anyValue) }},
+		{name: "uint64 small enough for int64", test: func(tt *testing.T) {
+			u64, err := Wrap(uint64(math.MaxInt64))
+			require.NoError(tt, err)
+
+			expected, err := Wrap(int64(math.MaxInt64))
+			require.NoError(tt, err)
+
+			assert.Equal(tt, expected, u64)
+
+			unwrapped := uint64(0)
+			err = u64.UnwrapTo(&unwrapped)
+			require.NoError(tt, err)
+			assert.Equal(tt, uint64(math.MaxInt64), unwrapped)
+		}},
+		{name: "uint64 too large for int64", test: func(tt *testing.T) {
+			u64, err := Wrap(uint64(math.MaxInt64 + 1))
+			require.NoError(tt, err)
+
+			expected, err := Wrap(new(big.Int).SetUint64(math.MaxInt64 + 1))
+			require.NoError(tt, err)
+
+			assert.Equal(tt, expected, u64)
+
+			unwrapped := uint64(0)
+			err = u64.UnwrapTo(&unwrapped)
+			require.NoError(tt, err)
+			assert.Equal(tt, uint64(math.MaxInt64+1), unwrapped)
+		}},
 	}
 
 	for _, tc := range testCases {
@@ -451,6 +479,7 @@ type aliasByte uint8
 type decimalAlias decimal.Decimal
 type bigIntAlias big.Int
 type bigIntPtrAlias *big.Int
+type aliasUint64 uint64
 
 func Test_Aliases(t *testing.T) {
 	testCases := []struct {
@@ -480,6 +509,14 @@ func Test_Aliases(t *testing.T) {
 		{
 			name: "integer",
 			test: func(tt *testing.T) { wrappableTest[int, aliasInt](tt, 1) },
+		},
+		{
+			name: "uint64 fits in int64",
+			test: func(tt *testing.T) { wrappableTest[uint64, aliasUint64](tt, uint64(math.MaxInt64)) },
+		},
+		{
+			name: "uint64 too large for int64",
+			test: func(tt *testing.T) { wrappableTest[uint64, aliasUint64](tt, uint64(math.MaxInt64+1)) },
 		},
 		{
 			name: "map",

@@ -2,12 +2,17 @@ package chainreader
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+)
+
+var (
+	ErrNoBindings = errors.New("no bindings found")
 )
 
 // WrapContractReaderByIDs returns types.ContractReader behind ContractReaderByIDs interface.
@@ -99,7 +104,7 @@ func (crByIds *ContractReaderByIDs) BatchGetLatestValues(ctx context.Context, re
 func (crByIds *ContractReaderByIDs) getBoundContract(contractID string) (types.BoundContract, error) {
 	binding, ok := crByIds.bindings.Load(contractID)
 	if !ok {
-		return types.BoundContract{}, fmt.Errorf("binding not found for contractID %s", contractID)
+		return types.BoundContract{}, fmt.Errorf("%w for contractID: %s", ErrNoBindings, contractID)
 	}
 
 	boundContract, ok := binding.(types.BoundContract)

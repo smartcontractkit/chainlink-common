@@ -50,7 +50,6 @@ func (n *noopStatsCollector) OnCacheAddition()    {}
 // statsCollector can be provided to collect cache stats.
 func NewExpirableCache[K comparable, V any](clock clockwork.Clock, tick, expiryAfter time.Duration, evictAfterSize int,
 	statsCollector StatsCollector) *ExpirableCache[K, V] {
-
 	if statsCollector == nil {
 		statsCollector = &noopStatsCollector{}
 	}

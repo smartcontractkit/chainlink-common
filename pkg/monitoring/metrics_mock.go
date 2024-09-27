@@ -519,6 +519,48 @@ func (_c *MetricsMock_SetOffchainAggregatorAnswers_Call) RunAndReturn(run func(f
 	return _c
 }
 
+// SetOffchainAggregatorAnswersLatestTimestamp provides a mock function with given fields: latestTimestampSeconds, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName
+func (_m *MetricsMock) SetOffchainAggregatorAnswersLatestTimestamp(latestTimestampSeconds float64, contractAddress string, feedID string, chainID string, contractStatus string, contractType string, feedName string, feedPath string, networkID string, networkName string) {
+	_m.Called(latestTimestampSeconds, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName)
+}
+
+// MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetOffchainAggregatorAnswersLatestTimestamp'
+type MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call struct {
+	*mock.Call
+}
+
+// SetOffchainAggregatorAnswersLatestTimestamp is a helper method to define mock.On call
+//   - latestTimestampSeconds float64
+//   - contractAddress string
+//   - feedID string
+//   - chainID string
+//   - contractStatus string
+//   - contractType string
+//   - feedName string
+//   - feedPath string
+//   - networkID string
+//   - networkName string
+func (_e *MetricsMock_Expecter) SetOffchainAggregatorAnswersLatestTimestamp(latestTimestampSeconds interface{}, contractAddress interface{}, feedID interface{}, chainID interface{}, contractStatus interface{}, contractType interface{}, feedName interface{}, feedPath interface{}, networkID interface{}, networkName interface{}) *MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call {
+	return &MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call{Call: _e.mock.On("SetOffchainAggregatorAnswersLatestTimestamp", latestTimestampSeconds, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName)}
+}
+
+func (_c *MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call) Run(run func(latestTimestampSeconds float64, contractAddress string, feedID string, chainID string, contractStatus string, contractType string, feedName string, feedPath string, networkID string, networkName string)) *MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(float64), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string), args[7].(string), args[8].(string), args[9].(string))
+	})
+	return _c
+}
+
+func (_c *MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call) Return() *MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call) RunAndReturn(run func(float64, string, string, string, string, string, string, string, string, string)) *MetricsMock_SetOffchainAggregatorAnswersLatestTimestamp_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetOffchainAggregatorAnswersRaw provides a mock function with given fields: answer, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName
 func (_m *MetricsMock) SetOffchainAggregatorAnswersRaw(answer float64, contractAddress string, feedID string, chainID string, contractStatus string, contractType string, feedName string, feedPath string, networkID string, networkName string) {
 	_m.Called(answer, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName)

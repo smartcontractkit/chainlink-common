@@ -1,4 +1,4 @@
-package corenodecomponents_test
+package capabilities_test
 
 import (
 	"os"
@@ -8,21 +8,20 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 
-	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/capabilities"
 )
 
 func TestNewDashboard(t *testing.T) {
 	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
-		testDashboard, err := corenodecomponents.NewDashboard(&corenodecomponents.Props{
-			Name:              "Core Node Components Dashboard",
+		testDashboard, err := capabilities.NewDashboard(&capabilities.Props{
+			Name:              "Capabilities Dashboard",
 			MetricsDataSource: grafana.NewDataSource("Prometheus", ""),
-			LogsDataSource:    grafana.NewDataSource("Loki", ""),
 		})
 		if err != nil {
 			t.Errorf("Error creating dashboard: %v", err)
 		}
 		require.IsType(t, grafana.Dashboard{}, *testDashboard)
-		require.Equal(t, "Core Node Components Dashboard", *testDashboard.Dashboard.Title)
+		require.Equal(t, "Capabilities Dashboard", *testDashboard.Dashboard.Title)
 		json, errJSON := testDashboard.GenerateJSON()
 		if errJSON != nil {
 			t.Errorf("Error generating JSON: %v", errJSON)

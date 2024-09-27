@@ -3,14 +3,13 @@ package cmd
 import (
 	"errors"
 
-	"github.com/smartcontractkit/chainlink-common/observability-lib/capabilities"
-
-	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
-	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/core-node"
-	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
+	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/atlas-don"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/capabilities"
+	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/core-node"
+	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/core-node-components"
+	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/k8s-resources"
+	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/nop-ocr"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
-	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/k8s-resources"
-	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/nop-ocr"
 )
 
 type TypeDashboard string

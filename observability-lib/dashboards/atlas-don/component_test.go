@@ -1,26 +1,29 @@
-package k8sresources_test
+package atlasdon_test
 
 import (
 	"os"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
-	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/k8s-resources"
-
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+
+	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/atlas-don"
 )
 
 func TestNewDashboard(t *testing.T) {
 	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
-		testDashboard, err := k8sresources.NewDashboard(&k8sresources.Props{
-			Name:              "K8s resources",
+		testDashboard, err := atlasdon.NewDashboard(&atlasdon.Props{
+			Name:              "DON OCR Dashboard",
+			Platform:          grafana.TypePlatformDocker,
 			MetricsDataSource: grafana.NewDataSource("Prometheus", ""),
+			OCRVersion:        "ocr2",
 		})
 		if err != nil {
 			t.Errorf("Error creating dashboard: %v", err)
 		}
 		require.IsType(t, grafana.Dashboard{}, *testDashboard)
-		require.Equal(t, "K8s resources", *testDashboard.Dashboard.Title)
+		require.Equal(t, "DON OCR Dashboard", *testDashboard.Dashboard.Title)
 		json, errJSON := testDashboard.GenerateJSON()
 		if errJSON != nil {
 			t.Errorf("Error generating JSON: %v", errJSON)

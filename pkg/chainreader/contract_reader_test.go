@@ -20,7 +20,7 @@ import (
 func TestContractReaderByIDsGetLatestValue(t *testing.T) {
 	ctx := tests.Context(t)
 	mockReader := new(mocks.ContractReader)
-	crByIDs := &contractReaderByIDs{
+	crByIDs := &ContractReaderByIDs{
 		bindings: sync.Map{},
 		cr:       mockReader,
 	}
@@ -66,7 +66,7 @@ func TestContractReaderByIDsGetLatestValue(t *testing.T) {
 func TestContractReaderByIDsQueryKey(t *testing.T) {
 	ctx := tests.Context(t)
 	mockReader := new(mocks.ContractReader)
-	crByIDs := &contractReaderByIDs{
+	crByIDs := &ContractReaderByIDs{
 		bindings: sync.Map{},
 		cr:       mockReader,
 	}
@@ -122,7 +122,7 @@ func TestContractReaderByIDsQueryKey(t *testing.T) {
 func TestContractReaderByIDsBatchGetLatestValues(t *testing.T) {
 	ctx := tests.Context(t)
 	mockReader := new(mocks.ContractReader)
-	crByIDs := &contractReaderByIDs{
+	crByIDs := &ContractReaderByIDs{
 		bindings: sync.Map{},
 		cr:       mockReader,
 	}

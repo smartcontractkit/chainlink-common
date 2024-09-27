@@ -1,8 +1,6 @@
 package codec
 
 import (
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -366,85 +364,4 @@ func addr(value reflect.Value) reflect.Value {
 	tmp := reflect.New(value.Type())
 	tmp.Elem().Set(value)
 	return tmp
-}
-
-func addressToStringHookForOffChain(length AddressLength, checksum func([]byte) []byte) func(from reflect.Type, to reflect.Type, data any) (any, error) {
-	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		byteArrTyp, err := typeFromAddressLength(length)
-		if err != nil {
-			return nil, err
-		}
-
-		strTyp := reflect.TypeOf("")
-
-		// if 'from' is a pointer to the byte array (e.g., *[20]byte), dereference it.
-		if from.Kind() == reflect.Ptr && from.Elem() == byteArrTyp {
-			data = reflect.ValueOf(data).Elem().Interface()
-			from = from.Elem()
-		}
-
-		// Convert from byte array to string (e.g., [20]byte -> string)
-		if from.ConvertibleTo(byteArrTyp) && to == strTyp {
-			val := reflect.ValueOf(data)
-			bts := make([]byte, val.Len())
-
-			for i := 0; i < val.Len(); i++ {
-				bts[i] = byte(val.Index(i).Uint())
-			}
-
-			encoded := "0x" + hex.EncodeToString(bts)
-			return string(checksum([]byte(encoded))), nil
-		}
-
-		return data, nil
-	}
-}
-
-func stringToAddressHookForOnChain(length AddressLength) func(from reflect.Type, to reflect.Type, data any) (any, error) {
-	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-
-		byteArrTyp, err := typeFromAddressLength(length)
-		if err != nil {
-			return nil, err
-		}
-
-		strTyp := reflect.TypeOf("")
-
-		// Convert from string to byte array (e.g., string -> [20]byte)
-		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
-			addr := data.(string)
-
-			// Avoid potential panic and just return data
-			if len(addr) < 2 {
-				return data, nil
-			}
-
-			// Decode the hex string to bytes, skipping the "0x" prefix
-			bts, err := hex.DecodeString(addr[2:])
-			if err != nil {
-				return nil, err
-			}
-			// Ensure the byte length matches the expected AddressLength
-			if len(bts) != int(length) {
-				return nil, fmt.Errorf("length mismatch: expected %d bytes, got %d", length, len(bts))
-			}
-
-			// Create a new array of the desired type and fill it with the decoded bytes
-			val := reflect.New(byteArrTyp).Elem()
-			reflect.Copy(val, reflect.ValueOf(bts))
-
-			return val.Interface(), nil
-		}
-
-		return data, nil
-	}
-}
-
-func typeFromAddressLength(length AddressLength) (reflect.Type, error) {
-	switch length {
-	case Byte20Address:
-		return reflect.TypeOf([Byte20Address]byte{}), nil
-	default:
-		return nil, errors.New("address length not available")
-	}
 }

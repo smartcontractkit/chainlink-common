@@ -3,7 +3,6 @@ package codec
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -231,8 +230,9 @@ func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 
 type AddressBytesToStringModifierConfig struct {
 	Fields   []string
-	Length   int
-	Checksum string
+	Length   AddressLength
+	Checksum ChecksumType
+	Encoding EncodingType
 }
 
 func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
@@ -240,21 +240,22 @@ func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.Decode
 		c.Fields[i] = upperFirstCharacter(f)
 	}
 
-	var checksum AddressChecksum
-	switch c.Checksum {
-	case "eip55":
-		checksum = EIP55AddressChecksum
-	case "none":
-		checksum = NoChecksum
+	checksum, err := getChecksumFunction(c.Checksum)
+	if err != nil {
+		return nil, fmt.Errorf("error in checksum configuration: %w", err)
 	}
 
-	switch AddressLength(c.Length) {
-	case Byte20Address:
-	default:
-		return nil, errors.New("address length unavailable")
+	addrLength, err := getAddressLength(c.Length)
+	if err != nil {
+		return nil, fmt.Errorf("error in address length: %w", err)
 	}
 
-	return NewAddressBytesToStringModifier(AddressLength(c.Length), checksum, c.Fields), nil
+	encoding, err := getEncodingType(c.Encoding)
+	if err != nil {
+		return nil, fmt.Errorf("error in encoding type: %w", err)
+	}
+
+	return NewAddressBytesToStringModifier(addrLength, checksum, c.Fields, encoding), nil
 }
 
 func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {

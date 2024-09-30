@@ -32,6 +32,6 @@ type RMNCrypto interface {
 	) error
 }
 
-type AttestationEncoder interface {
-	Encode(context.Context, AttestationStatus) (Bytes, error)
+type TokenDataEncoder interface {
+	EncodeUSDC(ctx context.Context, message Bytes, attestation Bytes) (Bytes, error)
 }

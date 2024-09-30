@@ -76,21 +76,18 @@ func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
 	case TypeDashboardDONOCR:
 		return atlasdon.NewDashboard(&atlasdon.Props{
 			Name:              options.Name,
-			Platform:          options.Platform,
 			MetricsDataSource: options.MetricsDataSource,
 			OCRVersion:        string(OCRVersionOCR),
 		})
 	case TypeDashboardDONOCR2:
 		return atlasdon.NewDashboard(&atlasdon.Props{
 			Name:              options.Name,
-			Platform:          options.Platform,
 			MetricsDataSource: options.MetricsDataSource,
 			OCRVersion:        string(OCRVersionOCR2),
 		})
 	case TypeDashboardDONOCR3:
 		return atlasdon.NewDashboard(&atlasdon.Props{
 			Name:              options.Name,
-			Platform:          options.Platform,
 			MetricsDataSource: options.MetricsDataSource,
 			OCRVersion:        string(OCRVersionOCR3),
 		})

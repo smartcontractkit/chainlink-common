@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727454350619,
+  "lastUpdate": 1727688392421,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2268,6 +2268,48 @@ window.BENCHMARK_DATA = {
             "value": 28673,
             "unit": "ns/op",
             "extra": "41961 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4cca03442d82ebae2396f31114ed6038c512f60e",
+          "message": "Extract expirable cache abstraction for reuse (#807)\n\n* expirable_cache",
+          "timestamp": "2024-09-30T10:25:29+01:00",
+          "tree_id": "a847c4f39c45d97b3ce78432e11f7007372f0f75",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4cca03442d82ebae2396f31114ed6038c512f60e"
+        },
+        "date": 1727688391767,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 467.2,
+            "unit": "ns/op",
+            "extra": "2493256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 526.2,
+            "unit": "ns/op",
+            "extra": "2192206 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28598,
+            "unit": "ns/op",
+            "extra": "41940 times\n4 procs"
           }
         ]
       }

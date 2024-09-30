@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"testing"
@@ -20,6 +21,7 @@ import (
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -42,6 +44,8 @@ const (
 	envBinaryCmd          = "test/env/cmd"
 	logBinaryLocation     = "test/log/cmd/testmodule.wasm"
 	logBinaryCmd          = "test/log/cmd"
+	fetchBinaryLocation   = "test/fetch/cmd/testmodule.wasm"
+	fetchBinaryCmd        = "test/fetch/cmd"
 )
 
 func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
@@ -75,6 +79,9 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger.Test(t),
+			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+				return wasm.TargetResponsePayload{}, nil
+			},
 		},
 		binary,
 		[]byte(""),
@@ -90,7 +97,10 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
-			Logger:         logger.Test(t),
+			Logger: logger.Test(t),
+			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+				return wasm.TargetResponsePayload{}, nil
+			},
 			IsUncompressed: true,
 		},
 		binary,
@@ -108,6 +118,9 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 	_, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger.Test(t),
+			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+				return wasm.TargetResponsePayload{}, nil
+			},
 		},
 		failBinary,
 		[]byte(""),
@@ -124,6 +137,9 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 		&ModuleConfig{
 			Timeout: &d,
 			Logger:  logger.Test(t),
+			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+				return wasm.TargetResponsePayload{}, nil
+			},
 		},
 		binary, // use the success binary with a zero timeout
 		[]byte(""),
@@ -139,6 +155,9 @@ func Test_GetWorkflowSpec_Logs(t *testing.T) {
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger,
+			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+				return wasm.TargetResponsePayload{}, nil
+			},
 		},
 		binary,
 		[]byte(""),
@@ -168,10 +187,68 @@ func Test_GetWorkflowSpec_Logs(t *testing.T) {
 	}
 }
 
+func Test_GetWorkflowSpec_Fetch(t *testing.T) {
+	t.Run("NOK-fetch_function_is_not_provided", func(t *testing.T) {
+		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
+		logger, _ := logger.TestObserved(t, zapcore.InfoLevel)
+
+		_, err := GetWorkflowSpec(
+			&ModuleConfig{
+				Logger: logger,
+			},
+			binary,
+			[]byte(""),
+		)
+		require.Error(t, err, "could not instantiate module: must provide a Fetch func")
+	})
+	t.Run("OK-fetch_function", func(t *testing.T) {
+		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
+		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
+
+		expected := "Valid fetch response"
+
+		_, err := GetWorkflowSpec(
+			&ModuleConfig{
+				Logger: logger,
+				Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+					return wasm.TargetResponsePayload{
+						Success:    true,
+						Body:       []byte(expected),
+						StatusCode: uint8(http.StatusOK),
+					}, nil
+				},
+			},
+			binary,
+			[]byte(""),
+		)
+		require.NoError(t, err)
+
+		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "fetch response"},
+				Fields: []zapcore.Field{
+					zap.String("body", expected),
+				},
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
+		}
+	})
+
+}
+
 func TestModule_Errors(t *testing.T) {
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+	}, binary)
 	require.NoError(t, err)
 
 	_, err = m.Run(nil)
@@ -211,7 +288,12 @@ func TestModule_Errors(t *testing.T) {
 func TestModule_Sandbox_Memory(t *testing.T) {
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+	}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -227,7 +309,12 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+	}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -252,7 +339,12 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t), Timeout: &tmt}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+		Timeout: &tmt}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -270,7 +362,12 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+	}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -296,7 +393,12 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+	}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -322,7 +424,12 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+	}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -348,7 +455,12 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger.Test(t),
+		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
+			return wasm.TargetResponsePayload{}, nil
+		},
+	}, binary)
 	require.NoError(t, err)
 
 	m.Start()

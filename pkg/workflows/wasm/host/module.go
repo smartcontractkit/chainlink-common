@@ -3,6 +3,7 @@ package host
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -88,6 +89,7 @@ type ModuleConfig struct {
 	InitialFuel    uint64
 	Logger         logger.Logger
 	IsUncompressed bool
+	Fetch          func(wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error)
 }
 
 type Module struct {
@@ -103,9 +105,13 @@ type Module struct {
 	stopCh chan struct{}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
+func NewModule(modCfg *ModuleConfig, binaryInput []byte) (*Module, error) {
 	if modCfg.Logger == nil {
 		return nil, errors.New("must provide logger")
+	}
+
+	if modCfg.Fetch == nil {
+		return nil, errors.New("must provide a Fetch func")
 	}
 
 	logger := modCfg.Logger
@@ -133,16 +139,16 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 	engine := wasmtime.NewEngineWithConfig(cfg)
 
 	if !modCfg.IsUncompressed {
-		rdr := brotli.NewReader(bytes.NewBuffer(binary))
+		rdr := brotli.NewReader(bytes.NewBuffer(binaryInput))
 		decompedBinary, err := io.ReadAll(rdr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decompress binary: %w", err)
 		}
 
-		binary = decompedBinary
+		binaryInput = decompedBinary
 	}
 
-	mod, err := wasmtime.NewModule(engine, binary)
+	mod, err := wasmtime.NewModule(engine, binaryInput)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
@@ -230,6 +236,55 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 			default:
 				logger.Infow(msg, args...)
 			}
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = linker.FuncWrap(
+		"env",
+		"fetch",
+		func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+			b, innerErr := safeMem(caller, reqptr, reqptrlen)
+			if innerErr != nil {
+				logger.Errorf("error calling fetch: %s", innerErr)
+				return 1 //errnumber
+			}
+
+			req := wasm.TargetRequestPayload{}
+			innerErr = json.Unmarshal(b, &req)
+			if innerErr != nil {
+				logger.Errorf("error calling fetch: %s", innerErr)
+				return 1 //errnumber
+			}
+
+			targetResp, innerErr := modCfg.Fetch(req)
+			if innerErr != nil {
+				logger.Errorf("error calling fetch: %s", innerErr)
+				return 1 //errnumber
+			}
+
+			respBytes, innerErr := json.Marshal(targetResp)
+			if innerErr != nil {
+				logger.Errorf("error calling fetch: %s", innerErr)
+				return 1 //errnumber
+			}
+
+			size := copyBuffer(caller, respBytes, respptr, int32(len(respBytes)))
+			if size == -1 {
+				return ErrnoFault
+			}
+
+			uint32Size := int32(4)
+			resplenBytes := make([]byte, uint32Size)
+			binary.LittleEndian.PutUint32(resplenBytes, uint32(len(respBytes)))
+			size = copyBuffer(caller, resplenBytes, resplenptr, uint32Size)
+			if size == -1 {
+				return ErrnoFault
+			}
+
+			return 0 //errnumber
 		},
 	)
 	if err != nil {

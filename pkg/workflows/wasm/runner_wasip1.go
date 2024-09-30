@@ -1,6 +1,8 @@
 package wasm
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"os"
 	"unsafe"
 
@@ -16,11 +18,16 @@ func sendResponse(respptr unsafe.Pointer, respptrlen int32) (errno int32)
 //go:wasmimport env log
 func log(respptr unsafe.Pointer, respptrlen int32)
 
+//go:wasmimport env fetch
+func fetch(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32
+
 func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
 	return unsafe.Pointer(&buf[0]), int32(len(buf))
 }
 
 func NewRunner() *Runner {
+	l := logger.NewWithSync(&wasmWriteSyncer{})
+
 	return &Runner{
 		sendResponse: func(response *wasmpb.Response) {
 			pb, err := proto.Marshal(response)
@@ -51,7 +58,37 @@ func NewRunner() *Runner {
 			os.Exit(code)
 		},
 		SDK: Runtime{
-			Logger: logger.NewWithSync(&wasmWriteSyncer{}),
+			Logger: l,
+			Fetch: func(req TargetRequestPayload) TargetResponsePayload {
+
+				b, err := json.Marshal(req)
+				if err != nil {
+					os.Exit(CodeRunnerErr)
+				}
+				reqptr, reqptrlen := bufferToPointerLen(b)
+
+				respBuffer := make([]byte, 1024*5)
+				respptr, _ := bufferToPointerLen(respBuffer)
+
+				resplenBuffer := make([]byte, 4)
+				resplenptr, _ := bufferToPointerLen(resplenBuffer)
+
+				errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
+				if errno != 0 {
+					l.Error("Error number: ", errno)
+					os.Exit(CodeHostErr)
+				}
+
+				responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+				response := TargetResponsePayload{}
+				err = json.Unmarshal(respBuffer[:responseSize], &response)
+				if err != nil {
+					l.Error("Error: ", err.Error())
+					os.Exit(CodeRunnerErr)
+				}
+
+				return response
+			},
 		},
 		args: os.Args,
 	}

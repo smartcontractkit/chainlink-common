@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727695160936,
+  "lastUpdate": 1727706146012,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2352,6 +2352,48 @@ window.BENCHMARK_DATA = {
             "value": 29130,
             "unit": "ns/op",
             "extra": "42007 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "mateusz.sekara@gmail.com",
+            "name": "Mateusz Sekara",
+            "username": "mateusz-sekara"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ef04dd443670b7e892611bfd4484b06a6217e12b",
+          "message": "CCIP-3555 Attestation encoder interfaces (#813)\n\n* Attestation encoder interfaces\r\n\r\n* Attestation encoder interfaces\r\n\r\n* Attestation encoder interfaces\r\n\r\n* Comment",
+          "timestamp": "2024-09-30T18:21:17+04:00",
+          "tree_id": "c28119fd33c9048e596d21a3cf55364f22ea7eaa",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ef04dd443670b7e892611bfd4484b06a6217e12b"
+        },
+        "date": 1727706144960,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 462.5,
+            "unit": "ns/op",
+            "extra": "2397535 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 523.3,
+            "unit": "ns/op",
+            "extra": "2288337 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28449,
+            "unit": "ns/op",
+            "extra": "42183 times\n4 procs"
           }
         ]
       }

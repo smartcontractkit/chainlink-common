@@ -31,3 +31,7 @@ type RMNCrypto interface {
 		signerAddresses []Bytes,
 	) error
 }
+
+type AttestationEncoder interface {
+	Encode(context.Context, AttestationStatus) (Bytes, error)
+}

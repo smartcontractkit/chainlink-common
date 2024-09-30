@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727706146012,
+  "lastUpdate": 1727715878412,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2394,6 +2394,48 @@ window.BENCHMARK_DATA = {
             "value": 28449,
             "unit": "ns/op",
             "extra": "42183 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f10ba2b23682b36574339a2738438142a40644f8",
+          "message": "[BCF-3392]  - ContractReaderByIDs Wrapper (#797)\n\n* WIP\r\n\r\n* Update ContractReaderByIDs interface method names\r\n\r\n* Unexpose types.ContractReader in contractReaderByIDs\r\n\r\n* Add multiple contract address support to fakeContractReader for tests\r\n\r\n* Add GetLatestValue unit test for contractReaderByIDs\r\n\r\n* Add GetLatestValue unit test for QueryKey\r\n\r\n* Add BatchGetLatestValues unit test for CR by custom IdDs wrapper\r\n\r\n* Rm ContractReaderByIDs interface and export the struct\r\n\r\n* Change ContractReaderByIDs wrapper Unbind handling\r\n\r\n* Improve ContractReaderByIDs wrapper err handling\r\n\r\n* Remove mockery usage from ContractReaderByIDs tests\r\n\r\n* lint",
+          "timestamp": "2024-09-30T19:03:30+02:00",
+          "tree_id": "9ebce821913dac0321bcae74166c84fa9d93848d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f10ba2b23682b36574339a2738438142a40644f8"
+        },
+        "date": 1727715877348,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458.2,
+            "unit": "ns/op",
+            "extra": "2399402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 556.6,
+            "unit": "ns/op",
+            "extra": "2235771 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28469,
+            "unit": "ns/op",
+            "extra": "42158 times\n4 procs"
           }
         ]
       }

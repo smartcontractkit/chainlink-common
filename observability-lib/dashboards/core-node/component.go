@@ -209,6 +209,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Datasource: p.MetricsDataSource.Name,
 			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", job="$job"}, pod)`,
 			Multi:      true,
+			IncludeAll: true,
 		}))
 	} else {
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -219,6 +220,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Datasource: p.MetricsDataSource.Name,
 			Query:      fmt.Sprintf("label_values(%s)", p.PlatformOpts.LabelFilter),
 			Multi:      true,
+			IncludeAll: true,
 		}))
 	}
 

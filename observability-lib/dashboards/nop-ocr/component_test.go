@@ -1,10 +1,10 @@
-package corenode_test
+package nopocr_test
 
 import (
 	"os"
 	"testing"
 
-	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/core-node"
+	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/nop-ocr"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 
 	"github.com/stretchr/testify/require"
@@ -12,16 +12,15 @@ import (
 
 func TestNewDashboard(t *testing.T) {
 	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
-		testDashboard, err := corenode.NewDashboard(&corenode.Props{
-			Name:              "Core Node Dashboard",
-			Platform:          grafana.TypePlatformDocker,
-			MetricsDataSource: grafana.NewDataSource("Prometheus", "1"),
+		testDashboard, err := nopocr.NewDashboard(&nopocr.Props{
+			Name:              "NOP OCR Dashboard",
+			MetricsDataSource: grafana.NewDataSource("Prometheus", ""),
 		})
 		if err != nil {
 			t.Errorf("Error creating dashboard: %v", err)
 		}
 		require.IsType(t, grafana.Dashboard{}, *testDashboard)
-		require.Equal(t, "Core Node Dashboard", *testDashboard.Dashboard.Title)
+		require.Equal(t, "NOP OCR Dashboard", *testDashboard.Dashboard.Title)
 		json, errJSON := testDashboard.GenerateJSON()
 		if errJSON != nil {
 			t.Errorf("Error generating JSON: %v", errJSON)

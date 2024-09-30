@@ -8,14 +8,13 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 
-	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
+	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/atlas-don"
 )
 
 func TestNewDashboard(t *testing.T) {
 	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
 		testDashboard, err := atlasdon.NewDashboard(&atlasdon.Props{
 			Name:              "DON OCR Dashboard",
-			Platform:          grafana.TypePlatformDocker,
 			MetricsDataSource: grafana.NewDataSource("Prometheus", ""),
 			OCRVersion:        "ocr2",
 		})

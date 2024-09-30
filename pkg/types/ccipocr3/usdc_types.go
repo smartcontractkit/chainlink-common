@@ -11,3 +11,11 @@ type AttestationStatus struct {
 	// Error is the error that occurred during fetching the attestation data
 	Error error
 }
+
+func SuccessAttestationStatus(messageHash Bytes, attestation Bytes) AttestationStatus {
+	return AttestationStatus{MessageHash: messageHash, Attestation: attestation}
+}
+
+func ErrorAttestationStatus(err error) AttestationStatus {
+	return AttestationStatus{Error: err}
+}

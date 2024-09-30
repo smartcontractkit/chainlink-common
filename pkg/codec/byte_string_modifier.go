@@ -26,7 +26,7 @@ const (
 	Byte32Address  AddressLength = 32
 	Base58Encoding EncodingType  = "base58"
 	// General
-	None ChecksumType = "none"
+	NoneChecksum ChecksumType = "none"
 )
 
 type AddressChecksum func([]byte) []byte
@@ -104,7 +104,7 @@ func getChecksumFunction(checksumTy ChecksumType) (AddressChecksum, error) {
 	switch checksumTy {
 	case EIP55:
 		return EIP55AddressChecksum, nil
-	case None:
+	case NoneChecksum:
 		return NoChecksum, nil
 	default:
 		return nil, fmt.Errorf("checksum type unavailable: %s", checksumTy)
@@ -144,8 +144,6 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 		}
 	}()
 
-	//fmt.Printf("\nRetypeToOffChain called with type: %v, itemType: %T", onChainType, itemType)
-
 	if len(t.fields) == 0 {
 		t.offToOnChainType[onChainType] = onChainType
 		t.onToOffChainType[onChainType] = onChainType
@@ -163,17 +161,13 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
-		//fmt.Printf("\nPointer detected: %v, element type: %v", onChainType, onChainType.Elem())
-
 		// Recursively call RetypeToOffChain on the element type
 		elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
-			//fmt.Printf("\nError while processing pointer element type: %v", err)
 			return nil, err
 		}
 
 		ptr := reflect.PointerTo(elm)
-		//fmt.Printf("\nPointer transformed: %v -> %v", onChainType, ptr)
 
 		t.onToOffChainType[onChainType] = ptr
 		t.offToOnChainType[ptr] = onChainType
@@ -267,24 +261,18 @@ func addressTransformationAction[T any](length AddressLength) mapAction[T] {
 
 					// Replace the field in the map with the converted array
 					em[fieldName] = addressArray.Interface()
-					fmt.Printf("Converted field '%s' to array of %s: %v\n", fieldName, expectedType, addressArray.Interface())
 				} else if rVal.Type() == expectedType {
 					// Handle a single array (e.g., [length]byte)
-					fmt.Printf("Single array detected: %v\n", rVal.Type())
 					addressVal := reflect.New(expectedType).Elem()
 					reflect.Copy(addressVal, rVal)
 
 					// Replace the field in the map with the converted array
 					em[fieldName] = addressVal.Interface()
-					fmt.Printf("Converted field '%s' to %s: %x\n", fieldName, expectedType, addressVal.Interface())
 				} else {
-					fmt.Printf("Unexpected array type: %v, expected: %v\n", rVal.Type(), expectedType)
 					return fmt.Errorf("expected [%v]byte or array of [%v]byte but got %v for field %s", length, length, rVal.Type(), fieldName)
 				}
 
 			case reflect.Slice:
-				fmt.Printf("Slice detected: %v\n", rVal.Type())
-
 				// Handle slices of byte arrays (e.g., [][][length]byte)
 				if rVal.Len() > 0 && rVal.Index(0).Type() == expectedType {
 					// Create a slice of the expected type
@@ -303,7 +291,6 @@ func addressTransformationAction[T any](length AddressLength) mapAction[T] {
 
 					// Replace the field in the map with the converted slice
 					em[fieldName] = addressSlice.Interface()
-					fmt.Printf("Converted field '%s' to slice of %v: %v\n", fieldName, expectedType, addressSlice.Interface())
 				} else {
 					return fmt.Errorf("expected slice of [%v]byte arrays but got %v for field %s", length, rVal.Type(), fieldName)
 				}
@@ -321,35 +308,22 @@ func addressTransformationAction[T any](length AddressLength) mapAction[T] {
 // if the element type matches the specified byte array length. Returns an error if the conversion is not possible.
 func convertBytesToString(t reflect.Type, field string, length int) (reflect.Type, error) {
 	switch t.Kind() {
+	case reflect.Pointer:
+		return convertBytesToString(t.Elem(), field, length)
+
 	case reflect.Array:
-		//	fmt.Printf("\nArray detected: %v, field: %s", t, field)
 		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
-			//	fmt.Printf("\nConverting array of [%v]byte to array of strings: %v", length, t)
 			return reflect.ArrayOf(t.Len(), reflect.TypeOf("")), nil
 		}
-		fmt.Printf("\nConverting [20]byte to string: %v", t)
 		return reflect.TypeOf(""), nil
 
-	case reflect.Pointer:
-		//	fmt.Printf("\nPointer detected: %v, field: %s", t, field)
-		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
-			//	fmt.Printf("\nConverting pointer to [%v]byte to string: %v", length, t)
-			return reflect.TypeOf(""), nil
-		}
-		fmt.Printf("\nPointer is not pointing to an array of [%v]byte, returning error", length)
-		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
-
 	case reflect.Slice:
-		//	fmt.Printf("\nSlice detected: %v, field: %s", t, field)
 		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
-			//		fmt.Printf("\nConverting slice of [%v]byte to slice of strings: %v", length, t)
 			return reflect.SliceOf(reflect.TypeOf("")), nil
 		}
-		//	fmt.Printf("\nSlice does not contain [%v]byte elements, returning error", length)
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
 	default:
-		fmt.Printf("\nUnsupported type detected: %v, field: %s", t, field)
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 	}
 }

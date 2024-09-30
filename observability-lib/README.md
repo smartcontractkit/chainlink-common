@@ -85,13 +85,21 @@ func main() {
 ```
 </details>
 
-More advanced examples can be found in the `dashboards` folder.
+More advanced examples can be found in the [dashboards](./dashboards) folder :
+- [DON OCR](./dashboards/atlas-don/component.go)
+- [Capabilities](./dashboards/capabilities/component.go)
+- [Node General](./dashboards/core-node/component.go)
+- [Node Components](./dashboards/core-node-components/component.go)
+- [Kubernetes Resources](./dashboards/k8s-resources/component.go)
+- [NOP OCR Health](./dashboards/nop-ocr/component.go)
 
 ## Cmd Usage
 
 The CLI can be used to :
 - Deploy dashboards and alerts to grafana
 - Generate JSON from dashboards defined in the `dashboards` folder
+
+`func NewDashboard(props *Props)` in each [dashboards](./dashboards) packages is called from [cmd](./cmd/builder.go) to deploy or generate JSON from the dashboard.
 
 Example to deploy a dashboard to grafana instance using URL and token:
 ```shell

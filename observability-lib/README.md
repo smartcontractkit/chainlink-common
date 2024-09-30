@@ -1,6 +1,6 @@
 # Observability-lib
 
-This library enable creating grafana dashboards and alerts with go code.
+This library enables creating Grafana dashboards and alerts with go code.
 
 It provides abstractions to create grafana resources :
 - [Dashboards](https://grafana.com/docs/grafana/latest/dashboards/)
@@ -80,7 +80,7 @@ if err != nil {
 fmt.Println(string(json))
 ```
 
-More advances examples can be found in the `dashboards` folder.
+More advanced examples can be found in the `dashboards` folder.
 
 ## Cmd Usage
 

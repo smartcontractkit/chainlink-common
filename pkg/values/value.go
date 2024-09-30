@@ -3,6 +3,7 @@ package values
 import (
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"reflect"
 
@@ -57,6 +58,9 @@ func Wrap(v any) (Value, error) {
 	case int:
 		return NewInt64(int64(tv)), nil
 	case uint64:
+		if tv > math.MaxInt64 {
+			return NewBigInt(new(big.Int).SetUint64(tv)), nil
+		}
 		return NewInt64(int64(tv)), nil
 	case uint32:
 		return NewInt64(int64(tv)), nil
@@ -141,7 +145,9 @@ func Wrap(v any) (Value, error) {
 
 	case reflect.Bool:
 		return Wrap(val.Convert(reflect.TypeOf(true)).Interface())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint64:
+		return Wrap(val.Convert(reflect.TypeOf(uint64(0))).Interface())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
 		return Wrap(val.Convert(reflect.TypeOf(int64(0))).Interface())
 	case reflect.Float32, reflect.Float64:
 		return Wrap(val.Convert(reflect.TypeOf(float64(0))).Interface())

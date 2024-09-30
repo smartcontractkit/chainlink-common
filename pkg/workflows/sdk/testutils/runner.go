@@ -70,6 +70,8 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 	if err != nil {
 		r.errors = append(r.errors, err)
 	}
+
+	r.unregisterWorkflow(spec)
 }
 
 func (r *Runner) Err() error {
@@ -120,7 +122,11 @@ func (r *Runner) setupSteps(factory *sdk.WorkflowSpecFactory, spec sdk.WorkflowS
 			}
 			r.MockCapability(info.ID, &step.Ref, compute)
 		}
+
+		r.registerStep(step)
 	}
+
+	r.registerStep(spec.Triggers[0])
 	r.idToStep[workflows.KeywordTrigger] = spec.Triggers[0]
 }
 
@@ -250,6 +256,62 @@ func (r *Runner) isReady(ref string) bool {
 	}
 
 	return true
+}
+
+func (r *Runner) registerStep(step sdk.StepDefinition) {
+	mock := r.GetRegisteredMock(step.ID, step.Ref)
+	if mock == nil {
+		// It's possible the workflow intentionally doesn't reach this step, so it's ok to not register a mock.
+		// If it does reach the step, the user will get an error then.
+		return
+	}
+
+	config, err := values.NewMap(step.Config)
+	if err != nil {
+		r.errors = append(r.errors, err)
+		return
+	}
+
+	if err = mock.RegisterToWorkflow(r.ctx, capabilities.RegisterToWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    "test",
+			WorkflowOwner: "test",
+		},
+		Config: config,
+	}); err != nil {
+		r.errors = append(r.errors, err)
+	}
+}
+
+func (r *Runner) unregisterStep(step sdk.StepDefinition) {
+	mock := r.GetRegisteredMock(step.ID, step.Ref)
+	if mock == nil {
+		return
+	}
+
+	config, err := values.NewMap(step.Config)
+	if err != nil {
+		r.errors = append(r.errors, err)
+		return
+	}
+
+	if err := mock.UnregisterFromWorkflow(r.ctx, capabilities.UnregisterFromWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    "test",
+			WorkflowOwner: "test",
+		},
+		Config: config,
+	}); err != nil {
+		r.errors = append(r.errors, err)
+	}
+}
+
+func (r *Runner) unregisterWorkflow(spec sdk.WorkflowSpec) {
+	for _, step := range spec.Steps() {
+		r.unregisterStep(step)
+	}
+
+	r.unregisterStep(spec.Triggers[0])
 }
 
 func getFullName(name string, step *string) string {

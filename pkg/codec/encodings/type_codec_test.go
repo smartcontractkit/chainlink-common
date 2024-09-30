@@ -178,10 +178,14 @@ func (b *bigEndianInterfaceTester) encode(t *testing.T, bytes []byte, ts TestStr
 	bs, err := bigbigendian.SerializeSigned(4, ts.BigField)
 	require.NoError(t, err)
 	bytes = append(bytes, bs...)
-	bytes = append(bytes, ts.NestedStruct.FixedBytes[:]...)
-	bytes = rawbin.BigEndian.AppendUint64(bytes, uint64(ts.NestedStruct.Inner.I))
-	bytes = rawbin.BigEndian.AppendUint32(bytes, uint32(len(ts.NestedStruct.Inner.S)))
-	bytes = append(bytes, []byte(ts.NestedStruct.Inner.S)...)
+	bytes = append(bytes, ts.NestedDynamicStruct.FixedBytes[:]...)
+	bytes = rawbin.BigEndian.AppendUint64(bytes, uint64(ts.NestedDynamicStruct.Inner.I))
+	bytes = rawbin.BigEndian.AppendUint32(bytes, uint32(len(ts.NestedDynamicStruct.Inner.S)))
+	bytes = append(bytes, []byte(ts.NestedDynamicStruct.Inner.S)...)
+	bytes = append(bytes, ts.NestedStaticStruct.FixedBytes[:]...)
+	bytes = rawbin.BigEndian.AppendUint64(bytes, uint64(ts.NestedStaticStruct.Inner.I))
+	bytes = append(bytes, byte(len(ts.NestedStaticStruct.Inner.A)))
+	bytes = append(bytes, ts.NestedStaticStruct.Inner.A...)
 	if request.ExtraField {
 		bytes = append(bytes, 5)
 	}
@@ -196,26 +200,41 @@ func (b *bigEndianInterfaceTester) encode(t *testing.T, bytes []byte, ts TestStr
 func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeCodec {
 	sCodec, err := builder.String(math.MaxInt32)
 	require.NoError(t, err)
-	innerTestStruct, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
-		{Name: "I", Codec: builder.Int64()},
-		{Name: "S", Codec: sCodec},
-	})
-	require.NoError(t, err)
+
 	arr2, err := encodings.NewArray(2, builder.Uint8())
-	require.NoError(t, err)
-
-	midCodec, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
-		{Name: "FixedBytes", Codec: arr2},
-		{Name: "Inner", Codec: innerTestStruct},
-	})
-	require.NoError(t, err)
-
-	oIDs, err := encodings.NewArray(32, builder.OracleID())
 	require.NoError(t, err)
 
 	size, err := builder.Int(1)
 	require.NoError(t, err)
+
 	acc, err := encodings.NewSlice(builder.Uint8(), size)
+	require.NoError(t, err)
+
+	innerDynamicTestStruct, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
+		{Name: "I", Codec: builder.Int64()},
+		{Name: "S", Codec: sCodec},
+	})
+	require.NoError(t, err)
+
+	innerStaticTestStruct, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
+		{Name: "I", Codec: builder.Int64()},
+		{Name: "A", Codec: acc},
+	})
+	require.NoError(t, err)
+
+	midDynamicCodec, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
+		{Name: "FixedBytes", Codec: arr2},
+		{Name: "Inner", Codec: innerDynamicTestStruct},
+	})
+	require.NoError(t, err)
+
+	midStaticCodec, err := encodings.NewStructCodec([]encodings.NamedTypeCodec{
+		{Name: "FixedBytes", Codec: arr2},
+		{Name: "Inner", Codec: innerStaticTestStruct},
+	})
+	require.NoError(t, err)
+
+	oIDs, err := encodings.NewArray(32, builder.OracleID())
 	require.NoError(t, err)
 
 	accs, err := encodings.NewSlice(acc, size)
@@ -232,7 +251,8 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 		{Name: "Account", Codec: acc},
 		{Name: "Accounts", Codec: accs},
 		{Name: "BigField", Codec: bi},
-		{Name: "NestedStruct", Codec: midCodec},
+		{Name: "NestedDynamicStruct", Codec: midDynamicCodec},
+		{Name: "NestedStaticStruct", Codec: midStaticCodec},
 	})
 	require.NoError(t, err)
 	return ts

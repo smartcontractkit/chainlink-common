@@ -1,16 +1,21 @@
 package host
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -35,21 +40,37 @@ const (
 	httpBinaryCmd         = "test/http/cmd"
 	envBinaryLocation     = "test/env/cmd/testmodule.wasm"
 	envBinaryCmd          = "test/env/cmd"
+	logBinaryLocation     = "test/log/cmd/testmodule.wasm"
+	logBinaryCmd          = "test/log/cmd"
 )
 
-func createTestBinary(outputPath, path string, t *testing.T) string {
+func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
 	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
 	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	return path
+	binary, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	if !compress {
+		return binary
+	}
+
+	var b bytes.Buffer
+	bwr := brotli.NewWriter(&b)
+	_, err = bwr.Write(binary)
+	require.NoError(t, err)
+	require.NoError(t, bwr.Close())
+
+	cb, err := io.ReadAll(&b)
+	require.NoError(t, err)
+	return cb
 }
 
 func Test_GetWorkflowSpec(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
@@ -64,11 +85,27 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	assert.Equal(t, spec.Owner, "ryan")
 }
 
-func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
-	failBinary, err := os.ReadFile(createTestBinary(failureBinaryCmd, failureBinaryLocation, t))
+func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
+
+	spec, err := GetWorkflowSpec(
+		&ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		},
+		binary,
+		[]byte(""),
+	)
 	require.NoError(t, err)
 
-	_, err = GetWorkflowSpec(
+	assert.Equal(t, spec.Name, "tester")
+	assert.Equal(t, spec.Owner, "ryan")
+}
+
+func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
+	failBinary := createTestBinary(failureBinaryCmd, failureBinaryLocation, true, t)
+
+	_, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger.Test(t),
 		},
@@ -80,11 +117,10 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_Timeout(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
-	require.NoError(t, err)
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	d := time.Duration(0)
-	_, err = GetWorkflowSpec(
+	_, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Timeout: &d,
 			Logger:  logger.Test(t),
@@ -96,9 +132,44 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	assert.ErrorContains(t, err, "wasm trap: interrupt")
 }
 
-func TestModule_Errors(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(successBinaryCmd, successBinaryLocation, t))
+func Test_GetWorkflowSpec_Logs(t *testing.T) {
+	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
+
+	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
+	spec, err := GetWorkflowSpec(
+		&ModuleConfig{
+			Logger: logger,
+		},
+		binary,
+		[]byte(""),
+	)
 	require.NoError(t, err)
+
+	assert.Equal(t, spec.Name, "tester")
+	assert.Equal(t, spec.Owner, "ryan")
+
+	expectedEntries := []Entry{
+		{
+			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
+			Fields: []zapcore.Field{
+				zap.String("test-string-field-key", "this is a test field content"),
+				zap.Float64("test-numeric-field-key", 6400000),
+			},
+		},
+		{
+			Log:    zapcore.Entry{Level: zapcore.InfoLevel, Message: "running workflow..."},
+			Fields: []zapcore.Field{},
+		},
+	}
+	for i := range expectedEntries {
+		assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
+	}
+}
+
+func TestModule_Errors(t *testing.T) {
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -137,9 +208,8 @@ func TestModule_Errors(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid compute request: could not find compute function for id doesnt-exist")
 }
 
-func TestModule_Sandboxes_Memory(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(oomBinaryCmd, oomBinaryLocation, t))
-	require.NoError(t, err)
+func TestModule_Sandbox_Memory(t *testing.T) {
+	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -154,9 +224,8 @@ func TestModule_Sandboxes_Memory(t *testing.T) {
 	assert.ErrorContains(t, err, "exit status 2")
 }
 
-func TestModule_Sandboxes_Timeout(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(sleepBinaryCmd, sleepBinaryLocation, t))
-	require.NoError(t, err)
+func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -167,13 +236,39 @@ func TestModule_Sandboxes_Timeout(t *testing.T) {
 		Id:      uuid.New().String(),
 		Message: &wasmpb.Request_SpecRequest{},
 	}
+
+	start := time.Now()
 	_, err = m.Run(req)
-	assert.ErrorContains(t, err, "all fuel consumed by WebAssembly")
+	end := time.Now()
+
+	// The binary sleeps for 1 hour,
+	// but with our stubbed out functions,
+	// it should execute and return almost immediately.
+	assert.WithinDuration(t, start, end, 10*time.Second)
+	assert.NotNil(t, err)
 }
 
-func TestModule_Sandboxes_CantReadFiles(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(filesBinaryCmd, filesBinaryLocation, t))
+func TestModule_Sandbox_Timeout(t *testing.T) {
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
+
+	tmt := 10 * time.Millisecond
+	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t), Timeout: &tmt}, binary)
 	require.NoError(t, err)
+
+	m.Start()
+
+	req := &wasmpb.Request{
+		Id:      uuid.New().String(),
+		Message: &wasmpb.Request_SpecRequest{},
+	}
+
+	_, err = m.Run(req)
+
+	assert.ErrorContains(t, err, "interrupt")
+}
+
+func TestModule_Sandbox_CantReadFiles(t *testing.T) {
+	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -198,9 +293,8 @@ func TestModule_Sandboxes_CantReadFiles(t *testing.T) {
 	assert.ErrorContains(t, err, "open /tmp/file")
 }
 
-func TestModule_Sandboxes_CantCreateDir(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(dirsBinaryCmd, dirsBinaryLocation, t))
-	require.NoError(t, err)
+func TestModule_Sandbox_CantCreateDir(t *testing.T) {
+	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -225,9 +319,8 @@ func TestModule_Sandboxes_CantCreateDir(t *testing.T) {
 	assert.ErrorContains(t, err, "mkdir")
 }
 
-func TestModule_Sandboxes_HTTPRequest(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(httpBinaryCmd, httpBinaryLocation, t))
-	require.NoError(t, err)
+func TestModule_Sandbox_HTTPRequest(t *testing.T) {
+	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -252,9 +345,8 @@ func TestModule_Sandboxes_HTTPRequest(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestModule_Sandboxes_ReadEnv(t *testing.T) {
-	binary, err := os.ReadFile(createTestBinary(envBinaryCmd, envBinaryLocation, t))
-	require.NoError(t, err)
+func TestModule_Sandbox_ReadEnv(t *testing.T) {
+	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -281,4 +373,9 @@ func TestModule_Sandboxes_ReadEnv(t *testing.T) {
 	// This will return an error if FOO == BAR in the WASM binary
 	_, err = m.Run(req)
 	assert.Nil(t, err)
+}
+
+type Entry struct {
+	Log    zapcore.Entry
+	Fields []zapcore.Field
 }

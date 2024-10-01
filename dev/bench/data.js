@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727791526312,
+  "lastUpdate": 1727816503579,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2520,6 +2520,48 @@ window.BENCHMARK_DATA = {
             "value": 28556,
             "unit": "ns/op",
             "extra": "42242 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rstout610@gmail.com",
+            "name": "Ryan Stout",
+            "username": "rstout"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dd59341432bd814166d98be1fb6bccfb0da6cbb5",
+          "message": "Add the FeeValueJuels field to ccipocr3.Message (#819)",
+          "timestamp": "2024-10-01T16:00:38-05:00",
+          "tree_id": "5d39f28eccecebde9aecd9ad394cb6fb554fc3ec",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/dd59341432bd814166d98be1fb6bccfb0da6cbb5"
+        },
+        "date": 1727816503117,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 541.3,
+            "unit": "ns/op",
+            "extra": "2420666 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 607.1,
+            "unit": "ns/op",
+            "extra": "2087967 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 30450,
+            "unit": "ns/op",
+            "extra": "39322 times\n4 procs"
           }
         ]
       }

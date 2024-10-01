@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727715878412,
+  "lastUpdate": 1727786951186,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2436,6 +2436,48 @@ window.BENCHMARK_DATA = {
             "value": 28469,
             "unit": "ns/op",
             "extra": "42158 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "makramkd@users.noreply.github.com",
+            "name": "Makram",
+            "username": "makramkd"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ac3da2ed53850e3b2570713b91a3ffb6a7198f0a",
+          "message": "pkg/types/ccipocr3: add DestExecData to RampTokenAmount (#817)\n\n* pkg/types/ccipocr3: add DestExecData to RampTokenAmount\n\n* fix test",
+          "timestamp": "2024-10-01T07:48:01-05:00",
+          "tree_id": "27a31d3e9d3b644f8e1eb1834704e6ed86afecf9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ac3da2ed53850e3b2570713b91a3ffb6a7198f0a"
+        },
+        "date": 1727786950513,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.5,
+            "unit": "ns/op",
+            "extra": "2271177 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 518,
+            "unit": "ns/op",
+            "extra": "2286686 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28429,
+            "unit": "ns/op",
+            "extra": "42188 times\n4 procs"
           }
         ]
       }

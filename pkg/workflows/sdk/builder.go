@@ -22,8 +22,13 @@ func (w *WorkflowSpecFactory) GetFn(name string) func(sdk Runtime, request capab
 }
 
 type CapDefinition[O any] interface {
-	Ref() any
+	capDefinition
 	self() CapDefinition[O]
+}
+
+type capDefinition interface {
+	Ref() any
+	private()
 }
 
 type CapListDefinition[O any] interface {
@@ -61,6 +66,8 @@ func (c *multiCapList[O]) Ref() any {
 	return c.refs
 }
 
+func (c *multiCapList[O]) private() {}
+
 // self is required to implement CapDefinition, complication fails without it, false positive.
 // nolint
 func (c *multiCapList[O]) self() CapDefinition[[]O] {
@@ -92,6 +99,8 @@ func (c *capDefinitionImpl[O]) Ref() any {
 func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 	return c
 }
+
+func (c *capDefinitionImpl[O]) private() {}
 
 type NewWorkflowParams struct {
 	Owner string
@@ -183,4 +192,28 @@ func (c ComponentCapDefinition[O]) Ref() any {
 // nolint
 func (c ComponentCapDefinition[O]) self() CapDefinition[O] {
 	return c
+}
+
+func (c ComponentCapDefinition[O]) private() {}
+
+func Map[T any, M ~map[string]T](input map[string]CapDefinition[T]) CapDefinition[M] {
+	components := &ComponentCapDefinition[M]{}
+
+	for k, v := range input {
+		(*components)[k] = v
+	}
+
+	return components
+}
+
+type CapMap map[string]capDefinition
+
+func AnyMap[M ~map[string]any](inputs CapMap) CapDefinition[M] {
+	components := &ComponentCapDefinition[M]{}
+
+	for k, v := range inputs {
+		(*components)[k] = v
+	}
+
+	return components
 }

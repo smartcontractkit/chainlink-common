@@ -237,7 +237,7 @@ func addressTransformationAction[T any](length AddressLength) mapAction[T] {
 				return err
 			}
 
-			//	Handle type alias that are convertible to the expected type
+			// Handle type alias that are convertible to the expected type
 			// eg. type addressType [codec.Byte20Address]byte converts to [20]byte
 			if rVal.Type().ConvertibleTo(expectedType) {
 				rVal = rVal.Convert(expectedType)
@@ -273,7 +273,7 @@ func addressTransformationAction[T any](length AddressLength) mapAction[T] {
 				}
 
 			case reflect.Slice:
-				// Handle slices of byte arrays (e.g., [][][length]byte)
+				// Handle slices of byte arrays (e.g., [][length]byte)
 				if rVal.Len() > 0 && rVal.Index(0).Type() == expectedType {
 					// Create a slice of the expected type
 					addressSlice := reflect.MakeSlice(reflect.SliceOf(expectedType), rVal.Len(), rVal.Len())

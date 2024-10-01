@@ -39,74 +39,8 @@ func TestCompute(t *testing.T) {
 
 		spec, err2 := workflow.Spec()
 		require.NoError(t, err2)
-		expectedSpec := sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
-			Triggers: []sdk.StepDefinition{
-				{
-					ID:             "notstreams@1.0.0",
-					Ref:            "trigger",
-					Inputs:         sdk.StepInputs{},
-					Config:         map[string]any{"maxFrequencyMs": 5000},
-					CapabilityType: capabilities.CapabilityTypeTrigger,
-				},
-			},
-			Actions: []sdk.StepDefinition{
-				{
-					ID:  "custom_compute@1.0.0",
-					Ref: "Compute",
-					Inputs: sdk.StepInputs{
-						Mapping: map[string]any{"Arg0": "$(trigger.outputs)"},
-					},
-					Config: map[string]any{
-						"binary": "$(ENV.binary)",
-						"config": "$(ENV.config)",
-					},
-					CapabilityType: capabilities.CapabilityTypeAction,
-				},
-			},
-			Consensus: []sdk.StepDefinition{
-				{
-					ID:  "offchain_reporting@1.0.0",
-					Ref: "data-feeds-report",
-					Inputs: sdk.StepInputs{
-						Mapping: map[string]any{"observations": "$(Compute.outputs.Value)"},
-					},
-					Config: map[string]any{
-						"aggregation_config": ocr3.DataFeedsConsensusConfigAggregationConfig{
-							AllowedPartialStaleness: "false",
-							Feeds: map[string]ocr3.FeedValue{
-								anyFakeFeedID: {
-									Deviation: "0.5",
-									Heartbeat: 3600,
-								},
-							},
-						},
-						"aggregation_method": "data_feeds",
-						"encoder":            ocr3.EncoderEVM,
-						"encoder_config":     ocr3.EncoderConfig{},
-						"report_id":          "0001",
-					},
-					CapabilityType: capabilities.CapabilityTypeConsensus,
-				},
-			},
-			Targets: []sdk.StepDefinition{
-				{
-					ID: "write_ethereum-testnet-sepolia@1.0.0",
-					Inputs: sdk.StepInputs{
-						Mapping: map[string]any{"signed_report": "$(data-feeds-report.outputs)"},
-					},
-					Config: map[string]any{
-						"address":    "0xE0082363396985ae2FdcC3a9F816A586Eed88416",
-						"deltaStage": "45s",
-						"schedule":   "oneAtATime",
-					},
-					CapabilityType: capabilities.CapabilityTypeTarget,
-				},
-			},
-		}
 
-		testutils.AssertWorkflowSpec(t, expectedSpec, spec)
+		testutils.AssertWorkflowSpec(t, serialWorkflowSpec, spec)
 	})
 
 	t.Run("compute runs the function and returns the value", func(t *testing.T) {
@@ -133,7 +67,7 @@ func TestCompute(t *testing.T) {
 func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams.Feed, error)) *sdk.WorkflowSpecFactory {
 	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
 		Owner: "owner",
-		Name:  "name",
+		Name:  "serial",
 	})
 
 	trigger := notstreams.TriggerConfig{MaxFrequencyMs: 5000}.New(workflow)

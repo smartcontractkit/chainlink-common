@@ -532,6 +532,164 @@ func (*Response_ComputeResponse) isResponse_Message() {}
 
 func (*Response_SpecResponse) isResponse_Message() {}
 
+type FetchRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Url       string   `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	Method    string   `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	Headers   *pb1.Map `protobuf:"bytes,3,opt,name=headers,proto3" json:"headers,omitempty"`
+	Body      []byte   `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	TimeoutMs uint32   `protobuf:"varint,5,opt,name=timeoutMs,proto3" json:"timeoutMs,omitempty"`
+}
+
+func (x *FetchRequest) Reset() {
+	*x = FetchRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FetchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchRequest) ProtoMessage() {}
+
+func (x *FetchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchRequest.ProtoReflect.Descriptor instead.
+func (*FetchRequest) Descriptor() ([]byte, []int) {
+	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FetchRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *FetchRequest) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+func (x *FetchRequest) GetHeaders() *pb1.Map {
+	if x != nil {
+		return x.Headers
+	}
+	return nil
+}
+
+func (x *FetchRequest) GetBody() []byte {
+	if x != nil {
+		return x.Body
+	}
+	return nil
+}
+
+func (x *FetchRequest) GetTimeoutMs() uint32 {
+	if x != nil {
+		return x.TimeoutMs
+	}
+	return 0
+}
+
+type FetchResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Success      bool     `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	ErrorMessage string   `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
+	StatusCode   uint32   `protobuf:"varint,3,opt,name=statusCode,proto3" json:"statusCode,omitempty"` // NOTE: this is actually a uint8, but proto doesn't support this.
+	Headers      *pb1.Map `protobuf:"bytes,4,opt,name=headers,proto3" json:"headers,omitempty"`
+	Body         []byte   `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
+}
+
+func (x *FetchResponse) Reset() {
+	*x = FetchResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FetchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchResponse) ProtoMessage() {}
+
+func (x *FetchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchResponse.ProtoReflect.Descriptor instead.
+func (*FetchResponse) Descriptor() ([]byte, []int) {
+	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FetchResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *FetchResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *FetchResponse) GetStatusCode() uint32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
+func (x *FetchResponse) GetHeaders() *pb1.Map {
+	if x != nil {
+		return x.Headers
+	}
+	return nil
+}
+
+func (x *FetchResponse) GetBody() []byte {
+	if x != nil {
+		return x.Body
+	}
+	return nil
+}
+
 var File_workflows_wasm_pb_wasm_proto protoreflect.FileDescriptor
 
 var file_workflows_wasm_pb_wasm_proto_rawDesc = []byte{
@@ -607,12 +765,32 @@ var file_workflows_wasm_pb_wasm_proto_rawDesc = []byte{
 	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73,
 	0x64, 0x6b, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x53, 0x70, 0x65, 0x63, 0x48,
 	0x00, 0x52, 0x0c, 0x73, 0x70, 0x65, 0x63, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x09, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x43, 0x5a, 0x41, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72, 0x74, 0x63, 0x6f,
-	0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x6c,
-	0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x77,
-	0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x73, 0x2f, 0x73, 0x64, 0x6b, 0x2f, 0x70, 0x62, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x91, 0x01, 0x0a, 0x0c, 0x46,
+	0x65, 0x74, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x75,
+	0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x16, 0x0a,
+	0x06, 0x6d, 0x65, 0x74, 0x68, 0x6f, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x6d,
+	0x65, 0x74, 0x68, 0x6f, 0x64, 0x12, 0x25, 0x0a, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x2e,
+	0x4d, 0x61, 0x70, 0x52, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x12, 0x12, 0x0a, 0x04,
+	0x62, 0x6f, 0x64, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79,
+	0x12, 0x1c, 0x0a, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x4d, 0x73, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x4d, 0x73, 0x22, 0xa8,
+	0x01, 0x0a, 0x0d, 0x46, 0x65, 0x74, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x22, 0x0a, 0x0c, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1e,
+	0x0a, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x43, 0x6f, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0d, 0x52, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x25,
+	0x0a, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x0b, 0x2e, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x2e, 0x4d, 0x61, 0x70, 0x52, 0x07, 0x68, 0x65,
+	0x61, 0x64, 0x65, 0x72, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0c, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x42, 0x43, 0x5a, 0x41, 0x67, 0x69, 0x74,
+	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72, 0x74, 0x63, 0x6f, 0x6e,
+	0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x6c, 0x69,
+	0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x77, 0x6f,
+	0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x73, 0x2f, 0x73, 0x64, 0x6b, 0x2f, 0x70, 0x62, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -627,7 +805,7 @@ func file_workflows_wasm_pb_wasm_proto_rawDescGZIP() []byte {
 	return file_workflows_wasm_pb_wasm_proto_rawDescData
 }
 
-var file_workflows_wasm_pb_wasm_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_workflows_wasm_pb_wasm_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_workflows_wasm_pb_wasm_proto_goTypes = []interface{}{
 	(*ComputeRequest)(nil),        // 0: sdk.ComputeRequest
 	(*Request)(nil),               // 1: sdk.Request
@@ -636,30 +814,34 @@ var file_workflows_wasm_pb_wasm_proto_goTypes = []interface{}{
 	(*StepDefinition)(nil),        // 4: sdk.StepDefinition
 	(*WorkflowSpec)(nil),          // 5: sdk.WorkflowSpec
 	(*Response)(nil),              // 6: sdk.Response
-	(*pb.CapabilityRequest)(nil),  // 7: capabilities.CapabilityRequest
-	(*emptypb.Empty)(nil),         // 8: google.protobuf.Empty
-	(*pb.CapabilityResponse)(nil), // 9: capabilities.CapabilityResponse
-	(*pb1.Map)(nil),               // 10: values.Map
+	(*FetchRequest)(nil),          // 7: sdk.FetchRequest
+	(*FetchResponse)(nil),         // 8: sdk.FetchResponse
+	(*pb.CapabilityRequest)(nil),  // 9: capabilities.CapabilityRequest
+	(*emptypb.Empty)(nil),         // 10: google.protobuf.Empty
+	(*pb.CapabilityResponse)(nil), // 11: capabilities.CapabilityResponse
+	(*pb1.Map)(nil),               // 12: values.Map
 }
 var file_workflows_wasm_pb_wasm_proto_depIdxs = []int32{
-	7,  // 0: sdk.ComputeRequest.request:type_name -> capabilities.CapabilityRequest
+	9,  // 0: sdk.ComputeRequest.request:type_name -> capabilities.CapabilityRequest
 	0,  // 1: sdk.Request.computeRequest:type_name -> sdk.ComputeRequest
-	8,  // 2: sdk.Request.specRequest:type_name -> google.protobuf.Empty
-	9,  // 3: sdk.ComputeResponse.response:type_name -> capabilities.CapabilityResponse
-	10, // 4: sdk.StepInputs.mapping:type_name -> values.Map
+	10, // 2: sdk.Request.specRequest:type_name -> google.protobuf.Empty
+	11, // 3: sdk.ComputeResponse.response:type_name -> capabilities.CapabilityResponse
+	12, // 4: sdk.StepInputs.mapping:type_name -> values.Map
 	3,  // 5: sdk.StepDefinition.inputs:type_name -> sdk.StepInputs
-	10, // 6: sdk.StepDefinition.config:type_name -> values.Map
+	12, // 6: sdk.StepDefinition.config:type_name -> values.Map
 	4,  // 7: sdk.WorkflowSpec.triggers:type_name -> sdk.StepDefinition
 	4,  // 8: sdk.WorkflowSpec.actions:type_name -> sdk.StepDefinition
 	4,  // 9: sdk.WorkflowSpec.consensus:type_name -> sdk.StepDefinition
 	4,  // 10: sdk.WorkflowSpec.targets:type_name -> sdk.StepDefinition
 	2,  // 11: sdk.Response.computeResponse:type_name -> sdk.ComputeResponse
 	5,  // 12: sdk.Response.specResponse:type_name -> sdk.WorkflowSpec
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	12, // 13: sdk.FetchRequest.headers:type_name -> values.Map
+	12, // 14: sdk.FetchResponse.headers:type_name -> values.Map
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_workflows_wasm_pb_wasm_proto_init() }
@@ -752,6 +934,30 @@ func file_workflows_wasm_pb_wasm_proto_init() {
 				return nil
 			}
 		}
+		file_workflows_wasm_pb_wasm_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FetchRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_workflows_wasm_pb_wasm_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FetchResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_workflows_wasm_pb_wasm_proto_msgTypes[1].OneofWrappers = []interface{}{
 		(*Request_ComputeRequest)(nil),
@@ -767,7 +973,7 @@ func file_workflows_wasm_pb_wasm_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_workflows_wasm_pb_wasm_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -27,7 +27,7 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 
 func main() {
 	runner := wasm.NewRunner()
-	resp := runner.SDK.Fetch(wasm.TargetRequestPayload{
+	resp := runner.SDK.Fetch(wasm.FetchRequest{
 		Method: http.MethodGet,
 		URL:    "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=BTC",
 	})

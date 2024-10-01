@@ -2,13 +2,13 @@ package wasm
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"os"
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -59,9 +59,20 @@ func NewRunner() *Runner {
 		},
 		SDK: Runtime{
 			Logger: l,
-			Fetch: func(req TargetRequestPayload) TargetResponsePayload {
+			Fetch: func(req FetchRequest) FetchResponse {
 
-				b, err := json.Marshal(req)
+				headerspb, err := values.NewMap(req.Headers)
+				if err != nil {
+					os.Exit(CodeRunnerErr)
+				}
+
+				b, err := proto.Marshal(&wasmpb.FetchRequest{
+					Url:       req.URL,
+					Method:    req.Method,
+					Headers:   values.ProtoMap(headerspb),
+					Body:      req.Body,
+					TimeoutMs: req.TimeoutMs,
+				})
 				if err != nil {
 					os.Exit(CodeRunnerErr)
 				}
@@ -80,14 +91,26 @@ func NewRunner() *Runner {
 				}
 
 				responseSize := binary.LittleEndian.Uint32(resplenBuffer)
-				response := TargetResponsePayload{}
-				err = json.Unmarshal(respBuffer[:responseSize], &response)
+				response := &wasmpb.FetchResponse{}
+				err = proto.Unmarshal(respBuffer[:responseSize], response)
 				if err != nil {
 					l.Error("Error: ", err.Error())
 					os.Exit(CodeRunnerErr)
 				}
 
-				return response
+				fields := response.Headers.GetFields()
+				headersResp := make(map[string]any, len(fields))
+				for k, v := range fields {
+					headersResp[k] = v
+				}
+
+				return FetchResponse{
+					Success:      response.Success,
+					ErrorMessage: response.ErrorMessage,
+					StatusCode:   uint8(response.StatusCode),
+					Headers:      headersResp,
+					Body:         response.Body,
+				}
 			},
 		},
 		args: os.Args,

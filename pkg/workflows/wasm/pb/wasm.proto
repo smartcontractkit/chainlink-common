@@ -57,3 +57,19 @@ message Response {
     WorkflowSpec specResponse = 4;
   }
 }
+
+message FetchRequest {
+  string url = 1;
+  string method = 2;
+  values.Map headers = 3;
+  bytes body = 4;
+  uint32 timeoutMs = 5;
+}
+
+message FetchResponse {
+  bool success = 1;
+  string errorMessage = 2;
+  uint32 statusCode = 3; // NOTE: this is actually a uint8, but proto doesn't support this.
+  values.Map headers = 4;
+  bytes body = 5;
+}

@@ -89,7 +89,7 @@ type ModuleConfig struct {
 	InitialFuel    uint64
 	Logger         logger.Logger
 	IsUncompressed bool
-	Fetch          func(wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error)
+	Fetch          func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
 }
 
 type Module struct {
@@ -252,20 +252,20 @@ func NewModule(modCfg *ModuleConfig, binaryInput []byte) (*Module, error) {
 				return 1 //errnumber
 			}
 
-			req := wasm.TargetRequestPayload{}
-			innerErr = json.Unmarshal(b, &req)
+			req := &wasmpb.FetchRequest{}
+			innerErr = proto.Unmarshal(b, req)
 			if innerErr != nil {
 				logger.Errorf("error calling fetch: %s", innerErr)
 				return 1 //errnumber
 			}
 
-			targetResp, innerErr := modCfg.Fetch(req)
+			fetchResp, innerErr := modCfg.Fetch(req)
 			if innerErr != nil {
 				logger.Errorf("error calling fetch: %s", innerErr)
 				return 1 //errnumber
 			}
 
-			respBytes, innerErr := json.Marshal(targetResp)
+			respBytes, innerErr := proto.Marshal(fetchResp)
 			if innerErr != nil {
 				logger.Errorf("error calling fetch: %s", innerErr)
 				return 1 //errnumber

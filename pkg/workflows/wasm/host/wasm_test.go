@@ -21,7 +21,6 @@ import (
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -79,8 +78,8 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger.Test(t),
-			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-				return wasm.TargetResponsePayload{}, nil
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{}, nil
 			},
 		},
 		binary,
@@ -98,8 +97,8 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger.Test(t),
-			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-				return wasm.TargetResponsePayload{}, nil
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{}, nil
 			},
 			IsUncompressed: true,
 		},
@@ -118,8 +117,8 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 	_, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger.Test(t),
-			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-				return wasm.TargetResponsePayload{}, nil
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{}, nil
 			},
 		},
 		failBinary,
@@ -137,8 +136,8 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 		&ModuleConfig{
 			Timeout: &d,
 			Logger:  logger.Test(t),
-			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-				return wasm.TargetResponsePayload{}, nil
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{}, nil
 			},
 		},
 		binary, // use the success binary with a zero timeout
@@ -155,8 +154,8 @@ func Test_GetWorkflowSpec_Logs(t *testing.T) {
 	spec, err := GetWorkflowSpec(
 		&ModuleConfig{
 			Logger: logger,
-			Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-				return wasm.TargetResponsePayload{}, nil
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{}, nil
 			},
 		},
 		binary,
@@ -210,11 +209,11 @@ func Test_GetWorkflowSpec_Fetch(t *testing.T) {
 		_, err := GetWorkflowSpec(
 			&ModuleConfig{
 				Logger: logger,
-				Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-					return wasm.TargetResponsePayload{
+				Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{
 						Success:    true,
 						Body:       []byte(expected),
-						StatusCode: uint8(http.StatusOK),
+						StatusCode: http.StatusOK,
 					}, nil
 				},
 			},
@@ -245,8 +244,8 @@ func TestModule_Errors(t *testing.T) {
 
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 	}, binary)
 	require.NoError(t, err)
@@ -290,8 +289,8 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 	}, binary)
 	require.NoError(t, err)
@@ -311,8 +310,8 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 	}, binary)
 	require.NoError(t, err)
@@ -341,8 +340,8 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 	tmt := 10 * time.Millisecond
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 		Timeout: &tmt}, binary)
 	require.NoError(t, err)
@@ -364,8 +363,8 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 	}, binary)
 	require.NoError(t, err)
@@ -395,8 +394,8 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 	}, binary)
 	require.NoError(t, err)
@@ -426,8 +425,8 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 	}, binary)
 	require.NoError(t, err)
@@ -457,8 +456,8 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger.Test(t),
-		Fetch: func(req wasm.TargetRequestPayload) (wasm.TargetResponsePayload, error) {
-			return wasm.TargetResponsePayload{}, nil
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{}, nil
 		},
 	}, binary)
 	require.NoError(t, err)

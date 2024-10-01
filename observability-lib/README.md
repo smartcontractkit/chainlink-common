@@ -20,6 +20,10 @@ observability-lib/
     grafana/ # grafana-foundations-sdk abstraction to manipulate grafana resources
 ```
 
+## Documentation
+
+Godoc generated documentation is available [here](https://pkg.go.dev/github.com/smartcontractkit/chainlink-common/observability-lib)
+
 ## Quickstart
 
 ### Creating a dashboard

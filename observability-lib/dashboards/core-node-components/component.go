@@ -14,7 +14,7 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 		return nil, fmt.Errorf("Name is required")
 	}
 
-	props.PlatformOpts = PlatformPanelOpts()
+	props.platformOpts = platformPanelOpts()
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:     props.Name,
@@ -131,7 +131,7 @@ func panelsGeneralInfo(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env)`,
+					Expr:   `100 * avg(avg_over_time(health{` + p.platformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env)`,
 					Legend: "{{service_id}}",
 				},
 			},
@@ -160,7 +160,7 @@ func panelsGeneralInfo(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * (health{` + p.PlatformOpts.LabelQuery + `service_id=~"${service_id}"})`,
+					Expr:   `100 * (health{` + p.platformOpts.LabelQuery + `service_id=~"${service_id}"})`,
 					Legend: "{{service_id}}",
 				},
 			},
@@ -179,7 +179,7 @@ func panelsGeneralInfo(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * (avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env))`,
+					Expr:   `100 * (avg(avg_over_time(health{` + p.platformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env))`,
 					Legend: "{{service_id}}",
 				},
 			},

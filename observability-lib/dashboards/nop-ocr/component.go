@@ -11,9 +11,9 @@ import (
 )
 
 type Props struct {
-	Name              string
-	MetricsDataSource *grafana.DataSource
-	OCRVersion        string
+	Name              string              // Name is the name of the dashboard
+	MetricsDataSource *grafana.DataSource // MetricsDataSource is the datasource for querying metrics
+	OCRVersion        string              // OCRVersion is the version of the OCR (ocr, ocr2, ocr3)
 }
 
 func NewDashboard(props *Props) (*grafana.Dashboard, error) {

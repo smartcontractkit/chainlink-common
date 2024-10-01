@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
+// NewDashboard creates a DON dashboard for the given OCR version
 func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	if props.Name == "" {
 		return nil, fmt.Errorf("Name is required")
@@ -32,7 +33,7 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 		}
 	}
 
-	props.PlatformOpts = PlatformPanelOpts(props.Platform)
+	props.platformOpts = platformPanelOpts(props.Platform)
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:       props.Name,
@@ -136,7 +137,7 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 	var variables []cog.Builder[dashboard.VariableModel]
 
-	if p.PlatformOpts.Platform == "kubernetes" {
+	if p.platformOpts.Platform == "kubernetes" {
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
 			VariableOption: &grafana.VariableOption{
 				Label: "Environment",
@@ -218,7 +219,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "instance",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      fmt.Sprintf("label_values(%s)", p.PlatformOpts.LabelFilter),
+			Query:      fmt.Sprintf("label_values(%s)", p.platformOpts.LabelFilter),
 			Multi:      true,
 			IncludeAll: true,
 		}))
@@ -240,7 +241,7 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:    1,
 			Query: []grafana.Query{
 				{
-					Expr:    `version{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:    `version{` + p.platformOpts.LabelQuery + `}`,
 					Legend:  "Version: {{version}} https://github.com/smartcontractkit/chainlink/commit/{{commit}} https://github.com/smartcontractkit/chainlink/tree/release/{{version}}",
 					Instant: true,
 				},
@@ -262,8 +263,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Unit:        "s",
 			Query: []grafana.Query{
 				{
-					Expr:   `uptime_seconds{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `uptime_seconds{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -281,8 +282,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:    `sum(eth_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
-					Legend:  `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
+					Expr:    `sum(eth_balance{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `, account)`,
+					Legend:  `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 					Instant: true,
 				},
 			},
@@ -309,8 +310,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:    `sum(solana_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
-					Legend:  `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
+					Expr:    `sum(solana_balance{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `, account)`,
+					Legend:  `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 					Instant: true,
 				},
 			},
@@ -338,8 +339,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * (avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `}[15m])) by (` + p.PlatformOpts.LabelFilter + `, service_id, version, service, cluster, env))`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{service_id}}`,
+					Expr:   `100 * (avg(avg_over_time(health{` + p.platformOpts.LabelQuery + `}[15m])) by (` + p.platformOpts.LabelFilter + `, service_id, version, service, cluster, env))`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{service_id}}`,
 				},
 			},
 			Min: grafana.Pointer[float64](0),
@@ -406,8 +407,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Unit:        "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `}[15m])) by (` + p.PlatformOpts.LabelFilter + `, service_id, version, service, cluster, env) < 90`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{service_id}}`,
+					Expr:   `100 * avg(avg_over_time(health{` + p.platformOpts.LabelQuery + `}[15m])) by (` + p.platformOpts.LabelFilter + `, service_id, version, service, cluster, env) < 90`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{service_id}}`,
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -435,13 +436,13 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(eth_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
+					Expr:   `sum(eth_balance{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `, account)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
 			AlertOptions: &grafana.AlertOptions{
 				Summary:     `ETH Balance is lower than threshold`,
-				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.PlatformOpts.LabelFilter + `" }}`,
+				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 				For:         "15m",
 				NoDataState: alerting.RuleNoDataStateOK,
@@ -484,13 +485,13 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(solana_balance{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, account)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{account}}`,
+					Expr:   `sum(solana_balance{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `, account)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
 			AlertOptions: &grafana.AlertOptions{
 				Summary:     `Solana Balance is lower than threshold`,
-				Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.PlatformOpts.LabelFilter + `" }}`,
+				Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 				For:         "15m",
 				NoDataState: alerting.RuleNoDataStateOK,
@@ -524,7 +525,7 @@ func headlines(p *Props) []*grafana.Panel {
 		},
 	}))
 
-	if p.PlatformOpts.Platform == "kubernetes" {
+	if p.platformOpts.Platform == "kubernetes" {
 		panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
 				Datasource: p.MetricsDataSource.Name,
@@ -657,8 +658,8 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `process_open_fds{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `process_open_fds{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -674,7 +675,7 @@ func headlines(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:    `go_info{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:    `go_info{` + p.platformOpts.LabelQuery + `}`,
 					Legend:  "{{exported_version}}",
 					Instant: true,
 				},
@@ -700,20 +701,20 @@ func appDBConnections(p *Props) []*grafana.Panel {
 			Unit:       "Conn",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(db_conns_max{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Max`,
+					Expr:   `sum(db_conns_max{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - Max`,
 				},
 				{
-					Expr:   `sum(db_conns_open{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Open`,
+					Expr:   `sum(db_conns_open{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - Open`,
 				},
 				{
-					Expr:   `sum(db_conns_used{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Used`,
+					Expr:   `sum(db_conns_used{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - Used`,
 				},
 				{
-					Expr:   `sum(db_conns_wait{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Wait`,
+					Expr:   `sum(db_conns_wait{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - Wait`,
 				},
 			},
 		},
@@ -731,8 +732,8 @@ func appDBConnections(p *Props) []*grafana.Panel {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(db_wait_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+					Expr:   `sum(db_wait_count{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -747,8 +748,8 @@ func appDBConnections(p *Props) []*grafana.Panel {
 			Unit:       "Sec",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(db_wait_time_seconds{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+					Expr:   `sum(db_wait_time_seconds{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -770,15 +771,15 @@ func sqlQueries(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
+					Expr:   `histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
 					Legend: "p90",
 				},
 				{
-					Expr:   `histogram_quantile(0.95, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
+					Expr:   `histogram_quantile(0.95, sum(rate(sql_query_timeout_percent_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
 					Legend: "p95",
 				},
 				{
-					Expr:   `histogram_quantile(0.99, sum(rate(sql_query_timeout_percent_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
+					Expr:   `histogram_quantile(0.99, sum(rate(sql_query_timeout_percent_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le))`,
 					Legend: "p99",
 				},
 			},
@@ -804,8 +805,8 @@ func headTracker(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(head_tracker_current_head{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -819,8 +820,8 @@ func headTracker(p *Props) []*grafana.Panel {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:    `head_tracker_current_head{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend:  `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:    `head_tracker_current_head{` + p.platformOpts.LabelQuery + `}`,
+					Legend:  `{{` + p.platformOpts.LegendString + `}}`,
 					Instant: true,
 				},
 			},
@@ -837,13 +838,13 @@ func headTracker(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `rate(head_tracker_heads_received{` + p.PlatformOpts.LabelQuery + `}[1m])`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+					Expr:   `rate(head_tracker_heads_received{` + p.platformOpts.LabelQuery + `}[1m])`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
 			AlertOptions: &grafana.AlertOptions{
 				Summary:     `No Headers Received`,
-				Description: `{{ index $labels "` + p.PlatformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
+				Description: `{{ index $labels "` + p.platformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 				For:         "10m",
 				NoDataState: alerting.RuleNoDataStateOK,
@@ -886,8 +887,8 @@ func headTracker(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `head_tracker_very_old_head{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `head_tracker_very_old_head{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -902,8 +903,8 @@ func headTracker(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `rate(head_tracker_connection_errors{` + p.PlatformOpts.LabelQuery + `}[1m])`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `rate(head_tracker_connection_errors{` + p.platformOpts.LabelQuery + `}[1m])`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -924,8 +925,8 @@ func headReporter(p *Props) []*grafana.Panel {
 			Unit:       "Tx",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(unconfirmed_transactions{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(unconfirmed_transactions{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -940,8 +941,8 @@ func headReporter(p *Props) []*grafana.Panel {
 			Unit:       "s",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(max_unconfirmed_tx_age{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(max_unconfirmed_tx_age{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -956,8 +957,8 @@ func headReporter(p *Props) []*grafana.Panel {
 			Unit:       "Blocks",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(max_unconfirmed_blocks{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(max_unconfirmed_blocks{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -988,8 +989,8 @@ func txManager(p *Props) []*grafana.Panel {
 				Height:     6,
 				Query: []grafana.Query{
 					{
-						Expr:   `sum(tx_manager_` + status + `{` + p.PlatformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.PlatformOpts.LabelFilter + `)`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+						Expr:   `sum(tx_manager_` + status + `{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 					},
 				},
 			},
@@ -1013,8 +1014,8 @@ func txManager(p *Props) []*grafana.Panel {
 				Unit:        "ms",
 				Query: []grafana.Query{
 					{
-						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.PlatformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 					},
 				},
 			},
@@ -1037,7 +1038,7 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:    1,
 			Query: []grafana.Query{
 				{
-					Expr:   `count(log_poller_query_duration_sum{` + p.PlatformOpts.LabelQuery + `}) by (evmChainID)`,
+					Expr:   `count(log_poller_query_duration_sum{` + p.platformOpts.LabelQuery + `}) by (evmChainID)`,
 					Legend: "chainId: {{evmChainID}}",
 				},
 			},
@@ -1059,11 +1060,11 @@ func logPoller(p *Props) []*grafana.Panel {
 			Unit:        "reqps",
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (query, ` + p.PlatformOpts.LabelFilter + `) (sum by (query, job) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
+					Expr:   `avg by (query, ` + p.platformOpts.LabelFilter + `) (sum by (query, job) (rate(log_poller_query_duration_count{` + p.platformOpts.LabelQuery + `}[$__rate_interval])))`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{query}}`,
 				},
 				{
-					Expr:   `avg (sum by(` + p.PlatformOpts.LabelFilter + `) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
+					Expr:   `avg (sum by(` + p.platformOpts.LabelFilter + `) (rate(log_poller_query_duration_count{` + p.platformOpts.LabelQuery + `}[$__rate_interval])))`,
 					Legend: "Total",
 				},
 			},
@@ -1084,8 +1085,8 @@ func logPoller(p *Props) []*grafana.Panel {
 			Unit:       "reqps",
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (` + p.PlatformOpts.LabelFilter + `, type) (sum by (type, ` + p.PlatformOpts.LabelFilter + `) (rate(log_poller_query_duration_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])))`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{type}}`,
+					Expr:   `avg by (` + p.platformOpts.LabelFilter + `, type) (sum by (type, ` + p.platformOpts.LabelFilter + `) (rate(log_poller_query_duration_count{` + p.platformOpts.LabelQuery + `}[$__rate_interval])))`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{type}}`,
 				},
 			},
 		},
@@ -1100,8 +1101,8 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (` + p.PlatformOpts.LabelFilter + `, query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
+					Expr:   `avg by (` + p.platformOpts.LabelFilter + `, query) (log_poller_query_dataset_size{` + p.platformOpts.LabelQuery + `})`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{query}}`,
 				},
 			},
 		},
@@ -1116,8 +1117,8 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `max by (` + p.PlatformOpts.LabelFilter + `, query) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
+					Expr:   `max by (` + p.platformOpts.LabelFilter + `, query) (log_poller_query_dataset_size{` + p.platformOpts.LabelQuery + `})`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{query}}`,
 				},
 			},
 		},
@@ -1132,7 +1133,7 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `max by (evmChainID) (log_poller_query_dataset_size{` + p.PlatformOpts.LabelQuery + `})`,
+					Expr:   `max by (evmChainID) (log_poller_query_dataset_size{` + p.platformOpts.LabelQuery + `})`,
 					Legend: "{{evmChainID}}",
 				},
 			},
@@ -1151,8 +1152,8 @@ func logPoller(p *Props) []*grafana.Panel {
 				Unit:       "ms",
 				Query: []grafana.Query{
 					{
-						Expr:   `histogram_quantile(` + quantile + `, sum(rate(log_poller_query_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.PlatformOpts.LabelFilter + `, query)) / 1e6`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{query}}`,
+						Expr:   `histogram_quantile(` + quantile + `, sum(rate(log_poller_query_duration_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, query)) / 1e6`,
+						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{query}}`,
 					},
 				},
 			},
@@ -1172,7 +1173,7 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (evmChainID) (log_poller_logs_inserted{` + p.PlatformOpts.LabelQuery + `})`,
+					Expr:   `avg by (evmChainID) (log_poller_logs_inserted{` + p.platformOpts.LabelQuery + `})`,
 					Legend: "{{evmChainID}}",
 				},
 			},
@@ -1188,7 +1189,7 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (evmChainID) (rate(log_poller_logs_inserted{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval]))`,
+					Expr:   `avg by (evmChainID) (rate(log_poller_logs_inserted{` + p.platformOpts.LabelQuery + `}[$__rate_interval]))`,
 					Legend: "{{evmChainID}}",
 				},
 			},
@@ -1204,7 +1205,7 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (evmChainID) (log_poller_blocks_inserted{` + p.PlatformOpts.LabelQuery + `})`,
+					Expr:   `avg by (evmChainID) (log_poller_blocks_inserted{` + p.platformOpts.LabelQuery + `})`,
 					Legend: "{{evmChainID}}",
 				},
 			},
@@ -1220,7 +1221,7 @@ func logPoller(p *Props) []*grafana.Panel {
 			Decimals:   2,
 			Query: []grafana.Query{
 				{
-					Expr:   `avg by (evmChainID) (rate(log_poller_blocks_inserted{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval]))`,
+					Expr:   `avg by (evmChainID) (rate(log_poller_blocks_inserted{` + p.platformOpts.LabelQuery + `}[$__rate_interval]))`,
 					Legend: "{{evmChainID}}",
 				},
 			},
@@ -1242,8 +1243,8 @@ func feedsJobs(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(feeds_job_proposal_requests{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(feeds_job_proposal_requests{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1259,8 +1260,8 @@ func feedsJobs(p *Props) []*grafana.Panel {
 			Decimals:    1,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(feeds_job_proposal_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(feeds_job_proposal_count{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1282,8 +1283,8 @@ func mailbox(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(mailbox_load_percent{` + p.PlatformOpts.LabelQuery + `}) by (capacity, name, ` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - Capacity: {{capacity}} - {{name}}`,
+					Expr:   `sum(mailbox_load_percent{` + p.platformOpts.LabelQuery + `}) by (capacity, name, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - Capacity: {{capacity}} - {{name}}`,
 				},
 			},
 		},
@@ -1309,8 +1310,8 @@ func logsCounters(p *Props) []*grafana.Panel {
 				Height:     6,
 				Query: []grafana.Query{
 					{
-						Expr:   `sum(log_` + status + `_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - ` + status,
+						Expr:   `sum(log_` + status + `_count{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+						Legend: `{{` + p.platformOpts.LabelFilter + `}} - ` + status,
 					},
 				},
 			},
@@ -1333,8 +1334,8 @@ func logsRate(p *Props) []*grafana.Panel {
 				Height:     6,
 				Query: []grafana.Query{
 					{
-						Expr:   `sum(rate(log_` + status + `_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `)`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - error`,
+						Expr:   `sum(rate(log_` + status + `_count{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LabelFilter + `)`,
+						Legend: `{{` + p.platformOpts.LabelFilter + `}} - error`,
 					},
 				},
 			},
@@ -1357,8 +1358,8 @@ func evmPoolLifecycle(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `evm_pool_rpc_node_highest_seen_block{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `evm_pool_rpc_node_highest_seen_block{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1374,8 +1375,8 @@ func evmPoolLifecycle(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `evm_pool_rpc_node_num_seen_blocks{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `evm_pool_rpc_node_num_seen_blocks{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1391,8 +1392,8 @@ func evmPoolLifecycle(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `evm_pool_rpc_node_polls_total{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `evm_pool_rpc_node_polls_total{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1408,8 +1409,8 @@ func evmPoolLifecycle(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `evm_pool_rpc_node_polls_failed{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `evm_pool_rpc_node_polls_failed{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1425,8 +1426,8 @@ func evmPoolLifecycle(p *Props) []*grafana.Panel {
 			Unit:       "Block",
 			Query: []grafana.Query{
 				{
-					Expr:   `evm_pool_rpc_node_polls_success{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `evm_pool_rpc_node_polls_success{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1449,8 +1450,8 @@ func nodesRPC(p *Props) []*grafana.Panel {
 				Decimals:   1,
 				Query: []grafana.Query{
 					{
-						Expr:   `sum(multi_node_states{` + p.PlatformOpts.LabelQuery + `state="` + state + `"}) by (` + p.PlatformOpts.LabelFilter + `, chainId)`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{chainId}}`,
+						Expr:   `sum(multi_node_states{` + p.platformOpts.LabelQuery + `state="` + state + `"}) by (` + p.platformOpts.LabelFilter + `, chainId)`,
+						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{chainId}}`,
 					},
 				},
 			},
@@ -1475,8 +1476,8 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(increase(evm_pool_rpc_node_calls_success{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{nodeName}}`,
+					Expr:   `sum(increase(evm_pool_rpc_node_calls_success{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LabelFilter + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LabelFilter + `, evmChainID, nodeName)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{nodeName}}`,
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -1505,8 +1506,8 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(increase(evm_pool_rpc_node_dials_failed{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, nodeName)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{nodeName}}`,
+					Expr:   `sum(increase(evm_pool_rpc_node_dials_failed{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LabelFilter + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LabelFilter + `, evmChainID, nodeName)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{evmChainID}} - {{nodeName}}`,
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -1534,27 +1535,27 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `evm_pool_rpc_node_num_transitions_to_alive{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `evm_pool_rpc_node_num_transitions_to_alive{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "Alive",
 				},
 				{
-					Expr:   `evm_pool_rpc_node_num_transitions_to_in_sync{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `evm_pool_rpc_node_num_transitions_to_in_sync{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "InSync",
 				},
 				{
-					Expr:   `evm_pool_rpc_node_num_transitions_to_out_of_sync{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `evm_pool_rpc_node_num_transitions_to_out_of_sync{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "OutOfSync",
 				},
 				{
-					Expr:   `evm_pool_rpc_node_num_transitions_to_unreachable{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `evm_pool_rpc_node_num_transitions_to_unreachable{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "UnReachable",
 				},
 				{
-					Expr:   `evm_pool_rpc_node_num_transitions_to_invalid_chain_id{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `evm_pool_rpc_node_num_transitions_to_invalid_chain_id{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "InvalidChainID",
 				},
 				{
-					Expr:   `evm_pool_rpc_node_num_transitions_to_unusable{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `evm_pool_rpc_node_num_transitions_to_unusable{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "TransitionToUnusable",
 				},
 			},
@@ -1570,8 +1571,8 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `evm_pool_rpc_node_states{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{evmChainID}} - {{state}}`,
+					Expr:   `evm_pool_rpc_node_states{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - {{evmChainID}} - {{state}}`,
 				},
 			},
 		},
@@ -1587,8 +1588,8 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Unit:       "percentunit",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(increase(evm_pool_rpc_node_verifies_success{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName) * 100`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{evmChainID}} - {{nodeName}}`,
+					Expr:   `sum(increase(evm_pool_rpc_node_verifies_success{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `, evmChainID, nodeName) * 100`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - {{evmChainID}} - {{nodeName}}`,
 				},
 			},
 		},
@@ -1604,8 +1605,8 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Unit:       "percentunit",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(increase(evm_pool_rpc_node_verifies_failed{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, evmChainID, nodeName) * 100`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{evmChainID}} - {{nodeName}}`,
+					Expr:   `sum(increase(evm_pool_rpc_node_verifies_failed{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `, evmChainID, nodeName) * 100`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - {{evmChainID}} - {{nodeName}}`,
 				},
 			},
 		},
@@ -1629,8 +1630,8 @@ func evmPoolRPCNodeLatencies(p *Props) []*grafana.Panel {
 				Unit:       "ms",
 				Query: []grafana.Query{
 					{
-						Expr:   `histogram_quantile(` + quantile + `, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LabelFilter + `, le, rpcCallName)) / 1e6`,
-						Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{rpcCallName}}`,
+						Expr:   `histogram_quantile(` + quantile + `, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LabelFilter + `, le, rpcCallName)) / 1e6`,
+						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{rpcCallName}}`,
 					},
 				},
 			},
@@ -1657,8 +1658,8 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Unit:        "gwei",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(gas_updater_all_gas_price_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, percentile)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{percentile}}`,
+					Expr:   `sum(gas_updater_all_gas_price_percentiles{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `, evmChainID, percentile)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{evmChainID}} - {{percentile}}`,
 				},
 			},
 		},
@@ -1677,8 +1678,8 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Height:      6,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(gas_updater_all_tip_cap_percentiles{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `, evmChainID, percentile)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}} - {{evmChainID}} - {{percentile}}`,
+					Expr:   `sum(gas_updater_all_tip_cap_percentiles{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `, evmChainID, percentile)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{evmChainID}} - {{percentile}}`,
 				},
 			},
 		},
@@ -1696,8 +1697,8 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(gas_updater_set_gas_price{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+					Expr:   `sum(gas_updater_set_gas_price{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -1711,8 +1712,8 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(gas_updater_set_tip_cap{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+					Expr:   `sum(gas_updater_set_tip_cap{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -1726,8 +1727,8 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(gas_updater_current_base_fee{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+					Expr:   `sum(gas_updater_current_base_fee{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -1741,8 +1742,8 @@ func evmBlockHistoryEstimator(p *Props) []*grafana.Panel {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(block_history_estimator_connectivity_failure_count{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LabelFilter + `)`,
-					Legend: `{{` + p.PlatformOpts.LabelFilter + `}}`,
+					Expr:   `sum(block_history_estimator_connectivity_failure_count{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
 		},
@@ -1764,8 +1765,8 @@ func pipelines(p *Props) []*grafana.Panel {
 			Unit:       "s",
 			Query: []grafana.Query{
 				{
-					Expr:   `pipeline_task_execution_time{` + p.PlatformOpts.LabelQuery + `} / 1e6`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} JobID: {{job_id}}`,
+					Expr:   `pipeline_task_execution_time{` + p.platformOpts.LabelQuery + `} / 1e6`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} JobID: {{job_id}}`,
 				},
 			},
 		},
@@ -1780,8 +1781,8 @@ func pipelines(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `pipeline_run_errors{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} JobID: {{job_id}}`,
+					Expr:   `pipeline_run_errors{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} JobID: {{job_id}}`,
 				},
 			},
 		},
@@ -1797,8 +1798,8 @@ func pipelines(p *Props) []*grafana.Panel {
 			Unit:       "s",
 			Query: []grafana.Query{
 				{
-					Expr:   `pipeline_run_total_time_to_completion{` + p.PlatformOpts.LabelQuery + `} / 1e6`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} JobID: {{job_id}}`,
+					Expr:   `pipeline_run_total_time_to_completion{` + p.platformOpts.LabelQuery + `} / 1e6`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} JobID: {{job_id}}`,
 				},
 			},
 		},
@@ -1813,8 +1814,8 @@ func pipelines(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `pipeline_tasks_total_finished{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} JobID: {{job_id}}`,
+					Expr:   `pipeline_tasks_total_finished{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} JobID: {{job_id}}`,
 				},
 			},
 		},
@@ -1836,8 +1837,8 @@ func httpAPI(p *Props) []*grafana.Panel {
 			Unit:       "s",
 			Query: []grafana.Query{
 				{
-					Expr:   `histogram_quantile(0.95, sum(rate(service_gonic_request_duration_bucket{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, le, path, method))`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{method}} - {{path}}`,
+					Expr:   `histogram_quantile(0.95, sum(rate(service_gonic_request_duration_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `, le, path, method))`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - {{method}} - {{path}}`,
 				},
 			},
 		},
@@ -1852,8 +1853,8 @@ func httpAPI(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(rate(service_gonic_requests_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, path, method, code)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{method}} - {{path}} - {{code}}`,
+					Expr:   `sum(rate(service_gonic_requests_total{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `, path, method, code)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - {{method}} - {{path}} - {{code}}`,
 				},
 			},
 		},
@@ -1869,8 +1870,8 @@ func httpAPI(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `avg(rate(service_gonic_request_size_bytes_sum{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)/avg(rate(service_gonic_request_size_bytes_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `avg(rate(service_gonic_request_size_bytes_sum{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `)/avg(rate(service_gonic_request_size_bytes_count{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1886,8 +1887,8 @@ func httpAPI(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `avg(rate(service_gonic_response_size_bytes_sum{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)/avg(rate(service_gonic_response_size_bytes_count{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `avg(rate(service_gonic_response_size_bytes_sum{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `)/avg(rate(service_gonic_response_size_bytes_count{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1908,8 +1909,8 @@ func promHTTP(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(rate(promhttp_metric_handler_requests_total{` + p.PlatformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.PlatformOpts.LegendString + `, code)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - {{code}}`,
+					Expr:   `sum(rate(promhttp_metric_handler_requests_total{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (` + p.platformOpts.LegendString + `, code)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - {{code}}`,
 				},
 			},
 		},
@@ -1930,8 +1931,8 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(go_threads{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(go_threads{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LegendString + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1947,7 +1948,7 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(go_memstats_heap_alloc_bytes{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LegendString + `)`,
+					Expr:   `sum(go_memstats_heap_alloc_bytes{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LegendString + `)`,
 					Legend: "",
 				},
 			},
@@ -1966,8 +1967,8 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(go_memstats_heap_alloc_bytes{` + p.PlatformOpts.LabelQuery + `}) by (` + p.PlatformOpts.LegendString + `)`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `sum(go_memstats_heap_alloc_bytes{` + p.platformOpts.LabelQuery + `}) by (` + p.platformOpts.LegendString + `)`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -1983,24 +1984,24 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `go_memstats_heap_alloc_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Alloc`,
+					Expr:   `go_memstats_heap_alloc_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Alloc`,
 				},
 				{
-					Expr:   `go_memstats_heap_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Sys`,
+					Expr:   `go_memstats_heap_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Sys`,
 				},
 				{
-					Expr:   `go_memstats_heap_idle_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Idle`,
+					Expr:   `go_memstats_heap_idle_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Idle`,
 				},
 				{
-					Expr:   `go_memstats_heap_inuse_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - InUse`,
+					Expr:   `go_memstats_heap_inuse_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - InUse`,
 				},
 				{
-					Expr:   `go_memstats_heap_released_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Released`,
+					Expr:   `go_memstats_heap_released_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Released`,
 				},
 			},
 		},
@@ -2016,36 +2017,36 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `go_memstats_mspan_inuse_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Total InUse`,
+					Expr:   `go_memstats_mspan_inuse_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Total InUse`,
 				},
 				{
-					Expr:   `go_memstats_mspan_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Total Sys`,
+					Expr:   `go_memstats_mspan_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Total Sys`,
 				},
 				{
-					Expr:   `go_memstats_mcache_inuse_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Cache InUse`,
+					Expr:   `go_memstats_mcache_inuse_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Cache InUse`,
 				},
 				{
-					Expr:   `go_memstats_mcache_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Cache Sys`,
+					Expr:   `go_memstats_mcache_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Cache Sys`,
 				},
 				{
-					Expr:   `go_memstats_buck_hash_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Hash Sys`,
+					Expr:   `go_memstats_buck_hash_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Hash Sys`,
 				},
 				{
-					Expr:   `go_memstats_gc_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - GC Sys`,
+					Expr:   `go_memstats_gc_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - GC Sys`,
 				},
 				{
-					Expr:   `go_memstats_other_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - bytes of memory are used for other runtime allocations`,
+					Expr:   `go_memstats_other_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - bytes of memory are used for other runtime allocations`,
 				},
 				{
-					Expr:   `go_memstats_next_gc_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Next GC`,
+					Expr:   `go_memstats_next_gc_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Next GC`,
 				},
 			},
 		},
@@ -2061,12 +2062,12 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `go_memstats_stack_inuse_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - InUse`,
+					Expr:   `go_memstats_stack_inuse_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - InUse`,
 				},
 				{
-					Expr:   `go_memstats_stack_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}} - Sys`,
+					Expr:   `go_memstats_stack_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}} - Sys`,
 				},
 			},
 		},
@@ -2082,8 +2083,8 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "bytes",
 			Query: []grafana.Query{
 				{
-					Expr:   `go_memstats_sys_bytes{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `go_memstats_sys_bytes{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -2098,8 +2099,8 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `go_memstats_mallocs_total{` + p.PlatformOpts.LabelQuery + `} - go_memstats_frees_total{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `go_memstats_mallocs_total{` + p.platformOpts.LabelQuery + `} - go_memstats_frees_total{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -2114,8 +2115,8 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `rate(go_memstats_mallocs_total{` + p.PlatformOpts.LabelQuery + `}[1m])`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `rate(go_memstats_mallocs_total{` + p.platformOpts.LabelQuery + `}[1m])`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -2131,8 +2132,8 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "ops",
 			Query: []grafana.Query{
 				{
-					Expr:   `rate(go_memstats_lookups_total{` + p.PlatformOpts.LabelQuery + `}[1m])`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `rate(go_memstats_lookups_total{` + p.platformOpts.LabelQuery + `}[1m])`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},
@@ -2148,8 +2149,8 @@ func goMetrics(p *Props) []*grafana.Panel {
 			Unit:       "ops",
 			Query: []grafana.Query{
 				{
-					Expr:   `go_goroutines{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: `{{` + p.PlatformOpts.LegendString + `}}`,
+					Expr:   `go_goroutines{` + p.platformOpts.LabelQuery + `}`,
+					Legend: `{{` + p.platformOpts.LegendString + `}}`,
 				},
 			},
 		},

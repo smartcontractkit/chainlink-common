@@ -15,7 +15,7 @@ func TestNewDashboard(t *testing.T) {
 	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
 		testDashboard, err := atlasdon.NewDashboard(&atlasdon.Props{
 			Name:              "DON OCR Dashboard",
-			MetricsDataSource: grafana.NewDataSource("Prometheus", ""),
+			MetricsDataSource: grafana.NewDataSource("Prometheus", "1"),
 			OCRVersion:        "ocr2",
 		})
 		if err != nil {

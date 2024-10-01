@@ -4,7 +4,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
-type PlatformOpts struct {
+type platformOpts struct {
 	LabelFilters map[string]string
 	LabelFilter  string
 	LegendString string
@@ -12,15 +12,15 @@ type PlatformOpts struct {
 }
 
 type Props struct {
-	Name              string
-	MetricsDataSource *grafana.DataSource
-	PlatformOpts      PlatformOpts
-	OCRVersion        string
+	Name              string              // Name is the name of the dashboard
+	MetricsDataSource *grafana.DataSource // MetricsDataSource is the datasource for querying metrics
+	OCRVersion        string              // OCRVersion is the version of the OCR (ocr, ocr2, ocr3)
+	platformOpts      platformOpts
 }
 
 // PlatformPanelOpts generate different queries depending on params
-func PlatformPanelOpts(ocrVersion string) PlatformOpts {
-	po := PlatformOpts{
+func platformPanelOpts(ocrVersion string) platformOpts {
+	po := platformOpts{
 		LabelFilters: map[string]string{
 			"contract": `=~"${contract}"`,
 		},

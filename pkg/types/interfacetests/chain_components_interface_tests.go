@@ -817,7 +817,9 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				assert.Eventually(t, func() bool {
 					var allSequences []types.Sequence
 
-					filter := query.KeyFilter{Key: EventName}
+					filter := query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+						query.Confidence(primitives.Finalized),
+					}}
 					limit := query.LimitAndSort{
 						SortBy: []query.SortBy{query.NewSortBySequence(query.Asc)},
 						Limit:  query.CountLimit(2),

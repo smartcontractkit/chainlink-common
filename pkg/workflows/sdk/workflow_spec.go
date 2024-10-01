@@ -1,6 +1,8 @@
 package sdk
 
-import "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+import (
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+)
 
 type StepInputs struct {
 	OutputRef string

@@ -47,3 +47,7 @@ lint-workspace:
 
 lint:
 	@./script/lint.sh $(GOLANGCI_LINT_VERSION) "$(GOLANGCI_LINT_COMMON_OPTS)" $(GOLANGCI_LINT_DIRECTORY) "--new-from-rev=origin/main"
+
+.PHONY: test-quiet
+test-quiet:
+	go test ./... | grep -v "\[no test files\]" | grep -v "\(cached\)"

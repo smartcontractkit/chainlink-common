@@ -48,7 +48,7 @@ var transformJSON = cmp.FilterValues(func(x, y []byte) bool {
 	return out
 }))
 
-func TestWorkflowSpecMarshalling(t *testing.T) {
+func TestWorkflowSpecYamlMarshalling(t *testing.T) {
 	t.Parallel()
 	fixtureReader := yamlFixtureReaderBytes(t, "marshalling")
 

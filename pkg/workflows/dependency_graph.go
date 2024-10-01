@@ -129,7 +129,7 @@ func BuildDependencyGraph(spec sdk.WorkflowSpec) (*DependencyGraph, error) {
 		Graph:    g,
 		Triggers: triggerSteps,
 	}
-	return wf, err
+	return wf, nil
 }
 
 var (

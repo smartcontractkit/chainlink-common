@@ -1,0 +1,180 @@
+<html>
+<head>
+    <style>
+
+    </style>
+</head>
+<body>
+<div style="display: flex; flex-direction: row; height: 100%;">
+    <div style="flex-grow: 1">
+        <form id="form" style="display: flex; flex-direction: column; height: 100%;">
+            <pre contentEditable="true" id="code" style="font-size: 10px; tab-size:20px; flex-grow: 2; overflow-y: scroll; padding: 10px;">
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
+	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/mathutil"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+)
+
+func buildWorkflow() *sdk.WorkflowSpecFactory {
+	w := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
+		Owner: "your name", Name: "workflow name",
+	})
+	trigger := basictrigger.TriggerConfig{
+		Name:   "trigger",
+		Number: 100,
+	}.New(w)
+
+	foo := sdk.Compute1(w, "get-foo", sdk.Compute1Inputs[string]{
+		Arg0: trigger.CoolOutput(),
+	}, func(runtime sdk.Runtime, s string) (int64, error) {
+		resp, err := http.Get("https://foo.com/" + s)
+		if err != nil {
+			return -1, fmt.Errorf("failed to get data from foo.com: %w", err)
+		}
+		defer resp.Body.Close()
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return -1, fmt.Errorf("failed to read response from foo.com: %w", err)
+		}
+		return strconv.ParseInt(string(b), 10, 64)
+	})
+	bar := sdk.Compute1(w, "get-bar", sdk.Compute1Inputs[string]{
+		Arg0: trigger.CoolOutput(),
+	}, func(runtime sdk.Runtime, s string) (int64, error) {
+		resp, err := http.Get("https://bar.io/api/" + s)
+		if err != nil {
+			return -1, fmt.Errorf("failed to get data from bar.io: %w", err)
+		}
+		defer resp.Body.Close()
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return -1, fmt.Errorf("failed to read response from bar.io: %w", err)
+		}
+		return strconv.ParseInt(string(b), 10, 64)
+	})
+	baz := sdk.Compute1(w, "get-baz", sdk.Compute1Inputs[string]{
+		Arg0: trigger.CoolOutput(),
+	}, func(runtime sdk.Runtime, s string) (int64, error) {
+		query := url.Values{"id": []string{s}}.Encode()
+		resp, err := http.Get("https://baz.com/v2/path/to/thing?" + query)
+		if err != nil {
+			return -1, fmt.Errorf("failed to get data from baz.com/v2: %w", err)
+		}
+		defer resp.Body.Close()
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return -1, fmt.Errorf("failed to read response from baz.com/v2: %w", err)
+		}
+		return strconv.ParseInt(string(b), 10, 64)
+	})
+
+	compute := sdk.Compute3(w, "compute", sdk.Compute3Inputs[int64, int64, int64]{
+		Arg0: foo.Value(),
+		Arg1: bar.Value(),
+		Arg2: baz.Value(),
+	}, func(runtime sdk.Runtime, foo, bar, baz int64) ([]streams.Feed, error) {
+		val, err := mathutil.Median(foo, bar, baz)
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate median: %w", err)
+		}
+		return []streams.Feed{{
+			Metadata: streams.SignersMetadata{},
+			Payload: []streams.FeedReport{
+				{FullReport: []byte(strconv.FormatInt(val, 10))},
+			},
+			Timestamp: 0,
+		}}, nil
+	})
+
+	consensus := ocr3.DataFeedsConsensusConfig{}.New(w, "consensus", ocr3.DataFeedsConsensusInput{
+		Observations: compute.Value(),
+	})
+
+	chainwriter.TargetConfig{
+		Address: "0xfakeaddr",
+	}.New(w, "id", chainwriter.TargetInput{
+		SignedReport: consensus,
+	})
+	return w
+}
+            </pre>
+<!--            TODO checkbox for auto-render?-->
+            <button type="submit">Render</button>
+            <div id="message"></div>
+        </form>
+    </div>
+    <div id="chart" class="mermaid" style="flex-grow: 1">
+flowchart
+
+        trigger[\"<b>trigger</b><br>trigger<br><i>(basic-test-trigger[at]1.0.0)</i>"/]
+
+        compute["<b>compute</b><br>action<br><i>(custom_compute[at]1.0.0)</i>"]
+        get-bar -- Value --> compute
+                        get-baz -- Value --> compute
+                        get-foo -- Value --> compute
+
+        get-bar["<b>get-bar</b><br>action<br><i>(custom_compute[at]1.0.0)</i>"]
+        trigger -- cool_output --> get-bar
+
+        get-baz["<b>get-baz</b><br>action<br><i>(custom_compute[at]1.0.0)</i>"]
+        trigger -- cool_output --> get-baz
+
+        get-foo["<b>get-foo</b><br>action<br><i>(custom_compute[at]1.0.0)</i>"]
+        trigger -- cool_output --> get-foo
+
+        consensus[["<b>consensus</b><br>consensus<br><i>(offchain_reporting[at]1.0.0)</i>"]]
+        compute -- Value --> consensus
+
+        unnamed6[/"target<br><i>(id)</i>"\]
+        consensus --> unnamed6
+    </div>
+</div>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+        let form = document.getElementById('form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            let code = document.getElementById('code').innerText;
+            let message = document.getElementById('message');
+            let chart = document.getElementById('chart');
+            message.innerText = '';
+            chart.innerHTML = '';
+
+            fetch('/format-chart', {
+                method: 'PUT',
+                body: code,
+            }).then(response => response.json()
+            ).then(data => {
+                if (data.error) {
+                    throw data.error;
+                }
+                let code = document.getElementById('code')
+                code.innerText = data.workflow;
+
+                return data.chart;
+            }).then(data => mermaid.render('mermaid', data)).then(data => {
+                let chart = document.getElementById('chart');
+                chart.innerHTML = data.svg;
+            }).catch(error => {
+                let message = document.getElementById('message');
+                let chart = document.getElementById('chart');
+                message.innerText = error;
+                chart.innerText = '';
+            });
+        });
+    </script>
+</body>
+</html>

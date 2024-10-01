@@ -67,13 +67,15 @@ func TestWorkflowSpecFormatChart(t *testing.T) {
 	}{
 		{"notstreamssepolia", notStreamSepoliaWorkflowSpec},
 		{"serial", serialWorkflowSpec},
+
 		{"parallel", parallelWorkflowSpec},
 		{"parallel_serialized", parallelSerializedWorkflowSpec},
+
 		{"builder_parallel", buildSimpleWorkflowSpec(
-			sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Owner: "test", Name: "parallel"}),
+			sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "parallel"}),
 		).MustSpec(t)},
 		{"builder_serial", buildSimpleWorkflowSpec(
-			sdk.NewSerialWorkflowSpecFactory(sdk.NewWorkflowParams{Owner: "test", Name: "serial"}),
+			sdk.NewSerialWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "serial"}),
 		).MustSpec(t)},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

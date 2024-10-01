@@ -51,3 +51,11 @@ lint:
 .PHONY: test-quiet
 test-quiet:
 	go test ./... | grep -v "\[no test files\]" | grep -v "\(cached\)"
+
+.PHONY: install-goimports
+install-goimports:
+	$ go install golang.org/x/tools/cmd/goimports@latest
+
+.PHONY: workflow-playground
+workflow-playground: install-goimports
+	go run ./pkg/workflows/sdk/cmd/playground

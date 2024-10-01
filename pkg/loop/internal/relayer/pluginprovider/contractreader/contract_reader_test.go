@@ -319,11 +319,11 @@ func (it *fakeContractReaderInterfaceTester) GetBindings(_ *testing.T) []types.B
 	}
 }
 
-func (it *fakeContractReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readIdentifier string, confidenceLevel primitives.ConfidenceLevel) {
-	fake, ok := it.impl.(*fakeContractReader)
-	assert.True(t, ok)
-	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readIdentifier, confidenceLevel)
-}
+// func (it *fakeContractReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t *testing.T, contractName, readIdentifier string, confidenceLevel primitives.ConfidenceLevel) {
+// 	fake, ok := it.impl.(*fakeContractReader)
+// 	assert.True(t, ok)
+// 	fake.GenerateBlocksTillConfidenceLevel(t, contractName, readIdentifier, confidenceLevel)
+// }
 
 func (it *fakeContractReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
 	return time.Millisecond * 100
@@ -388,6 +388,8 @@ func (f *fakeChainWriter) SubmitTransaction(ctx context.Context, contractName, m
 }
 
 func (f *fakeChainWriter) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+	
+	f.cr.GenerateBlocksTillConfidenceLevel(primitives.Finalized)
 	return types.Finalized, nil
 }
 
@@ -661,7 +663,7 @@ func (f *fakeContractReader) SetTrigger(testStruct *TestStruct) {
 	f.triggers = append(f.triggers, eventConfidencePair{testStruct: *testStruct, confidenceLevel: primitives.Unconfirmed})
 }
 
-func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, _ string, confidenceLevel primitives.ConfidenceLevel) {
+func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(confidenceLevel primitives.ConfidenceLevel) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	for i, val := range f.vals {

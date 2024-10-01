@@ -1,0 +1,310 @@
+[0;32m📦 github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins/ocr3[0m
+  [0;32m✅ TestLOOPPService[0;37m (42.65s)[0m
+    logger.go:146: 10:20:48.178572000	DEBUG	OCR3GenericService	Starting keepAlive	{"tick": "5s"}
+    logger.go:146: 10:20:48.179006000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:20:48.179148000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-reporting-plugin-with-median-provider"]}
+    logger.go:146: 10:20:48.180655000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 96515}
+    logger.go:146: 10:20:48.180882000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:20:49.500242000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:20:49.500424000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin947536283", "network": "unix", "timestamp": "2024-09-26T10:20:49.499-0400"}
+    logger.go:146: 10:20:49.502007000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:20:49.502115000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:49.502109000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:20:49.502147000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:20:49.502665000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:20:49.502888000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:20:49.503073000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:20:49.503281000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:20:49.503442000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:20:49.503611000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:20:49.505564000	DEBUG	OCR3GenericService.OCR3ReportingPluginService	Serving ReportingPluginProvider on connection 1	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:20:49.505-0400"}
+    logger.go:146: 10:20:49.505810000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client dial	{"id": 1}
+    logger.go:146: 10:20:49.506387000	DEBUG	OCR3GenericService.OCR3ReportingPluginService.OCR3ReportingPluginFactoryServer	Serving OCR3ReportingPlugin on connection 2	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:20:49.506-0400"}
+    logger.go:146: 10:20:49.508460000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:20:49.508489000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:20:49.508498000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:20:49.511234000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "96515", "error": "signal: killed"}
+    logger.go:146: 10:20:54.503611000	ERROR	OCR3GenericService	Error closing old client	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:20:54.503796000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:20:54.504513000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-reporting-plugin-with-median-provider"]}
+    logger.go:146: 10:20:54.509967000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 96667}
+    logger.go:146: 10:20:54.510130000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:20:55.812551000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:20:55.812644000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin2075695545", "network": "unix", "timestamp": "2024-09-26T10:20:55.812-0400"}
+    logger.go:146: 10:20:55.813231000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:20:55.813267000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:20:59.512862000	WARN	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	clientConn: Invoke: terminal error, refreshing connection	{"err": "rpc error: code = Unavailable desc = connection error: desc = \"transport: error while dialing: dial unix /var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin3123552802: connect: connection refused\""}
+    logger.go:146: 10:20:59.512991000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:59.513035000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:20:59.518611000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:20:59.519347000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:20:59.520350000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:20:59.521027000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:20:59.521822000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:20:59.522645000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:20:59.526714000	DEBUG	OCR3GenericService.OCR3ReportingPluginService	Serving ReportingPluginProvider on connection 1	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:20:59.526-0400"}
+    logger.go:146: 10:20:59.526953000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client dial	{"id": 1}
+    logger.go:146: 10:20:59.527708000	DEBUG	OCR3GenericService.OCR3ReportingPluginService.OCR3ReportingPluginFactoryServer	Serving OCR3ReportingPlugin on connection 2	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:20:59.527-0400"}
+    logger.go:146: 10:20:59.530777000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:20:59.530813000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:20:59.530828000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:20:59.533190000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "96667", "error": "signal: killed"}
+    logger.go:146: 10:21:04.503109000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:21:04.503613000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-reporting-plugin-with-median-provider"]}
+    logger.go:146: 10:21:04.512661000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 96921}
+    logger.go:146: 10:21:04.512845000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:21:05.737798000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:21:05.737900000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin366642253", "network": "unix", "timestamp": "2024-09-26T10:21:05.737-0400"}
+    logger.go:146: 10:21:05.738454000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:21:05.738486000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:21:09.533742000	WARN	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	clientConn: Invoke: terminal error, refreshing connection	{"err": "rpc error: code = Unavailable desc = connection error: desc = \"transport: error while dialing: dial unix /var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin2677019955: connect: connection refused\""}
+    logger.go:146: 10:21:09.533834000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:09.533865000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:21:09.534383000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:21:09.534606000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:21:09.534809000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:21:09.534978000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:21:09.535161000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:21:09.535336000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:21:09.537561000	DEBUG	OCR3GenericService.OCR3ReportingPluginService	Serving ReportingPluginProvider on connection 1	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:09.537-0400"}
+    logger.go:146: 10:21:09.537936000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client dial	{"id": 1}
+    logger.go:146: 10:21:09.538326000	DEBUG	OCR3GenericService.OCR3ReportingPluginService.OCR3ReportingPluginFactoryServer	Serving OCR3ReportingPlugin on connection 2	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:09.538-0400"}
+    logger.go:146: 10:21:09.539575000	DEBUG	OCR3GenericService	Starting keepAlive	{"tick": "5s"}
+    logger.go:146: 10:21:09.539598000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:21:09.539677000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-plugin-service"]}
+    logger.go:146: 10:21:09.540926000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 97044}
+    logger.go:146: 10:21:09.541044000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:21:10.759569000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:21:10.759710000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin2947646424", "network": "unix", "timestamp": "2024-09-26T10:21:10.759-0400"}
+    logger.go:146: 10:21:10.760622000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:21:10.760686000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:21:10.760746000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:10.760782000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:21:10.761238000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:21:10.761522000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:21:10.761780000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:21:10.762002000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:21:10.762220000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:21:10.762439000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:21:10.764145000	DEBUG	OCR3GenericService.OCR3ReportingPluginService	Serving ReportingPluginProvider on connection 1	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:10.763-0400"}
+    logger.go:146: 10:21:10.764530000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client dial	{"id": 1}
+    logger.go:146: 10:21:10.764987000	DEBUG	OCR3GenericService.OCR3ReportingPluginService.OCR3ReportingPluginFactoryServer	Serving OCR3ReportingPlugin on connection 2	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:10.764-0400"}
+    logger.go:146: 10:21:10.767782000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:21:10.767829000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:21:10.767849000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:21:10.769675000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "97044", "error": "signal: killed"}
+    logger.go:146: 10:21:15.761078000	ERROR	OCR3GenericService	Error closing old client	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:21:15.761230000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:21:15.761448000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-plugin-service"]}
+    logger.go:146: 10:21:15.765502000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 99485}
+    logger.go:146: 10:21:15.765687000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:21:18.566689000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:21:18.566979000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin3810302697", "network": "unix", "timestamp": "2024-09-26T10:21:18.566-0400"}
+    logger.go:146: 10:21:18.569946000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:21:18.570045000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:21:20.780959000	WARN	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	clientConn: Invoke: terminal error, refreshing connection	{"err": "rpc error: code = Unavailable desc = connection error: desc = \"transport: error while dialing: dial unix /var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin69687124: connect: connection refused\""}
+    logger.go:146: 10:21:20.781254000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:20.781306000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:21:20.782428000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:21:20.782671000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:21:20.782903000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:21:20.783414000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:21:20.783651000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:21:20.783833000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:21:20.787553000	DEBUG	OCR3GenericService.OCR3ReportingPluginService	Serving ReportingPluginProvider on connection 1	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:20.787-0400"}
+    logger.go:146: 10:21:20.787922000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client dial	{"id": 1}
+    logger.go:146: 10:21:20.788984000	DEBUG	OCR3GenericService.OCR3ReportingPluginService.OCR3ReportingPluginFactoryServer	Serving OCR3ReportingPlugin on connection 2	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:20.788-0400"}
+    logger.go:146: 10:21:20.801424000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:21:20.801486000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:21:20.801522000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:21:20.807105000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "99485", "error": "signal: killed"}
+    logger.go:146: 10:21:25.761035000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:21:25.761446000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-plugin-service"]}
+    logger.go:146: 10:21:25.764077000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 312}
+    logger.go:146: 10:21:25.764204000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:21:27.274156000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:21:27.274255000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin3491528323", "network": "unix", "timestamp": "2024-09-26T10:21:27.273-0400"}
+    logger.go:146: 10:21:27.274894000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:21:27.274975000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:21:30.808129000	WARN	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	clientConn: Invoke: terminal error, refreshing connection	{"err": "rpc error: code = Unavailable desc = connection error: desc = \"transport: error while dialing: dial unix /var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin2517264138: connect: connection refused\""}
+    logger.go:146: 10:21:30.808196000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:30.808216000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:21:30.808629000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:21:30.808847000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:21:30.809066000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:21:30.809233000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:21:30.809414000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:21:30.809605000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:21:30.811745000	DEBUG	OCR3GenericService.OCR3ReportingPluginService	Serving ReportingPluginProvider on connection 1	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:30.811-0400"}
+    logger.go:146: 10:21:30.812055000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client dial	{"id": 1}
+    logger.go:146: 10:21:30.813093000	DEBUG	OCR3GenericService.OCR3ReportingPluginService.OCR3ReportingPluginFactoryServer	Serving OCR3ReportingPlugin on connection 2	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:30.813-0400"}
+    logger.go:146: 10:21:30.815091000	WARN	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	clientConn: Invoke: terminal error, refreshing connection	{"err": "rpc error: code = Canceled desc = context canceled"}
+    logger.go:146: 10:21:30.815227000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:30.815246000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 8
+    logger.go:146: 10:21:30.816410000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 9
+    logger.go:146: 10:21:30.816602000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 10
+    logger.go:146: 10:21:30.816765000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 11
+    logger.go:146: 10:21:30.816941000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 12
+    logger.go:146: 10:21:30.817104000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 13
+    logger.go:146: 10:21:30.817279000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 14
+    logger.go:146: 10:21:30.817772000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "rpc error: code = Canceled desc = context canceled"}
+    logger.go:146: 10:21:30.817828000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh failed: aborting refresh due to context error	{"err": "context canceled"}
+    logger.go:146: 10:21:30.818165000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:21:30.818183000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:21:30.818195000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:21:30.819938000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "312", "error": "signal: killed"}
+    logger.go:146: 10:21:30.820357000	WARN	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	clientConn: Invoke: terminal error, refreshing connection	{"err": "rpc error: code = Canceled desc = context canceled"}
+    logger.go:146: 10:21:30.820491000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:30.820508000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 8
+    logger.go:146: 10:21:30.821781000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 9
+    logger.go:146: 10:21:30.821978000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 10
+    logger.go:146: 10:21:30.822150000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 11
+    logger.go:146: 10:21:30.822378000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 12
+    logger.go:146: 10:21:30.822541000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 13
+    logger.go:146: 10:21:30.822745000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 14
+    logger.go:146: 10:21:30.822898000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "rpc error: code = Canceled desc = context canceled"}
+    logger.go:146: 10:21:30.822911000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh failed: aborting refresh due to context error	{"err": "context canceled"}
+    logger.go:146: 10:21:30.823233000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:21:30.823251000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:21:30.823266000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:21:30.826125000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "96921", "error": "signal: killed"}
+  [0;32m✅ TestLOOPPService/Kill[0;37m (10.02s)[0m
+  [0;32m✅ TestLOOPPService/Kill/OCR3ReportingPluginFactory[0;37m (20ms)[0m
+  [0;32m✅ TestLOOPPService/Kill/OCR3ReportingPluginFactory/OCR3ReportingPlugin[0;37m (0s)[0m
+  [0;32m✅ TestLOOPPService/Kill#01[0;37m (10.03s)[0m
+  [0;32m✅ TestLOOPPService/Kill#01/OCR3ReportingPluginFactory[0;37m (20ms)[0m
+  [0;32m✅ TestLOOPPService/Kill#01/OCR3ReportingPluginFactory/OCR3ReportingPlugin[0;37m (10ms)[0m
+  [0;32m✅ TestLOOPPService/Reset[0;37m (10.01s)[0m
+  [0;32m✅ TestLOOPPService/Reset/OCR3ReportingPluginFactory[0;37m (10ms)[0m
+  [0;32m✅ TestLOOPPService/Reset/OCR3ReportingPluginFactory/OCR3ReportingPlugin[0;37m (0s)[0m
+  [0;32m✅ TestLOOPPService/Reset#01[0;37m (10.02s)[0m
+  [0;32m✅ TestLOOPPService/Reset#01/OCR3ReportingPluginFactory[0;37m (10ms)[0m
+  [0;32m✅ TestLOOPPService/Reset#01/OCR3ReportingPluginFactory/OCR3ReportingPlugin[0;37m (0s)[0m
+  [0;32m✅ TestLOOPPService/control[0;37m (1.33s)[0m
+  [0;32m✅ TestLOOPPService/control/OCR3ReportingPluginFactory[0;37m (1.33s)[0m
+  [0;32m✅ TestLOOPPService/control/OCR3ReportingPluginFactory/OCR3ReportingPlugin[0;37m (0s)[0m
+  [0;32m✅ TestLOOPPService/control#01[0;37m (1.23s)[0m
+  [0;32m✅ TestLOOPPService/control#01/OCR3ReportingPluginFactory[0;37m (1.23s)[0m
+  [0;32m✅ TestLOOPPService/control#01/OCR3ReportingPluginFactory/OCR3ReportingPlugin[0;37m (0s)[0m
+  [0;32m✅ TestLOOPPService_recovery[0;37m (17.98s)[0m
+    logger.go:146: 10:20:48.178558000	DEBUG	OCR3GenericService	Starting keepAlive	{"tick": "5s"}
+    logger.go:146: 10:20:48.179007000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:20:48.179133000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-reporting-plugin-with-median-provider", "-limit=1"]}
+    logger.go:146: 10:20:48.180743000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 96516}
+    logger.go:146: 10:20:48.180860000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:20:49.824263000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:20:49.824383000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin2179920371", "network": "unix", "timestamp": "2024-09-26T10:20:49.823-0400"}
+    logger.go:146: 10:20:49.825192000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:20:49.825234000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:49.825255000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:20:49.825231000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:20:49.825682000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:20:49.826077000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:20:49.826370000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:20:49.826707000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:20:49.826736000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:20:49.826878000	DEBUG	OCR3GenericService	exit status 3
+    logger.go:146: 10:20:49.826920000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "failed to accept CapRegistry server connection 5: broker closed"}
+    logger.go:146: 10:20:49.826937000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "100ms"}
+    logger.go:146: 10:20:49.830546000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "96516", "error": "exit status 1"}
+    logger.go:146: 10:20:49.927995000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:49.928061000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 6
+    logger.go:146: 10:20:49.928579000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "failed to accept PluginProvider server connection 6: broker closed"}
+    logger.go:146: 10:20:49.928603000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "200ms"}
+    logger.go:146: 10:20:50.129661000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:50.129752000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 7
+    logger.go:146: 10:20:50.130357000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "failed to accept PluginProvider server connection 7: broker closed"}
+    logger.go:146: 10:20:50.130387000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "400ms"}
+    logger.go:146: 10:20:50.531488000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:50.531669000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 8
+    logger.go:146: 10:20:50.532500000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "failed to accept PluginProvider server connection 8: broker closed"}
+    logger.go:146: 10:20:50.532549000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "800ms"}
+    logger.go:146: 10:20:51.333673000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:51.333885000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 9
+    logger.go:146: 10:20:51.334871000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "failed to accept PluginProvider server connection 9: broker closed"}
+    logger.go:146: 10:20:51.334918000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "1.6s"}
+    logger.go:146: 10:20:52.936015000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:52.936116000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 10
+    logger.go:146: 10:20:52.936928000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "failed to accept PluginProvider server connection 10: broker closed"}
+    logger.go:146: 10:20:52.936966000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "3.2s"}
+    logger.go:146: 10:20:54.826442000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:20:54.826509000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:20:54.826522000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:20:54.826662000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-reporting-plugin-with-median-provider", "-limit=2"]}
+    logger.go:146: 10:20:54.827806000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 96693}
+    logger.go:146: 10:20:54.827914000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:20:56.138023000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:20:56.138113000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 11
+    logger.go:146: 10:20:56.138504000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "failed to accept PluginProvider server connection 11: broker closed"}
+    logger.go:146: 10:20:56.138522000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "5s"}
+    logger.go:146: 10:20:56.174483000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:20:56.174561000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin1347671779", "network": "unix", "timestamp": "2024-09-26T10:20:56.174-0400"}
+    logger.go:146: 10:20:56.175160000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:20:56.175269000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:20:56.176306000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:20:56.176481000	DEBUG	OCR3GenericService	exit status 3
+    logger.go:146: 10:20:56.179618000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "96693", "error": "exit status 1"}
+    logger.go:146: 10:20:59.825804000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:20:59.825859000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:20:59.825889000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:20:59.826014000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-reporting-plugin-with-median-provider", "-limit=3"]}
+    logger.go:146: 10:20:59.828072000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 96790}
+    logger.go:146: 10:20:59.828187000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:21:01.137328000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:21:01.137408000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin2910900888", "network": "unix", "timestamp": "2024-09-26T10:21:01.137-0400"}
+    logger.go:146: 10:21:01.137909000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:21:01.137957000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:21:01.138587000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:01.138621000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:21:01.139057000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:21:01.139312000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:21:01.139504000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:21:01.139682000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:21:01.139844000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:21:01.140120000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:21:01.141121000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:21:01.141142000	INFO	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Waiting to refresh	{"wait": "5s"}
+    logger.go:146: 10:21:01.141144000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:21:01.141262000	DEBUG	OCR3GenericService	exit status 3
+    logger.go:146: 10:21:01.143432000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "96790", "error": "exit status 1"}
+    logger.go:146: 10:21:04.826341000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:21:04.826402000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:21:04.826413000	DEBUG	OCR3GenericService	Launching
+    logger.go:146: 10:21:04.826553000	DEBUG	OCR3GenericService	starting plugin	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "args": ["go", "run", "../../internal/test/cmd/main.go", "-cmd=ocr3-reporting-plugin-with-median-provider", "-limit=4"]}
+    logger.go:146: 10:21:04.827669000	DEBUG	OCR3GenericService	plugin started	{"path": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "pid": 96940}
+    logger.go:146: 10:21:04.827795000	DEBUG	OCR3GenericService	waiting for RPC address	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go"}
+    logger.go:146: 10:21:06.066075000	DEBUG	OCR3GenericService	using plugin	{"version": 0}
+    logger.go:146: 10:21:06.066165000	DEBUG	OCR3GenericService	plugin address	{"address": "/var/folders/p4/jlx3pf896blgl6tcj0xbkhvm0000gn/T/plugin4056781317", "network": "unix", "timestamp": "2024-09-26T10:21:06.065-0400"}
+    logger.go:146: 10:21:06.067163000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Refreshed PluginClient connection	{"state": "READY"}
+    logger.go:146: 10:21:06.067228000	DEBUG	OCR3GenericService	waiting for stdio data
+    logger.go:146: 10:21:06.142173000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:06.142238000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 1
+    logger.go:146: 10:21:06.142735000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 2
+    logger.go:146: 10:21:06.142960000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 3
+    logger.go:146: 10:21:06.143144000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 4
+    logger.go:146: 10:21:06.143333000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 5
+    logger.go:146: 10:21:06.143507000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 6
+    logger.go:146: 10:21:06.143689000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 7
+    logger.go:146: 10:21:06.145796000	DEBUG	OCR3GenericService.OCR3ReportingPluginService	Serving ReportingPluginProvider on connection 1	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:06.145-0400"}
+    logger.go:146: 10:21:06.146204000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client dial	{"id": 1}
+    logger.go:146: 10:21:06.147254000	DEBUG	OCR3GenericService.OCR3ReportingPluginService.OCR3ReportingPluginFactoryServer	Serving OCR3ReportingPlugin on connection 2	{"caller": "net/broker.go:107", "timestamp": "2024-09-26T10:21:06.147-0400"}
+    logger.go:146: 10:21:06.149931000	WARN	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	clientConn: Invoke: terminal error, refreshing connection	{"err": "rpc error: code = Canceled desc = context canceled"}
+    logger.go:146: 10:21:06.150554000	DEBUG	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh
+    logger.go:146: 10:21:06.150596000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PluginProvider on connection 8
+    logger.go:146: 10:21:06.150954000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving PipelineRunner on connection 9
+    logger.go:146: 10:21:06.151282000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving Telemetry on connection 10
+    logger.go:146: 10:21:06.151761000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving ErrorLog on connection 11
+    logger.go:146: 10:21:06.151953000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving CapRegistry on connection 12
+    logger.go:146: 10:21:06.152124000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving KeyValueStore on connection 13
+    logger.go:146: 10:21:06.152230000	ERROR	OCR3GenericService.ReportingPluginServiceClient	Failed to serve CapRegistry on connection 12	{"err": "grpc: the server has been stopped"}
+    logger.go:146: 10:21:06.152366000	DEBUG	OCR3GenericService.ReportingPluginServiceClient	Serving RelayerSet on connection 14
+    logger.go:146: 10:21:06.152600000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh attempt failed	{"err": "rpc error: code = Canceled desc = context canceled"}
+    logger.go:146: 10:21:06.152615000	ERROR	OCR3GenericService.ReportingPluginServiceClient.ReportingPluginServiceFactory	Client refresh failed: aborting refresh due to context error	{"err": "context canceled"}
+    logger.go:146: 10:21:06.153704000	DEBUG	OCR3GenericService	received EOF, stopping recv loop	{"err": "rpc error: code = Unavailable desc = error reading from server: EOF"}
+    logger.go:146: 10:21:06.153731000	WARN	OCR3GenericService	error closing client during Kill	{"err": "rpc error: code = Canceled desc = grpc: the client connection is closing"}
+    logger.go:146: 10:21:06.153749000	WARN	OCR3GenericService	plugin failed to exit gracefully
+    logger.go:146: 10:21:06.153784000	DEBUG	OCR3GenericService	exit status 3
+    logger.go:146: 10:21:06.155381000	ERROR	OCR3GenericService	plugin process exited	{"plugin": "/Users/silaslenihan/.asdf/installs/golang/1.22.7/go/bin/go", "id": "96940", "error": "signal: killed"}
+  [0;32m✅ TestLOOPPService_recovery/OCR3ReportingPluginFactory[0;37m (17.97s)[0m
+  [0;32m✅ TestLOOPPService_recovery/OCR3ReportingPluginFactory/OCR3ReportingPlugin[0;37m (0s)[0m
+

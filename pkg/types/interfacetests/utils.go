@@ -97,10 +97,10 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfac
 		case <-ctx.Done():
 			return fmt.Errorf("transaction %s not finalized within timeout period", txID)
 		case <-ticker.C:
-			if mockRun {
-				tester.GenerateBlocksTillConfidenceLevel(t, "", "", primitives.Finalized)
-				return nil
-			}
+			// if mockRun {
+			// 	tester.GenerateBlocksTillConfidenceLevel(t, "", "", primitives.Finalized)
+			// 	return nil
+			// }
 			current, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
 			if err != nil {
 				return fmt.Errorf("failed to get transaction status: %w", err)

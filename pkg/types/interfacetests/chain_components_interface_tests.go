@@ -26,9 +26,6 @@ type ChainComponentsInterfaceTester[T TestingT[T]] interface {
 	// the ChainWriter.
 	DirtyContracts()
 	MaxWaitTimeForEvents() time.Duration
-	// GenerateBlocksTillConfidenceLevel is only used by the internal common tests, all other tests can/should
-	// rely on the ChainWriter waiting for actual blocks to be mined.
-	GenerateBlocksTillConfidenceLevel(t T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel)
 }
 
 const (

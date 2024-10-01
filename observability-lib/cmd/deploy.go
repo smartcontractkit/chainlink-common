@@ -49,7 +49,6 @@ var DeployCmd = &cobra.Command{
 			AlertsTags:        alertsTags,
 			AlertsFilters:     cmd.Flag("alerts-filters").Value.String(),
 		})
-
 		if err != nil {
 			return err
 		}
@@ -62,7 +61,7 @@ var DeployCmd = &cobra.Command{
 			NotificationTemplates: cmd.Flag("notification-templates").Value.String(),
 		})
 		if errDeploy != nil {
-			return err
+			return errDeploy
 		}
 
 		return nil

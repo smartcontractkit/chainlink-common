@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727786951186,
+  "lastUpdate": 1727791526312,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2478,6 +2478,48 @@ window.BENCHMARK_DATA = {
             "value": 28429,
             "unit": "ns/op",
             "extra": "42188 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "35be2fad06ec94d06d27607ebf8a8b37be136813",
+          "message": "Allow the creation of maps from string to capbility outputs. (#815)",
+          "timestamp": "2024-10-01T10:04:26-04:00",
+          "tree_id": "b3da1cb79044d549c0be6da91a5b90ea07e01bb3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/35be2fad06ec94d06d27607ebf8a8b37be136813"
+        },
+        "date": 1727791525825,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 467,
+            "unit": "ns/op",
+            "extra": "2531828 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 523,
+            "unit": "ns/op",
+            "extra": "2293088 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28556,
+            "unit": "ns/op",
+            "extra": "42242 times\n4 procs"
           }
         ]
       }

@@ -228,6 +228,16 @@ func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// AddressBytesToStringModifierConfig is used to transform address bytes fields to string.
+// It specifies the bytes array fields to be transformed, the length of the byte array, and the encoding/decoding format.
+//
+// - Fields: A list of field names that should be modified (e.g., converting a byte array called "Account" to a string).
+//
+// - Length: Specifies the length of the byte array (e.g., 20 bytes for EVM, 32 bytes for Solana).
+//
+// - Checksum: Defines the type of checksum to apply (e.g., EIP55 for Ethereum addresses, None for no checksum).
+//
+// - Encoding: Specifies the encoding type (e.g., Hex for Ethereum, Base58 for Solana).
 type AddressBytesToStringModifierConfig struct {
 	Fields   []string
 	Length   AddressLength

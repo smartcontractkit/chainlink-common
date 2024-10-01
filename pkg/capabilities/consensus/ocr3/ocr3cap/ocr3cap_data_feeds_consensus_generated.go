@@ -74,9 +74,11 @@ func (j *DataFeedsConsensusConfigAggregationConfig) UnmarshalJSON(b []byte) erro
 type DataFeedsConsensusConfigAggregationMethod string
 
 const DataFeedsConsensusConfigAggregationMethodDataFeeds DataFeedsConsensusConfigAggregationMethod = "data_feeds"
+const DataFeedsConsensusConfigAggregationMethodMedian DataFeedsConsensusConfigAggregationMethod = "median"
 
 var enumValues_DataFeedsConsensusConfigAggregationMethod = []interface{}{
 	"data_feeds",
+	"median",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

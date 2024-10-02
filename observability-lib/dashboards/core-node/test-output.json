@@ -269,26 +269,78 @@
         }
       },
       {
-        "type": "stat",
+        "type": "timeseries",
         "id": 4,
         "targets": [
           {
-            "expr": "100 * avg(avg_over_time(health{instance=~\"${instance}\", }[15m])) by (service_id, version, service, cluster, env) \u003c 90",
+            "expr": "100 * (avg(avg_over_time(health{instance=~\"${instance}\", }[15m])) by (instance, service_id, version, service, cluster, env))",
             "format": "",
-            "legendFormat": "{{service_id}}",
+            "legendFormat": "{{instance}} - {{service_id}}",
             "refId": ""
           }
         ],
-        "title": "Components Health Avg by Service over 15m",
+        "title": "Health Avg by Service over 15m",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 16,
+          "x": 0,
+          "y": 9
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "min": 0,
+            "max": 100,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 5,
+        "targets": [
+          {
+            "expr": "100 * avg(avg_over_time(health{instance=~\"${instance}\", }[15m])) by (instance, service_id, version, service, cluster, env) \u003c 90",
+            "format": "",
+            "legendFormat": "{{instance}} - {{service_id}}",
+            "refId": ""
+          }
+        ],
+        "title": "Health Avg by Service over 15m with health \u003c 90%",
         "description": "Only displays services with health average \u003c 90%",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
         },
         "gridPos": {
-          "h": 4,
-          "w": 24,
-          "x": 0,
+          "h": 6,
+          "w": 8,
+          "x": 16,
           "y": 9
         },
         "options": {
@@ -341,7 +393,7 @@
       },
       {
         "type": "timeseries",
-        "id": 5,
+        "id": 6,
         "targets": [
           {
             "expr": "sum(eth_balance{instance=~\"${instance}\", }) by (instance, account)",
@@ -360,7 +412,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 13
+          "y": 15
         },
         "options": {
           "legend": {
@@ -391,7 +443,7 @@
       },
       {
         "type": "timeseries",
-        "id": 6,
+        "id": 7,
         "targets": [
           {
             "expr": "sum(solana_balance{instance=~\"${instance}\", }) by (instance, account)",
@@ -410,7 +462,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 13
+          "y": 15
         },
         "options": {
           "legend": {
@@ -441,7 +493,7 @@
       },
       {
         "type": "stat",
-        "id": 7,
+        "id": 8,
         "targets": [
           {
             "expr": "process_open_fds{instance=~\"${instance}\", }",
@@ -460,7 +512,7 @@
           "h": 4,
           "w": 6,
           "x": 0,
-          "y": 19
+          "y": 21
         },
         "options": {
           "graphMode": "area",
@@ -491,7 +543,7 @@
       },
       {
         "type": "stat",
-        "id": 8,
+        "id": 9,
         "targets": [
           {
             "expr": "go_info{instance=~\"${instance}\", }",
@@ -512,7 +564,7 @@
           "h": 4,
           "w": 4,
           "x": 6,
-          "y": 19
+          "y": 21
         },
         "options": {
           "graphMode": "none",
@@ -549,14 +601,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 23
+          "y": 25
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 9,
+        "id": 10,
         "targets": [
           {
             "expr": "sum(db_conns_max{instance=~\"${instance}\", }) by (instance)",
@@ -593,7 +645,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 24
+          "y": 26
         },
         "options": {
           "legend": {
@@ -624,7 +676,7 @@
       },
       {
         "type": "timeseries",
-        "id": 10,
+        "id": 11,
         "targets": [
           {
             "expr": "sum(db_wait_count{instance=~\"${instance}\", }) by (instance)",
@@ -643,7 +695,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 30
+          "y": 32
         },
         "options": {
           "legend": {
@@ -674,7 +726,7 @@
       },
       {
         "type": "timeseries",
-        "id": 11,
+        "id": 12,
         "targets": [
           {
             "expr": "sum(db_wait_time_seconds{instance=~\"${instance}\", }) by (instance)",
@@ -693,7 +745,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 30
+          "y": 32
         },
         "options": {
           "legend": {
@@ -730,14 +782,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 36
+          "y": 38
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 12,
+        "id": 13,
         "targets": [
           {
             "expr": "histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le))",
@@ -768,7 +820,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 37
+          "y": 39
         },
         "options": {
           "legend": {
@@ -800,44 +852,96 @@
       {
         "type": "row",
         "collapsed": false,
-        "title": "LogPoller",
+        "title": "HeadTracker",
         "gridPos": {
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 43
+          "y": 45
         },
         "id": 0,
         "panels": null
       },
       {
-        "type": "stat",
-        "id": 13,
+        "type": "timeseries",
+        "id": 14,
         "targets": [
           {
-            "expr": "count(log_poller_query_duration_sum{instance=~\"${instance}\", }) by (evmChainID)",
+            "expr": "sum(head_tracker_current_head{instance=~\"${instance}\", }) by (instance)",
             "format": "",
-            "legendFormat": "chainId: {{evmChainID}}",
+            "legendFormat": "{{instance}}",
             "refId": ""
           }
         ],
-        "title": "Goroutines per ChainId",
-        "description": "goroutines per chainId",
+        "title": "Head Tracker Current Head",
+        "description": "",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
+          "w": 18,
           "x": 0,
-          "y": 44
+          "y": 46
         },
         "options": {
-          "graphMode": "line",
-          "colorMode": "value",
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 15,
+        "targets": [
+          {
+            "expr": "head_tracker_current_head{instance=~\"${instance}\", }",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Current Head Summary",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 46
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
           "justifyMode": "auto",
-          "textMode": "value_and_name",
+          "textMode": "value",
           "wideLayout": true,
           "reduceOptions": {
             "calcs": [
@@ -849,119 +953,13 @@
             "valueSize": 18
           },
           "showPercentChange": false,
-          "orientation": "horizontal"
+          "orientation": "auto"
         },
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 1,
+            "decimals": 0,
             "noValue": "No data"
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 14,
-        "targets": [
-          {
-            "expr": "avg by (query, instance) (sum by (query, job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
-            "format": "",
-            "legendFormat": "{{instance}} - {{query}}",
-            "refId": ""
-          },
-          {
-            "expr": "avg (sum by(instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
-            "format": "",
-            "legendFormat": "Total",
-            "refId": ""
-          }
-        ],
-        "title": "RPS",
-        "description": "requests per second",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 44
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "right",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "reqps",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 15,
-        "targets": [
-          {
-            "expr": "avg by (instance, type) (sum by (type, instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
-            "format": "",
-            "legendFormat": "{{instance}} - {{type}}",
-            "refId": ""
-          }
-        ],
-        "title": "RPS by Type",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 0,
-          "y": 50
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "reqps",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
           },
           "overrides": null
         }
@@ -971,13 +969,13 @@
         "id": 16,
         "targets": [
           {
-            "expr": "avg by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "rate(head_tracker_heads_received{instance=~\"${instance}\", }[1m])",
             "format": "",
-            "legendFormat": "{{instance}} - {{query}}",
+            "legendFormat": "{{instance}}",
             "refId": ""
           }
         ],
-        "title": "Avg number of logs returned",
+        "title": "Head Tracker Heads Received Rate",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -985,9 +983,9 @@
         },
         "gridPos": {
           "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 50
+          "w": 24,
+          "x": 0,
+          "y": 52
         },
         "options": {
           "legend": {
@@ -1003,8 +1001,8 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "",
-            "decimals": 2,
+            "unit": "Block",
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1021,13 +1019,13 @@
         "id": 17,
         "targets": [
           {
-            "expr": "max by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "head_tracker_very_old_head{instance=~\"${instance}\", }",
             "format": "",
-            "legendFormat": "{{instance}} - {{query}}",
+            "legendFormat": "{{instance}}",
             "refId": ""
           }
         ],
-        "title": "Max number of logs returned",
+        "title": "Head Tracker Very Old Head",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -1037,7 +1035,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 56
+          "y": 58
         },
         "options": {
           "legend": {
@@ -1053,8 +1051,8 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "",
-            "decimals": 2,
+            "unit": "Block",
+            "decimals": 0,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1071,13 +1069,13 @@
         "id": 18,
         "targets": [
           {
-            "expr": "max by (evmChainID) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "rate(head_tracker_connection_errors{instance=~\"${instance}\", }[1m])",
             "format": "",
-            "legendFormat": "{{evmChainID}}",
+            "legendFormat": "{{instance}}",
             "refId": ""
           }
         ],
-        "title": "Logs returned by chain",
+        "title": "Head Tracker Connection Errors Rate",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -1087,7 +1085,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 56
+          "y": 58
         },
         "options": {
           "legend": {
@@ -1104,7 +1102,7 @@
         "fieldConfig": {
           "defaults": {
             "unit": "",
-            "decimals": 2,
+            "decimals": 1,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -1115,549 +1113,23 @@
           },
           "overrides": null
         }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "HeadReporter",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 64
+        },
+        "id": 0,
+        "panels": null
       },
       {
         "type": "timeseries",
         "id": 19,
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
-            "format": "",
-            "legendFormat": "{{instance}} - {{query}}",
-            "refId": ""
-          }
-        ],
-        "title": "Queries duration by query 0.5 quantile",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 62
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "right",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "ms",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 20,
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
-            "format": "",
-            "legendFormat": "{{instance}} - {{query}}",
-            "refId": ""
-          }
-        ],
-        "title": "Queries duration by query 0.9 quantile",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 68
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "right",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "ms",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 21,
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
-            "format": "",
-            "legendFormat": "{{instance}} - {{query}}",
-            "refId": ""
-          }
-        ],
-        "title": "Queries duration by query 0.99 quantile",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 74
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "right",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "ms",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 22,
-        "targets": [
-          {
-            "expr": "avg by (evmChainID) (log_poller_logs_inserted{instance=~\"${instance}\", })",
-            "format": "",
-            "legendFormat": "{{evmChainID}}",
-            "refId": ""
-          }
-        ],
-        "title": "Number of logs inserted",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 0,
-          "y": 80
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 23,
-        "targets": [
-          {
-            "expr": "avg by (evmChainID) (rate(log_poller_logs_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
-            "format": "",
-            "legendFormat": "{{evmChainID}}",
-            "refId": ""
-          }
-        ],
-        "title": "Logs insertion rate",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 80
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 24,
-        "targets": [
-          {
-            "expr": "avg by (evmChainID) (log_poller_blocks_inserted{instance=~\"${instance}\", })",
-            "format": "",
-            "legendFormat": "{{evmChainID}}",
-            "refId": ""
-          }
-        ],
-        "title": "Number of blocks inserted",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 0,
-          "y": 86
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 25,
-        "targets": [
-          {
-            "expr": "avg by (evmChainID) (rate(log_poller_blocks_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
-            "format": "",
-            "legendFormat": "{{evmChainID}}",
-            "refId": ""
-          }
-        ],
-        "title": "Blocks insertion rate",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 86
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 2,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "row",
-        "collapsed": false,
-        "title": "Feeds Jobs",
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 92
-        },
-        "id": 0,
-        "panels": null
-      },
-      {
-        "type": "timeseries",
-        "id": 26,
-        "targets": [
-          {
-            "expr": "sum(feeds_job_proposal_requests{instance=~\"${instance}\", }) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Feeds Job Proposal Requests",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 0,
-          "y": 93
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 27,
-        "targets": [
-          {
-            "expr": "sum(feeds_job_proposal_count{instance=~\"${instance}\", }) by (instance)",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Feeds Job Proposal Count",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 12,
-          "x": 12,
-          "y": 93
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "row",
-        "collapsed": false,
-        "title": "Mailbox",
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 99
-        },
-        "id": 0,
-        "panels": null
-      },
-      {
-        "type": "timeseries",
-        "id": 28,
-        "targets": [
-          {
-            "expr": "sum(mailbox_load_percent{instance=~\"${instance}\", }) by (capacity, name, instance)",
-            "format": "",
-            "legendFormat": "{{instance}} - Capacity: {{capacity}} - {{name}}",
-            "refId": ""
-          }
-        ],
-        "title": "Mailbox Load Percent",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 100
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "right",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "row",
-        "collapsed": false,
-        "title": "PromReporter",
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 106
-        },
-        "id": 0,
-        "panels": null
-      },
-      {
-        "type": "timeseries",
-        "id": 29,
         "targets": [
           {
             "expr": "sum(unconfirmed_transactions{instance=~\"${instance}\", }) by (instance)",
@@ -1676,7 +1148,7 @@
           "h": 6,
           "w": 8,
           "x": 0,
-          "y": 107
+          "y": 65
         },
         "options": {
           "legend": {
@@ -1707,7 +1179,7 @@
       },
       {
         "type": "timeseries",
-        "id": 30,
+        "id": 20,
         "targets": [
           {
             "expr": "sum(max_unconfirmed_tx_age{instance=~\"${instance}\", }) by (instance)",
@@ -1726,7 +1198,7 @@
           "h": 6,
           "w": 8,
           "x": 8,
-          "y": 107
+          "y": 65
         },
         "options": {
           "legend": {
@@ -1757,7 +1229,7 @@
       },
       {
         "type": "timeseries",
-        "id": 31,
+        "id": 21,
         "targets": [
           {
             "expr": "sum(max_unconfirmed_blocks{instance=~\"${instance}\", }) by (instance)",
@@ -1776,7 +1248,7 @@
           "h": 6,
           "w": 8,
           "x": 16,
-          "y": 107
+          "y": 65
         },
         "options": {
           "legend": {
@@ -1813,64 +1285,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 113
+          "y": 71
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 32,
-        "targets": [
-          {
-            "expr": "sum(tx_manager_gas_bump_exceeds_limit{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
-            "format": "",
-            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
-            "refId": ""
-          }
-        ],
-        "title": "TX Manager Gas Bump Exceeds Limit",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 6,
-          "x": 0,
-          "y": 114
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 0,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 33,
+        "id": 22,
         "targets": [
           {
             "expr": "sum(tx_manager_num_confirmed_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
@@ -1888,8 +1310,8 @@
         "gridPos": {
           "h": 6,
           "w": 6,
-          "x": 6,
-          "y": 114
+          "x": 0,
+          "y": 72
         },
         "options": {
           "legend": {
@@ -1920,7 +1342,7 @@
       },
       {
         "type": "timeseries",
-        "id": 34,
+        "id": 23,
         "targets": [
           {
             "expr": "sum(tx_manager_num_successful_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
@@ -1938,8 +1360,8 @@
         "gridPos": {
           "h": 6,
           "w": 6,
-          "x": 12,
-          "y": 114
+          "x": 6,
+          "y": 72
         },
         "options": {
           "legend": {
@@ -1970,7 +1392,7 @@
       },
       {
         "type": "timeseries",
-        "id": 35,
+        "id": 24,
         "targets": [
           {
             "expr": "sum(tx_manager_num_tx_reverted{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
@@ -1988,8 +1410,8 @@
         "gridPos": {
           "h": 6,
           "w": 6,
-          "x": 18,
-          "y": 114
+          "x": 12,
+          "y": 72
         },
         "options": {
           "legend": {
@@ -2020,7 +1442,7 @@
       },
       {
         "type": "timeseries",
-        "id": 36,
+        "id": 25,
         "targets": [
           {
             "expr": "sum(tx_manager_num_gas_bumps{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
@@ -2038,8 +1460,8 @@
         "gridPos": {
           "h": 6,
           "w": 6,
-          "x": 0,
-          "y": 120
+          "x": 18,
+          "y": 72
         },
         "options": {
           "legend": {
@@ -2070,7 +1492,7 @@
       },
       {
         "type": "timeseries",
-        "id": 37,
+        "id": 26,
         "targets": [
           {
             "expr": "sum(tx_manager_fwd_tx_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
@@ -2088,8 +1510,8 @@
         "gridPos": {
           "h": 6,
           "w": 6,
-          "x": 6,
-          "y": 120
+          "x": 0,
+          "y": 78
         },
         "options": {
           "legend": {
@@ -2120,7 +1542,7 @@
       },
       {
         "type": "timeseries",
-        "id": 38,
+        "id": 27,
         "targets": [
           {
             "expr": "sum(tx_manager_tx_attempt_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
@@ -2138,8 +1560,8 @@
         "gridPos": {
           "h": 6,
           "w": 6,
-          "x": 12,
-          "y": 120
+          "x": 6,
+          "y": 78
         },
         "options": {
           "legend": {
@@ -2170,7 +1592,57 @@
       },
       {
         "type": "timeseries",
-        "id": 39,
+        "id": 28,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_gas_bump_exceeds_limit{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Gas Bump Exceeds Limit",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 78
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 29,
         "targets": [
           {
             "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
@@ -2189,7 +1661,7 @@
           "h": 6,
           "w": 6,
           "x": 18,
-          "y": 120
+          "y": 78
         },
         "options": {
           "legend": {
@@ -2220,7 +1692,7 @@
       },
       {
         "type": "timeseries",
-        "id": 40,
+        "id": 30,
         "targets": [
           {
             "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
@@ -2239,7 +1711,7 @@
           "h": 6,
           "w": 6,
           "x": 0,
-          "y": 126
+          "y": 84
         },
         "options": {
           "legend": {
@@ -2271,43 +1743,99 @@
       {
         "type": "row",
         "collapsed": false,
-        "title": "HeadTracker",
+        "title": "LogPoller",
         "gridPos": {
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 132
+          "y": 90
         },
         "id": 0,
         "panels": null
       },
       {
-        "type": "timeseries",
-        "id": 41,
+        "type": "stat",
+        "id": 31,
         "targets": [
           {
-            "expr": "sum(head_tracker_current_head{instance=~\"${instance}\", }) by (instance)",
+            "expr": "count(log_poller_query_duration_sum{instance=~\"${instance}\", }) by (evmChainID)",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "chainId: {{evmChainID}}",
             "refId": ""
           }
         ],
-        "title": "Head Tracker Current Head",
-        "description": "",
+        "title": "Goroutines per ChainId",
+        "description": "goroutines per chainId",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
         },
         "gridPos": {
           "h": 6,
-          "w": 18,
+          "w": 12,
           "x": 0,
-          "y": 133
+          "y": 91
+        },
+        "options": {
+          "graphMode": "line",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 32,
+        "targets": [
+          {
+            "expr": "avg by (query, instance) (sum by (query, job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          },
+          {
+            "expr": "avg (sum by(instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "format": "",
+            "legendFormat": "Total",
+            "refId": ""
+          }
+        ],
+        "title": "RPS",
+        "description": "requests per second",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 91
         },
         "options": {
           "legend": {
             "displayMode": "list",
-            "placement": "bottom",
+            "placement": "right",
             "showLegend": true,
             "calcs": []
           },
@@ -2318,8 +1846,8 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "Block",
-            "decimals": 0,
+            "unit": "reqps",
+            "decimals": 2,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2332,171 +1860,17 @@
         }
       },
       {
-        "type": "stat",
-        "id": 42,
-        "targets": [
-          {
-            "expr": "head_tracker_current_head{instance=~\"${instance}\", }",
-            "instant": true,
-            "range": false,
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Head Tracker Current Head",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 6,
-          "x": 18,
-          "y": 133
-        },
-        "options": {
-          "graphMode": "none",
-          "colorMode": "none",
-          "justifyMode": "auto",
-          "textMode": "value",
-          "wideLayout": true,
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ]
-          },
-          "text": {
-            "titleSize": 10,
-            "valueSize": 18
-          },
-          "showPercentChange": false,
-          "orientation": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 0,
-            "noValue": "No data"
-          },
-          "overrides": null
-        }
-      },
-      {
         "type": "timeseries",
-        "id": 43,
+        "id": 33,
         "targets": [
           {
-            "expr": "sum(head_tracker_heads_received{instance=~\"${instance}\", }) by (instance)",
+            "expr": "avg by (instance, type) (sum by (type, instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{type}}",
             "refId": ""
           }
         ],
-        "title": "Head Tracker Heads Received",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 18,
-          "x": 0,
-          "y": 139
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "Block",
-            "decimals": 0,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "stat",
-        "id": 44,
-        "targets": [
-          {
-            "expr": "head_tracker_heads_received{instance=~\"${instance}\", }",
-            "instant": true,
-            "range": false,
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Head Tracker Current Received",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 6,
-          "x": 18,
-          "y": 139
-        },
-        "options": {
-          "graphMode": "none",
-          "colorMode": "none",
-          "justifyMode": "auto",
-          "textMode": "value",
-          "wideLayout": true,
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ]
-          },
-          "text": {
-            "titleSize": 10,
-            "valueSize": 18
-          },
-          "showPercentChange": false,
-          "orientation": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 0,
-            "noValue": "No data"
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 45,
-        "targets": [
-          {
-            "expr": "head_tracker_very_old_head{instance=~\"${instance}\", }",
-            "format": "",
-            "legendFormat": "{{instance}}",
-            "refId": ""
-          }
-        ],
-        "title": "Head Tracker Very Old Head",
+        "title": "RPS by Type",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -2506,7 +1880,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 145
+          "y": 97
         },
         "options": {
           "legend": {
@@ -2522,8 +1896,8 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "Block",
-            "decimals": 0,
+            "unit": "reqps",
+            "decimals": 2,
             "noValue": "No data",
             "custom": {
               "fillOpacity": 2,
@@ -2537,16 +1911,16 @@
       },
       {
         "type": "timeseries",
-        "id": 46,
+        "id": 34,
         "targets": [
           {
-            "expr": "head_tracker_connection_errors{instance=~\"${instance}\", }",
+            "expr": "avg by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
             "format": "",
-            "legendFormat": "{{instance}}",
+            "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           }
         ],
-        "title": "Head Tracker Connection Errors",
+        "title": "Avg number of logs returned",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -2556,7 +1930,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 145
+          "y": 97
         },
         "options": {
           "legend": {
@@ -2572,7 +1946,633 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "Block",
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 35,
+        "targets": [
+          {
+            "expr": "max by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Max number of logs returned",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 103
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 36,
+        "targets": [
+          {
+            "expr": "max by (evmChainID) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Logs returned by chain",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 103
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 37,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Queries duration by query 0.5 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 109
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 38,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Queries duration by query 0.9 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 115
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 39,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Queries duration by query 0.99 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 121
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 40,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (log_poller_logs_inserted{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Number of logs inserted",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 127
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 41,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (rate(log_poller_logs_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Logs insertion rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 127
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 42,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (log_poller_blocks_inserted{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Number of blocks inserted",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 133
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 43,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (rate(log_poller_blocks_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Blocks insertion rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 133
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Feeds Jobs",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 139
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 44,
+        "targets": [
+          {
+            "expr": "sum(feeds_job_proposal_requests{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Feeds Job Proposal Requests",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 140
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 45,
+        "targets": [
+          {
+            "expr": "sum(feeds_job_proposal_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Feeds Job Proposal Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 140
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Mailbox",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 146
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 46,
+        "targets": [
+          {
+            "expr": "sum(mailbox_load_percent{instance=~\"${instance}\", }) by (capacity, name, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - Capacity: {{capacity}} - {{name}}",
+            "refId": ""
+          }
+        ],
+        "title": "Mailbox Load Percent",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 147
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
             "decimals": 1,
             "noValue": "No data",
             "custom": {
@@ -2593,7 +2593,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 151
+          "y": 153
         },
         "id": 0,
         "panels": null
@@ -2619,7 +2619,7 @@
           "h": 6,
           "w": 8,
           "x": 0,
-          "y": 152
+          "y": 154
         },
         "options": {
           "legend": {
@@ -2669,7 +2669,7 @@
           "h": 6,
           "w": 8,
           "x": 8,
-          "y": 152
+          "y": 154
         },
         "options": {
           "legend": {
@@ -2719,7 +2719,7 @@
           "h": 6,
           "w": 8,
           "x": 16,
-          "y": 152
+          "y": 154
         },
         "options": {
           "legend": {
@@ -2769,7 +2769,7 @@
           "h": 6,
           "w": 8,
           "x": 0,
-          "y": 158
+          "y": 160
         },
         "options": {
           "legend": {
@@ -2819,7 +2819,7 @@
           "h": 6,
           "w": 8,
           "x": 8,
-          "y": 158
+          "y": 160
         },
         "options": {
           "legend": {
@@ -2856,7 +2856,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 164
+          "y": 166
         },
         "id": 0,
         "panels": null
@@ -2882,7 +2882,7 @@
           "h": 6,
           "w": 8,
           "x": 0,
-          "y": 165
+          "y": 167
         },
         "options": {
           "legend": {
@@ -2932,7 +2932,7 @@
           "h": 6,
           "w": 8,
           "x": 8,
-          "y": 165
+          "y": 167
         },
         "options": {
           "legend": {
@@ -2982,7 +2982,7 @@
           "h": 6,
           "w": 8,
           "x": 16,
-          "y": 165
+          "y": 167
         },
         "options": {
           "legend": {
@@ -3032,7 +3032,7 @@
           "h": 6,
           "w": 8,
           "x": 0,
-          "y": 171
+          "y": 173
         },
         "options": {
           "legend": {
@@ -3082,7 +3082,7 @@
           "h": 6,
           "w": 8,
           "x": 8,
-          "y": 171
+          "y": 173
         },
         "options": {
           "legend": {
@@ -3119,7 +3119,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 177
+          "y": 179
         },
         "id": 0,
         "panels": null
@@ -3145,7 +3145,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 178
+          "y": 180
         },
         "options": {
           "legend": {
@@ -3195,7 +3195,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 178
+          "y": 180
         },
         "options": {
           "legend": {
@@ -3245,7 +3245,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 184
+          "y": 186
         },
         "options": {
           "legend": {
@@ -3295,7 +3295,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 184
+          "y": 186
         },
         "options": {
           "legend": {
@@ -3345,7 +3345,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 190
+          "y": 192
         },
         "options": {
           "legend": {
@@ -3382,7 +3382,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 196
+          "y": 198
         },
         "id": 0,
         "panels": null
@@ -3408,7 +3408,7 @@
           "h": 6,
           "w": 6,
           "x": 0,
-          "y": 197
+          "y": 199
         },
         "options": {
           "graphMode": "none",
@@ -3458,7 +3458,7 @@
           "h": 6,
           "w": 6,
           "x": 6,
-          "y": 197
+          "y": 199
         },
         "options": {
           "graphMode": "none",
@@ -3508,7 +3508,7 @@
           "h": 6,
           "w": 6,
           "x": 12,
-          "y": 197
+          "y": 199
         },
         "options": {
           "graphMode": "none",
@@ -3558,7 +3558,7 @@
           "h": 6,
           "w": 6,
           "x": 18,
-          "y": 197
+          "y": 199
         },
         "options": {
           "graphMode": "none",
@@ -3608,7 +3608,7 @@
           "h": 6,
           "w": 6,
           "x": 0,
-          "y": 203
+          "y": 205
         },
         "options": {
           "graphMode": "none",
@@ -3658,7 +3658,7 @@
           "h": 6,
           "w": 6,
           "x": 6,
-          "y": 203
+          "y": 205
         },
         "options": {
           "graphMode": "none",
@@ -3708,7 +3708,7 @@
           "h": 6,
           "w": 6,
           "x": 12,
-          "y": 203
+          "y": 205
         },
         "options": {
           "graphMode": "none",
@@ -3758,7 +3758,7 @@
           "h": 6,
           "w": 6,
           "x": 18,
-          "y": 203
+          "y": 205
         },
         "options": {
           "graphMode": "none",
@@ -3795,7 +3795,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 209
+          "y": 211
         },
         "id": 0,
         "panels": null
@@ -3807,7 +3807,7 @@
           {
             "expr": "sum(increase(evm_pool_rpc_node_calls_success{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName)",
             "format": "",
-            "legendFormat": "{{instance}} - {{evmChainID}} - {{nodeName}}",
+            "legendFormat": "{{instance}} - {{nodeName}}",
             "refId": ""
           }
         ],
@@ -3821,7 +3821,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 210
+          "y": 212
         },
         "options": {
           "legend": {
@@ -3893,7 +3893,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 216
+          "y": 218
         },
         "options": {
           "legend": {
@@ -3995,7 +3995,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 222
+          "y": 224
         },
         "options": {
           "legend": {
@@ -4045,7 +4045,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 222
+          "y": 224
         },
         "options": {
           "legend": {
@@ -4095,7 +4095,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 228
+          "y": 230
         },
         "options": {
           "legend": {
@@ -4145,7 +4145,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 228
+          "y": 230
         },
         "options": {
           "legend": {
@@ -4182,7 +4182,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 234
+          "y": 236
         },
         "id": 0,
         "panels": null
@@ -4208,7 +4208,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 235
+          "y": 237
         },
         "options": {
           "legend": {
@@ -4258,7 +4258,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 241
+          "y": 243
         },
         "options": {
           "legend": {
@@ -4308,7 +4308,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 247
+          "y": 249
         },
         "options": {
           "legend": {
@@ -4345,7 +4345,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 253
+          "y": 255
         },
         "id": 0,
         "panels": null
@@ -4355,14 +4355,14 @@
         "id": 79,
         "targets": [
           {
-            "expr": "sum(gas_updater_all_gas_price_percentiles{instance=~\"${instance}\", }) by (instance, percentile)",
+            "expr": "sum(gas_updater_all_gas_price_percentiles{instance=~\"${instance}\", }) by (instance, evmChainID, percentile)",
             "format": "",
-            "legendFormat": "{{instance}} - {{percentile}}",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{percentile}}",
             "refId": ""
           }
         ],
         "title": "Gas Updater All Gas Price Percentiles",
-        "description": "",
+        "description": "Gas price at given percentile",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
@@ -4371,7 +4371,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 254
+          "y": 256
         },
         "options": {
           "legend": {
@@ -4387,7 +4387,7 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "",
+            "unit": "gwei",
             "decimals": 0,
             "noValue": "No data",
             "custom": {
@@ -4405,14 +4405,14 @@
         "id": 80,
         "targets": [
           {
-            "expr": "sum(gas_updater_all_tip_cap_percentiles{instance=~\"${instance}\", }) by (instance, percentile)",
+            "expr": "sum(gas_updater_all_tip_cap_percentiles{instance=~\"${instance}\", }) by (instance, evmChainID, percentile)",
             "format": "",
-            "legendFormat": "{{instance}} - {{percentile}}",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{percentile}}",
             "refId": ""
           }
         ],
         "title": "Gas Updater All Tip Cap Percentiles",
-        "description": "",
+        "description": "Tip cap at given percentile",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
@@ -4421,7 +4421,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 260
+          "y": 262
         },
         "options": {
           "legend": {
@@ -4471,7 +4471,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 266
+          "y": 268
         },
         "options": {
           "legend": {
@@ -4521,7 +4521,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 266
+          "y": 268
         },
         "options": {
           "legend": {
@@ -4571,7 +4571,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 272
+          "y": 274
         },
         "options": {
           "legend": {
@@ -4621,7 +4621,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 272
+          "y": 274
         },
         "options": {
           "legend": {
@@ -4658,7 +4658,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 278
+          "y": 280
         },
         "id": 0,
         "panels": null
@@ -4684,7 +4684,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 279
+          "y": 281
         },
         "options": {
           "legend": {
@@ -4734,7 +4734,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 285
+          "y": 287
         },
         "options": {
           "legend": {
@@ -4784,7 +4784,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 291
+          "y": 293
         },
         "options": {
           "legend": {
@@ -4834,7 +4834,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 297
+          "y": 299
         },
         "options": {
           "legend": {
@@ -4871,7 +4871,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 303
+          "y": 305
         },
         "id": 0,
         "panels": null
@@ -4897,7 +4897,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 304
+          "y": 306
         },
         "options": {
           "legend": {
@@ -4947,7 +4947,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 310
+          "y": 312
         },
         "options": {
           "legend": {
@@ -4997,7 +4997,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 316
+          "y": 318
         },
         "options": {
           "legend": {
@@ -5047,7 +5047,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 316
+          "y": 318
         },
         "options": {
           "legend": {
@@ -5084,7 +5084,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 322
+          "y": 324
         },
         "id": 0,
         "panels": null
@@ -5110,7 +5110,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 323
+          "y": 325
         },
         "options": {
           "legend": {
@@ -5147,7 +5147,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 329
+          "y": 331
         },
         "id": 0,
         "panels": null
@@ -5173,7 +5173,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 330
+          "y": 332
         },
         "options": {
           "legend": {
@@ -5223,7 +5223,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 336
+          "y": 338
         },
         "options": {
           "graphMode": "none",
@@ -5273,7 +5273,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 342
+          "y": 344
         },
         "options": {
           "legend": {
@@ -5347,7 +5347,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 348
+          "y": 350
         },
         "options": {
           "legend": {
@@ -5439,7 +5439,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 348
+          "y": 350
         },
         "options": {
           "legend": {
@@ -5495,7 +5495,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 354
+          "y": 356
         },
         "options": {
           "legend": {
@@ -5545,7 +5545,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 354
+          "y": 356
         },
         "options": {
           "legend": {
@@ -5595,7 +5595,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 360
+          "y": 362
         },
         "options": {
           "legend": {
@@ -5645,7 +5645,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 360
+          "y": 362
         },
         "options": {
           "legend": {
@@ -5695,7 +5695,7 @@
           "h": 6,
           "w": 12,
           "x": 0,
-          "y": 366
+          "y": 368
         },
         "options": {
           "legend": {
@@ -5745,7 +5745,7 @@
           "h": 6,
           "w": 12,
           "x": 12,
-          "y": 366
+          "y": 368
         },
         "options": {
           "legend": {
@@ -5805,6 +5805,96 @@
   "Alerts": [
     {
       "annotations": {
+        "description": "Component {{ index $labels \"service_id\" }} uptime in the last 15m is {{ index $values \"A\" }}%",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Uptime less than 90% over last 15 minutes on one component in a Node"
+      },
+      "condition": "D",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "health{}",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "mean",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "$B * 100",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "math"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    90,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "C",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "D",
+            "type": "threshold"
+          },
+          "refId": "D",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
+        "severity": "warning"
+      },
+      "noDataState": "NoData",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "Health Avg by Service over 15m"
+    },
+    {
+      "annotations": {
         "description": "ETH Balance critically low at {{ index $values \"A\" }} on {{ index $labels \"instance\" }}",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
         "summary": "ETH Balance is lower than threshold"
@@ -5814,7 +5904,7 @@
         {
           "datasourceUid": "1",
           "model": {
-            "expr": "eth_balance",
+            "expr": "eth_balance{}",
             "instant": true,
             "range": false,
             "legendFormat": "__auto",
@@ -5833,7 +5923,7 @@
               {
                 "evaluator": {
                   "params": [
-                    2,
+                    1,
                     0
                   ],
                   "type": "lt"
@@ -5855,14 +5945,136 @@
       ],
       "execErrState": "Alerting",
       "folderUID": "",
-      "for": "1m",
+      "for": "15m",
       "labels": {
-        "severity": "warning"
+        "severity": "critical"
       },
-      "noDataState": "NoData",
+      "noDataState": "OK",
       "orgID": 0,
       "ruleGroup": "",
       "title": "ETH Balance"
+    },
+    {
+      "annotations": {
+        "description": "Solana Balance critically low at {{ index $values \"A\" }} on {{ index $labels \"instance\" }}",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Solana Balance is lower than threshold"
+      },
+      "condition": "B",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "solana_balance{}",
+            "instant": true,
+            "range": false,
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    1,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "B",
+            "type": "threshold"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
+        "severity": "critical"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "SOL Balance"
+    },
+    {
+      "annotations": {
+        "description": "{{ index $labels \"instance\" }} on ChainID {{ index $labels \"ChainID\" }} has received {{ index $values \"A\" }} heads over 10 minutes.",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "No Headers Received"
+      },
+      "condition": "B",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "increase(head_tracker_heads_received{}[10m])",
+            "instant": true,
+            "range": false,
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    1,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "B",
+            "type": "threshold"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "10m",
+      "labels": {
+        "severity": "critical"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "Head Tracker Heads Received Rate"
     }
   ],
   "ContactPoints": null,

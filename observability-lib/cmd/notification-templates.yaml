@@ -2,6 +2,11 @@ slack: |-
   {{ define "slack.chainlink.text" }}
   {{- $root := . -}}
   {{ range .Alerts }}
+  {{ template "slack.print_alert" . }}
+  {{ end }}
+  {{ end }}
+  
+  {{ define "slack.print_alert" }}
   *Summary:* ```{{ .Annotations.summary }}```
   {{ if gt (len .Annotations.description) 0 }}*Description:* ```{{ .Annotations.description }}```{{ end }}
   *Labels:* ```{{- range .Labels.SortedPairs }}
@@ -24,7 +29,6 @@ slack: |-
   {{- if gt (len .Annotations.runbook_url ) 0 }}
   <{{ .Annotations.runbook_url }}|:spiral_note_pad: Runbook>
   {{- end }}
-  {{ end }}
   {{ end }}
   
   {{ define "slack.chainlink.color" }}

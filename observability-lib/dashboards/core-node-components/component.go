@@ -6,8 +6,6 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
-	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
-
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
@@ -16,7 +14,7 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 		return nil, fmt.Errorf("Name is required")
 	}
 
-	props.PlatformOpts = PlatformPanelOpts()
+	props.platformOpts = platformPanelOpts()
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:     props.Name,
@@ -114,6 +112,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 		Datasource: p.MetricsDataSource.Name,
 		Query:      `label_values(health{cluster="$cluster", blockchain="$blockchain", network_type="$network_type", component="$component", service="$service"}, service_id)`,
 		Multi:      true,
+		IncludeAll: true,
 	}))
 
 	return variables
@@ -121,43 +120,6 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 
 func panelsGeneralInfo(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
-
-	panels = append(panels, grafana.NewTablePanel(&grafana.TablePanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "List Nodes",
-			Span:       24,
-			Height:     1,
-			Decimals:   1,
-			Query: []grafana.Query{
-				{
-					Expr:    `max(up{` + p.PlatformOpts.LabelQuery + `}) by (env, cluster, blockchain, product, network_type, network, version, team, component, service)`,
-					Legend:  "",
-					Instant: true,
-					Format:  prometheus.PromQueryFormatTable,
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: p.MetricsDataSource.Name,
-			Title:      "Uptime",
-			Span:       24,
-			Height:     4,
-			Decimals:   1,
-			Unit:       "percent",
-			Query: []grafana.Query{
-				{
-					Expr:   `100 * up{` + p.PlatformOpts.LabelQuery + `}`,
-					Legend: "Team: {{team}} env: {{env}} cluster: {{cluster}} namespace: {{namespace}} job: {{job}} blockchain: {{blockchain}} product: {{product}} networkType: {{network_type}} component: {{component}} service: {{service}}",
-				},
-			},
-			Min: grafana.Pointer[float64](0),
-			Max: grafana.Pointer[float64](100),
-		},
-	}))
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
@@ -169,7 +131,7 @@ func panelsGeneralInfo(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env)`,
+					Expr:   `100 * avg(avg_over_time(health{` + p.platformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env)`,
 					Legend: "{{service_id}}",
 				},
 			},
@@ -198,7 +160,7 @@ func panelsGeneralInfo(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * (health{` + p.PlatformOpts.LabelQuery + `service_id=~"${service_id}"})`,
+					Expr:   `100 * (health{` + p.platformOpts.LabelQuery + `service_id=~"${service_id}"})`,
 					Legend: "{{service_id}}",
 				},
 			},
@@ -217,7 +179,7 @@ func panelsGeneralInfo(p *Props) []*grafana.Panel {
 			Unit:       "percent",
 			Query: []grafana.Query{
 				{
-					Expr:   `100 * (avg(avg_over_time(health{` + p.PlatformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env))`,
+					Expr:   `100 * (avg(avg_over_time(health{` + p.platformOpts.LabelQuery + `service_id=~"${service_id}"}[$interval])) by (service_id, version, service, cluster, env))`,
 					Legend: "{{service_id}}",
 				},
 			},

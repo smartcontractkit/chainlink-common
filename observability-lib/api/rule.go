@@ -53,6 +53,7 @@ func (c *Client) PostAlertRule(alertRule alerting.Rule) (PostAlertRuleResponse, 
 
 	resp, err := c.resty.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("X-Disable-Provenance", "true").
 		SetBody(alertRule).
 		SetResult(&grafanaResp).
 		Post("/api/v1/provisioning/alert-rules")

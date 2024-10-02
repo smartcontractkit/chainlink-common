@@ -17,112 +17,11 @@
     "schemaVersion": 0,
     "panels": [
       {
-        "type": "table",
+        "type": "stat",
         "id": 0,
         "targets": [
           {
-            "expr": "max(up{service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", }) by (env, cluster, blockchain, product, network_type, network, version, team, component, service)",
-            "instant": true,
-            "range": false,
-            "format": "table",
-            "legendFormat": "",
-            "refId": ""
-          }
-        ],
-        "title": "List Nodes",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 0
-        },
-        "options": {
-          "frameIndex": 0,
-          "showHeader": true,
-          "showTypeIcons": false,
-          "footer": {
-            "show": false,
-            "reducer": [],
-            "countRows": false
-          },
-          "cellHeight": "sm"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 1,
-            "noValue": "No data",
-            "custom": {
-              "align": "auto",
-              "inspect": false
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "timeseries",
-        "id": 1,
-        "targets": [
-          {
-            "expr": "100 * up{service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", }",
-            "format": "",
-            "legendFormat": "Team: {{team}} env: {{env}} cluster: {{cluster}} namespace: {{namespace}} job: {{job}} blockchain: {{blockchain}} product: {{product}} networkType: {{network_type}} component: {{component}} service: {{service}}",
-            "refId": ""
-          }
-        ],
-        "title": "Uptime",
-        "description": "",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 24,
-          "x": 0,
-          "y": 1
-        },
-        "options": {
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true,
-            "calcs": []
-          },
-          "tooltip": {
-            "mode": "",
-            "sort": ""
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "decimals": 1,
-            "min": 0,
-            "max": 100,
-            "noValue": "No data",
-            "custom": {
-              "fillOpacity": 2,
-              "scaleDistribution": {
-                "type": "linear"
-              }
-            }
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "stat",
-        "id": 2,
-        "targets": [
-          {
-            "expr": "100 * avg(avg_over_time(health{service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env)",
+            "expr": "100 * avg(avg_over_time(health{blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env)",
             "format": "",
             "legendFormat": "{{service_id}}",
             "refId": ""
@@ -138,7 +37,7 @@
           "h": 4,
           "w": 24,
           "x": 0,
-          "y": 5
+          "y": 0
         },
         "options": {
           "graphMode": "line",
@@ -190,10 +89,10 @@
       },
       {
         "type": "timeseries",
-        "id": 3,
+        "id": 1,
         "targets": [
           {
-            "expr": "100 * (health{service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service_id=~\"${service_id}\"})",
+            "expr": "100 * (health{blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", service_id=~\"${service_id}\"})",
             "format": "",
             "legendFormat": "{{service_id}}",
             "refId": ""
@@ -209,7 +108,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 9
+          "y": 4
         },
         "options": {
           "legend": {
@@ -242,10 +141,10 @@
       },
       {
         "type": "timeseries",
-        "id": 4,
+        "id": 2,
         "targets": [
           {
-            "expr": "100 * (avg(avg_over_time(health{service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env))",
+            "expr": "100 * (avg(avg_over_time(health{blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env))",
             "format": "",
             "legendFormat": "{{service_id}}",
             "refId": ""
@@ -261,7 +160,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 15
+          "y": 10
         },
         "options": {
           "legend": {
@@ -294,7 +193,7 @@
       },
       {
         "type": "logs",
-        "id": 5,
+        "id": 3,
         "targets": [
           {
             "expr": "{env=\"${env}\", cluster=\"${cluster}\", product=\"${product}\", network_type=\"${network_type}\", instance=~\"${service}\"} | json | level=~\"(error|panic|fatal|crit)\"",
@@ -313,7 +212,7 @@
           "h": 6,
           "w": 24,
           "x": 0,
-          "y": 21
+          "y": 16
         },
         "fieldConfig": {
           "defaults": {
@@ -358,8 +257,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -379,8 +277,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -400,8 +297,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -421,8 +317,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -442,8 +337,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -463,8 +357,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",
@@ -484,8 +377,7 @@
             ]
           },
           "multi": false,
-          "sort": 1,
-          "includeAll": true
+          "sort": 1
         },
         {
           "type": "query",

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727816503579,
+  "lastUpdate": 1727862638427,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2562,6 +2562,48 @@ window.BENCHMARK_DATA = {
             "value": 30450,
             "unit": "ns/op",
             "extra": "39322 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e1435d915916aef78e985938f9cc98fe501507f2",
+          "message": "feat(observability-lib): improve alerts rule (#803)\n\n* feat(observability-lib): improve alerts rule\r\n\r\n* chore(observability-lib): README + folder structure (#806)\r\n\r\n* chore(observability-lib): README + folder structure\r\n\r\n* feat(observability-lib): variable add current + includeAll options (#808)\r\n\r\n* chore(README): small corrections\r\n\r\n* chore(README): example improved\r\n\r\n* chore(README): add references to dashboards examples\r\n\r\n* feat(observability-lib): refactor exportable func + link to godoc\r\n\r\n* fix(observability-lib): cmd errors returns",
+          "timestamp": "2024-10-02T11:49:39+02:00",
+          "tree_id": "b60da4080a71c581a13562d80fcc3296af3b45e2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e1435d915916aef78e985938f9cc98fe501507f2"
+        },
+        "date": 1727862637989,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.4,
+            "unit": "ns/op",
+            "extra": "2522540 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.1,
+            "unit": "ns/op",
+            "extra": "2311569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28581,
+            "unit": "ns/op",
+            "extra": "42048 times\n4 procs"
           }
         ]
       }

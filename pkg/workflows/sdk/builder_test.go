@@ -334,7 +334,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
-					ID:     "anymapaction@1.0.0",
+					ID:     "basic-test-trigger@1.0.0",
 					Ref:    "trigger",
 					Inputs: sdk.StepInputs{},
 					Config: map[string]any{
@@ -346,7 +346,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 			},
 			Actions: []sdk.StepDefinition{
 				{
-					ID:  "mapaction@1.0.0",
+					ID:  "anymapaction@1.0.0",
 					Ref: "ref",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"payload": map[string]string{"Foo": "$(trigger.outputs.cool_output)"}},

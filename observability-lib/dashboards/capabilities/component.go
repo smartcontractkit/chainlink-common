@@ -10,10 +10,11 @@ import (
 )
 
 type Props struct {
-	Name              string
-	MetricsDataSource *grafana.DataSource
+	Name              string              // Name is the name of the dashboard
+	MetricsDataSource *grafana.DataSource // MetricsDataSource is the datasource for querying metrics
 }
 
+// NewDashboard creates a Capabilities dashboard
 func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	if props.Name == "" {
 		return nil, fmt.Errorf("Name is required")

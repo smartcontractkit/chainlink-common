@@ -11,15 +11,26 @@ import (
 )
 
 func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+	if props.Name == "" {
+		return nil, fmt.Errorf("Name is required")
+	}
+
 	if props.OCRVersion == "" {
 		return nil, fmt.Errorf("OCRVersion is required")
 	}
 
-	if props.Platform == "" {
-		return nil, fmt.Errorf("Platform is required")
+	if props.MetricsDataSource == nil {
+		return nil, fmt.Errorf("MetricsDataSource is required")
+	} else {
+		if props.MetricsDataSource.Name == "" {
+			return nil, fmt.Errorf("MetricsDataSource.Name is required")
+		}
+		if props.MetricsDataSource.UID == "" {
+			return nil, fmt.Errorf("MetricsDataSource.UID is required")
+		}
 	}
 
-	props.PlatformOpts = PlatformPanelOpts(props.Platform, props.OCRVersion)
+	props.platformOpts = platformPanelOpts(props.OCRVersion)
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:     props.Name,
@@ -57,31 +68,11 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 
 	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
 		VariableOption: &grafana.VariableOption{
-			Label: "Namespace",
-			Name:  "namespace",
-		},
-		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(namespace)`,
-		Regex:      "otpe[1-3]?$",
-	}))
-
-	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
-		VariableOption: &grafana.VariableOption{
 			Label: "Job",
 			Name:  "job",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(up{namespace="$namespace"}, job)`,
-	}))
-
-	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
-		VariableOption: &grafana.VariableOption{
-			Label: "Pod",
-			Name:  "pod",
-		},
-		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(up{namespace="$namespace", job="$job"}, pod)`,
-		Multi:      true,
+		Query:      `label_values(up{namespace` + p.platformOpts.LabelFilters["namespace"] + `}, job)`,
 	}))
 
 	variableFeedID := "feed_id"
@@ -132,7 +123,7 @@ func summary(p *Props) []*grafana.Panel {
 			Height:      4,
 			Query: []grafana.Query{
 				{
-					Expr:   `bool:` + p.OCRVersion + `_telemetry_down{` + p.PlatformOpts.LabelQuery + `} == 1`,
+					Expr:   `bool:` + p.OCRVersion + `_telemetry_down{` + p.platformOpts.LabelQuery + `} == 1`,
 					Legend: "{{job}} | {{report_type}}",
 				},
 			},
@@ -159,7 +150,7 @@ func summary(p *Props) []*grafana.Panel {
 			Query: []grafana.Query{
 				{
 					Expr:   `bool:` + p.OCRVersion + `_oracle_telemetry_down_except_telemetry_down{job=~"${job}", oracle!="csa_unknown"} == 1`,
-					Legend: "{{oracle}} | {{report_type}}",
+					Legend: "{{oracle}}",
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -168,6 +159,13 @@ func summary(p *Props) []*grafana.Panel {
 					{Value: nil, Color: "default"},
 					{Value: grafana.Pointer[float64](0), Color: "green"},
 					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
+			Transform: &grafana.TransformOptions{
+				ID: "renameByRegex",
+				Options: map[string]string{
+					"regex":         "/^(.*[\\\\\\/])/",
+					"renamePattern": "",
 				},
 			},
 		},
@@ -237,7 +235,7 @@ func summary(p *Props) []*grafana.Panel {
 			Query: []grafana.Query{
 				{
 					Expr:   `bool:` + p.OCRVersion + `_oracle_blind_except_telemetry_down{job=~"${job}"} == 1`,
-					Legend: "{{oracle}} | {{report_type}}",
+					Legend: "{{oracle}}",
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -246,6 +244,13 @@ func summary(p *Props) []*grafana.Panel {
 					{Value: nil, Color: "default"},
 					{Value: grafana.Pointer[float64](0), Color: "green"},
 					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
+			Transform: &grafana.TransformOptions{
+				ID: "renameByRegex",
+				Options: map[string]string{
+					"regex":         "/^(.*[\\\\\\/])/",
+					"renamePattern": "",
 				},
 			},
 		},
@@ -263,7 +268,7 @@ func summary(p *Props) []*grafana.Panel {
 			Query: []grafana.Query{
 				{
 					Expr:   `bool:` + p.OCRVersion + `_oracle_feed_no_observations_except_oracle_blind_except_feed_reporting_failure_except_feed_telemetry_down{job=~"${job}"} == 1`,
-					Legend: "{{oracle}} | {{report_type}}",
+					Legend: "{{oracle}}",
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -272,6 +277,13 @@ func summary(p *Props) []*grafana.Panel {
 					{Value: nil, Color: "default"},
 					{Value: grafana.Pointer[float64](0), Color: "green"},
 					{Value: grafana.Pointer[float64](0.99), Color: "red"},
+				},
+			},
+			Transform: &grafana.TransformOptions{
+				ID: "renameByRegex",
+				Options: map[string]string{
+					"regex":         "/^(.*[\\\\\\/])/",
+					"renamePattern": "",
 				},
 			},
 		},
@@ -295,8 +307,8 @@ func ocrContractConfigOracle(p *Props) []*grafana.Panel {
 			Decimals:    1,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(` + p.OCRVersion + `_contract_oracle_active{` + p.PlatformOpts.LabelQuery + `}) by (contract, oracle)`,
-					Legend: "{{contract}} - {{oracle}}",
+					Expr:   `sum(` + p.OCRVersion + `_contract_oracle_active{` + p.platformOpts.LabelQuery + `}) by (contract, oracle)`,
+					Legend: "{{oracle}}",
 				},
 			},
 			Threshold: &grafana.ThresholdOptions{
@@ -305,6 +317,13 @@ func ocrContractConfigOracle(p *Props) []*grafana.Panel {
 					{Value: nil, Color: "default"},
 					{Value: grafana.Pointer[float64](0), Color: "red"},
 					{Value: grafana.Pointer[float64](0.99), Color: "green"},
+				},
+			},
+			Transform: &grafana.TransformOptions{
+				ID: "renameByRegex",
+				Options: map[string]string{
+					"regex":         "/^(.*[\\\\\\/])/",
+					"renamePattern": "",
 				},
 			},
 		},
@@ -337,15 +356,15 @@ func ocrContractConfigNodes(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_n{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_n{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{` + variableFeedID + `}}`,
 				},
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_r_max{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_r_max{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `Max nodes`,
 				},
 				{
-					Expr:   `avg(2 * ` + p.OCRVersion + `_contract_config_f{` + p.PlatformOpts.LabelQuery + `} + 1)`,
+					Expr:   `avg(2 * ` + p.OCRVersion + `_contract_config_f{` + p.platformOpts.LabelQuery + `} + 1)`,
 					Legend: `Min nodes`,
 				},
 			},
@@ -402,7 +421,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_observation_ask{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_observation_ask{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -418,7 +437,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_observation{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_observation{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -434,7 +453,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_observation_bid{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_observation_bid{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -450,7 +469,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_ask{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_ask{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -466,7 +485,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -482,7 +501,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_bid{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_bid{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -499,7 +518,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:    1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_total{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_message_propose_observation_total{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -516,7 +535,7 @@ func priceReporting(p *Props) []*grafana.Panel {
 			Decimals:    1,
 			Query: []grafana.Query{
 				{
-					Expr:   `rate(` + p.OCRVersion + `_telemetry_message_observe_total{` + p.PlatformOpts.LabelQuery + `}[5m])`,
+					Expr:   `rate(` + p.OCRVersion + `_telemetry_message_observe_total{` + p.platformOpts.LabelQuery + `}[5m])`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -553,8 +572,13 @@ func priceReporting(p *Props) []*grafana.Panel {
 func roundEpochProgression(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	variableFeedID := "feed_id"
-	if p.OCRVersion == "ocr3" {
+	var variableFeedID string
+	switch p.OCRVersion {
+	case "ocr":
+		variableFeedID = "contract"
+	case "ocr2":
+		variableFeedID = "feed_id"
+	case "ocr3":
 		variableFeedID = "feed_id_name"
 	}
 
@@ -562,13 +586,13 @@ func roundEpochProgression(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Agreed Epoch Progression",
-			Span:       8,
+			Span:       12,
 			Height:     6,
 			Decimals:   1,
 			Unit:       "short",
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_feed_agreed_epoch{` + variableFeedID + `=~"${` + variableFeedID + `}"}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_feed_agreed_epoch{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{` + variableFeedID + `}}`,
 				},
 			},
@@ -579,13 +603,13 @@ func roundEpochProgression(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Round Epoch Progression",
-			Span:       8,
+			Span:       12,
 			Height:     6,
 			Decimals:   1,
 			Unit:       "short",
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_telemetry_epoch_round{` + variableFeedID + `=~"${` + variableFeedID + `}"}`,
+					Expr:   `` + p.OCRVersion + `_telemetry_epoch_round{` + p.platformOpts.LabelQuery + `}`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -597,13 +621,13 @@ func roundEpochProgression(p *Props) []*grafana.Panel {
 			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Rounds Started",
 			Description: `Tracks individual nodes firing "new round" message via telemetry (not part of P2P messages)`,
-			Span:        8,
+			Span:        12,
 			Height:      6,
 			Decimals:    1,
 			Unit:        "short",
 			Query: []grafana.Query{
 				{
-					Expr:   `rate(` + p.OCRVersion + `_telemetry_round_started_total{` + variableFeedID + `=~"${` + variableFeedID + `}"}[1m])`,
+					Expr:   `rate(` + p.OCRVersion + `_telemetry_round_started_total{` + p.platformOpts.LabelQuery + `}[1m])`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -614,13 +638,13 @@ func roundEpochProgression(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Telemetry Ingested",
-			Span:       8,
+			Span:       12,
 			Height:     6,
 			Decimals:   1,
 			Unit:       "short",
 			Query: []grafana.Query{
 				{
-					Expr:   `rate(` + p.OCRVersion + `_telemetry_ingested_total{` + variableFeedID + `=~"${` + variableFeedID + `}"}[1m])`,
+					Expr:   `rate(` + p.OCRVersion + `_telemetry_ingested_total{` + p.platformOpts.LabelQuery + `}[1m])`,
 					Legend: `{{oracle}}`,
 				},
 			},
@@ -642,7 +666,7 @@ func ocrContractConfigDelta(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_alpha{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_alpha{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "{{contract}}",
 				},
 			},
@@ -660,7 +684,7 @@ func ocrContractConfigDelta(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_delta_c_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_c_seconds{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "{{contract}}",
 				},
 			},
@@ -678,7 +702,7 @@ func ocrContractConfigDelta(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_delta_grace_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_grace_seconds{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "{{contract}}",
 				},
 			},
@@ -696,7 +720,7 @@ func ocrContractConfigDelta(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_delta_progress_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_progress_seconds{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "{{contract}}",
 				},
 			},
@@ -714,7 +738,7 @@ func ocrContractConfigDelta(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_delta_resend_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_resend_seconds{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "{{contract}}",
 				},
 			},
@@ -732,7 +756,7 @@ func ocrContractConfigDelta(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_delta_round_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_round_seconds{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "{{contract}}",
 				},
 			},
@@ -750,7 +774,7 @@ func ocrContractConfigDelta(p *Props) []*grafana.Panel {
 			Decimals:   1,
 			Query: []grafana.Query{
 				{
-					Expr:   `` + p.OCRVersion + `_contract_config_delta_stage_seconds{` + p.PlatformOpts.LabelQuery + `}`,
+					Expr:   `` + p.OCRVersion + `_contract_config_delta_stage_seconds{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "{{contract}}",
 				},
 			},

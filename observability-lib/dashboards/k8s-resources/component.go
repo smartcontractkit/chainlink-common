@@ -11,8 +11,8 @@ import (
 )
 
 type Props struct {
-	Name              string
-	MetricsDataSource *grafana.DataSource
+	Name              string              // Name is the name of the dashboard
+	MetricsDataSource *grafana.DataSource // MetricsDataSource is the datasource for querying metrics
 }
 
 func NewDashboard(props *Props) (*grafana.Dashboard, error) {

@@ -11,9 +11,9 @@ import (
 )
 
 type Props struct {
-	Name              string
-	MetricsDataSource *grafana.DataSource
-	OCRVersion        string
+	Name              string              // Name is the name of the dashboard
+	MetricsDataSource *grafana.DataSource // MetricsDataSource is the datasource for querying metrics
+	OCRVersion        string              // OCRVersion is the version of the OCR (ocr, ocr2, ocr3)
 }
 
 func NewDashboard(props *Props) (*grafana.Dashboard, error) {
@@ -78,6 +78,7 @@ func perContract(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Rounds Epoch Progression",
 			Description: "Rounds have stopped progressing for 90 seconds means NOP is unhealthy",
 			Span:        24,
@@ -115,6 +116,7 @@ func perContract(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Message Observe",
 			Description: "NOP have stopped sending messages for 3mins means NOP is unhealthy",
 			Span:        24,
@@ -152,6 +154,7 @@ func perContract(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Observations included in report",
 			Description: "NOP observations were not including in report for 3mins means NOP is unhealthy",
 			Span:        24,
@@ -195,6 +198,7 @@ func perNOP(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Rounds Epoch Progression",
 			Description: "Rounds have stopped progressing for 5mins means NOP is unhealthy",
 			Span:        24,
@@ -232,6 +236,7 @@ func perNOP(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Message Observe",
 			Description: "NOP have stopped sending messages for 3mins means NOP is unhealthy",
 			Span:        24,
@@ -269,6 +274,7 @@ func perNOP(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Observations included in report",
 			Description: "NOP observations were not including in report for 3mins means NOP is unhealthy",
 			Span:        24,
@@ -306,6 +312,7 @@ func perNOP(p *Props) []*grafana.Panel {
 
 	panels = append(panels, grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "P2P Connectivity",
 			Description: "Connectivity got interrupted for 60 seconds received from other nodes",
 			Span:        24,

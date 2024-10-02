@@ -58,15 +58,15 @@ func (b *Builder) AddRow(title string) {
 	b.dashboardBuilder.WithRow(dashboard.NewRowBuilder(title))
 }
 
-func (b *Builder) GetPanelCounter() uint32 {
+func (b *Builder) getPanelCounter() uint32 {
 	res := b.panelCounter
-	b.panelCounter = Inc(&b.panelCounter)
+	b.panelCounter = inc(&b.panelCounter)
 	return res
 }
 
 func (b *Builder) AddPanel(panel ...*Panel) {
 	for _, item := range panel {
-		panelID := b.GetPanelCounter()
+		panelID := b.getPanelCounter()
 		if item.statPanelBuilder != nil {
 			item.statPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.statPanelBuilder)

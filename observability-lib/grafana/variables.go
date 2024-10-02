@@ -12,28 +12,42 @@ type VariableOption struct {
 
 type QueryVariableOptions struct {
 	*VariableOption
-	Datasource string
-	Query      string
-	Multi      bool
-	Regex      string
+	Datasource   string
+	Query        string
+	Multi        bool
+	Regex        string
+	CurrentText  string
+	CurrentValue string
+	IncludeAll   bool
 }
 
 func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBuilder {
+	if options.CurrentText == "" {
+		options.CurrentText = "All"
+	}
+
+	if options.CurrentValue == "" {
+		options.CurrentValue = "$__all"
+	}
+
 	variable := dashboard.NewQueryVariableBuilder(options.Name).
 		Label(options.Label).
 		Query(dashboard.StringOrMap{String: cog.ToPtr[string](options.Query)}).
 		Datasource(datasourceRef(options.Datasource)).
 		Current(dashboard.VariableOption{
 			Selected: cog.ToPtr[bool](true),
-			Text:     dashboard.StringOrArrayOfString{ArrayOfString: []string{"All"}},
-			Value:    dashboard.StringOrArrayOfString{ArrayOfString: []string{"$__all"}},
+			Text:     dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentText}},
+			Value:    dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentValue}},
 		}).
 		Sort(dashboard.VariableSortAlphabeticalAsc).
-		Multi(options.Multi).
-		IncludeAll(true)
+		Multi(options.Multi)
 
 	if options.Regex != "" {
 		variable.Regex(options.Regex)
+	}
+
+	if options.IncludeAll {
+		variable.IncludeAll(options.IncludeAll)
 	}
 
 	return variable

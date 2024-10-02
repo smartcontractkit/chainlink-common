@@ -2,6 +2,7 @@ package wasm
 
 import (
 	"encoding/binary"
+	"errors"
 	"os"
 	"unsafe"
 
@@ -62,7 +63,7 @@ func NewRunner() *Runner {
 		sdkFactory: func(sdkConfig *RuntimeConfig) *Runtime {
 			return &Runtime{
 				Logger: l,
-				Fetch: func(req FetchRequest) FetchResponse {
+				Fetch: func(req FetchRequest) (FetchResponse, error) {
 					headerspb, err := values.NewMap(req.Headers)
 					if err != nil {
 						os.Exit(CodeInvalidRequest)
@@ -105,13 +106,16 @@ func NewRunner() *Runner {
 						headersResp[k] = v
 					}
 
-					return FetchResponse{
-						Success:      response.Success,
-						ErrorMessage: response.ErrorMessage,
-						StatusCode:   uint8(response.StatusCode),
-						Headers:      headersResp,
-						Body:         response.Body,
+					if response.ErrorMessage != "" {
+						return FetchResponse{}, errors.New(response.ErrorMessage)
 					}
+
+					return FetchResponse{
+						Success:    response.Success,
+						StatusCode: uint8(response.StatusCode),
+						Headers:    headersResp,
+						Body:       response.Body,
+					}, nil
 				},
 			}
 		},

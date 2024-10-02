@@ -111,7 +111,9 @@ func NewModule(modCfg *ModuleConfig, binaryInput []byte) (*Module, error) {
 	}
 
 	if modCfg.Fetch == nil {
-		return nil, errors.New("must provide a Fetch func")
+		modCfg.Fetch = func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return nil, fmt.Errorf("fetch not implemented")
+		}
 	}
 
 	logger := modCfg.Logger

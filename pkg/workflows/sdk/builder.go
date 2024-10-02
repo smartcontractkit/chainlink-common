@@ -92,7 +92,9 @@ type singleCapList[O any] struct {
 func (s singleCapList[O]) Index(i int) CapDefinition[O] {
 	listRef, ok := s.CapDefinition.Ref().(string)
 
-	// the value was from a hard-coded list, seems odd they are indexing into this
+	// There are two cases to indexing:
+	// It's a ref, in which case we just want to index the ref, i.e. ref -> ref.i
+	// It's a hardcoded list, in which case we get the nth element.
 	if !ok {
 		return &capDefinitionImpl[O]{ref: reflect.ValueOf(s.CapDefinition.Ref()).Index(i).Interface()}
 	}

@@ -8,8 +8,13 @@ import "capabilities/pb/capabilities.proto";
 import "values/pb/values.proto";
 import "google/protobuf/empty.proto";
 
+message RuntimeConfig {
+   int64 maxFetchResponseSizeBytes = 1;
+}
+
 message ComputeRequest {
   capabilities.CapabilityRequest request = 1;
+  RuntimeConfig runtimeConfig = 2;
 }
 
 message Request {

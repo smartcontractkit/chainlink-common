@@ -59,59 +59,61 @@ func NewRunner() *Runner {
 
 			os.Exit(code)
 		},
-		SDK: Runtime{
-			Logger: l,
-			Fetch: func(req FetchRequest) FetchResponse {
-				headerspb, err := values.NewMap(req.Headers)
-				if err != nil {
-					os.Exit(CodeInvalidRequest)
-				}
+		sdkFactory: func(sdkConfig *RuntimeConfig) *Runtime {
+			return &Runtime{
+				Logger: l,
+				Fetch: func(req FetchRequest) FetchResponse {
+					headerspb, err := values.NewMap(req.Headers)
+					if err != nil {
+						os.Exit(CodeInvalidRequest)
+					}
 
-				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Url:       req.URL,
-					Method:    req.Method,
-					Headers:   values.ProtoMap(headerspb),
-					Body:      req.Body,
-					TimeoutMs: req.TimeoutMs,
-				})
-				if err != nil {
-					os.Exit(CodeInvalidRequest)
-				}
-				reqptr, reqptrlen := bufferToPointerLen(b)
+					b, err := proto.Marshal(&wasmpb.FetchRequest{
+						Url:       req.URL,
+						Method:    req.Method,
+						Headers:   values.ProtoMap(headerspb),
+						Body:      req.Body,
+						TimeoutMs: req.TimeoutMs,
+					})
+					if err != nil {
+						os.Exit(CodeInvalidRequest)
+					}
+					reqptr, reqptrlen := bufferToPointerLen(b)
 
-				respBuffer := make([]byte, 1024*5)
-				respptr, _ := bufferToPointerLen(respBuffer)
+					respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
+					respptr, _ := bufferToPointerLen(respBuffer)
 
-				resplenBuffer := make([]byte, uint32Size)
-				resplenptr, _ := bufferToPointerLen(resplenBuffer)
+					resplenBuffer := make([]byte, uint32Size)
+					resplenptr, _ := bufferToPointerLen(resplenBuffer)
 
-				errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
-				if errno != 0 {
-					os.Exit(CodeRunnerErr)
-				}
+					errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
+					if errno != 0 {
+						os.Exit(CodeRunnerErr)
+					}
 
-				responseSize := binary.LittleEndian.Uint32(resplenBuffer)
-				response := &wasmpb.FetchResponse{}
-				err = proto.Unmarshal(respBuffer[:responseSize], response)
-				if err != nil {
-					l.Errorw("failed to unmarshal fetch response", "error", err.Error())
-					os.Exit(CodeInvalidResponse)
-				}
+					responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+					response := &wasmpb.FetchResponse{}
+					err = proto.Unmarshal(respBuffer[:responseSize], response)
+					if err != nil {
+						l.Errorw("failed to unmarshal fetch response", "error", err.Error())
+						os.Exit(CodeInvalidResponse)
+					}
 
-				fields := response.Headers.GetFields()
-				headersResp := make(map[string]any, len(fields))
-				for k, v := range fields {
-					headersResp[k] = v
-				}
+					fields := response.Headers.GetFields()
+					headersResp := make(map[string]any, len(fields))
+					for k, v := range fields {
+						headersResp[k] = v
+					}
 
-				return FetchResponse{
-					Success:      response.Success,
-					ErrorMessage: response.ErrorMessage,
-					StatusCode:   uint8(response.StatusCode),
-					Headers:      headersResp,
-					Body:         response.Body,
-				}
-			},
+					return FetchResponse{
+						Success:      response.Success,
+						ErrorMessage: response.ErrorMessage,
+						StatusCode:   uint8(response.StatusCode),
+						Headers:      headersResp,
+						Body:         response.Body,
+					}
+				},
+			}
 		},
 		args: os.Args,
 	}

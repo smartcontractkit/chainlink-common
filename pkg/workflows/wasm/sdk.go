@@ -10,6 +10,20 @@ type Runtime struct {
 	Fetch  func(req FetchRequest) FetchResponse
 }
 
+type RuntimeConfig struct {
+	MaxFetchResponseSizeBytes int64
+}
+
+const (
+	defaultMaxFetchResponseSizeBytes = 5 * 1024
+)
+
+func defaultRuntimeConfig() *RuntimeConfig {
+	return &RuntimeConfig{
+		MaxFetchResponseSizeBytes: defaultMaxFetchResponseSizeBytes,
+	}
+}
+
 var _ sdk.Runtime = (*Runtime)(nil)
 
 type FetchRequest struct {

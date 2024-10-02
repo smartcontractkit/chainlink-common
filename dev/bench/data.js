@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727878843491,
+  "lastUpdate": 1727903717545,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2646,6 +2646,48 @@ window.BENCHMARK_DATA = {
             "value": 28593,
             "unit": "ns/op",
             "extra": "41998 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "707d968168d4c1bfdc43264eed41da87f64d0e53",
+          "message": "Fix map and ToListDefinition, add tests for them in the builder, add a way to create a list of any from inputs (#823)\n\n* Fix map and ToListDefinition, add tests for them in the builder, add a way to create a list of any from inputs\r\n\r\n* Fix any map test\r\n\r\n* Clarify comment int singleCapList Index",
+          "timestamp": "2024-10-02T22:14:18+01:00",
+          "tree_id": "a6f931ac792dbffb8b36cacc002b56e485f79961",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/707d968168d4c1bfdc43264eed41da87f64d0e53"
+        },
+        "date": 1727903717101,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 474.9,
+            "unit": "ns/op",
+            "extra": "2357803 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 521,
+            "unit": "ns/op",
+            "extra": "2292445 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28437,
+            "unit": "ns/op",
+            "extra": "42206 times\n4 procs"
           }
         ]
       }

@@ -251,26 +251,26 @@ func NewModule(modCfg *ModuleConfig, binaryInput []byte) (*Module, error) {
 			b, innerErr := safeMem(caller, reqptr, reqptrlen)
 			if innerErr != nil {
 				logger.Errorf("error calling fetch: %s", innerErr)
-				return 1 //errnumber
+				return ErrnoFault
 			}
 
 			req := &wasmpb.FetchRequest{}
 			innerErr = proto.Unmarshal(b, req)
 			if innerErr != nil {
 				logger.Errorf("error calling fetch: %s", innerErr)
-				return 1 //errnumber
+				return ErrnoFault
 			}
 
 			fetchResp, innerErr := modCfg.Fetch(req)
 			if innerErr != nil {
 				logger.Errorf("error calling fetch: %s", innerErr)
-				return 1 //errnumber
+				return ErrnoFault
 			}
 
 			respBytes, innerErr := proto.Marshal(fetchResp)
 			if innerErr != nil {
 				logger.Errorf("error calling fetch: %s", innerErr)
-				return 1 //errnumber
+				return ErrnoFault
 			}
 
 			size := copyBuffer(caller, respBytes, respptr, int32(len(respBytes)))
@@ -286,7 +286,7 @@ func NewModule(modCfg *ModuleConfig, binaryInput []byte) (*Module, error) {
 				return ErrnoFault
 			}
 
-			return 0 //errnumber
+			return ErrnoSuccess
 		},
 	)
 	if err != nil {

@@ -20,24 +20,24 @@ type BasicTester[T any] interface {
 	Setup(t T)
 	Name() string
 	GetAccountBytes(i int) []byte
-	IsDisabled(testId string) bool
-	DisableTests(testIds []string)
+	IsDisabled(testID string) bool
+	DisableTests(testIDs []string)
 }
 
 type TestSelectionSupport struct {
 	enabledTests map[string]bool
 }
 
-func (t TestSelectionSupport) IsDisabled(testId string) bool {
-	return t.enabledTests[testId]
+func (t TestSelectionSupport) IsDisabled(testID string) bool {
+	return t.enabledTests[testID]
 }
 
-func (t *TestSelectionSupport) DisableTests(testIds []string) {
+func (t *TestSelectionSupport) DisableTests(testIDs []string) {
 	if t.enabledTests == nil {
 		t.enabledTests = map[string]bool{}
 	}
-	for _, testId := range testIds {
-		t.enabledTests[testId] = true
+	for _, testID := range testIDs {
+		t.enabledTests[testID] = true
 	}
 }
 

@@ -82,12 +82,12 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 	case JSONEncodingVersion1:
 		bytes, err = json.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			return nil, fmt.Errorf("%w: %d %w", types.ErrInvalidType, version, err)
 		}
 	case JSONEncodingVersion2:
 		bytes, err = jsonv2.Marshal(data, jsonv2.StringifyNumbers(true))
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			return nil, fmt.Errorf("%w: %d %w", types.ErrInvalidType, version, err)
 		}
 	case CBOREncodingVersion:
 		enco := cbor.CoreDetEncOptions()
@@ -99,16 +99,16 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 		}
 		bytes, err = enc.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			return nil, fmt.Errorf("%w: %d %w", types.ErrInvalidType, version, err)
 		}
 	case ValuesEncodingVersion:
 		val, err := values.Wrap(data)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			return nil, fmt.Errorf("%w: %d %w", types.ErrInvalidType, version, err)
 		}
 		bytes, err = proto.Marshal(values.Proto(val))
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			return nil, fmt.Errorf("%w: %d %w", types.ErrInvalidType, version, err)
 		}
 	default:
 		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)

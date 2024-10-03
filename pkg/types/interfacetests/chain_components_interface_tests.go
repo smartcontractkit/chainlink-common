@@ -791,7 +791,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 					},
 					}, query.LimitAndSort{}, ts)
 					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts2, sequences[1].Data) && reflect.DeepEqual(&ts3, sequences[0].Data)
-				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*500)
 			},
 		},
 		{
@@ -842,7 +842,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 					return len(allSequences) == len(testStructs) &&
 						reflect.DeepEqual(&testStructs[0], allSequences[0].Data) &&
 						reflect.DeepEqual(&testStructs[len(testStructs)-1], allSequences[len(testStructs)-1].Data)
-				}, tester.MaxWaitTimeForEvents(), 50*time.Millisecond)
+				}, tester.MaxWaitTimeForEvents(), 500*time.Millisecond)
 			},
 		},
 	}

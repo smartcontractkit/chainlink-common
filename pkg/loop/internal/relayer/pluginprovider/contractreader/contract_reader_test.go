@@ -642,7 +642,7 @@ func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract,
 					if err != nil {
 						return nil, err
 					}
-					sequences = append(sequences, types.Sequence{Cursor: fmt.Sprintf("%d", idx), Data: &value})
+					sequences = append(sequences, types.Sequence{Cursor: strconv.Itoa(idx), Data: &value})
 				} else {
 					sequences = append(sequences, types.Sequence{Cursor: fmt.Sprintf("%d", idx), Data: trigger.testStruct})
 				}

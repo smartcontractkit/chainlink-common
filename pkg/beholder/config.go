@@ -11,6 +11,7 @@ type Config struct {
 	InsecureConnection       bool
 	CACertFile               string
 	OtelExporterGRPCEndpoint string
+	OtelExporterHTTPEndpoint string
 
 	// OTel Resource
 	ResourceAttributes []otelattr.KeyValue
@@ -66,5 +67,15 @@ func TestDefaultConfig() Config {
 	// Should be only disabled for testing
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
+	return config
+}
+
+func TestDefaultConfigHTTPClient() Config {
+	config := DefaultConfig()
+	// Should be only disabled for testing
+	config.EmitterBatchProcessor = false
+	config.LogBatchProcessor = false
+	config.OtelExporterGRPCEndpoint = ""
+	config.OtelExporterHTTPEndpoint = "localhost:4318"
 	return config
 }

@@ -77,6 +77,7 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 	var bytes []byte
 	var err error
 
+	println("CONTRACT READER ENCODE VERSIONED BYTES, version: ", version)
 	switch version {
 	case JSONEncodingVersion1:
 		bytes, err = json.Marshal(data)

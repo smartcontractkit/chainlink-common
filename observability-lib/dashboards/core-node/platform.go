@@ -6,7 +6,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
-type PlatformOpts struct {
+type platformOpts struct {
 	// Platform is infrastructure deployment platform: docker or k8s
 	Platform     grafana.TypePlatform
 	LabelFilters map[string]string
@@ -16,18 +16,19 @@ type PlatformOpts struct {
 }
 
 type Props struct {
-	Name              string
-	Platform          grafana.TypePlatform
-	MetricsDataSource *grafana.DataSource
-	PlatformOpts      PlatformOpts
-	SlackChannel      string
-	SlackWebhookURL   string
-	AlertsTags        map[string]string
+	Name              string               // Name is the name of the dashboard
+	Platform          grafana.TypePlatform // Platform is infrastructure deployment platform: docker or k8s
+	MetricsDataSource *grafana.DataSource  // MetricsDataSource is the datasource for querying metrics
+	SlackChannel      string               // SlackChannel is the channel to send alerts to
+	SlackWebhookURL   string               // SlackWebhookURL is the URL to send alerts to
+	AlertsTags        map[string]string    // AlertsTags is the tags to map with notification policy
+	AlertsFilters     string               // AlertsFilters is the filters to apply to alerts
+	platformOpts      platformOpts
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms
-func PlatformPanelOpts(platform grafana.TypePlatform) PlatformOpts {
-	po := PlatformOpts{
+func platformPanelOpts(platform grafana.TypePlatform) platformOpts {
+	po := platformOpts{
 		LabelFilters: map[string]string{},
 		Platform:     platform,
 	}

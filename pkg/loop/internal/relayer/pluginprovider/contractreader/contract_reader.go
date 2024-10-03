@@ -183,6 +183,8 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 		return err
 	}
 
+	panic(fmt.Errorf("CONTRACT READER GET LATEST VALUE Before call, versionedParams: %v", versionedParams))
+
 	reply, err := c.grpc.GetLatestValue(
 		ctx,
 		&pb.GetLatestValueRequest{
@@ -195,6 +197,8 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 	if err != nil {
 		return net.WrapRPCErr(err)
 	}
+
+	panic(fmt.Errorf("CONTRACT READER GET LATEST VALUE Reply RetVal %v", reply.RetVal))
 
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }

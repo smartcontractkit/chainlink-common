@@ -119,6 +119,7 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 
 func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	var err error
+	version := EncodingVersion(vData.Version)
 	switch EncodingVersion(vData.Version) {
 	case JSONEncodingVersion1:
 		decoder := json.NewDecoder(bytes.NewBuffer(vData.Data))
@@ -132,20 +133,20 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 		var dec cbor.DecMode
 		dec, err = decopt.DecMode()
 		if err != nil {
-			return fmt.Errorf("%w: %w", types.ErrInternal, err)
+			return fmt.Errorf("%w: version: %d error: %w", types.ErrInvalidType, version, err)
 		}
 		err = dec.Unmarshal(vData.Data, res)
 	case ValuesEncodingVersion:
 		protoValue := &valuespb.Value{}
 		err = proto.Unmarshal(vData.Data, protoValue)
 		if err != nil {
-			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			return fmt.Errorf("%w: version: %d error: %w", types.ErrInvalidType, version, err)
 		}
 
 		var value values.Value
 		value, err = values.FromProto(protoValue)
 		if err != nil {
-			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+			return fmt.Errorf("%w: version: %d error: %w", types.ErrInvalidType, version, err)
 		}
 
 		valuePtr, ok := res.(*values.Value)
@@ -154,7 +155,8 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 		} else {
 			err = value.UnwrapTo(res)
 			if err != nil {
-				return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+				return fmt.Errorf("%w: version: %d error: %w", types.ErrInvalidType, version, err)
+
 			}
 		}
 	default:
@@ -162,7 +164,7 @@ func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
+		return fmt.Errorf("%w: version: %d error: %w", types.ErrInvalidType, version, err)
 	}
 
 	return nil

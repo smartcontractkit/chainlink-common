@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/beholder/pb";
+
+package pb;
+
+message KeystoneCustomMessage {
+  string msg=1;
+  string capabilityID=2;
+  string capabilityExecutionID=3;
+  string triggerID=4;
+  string workflowID=5;
+  string workflowExecutionID=6;
+  string workflowOwner=7;
+  string stepID=8;
+  string stepRef=9;
+}
+
+message KeystoneCustomMessage2 {
+  string msg=1;
+  // https://protobuf.dev/programming-guides/proto3/#maps
+  // In go: if Value is empty for a key, nothing will be serialized
+  map<string, Value> labels=2;
+}
+
+
+message Value {
+  oneof value {
+    string string_value = 1;
+    int32 int_value = 2;
+    bool bool_value = 3;
+  }
+}

@@ -12,15 +12,3 @@ message TestCustomMessage {
   string string_val=4;
   bytes bytes_val=5;
 }
-
-message KeystoneCustomMessage {
-  string msg=1;
-  string capabilityID=2;
-  string capabilityExecutionID=3;
-  string triggerID=4;
-  string workflowID=5;
-  string workflowExecutionID=6;
-  string workflowOwner=7;
-  string stepID=8;
-  string stepRef=9;
-}

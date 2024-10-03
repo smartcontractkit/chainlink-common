@@ -5,7 +5,7 @@
 package notstreamstest
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/notstreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testdata/fixtures/capabilities/notstreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 

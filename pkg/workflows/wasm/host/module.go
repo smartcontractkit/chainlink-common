@@ -21,6 +21,7 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
+// safeMem returns a copy of the wasm module memory at the given pointer and size.
 func safeMem(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
 	mem := caller.GetExport("memory").Memory()
 	data := mem.UnsafeData(caller)
@@ -32,6 +33,8 @@ func safeMem(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
 	copy(cd, data[ptr:ptr+size])
 	return cd, nil
 }
+
+// copyBuffer copies the given src byte slice into the wasm module memory at the given pointer and size.
 func copyBuffer(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
 	mem := caller.GetExport("memory").Memory()
 	rawData := mem.UnsafeData(caller)

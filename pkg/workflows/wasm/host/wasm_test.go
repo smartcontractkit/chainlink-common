@@ -42,6 +42,8 @@ const (
 	envBinaryCmd          = "test/env/cmd"
 	logBinaryLocation     = "test/log/cmd/testmodule.wasm"
 	logBinaryCmd          = "test/log/cmd"
+	randBinaryLocation    = "test/rand/cmd/testmodule.wasm"
+	randBinaryCmd         = "test/rand/cmd"
 )
 
 func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
@@ -371,6 +373,33 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 		},
 	}
 	// This will return an error if FOO == BAR in the WASM binary
+	_, err = m.Run(req)
+	assert.Nil(t, err)
+}
+
+func TestModule_Sandbox_RandRead(t *testing.T) {
+	binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
+
+	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	require.NoError(t, err)
+
+	m.Start()
+
+	req := &wasmpb.Request{
+		Id: uuid.New().String(),
+		Message: &wasmpb.Request_ComputeRequest{
+			ComputeRequest: &wasmpb.ComputeRequest{
+				Request: &capabilitiespb.CapabilityRequest{
+					Inputs: &valuespb.Map{},
+					Config: &valuespb.Map{},
+					Metadata: &capabilitiespb.RequestMetadata{
+						ReferenceId: "transform",
+					},
+				},
+			},
+		},
+	}
+
 	_, err = m.Run(req)
 	assert.Nil(t, err)
 }

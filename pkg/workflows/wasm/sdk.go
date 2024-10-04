@@ -6,8 +6,8 @@ import (
 )
 
 type Runtime struct {
-	Logger logger.Logger
-	Fetch  func(req FetchRequest) FetchResponse
+	fetchFn func(req sdk.FetchRequest) (sdk.FetchResponse, error)
+	logger  logger.Logger
 }
 
 type RuntimeConfig struct {
@@ -26,17 +26,10 @@ func defaultRuntimeConfig() *RuntimeConfig {
 
 var _ sdk.Runtime = (*Runtime)(nil)
 
-type FetchRequest struct {
-	URL       string         `json:"url"`                 // URL to query, only http and https protocols are supported.
-	Method    string         `json:"method,omitempty"`    // HTTP verb, defaults to GET.
-	Headers   map[string]any `json:"headers,omitempty"`   // HTTP headers, defaults to empty.
-	Body      []byte         `json:"body,omitempty"`      // HTTP request body
-	TimeoutMs uint32         `json:"timeoutMs,omitempty"` // Timeout in milliseconds
+func (r *Runtime) Fetch(req sdk.FetchRequest) (sdk.FetchResponse, error) {
+	return r.fetchFn(req)
 }
 
-type FetchResponse struct {
-	Success    bool           `json:"success"`           // true if HTTP request was successful
-	StatusCode uint8          `json:"statusCode"`        // HTTP status code
-	Headers    map[string]any `json:"headers,omitempty"` // HTTP headers
-	Body       []byte         `json:"body,omitempty"`    // HTTP response body
+func (r *Runtime) Logger() logger.Logger {
+	return r.logger
 }

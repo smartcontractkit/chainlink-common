@@ -135,22 +135,38 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	assert.ErrorContains(t, err, "wasm trap: interrupt")
 }
 
-func Test_GetWorkflowSpec_Logs(t *testing.T) {
+func Test_Compute_Logs(t *testing.T) {
 	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
 
 	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-	spec, err := GetWorkflowSpec(
-		&ModuleConfig{
-			Logger: logger,
+	m, err := NewModule(&ModuleConfig{
+		Logger: logger,
+		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return nil, nil
 		},
-		binary,
-		[]byte(""),
-	)
+	}, binary)
 	require.NoError(t, err)
 
-	assert.Equal(t, spec.Name, "tester")
-	assert.Equal(t, spec.Owner, "ryan")
+	m.Start()
 
+	req := &wasmpb.Request{
+		Id: uuid.New().String(),
+		Message: &wasmpb.Request_ComputeRequest{
+			ComputeRequest: &wasmpb.ComputeRequest{
+				Request: &capabilitiespb.CapabilityRequest{
+					Inputs: &valuespb.Map{},
+					Config: &valuespb.Map{},
+					Metadata: &capabilitiespb.RequestMetadata{
+						ReferenceId: "transform",
+					},
+				},
+			},
+		},
+	}
+	_, err = m.Run(req)
+	assert.Nil(t, err)
+
+	require.Len(t, logs.AllUntimed(), 1)
 	expectedEntries := []Entry{
 		{
 			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
@@ -158,10 +174,6 @@ func Test_GetWorkflowSpec_Logs(t *testing.T) {
 				zap.String("test-string-field-key", "this is a test field content"),
 				zap.Float64("test-numeric-field-key", 6400000),
 			},
-		},
-		{
-			Log:    zapcore.Entry{Level: zapcore.InfoLevel, Message: "running workflow..."},
-			Fields: []zapcore.Field{},
 		},
 	}
 	for i := range expectedEntries {
@@ -206,7 +218,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		},
 	}
 	_, err = m.Run(req)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
+	require.Len(t, logs.AllUntimed(), 1)
 
 	expectedEntries := []Entry{
 		{

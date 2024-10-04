@@ -20,19 +20,25 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 	)
 
 	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
-	_ = triggerCfg.New(workflow)
+	trigger := triggerCfg.New(workflow)
+
+	sdk.Compute1[basictrigger.TriggerOutputs, bool](
+		workflow,
+		"transform",
+		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
+			resp, err := rsdk.Fetch(sdk.FetchRequest{
+				Method: http.MethodGet,
+				URL:    "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=BTC",
+			})
+			rsdk.Logger().Infow("fetch response", "body", string(resp.Body))
+			return resp.Success, err
+		})
 
 	return workflow
 }
-
 func main() {
 	runner := wasm.NewRunner()
-	resp := runner.SDK.Fetch(wasm.FetchRequest{
-		Method: http.MethodGet,
-		URL:    "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=BTC",
-	})
-
-	runner.SDK.Logger.Infow("fetch response", "body", string(resp.Body))
 	workflow := BuildWorkflow(runner.Config())
 	runner.Run(workflow)
 }

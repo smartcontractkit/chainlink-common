@@ -161,7 +161,6 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 		if rc.MaxFetchResponseSizeBytes != 0 {
 			drc.MaxFetchResponseSizeBytes = rc.MaxFetchResponseSizeBytes
 		}
-
 	}
 
 	sdk := r.sdkFactory(drc)

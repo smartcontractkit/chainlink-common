@@ -21,7 +21,7 @@ func NewRunner(ctx context.Context) *Runner {
 		results:      runnerResults{},
 		idToStep:     map[string]sdk.StepDefinition{},
 		dependencies: map[string][]string{},
-		runtime:      &runtime{},
+		runtime:      &NopRuntime{},
 	}
 }
 

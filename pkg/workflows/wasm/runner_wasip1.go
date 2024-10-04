@@ -10,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -62,8 +63,8 @@ func NewRunner() *Runner {
 		},
 		sdkFactory: func(sdkConfig *RuntimeConfig) *Runtime {
 			return &Runtime{
-				Logger: l,
-				Fetch: func(req FetchRequest) (FetchResponse, error) {
+				logger: l,
+				fetchFn: func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
 					headerspb, err := values.NewMap(req.Headers)
 					if err != nil {
 						os.Exit(CodeInvalidRequest)
@@ -107,10 +108,10 @@ func NewRunner() *Runner {
 					}
 
 					if response.ErrorMessage != "" {
-						return FetchResponse{}, errors.New(response.ErrorMessage)
+						return sdk.FetchResponse{}, errors.New(response.ErrorMessage)
 					}
 
-					return FetchResponse{
+					return sdk.FetchResponse{
 						Success:    response.Success,
 						StatusCode: uint8(response.StatusCode),
 						Headers:    headersResp,

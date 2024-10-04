@@ -22,17 +22,15 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
 	trigger := triggerCfg.New(workflow)
 
-	sdk.Compute1[basictrigger.TriggerOutputs, bool](
+	sdk.Compute1[basictrigger.TriggerOutputs, sdk.FetchResponse](
 		workflow,
 		"transform",
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
-		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
-			resp, err := rsdk.Fetch(sdk.FetchRequest{
+		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (sdk.FetchResponse, error) {
+			return rsdk.Fetch(sdk.FetchRequest{
 				Method: http.MethodGet,
 				URL:    "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=BTC",
 			})
-			rsdk.Logger().Infow("fetch response", "body", string(resp.Body))
-			return resp.Success, err
 		})
 
 	return workflow

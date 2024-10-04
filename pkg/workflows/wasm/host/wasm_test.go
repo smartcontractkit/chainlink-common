@@ -18,9 +18,11 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -187,16 +189,20 @@ func Test_Compute_Fetch(t *testing.T) {
 	binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
 	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
-		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-		expected := "Valid fetch response"
+		expected := sdk.FetchResponse{
+			Success:    true,
+			Body:       []byte("valid-response"),
+			StatusCode: http.StatusOK,
+			Headers:    map[string]any{},
+		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger,
+			Logger: logger.Test(t),
 			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
-					Success:    true,
-					Body:       []byte(expected),
-					StatusCode: http.StatusOK,
+					Success:    expected.Success,
+					Body:       expected.Body,
+					StatusCode: uint32(expected.StatusCode),
 				}, nil
 			},
 		}, binary)
@@ -218,36 +224,33 @@ func Test_Compute_Fetch(t *testing.T) {
 				},
 			},
 		}
-		_, err = m.Run(req)
+		response, err := m.Run(req)
 		assert.Nil(t, err)
-		require.Len(t, logs.AllUntimed(), 1)
 
-		expectedEntries := []Entry{
-			{
-				Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "fetch response"},
-				Fields: []zapcore.Field{
-					zap.String("body", expected),
-				},
-			},
-		}
-		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
-			assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
-		}
+		actual := sdk.FetchResponse{}
+		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
+		require.NoError(t, err)
+		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, actual)
 	})
 
 	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
-		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-		expected := "Valid fetch response"
+		expected := sdk.FetchResponse{
+			Success:    true,
+			Body:       []byte("valid-response"),
+			StatusCode: http.StatusOK,
+			Headers:    map[string]any{},
+		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger,
+			Logger: logger.Test(t),
 			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
-					Success:    true,
-					Body:       []byte(expected),
-					StatusCode: http.StatusOK,
+					Success:    expected.Success,
+					Body:       expected.Body,
+					StatusCode: uint32(expected.StatusCode),
 				}, nil
 			},
 		}, binary)
@@ -272,23 +275,16 @@ func Test_Compute_Fetch(t *testing.T) {
 				},
 			},
 		}
-		_, err = m.Run(req)
+		response, err := m.Run(req)
 		assert.Nil(t, err)
-		require.Len(t, logs.AllUntimed(), 1)
 
-		expectedEntries := []Entry{
-			{
-				Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "fetch response"},
-				Fields: []zapcore.Field{
-					zap.String("body", expected),
-				},
-			},
-		}
-		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
-			assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
-		}
+		actual := sdk.FetchResponse{}
+		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
+		require.NoError(t, err)
+		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, actual)
 	})
 
 	t.Run("NOK_fetch_error_returned", func(t *testing.T) {

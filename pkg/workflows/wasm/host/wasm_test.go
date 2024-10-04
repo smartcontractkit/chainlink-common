@@ -185,55 +185,154 @@ func Test_Compute_Logs(t *testing.T) {
 
 func Test_Compute_Fetch(t *testing.T) {
 	binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
-	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-	expected := "Valid fetch response"
+	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
+		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
+		expected := "Valid fetch response"
 
-	m, err := NewModule(&ModuleConfig{
-		Logger: logger,
-		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-			return &wasmpb.FetchResponse{
-				Success:    true,
-				Body:       []byte(expected),
-				StatusCode: http.StatusOK,
-			}, nil
-		},
-	}, binary)
-	require.NoError(t, err)
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger,
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					Success:    true,
+					Body:       []byte(expected),
+					StatusCode: http.StatusOK,
+				}, nil
+			},
+		}, binary)
+		require.NoError(t, err)
 
-	m.Start()
+		m.Start()
 
-	req := &wasmpb.Request{
-		Id: uuid.New().String(),
-		Message: &wasmpb.Request_ComputeRequest{
-			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
-					Inputs: &valuespb.Map{},
-					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
-						ReferenceId: "transform",
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
 					},
 				},
 			},
-		},
-	}
-	_, err = m.Run(req)
-	assert.Nil(t, err)
-	require.Len(t, logs.AllUntimed(), 1)
+		}
+		_, err = m.Run(req)
+		assert.Nil(t, err)
+		require.Len(t, logs.AllUntimed(), 1)
 
-	expectedEntries := []Entry{
-		{
-			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "fetch response"},
-			Fields: []zapcore.Field{
-				zap.String("body", expected),
+		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "fetch response"},
+				Fields: []zapcore.Field{
+					zap.String("body", expected),
+				},
 			},
-		},
-	}
-	for i := range expectedEntries {
-		assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
-		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
-	}
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
+		}
+	})
+
+	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
+		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
+		expected := "Valid fetch response"
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger,
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					Success:    true,
+					Body:       []byte(expected),
+					StatusCode: http.StatusOK,
+				}, nil
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+					RuntimeConfig: &wasmpb.RuntimeConfig{
+						MaxFetchResponseSizeBytes: 2 * 1024,
+					},
+				},
+			},
+		}
+		_, err = m.Run(req)
+		assert.Nil(t, err)
+		require.Len(t, logs.AllUntimed(), 1)
+
+		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "fetch response"},
+				Fields: []zapcore.Field{
+					zap.String("body", expected),
+				},
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
+		}
+	})
+
+	t.Run("NOK_fetch_error_returned", func(t *testing.T) {
+		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
+		expectedErr := fmt.Errorf("test-error")
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger,
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return nil, expectedErr
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(req)
+		assert.NotNil(t, err)
+		require.Len(t, logs.AllUntimed(), 1)
+
+		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{Level: zapcore.ErrorLevel, Message: fmt.Sprintf("error calling fetch: %s", expectedErr)},
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+		}
+	})
 }
 
 func TestModule_Errors(t *testing.T) {

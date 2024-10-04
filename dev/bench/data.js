@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727903717545,
+  "lastUpdate": 1728039532326,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2688,6 +2688,48 @@ window.BENCHMARK_DATA = {
             "value": 28437,
             "unit": "ns/op",
             "extra": "42206 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "alecpgard@gmail.com",
+            "name": "Alec Gard",
+            "username": "alecgard"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "298546dff699f20d9be574df38011759f6658316",
+          "message": "Add metric offchain_aggregator_answers_latest_timestamp (#825)",
+          "timestamp": "2024-10-04T05:57:06-05:00",
+          "tree_id": "12f3f0b84837f3cf023fbbaff38ad26f05e6659d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/298546dff699f20d9be574df38011759f6658316"
+        },
+        "date": 1728039531164,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 452.8,
+            "unit": "ns/op",
+            "extra": "2663928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 533.2,
+            "unit": "ns/op",
+            "extra": "2327762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28521,
+            "unit": "ns/op",
+            "extra": "42256 times\n4 procs"
           }
         ]
       }

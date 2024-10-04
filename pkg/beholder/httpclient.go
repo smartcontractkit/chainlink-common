@@ -32,7 +32,7 @@ func NewHTTPClient(cfg Config) (*Client, error) {
 // Used for testing to override the default exporter
 type otlploghttpFactory func(options ...otlploghttp.Option) (sdklog.Exporter, error)
 
-func newTLSConfigFromFile(certFile string) (*tls.Config, error) {
+func newCertFromFile(certFile string) (*x509.CertPool, error) {
 	b, err := os.ReadFile(certFile)
 	if err != nil {
 		return nil, err
@@ -41,20 +41,26 @@ func newTLSConfigFromFile(certFile string) (*tls.Config, error) {
 	if !cp.AppendCertsFromPEM(b) {
 		return nil, fmt.Errorf("credentials: failed to append certificates")
 	}
-	return &tls.Config{RootCAs: cp, MinVersion: tls.VersionTLS12}, nil
+	return cp, nil
 }
 
 func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
-	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
+	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return noop, err
 	}
 	var tlsConfig *tls.Config
-	if !cfg.InsecureConnection && cfg.CACertFile != "" {
-		tlsConfig, err = newTLSConfigFromFile(cfg.CACertFile)
-		if err != nil {
-			return noop, err
+	if !cfg.InsecureConnection {
+		tlsConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
+		if cfg.CACertFile != "" {
+			rootCAs, e := newCertFromFile(cfg.CACertFile)
+			if e != nil {
+				return noop, e
+			}
+			tlsConfig.RootCAs = rootCAs
 		}
 	}
 	tlsConfigOption := otlploghttp.WithInsecure()

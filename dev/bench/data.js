@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728313684901,
+  "lastUpdate": 1728342313072,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2772,6 +2772,48 @@ window.BENCHMARK_DATA = {
             "value": 28545,
             "unit": "ns/op",
             "extra": "41959 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d98e32024f8b8b7403a036a5b7704fdf99a7eb37",
+          "message": "Add Capabilities team code owners to values library and /capabilities (#820)",
+          "timestamp": "2024-10-07T19:04:13-04:00",
+          "tree_id": "d16dc3006b5c1c1948aff8bf3afd578a3f647d47",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d98e32024f8b8b7403a036a5b7704fdf99a7eb37"
+        },
+        "date": 1728342312055,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.2,
+            "unit": "ns/op",
+            "extra": "2697048 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.1,
+            "unit": "ns/op",
+            "extra": "2335945 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28499,
+            "unit": "ns/op",
+            "extra": "42115 times\n4 procs"
           }
         ]
       }

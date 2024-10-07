@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728039532326,
+  "lastUpdate": 1728313684901,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2730,6 +2730,48 @@ window.BENCHMARK_DATA = {
             "value": 28521,
             "unit": "ns/op",
             "extra": "42256 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "93c2fb862aa950f2349664a817611c9ede779d1b",
+          "message": "Fix a bug where schema validation looses type information if the input has an any in it (#827)",
+          "timestamp": "2024-10-07T11:06:59-04:00",
+          "tree_id": "5726c055322acc765a8c236ac3bf420cac0cd7bb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/93c2fb862aa950f2349664a817611c9ede779d1b"
+        },
+        "date": 1728313683792,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.8,
+            "unit": "ns/op",
+            "extra": "2639769 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.7,
+            "unit": "ns/op",
+            "extra": "2338688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28545,
+            "unit": "ns/op",
+            "extra": "41959 times\n4 procs"
           }
         ]
       }

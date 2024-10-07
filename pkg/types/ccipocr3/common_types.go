@@ -7,6 +7,26 @@ import (
 	"strings"
 )
 
+// UnknownAddress represents a raw address with an unknown encoding.
+type UnknownAddress []byte
+
+// NewUnknownAddressFromHex creates a new UnknownAddress from a hex string.
+func NewUnknownAddressFromHex(s string) (UnknownAddress, error) {
+	b, err := NewBytesFromString(s)
+	if err != nil {
+		return nil, err
+	}
+	return UnknownAddress(b), nil
+}
+
+// String returns the hex representation of the unknown address.
+func (a UnknownAddress) String() string {
+	return Bytes(a).String()
+}
+
+// UnknownEncodedAddress represents an encoded address with an unknown encoding.
+type UnknownEncodedAddress string
+
 type Bytes []byte
 
 func NewBytesFromString(s string) (Bytes, error) {

@@ -306,7 +306,7 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 		var (
 			// Fix the random source with a hardcoded seed
 			seed       = cfg.Determinism.Seed
-			randSource = rand.New(rand.NewSource(seed))
+			randSource = rand.New(rand.NewSource(seed)) //nolint:gosec
 			randOutput = make([]byte, bufLen)
 		)
 

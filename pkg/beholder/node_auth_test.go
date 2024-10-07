@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
 func defaultTestingConfig() beholder.Config {
@@ -17,7 +18,6 @@ func defaultTestingConfig() beholder.Config {
 		CSASigner:          func([]byte) []byte { return []byte("test-signature") },
 		InsecureConnection: false,
 	}
-
 }
 
 func TestNodeAuthenticator_HappyPath(t *testing.T) {

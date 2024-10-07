@@ -37,7 +37,7 @@ func (na *NodeAuthenticator) RequireTransportSecurity() bool {
 
 func validateNodeAuthConfig(config Config) error {
 	if config.CSAAuthEnabled {
-		if config.CSAPublicKey == nil {
+		if len(config.CSAPublicKey) == 0 {
 			return fmt.Errorf("CSA auth is enabled but no CSA public key was provided")
 		}
 		if config.CSASigner == nil {

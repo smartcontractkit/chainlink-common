@@ -26,7 +26,7 @@ type AddressModifier interface {
 //
 // The fields parameter specifies which fields within a struct should be modified. The AddressModifier
 // is injected into the modifier to handle chain-specific logic (e.g., different encoding schemes for
-// Ethereum or Solana addresses). This happends during the contractReader relayer configuration.
+// Ethereum or Solana addresses). This happens during the contractReader relayer configuration.
 func NewAddressBytesToStringModifier(fields []string, modifier AddressModifier) Modifier {
 	fieldMap := map[string]bool{}
 	for _, field := range fields {

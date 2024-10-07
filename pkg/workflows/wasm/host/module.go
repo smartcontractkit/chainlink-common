@@ -191,7 +191,7 @@ func NewModule(modCfg *ModuleConfig, binaryInput []byte) (*Module, error) {
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error wrapping sendResponse func: %w", err)
 	}
 
 	err = linker.FuncWrap(
@@ -241,56 +241,16 @@ func NewModule(modCfg *ModuleConfig, binaryInput []byte) (*Module, error) {
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error wrapping log func: %w", err)
 	}
 
 	err = linker.FuncWrap(
 		"env",
 		"fetch",
-		func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-			b, innerErr := safeMem(caller, reqptr, reqptrlen)
-			if innerErr != nil {
-				logger.Errorf("error calling fetch: %s", innerErr)
-				return ErrnoFault
-			}
-
-			req := &wasmpb.FetchRequest{}
-			innerErr = proto.Unmarshal(b, req)
-			if innerErr != nil {
-				logger.Errorf("error calling fetch: %s", innerErr)
-				return ErrnoFault
-			}
-
-			fetchResp, innerErr := modCfg.Fetch(req)
-			if innerErr != nil {
-				logger.Errorf("error calling fetch: %s", innerErr)
-				return ErrnoFault
-			}
-
-			respBytes, innerErr := proto.Marshal(fetchResp)
-			if innerErr != nil {
-				logger.Errorf("error calling fetch: %s", innerErr)
-				return ErrnoFault
-			}
-
-			size := copyBuffer(caller, respBytes, respptr, int32(len(respBytes)))
-			if size == -1 {
-				return ErrnoFault
-			}
-
-			uint32Size := int32(4)
-			resplenBytes := make([]byte, uint32Size)
-			binary.LittleEndian.PutUint32(resplenBytes, uint32(len(respBytes)))
-			size = copyBuffer(caller, resplenBytes, resplenptr, uint32Size)
-			if size == -1 {
-				return ErrnoFault
-			}
-
-			return ErrnoSuccess
-		},
+		fetchFn(logger, modCfg),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error wrapping fetch func: %w", err)
 	}
 
 	m := &Module{
@@ -407,4 +367,49 @@ func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
 
 func containsCode(err error, code int) bool {
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
+}
+
+func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+	const fetchErrSfx = "error calling fetch"
+	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+		b, innerErr := safeMem(caller, reqptr, reqptrlen)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		req := &wasmpb.FetchRequest{}
+		innerErr = proto.Unmarshal(b, req)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		fetchResp, innerErr := modCfg.Fetch(req)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		respBytes, innerErr := proto.Marshal(fetchResp)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		size := copyBuffer(caller, respBytes, respptr, int32(len(respBytes)))
+		if size == -1 {
+			return ErrnoFault
+		}
+
+		uint32Size := int32(4)
+		resplenBytes := make([]byte, uint32Size)
+		binary.LittleEndian.PutUint32(resplenBytes, uint32(len(respBytes)))
+		size = copyBuffer(caller, resplenBytes, resplenptr, uint32Size)
+		if size == -1 {
+			return ErrnoFault
+		}
+
+		return ErrnoSuccess
+	}
 }

@@ -289,12 +289,11 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("NOK_fetch_error_returned", func(t *testing.T) {
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-		expectedErr := fmt.Errorf("test-error")
 
 		m, err := NewModule(&ModuleConfig{
 			Logger: logger,
 			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return nil, expectedErr
+				return nil, assert.AnError
 			},
 		}, binary)
 		require.NoError(t, err)
@@ -321,7 +320,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 		expectedEntries := []Entry{
 			{
-				Log: zapcore.Entry{Level: zapcore.ErrorLevel, Message: fmt.Sprintf("error calling fetch: %s", expectedErr)},
+				Log: zapcore.Entry{Level: zapcore.ErrorLevel, Message: fmt.Sprintf("error calling fetch: %s", assert.AnError)},
 			},
 		}
 		for i := range expectedEntries {

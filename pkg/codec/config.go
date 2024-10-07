@@ -22,6 +22,7 @@ import (
 // - hard code -> [HardCodeModifierConfig]
 // - extract element -> [ElementExtractorModifierConfig]
 // - epoch to time -> [EpochToTimeModifierConfig]
+// - address to string -> [AddressBytesToStringModifierConfig]
 type ModifiersConfig []ModifierConfig
 
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
@@ -228,44 +229,20 @@ func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// AddressBytesToStringModifierConfig is used to transform address bytes fields to string.
-// It specifies the bytes array fields to be transformed, the length of the byte array, and the encoding/decoding format.
+// AddressBytesToStringModifierConfig is used to transform address byte fields into string fields.
+// It holds the list of fields that should be modified and the chain-specific logic to do the modifications.
 //
-// - Fields: A list of field names that should be modified (e.g., converting a byte array called "Account" to a string).
-//
-// - Length: Specifies the length of the byte array (e.g., 20 bytes for EVM, 32 bytes for Solana).
-//
-// - Checksum: Defines the type of checksum to apply (e.g., EIP55 for Ethereum addresses, None for no checksum).
-//
-// - Encoding: Specifies the encoding type (e.g., Hex for Ethereum, Base58 for Solana).
+// The chain-specific AddressModifier (e.g., EVMAddressModifier, SolanaAddressModifier) handles
+// encoding and decoding of addresses. This field is skipped during JSON serialization and is
+// injected during the relayer contractReader configuration.
 type AddressBytesToStringModifierConfig struct {
-	Fields   []string
-	Length   AddressLength
-	Checksum ChecksumType
-	Encoding EncodingType
+	Fields []string
+	// Modifier is skipped in JSON serialization, will be injected later.
+	Modifier AddressModifier `json:"-"`
 }
 
 func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
-	for i, f := range c.Fields {
-		c.Fields[i] = upperFirstCharacter(f)
-	}
-
-	checksum, err := getChecksumFunction(c.Checksum)
-	if err != nil {
-		return nil, fmt.Errorf("error in checksum configuration: %w", err)
-	}
-
-	addrLength, err := getAddressLength(c.Length)
-	if err != nil {
-		return nil, fmt.Errorf("error in address length: %w", err)
-	}
-
-	encoding, err := getEncodingType(c.Encoding)
-	if err != nil {
-		return nil, fmt.Errorf("error in encoding type: %w", err)
-	}
-
-	return NewAddressBytesToStringModifier(addrLength, checksum, c.Fields, encoding), nil
+	return NewAddressBytesToStringModifier(c.Fields, c.Modifier), nil
 }
 
 func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {

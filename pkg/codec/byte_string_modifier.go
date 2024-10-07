@@ -1,78 +1,40 @@
 package codec
 
 import (
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"reflect"
-
-	"golang.org/x/crypto/sha3"
-
-	"github.com/mr-tron/base58"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-type AddressLength int
-type ChecksumType string
-type EncodingType string
-
-const (
-	// EVM
-	Byte20Address AddressLength = 20
-	EIP55         ChecksumType  = "eip55"
-	HexEncoding   EncodingType  = "hex"
-	// Solana
-	Byte32Address  AddressLength = 32
-	Base58Encoding EncodingType  = "base58"
-	// General
-	NoneChecksum ChecksumType = "none"
-)
-
-type AddressChecksum func([]byte) []byte
-
-// EIP55AddressChecksum Applies EIP55 checksum logic to the address
-// assuming input 'a' is already in hex form without the "0x" prefix
-func EIP55AddressChecksum(a []byte) []byte {
-	buf := a
-
-	// compute checksum
-	sha := sha3.NewLegacyKeccak256()
-	sha.Write(buf[2:])
-	hash := sha.Sum(nil)
-
-	for i := 2; i < len(buf); i++ {
-		hashByte := hash[(i-2)/2]
-		if i%2 == 0 {
-			hashByte = hashByte >> 4
-		} else {
-			hashByte &= 0xf
-		}
-		if buf[i] > '9' && hashByte > 7 {
-			buf[i] -= 32
-		}
-	}
-
-	return buf[:]
+// AddressModifier defines the interface for encoding, decoding, and handling addresses.
+// This interface allows for chain-specific logic to be injected into the modifier without
+// modifying the common repository, making the implementation flexible and adaptable for
+// different blockchain ecosystems (e.g., Ethereum, Solana).
+type AddressModifier interface {
+	// Converts a byte array representing an address into its string form.
+	EncodeAddress([]byte) (string, error)
+	// Converts a string representation of an address back into its byte array form.
+	DecodeAddress(string) ([]byte, error)
+	// Returns the expected byte length of the address for the specific chain.
+	Length() int
 }
 
-// NoChecksum is a checksum function that returns the input bytes unchanged.
-func NoChecksum(a []byte) []byte {
-	return a
-}
-
-// NewAddressBytesToStringModifier creates a new modifier that converts byte arrays to strings.
-// It uses the specified address length, checksum, fields, and encoding.
-func NewAddressBytesToStringModifier(length AddressLength, checksum AddressChecksum, fields []string, encoding EncodingType) Modifier {
+// NewAddressBytesToStringModifier creates and returns a new modifier that transforms address byte
+// arrays to their corresponding string representation (or vice versa) based on the provided
+// AddressModifier.
+//
+// The fields parameter specifies which fields within a struct should be modified. The AddressModifier
+// is injected into the modifier to handle chain-specific logic (e.g., different encoding schemes for
+// Ethereum or Solana addresses). This happends during the contractReader relayer configuration.
+func NewAddressBytesToStringModifier(fields []string, modifier AddressModifier) Modifier {
 	fieldMap := map[string]bool{}
 	for _, field := range fields {
 		fieldMap[field] = true
 	}
 
 	m := &bytesToStringModifier{
-		length:   length,
-		checksum: checksum,
-		encoding: encoding,
+		modifier: modifier,
 		modifierBase: modifierBase[bool]{
 			fields:           fieldMap,
 			onToOffChainType: map[reflect.Type]reflect.Type{},
@@ -80,8 +42,9 @@ func NewAddressBytesToStringModifier(length AddressLength, checksum AddressCheck
 		},
 	}
 
+	// Modify field for input using the modifier to convert the byte array to string
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, _ bool) error {
-		t, err := convertBytesToString(field.Type, field.Name, int(m.length))
+		t, err := convertBytesToString(field.Type, field.Name, modifier.Length())
 		if err != nil {
 			return err
 		}
@@ -93,46 +56,9 @@ func NewAddressBytesToStringModifier(length AddressLength, checksum AddressCheck
 }
 
 type bytesToStringModifier struct {
-	length   AddressLength
-	checksum AddressChecksum
-	encoding EncodingType
+	// Injected modifier that contains chain-specific logic
+	modifier AddressModifier
 	modifierBase[bool]
-}
-
-// getChecksumFunction returns the checksum function based on the ChecksumType.
-func getChecksumFunction(checksumTy ChecksumType) (AddressChecksum, error) {
-	switch checksumTy {
-	case EIP55:
-		return EIP55AddressChecksum, nil
-	case NoneChecksum:
-		return NoChecksum, nil
-	default:
-		return nil, fmt.Errorf("checksum type unavailable: %s", checksumTy)
-	}
-}
-
-// getAddressLength returns the AddressLength based on the input value.
-func getAddressLength(length AddressLength) (AddressLength, error) {
-	switch length {
-	case Byte20Address:
-		return Byte20Address, nil
-	case Byte32Address:
-		return Byte32Address, nil
-	default:
-		return 0, fmt.Errorf("address length unavailable: %d", length)
-	}
-}
-
-// getEncodingType returns the EncodingType based on the input value.
-func getEncodingType(encodingTy EncodingType) (EncodingType, error) {
-	switch encodingTy {
-	case HexEncoding:
-		return HexEncoding, nil
-	case Base58Encoding:
-		return Base58Encoding, nil
-	default:
-		return "", fmt.Errorf("unsupported encoding type: %s", encodingTy)
-	}
 }
 
 func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemType string) (tpe reflect.Type, err error) {
@@ -154,10 +80,7 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 		return cached, nil
 	}
 
-	addrType, err := typeFromAddressLength(t.length)
-	if err != nil {
-		return nil, err
-	}
+	addrType := reflect.ArrayOf(t.modifier.Length(), reflect.TypeOf(byte(0)))
 
 	switch onChainType.Kind() {
 	case reflect.Pointer:
@@ -168,7 +91,6 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 		}
 
 		ptr := reflect.PointerTo(elm)
-
 		t.onToOffChainType[onChainType] = ptr
 		t.offToOnChainType[ptr] = onChainType
 		return ptr, nil
@@ -184,8 +106,9 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 		return sliceType, nil
 	case reflect.Array:
 		var offChainType reflect.Type
-		if onChainType == addrType {
-			offChainType = reflect.TypeOf("")
+		// Check for nested byte arrays (e.g., [20]byte)
+		if onChainType.Elem() == addrType.Elem() {
+			offChainType = reflect.ArrayOf(onChainType.Len(), reflect.TypeOf(""))
 		} else {
 			elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
 			if err != nil {
@@ -206,21 +129,23 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, itemT
 	}
 }
 
+// TransformToOnChain uses the AddressModifier for string-to-address conversion.
 func (t *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
-	return transformWithMaps(offChainValue, t.offToOnChainType, t.fields, noop, stringToAddressHookForOnChain(t.length, t.encoding))
+	return transformWithMaps(offChainValue, t.offToOnChainType, t.fields, noop, stringToAddressHookForOnChain(t.modifier))
 }
 
+// TransformToOffChain uses the AddressModifier for address-to-string conversion.
 func (t *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
 	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields,
-		addressTransformationAction[bool](t.length),
-		addressToStringHookForOffChain(t.length, t.encoding, t.checksum),
+		addressTransformationAction[bool](t.modifier.Length()),
+		addressToStringHookForOffChain(t.modifier),
 	)
 }
 
 // addressTransformationAction performs conversions over the fields we want to modify.
-// It handles byte arrays, ensuring they are convertible to the expected custom type AddressLength.
+// It handles byte arrays, ensuring they are convertible to the expected length.
 // It then replaces the field in the map with the transformed value.
-func addressTransformationAction[T any](length AddressLength) mapAction[T] {
+func addressTransformationAction[T any](length int) mapAction[T] {
 	return func(em map[string]any, fieldName string, value T) error {
 		// Check if the field exists in the map
 		if val, ok := em[fieldName]; ok {
@@ -231,14 +156,9 @@ func addressTransformationAction[T any](length AddressLength) mapAction[T] {
 				rVal = reflect.Indirect(rVal)
 			}
 
-			// Get the expected type from the AddressLength (e.g., [length]byte)
-			expectedType, err := typeFromAddressLength(length)
-			if err != nil {
-				return err
-			}
+			expectedType := reflect.ArrayOf(length, reflect.TypeOf(byte(0)))
 
 			// Handle type alias that are convertible to the expected type
-			// eg. type addressType [codec.Byte20Address]byte converts to [20]byte
 			if rVal.Type().ConvertibleTo(expectedType) {
 				rVal = rVal.Convert(expectedType)
 			}
@@ -246,55 +166,46 @@ func addressTransformationAction[T any](length AddressLength) mapAction[T] {
 			switch rVal.Kind() {
 			case reflect.Array:
 				// Handle outer arrays (e.g., [n][length]byte)
-				if rVal.Type().Elem().Kind() == reflect.Array && rVal.Type().Elem().Len() == int(length) {
+				if rVal.Type().Elem().Kind() == reflect.Array && rVal.Type().Elem().Len() == length {
 					// Create a new array of the correct size to store the converted elements
 					addressArray := reflect.New(reflect.ArrayOf(rVal.Len(), expectedType)).Elem()
-
 					// Convert each element from [length]byte to the expected type
 					for i := 0; i < rVal.Len(); i++ {
 						elem := rVal.Index(i)
-						if elem.Len() != int(length) {
+						if elem.Len() != length {
 							return fmt.Errorf("expected [%v]byte but got length %d for element %d", length, elem.Len(), i)
 						}
 						reflect.Copy(addressArray.Index(i), elem)
 					}
-
 					// Replace the field in the map with the converted array
 					em[fieldName] = addressArray.Interface()
 				} else if rVal.Type() == expectedType {
 					// Handle a single array (e.g., [length]byte)
 					addressVal := reflect.New(expectedType).Elem()
 					reflect.Copy(addressVal, rVal)
-
 					// Replace the field in the map with the converted array
 					em[fieldName] = addressVal.Interface()
 				} else {
-					return fmt.Errorf("expected [%v]byte or array of [%v]byte but got %v for field %s", length, length, rVal.Type(), fieldName)
+					return fmt.Errorf("expected [%v]byte but got %v for field %s", length, rVal.Type(), fieldName)
 				}
-
 			case reflect.Slice:
 				// Handle slices of byte arrays (e.g., [][length]byte)
 				if rVal.Len() > 0 && rVal.Index(0).Type() == expectedType {
 					// Create a slice of the expected type
 					addressSlice := reflect.MakeSlice(reflect.SliceOf(expectedType), rVal.Len(), rVal.Len())
-
 					// Convert each element of the slice
 					for i := 0; i < rVal.Len(); i++ {
 						elem := rVal.Index(i)
-						if elem.Len() != int(length) {
+						if elem.Len() != length {
 							return fmt.Errorf("expected element of [%v]byte but got length %d at index %d", length, elem.Len(), i)
 						}
-
-						// Copy the element to the new slice
 						reflect.Copy(addressSlice.Index(i), elem)
 					}
-
 					// Replace the field in the map with the converted slice
 					em[fieldName] = addressSlice.Interface()
 				} else {
-					return fmt.Errorf("expected slice of [%v]byte arrays but got %v for field %s", length, rVal.Type(), fieldName)
+					return fmt.Errorf("expected slice of [%v]byte but got %v for field %s", length, rVal.Type(), fieldName)
 				}
-
 			default:
 				return fmt.Errorf("unexpected type %v for field %s", rVal.Kind(), fieldName)
 			}
@@ -312,12 +223,17 @@ func convertBytesToString(t reflect.Type, field string, length int) (reflect.Typ
 		return convertBytesToString(t.Elem(), field, length)
 
 	case reflect.Array:
-		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
+		// Handle arrays, convert array of bytes to array of strings
+		if t.Elem().Kind() == reflect.Uint8 && t.Len() == length {
+			return reflect.TypeOf(""), nil
+		} else if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
+			// Handle nested arrays (e.g., [2][20]byte to [2]string)
 			return reflect.ArrayOf(t.Len(), reflect.TypeOf("")), nil
 		}
-		return reflect.TypeOf(""), nil
+		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
 	case reflect.Slice:
+		// Handle slices of byte arrays, convert to slice of strings
 		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
 			return reflect.SliceOf(reflect.TypeOf("")), nil
 		}
@@ -328,15 +244,40 @@ func convertBytesToString(t reflect.Type, field string, length int) (reflect.Typ
 	}
 }
 
-// addressToStringHookForOffChain converts byte arrays to their string representation for off-chain use.
-// It handles different encodings (e.g., hex, base58) and applies a checksum if provided.
-func addressToStringHookForOffChain(length AddressLength, encoding EncodingType, checksum func([]byte) []byte) func(from reflect.Type, to reflect.Type, data any) (any, error) {
+// stringToAddressHookForOnChain converts a string representation of an address back into a byte array for on-chain use.
+func stringToAddressHookForOnChain(modifier AddressModifier) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		byteArrTyp, err := typeFromAddressLength(length)
-		if err != nil {
-			return nil, err
-		}
+		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeOf(byte(0)))
+		strTyp := reflect.TypeOf("")
 
+		// Convert from string to byte array (e.g., string -> [20]byte)
+		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
+			addr := data.(string)
+
+			// Decode the address based on encoding type
+			bts, err := modifier.DecodeAddress(addr)
+			if err != nil {
+				return nil, err
+			}
+
+			// Ensure the byte length matches the expected length
+			if len(bts) != modifier.Length() {
+				return nil, fmt.Errorf("length mismatch: expected %d bytes, got %d", modifier.Length(), len(bts))
+			}
+
+			// Create a new array of the desired type and fill it with the decoded bytes
+			val := reflect.New(byteArrTyp).Elem()
+			reflect.Copy(val, reflect.ValueOf(bts))
+			return val.Interface(), nil
+		}
+		return data, nil
+	}
+}
+
+// addressToStringHookForOffChain converts byte arrays to their string representation for off-chain use.
+func addressToStringHookForOffChain(modifier AddressModifier) func(from reflect.Type, to reflect.Type, data any) (any, error) {
+	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
+		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeOf(byte(0)))
 		strTyp := reflect.TypeOf("")
 
 		// if 'from' is a pointer to the byte array (e.g., *[20]byte), dereference it.
@@ -354,113 +295,13 @@ func addressToStringHookForOffChain(length AddressLength, encoding EncodingType,
 				bts[i] = byte(val.Index(i).Uint())
 			}
 
-			encoded, err := encodeAddressWithChecksum(bts, encoding, checksum)
+			encoded, err := modifier.EncodeAddress(bts)
 			if err != nil {
 				return nil, err
 			}
 
 			return encoded, nil
 		}
-
 		return data, nil
-	}
-}
-
-// stringToAddressHookForOnChain converts a string representation of an address back into a byte array for on-chain use.
-// It decodes the address using the specified encoding (e.g., hex, base58) and verifies the length.
-func stringToAddressHookForOnChain(length AddressLength, encoding EncodingType) func(from reflect.Type, to reflect.Type, data any) (any, error) {
-	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		byteArrTyp, err := typeFromAddressLength(length)
-		if err != nil {
-			return nil, err
-		}
-
-		strTyp := reflect.TypeOf("")
-
-		// Convert from string to byte array (e.g., string -> [20]byte)
-		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
-			addr := data.(string)
-
-			// Avoid potential panic when the address is empty
-			if len(addr) == 0 {
-				return nil, fmt.Errorf("empty address")
-			}
-
-			// Decode the address based on encoding type
-			bts, err := decodeAddress(addr, encoding, length)
-			if err != nil {
-				return nil, err
-			}
-
-			// Ensure the byte length matches the expected AddressLength
-			if len(bts) != int(length) {
-				return nil, fmt.Errorf("length mismatch: expected %d bytes, got %d", length, len(bts))
-			}
-
-			// Create a new array of the desired type and fill it with the decoded bytes
-			val := reflect.New(byteArrTyp).Elem()
-			reflect.Copy(val, reflect.ValueOf(bts))
-
-			return val.Interface(), nil
-		}
-
-		return data, nil
-	}
-}
-
-// decodeAddress decodes a string address into a byte array based on the specified encoding (e.g., hex or base58).
-// It also checks if the decoded byte array matches the expected address length.
-func decodeAddress(addr string, encoding EncodingType, length AddressLength) ([]byte, error) {
-	switch encoding {
-	case Base58Encoding:
-		bts, err := base58.Decode(addr)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(bts) != int(length) {
-			return nil, fmt.Errorf("length mismatch: expected %d bytes, got %d", length, len(bts))
-		}
-		return bts, nil
-
-	case HexEncoding:
-		bts, err := hex.DecodeString(addr[2:])
-		if err != nil {
-			return nil, err
-		}
-
-		if len(bts) != int(length) {
-			return nil, fmt.Errorf("length mismatch: expected %d bytes, got %d", length, len(bts))
-		}
-		return bts, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported encoding type: %v", encoding)
-	}
-}
-
-// encodeAddressWithChecksum encodes a byte array into a string based on the specified encoding (e.g., hex or base58).
-// It also applies a checksum function to the byte array before returning the encoded result.
-func encodeAddressWithChecksum(bts []byte, encoding EncodingType, checksum func([]byte) []byte) (string, error) {
-	switch encoding {
-	case Base58Encoding:
-		return base58.Encode(checksum(bts)), nil
-	case HexEncoding:
-		encoded := "0x" + hex.EncodeToString(bts)
-		return string(checksum([]byte(encoded))), nil
-	default:
-		return "", fmt.Errorf("unsupported encoding type: %v", encoding)
-	}
-}
-
-// typeFromAddressLength returns the reflect.Type corresponding to the given AddressLength (e.g., [20]byte for Byte20Address).
-func typeFromAddressLength(length AddressLength) (reflect.Type, error) {
-	switch length {
-	case Byte20Address:
-		return reflect.TypeOf([Byte20Address]byte{}), nil
-	case Byte32Address:
-		return reflect.TypeOf([Byte32Address]byte{}), nil
-	default:
-		return nil, errors.New("address length not available")
 	}
 }

@@ -2,8 +2,6 @@ package host
 
 import (
 	"encoding/binary"
-	"io"
-	"math/rand"
 	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v23"
@@ -43,39 +41,7 @@ func newWasiLinker(engine *wasmtime.Engine) (*wasmtime.Linker, error) {
 		return nil, err
 	}
 
-	err = linker.FuncWrap(
-		"wasi_snapshot_preview1",
-		"random_get",
-		randomGet,
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	return linker, nil
-}
-
-// randomGet overrides the random_get function in the WASI API and fixes the random source with
-// a hardcoded seed via insecure randomness.  This is to ensure that workflows are deterministic.
-// Randomness should not be used in workflows.
-func randomGet(caller *wasmtime.Caller, buf, bufLen int32) int32 {
-	var (
-		// Fix the random source with a hardcoded seed
-		randSource = rand.New(rand.NewSource(42)) //nolint:gosec
-		randOutput = make([]byte, bufLen)
-	)
-
-	// Generate random bytes from the source
-	if _, err := io.ReadAtLeast(randSource, randOutput, int(bufLen)); err != nil {
-		return ErrnoFault
-	}
-
-	// Copy the random bytes into the wasm module memory
-	if n := copyBuffer(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
-		return ErrnoFault
-	}
-
-	return ErrnoSuccess
 }
 
 const (

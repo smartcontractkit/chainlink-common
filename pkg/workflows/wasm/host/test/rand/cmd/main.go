@@ -45,9 +45,7 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 }
 
 func main() {
-
 	runner := wasm.NewRunner()
 	workflow := BuildWorkflow(runner.Config())
 	runner.Run(workflow)
-
 }

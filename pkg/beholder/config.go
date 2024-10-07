@@ -1,6 +1,7 @@
 package beholder
 
 import (
+	"crypto/ed25519"
 	"time"
 
 	otelattr "go.opentelemetry.io/otel/attribute"
@@ -30,7 +31,13 @@ type Config struct {
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	LogBatchProcessor bool
+
+	CSAAuthEnabled bool
+	CSAPublicKey   ed25519.PublicKey
+	CSASigner      CSASigner
 }
+
+type CSASigner func([]byte) []byte
 
 const (
 	defaultPackageName = "beholder"
@@ -58,6 +65,7 @@ func DefaultConfig() Config {
 		// Log
 		LogExportTimeout:  1 * time.Second,
 		LogBatchProcessor: true,
+		CSAAuthEnabled:    false,
 	}
 }
 

@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -216,6 +217,21 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Add csa public key resource attribute
+	csaPublicKeyHex := "not-configured"
+	if len(cfg.CSAPublicKey) > 0 {
+		csaPublicKeyHex = hex.EncodeToString(cfg.CSAPublicKey)
+	}
+	csaPublicKeyAttr := attribute.String("csa_public_key", csaPublicKeyHex)
+	resource, err = sdkresource.Merge(
+		sdkresource.NewSchemaless(csaPublicKeyAttr),
+		resource,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// Add custom resource attributes
 	resource, err = sdkresource.Merge(
 		sdkresource.NewSchemaless(cfg.ResourceAttributes...),

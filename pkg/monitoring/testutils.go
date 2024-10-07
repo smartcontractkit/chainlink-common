@@ -545,6 +545,8 @@ func (d *devnullMetrics) SetOffchainAggregatorAnswers(answer float64, contractAd
 }
 func (d *devnullMetrics) IncOffchainAggregatorAnswersTotal(contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
 }
+func (d *devnullMetrics) SetOffchainAggregatorAnswersLatestTimestamp(latestTimestampSeconds float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
+}
 func (d *devnullMetrics) SetOffchainAggregatorJuelsPerFeeCoinRaw(juelsPerFeeCoin float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
 }
 func (d *devnullMetrics) SetOffchainAggregatorJuelsPerFeeCoin(juelsPerFeeCoin float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {

@@ -43,12 +43,15 @@ func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1I
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime1Inputs[I0]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -110,12 +113,15 @@ func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input C
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime2Inputs[I0, I1]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -180,12 +186,15 @@ func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string,
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime3Inputs[I0, I1, I2]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -253,12 +262,15 @@ func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime4Inputs[I0, I1, I2, I3]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -329,12 +341,15 @@ func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFact
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime5Inputs[I0, I1, I2, I3, I4]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -408,12 +423,15 @@ func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *Workflow
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime6Inputs[I0, I1, I2, I3, I4, I5]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -490,12 +508,15 @@ func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime7Inputs[I0, I1, I2, I3, I4, I5, I6]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -575,12 +596,15 @@ func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O 
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -663,12 +687,15 @@ func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 
@@ -754,12 +781,15 @@ func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		// verify against any schema
+		// verify against any schema by marshalling and unmarshalling
 		ji, err := json.Marshal(inputs)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		if err := json.Unmarshal(ji, &inputs); err != nil {
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
 

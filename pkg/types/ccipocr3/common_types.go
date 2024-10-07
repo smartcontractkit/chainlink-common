@@ -24,6 +24,14 @@ func (a UnknownAddress) String() string {
 	return Bytes(a).String()
 }
 
+func (a UnknownAddress) MarshalJSON() ([]byte, error) {
+	return Bytes(a).MarshalJSON()
+}
+
+func (a *UnknownAddress) UnmarshalJSON(data []byte) error {
+	return (*Bytes)(a).UnmarshalJSON(data)
+}
+
 // UnknownEncodedAddress represents an encoded address with an unknown encoding.
 type UnknownEncodedAddress string
 

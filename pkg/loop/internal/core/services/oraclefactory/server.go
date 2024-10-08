@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	oraclepb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oracle"
 	oraclefactorypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oraclefactory"
-	ocr2relayer "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	ocr3relayer "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -108,13 +107,6 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 		ReportingPluginFactoryService: ocr3.NewReportingPluginFactoryClient(
 			s.broker,
 			reportingPluginFactoryServiceConn,
-		),
-		ContractConfigTracker: ocr2relayer.NewContractConfigTrackerClient(
-			contractConfigTrackerConn,
-		),
-		OffchainConfigDigester: ocr2relayer.NewOffchainConfigDigesterClient(
-			s.broker,
-			offchainConfigDigesterConn,
 		),
 		ContractTransmitter: ocr3relayer.NewContractTransmitterClient(s.broker, contractTransmitterConn),
 	}

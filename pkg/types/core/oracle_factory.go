@@ -19,7 +19,5 @@ type OracleFactory interface {
 type OracleArgs struct {
 	LocalConfig                   types.LocalConfig
 	ReportingPluginFactoryService ocr3types.ReportingPluginFactory[[]byte]
-	ContractConfigTracker         types.ContractConfigTracker
 	ContractTransmitter           ocr3types.ContractTransmitter[[]byte]
-	OffchainConfigDigester        types.OffchainConfigDigester
 }

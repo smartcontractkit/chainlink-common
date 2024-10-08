@@ -12,10 +12,8 @@ import (
 	reportingplugin "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
 	oraclefactorypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oraclefactory"
-	ocr2relayer "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	ocr3relayer "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -56,20 +54,6 @@ func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (cor
 	}
 	resources = append(resources, reportingPluginFactoryServerRes)
 
-	serviceName = "ContractConfigTracker"
-	contractConfigTrackerID, contractConfigTrackerRes, err := c.broker.ServeNew(
-		serviceName, func(gs *grpc.Server) {
-			pb.RegisterContractConfigTrackerServer(gs, ocr2relayer.NewContractConfigTrackerServer(
-				oracleArgs.ContractConfigTracker,
-			))
-		},
-	)
-	if err != nil {
-		c.broker.CloseAll(resources...)
-		return nil, fmt.Errorf("failed to serve new %s: %w", serviceName, err)
-	}
-	resources = append(resources, contractConfigTrackerRes)
-
 	serviceName = "ContractTransmitterServer"
 	contractTransmitterServerID, contractTransmitterServerRes, err := c.broker.ServeNew(
 		serviceName, func(gs *grpc.Server) {
@@ -84,20 +68,6 @@ func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (cor
 	}
 	resources = append(resources, contractTransmitterServerRes)
 
-	serviceName = "OffchainConfigDigester"
-	offchainConfigDigesterID, offchainConfigDigesterRes, err := c.broker.ServeNew(
-		serviceName, func(gs *grpc.Server) {
-			pb.RegisterOffchainConfigDigesterServer(gs, ocr2relayer.NewOffchainConfigDigesterServer(
-				oracleArgs.OffchainConfigDigester,
-			))
-		},
-	)
-	if err != nil {
-		c.broker.CloseAll(resources...)
-		return nil, fmt.Errorf("failed to serve new %s: %w", serviceName, err)
-	}
-	resources = append(resources, offchainConfigDigesterRes)
-
 	newOracleRequest := oraclefactorypb.NewOracleRequest{
 		LocalConfig: &oraclefactorypb.LocalConfig{
 			BlockchainTimeout:                  durationpb.New(oracleArgs.LocalConfig.BlockchainTimeout),
@@ -110,9 +80,7 @@ func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (cor
 			DevelopmentMode:                    oracleArgs.LocalConfig.DevelopmentMode,
 		},
 		ReportingPluginFactoryServiceId: reportingPluginFactoryServerID,
-		ContractConfigTrackerId:         contractConfigTrackerID,
 		ContractTransmitterId:           contractTransmitterServerID,
-		OffchainConfigDigesterId:        offchainConfigDigesterID,
 	}
 
 	newOracleReply, err := c.grpc.NewOracle(ctx, &newOracleRequest)

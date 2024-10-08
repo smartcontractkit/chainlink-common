@@ -27,8 +27,8 @@ type ConfigProviderClient struct {
 
 func NewConfigProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ConfigProviderClient {
 	c := &ConfigProviderClient{ServiceClient: goplugin.NewServiceClient(b, cc)}
-	c.offchainDigester = NewOffchainConfigDigesterClient(b, cc)
-	c.contractTracker = NewContractConfigTrackerClient(cc)
+	c.offchainDigester = &offchainConfigDigesterClient{b, pb.NewOffchainConfigDigesterClient(cc)}
+	c.contractTracker = &contractConfigTrackerClient{pb.NewContractConfigTrackerClient(cc)}
 	return c
 }
 
@@ -45,13 +45,6 @@ var _ libocr.OffchainConfigDigester = (*offchainConfigDigesterClient)(nil)
 type offchainConfigDigesterClient struct {
 	*net.BrokerExt
 	grpc pb.OffchainConfigDigesterClient
-}
-
-func NewOffchainConfigDigesterClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *offchainConfigDigesterClient {
-	return &offchainConfigDigesterClient{
-		b,
-		pb.NewOffchainConfigDigesterClient(cc),
-	}
 }
 
 func (o *offchainConfigDigesterClient) ConfigDigest(config libocr.ContractConfig) (digest libocr.ConfigDigest, err error) {
@@ -87,12 +80,6 @@ var _ pb.OffchainConfigDigesterServer = (*offchainConfigDigesterServer)(nil)
 type offchainConfigDigesterServer struct {
 	pb.UnimplementedOffchainConfigDigesterServer
 	impl libocr.OffchainConfigDigester
-}
-
-func NewOffchainConfigDigesterServer(impl libocr.OffchainConfigDigester) *offchainConfigDigesterServer {
-	return &offchainConfigDigesterServer{
-		impl: impl,
-	}
 }
 
 func (o *offchainConfigDigesterServer) ConfigDigest(ctx context.Context, request *pb.ConfigDigestRequest) (*pb.ConfigDigestReply, error) {
@@ -132,12 +119,6 @@ var _ libocr.ContractConfigTracker = (*contractConfigTrackerClient)(nil)
 
 type contractConfigTrackerClient struct {
 	grpc pb.ContractConfigTrackerClient
-}
-
-func NewContractConfigTrackerClient(cc grpc.ClientConnInterface) *contractConfigTrackerClient {
-	return &contractConfigTrackerClient{
-		grpc: pb.NewContractConfigTrackerClient(cc),
-	}
 }
 
 func (c *contractConfigTrackerClient) Notify() <-chan struct{} { return nil }
@@ -206,12 +187,6 @@ type contractConfigTrackerServer struct {
 	impl libocr.ContractConfigTracker
 }
 
-func NewContractConfigTrackerServer(impl libocr.ContractConfigTracker) *contractConfigTrackerServer {
-	return &contractConfigTrackerServer{
-		impl: impl,
-	}
-}
-
 func (c *contractConfigTrackerServer) LatestConfigDetails(ctx context.Context, request *pb.LatestConfigDetailsRequest) (*pb.LatestConfigDetailsReply, error) {
 	changedInBlock, configDigest, err := c.impl.LatestConfigDetails(ctx)
 	if err != nil {
@@ -271,6 +246,6 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 
 func RegisterConfigProviderServices(s *grpc.Server, provider types.ConfigProvider) {
 	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: provider})
-	pb.RegisterOffchainConfigDigesterServer(s, NewOffchainConfigDigesterServer(provider.OffchainConfigDigester()))
-	pb.RegisterContractConfigTrackerServer(s, NewContractConfigTrackerServer(provider.ContractConfigTracker()))
+	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
+	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 }

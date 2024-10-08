@@ -63,26 +63,6 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 		Name:   serviceName,
 	})
 
-	serviceName = "ContractConfigTracker"
-	contractConfigTrackerConn, err := s.broker.Dial(req.ContractConfigTrackerId)
-	if err != nil {
-		return nil, fmt.Errorf("error dialing %s service: %w", serviceName, err)
-	}
-	resources = append(resources, net.Resource{
-		Closer: contractConfigTrackerConn,
-		Name:   serviceName,
-	})
-
-	serviceName = "OffchainConfigDigester"
-	offchainConfigDigesterConn, err := s.broker.Dial(req.OffchainConfigDigesterId)
-	if err != nil {
-		return nil, fmt.Errorf("error dialing %s service: %w", serviceName, err)
-	}
-	resources = append(resources, net.Resource{
-		Closer: offchainConfigDigesterConn,
-		Name:   serviceName,
-	})
-
 	serviceName = "ContractTransmitter"
 	contractTransmitterConn, err := s.broker.Dial(req.ContractTransmitterId)
 	if err != nil {

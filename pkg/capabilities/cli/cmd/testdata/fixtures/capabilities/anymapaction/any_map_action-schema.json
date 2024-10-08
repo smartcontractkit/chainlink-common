@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/anymapaction/anymapaction@1.0.0",
+  "description": "Map Consumer Test Action",
+  "$defs" : {
+  },
+  "properties": {
+    "config": {
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "inputs" : {
+      "properties": {
+        "payload": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["payload"]
+    },
+    "outputs": {
+      "properties": {
+        "payload": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["payload"]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config", "inputs", "outputs"]
+}

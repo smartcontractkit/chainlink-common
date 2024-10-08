@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/shopspring/decimal"
@@ -99,6 +100,22 @@ func Test_Value(t *testing.T) {
 				b := big.NewInt(math.MaxInt64)
 				bv := NewBigInt(b)
 				return b, bv, nil
+			},
+		},
+		{
+			name: "time",
+			newValue: func() (any, Value, error) {
+				t, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+				tv := NewTime(t)
+				return t, tv, err
+			},
+		},
+		{
+			name: "float64",
+			newValue: func() (any, Value, error) {
+				f := 1.0
+				fv := NewFloat64(f)
+				return f, fv, nil
 			},
 		},
 		{
@@ -255,6 +272,34 @@ func Test_IntTypes(t *testing.T) {
 		{name: "uint16", test: func(tt *testing.T) { wrappableTest[int64, uint16](tt, anyValue) }},
 		{name: "uint8", test: func(tt *testing.T) { wrappableTest[int64, uint8](tt, anyValue) }},
 		{name: "uint", test: func(tt *testing.T) { wrappableTest[int64, uint](tt, anyValue) }},
+		{name: "uint64 small enough for int64", test: func(tt *testing.T) {
+			u64, err := Wrap(uint64(math.MaxInt64))
+			require.NoError(tt, err)
+
+			expected, err := Wrap(int64(math.MaxInt64))
+			require.NoError(tt, err)
+
+			assert.Equal(tt, expected, u64)
+
+			unwrapped := uint64(0)
+			err = u64.UnwrapTo(&unwrapped)
+			require.NoError(tt, err)
+			assert.Equal(tt, uint64(math.MaxInt64), unwrapped)
+		}},
+		{name: "uint64 too large for int64", test: func(tt *testing.T) {
+			u64, err := Wrap(uint64(math.MaxInt64 + 1))
+			require.NoError(tt, err)
+
+			expected, err := Wrap(new(big.Int).SetUint64(math.MaxInt64 + 1))
+			require.NoError(tt, err)
+
+			assert.Equal(tt, expected, u64)
+
+			unwrapped := uint64(0)
+			err = u64.UnwrapTo(&unwrapped)
+			require.NoError(tt, err)
+			assert.Equal(tt, uint64(math.MaxInt64+1), unwrapped)
+		}},
 	}
 
 	for _, tc := range testCases {
@@ -380,6 +425,9 @@ func Test_Copy(t *testing.T) {
 			value: mp,
 		},
 		{
+			value: NewTime(time.Time{}),
+		},
+		{
 			value: (*String)(nil),
 			isNil: true,
 		},
@@ -407,6 +455,10 @@ func Test_Copy(t *testing.T) {
 			value: (*Map)(nil),
 			isNil: true,
 		},
+		{
+			value: (*Time)(nil),
+			isNil: true,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -427,6 +479,7 @@ type aliasByte uint8
 type decimalAlias decimal.Decimal
 type bigIntAlias big.Int
 type bigIntPtrAlias *big.Int
+type aliasUint64 uint64
 
 func Test_Aliases(t *testing.T) {
 	testCases := []struct {
@@ -456,6 +509,14 @@ func Test_Aliases(t *testing.T) {
 		{
 			name: "integer",
 			test: func(tt *testing.T) { wrappableTest[int, aliasInt](tt, 1) },
+		},
+		{
+			name: "uint64 fits in int64",
+			test: func(tt *testing.T) { wrappableTest[uint64, aliasUint64](tt, uint64(math.MaxInt64)) },
+		},
+		{
+			name: "uint64 too large for int64",
+			test: func(tt *testing.T) { wrappableTest[uint64, aliasUint64](tt, uint64(math.MaxInt64+1)) },
 		},
 		{
 			name: "map",

@@ -3,6 +3,7 @@ package values
 import (
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"reflect"
 
@@ -57,6 +58,9 @@ func Wrap(v any) (Value, error) {
 	case int:
 		return NewInt64(int64(tv)), nil
 	case uint64:
+		if tv > math.MaxInt64 {
+			return NewBigInt(new(big.Int).SetUint64(tv)), nil
+		}
 		return NewInt64(int64(tv)), nil
 	case uint32:
 		return NewInt64(int64(tv)), nil
@@ -66,6 +70,10 @@ func Wrap(v any) (Value, error) {
 		return NewInt64(int64(tv)), nil
 	case uint:
 		return NewInt64(int64(tv)), nil
+	case float64:
+		return NewFloat64(tv), nil
+	case float32:
+		return NewFloat64(float64(tv)), nil
 	case *big.Int:
 		return NewBigInt(tv), nil
 	case nil:
@@ -84,6 +92,8 @@ func Wrap(v any) (Value, error) {
 	case *Decimal:
 		return tv, nil
 	case *Int64:
+		return tv, nil
+	case *Float64:
 		return tv, nil
 	}
 
@@ -135,8 +145,12 @@ func Wrap(v any) (Value, error) {
 
 	case reflect.Bool:
 		return Wrap(val.Convert(reflect.TypeOf(true)).Interface())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint64:
+		return Wrap(val.Convert(reflect.TypeOf(uint64(0))).Interface())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
 		return Wrap(val.Convert(reflect.TypeOf(int64(0))).Interface())
+	case reflect.Float32, reflect.Float64:
+		return Wrap(val.Convert(reflect.TypeOf(float64(0))).Interface())
 	}
 
 	return nil, fmt.Errorf("could not wrap into value: %+v", v)
@@ -209,6 +223,10 @@ func FromProto(val *pb.Value) (Value, error) {
 		return FromMapValueProto(val.GetMapValue())
 	case *pb.Value_BigintValue:
 		return fromBigIntValueProto(val.GetBigintValue()), nil
+	case *pb.Value_TimeValue:
+		return NewTime(val.GetTimeValue().AsTime()), nil
+	case *pb.Value_Float64Value:
+		return NewFloat64(val.GetFloat64Value()), nil
 	}
 
 	return nil, fmt.Errorf("unsupported type %T: %+v", val, val)

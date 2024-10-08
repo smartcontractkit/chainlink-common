@@ -40,7 +40,7 @@ type encoder struct {
 	types.Encoder
 }
 
-func mockEncoderFactory(_ *values.Map) (types.Encoder, error) {
+func mockEncoderFactory(_ string, _ *values.Map, _ logger.Logger) (types.Encoder, error) {
 	return &encoder{}, nil
 }
 

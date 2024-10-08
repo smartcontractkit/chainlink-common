@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728403601979,
+  "lastUpdate": 1728407150386,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2856,6 +2856,48 @@ window.BENCHMARK_DATA = {
             "value": 28434,
             "unit": "ns/op",
             "extra": "42225 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "deividas.karzinauskas@gmail.com",
+            "name": "Deividas Karžinauskas",
+            "username": "DeividasK"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8bfcea33a98dce20a28f5205407eff129a04915c",
+          "message": "[KS-430] Provide an OracleFactory to StandardCapabilities (#738)",
+          "timestamp": "2024-10-08T20:04:07+03:00",
+          "tree_id": "81ab6f90fec133ce592aa77bcbacc95f9150b4a8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8bfcea33a98dce20a28f5205407eff129a04915c"
+        },
+        "date": 1728407149690,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.2,
+            "unit": "ns/op",
+            "extra": "2652418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.9,
+            "unit": "ns/op",
+            "extra": "2339522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29354,
+            "unit": "ns/op",
+            "extra": "42265 times\n4 procs"
           }
         ]
       }

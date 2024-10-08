@@ -25,13 +25,14 @@ import (
 func TestGlobal(t *testing.T) {
 	// Get global logger, tracer, meter, messageEmitter
 	// If not initialized with beholder.SetClient will return noop client
-	logger, tracer, meter, messageEmitter := beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()
+	logger, tracer, meter, messageEmitter, authenticator := beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter(), beholder.GetAuthenticator()
 	noopClient := beholder.NewNoopClient()
 	assert.IsType(t, otellognoop.Logger{}, logger)
 	assert.IsType(t, oteltracenoop.Tracer{}, tracer)
 	assert.IsType(t, otelmetricnoop.Meter{}, meter)
 	expectedMessageEmitter := beholder.NewNoopClient().Emitter
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
+	assert.IsType(t, &beholder.Authenticator{}, authenticator)
 
 	var noopClientPtr *beholder.Client = noopClient
 	assert.IsType(t, noopClientPtr, beholder.GetClient())
@@ -41,8 +42,8 @@ func TestGlobal(t *testing.T) {
 	beholder.SetClient(noopClientPtr)
 	assert.Same(t, noopClientPtr, beholder.GetClient())
 
-	// After that use beholder functions to get logger, tracer, meter, messageEmitter
-	logger, tracer, meter, messageEmitter = beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()
+	// After that use beholder functions to get logger, tracer, meter, messageEmitter, authenticator
+	logger, tracer, meter, messageEmitter, authenticator = beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter(), beholder.GetAuthenticator()
 
 	// Emit otel log record
 	logger.Emit(tests.Context(t), otellog.Record{})
@@ -60,6 +61,10 @@ func TestGlobal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error emitting message: %v", err)
 	}
+
+	// Get the auth headers
+	headers := authenticator.GetHeaders()
+	assert.Nil(t, headers)
 }
 
 func TestClient_SetGlobalOtelProviders(t *testing.T) {

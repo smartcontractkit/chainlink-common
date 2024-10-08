@@ -74,10 +74,8 @@ func deriveAuthHeaders(config Config) map[string]string {
 // where the byte value of <csa_public_key_hex> is what's being signed
 func deriveAuthHeaderValue(config Config) string {
 	messageBytes := config.CSAPublicKey
-	messageHex := hex.EncodeToString(messageBytes)
 
 	signature := config.CSASigner(messageBytes)
-	signatureHex := hex.EncodeToString(signature)
 
-	return fmt.Sprintf("%s:%s:%s", authHeaderVersion, messageHex, signatureHex)
+	return fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
 }

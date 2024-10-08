@@ -231,10 +231,6 @@ func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 
 // AddressBytesToStringModifierConfig is used to transform address byte fields into string fields.
 // It holds the list of fields that should be modified and the chain-specific logic to do the modifications.
-//
-// The chain-specific AddressModifier (e.g., EVMAddressModifier, SolanaAddressModifier) handles
-// encoding and decoding of addresses. This field is skipped during JSON serialization and is
-// injected during the relayer contractReader configuration.
 type AddressBytesToStringModifierConfig struct {
 	Fields []string
 	// Modifier is skipped in JSON serialization, will be injected later.

@@ -42,6 +42,8 @@ const (
 	envBinaryCmd          = "test/env/cmd"
 	logBinaryLocation     = "test/log/cmd/testmodule.wasm"
 	logBinaryCmd          = "test/log/cmd"
+	randBinaryLocation    = "test/rand/cmd/testmodule.wasm"
+	randBinaryCmd         = "test/rand/cmd"
 )
 
 func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
@@ -373,6 +375,54 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	// This will return an error if FOO == BAR in the WASM binary
 	_, err = m.Run(req)
 	assert.Nil(t, err)
+}
+
+func TestModule_Sandbox_RandomGet(t *testing.T) {
+	req := &wasmpb.Request{
+		Id: uuid.New().String(),
+		Message: &wasmpb.Request_ComputeRequest{
+			ComputeRequest: &wasmpb.ComputeRequest{
+				Request: &capabilitiespb.CapabilityRequest{
+					Inputs: &valuespb.Map{},
+					Config: &valuespb.Map{},
+					Metadata: &capabilitiespb.RequestMetadata{
+						ReferenceId: "transform",
+					},
+				},
+			},
+		},
+	}
+	t.Run("success: deterministic override via module config", func(t *testing.T) {
+		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Determinism: &DeterminismConfig{
+				Seed: 42,
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		_, err = m.Run(req)
+		assert.Nil(t, err)
+	})
+
+	t.Run("success: default module config is non deterministic", func(t *testing.T) {
+		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		_, err = m.Run(req)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "expected deterministic output")
+	})
 }
 
 type Entry struct {

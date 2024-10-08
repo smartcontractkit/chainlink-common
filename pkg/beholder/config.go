@@ -31,6 +31,10 @@ type Config struct {
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	LogBatchProcessor bool
+
+	AuthenticatorPublicKey []byte
+	AuthenticatorSigner    func([]byte) []byte
+	AuthenticatorHeaders   map[string]string
 }
 
 const (

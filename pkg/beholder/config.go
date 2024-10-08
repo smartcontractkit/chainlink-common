@@ -34,7 +34,10 @@ type Config struct {
 	// Disable it only for testing
 	LogBatchProcessor bool
 	// Retry config for shared log exporter, used by Emitter and Logger
-	LogRetryConfig *RetryConfig
+	LogRetryConfig         *RetryConfig
+	AuthenticatorPublicKey []byte
+	AuthenticatorSigner    func([]byte) []byte
+	AuthenticatorHeaders   map[string]string
 }
 
 type RetryConfig struct {

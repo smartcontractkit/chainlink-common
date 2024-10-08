@@ -19,10 +19,15 @@ import "bytes"
 type CommitPluginReport struct {
 	MerkleRoots  []MerkleRootChain `json:"merkleRoots"`
 	PriceUpdates PriceUpdates      `json:"priceUpdates"`
+
 	// RMNSignatures are the ECDSA signatures from the RMN signing nodes on the RMNReport structure.
 	// For more details see the contract here: https://github.com/smartcontractkit/chainlink/blob/7ba0f37134a618375542079ff1805fe2224d7916/contracts/src/v0.8/ccip/interfaces/IRMNV2.sol#L8-L12
 	RMNSignatures []RMNECDSASignature `json:"rmnSignatures"`
-	RmnRawVs      BigInt              `json:"rmnRawVs"`
+
+	// RMNRawVs is a 256-bit bitmap. A bit is set if the v value of the signature is 28,
+	// and unset if the v value is 27.
+	// Note that this implies that the maximum number of RMN signatures is 256.
+	RMNRawVs BigInt `json:"rmnRawVs"`
 }
 
 // IsEmpty returns true if the CommitPluginReport is empty

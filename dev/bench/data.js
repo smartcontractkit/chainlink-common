@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728408977388,
+  "lastUpdate": 1728409987571,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2940,6 +2940,48 @@ window.BENCHMARK_DATA = {
             "value": 28247,
             "unit": "ns/op",
             "extra": "42456 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "2677789+asoliman92@users.noreply.github.com",
+            "name": "Abdelrahman Soliman (Boda)",
+            "username": "asoliman92"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "167715aa8613ebdaa17f1b5b4b003a31c120d455",
+          "message": "Mirror on-chain data structures (#833)\n\n* Mirror on-chain data structures\r\n\r\n* Revert \"Mirror on-chain data structures\"\r\n\r\nThis reverts commit b647b125f34e1f3ae6b64c17af4ac9d6acbb132b.\r\n\r\n* Mirror on-chain data structures\r\n\r\n* address comments\r\n\r\n---------\r\n\r\nCo-authored-by: Makram Kamaleddine <makramkd@users.noreply.github.com>",
+          "timestamp": "2024-10-08T21:52:10+04:00",
+          "tree_id": "c395aa1fbc5de85e36ebcc8737fabec4f88ffb30",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/167715aa8613ebdaa17f1b5b4b003a31c120d455"
+        },
+        "date": 1728409987101,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.2,
+            "unit": "ns/op",
+            "extra": "2572830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 514.2,
+            "unit": "ns/op",
+            "extra": "2335609 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28417,
+            "unit": "ns/op",
+            "extra": "42259 times\n4 procs"
           }
         ]
       }

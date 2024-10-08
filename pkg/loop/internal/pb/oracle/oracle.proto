@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/oracle";
+
+package loop;
+
+import "google/protobuf/empty.proto";
+
+service Oracle {
+  rpc StartOracle(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc CloseOracle(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"math/rand"
+
 	"strings"
 	"sync"
 	"time"
@@ -179,7 +179,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
 
-	linker, err := newWasiLinker(engine)
+	linker, err := newWasiLinker(modCfg, engine)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasi linker: %w", err)
 	}
@@ -268,17 +268,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, err
 	}
 
-	if modCfg.Determinism != nil {
-		err = linker.FuncWrap(
-			"wasi_snapshot_preview1",
-			"random_get",
-			createRandomGet(modCfg),
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	m := &Module{
 		engine: engine,
 		module: mod,
@@ -292,36 +281,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	return m, nil
-}
-
-// randomGet overrides the random_get function in the WASI API and fixes the random source with
-// a hardcoded seed via insecure randomness.  This is to ensure that workflows are deterministic.
-// Randomness should not be used in workflows.
-func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
-	return func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
-		if cfg.Determinism == nil {
-			return ErrnoInval
-		}
-
-		var (
-			// Fix the random source with a hardcoded seed
-			seed       = cfg.Determinism.Seed
-			randSource = rand.New(rand.NewSource(seed)) //nolint:gosec
-			randOutput = make([]byte, bufLen)
-		)
-
-		// Generate random bytes from the source
-		if _, err := io.ReadAtLeast(randSource, randOutput, int(bufLen)); err != nil {
-			return ErrnoFault
-		}
-
-		// Copy the random bytes into the wasm module memory
-		if n := copyBuffer(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
-			return ErrnoFault
-		}
-
-		return ErrnoSuccess
-	}
 }
 
 func (m *Module) Start() {

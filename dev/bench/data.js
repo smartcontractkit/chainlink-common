@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728407150386,
+  "lastUpdate": 1728408977388,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2898,6 +2898,48 @@ window.BENCHMARK_DATA = {
             "value": 29354,
             "unit": "ns/op",
             "extra": "42265 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a3ff1166f0dd80b998eb792368803e1ed4bdf900",
+          "message": "[CAPPL-41] SDK Fetch import (#814)\n\n* feat: draft implementation of fetch\r\n\r\n* feat: use proto for the guest <> host communication\r\n\r\n* chore: nop implementation by default\r\n\r\n* chore: adjust errors returned\r\n\r\n* Pass responseSizeBytes via Compute call\r\n\r\n* Handle errors\r\n\r\n* fix: expose fetch and logger functions on runtime sdk\r\n\r\n* test: add test coverage for err while fetching and runtime cfg\r\n\r\n* test: validate response instead of log\r\n\r\n* chore: address comments\r\n\r\n---------\r\n\r\nCo-authored-by: Cedric Cordenier <cedric.cordenier@smartcontract.com>",
+          "timestamp": "2024-10-08T18:35:18+01:00",
+          "tree_id": "08008ce6df355f48f32297dd4cbd8ac66c340abb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a3ff1166f0dd80b998eb792368803e1ed4bdf900"
+        },
+        "date": 1728408976767,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.4,
+            "unit": "ns/op",
+            "extra": "2635040 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 514.5,
+            "unit": "ns/op",
+            "extra": "2339486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28247,
+            "unit": "ns/op",
+            "extra": "42456 times\n4 procs"
           }
         ]
       }

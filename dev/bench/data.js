@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728342313072,
+  "lastUpdate": 1728403601979,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -2814,6 +2814,48 @@ window.BENCHMARK_DATA = {
             "value": 28499,
             "unit": "ns/op",
             "extra": "42115 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c03afeeb7d6df77ef669b1c6d81fdb0e1919ee85",
+          "message": "feat(wasm): override random_get (#831)\n\n* feat(wasm): override random_get\r\n\r\n* chore(wasm): adds a deterministic config to modules\r\n\r\n* feat(wasm): require DAG creation is deterministic\r\n\r\n* chore(host): move random_get override",
+          "timestamp": "2024-10-08T12:05:44-04:00",
+          "tree_id": "3335cab21ac9bf395101016e752bfaf8800643d4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c03afeeb7d6df77ef669b1c6d81fdb0e1919ee85"
+        },
+        "date": 1728403601555,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 447.3,
+            "unit": "ns/op",
+            "extra": "2710537 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 509.6,
+            "unit": "ns/op",
+            "extra": "2354833 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28434,
+            "unit": "ns/op",
+            "extra": "42225 times\n4 procs"
           }
         ]
       }

@@ -47,6 +47,9 @@ type Client struct {
 	MeterProvider         otelmetric.MeterProvider
 	MessageLoggerProvider otellog.LoggerProvider
 
+	// Authenticator
+	Authenticator *Authenticator
+
 	// OnClose
 	OnClose func() error
 }
@@ -90,9 +93,14 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 	}
+	authenticator, err := NewAuthenticator(cfg)
+	if err != nil {
+		return noop, err
+	}
 	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+		otlploggrpc.WithHeaders(authenticator.GetHeaders()),
 	}
 	if cfg.LogRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -135,14 +143,14 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
-	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
+	tracerProvider, err := newTracerProvider(cfg, baseResource, creds, authenticator)
 	if err != nil {
 		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
+	meterProvider, err := newMeterProvider(cfg, baseResource, creds, authenticator)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +194,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, authenticator, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes
@@ -276,12 +284,13 @@ type shutdowner interface {
 	Shutdown(ctx context.Context) error
 }
 
-func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
+func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials, authenticator *Authenticator) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		otlptracegrpc.WithHeaders(authenticator.GetHeaders()),
 	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -313,11 +322,12 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	return sdktrace.NewTracerProvider(opts...), nil
 }
 
-func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
+func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials, authenticator *Authenticator) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		otlpmetricgrpc.WithHeaders(authenticator.GetHeaders()),
 	}
 	if config.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK

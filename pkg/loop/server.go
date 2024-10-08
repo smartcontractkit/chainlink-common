@@ -96,6 +96,7 @@ func (s *Server) start() error {
 			OtelExporterGRPCEndpoint: envCfg.TelemetryEndpoint,
 			ResourceAttributes:       append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
 			TraceSampleRatio:         envCfg.TelemetryTraceSampleRatio,
+			AuthenticatorHeaders:     envCfg.TelemetryAuthHeaders,
 		}
 
 		if tracingConfig.Enabled {

@@ -26,7 +26,7 @@ func TestIdenticalConsensus(t *testing.T) {
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
 		ReportID:      "0001",
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{Observations: trigger})
+	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{Observation: trigger})
 
 	chainwriter.TargetConfig{
 		Address:    "0x1235",

@@ -938,7 +938,7 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
 	require.NoError(t, err)
 	opb1 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome, opb1)

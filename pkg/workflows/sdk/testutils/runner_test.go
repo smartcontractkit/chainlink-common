@@ -84,7 +84,7 @@ func TestRunner(t *testing.T) {
 		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 			Encoder:       "Test",
 			EncoderConfig: ocr3.EncoderConfig{},
-		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 		chainwriter.TargetConfig{
 			Address:    "0x123",
@@ -350,7 +350,7 @@ func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecF
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder: "Test", EncoderConfig: ocr3.EncoderConfig{},
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 	chainwriter.TargetConfig{
 		Address:    "0x123",

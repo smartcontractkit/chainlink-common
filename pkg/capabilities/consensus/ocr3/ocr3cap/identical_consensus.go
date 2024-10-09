@@ -40,7 +40,7 @@ type IdenticalConsensusInput[T any] struct {
 func (input IdenticalConsensusInput[T]) ToSteps() sdk.StepInputs {
 	return sdk.StepInputs{
 		Mapping: map[string]any{
-			"observations":  sdk.ListOf(input.Observation),
+			"observations":  sdk.ListOf(input.Observation).Ref(),
 			"encoder":       input.Encoder,
 			"encoderConfig": input.EncoderConfig,
 		},

@@ -181,7 +181,7 @@ func shaForOverriddenEncoder(obs *pbtypes.Observation) (string, error) {
 		return "", fmt.Errorf("could not marshal overridden encoder: %w", err)
 	}
 
-	_, err = hash.Write([]byte(marshalled))
+	_, err = hash.Write(marshalled)
 	if err != nil {
 		return "", fmt.Errorf("could not write encoder config to hash: %w", err)
 	}

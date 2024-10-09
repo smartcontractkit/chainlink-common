@@ -74,8 +74,8 @@ func (c *Client) VerifyBatch(ctx context.Context, keyID []byte, data [][]byte) (
 	return reply.Valid, nil
 }
 
-func (c *Client) Get(ctx context.Context, tags []string) ([][]byte, error) {
-	reply, err := c.grpc.Get(ctx, &keystorepb.GetRequest{
+func (c *Client) List(ctx context.Context, tags []string) ([][]byte, error) {
+	reply, err := c.grpc.List(ctx, &keystorepb.ListRequest{
 		Tags: tags,
 	})
 
@@ -149,12 +149,12 @@ func (s *server) VerifyBatch(ctx context.Context, request *keystorepb.VerifyBatc
 	return &keystorepb.VerifyBatchResponse{Valid: valid}, err
 }
 
-func (s *server) Get(ctx context.Context, request *keystorepb.GetRequest) (*keystorepb.GetResponse, error) {
-	keyIDs, err := s.impl.Get(ctx, request.Tags)
+func (s *server) List(ctx context.Context, request *keystorepb.ListRequest) (*keystorepb.ListResponse, error) {
+	keyIDs, err := s.impl.List(ctx, request.Tags)
 	if err != nil {
 		return nil, err
 	}
-	return &keystorepb.GetResponse{KeyIDs: keyIDs}, err
+	return &keystorepb.ListResponse{KeyIDs: keyIDs}, err
 }
 
 func (s *server) RunUDF(ctx context.Context, request *keystorepb.RunUDFRequest) (*keystorepb.RunUDFResponse, error) {

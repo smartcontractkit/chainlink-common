@@ -19,12 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Keystore_Sign_FullMethodName        = "/loop.Keystore/Sign"
-	Keystore_SignBatch_FullMethodName   = "/loop.Keystore/SignBatch"
-	Keystore_Verify_FullMethodName      = "/loop.Keystore/Verify"
-	Keystore_VerifyBatch_FullMethodName = "/loop.Keystore/VerifyBatch"
-	Keystore_Get_FullMethodName         = "/loop.Keystore/Get"
-	Keystore_RunUDF_FullMethodName      = "/loop.Keystore/RunUDF"
+	Keystore_Sign_FullMethodName        = "/loop.internal.pb.keystore.Keystore/Sign"
+	Keystore_SignBatch_FullMethodName   = "/loop.internal.pb.keystore.Keystore/SignBatch"
+	Keystore_Verify_FullMethodName      = "/loop.internal.pb.keystore.Keystore/Verify"
+	Keystore_VerifyBatch_FullMethodName = "/loop.internal.pb.keystore.Keystore/VerifyBatch"
+	Keystore_List_FullMethodName        = "/loop.internal.pb.keystore.Keystore/List"
+	Keystore_RunUDF_FullMethodName      = "/loop.internal.pb.keystore.Keystore/RunUDF"
 )
 
 // KeystoreClient is the client API for Keystore service.
@@ -35,7 +35,7 @@ type KeystoreClient interface {
 	SignBatch(ctx context.Context, in *SignBatchRequest, opts ...grpc.CallOption) (*SignBatchResponse, error)
 	Verify(ctx context.Context, in *VerifyRequest, opts ...grpc.CallOption) (*VerifyResponse, error)
 	VerifyBatch(ctx context.Context, in *VerifyBatchRequest, opts ...grpc.CallOption) (*VerifyBatchResponse, error)
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	RunUDF(ctx context.Context, in *RunUDFRequest, opts ...grpc.CallOption) (*RunUDFResponse, error)
 }
 
@@ -83,9 +83,9 @@ func (c *keystoreClient) VerifyBatch(ctx context.Context, in *VerifyBatchRequest
 	return out, nil
 }
 
-func (c *keystoreClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
-	err := c.cc.Invoke(ctx, Keystore_Get_FullMethodName, in, out, opts...)
+func (c *keystoreClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
+	out := new(ListResponse)
+	err := c.cc.Invoke(ctx, Keystore_List_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ type KeystoreServer interface {
 	SignBatch(context.Context, *SignBatchRequest) (*SignBatchResponse, error)
 	Verify(context.Context, *VerifyRequest) (*VerifyResponse, error)
 	VerifyBatch(context.Context, *VerifyBatchRequest) (*VerifyBatchResponse, error)
-	Get(context.Context, *GetRequest) (*GetResponse, error)
+	List(context.Context, *ListRequest) (*ListResponse, error)
 	RunUDF(context.Context, *RunUDFRequest) (*RunUDFResponse, error)
 	mustEmbedUnimplementedKeystoreServer()
 }
@@ -130,8 +130,8 @@ func (UnimplementedKeystoreServer) Verify(context.Context, *VerifyRequest) (*Ver
 func (UnimplementedKeystoreServer) VerifyBatch(context.Context, *VerifyBatchRequest) (*VerifyBatchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyBatch not implemented")
 }
-func (UnimplementedKeystoreServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+func (UnimplementedKeystoreServer) List(context.Context, *ListRequest) (*ListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedKeystoreServer) RunUDF(context.Context, *RunUDFRequest) (*RunUDFResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunUDF not implemented")
@@ -221,20 +221,20 @@ func _Keystore_VerifyBatch_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keystore_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRequest)
+func _Keystore_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KeystoreServer).Get(ctx, in)
+		return srv.(KeystoreServer).List(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Keystore_Get_FullMethodName,
+		FullMethod: Keystore_List_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeystoreServer).Get(ctx, req.(*GetRequest))
+		return srv.(KeystoreServer).List(ctx, req.(*ListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -261,7 +261,7 @@ func _Keystore_RunUDF_Handler(srv interface{}, ctx context.Context, dec func(int
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Keystore_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.Keystore",
+	ServiceName: "loop.internal.pb.keystore.Keystore",
 	HandlerType: (*KeystoreServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -281,8 +281,8 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Keystore_VerifyBatch_Handler,
 		},
 		{
-			MethodName: "Get",
-			Handler:    _Keystore_Get_Handler,
+			MethodName: "List",
+			Handler:    _Keystore_List_Handler,
 		},
 		{
 			MethodName: "RunUDF",

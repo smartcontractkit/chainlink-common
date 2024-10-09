@@ -8,7 +8,7 @@ type Keystore interface {
 	Verify(ctx context.Context, keyID []byte, data []byte) (bool, error)
 	VerifyBatch(ctx context.Context, keyID []byte, data [][]byte) ([]bool, error)
 
-	Get(ctx context.Context, tags []string) ([][]byte, error)
+	List(ctx context.Context, tags []string) ([][]byte, error)
 
 	RunUDF(ctx context.Context, udfName string, keyID []byte, data []byte) ([]byte, error)
 }

@@ -58,12 +58,12 @@ type IdenticalConsensusMock[T any] struct {
 var _ testutils.ConsensusMock = &IdenticalConsensusMock[struct{}]{}
 
 func (c *IdenticalConsensusMock[T]) SingleToManyObservations(input values.Value) (*values.Map, error) {
-	tmp := singleConsensusInput[T]{}
+	tmp := ConsensusInput[T]{}
 	if err := input.UnwrapTo(&tmp); err != nil {
 		return nil, err
 	}
 
-	return values.CreateMapFromStruct(ConsensusInput[T]{Observation: tmp.Observation})
+	return values.CreateMapFromStruct(tmp)
 }
 
 func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepResults[ConsensusInput[T], T] {

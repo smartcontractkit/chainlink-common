@@ -54,7 +54,7 @@ func TestRunner(t *testing.T) {
 		assert.True(t, helper.transformTriggerCalled)
 		consensus := consensusMock.GetStepDecoded("consensus")
 		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
-		require.NotNil(t, consensus.Input.Observation)
+		require.NotNil(t, consensus.Input.Observations[0])
 
 		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()

@@ -57,8 +57,13 @@ type Relayer interface {
 	NewLLOProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.LLOProvider, error)
 }
 
-type PluginKeystore interface {
+// Keystore This interface contains all the keystore GRPC functionality, keystore.Keystore is meant to be exposed to consumers and the keystore.Management interface in exposed only to the core node
+type Keystore interface {
 	services.Service
 	keystore.Keystore
-	NewKeystore()
+	keystore.Management
+}
+
+type PluginKeystoreFactory interface {
+	NewKeystore(ctx context.Context, config []byte) (Keystore, error)
 }

@@ -28,6 +28,4 @@ type Management interface {
 	AddTag(ctx context.Context, keyID []byte, tag string) error
 	RemoveTag(ctx context.Context, keyID []byte, tag string) error
 	ListTags(ctx context.Context, keyID []byte) ([]string, error)
-
-	//List(ctx context.Context, tags []string) ([][]byte, error) ????
 }

@@ -75,7 +75,6 @@
             "Underlying"
           ]
         },
-        "observation": true,
         "encoder": {
           "type": "string"
         },

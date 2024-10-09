@@ -8,6 +8,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/smartcontractkit/libocr/quorumhelper"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -160,12 +161,12 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
 }
 
-func (r *reportingPlugin) ValidateObservation(outctx ocr3types.OutcomeContext, query types.Query, ao types.AttributedObservation) error {
+func (r *reportingPlugin) ValidateObservation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, ao types.AttributedObservation) error {
 	return nil
 }
 
-func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, query types.Query) (ocr3types.Quorum, error) {
-	return ocr3types.QuorumTwoFPlusOne, nil
+func (r *reportingPlugin) ObservationQuorum(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (bool, error) {
+	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, r.config.N, r.config.F, aos), nil
 }
 
 func shaForOverriddenEncoder(obs *pbtypes.Observation) (string, error) {
@@ -193,7 +194,7 @@ type encoderConfig struct {
 	config *pb.Map
 }
 
-func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
+func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
 	execIDToOracleObservations := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
@@ -431,14 +432,14 @@ func marshalReportInfo(info *pbtypes.ReportInfo, keyID string) ([]byte, error) {
 	return ip, nil
 }
 
-func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[[]byte], error) {
+func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
 	o := &pbtypes.Outcome{}
 	err := proto.Unmarshal(outcome, o)
 	if err != nil {
 		return nil, err
 	}
 
-	reports := []ocr3types.ReportWithInfo[[]byte]{}
+	reports := []ocr3types.ReportPlus[[]byte]{}
 
 	for _, report := range o.CurrentReports {
 		if report == nil {
@@ -519,8 +520,12 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 				continue
 			}
 
-			rawReport, err = encoder.Encode(context.Background(), *mv)
+			rawReport, err = encoder.Encode(ctx, *mv)
 			if err != nil {
+				if cerr := ctx.Err(); cerr != nil {
+					r.lggr.Errorw("report encoding cancelled", "err", cerr)
+					return nil, cerr
+				}
 				r.lggr.Errorw("could not encode report for workflow", "error", err)
 				continue
 			}
@@ -533,9 +538,11 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 		}
 
 		// Append every report, even if shouldReport = false, to let the transmitter mark the step as complete.
-		reports = append(reports, ocr3types.ReportWithInfo[[]byte]{
-			Report: rawReport,
-			Info:   infob,
+		reports = append(reports, ocr3types.ReportPlus[[]byte]{
+			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
+				Report: rawReport,
+				Info:   infob,
+			},
 		})
 	}
 

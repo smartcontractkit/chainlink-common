@@ -36,7 +36,7 @@ func newFactory(s *requests.Store, c *capability, batchSize int, outcomePruningT
 	}, nil
 }
 
-func (o *factory) NewReportingPlugin(config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+func (o *factory) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
 	rp, err := newReportingPlugin(o.store, o.capability, o.batchSize, config, o.outcomePruningThreshold, o.lggr)
 	info := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",

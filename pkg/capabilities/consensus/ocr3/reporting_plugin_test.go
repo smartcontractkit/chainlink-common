@@ -17,7 +17,6 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
-
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -300,7 +299,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(ocr3types.OutcomeContext{}, qb, aos)
+	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 
 	opb := &pbtypes.Outcome{}
@@ -316,6 +315,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 }
 
 func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
+	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -349,7 +349,7 @@ func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 		{},
 	}
 
-	_, err = rp.Outcome(ocr3types.OutcomeContext{}, qb, aos)
+	_, err = rp.Outcome(ctx, ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 
 	obs := &pbtypes.Observations{
@@ -368,7 +368,7 @@ func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 			Observer:    commontypes.OracleID(1),
 		},
 	}
-	_, err = rp.Outcome(ocr3types.OutcomeContext{}, qb, aos)
+	_, err = rp.Outcome(ctx, ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 }
 
@@ -408,22 +408,25 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(sqNr, pl)
+	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
 	gotRep := reports[0]
-	assert.Len(t, gotRep.Report, 0)
+	assert.Len(t, gotRep.ReportWithInfo.Report, 0)
 
-	ib := gotRep.Info
+	ib := gotRep.ReportWithInfo.Info
 	info, err := extractReportInfo(ib)
 	require.NoError(t, err)
 
-	assert.EqualExportedValues(t, info.Id, id)
+	assert.EqualExportedValues(t, id, info.Id)
 	assert.False(t, info.ShouldReport)
+
+	require.Nil(t, gotRep.TransmissionScheduleOverride)
 }
 
 func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
+	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -461,7 +464,7 @@ func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	_, err = rp.Reports(sqNr, pl)
+	_, err = rp.Reports(ctx, sqNr, pl)
 	require.NoError(t, err)
 }
 
@@ -511,14 +514,14 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(sqNr, pl)
+	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
 	gotRep := reports[0]
 
 	rep := &pb.Value{}
-	err = proto.Unmarshal(gotRep.Report, rep)
+	err = proto.Unmarshal(gotRep.ReportWithInfo.Report, rep)
 	require.NoError(t, err)
 
 	// The workflow ID and execution ID get added to the report.
@@ -538,15 +541,18 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, nm, fp)
 
-	ib := gotRep.Info
+	ib := gotRep.ReportWithInfo.Info
 	info, err := extractReportInfo(ib)
 	require.NoError(t, err)
 
 	assert.EqualExportedValues(t, info.Id, id)
 	assert.True(t, info.ShouldReport)
+
+	require.Nil(t, gotRep.TransmissionScheduleOverride)
 }
 
 func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
+	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -642,13 +648,13 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 		},
 	}
 
-	outcome1, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	outcome1, err := rp.Outcome(ctx, ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
 	require.NoError(t, err)
 	opb1 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome1, opb1)
 	require.NoError(t, err)
 
-	outcome2, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: defaultOutcomePruningThreshold + 100, PreviousOutcome: outcome1}, qb, aos2)
+	outcome2, err := rp.Outcome(ctx, ocr3types.OutcomeContext{SeqNr: defaultOutcomePruningThreshold + 100, PreviousOutcome: outcome1}, qb, aos2)
 	require.NoError(t, err)
 	opb2 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome2, opb2)
@@ -663,6 +669,7 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 }
 
 func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
+	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -785,7 +792,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	outcome, err := rp.Outcome(ctx, ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
 	require.NoError(t, err)
 	opb1 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome, opb1)

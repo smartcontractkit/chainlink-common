@@ -153,7 +153,8 @@ func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
 }
 
 func setupOffRampServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.OffRampReaderGRPCServer {
-	offRampProvider, err := ccip.NewOffRampReaderGRPCServer(OffRampReader, b)
+	ctx := tests.Context(t)
+	offRampProvider, err := ccip.NewOffRampReaderGRPCServer(ctx, OffRampReader, b)
 	require.NoError(t, err)
 	ccippb.RegisterOffRampReaderServer(s, offRampProvider)
 	return offRampProvider

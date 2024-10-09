@@ -1,8 +1,6 @@
 package ocr3captest
 
 import (
-	"errors"
-
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
@@ -32,13 +30,7 @@ func IdenticalConsensusForStep[T any](runner *testutils.Runner, step string) *Id
 }
 
 func identicalConsensus[T any](inputs ConsensusInput[T]) (ocr3cap.SignedReport, error) {
-	if len(inputs.Observations) == 0 {
-		return ocr3cap.SignedReport{}, errors.New("no observations were made")
-	} else if len(inputs.Observations) > 1 {
-		return ocr3cap.SignedReport{}, errors.New("more than one observation was made, but this mock isn't set up to support that")
-	}
-
-	wrapped, err := values.Wrap(inputs.Observations[0])
+	wrapped, err := values.Wrap(inputs.Observation)
 	if err != nil {
 		return ocr3cap.SignedReport{}, err
 	}
@@ -71,7 +63,7 @@ func (c *IdenticalConsensusMock[T]) SingleToManyObservations(input values.Value)
 		return nil, err
 	}
 
-	return values.CreateMapFromStruct(ConsensusInput[T]{Observations: []T{tmp.Observations}})
+	return values.CreateMapFromStruct(ConsensusInput[T]{Observation: tmp.Observation})
 }
 
 func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepResults[ConsensusInput[T], T] {

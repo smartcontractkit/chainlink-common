@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"slices"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
@@ -125,6 +127,13 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			lggr.Errorw("observations are not a list")
 			continue
 		}
+
+		var cfgProto *pb.Map
+		if rq.OverriddenEncoderConfig != nil {
+			cp := values.Proto(rq.OverriddenEncoderConfig).GetMapValue()
+			cfgProto = cp
+		}
+
 		newOb := &pbtypes.Observation{
 			Observations: listProto,
 			Id: &pbtypes.Id{
@@ -137,6 +146,8 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 				ReportId:                 rq.ReportID,
 				KeyId:                    rq.KeyID,
 			},
+			OverriddenEncoderName:   rq.OverriddenEncoderName,
+			OverriddenEncoderConfig: cfgProto,
 		}
 
 		obs.Observations = append(obs.Observations, newOb)
@@ -157,12 +168,39 @@ func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, que
 	return ocr3types.QuorumTwoFPlusOne, nil
 }
 
+func shaForOverriddenEncoder(obs *pbtypes.Observation) (string, error) {
+	hash := sha256.New()
+	_, err := hash.Write([]byte(obs.OverriddenEncoderName))
+	if err != nil {
+		return "", fmt.Errorf("could not write encoder name to hash: %w", err)
+	}
+
+	marshalled, err := proto.MarshalOptions{Deterministic: true}.Marshal(obs.OverriddenEncoderConfig)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal overridden encoder: %w", err)
+	}
+
+	_, err = hash.Write([]byte(marshalled))
+	if err != nil {
+		return "", fmt.Errorf("could not write encoder config to hash: %w", err)
+	}
+
+	return string(hash.Sum([]byte{})), nil
+}
+
+type encoderConfig struct {
+	name   string
+	config *pb.Map
+}
+
 func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
 	execIDToOracleObservations := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
 	var sortedTimestamps []*timestamppb.Timestamp
 	var finalTimestamp *timestamppb.Timestamp
+	execIDToEncoderShaToCount := map[string]map[string]int{}
+	shaToEncoder := map[string]encoderConfig{}
 	for _, attributedObservation := range attributedObservations {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(attributedObservation.Observation, obs)
@@ -209,6 +247,21 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 				execIDToOracleObservations[weid] = make(map[ocrcommon.OracleID][]values.Value)
 			}
 			execIDToOracleObservations[weid][attributedObservation.Observer] = obsList.Underlying
+
+			sha, err := shaForOverriddenEncoder(request)
+			if err != nil {
+				r.lggr.Errorw("could not calculate sha for overridden encoder", "error", err, "observation", obs)
+				continue
+			}
+
+			shaToEncoder[sha] = encoderConfig{
+				name:   request.OverriddenEncoderName,
+				config: request.OverriddenEncoderConfig,
+			}
+			if _, ok := execIDToEncoderShaToCount[weid]; !ok {
+				execIDToEncoderShaToCount[weid] = map[string]int{}
+			}
+			execIDToEncoderShaToCount[weid][sha]++
 		}
 	}
 
@@ -296,6 +349,34 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		}
 
 		outcome.Timestamp = finalTimestamp
+
+		shaToCount, ok := execIDToEncoderShaToCount[weid.WorkflowExecutionId]
+		if !ok {
+			lggr.Debugw("could not find any encoder shas matching weid requested in the query")
+			continue
+		}
+
+		// Note: no need to check the observation count here,
+		// we've checked this above when we checked the observations count.
+		var encCfg *encoderConfig
+		for sha, count := range shaToCount {
+			if count >= 2*r.config.F+1 {
+				encoderCfg, ok := shaToEncoder[sha]
+				if !ok {
+					lggr.Debugw("could not find encoder matching sha")
+				} else {
+					lggr.Debugw("consensus reached on overridden encoder", "encoderName", encoderCfg.name)
+					encCfg = &encoderCfg
+					break
+				}
+			}
+		}
+
+		if encCfg != nil {
+			lggr.Debugw("overridden encoder set", "name", encCfg.name, "cfg", encCfg.config)
+			outcome.EncoderName = encCfg.name
+			outcome.EncoderConfig = encCfg.config
+		}
 
 		report := &pbtypes.Report{
 			Outcome: outcome,

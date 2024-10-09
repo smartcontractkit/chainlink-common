@@ -9,7 +9,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 )
@@ -28,11 +27,6 @@ type aggregatorConfig struct {
 	// If non-empty, the keys in the outcome map will be replaced with these values.
 	// If non-empty, must be of length ExpectedObservationsLen.
 	KeyOverrides []string
-	// If true, the encoder name and config will be overridden with the values
-	// provided under configured indices of the observations array (as long as consensus is reached).
-	OverrideEncoder               bool
-	EncoderNameObservationIndex   int
-	EncoderConfigObservationIndex int
 }
 
 type counter struct {
@@ -79,8 +73,6 @@ func (a *identicalAggregator) Aggregate(_ *types.AggregationOutcome, observation
 func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*counter, f int) (*types.AggregationOutcome, error) {
 	useOverrides := len(a.config.KeyOverrides) == len(counters)
 	outcome := make(map[string]any)
-	var encoderName string
-	var encoderConfig *pb.Map
 	for idx, shaToCounter := range counters {
 		highestCount := 0
 		var highestObservation values.Value
@@ -98,23 +90,6 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 		} else {
 			outcome[fmt.Sprintf("%d", idx)] = highestObservation
 		}
-		if a.config.OverrideEncoder {
-			if idx == a.config.EncoderNameObservationIndex {
-				// extract encoder name from observation
-				name, ok := highestObservation.(*values.String)
-				if !ok {
-					return nil, fmt.Errorf("expected encoder name under index %d to be a String", idx)
-				}
-				encoderName = name.Underlying
-			} else if idx == a.config.EncoderConfigObservationIndex {
-				// extract encoder config from observation
-				conf, ok := highestObservation.(*values.Map)
-				if !ok {
-					return nil, fmt.Errorf("expected encoder config under index %d to be a Map", idx)
-				}
-				encoderConfig = values.ProtoMap(conf)
-			}
-		}
 	}
 	valMap, err := values.NewMap(outcome)
 	if err != nil {
@@ -124,8 +99,6 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 		EncodableOutcome: values.ProtoMap(valMap),
 		Metadata:         nil,
 		ShouldReport:     true,
-		EncoderName:      encoderName,
-		EncoderConfig:    encoderConfig,
 	}, nil
 }
 

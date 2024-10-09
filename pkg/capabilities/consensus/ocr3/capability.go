@@ -232,6 +232,13 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			return capabilities.CapabilityResponse{}, err
 		}
 
+		if len(inputs.Observations.Underlying) == 0 && inputs.Observation != nil {
+			inputs.Observations, err = values.NewList([]any{inputs.Observation})
+			if err != nil {
+				return capabilities.CapabilityResponse{}, fmt.Errorf("cannot wrap single observation into list: %w", err)
+			}
+		}
+
 		config, err := o.ValidateConfig(r.Config)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
@@ -282,6 +289,8 @@ func (o *capability) queueRequestForProcessing(
 		WorkflowDonID:            metadata.WorkflowDonID,
 		WorkflowDonConfigVersion: metadata.WorkflowDonConfigVersion,
 		Observations:             i.Observations,
+		OverriddenEncoderName:    i.EncoderName,
+		OverriddenEncoderConfig:  i.EncoderConfig,
 		KeyID:                    c.KeyID,
 		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}

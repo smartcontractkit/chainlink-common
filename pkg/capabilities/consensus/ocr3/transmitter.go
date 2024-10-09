@@ -131,7 +131,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 	return err
 }
 
-func (c *ContractTransmitter) FromAccount() (types.Account, error) {
+func (c *ContractTransmitter) FromAccount(ctx context.Context) (types.Account, error) {
 	return types.Account(c.fromAccount), nil
 }
 

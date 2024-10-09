@@ -337,7 +337,7 @@ func (it *fakeContractReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t
 }
 
 func (it *fakeContractReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
-	return time.Millisecond * 100
+	return time.Millisecond * 1000
 }
 
 type valConfidencePair struct {

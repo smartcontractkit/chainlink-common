@@ -66,6 +66,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				resp := tester.EncodeFields(t, req)
 				compatibleItem := compatibleTestStruct{
 					Account:             item.Account,
+					AccountStr:          item.AccountStr,
 					Accounts:            item.Accounts,
 					BigField:            item.BigField,
 					DifferentField:      item.DifferentField,
@@ -95,6 +96,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				resp := tester.EncodeFields(t, req)
 				compatibleMap := map[string]any{
 					"Account":        item.Account,
+					"AccountStr":     item.AccountStr,
 					"Accounts":       item.Accounts,
 					"BigField":       item.BigField,
 					"DifferentField": item.DifferentField,
@@ -139,6 +141,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 					OracleID:            ts.OracleID,
 					OracleIDs:           ts.OracleIDs,
 					Account:             ts.Account,
+					AccountStr:          ts.AccountStr,
 					Accounts:            ts.Accounts,
 					BigField:            ts.BigField,
 					NestedDynamicStruct: ts.NestedDynamicStruct,
@@ -353,6 +356,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 					OracleID:            0,
 					OracleIDs:           [32]commontypes.OracleID{},
 					Account:             nil,
+					AccountStr:          "",
 					Accounts:            nil,
 					BigField:            nil,
 					NestedDynamicStruct: MidLevelDynamicTestStruct{},

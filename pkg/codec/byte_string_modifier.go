@@ -69,54 +69,20 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ str
 		}
 	}()
 
-	if len(t.fields) == 0 {
-		t.offToOnChainType[onChainType] = onChainType
-		t.onToOffChainType[onChainType] = onChainType
-		return onChainType, nil
-	}
-
-	if cached, ok := t.onToOffChainType[onChainType]; ok {
-		return cached, nil
-	}
-
-	var offChainType reflect.Type
-	switch onChainType.Kind() {
-	case reflect.Pointer:
-		elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
-		if err != nil {
-			return nil, err
-		}
-
-		offChainType = reflect.PointerTo(elm)
-	case reflect.Slice:
-		elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
-		if err != nil {
-			return nil, err
-		}
-
-		offChainType = reflect.SliceOf(elm)
-	case reflect.Array:
-		addrType := reflect.ArrayOf(t.modifier.Length(), reflect.TypeOf(byte(0)))
-		// Check for nested byte arrays (e.g., [20]byte)
-		if onChainType.Elem() == addrType.Elem() {
-			offChainType = reflect.ArrayOf(onChainType.Len(), reflect.TypeOf(""))
-		} else {
-			elm, err := t.RetypeToOffChain(onChainType.Elem(), "")
-			if err != nil {
-				return nil, err
+	// Attempt to retype using the shared functionality in modifierBase
+	offChainType, err := t.modifierBase.RetypeToOffChain(onChainType, "")
+	if err != nil {
+		// Handle additional cases specific to bytesToStringModifier
+		if onChainType.Kind() == reflect.Array {
+			addrType := reflect.ArrayOf(t.modifier.Length(), reflect.TypeOf(byte(0)))
+			// Check for nested byte arrays (e.g., [n][20]byte)
+			if onChainType.Elem() == addrType.Elem() {
+				return reflect.ArrayOf(onChainType.Len(), reflect.TypeOf("")), nil
 			}
-			offChainType = reflect.ArrayOf(onChainType.Len(), elm)
 		}
-
-	case reflect.Struct:
-		return t.getStructType(onChainType)
-	default:
-		return nil, fmt.Errorf("%w: cannot retype the kind %v", types.ErrInvalidType, onChainType.Kind())
 	}
 
-	t.onToOffChainType[onChainType] = offChainType
-	t.offToOnChainType[offChainType] = onChainType
-	return offChainType, nil
+	return offChainType, err
 }
 
 // TransformToOnChain uses the AddressModifier for string-to-address conversion.
@@ -269,16 +235,6 @@ func addressToStringHookForOffChain(modifier AddressModifier) func(from reflect.
 
 		if !reflect.ValueOf(data).IsValid() {
 			return nil, fmt.Errorf("invalid value for conversion: got %T", data)
-		}
-
-		// if 'from' is a pointer to the byte array (e.g., *[20]byte), dereference it.
-		if from.Kind() == reflect.Ptr && from.Elem() == byteArrTyp {
-			if rVal.IsNil() {
-				return nil, fmt.Errorf("nil pointer for expected byte array: got %T", data)
-			}
-			data = rVal.Elem().Interface()
-			from = from.Elem()
-			rVal = reflect.ValueOf(data)
 		}
 
 		// Convert from byte array to string (e.g., [20]byte -> string)

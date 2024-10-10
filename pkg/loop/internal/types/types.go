@@ -3,10 +3,10 @@ package internal
 import (
 	"context"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/keystore"
 )
 
 type PluginRelayer interface {
@@ -60,6 +60,5 @@ type Relayer interface {
 // Keystore This interface contains all the keystore GRPC functionality, keystore.Keystore is meant to be exposed to consumers and the keystore.Management interface in exposed only to the core node
 type Keystore interface {
 	services.Service
-	keystore.Keystore
-	keystore.Management
+	keystore.Internals
 }

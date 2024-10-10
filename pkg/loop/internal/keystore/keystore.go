@@ -22,56 +22,6 @@ type Client struct {
 	grpc keystorepb.KeystoreClient
 }
 
-func (c *Client) AddPolicy(ctx context.Context, policy []byte) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) RemovePolicy(ctx context.Context, policyID string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) ListPolicy(ctx context.Context) []byte {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) Import(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) Export(ctx context.Context, keyID []byte) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) Create(ctx context.Context, keyType string, tags []string) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) Delete(ctx context.Context, keyID []byte) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) AddTag(ctx context.Context, keyID []byte, tag string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) RemoveTag(ctx context.Context, keyID []byte, tag string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *Client) ListTags(ctx context.Context, keyID []byte) ([]string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewKeystoreClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *Client {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "KeystoreClient")
 	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
@@ -156,15 +106,15 @@ type server struct {
 	*net.BrokerExt
 	keystorepb.UnimplementedKeystoreServer
 
-	impl keystore.Keystore
+	impl Internals
 }
 
-func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl keystore.Keystore) error {
+func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl Internals) error {
 	keystorepb.RegisterKeystoreServer(server, newKeystoreServer(broker, brokerCfg, impl))
 	return nil
 }
 
-func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl keystore.Keystore) *server {
+func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl Internals) *server {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "KeystoreServer")
 	return &server{BrokerExt: &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
 }
@@ -215,4 +165,86 @@ func (s *server) RunUDF(ctx context.Context, request *keystorepb.RunUDFRequest) 
 		return nil, err
 	}
 	return &keystorepb.RunUDFResponse{Data: data}, err
+}
+
+func (c *Client) Import(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error) {
+	reply, err := c.grpc.Import(ctx, &keystorepb.ImportRequest{
+		KeyType: keyType,
+		Data:    data,
+		Tags:    tags,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return reply.KeyID, nil
+}
+
+func (c *Client) Export(ctx context.Context, keyID []byte) ([]byte, error) {
+	reply, err := c.grpc.Export(ctx, &keystorepb.ExportRequest{
+		KeyID: keyID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return reply.Data, nil
+}
+
+func (c *Client) Create(ctx context.Context, keyType string, tags []string) ([]byte, error) {
+	reply, err := c.grpc.Create(ctx, &keystorepb.CreateRequest{
+		KeyType: keyType,
+		Tags:    tags,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return reply.KeyID, nil
+}
+
+func (c *Client) Delete(ctx context.Context, keyID []byte) error {
+	_, err := c.grpc.Delete(ctx, &keystorepb.DeleteRequest{
+		KeyID: keyID,
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) AddTag(ctx context.Context, keyID []byte, tag string) error {
+	_, err := c.grpc.AddTag(ctx, &keystorepb.AddTagRequest{
+		KeyID: keyID,
+		Tag:   tag,
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) RemoveTag(ctx context.Context, keyID []byte, tag string) error {
+	_, err := c.grpc.RemoveTag(ctx, &keystorepb.RemoveTagRequest{
+		KeyID: keyID,
+		Tag:   tag,
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) ListTags(ctx context.Context, keyID []byte) ([]string, error) {
+	reply, err := c.grpc.ListTags(ctx, &keystorepb.ListTagsRequest{
+		KeyID: keyID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return reply.Tags, nil
 }

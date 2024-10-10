@@ -25,6 +25,13 @@ const (
 	Keystore_VerifyBatch_FullMethodName = "/loop.internal.pb.keystore.Keystore/VerifyBatch"
 	Keystore_List_FullMethodName        = "/loop.internal.pb.keystore.Keystore/List"
 	Keystore_RunUDF_FullMethodName      = "/loop.internal.pb.keystore.Keystore/RunUDF"
+	Keystore_Import_FullMethodName      = "/loop.internal.pb.keystore.Keystore/Import"
+	Keystore_Export_FullMethodName      = "/loop.internal.pb.keystore.Keystore/Export"
+	Keystore_Create_FullMethodName      = "/loop.internal.pb.keystore.Keystore/Create"
+	Keystore_Delete_FullMethodName      = "/loop.internal.pb.keystore.Keystore/Delete"
+	Keystore_AddTag_FullMethodName      = "/loop.internal.pb.keystore.Keystore/AddTag"
+	Keystore_RemoveTag_FullMethodName   = "/loop.internal.pb.keystore.Keystore/RemoveTag"
+	Keystore_ListTags_FullMethodName    = "/loop.internal.pb.keystore.Keystore/ListTags"
 )
 
 // KeystoreClient is the client API for Keystore service.
@@ -37,6 +44,13 @@ type KeystoreClient interface {
 	VerifyBatch(ctx context.Context, in *VerifyBatchRequest, opts ...grpc.CallOption) (*VerifyBatchResponse, error)
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	RunUDF(ctx context.Context, in *RunUDFRequest, opts ...grpc.CallOption) (*RunUDFResponse, error)
+	Import(ctx context.Context, in *ImportRequest, opts ...grpc.CallOption) (*ImportResponse, error)
+	Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (*ExportResponse, error)
+	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	AddTag(ctx context.Context, in *AddTagRequest, opts ...grpc.CallOption) (*AddTagResponse, error)
+	RemoveTag(ctx context.Context, in *RemoveTagRequest, opts ...grpc.CallOption) (*RemoveTagResponse, error)
+	ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error)
 }
 
 type keystoreClient struct {
@@ -101,6 +115,69 @@ func (c *keystoreClient) RunUDF(ctx context.Context, in *RunUDFRequest, opts ...
 	return out, nil
 }
 
+func (c *keystoreClient) Import(ctx context.Context, in *ImportRequest, opts ...grpc.CallOption) (*ImportResponse, error) {
+	out := new(ImportResponse)
+	err := c.cc.Invoke(ctx, Keystore_Import_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keystoreClient) Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (*ExportResponse, error) {
+	out := new(ExportResponse)
+	err := c.cc.Invoke(ctx, Keystore_Export_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keystoreClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error) {
+	out := new(CreateResponse)
+	err := c.cc.Invoke(ctx, Keystore_Create_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keystoreClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	out := new(DeleteResponse)
+	err := c.cc.Invoke(ctx, Keystore_Delete_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keystoreClient) AddTag(ctx context.Context, in *AddTagRequest, opts ...grpc.CallOption) (*AddTagResponse, error) {
+	out := new(AddTagResponse)
+	err := c.cc.Invoke(ctx, Keystore_AddTag_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keystoreClient) RemoveTag(ctx context.Context, in *RemoveTagRequest, opts ...grpc.CallOption) (*RemoveTagResponse, error) {
+	out := new(RemoveTagResponse)
+	err := c.cc.Invoke(ctx, Keystore_RemoveTag_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keystoreClient) ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error) {
+	out := new(ListTagsResponse)
+	err := c.cc.Invoke(ctx, Keystore_ListTags_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeystoreServer is the server API for Keystore service.
 // All implementations must embed UnimplementedKeystoreServer
 // for forward compatibility
@@ -111,6 +188,13 @@ type KeystoreServer interface {
 	VerifyBatch(context.Context, *VerifyBatchRequest) (*VerifyBatchResponse, error)
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	RunUDF(context.Context, *RunUDFRequest) (*RunUDFResponse, error)
+	Import(context.Context, *ImportRequest) (*ImportResponse, error)
+	Export(context.Context, *ExportRequest) (*ExportResponse, error)
+	Create(context.Context, *CreateRequest) (*CreateResponse, error)
+	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)
+	AddTag(context.Context, *AddTagRequest) (*AddTagResponse, error)
+	RemoveTag(context.Context, *RemoveTagRequest) (*RemoveTagResponse, error)
+	ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error)
 	mustEmbedUnimplementedKeystoreServer()
 }
 
@@ -135,6 +219,27 @@ func (UnimplementedKeystoreServer) List(context.Context, *ListRequest) (*ListRes
 }
 func (UnimplementedKeystoreServer) RunUDF(context.Context, *RunUDFRequest) (*RunUDFResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunUDF not implemented")
+}
+func (UnimplementedKeystoreServer) Import(context.Context, *ImportRequest) (*ImportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Import not implemented")
+}
+func (UnimplementedKeystoreServer) Export(context.Context, *ExportRequest) (*ExportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Export not implemented")
+}
+func (UnimplementedKeystoreServer) Create(context.Context, *CreateRequest) (*CreateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedKeystoreServer) Delete(context.Context, *DeleteRequest) (*DeleteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedKeystoreServer) AddTag(context.Context, *AddTagRequest) (*AddTagResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddTag not implemented")
+}
+func (UnimplementedKeystoreServer) RemoveTag(context.Context, *RemoveTagRequest) (*RemoveTagResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveTag not implemented")
+}
+func (UnimplementedKeystoreServer) ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTags not implemented")
 }
 func (UnimplementedKeystoreServer) mustEmbedUnimplementedKeystoreServer() {}
 
@@ -257,6 +362,132 @@ func _Keystore_RunUDF_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Keystore_Import_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeystoreServer).Import(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keystore_Import_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeystoreServer).Import(ctx, req.(*ImportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Keystore_Export_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeystoreServer).Export(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keystore_Export_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeystoreServer).Export(ctx, req.(*ExportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Keystore_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeystoreServer).Create(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keystore_Create_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeystoreServer).Create(ctx, req.(*CreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Keystore_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeystoreServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keystore_Delete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeystoreServer).Delete(ctx, req.(*DeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Keystore_AddTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTagRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeystoreServer).AddTag(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keystore_AddTag_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeystoreServer).AddTag(ctx, req.(*AddTagRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Keystore_RemoveTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveTagRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeystoreServer).RemoveTag(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keystore_RemoveTag_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeystoreServer).RemoveTag(ctx, req.(*RemoveTagRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Keystore_ListTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTagsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeystoreServer).ListTags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Keystore_ListTags_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeystoreServer).ListTags(ctx, req.(*ListTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Keystore_ServiceDesc is the grpc.ServiceDesc for Keystore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -287,6 +518,34 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RunUDF",
 			Handler:    _Keystore_RunUDF_Handler,
+		},
+		{
+			MethodName: "Import",
+			Handler:    _Keystore_Import_Handler,
+		},
+		{
+			MethodName: "Export",
+			Handler:    _Keystore_Export_Handler,
+		},
+		{
+			MethodName: "Create",
+			Handler:    _Keystore_Create_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _Keystore_Delete_Handler,
+		},
+		{
+			MethodName: "AddTag",
+			Handler:    _Keystore_AddTag_Handler,
+		},
+		{
+			MethodName: "RemoveTag",
+			Handler:    _Keystore_RemoveTag_Handler,
+		},
+		{
+			MethodName: "ListTags",
+			Handler:    _Keystore_ListTags_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

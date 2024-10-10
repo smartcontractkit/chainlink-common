@@ -63,7 +63,3 @@ type Keystore interface {
 	keystore.Keystore
 	keystore.Management
 }
-
-type PluginKeystoreFactory interface {
-	NewKeystore(ctx context.Context, config []byte) (Keystore, error)
-}

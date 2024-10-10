@@ -7,6 +7,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/keystore"
 	internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 )
 
@@ -19,15 +20,11 @@ type KeystoreService struct {
 
 func NewKeystoreService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config []byte) *KeystoreService {
 	newService := func(ctx context.Context, instance any) (internal.Keystore, error) {
-		plug, ok := instance.(internal.PluginKeystoreFactory)
+		plug, ok := instance.(*keystore.Client)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginKeystore but got %T", instance)
 		}
-		r, err := plug.NewKeystore(ctx, config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create Keystore: %w", err)
-		}
-		return r, nil
+		return plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "KeystoreService")

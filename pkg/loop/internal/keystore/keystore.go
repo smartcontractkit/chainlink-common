@@ -9,15 +9,67 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	keystorepb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/keystore"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/keystore"
 )
 
 var _ keystore.Keystore = (*Client)(nil)
 
 type Client struct {
+	services.Service
 	*goplugin.PluginClient
 
 	grpc keystorepb.KeystoreClient
+}
+
+func (c *Client) AddPolicy(ctx context.Context, policy []byte) (string, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) RemovePolicy(ctx context.Context, policyID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) ListPolicy(ctx context.Context) []byte {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) Import(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) Export(ctx context.Context, keyID []byte) ([]byte, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) Create(ctx context.Context, keyType string, tags []string) ([]byte, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) Delete(ctx context.Context, keyID []byte) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) AddTag(ctx context.Context, keyID []byte, tag string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) RemoveTag(ctx context.Context, keyID []byte, tag string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Client) ListTags(ctx context.Context, keyID []byte) ([]string, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewKeystoreClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *Client {

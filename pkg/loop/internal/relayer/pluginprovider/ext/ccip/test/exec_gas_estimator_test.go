@@ -47,26 +47,22 @@ func roundTripGasPriceEstimatorExecTests(t *testing.T, client *ccip.ExecGasEstim
 	})
 
 	t.Run("DenoteInUSD", func(t *testing.T) {
-		usd, err := client.DenoteInUSD(
-			GasPriceEstimatorExec.denoteInUSDRequest.p,
-			GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice,
-		)
+		ctx := tests.Context(t)
+		usd, err := client.DenoteInUSD(ctx, GasPriceEstimatorExec.denoteInUSDRequest.p, GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.denoteInUSDResponse.result, usd)
 	})
 
 	t.Run("EstimateMsgCostUSD", func(t *testing.T) {
-		cost, err := client.EstimateMsgCostUSD(
-			GasPriceEstimatorExec.estimateMsgCostUSDRequest.p,
-			GasPriceEstimatorExec.estimateMsgCostUSDRequest.wrappedNativePrice,
-			GasPriceEstimatorExec.estimateMsgCostUSDRequest.msg,
-		)
+		ctx := tests.Context(t)
+		cost, err := client.EstimateMsgCostUSD(ctx, GasPriceEstimatorExec.estimateMsgCostUSDRequest.p, GasPriceEstimatorExec.estimateMsgCostUSDRequest.wrappedNativePrice, GasPriceEstimatorExec.estimateMsgCostUSDRequest.msg)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.estimateMsgCostUSDResponse, cost)
 	})
 
 	t.Run("Median", func(t *testing.T) {
-		median, err := client.Median(GasPriceEstimatorExec.medianRequest.gasPrices)
+		ctx := tests.Context(t)
+		median, err := client.Median(ctx, GasPriceEstimatorExec.medianRequest.gasPrices)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.medianResponse, median)
 	})

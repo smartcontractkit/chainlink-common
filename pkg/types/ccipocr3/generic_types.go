@@ -127,6 +127,8 @@ type Message struct {
 	FeeToken Bytes `json:"feeToken"`
 	// FeeTokenAmount is the amount of fee tokens paid.
 	FeeTokenAmount BigInt `json:"feeTokenAmount"`
+	// FeeValueJuels is the fee amount in Juels
+	FeeValueJuels BigInt `json:"feeValueJuels"`
 	// TokenAmounts is the array of tokens and amounts to transfer.
 	TokenAmounts []RampTokenAmount `json:"tokenAmounts"`
 }

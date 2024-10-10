@@ -84,25 +84,22 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 		})
 
 		t.Run("DenoteInUSD", func(t *testing.T) {
-			usd, err := estimator.DenoteInUSD(
-				GasPriceEstimatorCommit.denoteInUSDRequest.p,
-				GasPriceEstimatorCommit.denoteInUSDRequest.wrappedNativePrice,
-			)
+			ctx := tests.Context(t)
+			usd, err := estimator.DenoteInUSD(ctx, GasPriceEstimatorCommit.denoteInUSDRequest.p, GasPriceEstimatorCommit.denoteInUSDRequest.wrappedNativePrice)
 			require.NoError(t, err)
 			assert.Equal(t, GasPriceEstimatorCommit.denoteInUSDResponse.result, usd)
 		})
 
 		t.Run("Deviates", func(t *testing.T) {
-			deviates, err := estimator.Deviates(
-				GasPriceEstimatorCommit.deviatesRequest.p1,
-				GasPriceEstimatorCommit.deviatesRequest.p2,
-			)
+			ctx := tests.Context(t)
+			deviates, err := estimator.Deviates(ctx, GasPriceEstimatorCommit.deviatesRequest.p1, GasPriceEstimatorCommit.deviatesRequest.p2)
 			require.NoError(t, err)
 			assert.Equal(t, GasPriceEstimatorCommit.deviatesResponse, deviates)
 		})
 
 		t.Run("Median", func(t *testing.T) {
-			median, err := estimator.Median(GasPriceEstimatorCommit.medianRequest.gasPrices)
+			ctx := tests.Context(t)
+			median, err := estimator.Median(ctx, GasPriceEstimatorCommit.medianRequest.gasPrices)
 			require.NoError(t, err)
 			assert.Equal(t, GasPriceEstimatorCommit.medianResponse, median)
 		})
@@ -179,7 +176,8 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 }
 
 func setupCommitStoreServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.CommitStoreGRPCServer {
-	commitProvider, err := ccip.NewCommitStoreReaderGRPCServer(CommitStoreReader, b)
+	ctx := tests.Context(t)
+	commitProvider, err := ccip.NewCommitStoreReaderGRPCServer(ctx, CommitStoreReader, b)
 	require.NoError(t, err)
 	ccippb.RegisterCommitStoreReaderServer(s, commitProvider)
 	return commitProvider

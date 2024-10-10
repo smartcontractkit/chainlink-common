@@ -32,17 +32,17 @@ func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string,
 }
 
 type IdenticalConsensusInput[T any] struct {
-	Observations sdk.CapDefinition[T]
-}
-
-type IdenticalConsensusMergedInput[T any] struct {
-	Observations []T
+	Observation   sdk.CapDefinition[T]
+	Encoder       Encoder
+	EncoderConfig EncoderConfig
 }
 
 func (input IdenticalConsensusInput[T]) ToSteps() sdk.StepInputs {
 	return sdk.StepInputs{
 		Mapping: map[string]any{
-			"observations": input.Observations.Ref(),
+			"observations":  sdk.ListOf(input.Observation).Ref(),
+			"encoder":       input.Encoder,
+			"encoderConfig": input.EncoderConfig,
 		},
 	}
 }

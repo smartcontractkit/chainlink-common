@@ -111,6 +111,7 @@ message InitialiseRequest {
   uint32 capRegistry_id = 5;
   uint32 keyValueStore_id = 6;
   uint32 relayer_set_id = 7;
+  uint32 oracle_factory_id = 8;
 }
 
 message CapabilityInfosReply {

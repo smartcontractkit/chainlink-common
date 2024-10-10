@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testdata/fixtures/capabilities/listtrigger/list@1.0.0",
+  "description": "Basic Test Trigger",
+  "properties": {
+    "config": {
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["name"]
+    },
+    "outputs": {
+      "properties": {
+        "cool_output": {
+          "type" : "array",
+          "items" : {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["cool_output"]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["config"]
+}

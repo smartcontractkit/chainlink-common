@@ -77,7 +77,7 @@ type NodeStatus struct {
 	State   string
 }
 
-// ChainService is a sub-interface of [loop.Relayer] that encapsulates the explicit interactions with a chain
+// ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service
 
@@ -92,11 +92,9 @@ type ChainService interface {
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 }
 
-// Relayer is the product-facing, and context-less sub-interface of [loop.Relayer].
-//
-// Deprecated: use loop.Relayer, which includes context.Context.
+// Relayer extends ChainService with providers for each product.
 type Relayer interface {
-	Service
+	ChainService
 
 	// NewChainWriter returns a new ChainWriter.
 	// The format of config depends on the implementation.
@@ -104,19 +102,19 @@ type Relayer interface {
 
 	// NewContractReader returns a new ContractReader.
 	// The format of contractReaderConfig depends on the implementation.
-	NewContractReader(contractReaderConfig []byte) (ContractReader, error)
+	NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error)
 
-	NewConfigProvider(rargs RelayArgs) (ConfigProvider, error)
+	NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error)
 
-	NewMedianProvider(rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
-	NewMercuryProvider(rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
-	NewFunctionsProvider(rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
-	NewAutomationProvider(rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
-	NewLLOProvider(rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
-	NewCCIPCommitProvider(rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error)
-	NewCCIPExecProvider(rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error)
+	NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
+	NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
+	NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
+	NewAutomationProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
+	NewLLOProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
+	NewCCIPCommitProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error)
+	NewCCIPExecProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error)
 
-	NewPluginProvider(rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
+	NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 
-	NewOCR3CapabilityProvider(rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
+	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
 }

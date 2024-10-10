@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
@@ -33,11 +35,12 @@ var ReportingPlugin = ocr3staticReportingPlugin{
 			observation: libocr.Observation{1, 2, 3},
 		},
 		observationQuorumRequest: observationQuorumRequest{
-			outcomeCtx: outcomeCtx,
-			query:      query,
+			outcomeCtx:   outcomeCtx,
+			query:        query,
+			observations: []libocr.AttributedObservation{{Observer: 1, Observation: []byte{1, 2, 3}}},
 		},
 		observationQuorumResponse: observationQuorumResponse{
-			quorum: 1,
+			quorumReached: true,
 		},
 		validateObservationRequest: validateObservationRequest{
 			outcomeCtx:            outcomeCtx,
@@ -57,8 +60,14 @@ var ReportingPlugin = ocr3staticReportingPlugin{
 			outcome: ocr3types.Outcome{1, 2, 3},
 		},
 		reportsResponse: reportsResponse{
-			reportWithInfo: []ocr3types.ReportWithInfo[[]byte]{
-				{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
+			reportPlus: []ocr3types.ReportPlus[[]byte]{
+				{
+					ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
+					TransmissionScheduleOverride: &ocr3types.TransmissionSchedule{
+						Transmitters:       []commontypes.OracleID{1, 2, 3},
+						TransmissionDelays: []time.Duration{time.Second, time.Millisecond},
+					},
+				},
 			},
 		},
 		shouldAcceptAttestedReportRequest: shouldAcceptAttestedReportRequest{
@@ -97,12 +106,13 @@ type observationResponse struct {
 }
 
 type observationQuorumRequest struct {
-	outcomeCtx ocr3types.OutcomeContext
-	query      libocr.Query
+	outcomeCtx   ocr3types.OutcomeContext
+	query        libocr.Query
+	observations []libocr.AttributedObservation
 }
 
 type observationQuorumResponse struct {
-	quorum ocr3types.Quorum
+	quorumReached bool
 }
 
 type validateObservationRequest struct {
@@ -127,7 +137,7 @@ type reportsRequest struct {
 }
 
 type reportsResponse struct {
-	reportWithInfo []ocr3types.ReportWithInfo[[]byte]
+	reportPlus []ocr3types.ReportPlus[[]byte]
 }
 
 type shouldAcceptAttestedReportRequest struct {
@@ -200,7 +210,7 @@ func (s ocr3staticReportingPlugin) Observation(ctx context.Context, outcomeCtx o
 	return s.observationResponse.observation, nil
 }
 
-func (s ocr3staticReportingPlugin) ValidateObservation(outcomeCtx ocr3types.OutcomeContext, q libocr.Query, a libocr.AttributedObservation) error {
+func (s ocr3staticReportingPlugin) ValidateObservation(ctx context.Context, outcomeCtx ocr3types.OutcomeContext, q libocr.Query, a libocr.AttributedObservation) error {
 	err := s.checkOutCtx(outcomeCtx)
 	if err != nil {
 		return err
@@ -220,19 +230,22 @@ func (s ocr3staticReportingPlugin) ValidateObservation(outcomeCtx ocr3types.Outc
 	return nil
 }
 
-func (s ocr3staticReportingPlugin) ObservationQuorum(outcomeCtx ocr3types.OutcomeContext, q libocr.Query) (ocr3types.Quorum, error) {
+func (s ocr3staticReportingPlugin) ObservationQuorum(ctx context.Context, outcomeCtx ocr3types.OutcomeContext, q libocr.Query, aos []libocr.AttributedObservation) (bool, error) {
 	err := s.checkOutCtx(outcomeCtx)
 	if err != nil {
-		return ocr3types.Quorum(0), err
+		return false, err
 	}
 	if !bytes.Equal(q, s.observationQuorumRequest.query) {
-		return ocr3types.Quorum(0), fmt.Errorf("expected %x but got %x", s.observationQuorumRequest.query, q)
+		return false, fmt.Errorf("expected %x but got %x", s.observationQuorumRequest.query, q)
+	}
+	if !assert.ObjectsAreEqual(aos, s.observationQuorumRequest.observations) {
+		return false, fmt.Errorf("expected %v but got %v", s.observationQuorumRequest.observations, aos)
 	}
 
-	return s.observationQuorumResponse.quorum, nil
+	return s.observationQuorumResponse.quorumReached, nil
 }
 
-func (s ocr3staticReportingPlugin) Outcome(outcomeCtx ocr3types.OutcomeContext, q libocr.Query, aos []libocr.AttributedObservation) (ocr3types.Outcome, error) {
+func (s ocr3staticReportingPlugin) Outcome(ctx context.Context, outcomeCtx ocr3types.OutcomeContext, q libocr.Query, aos []libocr.AttributedObservation) (ocr3types.Outcome, error) {
 	err := s.checkOutCtx(outcomeCtx)
 	if err != nil {
 		return nil, err
@@ -247,7 +260,7 @@ func (s ocr3staticReportingPlugin) Outcome(outcomeCtx ocr3types.OutcomeContext, 
 	return s.outcomeResponse.outcome, nil
 }
 
-func (s ocr3staticReportingPlugin) Reports(seq uint64, o ocr3types.Outcome) ([]ocr3types.ReportWithInfo[[]byte], error) {
+func (s ocr3staticReportingPlugin) Reports(ctx context.Context, seq uint64, o ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
 	if seq != s.reportsRequest.seq {
 		return nil, fmt.Errorf("expected %x but got %x", s.reportsRequest.seq, seq)
 	}
@@ -256,7 +269,7 @@ func (s ocr3staticReportingPlugin) Reports(seq uint64, o ocr3types.Outcome) ([]o
 		return nil, fmt.Errorf("expected %x but got %x", s.reportsRequest.outcome, o)
 	}
 
-	return s.reportsResponse.reportWithInfo, nil
+	return s.reportsResponse.reportPlus, nil
 }
 
 func (s ocr3staticReportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, u uint64, r ocr3types.ReportWithInfo[[]byte]) (bool, error) {
@@ -300,20 +313,20 @@ func (s ocr3staticReportingPlugin) AssertEqual(ctx context.Context, t *testing.T
 	require.NoError(t, err)
 	assert.Equal(t, s.observationResponse.observation, gotObs)
 
-	err = rp.ValidateObservation(s.validateObservationRequest.outcomeCtx, s.validateObservationRequest.query, s.validateObservationRequest.attributedObservation)
+	err = rp.ValidateObservation(ctx, s.validateObservationRequest.outcomeCtx, s.validateObservationRequest.query, s.validateObservationRequest.attributedObservation)
 	require.NoError(t, err)
 
-	gotQuorum, err := rp.ObservationQuorum(s.observationQuorumRequest.outcomeCtx, s.observationQuorumRequest.query)
+	gotQuorum, err := rp.ObservationQuorum(ctx, s.observationQuorumRequest.outcomeCtx, s.observationQuorumRequest.query, s.observationQuorumRequest.observations)
 	require.NoError(t, err)
-	assert.Equal(t, s.observationQuorumResponse.quorum, gotQuorum)
+	assert.Equal(t, s.observationQuorumResponse.quorumReached, gotQuorum)
 
-	gotOutcome, err := rp.Outcome(s.outcomeRequest.outcomeCtx, s.outcomeRequest.query, s.outcomeRequest.observations)
+	gotOutcome, err := rp.Outcome(ctx, s.outcomeRequest.outcomeCtx, s.outcomeRequest.query, s.outcomeRequest.observations)
 	require.NoError(t, err)
 	assert.Equal(t, s.outcomeResponse.outcome, gotOutcome)
 
-	gotRI, err := rp.Reports(s.reportsRequest.seq, s.reportsRequest.outcome)
+	gotRI, err := rp.Reports(ctx, s.reportsRequest.seq, s.reportsRequest.outcome)
 	require.NoError(t, err)
-	assert.Equal(t, s.reportsResponse.reportWithInfo, gotRI)
+	assert.Equal(t, s.reportsResponse.reportPlus, gotRI)
 
 	gotShouldAccept, err := rp.ShouldAcceptAttestedReport(ctx, s.shouldAcceptAttestedReportRequest.seq, s.shouldAcceptAttestedReportRequest.r)
 	require.NoError(t, err)

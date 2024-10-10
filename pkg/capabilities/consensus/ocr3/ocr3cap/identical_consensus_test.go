@@ -26,7 +26,11 @@ func TestIdenticalConsensus(t *testing.T) {
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
 		ReportID:      "0001",
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{Observations: trigger})
+	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{
+		Observation:   trigger,
+		Encoder:       "evm",
+		EncoderConfig: ocr3.EncoderConfig(map[string]any{"foo": "bar"}),
+	})
 
 	chainwriter.TargetConfig{
 		Address:    "0x1235",
@@ -55,9 +59,13 @@ func TestIdenticalConsensus(t *testing.T) {
 		Actions: []sdk.StepDefinition{},
 		Consensus: []sdk.StepDefinition{
 			{
-				ID:     "offchain_reporting@1.0.0",
-				Ref:    "consensus",
-				Inputs: sdk.StepInputs{Mapping: map[string]any{"observations": "$(trigger.outputs)"}},
+				ID:  "offchain_reporting@1.0.0",
+				Ref: "consensus",
+				Inputs: sdk.StepInputs{Mapping: map[string]any{
+					"observations":  []any{"$(trigger.outputs)"},
+					"encoder":       "evm",
+					"encoderConfig": map[string]any{"foo": "bar"},
+				}},
 				Config: map[string]any{
 					"encoder":            "EVM",
 					"encoder_config":     map[string]any{},

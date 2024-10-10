@@ -39,6 +39,8 @@ message Observation {
   Id id = 1;
   // list of observations defined in inputs.observations
   values.List observations = 4;
+  string overriddenEncoderName = 5;
+  values.Map overriddenEncoderConfig = 6;
 }
 
 message Observations {

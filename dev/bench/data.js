@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728571081065,
+  "lastUpdate": 1728574324059,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3066,6 +3066,48 @@ window.BENCHMARK_DATA = {
             "value": 28872,
             "unit": "ns/op",
             "extra": "41188 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2fd649133aced68d944e70f3f5a855c34c858d6d",
+          "message": "created integration test that asserts cursor functionality (#811)\n\n* created integration test that asserts cursor functionality\r\n\r\n* fix query key with cursor over loop and grpc type conversion bug\r\n\r\n* Added finality to QueryKey Expression\r\n\r\n* Apply suggestions from code review\r\n\r\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\r\n\r\n* Increased MaxWaitTimeforEvents for contractReader tests\r\n\r\n---------\r\n\r\nCo-authored-by: Silas Lenihan <sjl@lenihan.net>\r\nCo-authored-by: Silas Lenihan <32529249+silaslenihan@users.noreply.github.com>\r\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2024-10-10T11:31:10-04:00",
+          "tree_id": "69390df8ebe00b9a53e0859dc8e7ab0db094aeee",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2fd649133aced68d944e70f3f5a855c34c858d6d"
+        },
+        "date": 1728574323564,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.8,
+            "unit": "ns/op",
+            "extra": "2539358 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508,
+            "unit": "ns/op",
+            "extra": "2342630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28351,
+            "unit": "ns/op",
+            "extra": "42517 times\n4 procs"
           }
         ]
       }

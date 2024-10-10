@@ -52,7 +52,7 @@ func NewLOOPPService(
 }
 
 func (g *LOOPPService) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
-	if err := g.Wait(); err != nil {
+	if err := g.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
 	return g.Service.NewReportingPlugin(ctx, config)

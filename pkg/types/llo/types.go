@@ -8,6 +8,7 @@ import (
 	"math"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -35,8 +36,15 @@ const (
 
 	// NOTE: Only add something here if you actually need it, because it has to
 	// be supported forever and can't be changed
+
+	// ReportFormatEVMPremiumLegacy maintains compatibility with the legacy
+	// Mercury v0.3 report format
 	ReportFormatEVMPremiumLegacy ReportFormat = 1
-	ReportFormatJSON             ReportFormat = 2
+	// ReportFormatJSON is a simple JSON format for reference and debugging
+	ReportFormatJSON ReportFormat = 2
+	// ReportFormatRetirement is a special "capstone" report format to indicate
+	// a retired OCR instance, and handover crucial information to a new one
+	ReportFormatRetirement ReportFormat = 3
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -44,6 +52,7 @@ const (
 var ReportFormats = []ReportFormat{
 	ReportFormatEVMPremiumLegacy,
 	ReportFormatJSON,
+	ReportFormatRetirement,
 }
 
 func (rf ReportFormat) String() string {
@@ -52,6 +61,8 @@ func (rf ReportFormat) String() string {
 		return "evm_premium_legacy"
 	case ReportFormatJSON:
 		return "json"
+	case ReportFormatRetirement:
+		return "retirement"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -63,6 +74,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatEVMPremiumLegacy, nil
 	case "json":
 		return ReportFormatJSON, nil
+	case "retirement":
+		return ReportFormatRetirement, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}
@@ -301,4 +314,8 @@ type ChannelID = uint32
 type ChannelDefinitionCache interface {
 	Definitions() ChannelDefinitions
 	services.Service
+}
+
+type ShouldRetireCache interface {
+	ShouldRetire(digest ocr2types.ConfigDigest) (bool, error)
 }

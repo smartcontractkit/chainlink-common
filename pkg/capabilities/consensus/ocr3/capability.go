@@ -282,6 +282,8 @@ func (o *capability) queueRequestForProcessing(
 		WorkflowDonID:            metadata.WorkflowDonID,
 		WorkflowDonConfigVersion: metadata.WorkflowDonConfigVersion,
 		Observations:             i.Observations,
+		OverriddenEncoderName:    i.EncoderName,
+		OverriddenEncoderConfig:  i.EncoderConfig,
 		KeyID:                    c.KeyID,
 		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}

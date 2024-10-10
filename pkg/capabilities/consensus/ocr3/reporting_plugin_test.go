@@ -784,11 +784,11 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 		},
 		{
 			Observation: rawObs2,
-			Observer:    commontypes.OracleID(1),
+			Observer:    commontypes.OracleID(2),
 		},
 		{
 			Observation: rawObs3,
-			Observer:    commontypes.OracleID(1),
+			Observer:    commontypes.OracleID(3),
 		},
 	}
 
@@ -799,4 +799,161 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, timestamppb.New(time2), opb1.Outcomes[workflowTestID].Timestamp)
+}
+
+func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
+	lggr := logger.Test(t)
+	s := requests.NewStore()
+	mcap := &mockCapability{
+		aggregator: &aggregator{},
+		encoder:    &enc{},
+		registeredWorkflows: map[string]bool{
+			workflowTestID:  true,
+			workflowTestID2: true,
+		},
+	}
+	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{F: 1}, defaultOutcomePruningThreshold, lggr)
+	require.NoError(t, err)
+
+	wowner := uuid.New().String()
+	id := &pbtypes.Id{
+		WorkflowExecutionId: uuid.New().String(),
+		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	id2 := &pbtypes.Id{
+		WorkflowExecutionId: uuid.New().String(),
+		WorkflowId:          workflowTestID2,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	id3 := &pbtypes.Id{
+		WorkflowExecutionId: uuid.New().String(),
+		WorkflowId:          workflowTestID3,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	q := &pbtypes.Query{
+		Ids: []*pbtypes.Id{id, id2, id3},
+	}
+	qb, err := proto.Marshal(q)
+	require.NoError(t, err)
+	o, err := values.NewList([]any{"hello"})
+	require.NoError(t, err)
+	time1 := time.Now().Add(time.Second * 1)
+	time2 := time.Now().Add(time.Second * 2)
+	time3 := time.Now().Add(time.Second * 3)
+	m, err := values.NewMap(map[string]any{"foo": "bar"})
+	require.NoError(t, err)
+	mc := values.ProtoMap(m)
+	obs := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:                      id,
+				Observations:            values.Proto(o).GetListValue(),
+				OverriddenEncoderName:   "evm",
+				OverriddenEncoderConfig: mc,
+			},
+			{
+				Id:                      id2,
+				Observations:            values.Proto(o).GetListValue(),
+				OverriddenEncoderName:   "evm",
+				OverriddenEncoderConfig: mc,
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID, workflowTestID2},
+		Timestamp:             timestamppb.New(time1),
+	}
+	obs2 := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:                      id,
+				Observations:            values.Proto(o).GetListValue(),
+				OverriddenEncoderName:   "evm",
+				OverriddenEncoderConfig: mc,
+			},
+			{
+				Id:                      id2,
+				Observations:            values.Proto(o).GetListValue(),
+				OverriddenEncoderName:   "evm",
+				OverriddenEncoderConfig: mc,
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID},
+		Timestamp:             timestamppb.New(time2),
+	}
+	obs3 := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:                      id,
+				Observations:            values.Proto(o).GetListValue(),
+				OverriddenEncoderName:   "evm",
+				OverriddenEncoderConfig: mc,
+			},
+			{
+				Id:                      id2,
+				Observations:            values.Proto(o).GetListValue(),
+				OverriddenEncoderName:   "solana",
+				OverriddenEncoderConfig: mc,
+			},
+			{
+				Id:           id3,
+				Observations: values.Proto(o).GetListValue(),
+			},
+		},
+		RegisteredWorkflowIds: []string{workflowTestID},
+		Timestamp:             timestamppb.New(time3),
+	}
+
+	rawObs, err := proto.Marshal(obs)
+	require.NoError(t, err)
+	rawObs2, err := proto.Marshal(obs2)
+	require.NoError(t, err)
+	rawObs3, err := proto.Marshal(obs3)
+	require.NoError(t, err)
+	aos := []types.AttributedObservation{
+		{
+			Observation: rawObs,
+			Observer:    commontypes.OracleID(1),
+		},
+		{
+			Observation: rawObs2,
+			Observer:    commontypes.OracleID(2),
+		},
+		{
+			Observation: rawObs3,
+			Observer:    commontypes.OracleID(3),
+		},
+	}
+
+	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	require.NoError(t, err)
+	opb1 := &pbtypes.Outcome{}
+	err = proto.Unmarshal(outcome, opb1)
+	require.NoError(t, err)
+
+	assert.Equal(t, opb1.Outcomes[workflowTestID].EncoderName, "evm")
+	ec, err := values.FromMapValueProto(opb1.Outcomes[workflowTestID].EncoderConfig)
+	require.NoError(t, err)
+	assert.Equal(t, ec, m)
+
+	// No consensus on outcome 2
+	assert.Equal(t, opb1.Outcomes[workflowTestID2].EncoderName, "")
+	assert.Nil(t, opb1.Outcomes[workflowTestID2].EncoderConfig)
+
+	// Outcome 3 doesn't set the encoder
+	assert.Equal(t, opb1.Outcomes[workflowTestID3].EncoderName, "")
+	assert.Nil(t, opb1.Outcomes[workflowTestID3].EncoderConfig)
 }

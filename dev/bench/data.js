@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728478189509,
+  "lastUpdate": 1728571081065,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3024,6 +3024,48 @@ window.BENCHMARK_DATA = {
             "value": 28250,
             "unit": "ns/op",
             "extra": "42421 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "46370848a78919a4974f33871de164a93c49e772",
+          "message": "[CM-380] Identical Aggregator (#771)\n\n* [CM-380] Identical Aggregator\r\n\r\n* [CAPPL-60] Dynamic encoder selection in OCR consensus aggregator\r\n\r\n* extract encoder name and config\r\n\r\n* Add more tests\r\n\r\n* add limit to seq num range (#781)\r\n\r\n* [chore] Handle aliases in slices (#784)\r\n\r\n* [chore] Handle aliases in slices\r\n\r\n* More aliasing tests\r\n\r\n* Lint fix\r\n\r\n* Fix test\r\n\r\n---------\r\n\r\nCo-authored-by: Sri Kidambi <1702865+kidambisrinivas@users.noreply.github.com>\r\n\r\n* feat(observability-lib): legendoptions + improvement on node general dashboard (#785)\r\n\r\n* [CAPPL-58] Correctly stub out clock_time_get and poll_oneoff (#778)\r\n\r\n* [CAPPL-58] Further cleanup\r\n\r\n* [CAPPL-58] Add support for compression\r\n\r\n* More alias handling in Unwrap functionality of Value  (#792)\r\n\r\n* Generic case to handle both pointer type and raw type and simplify int unwrap\r\n\r\n* Handling interface and default\r\n\r\n* Small test fix\r\n\r\n---------\r\n\r\nCo-authored-by: Cedric Cordenier <cedric.cordenier@smartcontract.com>\r\n\r\n* Fix alias typing and tests (#788)\r\n\r\n* Fix alias typing and tests\r\n\r\n* Fix ints\r\n\r\n* errors.new instead of fmt\r\n\r\n* Add array support to slice (#789)\r\n\r\n* Replace fmt.Errorf with errors.New where possible (#795)\r\n\r\n* chore(workflows): adds unit test to utils (#782)\r\n\r\n* Have the mock runner register with capabilites (#783)\r\n\r\n* Add binary + config to custom compute (#794)\r\n\r\n* Add binary + config to custom compute\r\n\r\n* Add binary + config to custom compute\r\n\r\n* fix lint issues (#786)\r\n\r\n* execution factory constructor updated to take two providers, chainIDs, and source token address (#641)\r\n\r\n* execution factory constructor updated to take two providers and chain IDs\r\n\r\n(cherry picked from commit 6ad1f08d26810df5eaeed76a0f74e20be1908658)\r\n\r\n* Adding source token address to execution factory constructor\r\n\r\n* Support passing in a values.Value to the chainreader GetLatestValue method (#779)\r\n\r\n* add support for passing in a values.Value type to the contract readers GetLatestValue and QueryKey methods\r\n\r\n---------\r\n\r\nCo-authored-by: Sri Kidambi <1702865+kidambisrinivas@users.noreply.github.com>\r\nCo-authored-by: Cedric Cordenier <cedric.cordenier@smartcontract.com>\r\n\r\n* [CAPPL-31] feat(values): adds support for time.Time as value (#787)\r\n\r\n* feat(values): adds support for time.Time as value\r\n\r\n* chore(deps): updates .tool-versions\r\n\r\n* refactor(values): uses primitive type in protos\r\n\r\n* feat(values): support float64 values (#799)\r\n\r\n* confidence level from string (#802)\r\n\r\n* Float32/Float64 wrapping (#804)\r\n\r\n* feat: implement sdk logger (#762)\r\n\r\n* Add MustEmbed Constraint to Contract Reader (#801)\r\n\r\nReintroducing the must embed constraint to `ContractReader` implementations to\r\nensure that all implementations of `ContractReader` embed the `UnimplementedContractReader`.\r\n\r\nIf an implementation contains the unemplemented struct, changes to the interface\r\nwill flow down to all implementations without introducing breaking changes.\r\n\r\n* Updated TestStruct to enable advanced querying (#798)\r\n\r\n* Updated TestStruct to enable advanced querying\r\n\r\n* linting fixes\r\n\r\n* Update pkg/codec/encodings/type_codec_test.go\r\n\r\nCo-authored-by: Clement <clement.erena78@gmail.com>\r\n\r\n* Update pkg/codec/encodings/type_codec_test.go\r\n\r\nCo-authored-by: Clement <clement.erena78@gmail.com>\r\n\r\n* Fixed codec tests\r\n\r\n---------\r\n\r\nCo-authored-by: Clement <clement.erena78@gmail.com>\r\n\r\n* Properly support the range of uint64 and allow big int to unwrap into smaller integer types (#810)\r\n\r\n* Extract expirable cache abstraction for reuse (#807)\r\n\r\n* expirable_cache\r\n\r\n* remove cache (#812)\r\n\r\n* CCIP-3555 Attestation encoder interfaces (#813)\r\n\r\n* Attestation encoder interfaces\r\n\r\n* Attestation encoder interfaces\r\n\r\n* Attestation encoder interfaces\r\n\r\n* Comment\r\n\r\n* [BCF-3392]  - ContractReaderByIDs Wrapper (#797)\r\n\r\n* WIP\r\n\r\n* Update ContractReaderByIDs interface method names\r\n\r\n* Unexpose types.ContractReader in contractReaderByIDs\r\n\r\n* Add multiple contract address support to fakeContractReader for tests\r\n\r\n* Add GetLatestValue unit test for contractReaderByIDs\r\n\r\n* Add GetLatestValue unit test for QueryKey\r\n\r\n* Add BatchGetLatestValues unit test for CR by custom IdDs wrapper\r\n\r\n* Rm ContractReaderByIDs interface and export the struct\r\n\r\n* Change ContractReaderByIDs wrapper Unbind handling\r\n\r\n* Improve ContractReaderByIDs wrapper err handling\r\n\r\n* Remove mockery usage from ContractReaderByIDs tests\r\n\r\n* lint\r\n\r\n* pkg/types/ccipocr3: add DestExecData to RampTokenAmount (#817)\r\n\r\n* pkg/types/ccipocr3: add DestExecData to RampTokenAmount\r\n\r\n* fix test\r\n\r\n* Allow the creation of maps from string to capbility outputs. (#815)\r\n\r\n* Add the FeeValueJuels field to ccipocr3.Message (#819)\r\n\r\n* feat(observability-lib): improve alerts rule (#803)\r\n\r\n* feat(observability-lib): improve alerts rule\r\n\r\n* chore(observability-lib): README + folder structure (#806)\r\n\r\n* chore(observability-lib): README + folder structure\r\n\r\n* feat(observability-lib): variable add current + includeAll options (#808)\r\n\r\n* chore(README): small corrections\r\n\r\n* chore(README): example improved\r\n\r\n* chore(README): add references to dashboards examples\r\n\r\n* feat(observability-lib): refactor exportable func + link to godoc\r\n\r\n* fix(observability-lib): cmd errors returns\r\n\r\n* enable errorf check (#826)\r\n\r\n* Make overridding the encoder first-class\r\n\r\n* Update mocks\r\n\r\n* Mock updates\r\n\r\n* Adjust tests\r\n\r\n* Fix mock\r\n\r\n* Fix mock\r\n\r\n* Update mock\r\n\r\n* Linting\r\n\r\n---------\r\n\r\nCo-authored-by: Cedric Cordenier <cedric.cordenier@smartcontract.com>\r\nCo-authored-by: dimitris <dimitrios.kouveris@smartcontract.com>\r\nCo-authored-by: Sri Kidambi <1702865+kidambisrinivas@users.noreply.github.com>\r\nCo-authored-by: Clement <clement.erena78@gmail.com>\r\nCo-authored-by: Ryan Tinianov <tinianov@live.com>\r\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>\r\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\r\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>\r\nCo-authored-by: Matthew Pendrey <matthew.pendrey@gmail.com>\r\nCo-authored-by: Gabriel Paradiso <gaboparadiso@gmail.com>\r\nCo-authored-by: Awbrey Hughlett <athughlett@gmail.com>\r\nCo-authored-by: Silas Lenihan <32529249+silaslenihan@users.noreply.github.com>\r\nCo-authored-by: Mateusz Sekara <mateusz.sekara@gmail.com>\r\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>\r\nCo-authored-by: Makram <makramkd@users.noreply.github.com>\r\nCo-authored-by: Ryan Stout <rstout610@gmail.com>",
+          "timestamp": "2024-10-10T15:37:02+01:00",
+          "tree_id": "a338140ff3a2ba8d6d8797313645d6b1b6dbd88b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/46370848a78919a4974f33871de164a93c49e772"
+        },
+        "date": 1728571079926,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449,
+            "unit": "ns/op",
+            "extra": "2599153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.6,
+            "unit": "ns/op",
+            "extra": "2250219 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28872,
+            "unit": "ns/op",
+            "extra": "41188 times\n4 procs"
           }
         ]
       }

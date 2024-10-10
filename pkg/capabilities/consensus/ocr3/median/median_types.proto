@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "pkg/capabilities/consensus/median";
+
+package median_types;
+
+message MedianOutcomeMetadata {
+  map<string, MedianReportInfo> feedInfo = 1;
+}
+
+message MedianReportInfo {
+  reserved 1, 2, 4;
+  int64 observation_timestamp = 3;
+  bytes benchmark_price = 5; // big.Int
+}

@@ -946,6 +946,7 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 
 	assert.Equal(t, opb1.Outcomes[workflowTestID].EncoderName, "evm")
 	ec, err := values.FromMapValueProto(opb1.Outcomes[workflowTestID].EncoderConfig)
+	require.NoError(t, err)
 	assert.Equal(t, ec, m)
 
 	// No consensus on outcome 2

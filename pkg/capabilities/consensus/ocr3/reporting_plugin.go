@@ -365,11 +365,12 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 				encoderCfg, ok := shaToEncoder[sha]
 				if !ok {
 					lggr.Debugw("could not find encoder matching sha")
-				} else {
-					lggr.Debugw("consensus reached on overridden encoder", "encoderName", encoderCfg.name)
-					encCfg = &encoderCfg
-					break
+					continue
 				}
+
+				lggr.Debugw("consensus reached on overridden encoder", "encoderName", encoderCfg.name)
+				encCfg = &encoderCfg
+				break
 			}
 		}
 

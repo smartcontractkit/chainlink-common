@@ -63,7 +63,7 @@ func ParseWorkflowSpecYaml(data string) (sdk.WorkflowSpec, error) {
 type WorkflowSpecYaml struct {
 	// NOTE: Name and Owner are constrained the onchain representation in [github.com/smartcontractkit/chainlink-common/blob/main/pkg/capabilities/consensus/ocr3/types/Metadata]
 
-	Name string `json:"name,omitempty" jsonschema:"pattern=^[0-9A-Za-z_\\-]+$,maxLength=10"` // plain text string exactly 10 characters long, or  empty name allowed for anonymous workflows
+	Name string `json:"name,omitempty" jsonschema:"pattern=^[0-9A-Za-z_\\-]+$,minLength=10,maxLength=10"` // plain text string exactly 10 characters long, or  empty name allowed for anonymous workflows
 	//Name nameYaml `json:"name"`
 	Owner string `json:"owner,omitempty" jsonschema:"pattern=^0x[0-9a-fA-F]{40}$"` // 20 bytes represented as hex string with 0x prefix, or empty owner allowed for anonymous workflows
 	// Triggers define a starting condition for the workflow, based on specific events or conditions.

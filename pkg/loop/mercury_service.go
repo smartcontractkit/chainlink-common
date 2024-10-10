@@ -44,7 +44,7 @@ func NewMercuryV4Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 }
 
 func (m *MercuryV4Service) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
-	if err := m.Wait(); err != nil {
+	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
 	return m.Service.NewMercuryPlugin(ctx, config)
@@ -78,7 +78,7 @@ func NewMercuryV3Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 }
 
 func (m *MercuryV3Service) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
-	if err := m.Wait(); err != nil {
+	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
 	return m.Service.NewMercuryPlugin(ctx, config)
@@ -110,7 +110,7 @@ func NewMercuryV1Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 }
 
 func (m *MercuryV1Service) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
-	if err := m.Wait(); err != nil {
+	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
 	return m.Service.NewMercuryPlugin(ctx, config)
@@ -144,7 +144,7 @@ func NewMercuryV2Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 }
 
 func (m *MercuryV2Service) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
-	if err := m.Wait(); err != nil {
+	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
 	return m.Service.NewMercuryPlugin(ctx, config)

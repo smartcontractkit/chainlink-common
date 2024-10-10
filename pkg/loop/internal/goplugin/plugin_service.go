@@ -223,11 +223,6 @@ func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	}
 }
 
-// Wait is the context-ignorant version of WaitCtx above.
-func (s *PluginService[P, S]) Wait() error {
-	return s.WaitCtx(context.Background())
-}
-
 // XXXTestHook returns a TestPluginService.
 // It must only be called once, and before Start.
 func (s *PluginService[P, S]) XXXTestHook() TestPluginService[P, S] {

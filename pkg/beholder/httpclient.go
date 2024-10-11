@@ -53,8 +53,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	var tlsConfig *tls.Config
 	if !cfg.InsecureConnection {
 		tlsConfig = &tls.Config{
-			MinVersion:         tls.VersionTLS12,
-			InsecureSkipVerify: true,
+			MinVersion: tls.VersionTLS12,
 		}
 		if cfg.CACertFile != "" {
 			rootCAs, e := newCertFromFile(cfg.CACertFile)

@@ -35,7 +35,8 @@
         "aggregation_method": {
           "type": "string",
           "enum": [
-            "data_feeds"
+            "data_feeds",
+            "reduce"
           ]
         },
         "aggregation_config": {

@@ -112,12 +112,12 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 		previousReportInfo := currentState.FeedInfo[feedIDStr]
 		feedID, err2 := datastreams.NewFeedID(feedIDStr)
 		if err2 != nil {
-			lggr.Errorf("could not convert %s to feedID", feedID)
+			lggr.Errorw("could not convert %s to feedID", "feedID", feedID)
 			continue
 		}
 		latestReport, ok := latestReportPerFeed[feedID]
 		if !ok {
-			lggr.Errorf("no new Mercury report for feed: %v", feedID)
+			lggr.Errorw("no new Mercury report for feed", "feedID", feedID)
 			continue
 		}
 		config := a.config.Feeds[feedID]

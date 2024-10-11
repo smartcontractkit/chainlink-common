@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728660654821,
+  "lastUpdate": 1728663014854,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3192,6 +3192,48 @@ window.BENCHMARK_DATA = {
             "value": 28228,
             "unit": "ns/op",
             "extra": "42526 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "alec.gard@chainlinklabs.com",
+            "name": "Alec Gard",
+            "username": "alecgard"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5d432bcdc2e8c4e39369cb19183e3925afd37997",
+          "message": "Fix Latest timestamp metric to return timestamp in seconds (#844)",
+          "timestamp": "2024-10-11T11:09:13-05:00",
+          "tree_id": "d48de52ee226c04f956e78b2695b98f4acfc6df7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5d432bcdc2e8c4e39369cb19183e3925afd37997"
+        },
+        "date": 1728663014387,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450,
+            "unit": "ns/op",
+            "extra": "2674831 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 541.4,
+            "unit": "ns/op",
+            "extra": "2182867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28294,
+            "unit": "ns/op",
+            "extra": "42494 times\n4 procs"
           }
         ]
       }

@@ -3,7 +3,6 @@ package wasm
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"os"
 	"unsafe"
 
@@ -34,91 +33,108 @@ func NewRunner() *Runner {
 	l := logger.NewWithSync(&wasmWriteSyncer{})
 
 	return &Runner{
-		sendResponse: func(response *wasmpb.Response) {
-			pb, err := proto.Marshal(response)
-			if err != nil {
-				// We somehow couldn't marshal the response, so let's
-				// exit with a special error code letting the host know
-				// what happened.
-				os.Exit(CodeInvalidResponse)
-			}
-
-			// unknownID will only be set when we've failed to parse
-			// the request. Like before, let's bubble this up.
-			if response.Id == unknownID {
-				os.Exit(CodeInvalidRequest)
-			}
-
-			ptr, ptrlen := bufferToPointerLen(pb)
-			errno := sendResponse(ptr, ptrlen)
-			if errno != 0 {
-				os.Exit(CodeHostErr)
-			}
-
-			code := CodeSuccess
-			if response.ErrMsg != "" {
-				code = CodeRunnerErr
-			}
-
-			os.Exit(code)
-		},
+		sendResponse: sendResponseFn,
 		sdkFactory: func(sdkConfig *RuntimeConfig) *Runtime {
 			return &Runtime{
-				logger: l,
-				fetchFn: func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
-					headerspb, err := values.NewMap(req.Headers)
-					if err != nil {
-						return sdk.FetchResponse{}, fmt.Errorf("failed to create headers map: %w", err)
-					}
-
-					b, err := proto.Marshal(&wasmpb.FetchRequest{
-						Url:       req.URL,
-						Method:    req.Method,
-						Headers:   values.ProtoMap(headerspb),
-						Body:      req.Body,
-						TimeoutMs: req.TimeoutMs,
-					})
-					if err != nil {
-						return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)
-					}
-					reqptr, reqptrlen := bufferToPointerLen(b)
-
-					respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-					respptr, _ := bufferToPointerLen(respBuffer)
-
-					resplenBuffer := make([]byte, uint32Size)
-					resplenptr, _ := bufferToPointerLen(resplenBuffer)
-
-					errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
-					if errno != 0 {
-						return sdk.FetchResponse{}, errors.New("failed to execute fetch")
-					}
-
-					responseSize := binary.LittleEndian.Uint32(resplenBuffer)
-					response := &wasmpb.FetchResponse{}
-					err = proto.Unmarshal(respBuffer[:responseSize], response)
-					if err != nil {
-						return sdk.FetchResponse{}, fmt.Errorf("failed to unmarshal fetch response: %w", err)
-					}
-
-					fields := response.Headers.GetFields()
-					headersResp := make(map[string]any, len(fields))
-					for k, v := range fields {
-						headersResp[k] = v
-					}
-
-					return sdk.FetchResponse{
-						ExecutionError: response.ExecutionError,
-						ErrorMessage:   response.ErrorMessage,
-						StatusCode:     uint8(response.StatusCode),
-						Headers:        headersResp,
-						Body:           response.Body,
-					}, nil
-				},
+				logger:  l,
+				fetchFn: createFetchFn(sdkConfig, l),
 			}
 		},
 		args: os.Args,
 	}
+}
+
+// sendResponseFn implements sendResponse for import into WASM.
+func sendResponseFn(response *wasmpb.Response) {
+	pb, err := proto.Marshal(response)
+	if err != nil {
+		// We somehow couldn't marshal the response, so let's
+		// exit with a special error code letting the host know
+		// what happened.
+		os.Exit(CodeInvalidResponse)
+	}
+
+	// unknownID will only be set when we've failed to parse
+	// the request. Like before, let's bubble this up.
+	if response.Id == unknownID {
+		os.Exit(CodeInvalidRequest)
+	}
+
+	ptr, ptrlen := bufferToPointerLen(pb)
+	errno := sendResponse(ptr, ptrlen)
+	if errno != 0 {
+		os.Exit(CodeHostErr)
+	}
+
+	code := CodeSuccess
+	if response.ErrMsg != "" {
+		code = CodeRunnerErr
+	}
+
+	os.Exit(code)
+}
+
+// createFetchFn injects dependencies and creates a fetch function that can be used by the WASM
+// binary.
+func createFetchFn(
+	sdkConfig *RuntimeConfig,
+	l logger.Logger,
+) func(sdk.FetchRequest) (sdk.FetchResponse, error) {
+	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
+		headerspb, err := values.NewMap(req.Headers)
+		if err != nil {
+			os.Exit(CodeInvalidRequest)
+		}
+
+		b, err := proto.Marshal(&wasmpb.FetchRequest{
+			Url:       req.URL,
+			Method:    req.Method,
+			Headers:   values.ProtoMap(headerspb),
+			Body:      req.Body,
+			TimeoutMs: req.TimeoutMs,
+		})
+		if err != nil {
+			os.Exit(CodeInvalidRequest)
+		}
+		reqptr, reqptrlen := bufferToPointerLen(b)
+
+		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
+		respptr, _ := bufferToPointerLen(respBuffer)
+
+		resplenBuffer := make([]byte, uint32Size)
+		resplenptr, _ := bufferToPointerLen(resplenBuffer)
+
+		errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
+		if errno != 0 {
+			os.Exit(CodeRunnerErr)
+		}
+
+		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+		response := &wasmpb.FetchResponse{}
+		err = proto.Unmarshal(respBuffer[:responseSize], response)
+		if err != nil {
+			l.Errorw("failed to unmarshal fetch response", "error", err.Error())
+			os.Exit(CodeInvalidResponse)
+		}
+
+		fields := response.Headers.GetFields()
+		headersResp := make(map[string]any, len(fields))
+		for k, v := range fields {
+			headersResp[k] = v
+		}
+
+		if response.ErrorMessage != "" {
+			return sdk.FetchResponse{}, errors.New(response.ErrorMessage)
+		}
+
+		return sdk.FetchResponse{
+			Success:    response.Success,
+			StatusCode: uint8(response.StatusCode),
+			Headers:    headersResp,
+			Body:       response.Body,
+		}, nil
+	}
+	return fetchFn
 }
 
 type wasmWriteSyncer struct{}

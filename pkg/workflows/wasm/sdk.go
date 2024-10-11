@@ -7,6 +7,7 @@ import (
 
 type Runtime struct {
 	fetchFn func(req sdk.FetchRequest) (sdk.FetchResponse, error)
+	emitFn  func(msg string, labels map[string]any) error
 	logger  logger.Logger
 }
 
@@ -35,7 +36,7 @@ func (r *Runtime) Logger() logger.Logger {
 }
 
 func (r *Runtime) Emit(msg string, labels map[string]any) error {
-	panic("not implemented")
+	return r.emitFn(msg, labels)
 }
 
 func (r *Runtime) EmitContext(ctx string, msg string, labels map[string]any) error {

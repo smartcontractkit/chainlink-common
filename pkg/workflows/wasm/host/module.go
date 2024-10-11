@@ -285,6 +285,14 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, fmt.Errorf("error wrapping fetch func: %w", err)
 	}
 
+	err = linker.FuncWrap(
+		"env",
+		"emit",
+		func(caller *wasmtime.Caller, msgptr int32, msglen int32, labelsPtr int32, labelsLen int32) int32 {
+			return ErrnoNotsup
+		},
+	)
+
 	m := &Module{
 		engine: engine,
 		module: mod,

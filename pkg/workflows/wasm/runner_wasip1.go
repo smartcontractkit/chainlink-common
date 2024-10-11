@@ -23,12 +23,6 @@ func log(respptr unsafe.Pointer, respptrlen int32)
 //go:wasmimport env fetch
 func fetch(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32
 
-const uint32Size = int32(4)
-
-func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
-	return unsafe.Pointer(&buf[0]), int32(len(buf))
-}
-
 func NewRunner() *Runner {
 	l := logger.NewWithSync(&wasmWriteSyncer{})
 
@@ -144,4 +138,10 @@ func (wws *wasmWriteSyncer) Write(p []byte) (n int, err error) {
 	ptr, ptrlen := bufferToPointerLen(p)
 	log(ptr, ptrlen)
 	return int(ptrlen), nil
+}
+
+const uint32Size = int32(4)
+
+func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
+	return unsafe.Pointer(&buf[0]), int32(len(buf))
 }

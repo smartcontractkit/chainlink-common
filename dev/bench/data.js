@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728663014854,
+  "lastUpdate": 1728664670008,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3234,6 +3234,48 @@ window.BENCHMARK_DATA = {
             "value": 28294,
             "unit": "ns/op",
             "extra": "42494 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3619db2c34a431b1459d349ddf52e6e57848b3ae",
+          "message": "Enable consensus based on a value.Map (#840)\n\n* Enable consensus based on a value.Map\r\n\r\n* Add a method to get all encoder names",
+          "timestamp": "2024-10-11T12:36:36-04:00",
+          "tree_id": "27746a42ec7d619908d42e6e4460b2e41d8b5e29",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3619db2c34a431b1459d349ddf52e6e57848b3ae"
+        },
+        "date": 1728664668678,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.2,
+            "unit": "ns/op",
+            "extra": "2668617 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 520.6,
+            "unit": "ns/op",
+            "extra": "2187087 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28273,
+            "unit": "ns/op",
+            "extra": "42447 times\n4 procs"
           }
         ]
       }

@@ -17,3 +17,11 @@ func (nr *NoopRuntime) Logger() logger.Logger {
 	l, _ := logger.New()
 	return l
 }
+
+func (nr *NoopRuntime) Emit(msg string, labels map[string]interface{}) error {
+	return nil
+}
+
+func (nr *NoopRuntime) EmitContext(ctx string, msg string, labels map[string]interface{}) error {
+	return nil
+}

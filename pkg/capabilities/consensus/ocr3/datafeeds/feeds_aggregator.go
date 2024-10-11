@@ -126,7 +126,17 @@ func (a *dataFeedsAggregator) Aggregate(previousOutcome *types.AggregationOutcom
 		newPrice := big.NewInt(0).SetBytes(latestReport.BenchmarkPrice)
 		currDeviation := deviation(oldPrice, newPrice)
 		currStaleness := latestReport.ObservationTimestamp - previousReportInfo.ObservationTimestamp
-		a.lggr.Debugw("checking deviation and heartbeat", "feedID", feedID, "currentTs", latestReport.ObservationTimestamp, "oldTs", previousReportInfo.ObservationTimestamp, "oldPrice", oldPrice, "newPrice", newPrice, "deviation", currDeviation)
+		a.lggr.Debugw("checking deviation and heartbeat",
+			"feedID", feedID,
+			"currentTs", latestReport.ObservationTimestamp,
+			"oldTs", previousReportInfo.ObservationTimestamp,
+			"currStaleness", currStaleness,
+			"heartbeat", config.Heartbeat,
+			"oldPrice", oldPrice,
+			"newPrice", newPrice,
+			"currDeviation", currDeviation,
+			"deviation", config.Deviation.InexactFloat64(),
+		)
 		if currStaleness > int64(config.Heartbeat) ||
 			currDeviation > config.Deviation.InexactFloat64() {
 			previousReportInfo.ObservationTimestamp = latestReport.ObservationTimestamp

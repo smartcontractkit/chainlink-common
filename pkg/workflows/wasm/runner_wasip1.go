@@ -23,6 +23,9 @@ func log(respptr unsafe.Pointer, respptrlen int32)
 //go:wasmimport env fetch
 func fetch(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32
 
+//go:wasmimport env emit
+func emit(pbptr unsafe.Pointer, pblen int32) int32
+
 func NewRunner() *Runner {
 	l := logger.NewWithSync(&wasmWriteSyncer{})
 
@@ -32,6 +35,7 @@ func NewRunner() *Runner {
 			return &Runtime{
 				logger:  l,
 				fetchFn: createFetchFn(sdkConfig, l),
+				emitFn:  emitFn,
 			}
 		},
 		args: os.Args,
@@ -129,6 +133,26 @@ func createFetchFn(
 		}, nil
 	}
 	return fetchFn
+}
+
+func emitFn(msg string, labels map[string]any) error {
+	vm, err := values.NewMap(labels)
+	if err != nil {
+		return err
+	}
+
+	b, err := proto.Marshal(&wasmpb.CustomEmitMessage{
+		Message: msg,
+		Labels:  values.ProtoMap(vm),
+	})
+
+	ptr, ptrlen := bufferToPointerLen(b)
+	errno := emit(ptr, ptrlen)
+	if errno != 0 {
+		os.Exit(CodeRunnerErr)
+	}
+
+	return nil
 }
 
 type wasmWriteSyncer struct{}

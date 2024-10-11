@@ -50,6 +50,8 @@ func TestClient(t *testing.T) {
 			"byte_key_1":           []byte("byte_val_1"),
 			"str_slice_key_1":      []string{"str_val_1", "str_val_2"},
 			"nil_key_1":            nil,
+			"beholder_domain":      "TestDomain",        // Required field
+			"beholder_entity":      "TestEntity",        // Required field
 			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
 		}
 	}
@@ -202,15 +204,39 @@ func TestEmitterMessageValidation(t *testing.T) {
 		{
 			name: "Invalid URI",
 			attrs: Attributes{
+				"beholder_domain":      "TestDomain",
+				"beholder_entity":      "TestEntity",
 				"beholder_data_schema": "example-schema",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
 		},
 		{
-			name:                "Valid URI",
+			name: "Invalid BeholderDomain",
+			attrs: Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "TestEntity",
+				"beholder_domain":      "Test__Domain",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'no_double_underscore' tag",
+		},
+		{
+			name: "Invalid BeholderEntity",
+			attrs: Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "Test__Entity",
+				"beholder_domain":      "TestDomain",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'no_double_underscore' tag",
+		},
+		{
+			name:                "Valid Attributes",
 			exporterCalledTimes: 1,
 			attrs: Attributes{
+				"beholder_domain":      "TestDomain",
+				"beholder_entity":      "TestEntity",
 				"beholder_data_schema": "/example-schema/versions/1",
 			},
 			expectedError: "",

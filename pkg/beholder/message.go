@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
@@ -16,6 +17,8 @@ type Message struct {
 type Metadata struct {
 	//	REQUIRED FIELDS
 	// Schema Registry URI to fetch schema
+	BeholderDomain     string `validate:"required,no_double_underscore"`
+	BeholderEntity     string `validate:"required,no_double_underscore"`
 	BeholderDataSchema string `validate:"required,uri"`
 
 	// OPTIONAL FIELDS
@@ -55,6 +58,8 @@ func (m Metadata) Attributes() Attributes {
 		"workflow_owner_address":      m.WorkflowOwnerAddress,
 		"workflow_spec_id":            m.WorkflowSpecID,
 		"workflow_execution_id":       m.WorkflowExecutionID,
+		"beholder_domain":             m.BeholderDomain,
+		"beholder_entity":             m.BeholderEntity,
 		"beholder_data_schema":        m.BeholderDataSchema,
 		"capability_contract_address": m.CapabilityContractAddress,
 		"capability_id":               m.CapabilityID,
@@ -199,6 +204,10 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 			m.WorkflowSpecID = v.(string)
 		case "workflow_execution_id":
 			m.WorkflowExecutionID = v.(string)
+		case "beholder_domain":
+			m.BeholderDomain = v.(string)
+		case "beholder_entity":
+			m.BeholderEntity = v.(string)
 		case "beholder_data_schema":
 			m.BeholderDataSchema = v.(string)
 		case "capability_contract_address":
@@ -222,8 +231,19 @@ func NewMetadata(attrs Attributes) *Metadata {
 	return m
 }
 
-func (m *Metadata) Validate() error {
+func NewMetadataValidator() *validator.Validate {
 	validate := validator.New()
+	validate.RegisterValidation("no_double_underscore", func(fl validator.FieldLevel) bool {
+		if str, ok := fl.Field().Interface().(string); ok {
+			return !strings.Contains(str, "__")
+		}
+		return true
+	})
+	return validate
+}
+
+func (m *Metadata) Validate() error {
+	validate := NewMetadataValidator()
 	return validate.Struct(m)
 }
 

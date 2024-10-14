@@ -1,6 +1,11 @@
 package sdk
 
-import "github.com/smartcontractkit/chainlink-common/pkg/logger"
+import (
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+)
+
+var BreakErr = capabilities.ErrStopExecution
 
 type Runtime interface {
 	Logger() logger.Logger

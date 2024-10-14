@@ -116,7 +116,7 @@ func TestCompute(t *testing.T) {
 		require.NotNil(t, fn)
 
 		req := capabilities.CapabilityRequest{Inputs: nsf}
-		actual, err := fn(struct{}{}, req)
+		actual, err := fn(&testutils.NoopRuntime{}, req)
 		require.NoError(t, err)
 
 		expected, err := convertFeed(nil, anyNotStreamsInput)

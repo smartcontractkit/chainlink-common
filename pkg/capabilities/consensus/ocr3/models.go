@@ -16,5 +16,7 @@ type config struct {
 }
 
 type inputs struct {
-	Observations *values.List `json:"observations"`
+	Observations  *values.List `json:"observations" jsonschema:""`
+	EncoderName   string       `mapstructure:"encoder" json:"encoder,omitempty"`
+	EncoderConfig *values.Map  `mapstructure:"encoder_config" json:"encoder_config,omitempty"`
 }

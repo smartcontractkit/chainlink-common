@@ -33,7 +33,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 		return providerID, nil, nil
 	})
 
-	return relayer.WrapProviderClientConnection(rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
+	return relayer.WrapProviderClientConnection(ctx, rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
@@ -60,8 +60,8 @@ func (r *relayerClient) NewChainWriter(_ context.Context, chainWriterConfig []by
 	return chainwriter.NewClient(r.relayerSetClient.BrokerExt.WithName("ChainWriterClient"), cwc), nil
 }
 
-func (r *relayerClient) Start(context.Context) error {
-	return r.relayerSetClient.StartRelayer(context.Background(), r.relayerID)
+func (r *relayerClient) Start(ctx context.Context) error {
+	return r.relayerSetClient.StartRelayer(ctx, r.relayerID)
 }
 
 func (r *relayerClient) Close() error {
@@ -93,8 +93,8 @@ func (r *relayerClient) Name() string {
 	return name
 }
 
-func (r *relayerClient) LatestHead(_ context.Context) (types.Head, error) {
-	latestHead, err := r.relayerSetClient.RelayerLatestHead(context.Background(), r.relayerID)
+func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
+	latestHead, err := r.relayerSetClient.RelayerLatestHead(ctx, r.relayerID)
 	if err != nil {
 		r.log.Error("error getting latestHead", "error", err)
 		return types.Head{}, err

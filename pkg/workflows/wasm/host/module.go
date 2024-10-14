@@ -3,11 +3,13 @@ package host
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +23,7 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
+// safeMem returns a copy of the wasm module memory at the given pointer and size.
 func safeMem(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
 	mem := caller.GetExport("memory").Memory()
 	data := mem.UnsafeData(caller)
@@ -32,6 +35,8 @@ func safeMem(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
 	copy(cd, data[ptr:ptr+size])
 	return cd, nil
 }
+
+// copyBuffer copies the given src byte slice into the wasm module memory at the given pointer and size.
 func copyBuffer(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
 	mem := caller.GetExport("memory").Memory()
 	rawData := mem.UnsafeData(caller)
@@ -81,6 +86,11 @@ var (
 	DefaultInitialFuel  = uint64(100_000_000)
 )
 
+type DeterminismConfig struct {
+	// Seed is the seed used to generate cryptographically insecure random numbers in the module.
+	Seed int64
+}
+
 type ModuleConfig struct {
 	TickInterval   time.Duration
 	Timeout        *time.Duration
@@ -88,6 +98,11 @@ type ModuleConfig struct {
 	InitialFuel    uint64
 	Logger         logger.Logger
 	IsUncompressed bool
+	Fetch          func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+
+	// If Determinism is set, the module will override the random_get function in the WASI API with
+	// the provided seed to ensure deterministic behavior.
+	Determinism *DeterminismConfig
 }
 
 type Module struct {
@@ -103,9 +118,34 @@ type Module struct {
 	stopCh chan struct{}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
+// WithDeterminism sets the Determinism field to a deterministic seed from a known time.
+//
+// "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
+func WithDeterminism() func(*ModuleConfig) {
+	return func(cfg *ModuleConfig) {
+		t, err := time.Parse(time.RFC3339Nano, "2009-01-03T00:00:00Z")
+		if err != nil {
+			panic(err)
+		}
+
+		cfg.Determinism = &DeterminismConfig{Seed: t.Unix()}
+	}
+}
+
+func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
+	// Apply options to the module config.
+	for _, opt := range opts {
+		opt(modCfg)
+	}
+
 	if modCfg.Logger == nil {
 		return nil, errors.New("must provide logger")
+	}
+
+	if modCfg.Fetch == nil {
+		modCfg.Fetch = func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return nil, fmt.Errorf("fetch not implemented")
+		}
 	}
 
 	logger := modCfg.Logger
@@ -147,7 +187,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
 
-	linker, err := newWasiLinker(engine)
+	linker, err := newWasiLinker(modCfg, engine)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasi linker: %w", err)
 	}
@@ -183,7 +223,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error wrapping sendResponse func: %w", err)
 	}
 
 	err = linker.FuncWrap(
@@ -233,7 +273,16 @@ func NewModule(modCfg *ModuleConfig, binary []byte) (*Module, error) {
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error wrapping log func: %w", err)
+	}
+
+	err = linker.FuncWrap(
+		"env",
+		"fetch",
+		fetchFn(logger, modCfg),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error wrapping fetch func: %w", err)
 	}
 
 	m := &Module{
@@ -350,4 +399,49 @@ func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
 
 func containsCode(err error, code int) bool {
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
+}
+
+func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+	const fetchErrSfx = "error calling fetch"
+	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+		b, innerErr := safeMem(caller, reqptr, reqptrlen)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		req := &wasmpb.FetchRequest{}
+		innerErr = proto.Unmarshal(b, req)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		fetchResp, innerErr := modCfg.Fetch(req)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		respBytes, innerErr := proto.Marshal(fetchResp)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			return ErrnoFault
+		}
+
+		size := copyBuffer(caller, respBytes, respptr, int32(len(respBytes)))
+		if size == -1 {
+			return ErrnoFault
+		}
+
+		uint32Size := int32(4)
+		resplenBytes := make([]byte, uint32Size)
+		binary.LittleEndian.PutUint32(resplenBytes, uint32(len(respBytes)))
+		size = copyBuffer(caller, resplenBytes, resplenptr, uint32Size)
+		if size == -1 {
+			return ErrnoFault
+		}
+
+		return ErrnoSuccess
+	}
 }

@@ -21,13 +21,8 @@ func NewRunner(ctx context.Context) *Runner {
 		results:      runnerResults{},
 		idToStep:     map[string]sdk.StepDefinition{},
 		dependencies: map[string][]string{},
-		runtime:      &runtime{},
+		runtime:      &NoopRuntime{},
 	}
-}
-
-type ConsensusMock interface {
-	capabilities.ConsensusCapability
-	SingleToManyObservations(value values.Value) (*values.Map, error)
 }
 
 type Runner struct {
@@ -171,12 +166,6 @@ func (r *Runner) walk(spec sdk.WorkflowSpec, ref string) error {
 	request, err := r.buildRequest(spec, capability)
 	if err != nil {
 		return err
-	}
-
-	if c, ok := mock.(ConsensusMock); ok {
-		if request.Inputs, err = c.SingleToManyObservations(request.Inputs); err != nil {
-			return err
-		}
 	}
 
 	results, err := mock.Execute(r.ctx, request)

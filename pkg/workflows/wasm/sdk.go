@@ -38,7 +38,3 @@ func (r *Runtime) Logger() logger.Logger {
 func (r *Runtime) Emit(msg string, labels map[string]any) error {
 	return r.emitFn(msg, labels)
 }
-
-func (r *Runtime) EmitContext(ctx string, msg string, labels map[string]any) error {
-	panic("not implemented")
-}

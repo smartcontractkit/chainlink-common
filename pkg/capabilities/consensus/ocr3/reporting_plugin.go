@@ -336,7 +336,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			continue
 		}
 
-		outcome, err2 := agg.Aggregate(workflowOutcome, obs, r.config.F)
+		outcome, err2 := agg.Aggregate(lggr, workflowOutcome, obs, r.config.F)
 		if err2 != nil {
 			lggr.Errorw("error aggregating outcome", "error", err2)
 			return nil, err
@@ -458,14 +458,13 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 			continue
 		}
 
-		r.lggr.Debugw("generating reports", "len", len(o.CurrentReports), "shouldReport", report.Outcome.ShouldReport, "executionID", report.Id.WorkflowExecutionId)
-
 		lggr := logger.With(
 			r.lggr,
 			"workflowID", report.Id.WorkflowId,
 			"executionID", report.Id.WorkflowExecutionId,
 			"shouldReport", report.Outcome.ShouldReport,
 		)
+		lggr.Debugw("generating reports", "len", len(o.CurrentReports))
 
 		outcome, id := report.Outcome, report.Id
 
@@ -517,24 +516,24 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 
 			mv, err := values.FromMapValueProto(newOutcome.EncodableOutcome)
 			if err != nil {
-				r.lggr.Errorw("could not decode map from map value proto", "error", err)
+				lggr.Errorw("could not decode map from map value proto", "error", err)
 				continue
 			}
 
 			rawReport, err = encoder.Encode(ctx, *mv)
 			if err != nil {
 				if cerr := ctx.Err(); cerr != nil {
-					r.lggr.Errorw("report encoding cancelled", "err", cerr)
+					lggr.Errorw("report encoding cancelled", "err", cerr)
 					return nil, cerr
 				}
-				r.lggr.Errorw("could not encode report for workflow", "error", err)
+				lggr.Errorw("could not encode report for workflow", "error", err)
 				continue
 			}
 		}
 
 		infob, err := marshalReportInfo(info, id.KeyId)
 		if err != nil {
-			r.lggr.Errorw("could not marshal id into ReportWithInfo", "error", err)
+			lggr.Errorw("could not marshal id into ReportWithInfo", "error", err)
 			continue
 		}
 

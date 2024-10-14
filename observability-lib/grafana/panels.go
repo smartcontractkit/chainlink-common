@@ -5,6 +5,7 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/gauge"
+	"github.com/grafana/grafana-foundation-sdk/go/heatmap"
 	"github.com/grafana/grafana-foundation-sdk/go/logs"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 	"github.com/grafana/grafana-foundation-sdk/go/stat"
@@ -36,6 +37,7 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 type LegendOptions struct {
 	Placement   common.LegendPlacement
 	DisplayMode common.LegendDisplayMode
+	Calcs       []string
 }
 
 func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
@@ -49,8 +51,14 @@ func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
 
 	builder := common.NewVizLegendOptionsBuilder().
 		ShowLegend(true).
-		Placement(options.Placement).
-		DisplayMode(options.DisplayMode)
+		Placement(options.Placement)
+
+	if len(options.Calcs) > 0 {
+		options.DisplayMode = common.LegendDisplayModeTable
+		builder.Calcs(options.Calcs)
+	}
+
+	builder.DisplayMode(options.DisplayMode)
 
 	return builder
 }
@@ -97,6 +105,16 @@ type PanelOptions struct {
 	AlertOptions *AlertOptions
 }
 
+type Panel struct {
+	statPanelBuilder       *stat.PanelBuilder
+	timeSeriesPanelBuilder *timeseries.PanelBuilder
+	gaugePanelBuilder      *gauge.PanelBuilder
+	tablePanelBuilder      *table.PanelBuilder
+	logPanelBuilder        *logs.PanelBuilder
+	heatmapBuilder         *heatmap.PanelBuilder
+	alertBuilder           *alerting.RuleBuilder
+}
+
 // panel defaults
 func setDefaults(options *PanelOptions) {
 	if options.Datasource == "" {
@@ -125,15 +143,7 @@ type StatPanelOptions struct {
 	GraphMode   common.BigValueGraphMode
 	TextMode    common.BigValueTextMode
 	Orientation common.VizOrientation
-}
-
-type Panel struct {
-	statPanelBuilder       *stat.PanelBuilder
-	timeSeriesPanelBuilder *timeseries.PanelBuilder
-	gaugePanelBuilder      *gauge.PanelBuilder
-	tablePanelBuilder      *table.PanelBuilder
-	logPanelBuilder        *logs.PanelBuilder
-	alertBuilder           *alerting.RuleBuilder
+	Mappings    []dashboard.ValueMapping
 }
 
 func NewStatPanel(options *StatPanelOptions) *Panel {
@@ -170,6 +180,7 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		TextMode(options.TextMode).
 		Orientation(options.Orientation).
 		JustifyMode(options.JustifyMode).
+		Mappings(options.Mappings).
 		ReduceOptions(common.NewReduceDataOptionsBuilder().Calcs([]string{"last"}))
 
 	if options.Min != nil {
@@ -303,7 +314,11 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		Span(options.Span).
 		Height(options.Height).
 		Decimals(options.Decimals).
-		Unit(options.Unit)
+		Unit(options.Unit).
+		ReduceOptions(
+			common.NewReduceDataOptionsBuilder().
+				Calcs([]string{"lastNotNull"}).Values(false),
+		)
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -436,5 +451,57 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 
 	return &Panel{
 		logPanelBuilder: newPanel,
+	}
+}
+
+type HeatmapPanelOptions struct {
+	*PanelOptions
+}
+
+func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	newPanel := heatmap.NewPanelBuilder().
+		Datasource(datasourceRef(options.Datasource)).
+		Title(options.Title).
+		Description(options.Description).
+		Span(options.Span).
+		Height(options.Height).
+		Decimals(options.Decimals).
+		Unit(options.Unit).
+		NoValue(options.NoValue)
+
+	if options.Min != nil {
+		newPanel.Min(*options.Min)
+	}
+
+	if options.Max != nil {
+		newPanel.Max(*options.Max)
+	}
+
+	for _, q := range options.Query {
+		q.Format = prometheus.PromQueryFormatHeatmap
+		newPanel.WithTarget(newQuery(q))
+	}
+
+	if options.Threshold != nil {
+		newPanel.Thresholds(newThresholds(options.Threshold))
+	}
+
+	if options.Transform != nil {
+		newPanel.WithTransformation(newTransform(options.Transform))
+	}
+
+	if options.AlertOptions != nil {
+		options.AlertOptions.Name = options.Title
+
+		return &Panel{
+			heatmapBuilder: newPanel,
+			alertBuilder:   NewAlertRule(options.AlertOptions),
+		}
+	}
+
+	return &Panel{
+		heatmapBuilder: newPanel,
 	}
 }

@@ -136,7 +136,7 @@ func panelIDByTitle(db *dashboard.Dashboard, title string) string {
 		}
 	}
 
-	return ""
+	return "0"
 }
 
 type DeleteOptions struct {

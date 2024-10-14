@@ -174,7 +174,6 @@ func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 
 type AlertOptions struct {
 	Name              string
-	Datasource        string
 	Summary           string
 	Description       string
 	RunbookURL        string

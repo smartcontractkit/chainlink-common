@@ -5,7 +5,9 @@ go 1.22
 toolchain go1.22.5
 
 require (
+	github.com/andybalholm/brotli v1.1.1
 	github.com/atombender/go-jsonschema v0.16.0
+	github.com/bytecodealliance/wasmtime-go/v23 v23.0.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0
@@ -31,7 +33,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartcontractkit/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7
-	github.com/smartcontractkit/libocr v0.0.0-20240419185742-fd3cab206b2c
+	github.com/smartcontractkit/libocr v0.0.0-20241007185508-adbe57025f12
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.52.0
 	go.opentelemetry.io/otel v1.30.0

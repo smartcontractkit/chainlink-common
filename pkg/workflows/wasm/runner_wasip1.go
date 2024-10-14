@@ -166,6 +166,7 @@ func (wws *wasmWriteSyncer) Write(p []byte) (n int, err error) {
 
 const uint32Size = int32(4)
 
+// bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
 func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
 	return unsafe.Pointer(&buf[0]), int32(len(buf))
 }

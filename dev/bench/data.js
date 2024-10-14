@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728664670008,
+  "lastUpdate": 1728899052658,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3276,6 +3276,48 @@ window.BENCHMARK_DATA = {
             "value": 28273,
             "unit": "ns/op",
             "extra": "42447 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cdeea8fc821aa56809705e9ef5fd61b1e7bb8e0e",
+          "message": "[chore] Some logging updates for feeds aggregator (#843)\n\n* [chore] Some logging updates for feeds aggregator\r\n\r\n* [chore] Some logging updates for feeds aggregator\r\n\r\nAlso pass the logger through the aggregator interface so that\r\nwe can inherit the logging tags, including executionID and workflowID\r\n\r\n* Use Errorw for consistency",
+          "timestamp": "2024-10-14T10:43:07+01:00",
+          "tree_id": "01c7ab91e40bb54a2324f5e6ddfe67dafc66fad4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cdeea8fc821aa56809705e9ef5fd61b1e7bb8e0e"
+        },
+        "date": 1728899051961,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 452.6,
+            "unit": "ns/op",
+            "extra": "2586141 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 519,
+            "unit": "ns/op",
+            "extra": "2191023 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28285,
+            "unit": "ns/op",
+            "extra": "42472 times\n4 procs"
           }
         ]
       }

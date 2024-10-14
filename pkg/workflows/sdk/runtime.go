@@ -7,17 +7,29 @@ import (
 
 var BreakErr = capabilities.ErrStopExecution
 
-type Runtime interface {
-	Logger() logger.Logger
-	Fetch(req FetchRequest) (FetchResponse, error)
-
+type Emitter interface {
 	// Emit sends a message with the given message and labels to the configured collector.
 	Emit(msg string, labels map[string]any) error
+}
 
+type EmitterFunc func(msg string, labels map[string]any) error
+
+func (f EmitterFunc) Emit(msg string, labels map[string]any) error {
+	return f(msg, labels)
+}
+
+type ContextEmitter interface {
 	// EmitContext sends a message with the given message and labels to the configured collector.
 	//
 	// TODO(mstreet3): Do we want to support context here?
 	EmitContext(ctx string, msg string, labels map[string]any) error
+}
+
+type Runtime interface {
+	Logger() logger.Logger
+	Fetch(req FetchRequest) (FetchResponse, error)
+
+	Emitter
 }
 
 type FetchRequest struct {

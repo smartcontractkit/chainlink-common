@@ -21,7 +21,3 @@ func (nr *NoopRuntime) Logger() logger.Logger {
 func (nr *NoopRuntime) Emit(msg string, labels map[string]interface{}) error {
 	return nil
 }
-
-func (nr *NoopRuntime) EmitContext(ctx string, msg string, labels map[string]interface{}) error {
-	return nil
-}

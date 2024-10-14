@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/santhosh-tekuri/jsonschema/v5"
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -322,8 +321,8 @@ func TestMappingCustomType(t *testing.T) {
 	err := m.UnmarshalJSON([]byte(data))
 	require.NoError(t, err)
 	assert.Equal(t, int64(100), m["foo"], m)
-	assert.Equal(t, decimal.NewFromFloat(100.00), m["bar"], m)
-	assert.Equal(t, decimal.NewFromFloat(11.10), m["baz"].(map[string]any)["gnat"], m)
+	assert.Equal(t, float64(100.00), m["bar"], m)
+	assert.Equal(t, float64(11.10), m["baz"].(map[string]any)["gnat"], m)
 }
 
 func wfSpec(t *testing.T, name, owner string) any {

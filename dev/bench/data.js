@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728899052658,
+  "lastUpdate": 1728908949572,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3318,6 +3318,48 @@ window.BENCHMARK_DATA = {
             "value": 28285,
             "unit": "ns/op",
             "extra": "42472 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6c3cc4d0dc87f114328a309d786ae2dea8cc974f",
+          "message": "[CAPPL-87] Support breaking a workflow from inside custom compute (#848)",
+          "timestamp": "2024-10-14T13:28:10+01:00",
+          "tree_id": "9d3637db9bc660a07402e0c18e558c1f1a66265a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6c3cc4d0dc87f114328a309d786ae2dea8cc974f"
+        },
+        "date": 1728908949055,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.1,
+            "unit": "ns/op",
+            "extra": "2363246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512,
+            "unit": "ns/op",
+            "extra": "2336799 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28243,
+            "unit": "ns/op",
+            "extra": "42536 times\n4 procs"
           }
         ]
       }

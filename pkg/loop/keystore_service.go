@@ -10,15 +10,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/keystore"
 )
 
-//var _ internal.PluginKeystore = (*KeystoreService)(nil)
-
 // KeystoreService is a [types.Service] that maintains an internal [keystore.Keystore].
 type KeystoreService struct {
-	goplugin.PluginService[*GRPCPluginKeystore, keystore.Internals]
+	goplugin.PluginService[*GRPCPluginKeystore, keystore.KeystoreMethods]
 }
 
 func NewKeystoreService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config []byte) *KeystoreService {
-	newService := func(ctx context.Context, instance any) (keystore.Internals, error) {
+	newService := func(ctx context.Context, instance any) (keystore.KeystoreMethods, error) {
 		plug, ok := instance.(*keystore.Client)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginKeystore but got %T", instance)

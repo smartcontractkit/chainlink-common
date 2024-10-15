@@ -106,15 +106,15 @@ type server struct {
 	*net.BrokerExt
 	keystorepb.UnimplementedKeystoreServer
 
-	impl Internals
+	impl KeystoreMethods
 }
 
-func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl Internals) error {
+func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl KeystoreMethods) error {
 	keystorepb.RegisterKeystoreServer(server, newKeystoreServer(broker, brokerCfg, impl))
 	return nil
 }
 
-func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl Internals) *server {
+func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl KeystoreMethods) *server {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "KeystoreServer")
 	return &server{BrokerExt: &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
 }

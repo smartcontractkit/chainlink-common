@@ -112,10 +112,10 @@ func NewRunner() *Runner {
 					}
 
 					return sdk.FetchResponse{
-						Success:    response.Success,
-						StatusCode: uint8(response.StatusCode),
-						Headers:    headersResp,
-						Body:       response.Body,
+						ExecutionError: response.ExecutionError,
+						StatusCode:     uint8(response.StatusCode),
+						Headers:        headersResp,
+						Body:           response.Body,
 					}, nil
 				},
 			}

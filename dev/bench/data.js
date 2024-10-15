@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729027678639,
+  "lastUpdate": 1729036737045,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3444,6 +3444,48 @@ window.BENCHMARK_DATA = {
             "value": 28291,
             "unit": "ns/op",
             "extra": "42506 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "62ca3f778e32f09dd22c6089f4afe533f80f839a",
+          "message": "cleaning up CODEOWNERS (#853)",
+          "timestamp": "2024-10-15T19:57:49-04:00",
+          "tree_id": "74c84e094de884b03ae8005f7e185267558a4397",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/62ca3f778e32f09dd22c6089f4afe533f80f839a"
+        },
+        "date": 1729036735904,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 447.4,
+            "unit": "ns/op",
+            "extra": "2649942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 536.6,
+            "unit": "ns/op",
+            "extra": "2336173 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28340,
+            "unit": "ns/op",
+            "extra": "42466 times\n4 procs"
           }
         ]
       }

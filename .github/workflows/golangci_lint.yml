@@ -11,12 +11,8 @@ jobs:
       actions: read
     steps:
       - name: ci-lint
-        uses: smartcontractkit/.github/actions/ci-lint-go@7a4d99cb349ea8f25195d2390d157942031f8a57 # ci-lint-go@0.2.4
+        uses: smartcontractkit/.github/actions/ci-lint-go@5f5ebd52cb13f4b8530cd3005ec7ec3180840219 # v0.2.5
         with:
-          # grafana inputs
-          metrics-job-name: golangci-lint
-          gc-basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
-          gc-host: ${{ secrets.GRAFANA_INTERNAL_HOST }}
-          gc-org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
+          golangci-lint-version: v1.59.0
           go-version-file: go.mod
           

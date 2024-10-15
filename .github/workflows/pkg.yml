@@ -18,8 +18,7 @@ jobs:
         run: go build -v ./...
 
       - name: Unit Tests
-        #run: GORACE="log_path=$PWD/race" go test -race ./... -coverpkg=./... -coverprofile=coverage.txt
-        run: GORACE="log_path=$PWD/race" go test -race ./fail_test.go -coverpkg=./... -coverprofile=coverage.txt
+        run: GORACE="log_path=$PWD/race" go test -race ./... -coverpkg=./... -coverprofile=coverage.txt
 
       - name: Print Races
         if: failure()

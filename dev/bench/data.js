@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729001941241,
+  "lastUpdate": 1729027678639,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3402,6 +3402,48 @@ window.BENCHMARK_DATA = {
             "value": 28367,
             "unit": "ns/op",
             "extra": "42434 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "06ab6c310f4d1af42b0cdf47b0c86650baa28b93",
+          "message": "keystone custom message proto (#828)\n\n* initial pass at keystone custom message proto\r\n\r\n* trying other proto defs\r\n\r\n* moving keystone to its own package\r\n\r\n* picking msg values proto version\r\n\r\n* KeystoneCustomMessage --> BaseCustomMessage w/ path refactoring\r\n\r\n* make generate\r\n\r\n---------\r\n\r\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>",
+          "timestamp": "2024-10-15T17:26:58-04:00",
+          "tree_id": "61f4e8d87c4873e44f9022a972ecee28e240af79",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/06ab6c310f4d1af42b0cdf47b0c86650baa28b93"
+        },
+        "date": 1729027678128,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449,
+            "unit": "ns/op",
+            "extra": "2684554 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 533.6,
+            "unit": "ns/op",
+            "extra": "2253849 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28291,
+            "unit": "ns/op",
+            "extra": "42506 times\n4 procs"
           }
         ]
       }

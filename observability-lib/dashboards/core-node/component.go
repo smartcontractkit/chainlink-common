@@ -34,6 +34,9 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	}
 
 	props.platformOpts = platformPanelOpts(props.Platform)
+	if props.Tested {
+		props.platformOpts.LabelQuery = ""
+	}
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:       props.Name,
@@ -970,57 +973,146 @@ func headReporter(p *Props) []*grafana.Panel {
 func txManager(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	txStatus := map[string]string{
-		"num_confirmed_transactions":  "Confirmed",
-		"num_successful_transactions": "Successful",
-		"num_tx_reverted":             "Reverted",
-		"num_gas_bumps":               "Gas Bumps",
-		"fwd_tx_count":                "Forwarded",
-		"tx_attempt_count":            "Attempts",
-		"gas_bump_exceeds_limit":      "Gas Bump Exceeds Limit",
-	}
-
-	for status, title := range txStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource: p.MetricsDataSource.Name,
-				Title:      "TX Manager " + title,
-				Span:       6,
-				Height:     6,
-				Query: []grafana.Query{
-					{
-						Expr:   `sum(tx_manager_` + status + `{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
-						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Confirmed",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_confirmed_transactions{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 				},
 			},
-		}))
-	}
+		},
+	}))
 
-	txUntilStatus := map[string]string{
-		"broadcast": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
-		"confirmed": "The amount of time elapsed from a transaction being broadcast to being included in a block",
-	}
-
-	for status, description := range txUntilStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource:  p.MetricsDataSource.Name,
-				Title:       "TX Manager Time Until " + status,
-				Description: description,
-				Span:        6,
-				Height:      6,
-				Decimals:    1,
-				Unit:        "ms",
-				Query: []grafana.Query{
-					{
-						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
-						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Successful",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_successful_transactions{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 				},
 			},
-		}))
-	}
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Reverted",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_tx_reverted{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Gas Bumps",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_gas_bumps{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Forwarded",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_fwd_tx_count{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Attempts",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_tx_attempt_count{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Gas Bump Exceeds Limit",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_gas_bump_exceeds_limit{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "TX Manager Time Until Broadcast",
+			Description: "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
+			Span:        6,
+			Height:      6,
+			Decimals:    1,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "TX Manager Time Until Confirmed",
+			Description: "The amount of time elapsed from a transaction being broadcast to being included in a block",
+			Span:        6,
+			Height:      6,
+			Decimals:    1,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
 
 	return panels
 }

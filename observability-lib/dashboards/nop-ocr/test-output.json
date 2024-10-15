@@ -31,7 +31,7 @@
       },
       {
         "type": "stat",
-        "id": 0,
+        "id": 1,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_epoch_round{env=~\"${env}\", contract=~\"${contract}\"}[90s])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -111,7 +111,7 @@
       },
       {
         "type": "stat",
-        "id": 1,
+        "id": 2,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_message_observe_total{env=~\"${env}\", contract=~\"${contract}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -191,7 +191,7 @@
       },
       {
         "type": "stat",
-        "id": 2,
+        "id": 3,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_message_report_req_observation_total{env=~\"${env}\", contract=~\"${contract}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -284,7 +284,7 @@
       },
       {
         "type": "stat",
-        "id": 3,
+        "id": 4,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_epoch_round{env=~\"${env}\", oracle=~\"${oracle}\"}[90s])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -364,7 +364,7 @@
       },
       {
         "type": "stat",
-        "id": 4,
+        "id": 5,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_message_observe_total{env=~\"${env}\", oracle=~\"${oracle}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -444,7 +444,7 @@
       },
       {
         "type": "stat",
-        "id": 5,
+        "id": 6,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_message_report_req_observation_total{env=~\"${env}\", oracle=~\"${oracle}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -524,7 +524,7 @@
       },
       {
         "type": "stat",
-        "id": 6,
+        "id": 7,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_p2p_received_total{env=~\"${env}\", receiver=~\"${oracle}\"}[3m])) by (sender, receiver) \u003ebool 0)[$__range:])",
@@ -609,6 +609,7 @@
           "type": "query",
           "name": "env",
           "label": "Environment",
+          "description": "",
           "query": "label_values(_contract_config_f{}, env)",
           "datasource": {
             "uid": "Prometheus"
@@ -629,6 +630,7 @@
           "type": "query",
           "name": "contract",
           "label": "Contract",
+          "description": "",
           "query": "label_values(_contract_oracle_active{env=\"$env\"}, contract)",
           "datasource": {
             "uid": "Prometheus"
@@ -649,6 +651,7 @@
           "type": "query",
           "name": "oracle",
           "label": "NOP",
+          "description": "",
           "query": "label_values(_contract_oracle_active{env=\"$env\"}, oracle)",
           "datasource": {
             "uid": "Prometheus"

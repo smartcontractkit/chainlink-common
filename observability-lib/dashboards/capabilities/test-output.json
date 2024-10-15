@@ -29,7 +29,7 @@
       },
       {
         "type": "timeseries",
-        "id": 0,
+        "id": 1,
         "targets": [
           {
             "expr": "capability_execution_time_ms",
@@ -79,7 +79,7 @@
       },
       {
         "type": "timeseries",
-        "id": 1,
+        "id": 2,
         "targets": [
           {
             "expr": "capability_runs_count",
@@ -129,7 +129,7 @@
       },
       {
         "type": "timeseries",
-        "id": 2,
+        "id": 3,
         "targets": [
           {
             "expr": "capability_runs_fault_count",
@@ -179,7 +179,7 @@
       },
       {
         "type": "timeseries",
-        "id": 3,
+        "id": 4,
         "targets": [
           {
             "expr": "capability_runs_invalid_count",
@@ -229,7 +229,7 @@
       },
       {
         "type": "timeseries",
-        "id": 4,
+        "id": 5,
         "targets": [
           {
             "expr": "capability_runs_unauthorized_count",
@@ -279,7 +279,7 @@
       },
       {
         "type": "timeseries",
-        "id": 5,
+        "id": 6,
         "targets": [
           {
             "expr": "capability_runs_no_resource_count",
@@ -334,6 +334,7 @@
           "type": "query",
           "name": "env",
           "label": "Environment",
+          "description": "",
           "query": "label_values(up, env)",
           "datasource": {
             "uid": "Prometheus"
@@ -354,6 +355,7 @@
           "type": "query",
           "name": "cluster",
           "label": "Cluster",
+          "description": "",
           "query": "label_values(up{env=\"$env\"}, cluster)",
           "datasource": {
             "uid": "Prometheus"
@@ -374,6 +376,7 @@
           "type": "query",
           "name": "namespace",
           "label": "Namespace",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\"}, namespace)",
           "datasource": {
             "uid": "Prometheus"
@@ -394,6 +397,7 @@
           "type": "query",
           "name": "job",
           "label": "Job",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\"}, job)",
           "datasource": {
             "uid": "Prometheus"
@@ -414,6 +418,7 @@
           "type": "query",
           "name": "pod",
           "label": "Pod",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\", job=\"$job\"}, pod)",
           "datasource": {
             "uid": "Prometheus"
@@ -434,6 +439,7 @@
           "type": "query",
           "name": "capability",
           "label": "Capability",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\", job=\"$job\"}, pod)",
           "datasource": {
             "uid": "Prometheus"

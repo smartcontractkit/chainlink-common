@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728908949572,
+  "lastUpdate": 1729001941241,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3360,6 +3360,48 @@ window.BENCHMARK_DATA = {
             "value": 28243,
             "unit": "ns/op",
             "extra": "42536 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "516fee04cae8deb4d8bf5063b612a9b18aaf251f",
+          "message": "pkg/loop: swap eventually from assert to require (#851)",
+          "timestamp": "2024-10-15T09:17:57-05:00",
+          "tree_id": "d3b08bb9f5004f5d0a67f568da7a8f9ecbbb42f8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/516fee04cae8deb4d8bf5063b612a9b18aaf251f"
+        },
+        "date": 1729001940702,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 452.1,
+            "unit": "ns/op",
+            "extra": "2660906 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.8,
+            "unit": "ns/op",
+            "extra": "2270888 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28367,
+            "unit": "ns/op",
+            "extra": "42434 times\n4 procs"
           }
         ]
       }

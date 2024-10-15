@@ -1,7 +1,6 @@
 package loop_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/go-plugin"
@@ -13,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	sctest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestPluginStandardCapabilities(t *testing.T) {
@@ -29,30 +29,32 @@ func TestPluginStandardCapabilities(t *testing.T) {
 				Logger: logger.Test(t),
 				StopCh: stopCh}},
 		func(t *testing.T, s loop.StandardCapabilities) {
-			infos, err := s.Infos(context.Background())
+			ctx := tests.Context(t)
+			infos, err := s.Infos(ctx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2, len(infos))
 			assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 			assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 
-			err = s.Initialise(context.Background(), "", nil, nil, nil, nil, nil, nil, nil)
+			err = s.Initialise(ctx, "", nil, nil, nil, nil, nil, nil, nil)
 			assert.NoError(t, err)
 		})
 }
 
 func TestRunningStandardCapabilitiesPluginOutOfProcess(t *testing.T) {
 	t.Parallel()
+	ctx := tests.Context(t)
 	stopCh := newStopCh(t)
 
 	scs := newOutOfProcessStandardCapabilitiesService(t, true, stopCh)
 
-	infos, err := scs.Infos(context.Background())
+	infos, err := scs.Infos(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(infos))
 	assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 	assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 
-	err = scs.Initialise(context.Background(), "", nil, nil, nil, nil, nil, nil, nil)
+	err = scs.Initialise(ctx, "", nil, nil, nil, nil, nil, nil, nil)
 	assert.NoError(t, err)
 }
 

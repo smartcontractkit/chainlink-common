@@ -54,7 +54,7 @@ func TestRunner(t *testing.T) {
 		assert.True(t, helper.transformTriggerCalled)
 		consensus := consensusMock.GetStepDecoded("consensus")
 		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
-		require.Len(t, consensus.Input.Observations, 1)
+		require.NotNil(t, consensus.Input.Observations[0])
 
 		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()
@@ -84,7 +84,7 @@ func TestRunner(t *testing.T) {
 		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 			Encoder:       "Test",
 			EncoderConfig: ocr3.EncoderConfig{},
-		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 		chainwriter.TargetConfig{
 			Address:    "0x123",
@@ -350,7 +350,7 @@ func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecF
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder: "Test", EncoderConfig: ocr3.EncoderConfig{},
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 	chainwriter.TargetConfig{
 		Address:    "0x123",

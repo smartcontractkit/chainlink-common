@@ -1,10 +1,9 @@
 package ocr3captest
 
 import (
-	"errors"
-
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -32,12 +31,6 @@ func IdenticalConsensusForStep[T any](runner *testutils.Runner, step string) *Id
 }
 
 func identicalConsensus[T any](inputs ConsensusInput[T]) (ocr3cap.SignedReport, error) {
-	if len(inputs.Observations) == 0 {
-		return ocr3cap.SignedReport{}, errors.New("no observations were made")
-	} else if len(inputs.Observations) > 1 {
-		return ocr3cap.SignedReport{}, errors.New("more than one observation was made, but this mock isn't set up to support that")
-	}
-
 	wrapped, err := values.Wrap(inputs.Observations[0])
 	if err != nil {
 		return ocr3cap.SignedReport{}, err
@@ -63,16 +56,7 @@ type IdenticalConsensusMock[T any] struct {
 	*testutils.Mock[ConsensusInput[T], ocr3cap.SignedReport]
 }
 
-var _ testutils.ConsensusMock = &IdenticalConsensusMock[struct{}]{}
-
-func (c *IdenticalConsensusMock[T]) SingleToManyObservations(input values.Value) (*values.Map, error) {
-	tmp := singleConsensusInput[T]{}
-	if err := input.UnwrapTo(&tmp); err != nil {
-		return nil, err
-	}
-
-	return values.CreateMapFromStruct(ConsensusInput[T]{Observations: []T{tmp.Observations}})
-}
+var _ capabilities.ConsensusCapability = &IdenticalConsensusMock[struct{}]{}
 
 func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepResults[ConsensusInput[T], T] {
 	step := c.GetStep(ref)

@@ -55,8 +55,8 @@ func (c *contractTransmitterClient) Transmit(ctx context.Context, configDigest l
 	return nil
 }
 
-func (c *contractTransmitterClient) FromAccount() (libocr.Account, error) {
-	reply, err := c.grpc.FromAccount(context.TODO(), &emptypb.Empty{})
+func (c *contractTransmitterClient) FromAccount(ctx context.Context) (libocr.Account, error) {
+	reply, err := c.grpc.FromAccount(ctx, &emptypb.Empty{})
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +97,7 @@ func (c *contractTransmitterServer) Transmit(ctx context.Context, request *ocr3p
 }
 
 func (c *contractTransmitterServer) FromAccount(ctx context.Context, request *emptypb.Empty) (*ocr3pb.FromAccountReply, error) {
-	a, err := c.impl.FromAccount()
+	a, err := c.impl.FromAccount(ctx)
 	if err != nil {
 		return nil, err
 	}

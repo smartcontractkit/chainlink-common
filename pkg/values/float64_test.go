@@ -3,6 +3,7 @@ package values
 import (
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,6 +41,22 @@ func Test_Float64UnwrapTo(t *testing.T) {
 	err = v.UnwrapTo(&mf)
 	require.NoError(t, err)
 	assert.Equal(t, myFloat64(expected), mf)
+}
+
+func Test_Float64UnwrapToDecimal(t *testing.T) {
+	expected := decimal.NewFromFloat(1.1)
+	v := NewFloat64(1.1)
+
+	var got decimal.Decimal
+	err := v.UnwrapTo(&got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+
+	assert.Equal(t, expected, got)
+
+	gotn := (*decimal.Decimal)(nil)
+	err = v.UnwrapTo(gotn)
+	assert.ErrorContains(t, err, "cannot unwrap to nil pointer")
 }
 
 // Test_Float64 tests that Float64 values can converted to and from protobuf representations.

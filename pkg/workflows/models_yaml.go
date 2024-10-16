@@ -11,7 +11,6 @@ import (
 
 	"github.com/invopop/jsonschema"
 	validate "github.com/santhosh-tekuri/jsonschema/v5"
-	"github.com/shopspring/decimal"
 	"sigs.k8s.io/yaml"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -147,15 +146,12 @@ func (m *Mapping) UnmarshalJSON(b []byte) error {
 //
 // Supported type conversions:
 // - json.Number -> int64
-// - json.Number -> float64 -> decimal.Decimal
+// - json.Number -> float64
 func convertNumber(el any) (any, error) {
 	switch elv := el.(type) {
 	case json.Number:
 		if strings.Contains(elv.String(), ".") {
-			f, err := elv.Float64()
-			if err == nil {
-				return decimal.NewFromFloat(f), nil
-			}
+			return elv.Float64()
 		}
 
 		return elv.Int64()

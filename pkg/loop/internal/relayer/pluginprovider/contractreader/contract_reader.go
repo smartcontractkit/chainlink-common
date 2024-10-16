@@ -618,11 +618,11 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 		var tp pb.SortType
 
 		switch sort := sortBy.(type) {
-		case *query.SortByBlock:
+		case query.SortByBlock:
 			tp = pb.SortType_SortBlock
-		case *query.SortByTimestamp:
+		case query.SortByTimestamp:
 			tp = pb.SortType_SortTimestamp
-		case *query.SortBySequence:
+		case query.SortBySequence:
 			tp = pb.SortType_SortSequence
 		default:
 			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sort)

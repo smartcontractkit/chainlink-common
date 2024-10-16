@@ -25,7 +25,7 @@ type GRPCPluginKeystore struct {
 
 	BrokerConfig
 
-	PluginServer keystorepb.KeystoreMethods
+	PluginServer keystorepb.Methods
 
 	pluginClient *keystorepb.Client
 }

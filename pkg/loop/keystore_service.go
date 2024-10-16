@@ -12,11 +12,11 @@ import (
 
 // KeystoreService is a [types.Service] that maintains an internal [keystore.Keystore].
 type KeystoreService struct {
-	goplugin.PluginService[*GRPCPluginKeystore, keystore.KeystoreMethods]
+	goplugin.PluginService[*GRPCPluginKeystore, keystore.Methods]
 }
 
 func NewKeystoreService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config []byte) *KeystoreService {
-	newService := func(ctx context.Context, instance any) (keystore.KeystoreMethods, error) {
+	newService := func(ctx context.Context, instance any) (keystore.Methods, error) {
 		plug, ok := instance.(*keystore.Client)
 		if !ok {
 			return nil, fmt.Errorf("expected PluginKeystore but got %T", instance)

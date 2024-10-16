@@ -6,8 +6,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// KeystoreMethods This interface contains all the functionalities of the GRPC layer of the LOOPP keystore
-type KeystoreMethods interface {
+// Methods This interface contains all the functionalities of the GRPC layer of the LOOPP keystore
+type Methods interface {
 	services.Service
 	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
 	SignBatch(ctx context.Context, keyID []byte, data [][]byte) ([][]byte, error)

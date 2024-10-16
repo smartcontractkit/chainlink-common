@@ -87,18 +87,17 @@ func TestKeystore(t *testing.T) {
 	require.Equal(t, r9, create)
 
 	err = ks.Delete(ctx, keyID)
-	require.ErrorContains(t, err, deleteErr.Error())
+	require.ErrorContains(t, err, errDelete.Error())
 
 	err = ks.AddTag(ctx, keyID, tag)
-	require.ErrorContains(t, err, addTagErr.Error())
+	require.ErrorContains(t, err, errAddTag.Error())
 
 	err = ks.RemoveTag(ctx, keyID, tag)
-	require.ErrorContains(t, err, removeTagErr.Error())
+	require.ErrorContains(t, err, errRemoveTag.Error())
 
 	r10, err := ks.ListTags(ctx, keyID)
 	require.NoError(t, err)
 	require.Equal(t, r10, listTag)
-
 }
 
 var (
@@ -122,16 +121,16 @@ var (
 	export         = []byte("exported")
 	create         = []byte("created")
 	listTag        = []string{"tag1", "tag2"}
-	deleteErr      = errors.New("delete-err")
-	addTagErr      = errors.New("add-tag-err")
-	removeTagErr   = errors.New("remove-tag-err")
+	errDelete      = errors.New("delete-err")
+	errAddTag      = errors.New("add-tag-err")
+	errRemoveTag   = errors.New("remove-tag-err")
 )
 
 type testKeystorePlugin struct {
 	log logger.Logger
 	plugin.NetRPCUnsupportedPlugin
 	brokerExt *net.BrokerExt
-	impl      KeystoreMethods
+	impl      Methods
 }
 
 func (r *testKeystorePlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
@@ -156,49 +155,49 @@ type testKeystore struct {
 
 func checkKeyID(target []byte) error {
 	if !bytes.Equal(target, keyID) {
-		return errors.New(fmt.Sprintf("checkKeyID: expected %v but got %v", keyID, target))
+		return fmt.Errorf("checkKeyID: expected %v but got %v", keyID, target)
 	}
 	return nil
 }
 
 func checkData(target []byte) error {
 	if !bytes.Equal(target, data) {
-		return errors.New(fmt.Sprintf("checkData: expected %v but got %v", data, target))
+		return fmt.Errorf("checkData: expected %v but got %v", data, target)
 	}
 	return nil
 }
 
 func checkDataList(target [][]byte) error {
 	if !reflect.DeepEqual(target, dataList) {
-		return errors.New(fmt.Sprintf("checkDataList: nexpected %v but got %v", data, target))
+		return fmt.Errorf("checkDataList: nexpected %v but got %v", data, target)
 	}
 	return nil
 }
 
 func checkTags(target []string) error {
 	if !reflect.DeepEqual(target, tags) {
-		return errors.New(fmt.Sprintf("checkTags: expected %v but got %v", tags, target))
+		return fmt.Errorf("checkTags: expected %v but got %v", tags, target)
 	}
 	return nil
 }
 
 func checkUdfName(target string) error {
 	if target != udfName {
-		return errors.New(fmt.Sprintf("checkUdfName: expected %v but got %v", udfName, target))
+		return fmt.Errorf("checkUdfName: expected %v but got %v", udfName, target)
 	}
 	return nil
 }
 
 func checkKeyType(target string) error {
 	if target != keyType {
-		return errors.New(fmt.Sprintf("checkKeyType: expected %q but got %q", keyType, target))
+		return fmt.Errorf("checkKeyType: expected %q but got %q", keyType, target)
 	}
 	return nil
 }
 
 func checkTag(target string) error {
 	if target != tag {
-		return errors.New(fmt.Sprintf("checkTag: expected %q but got %q", tag, target))
+		return fmt.Errorf("checkTag: expected %q but got %q", tag, target)
 	}
 	return nil
 }
@@ -240,15 +239,15 @@ func (t testKeystore) Create(ctx context.Context, _keyType string, _tags []strin
 }
 
 func (t testKeystore) Delete(ctx context.Context, _keyID []byte) error {
-	return errors.Join(deleteErr, checkKeyID(_keyID))
+	return errors.Join(errDelete, checkKeyID(_keyID))
 }
 
 func (t testKeystore) AddTag(ctx context.Context, _keyID []byte, _tag string) error {
-	return errors.Join(addTagErr, checkKeyID(_keyID), checkTag(_tag))
+	return errors.Join(errAddTag, checkKeyID(_keyID), checkTag(_tag))
 }
 
 func (t testKeystore) RemoveTag(ctx context.Context, _keyID []byte, _tag string) error {
-	return errors.Join(removeTagErr, checkKeyID(_keyID), checkTag(_tag))
+	return errors.Join(errRemoveTag, checkKeyID(_keyID), checkTag(_tag))
 }
 
 func (t testKeystore) ListTags(ctx context.Context, _keyID []byte) ([]string, error) {

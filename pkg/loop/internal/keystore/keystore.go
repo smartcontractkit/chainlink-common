@@ -106,15 +106,15 @@ type server struct {
 	*net.BrokerExt
 	keystorepb.UnimplementedKeystoreServer
 
-	impl KeystoreMethods
+	impl Methods
 }
 
-func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl KeystoreMethods) error {
+func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl Methods) error {
 	keystorepb.RegisterKeystoreServer(server, newKeystoreServer(broker, brokerCfg, impl))
 	return nil
 }
 
-func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl KeystoreMethods) *server {
+func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl Methods) *server {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "KeystoreServer")
 	return &server{BrokerExt: &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
 }
@@ -184,11 +184,11 @@ func (s *server) Export(ctx context.Context, request *keystorepb.ExportRequest) 
 }
 
 func (s *server) Create(ctx context.Context, request *keystorepb.CreateRequest) (*keystorepb.CreateResponse, error) {
-	keyIDS, err := s.impl.Create(ctx, request.KeyType, request.Tags)
+	keyIDs, err := s.impl.Create(ctx, request.KeyType, request.Tags)
 	if err != nil {
 		return nil, err
 	}
-	return &keystorepb.CreateResponse{KeyID: keyIDS}, err
+	return &keystorepb.CreateResponse{KeyID: keyIDs}, err
 }
 
 func (s *server) Delete(ctx context.Context, request *keystorepb.DeleteRequest) (*keystorepb.DeleteResponse, error) {

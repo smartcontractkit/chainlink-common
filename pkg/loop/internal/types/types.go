@@ -60,5 +60,5 @@ type Relayer interface {
 // Keystore This interface contains all the keystore GRPC functionality, keystore.Keystore is meant to be exposed to consumers and the keystore.Management interface in exposed only to the core node
 type Keystore interface {
 	services.Service
-	keystore.KeystoreMethods
+	keystore.Methods
 }

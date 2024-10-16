@@ -618,9 +618,9 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 		var tp pb.SortType
 
 		switch sort := sortBy.(type) {
-		case *query.SortByBlock:
+		case query.SortByBlock:
 			tp = pb.SortType_SortBlock
-		case *query.SortByTimestamp:
+		case query.SortByTimestamp:
 			tp = pb.SortType_SortTimestamp
 		case query.SortBySequence:
 			tp = pb.SortType_SortSequence

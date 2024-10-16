@@ -74,6 +74,21 @@
           "required": [
             "Underlying"
           ]
+        },
+        "encoder": {
+          "type": "string"
+        },
+        "encoder_config": {
+          "properties": {
+            "Underlying": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "Underlying"
+          ]
         }
       },
       "additionalProperties": false,

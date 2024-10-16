@@ -25,11 +25,6 @@ func NewRunner(ctx context.Context) *Runner {
 	}
 }
 
-type ConsensusMock interface {
-	capabilities.ConsensusCapability
-	SingleToManyObservations(value values.Value) (*values.Map, error)
-}
-
 type Runner struct {
 	RawConfig []byte
 	// Context is held in this runner because it's for testing and capability calls are made by it.
@@ -171,12 +166,6 @@ func (r *Runner) walk(spec sdk.WorkflowSpec, ref string) error {
 	request, err := r.buildRequest(spec, capability)
 	if err != nil {
 		return err
-	}
-
-	if c, ok := mock.(ConsensusMock); ok {
-		if request.Inputs, err = c.SingleToManyObservations(request.Inputs); err != nil {
-			return err
-		}
 	}
 
 	results, err := mock.Execute(r.ctx, request)

@@ -199,7 +199,7 @@ func (p *prometheusExporter) exportEnvelope(envelope Envelope) {
 		p.chainConfig.GetNetworkName(),
 	)
 	p.metrics.SetOffchainAggregatorAnswersLatestTimestamp(
-		float64(envelope.LatestTimestamp.Second()),
+		float64(envelope.LatestTimestamp.Unix()),
 		p.feedConfig.GetID(),
 		p.feedConfig.GetID(),
 		p.chainConfig.GetChainID(),

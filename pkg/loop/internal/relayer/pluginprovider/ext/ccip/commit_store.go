@@ -57,8 +57,8 @@ type CommitStoreGRPCServer struct {
 	deps []io.Closer
 }
 
-func NewCommitStoreReaderGRPCServer(impl ccip.CommitStoreReader, brokerExt *net.BrokerExt) (*CommitStoreGRPCServer, error) {
-	estimator, err := impl.GasPriceEstimator(context.Background())
+func NewCommitStoreReaderGRPCServer(ctx context.Context, impl ccip.CommitStoreReader, brokerExt *net.BrokerExt) (*CommitStoreGRPCServer, error) {
+	estimator, err := impl.GasPriceEstimator(ctx)
 	if err != nil {
 		return nil, err
 	}

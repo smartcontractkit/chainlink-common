@@ -36,8 +36,14 @@ func Test_createEmitFn(t *testing.T) {
 				assert.NoError(t, err)
 				return b, nil
 			}),
+			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -52,8 +58,14 @@ func Test_createEmitFn(t *testing.T) {
 				assert.NoError(t, err)
 				return b, nil
 			}),
+			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -64,8 +76,10 @@ func Test_createEmitFn(t *testing.T) {
 			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
 			}),
+			nil,
+			nil,
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
 		assert.Equal(t, ErrnoFault, gotCode)
 	})
 
@@ -80,9 +94,15 @@ func Test_createEmitFn(t *testing.T) {
 				assert.NoError(t, err)
 				return b, nil
 			}),
+			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
 	t.Run("bad read failure to unmarshal protos", func(t *testing.T) {
@@ -92,8 +112,10 @@ func Test_createEmitFn(t *testing.T) {
 			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return []byte("not proto bufs"), nil
 			}),
+			nil,
+			nil,
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
 		assert.Equal(t, ErrnoFault, gotCode)
 	})
 }

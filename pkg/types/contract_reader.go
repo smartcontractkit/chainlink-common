@@ -17,6 +17,10 @@ const (
 	ErrNotFound                    = NotFoundError("not found")
 )
 
+type BlockMetaData struct {
+	Height uint64
+}
+
 // ContractReader defines essential read operations a chain should implement for reading contract values and events.
 type ContractReader interface {
 	services.Service
@@ -45,6 +49,9 @@ type ContractReader interface {
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
 	// Passing in a *values.Value as the returnVal will encode the return value as an appropriate value.Value instance.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
+
+	// GetLatestValueWithBlockMetaData should be used in the same was as GetLatestValue, but also returns the block metadata.
+	GetLatestValueWithBlockMetaData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (BlockMetaData, error)
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.

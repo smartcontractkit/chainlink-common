@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/events/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -174,9 +174,9 @@ func (e *Emitter) Emit(ctx context.Context, msg Message) error {
 
 	pm := values.ProtoMap(wm)
 
-	bytes, err := proto.Marshal(&pb.OperationalEvent{
-		Labels:  pm,
-		Message: msg.Msg,
+	bytes, err := proto.Marshal(&pb.BaseMessage{
+		Labels: pm,
+		Msg:    msg.Msg,
 	})
 	if err != nil {
 		return fmt.Errorf("could not marshal operational event: %w", err)

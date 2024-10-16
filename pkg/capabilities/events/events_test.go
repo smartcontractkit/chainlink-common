@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/events/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -47,11 +47,11 @@ func TestEmitter(t *testing.T) {
 	err = emitter.Emit(tests.Context(t), message)
 	require.NoError(t, err)
 
-	event := &pb.OperationalEvent{}
+	event := &pb.BaseMessage{}
 	err = proto.Unmarshal(client.payload, event)
 	require.NoError(t, err)
 
-	assert.Equal(t, event.Message, msg)
+	assert.Equal(t, event.Msg, msg)
 }
 
 func assertHasKey(t *testing.T, attrs []any, keyName, keyValue string) {

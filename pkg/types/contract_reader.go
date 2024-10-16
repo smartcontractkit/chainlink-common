@@ -134,7 +134,7 @@ func (UnimplementedContractReader) GetLatestValue(ctx context.Context, readIdent
 }
 
 func (UnimplementedContractReader) GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error) {
-	return Head{}, UnimplementedError("ContractReader.GetLatestValueWithBlockMetaData unimplemented")
+	return Head{}, UnimplementedError("ContractReader.GetLatestValueWithHeadData unimplemented")
 }
 
 func (UnimplementedContractReader) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error) {

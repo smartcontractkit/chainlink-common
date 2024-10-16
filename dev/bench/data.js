@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729099379806,
+  "lastUpdate": 1729100176092,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3612,6 +3612,48 @@ window.BENCHMARK_DATA = {
             "value": 28235,
             "unit": "ns/op",
             "extra": "42430 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b7b7f6310ac2815acf7a4deae0d3c5e33ac349d9",
+          "message": "[chore] Add OracleSpecID to RelayArgs (#858)",
+          "timestamp": "2024-10-16T18:35:14+01:00",
+          "tree_id": "a17772635e36890af94712cdecf921eb67909ba8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b7b7f6310ac2815acf7a4deae0d3c5e33ac349d9"
+        },
+        "date": 1729100175618,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 470.7,
+            "unit": "ns/op",
+            "extra": "2626407 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.4,
+            "unit": "ns/op",
+            "extra": "2327421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28510,
+            "unit": "ns/op",
+            "extra": "42538 times\n4 procs"
           }
         ]
       }

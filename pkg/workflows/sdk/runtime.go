@@ -18,13 +18,7 @@ func (f EmitterFunc) Emit(msg string, labels map[string]any) error {
 	return f(msg, labels)
 }
 
-type ContextEmitter interface {
-	// EmitContext sends a message with the given message and labels to the configured collector.
-	//
-	// TODO(mstreet3): Do we want to support context here?
-	EmitContext(ctx string, msg string, labels map[string]any) error
-}
-
+// Guest interface
 type Runtime interface {
 	Logger() logger.Logger
 	Fetch(req FetchRequest) (FetchResponse, error)

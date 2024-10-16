@@ -26,8 +26,9 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-// UnsafeDataGetter abstractly defines the behavior of unsafely fetching WASM memory.
-type UnsafeDataGetter func(*wasmtime.Caller) []byte
+type UnsafeWriterFunc func(c *wasmtime.Caller, src []byte, ptr, len int32) int64
+
+type UnsafeFixedLengthWriterFunc func(c *wasmtime.Caller, ptr int32, val uint32) int64
 
 // UnsafeReaderFunc abstractly defines the behavior of reading from WASM memory.
 type UnsafeReaderFunc func(c *wasmtime.Caller, ptr, len int32) ([]byte, error)
@@ -150,6 +151,7 @@ type Module struct {
 	module *wasmtime.Module
 	linker *wasmtime.Linker
 
+	// respStore collects responses from sendResponse mapped by request ID
 	r *respStore
 
 	cfg *ModuleConfig
@@ -171,12 +173,6 @@ func WithDeterminism() func(*ModuleConfig) {
 		cfg.Determinism = &DeterminismConfig{Seed: t.Unix()}
 	}
 }
-
-// TODO(mstreet3): New module error
-
-// TODO(mstreet3): Clean up functionlal options for New Module
-
-// TODO(mstreet3): Add func option for setting emitter
 
 func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
 	// Apply options to the module config.
@@ -338,7 +334,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"emit",
-		createEmitFn(logger, modCfg.Emitter, wasmRead),
+		createEmitFn(logger, modCfg.Emitter, wasmRead, wasmWrite, wasmWriteUInt32),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping emit func: %w", err)
@@ -500,16 +496,20 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.C
 	}
 }
 
+// createEmitFn injects dependencies and builds the emit function used within the WASM.  Errors in
+// Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
 	e sdk.Emitter,
 	reader UnsafeReaderFunc,
-) func(caller *wasmtime.Caller, msgptr, msglen int32) int32 {
+	writer UnsafeWriterFunc,
+	sizeWriter UnsafeFixedLengthWriterFunc,
+) func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
 	logErr := func(err error) {
 		l.Errorf("error emitting message: %s", err)
 	}
 
-	return func(caller *wasmtime.Caller, msgptr, msglen int32) int32 {
+	return func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
 		b, err := reader(caller, msgptr, msglen)
 		if err != nil {
 			logErr(err)
@@ -541,8 +541,25 @@ func createEmitFn(
 		}
 
 		if err := e.Emit(msg.Message, labels); err != nil {
-			logErr(err)
-			return ErrnoFault
+			respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
+				Error: &wasmpb.Error{
+					Message: err.Error(),
+				},
+			})
+			if err != nil {
+				logErr(err)
+				return ErrnoFault
+			}
+
+			if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
+				logErr(errors.New("failed to write response"))
+				return ErrnoFault
+			}
+
+			if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
+				logErr(errors.New("failed to write response length"))
+				return ErrnoFault
+			}
 		}
 
 		return ErrnoSuccess

@@ -2,7 +2,9 @@ package wasm
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"testing"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -201,4 +204,104 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 	gotSpec.Triggers[0].Inputs.Mapping = map[string]any{}
 	gotSpec.Triggers[0].Config["number"] = int64(gotSpec.Triggers[0].Config["number"].(uint64))
 	assert.Equal(t, &gotSpec, spc)
+}
+
+func Test_createEmitFn(t *testing.T) {
+	var (
+		l         = logger.Test(t)
+		sdkConfig = &RuntimeConfig{
+			MaxFetchResponseSizeBytes: 1_000,
+		}
+	)
+
+	t.Run("success", func(t *testing.T) {
+		var (
+			giveMsg    = "testing guest"
+			giveLabels = map[string]any{
+				"some-key": "some-value",
+			}
+			err    error
+			emitFn = createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+				return 0
+			})
+		)
+
+		err = emitFn(giveMsg, giveLabels)
+		assert.NoError(t, err)
+	})
+
+	t.Run("successfully read error message when emit fails", func(t *testing.T) {
+		var (
+			giveMsg    = "testing guest"
+			giveLabels = map[string]any{
+				"some-key": "some-value",
+			}
+			resp = &wasmpb.EmitMessageResponse{
+				Error: &wasmpb.Error{
+					Message: assert.AnError.Error(),
+				},
+			}
+		)
+
+		emitFn := createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			// marshall the protobufs
+			b, err := proto.Marshal(resp)
+			assert.NoError(t, err)
+
+			// write the marshalled response message to memory
+			resp := unsafe.Slice((*byte)(respptr), len(b))
+			copy(resp, b)
+
+			// write the length of the response to memory in little endian
+			respLen := unsafe.Slice((*byte)(resplenptr), uint32Size)
+			binary.LittleEndian.PutUint32(respLen, uint32(len(b)))
+
+			return 0
+		})
+		err := emitFn(giveMsg, giveLabels)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, assert.AnError.Error())
+	})
+
+	t.Run("fail to deserialize response from memory", func(t *testing.T) {
+		var (
+			giveMsg    = "testing guest"
+			giveLabels = map[string]any{
+				"some-key": "some-value",
+			}
+			resp = assert.AnError.Error()
+		)
+
+		emitFn := createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			b := []byte(resp)
+			// write the marshalled response message to memory
+			resp := unsafe.Slice((*byte)(respptr), len(b))
+			copy(resp, b)
+
+			// write the length of the response to memory in little endian
+			respLen := unsafe.Slice((*byte)(resplenptr), uint32Size)
+			binary.LittleEndian.PutUint32(respLen, uint32(len(b)))
+
+			return 0
+		})
+		err := emitFn(giveMsg, giveLabels)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "failed to unmarshal")
+	})
+
+	t.Run("fail with nonzero code from emit", func(t *testing.T) {
+		var (
+			giveMsg    = "testing guest"
+			giveLabels = map[string]any{
+				"some-key": "some-value",
+			}
+		)
+
+		emitFn := createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 42
+		})
+		err := emitFn(giveMsg, giveLabels)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "failed to emit")
+	})
 }

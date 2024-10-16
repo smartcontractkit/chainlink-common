@@ -46,7 +46,7 @@ type ContractReader interface {
 	// Passing in a *values.Value as the returnVal will encode the return value as an appropriate value.Value instance.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
-	// GetLatestValueWithHeadData should be used in the same was as GetLatestValue, but also returns the head data.
+	// GetLatestValueWithHeadData should be used in the same way as GetLatestValue, but also returns the head data.
 	GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error)
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.

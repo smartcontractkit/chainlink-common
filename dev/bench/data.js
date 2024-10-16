@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729071754835,
+  "lastUpdate": 1729081980944,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3528,6 +3528,48 @@ window.BENCHMARK_DATA = {
             "value": 28293,
             "unit": "ns/op",
             "extra": "42372 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87939adac36d8da9565ba7d9a76845d21084e32c",
+          "message": "[chore] Add Beholder custom event for Workflows and Capabilities (#854)\n\n* [chore] Add Beholder custom event for Workflows and Capabilities\r\n\r\n* [chore] Add Beholder custom event for Workflows and Capabilities",
+          "timestamp": "2024-10-16T13:31:51+01:00",
+          "tree_id": "1c863e424f0db9b40570b554f031a36966f7d46a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/87939adac36d8da9565ba7d9a76845d21084e32c"
+        },
+        "date": 1729081979772,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.4,
+            "unit": "ns/op",
+            "extra": "2663198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 514.2,
+            "unit": "ns/op",
+            "extra": "2334406 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28237,
+            "unit": "ns/op",
+            "extra": "42487 times\n4 procs"
           }
         ]
       }

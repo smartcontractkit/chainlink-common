@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729036737045,
+  "lastUpdate": 1729071754835,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3486,6 +3486,48 @@ window.BENCHMARK_DATA = {
             "value": 28340,
             "unit": "ns/op",
             "extra": "42466 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "935b2eeecf569610f556a42abfba702b94d27c79",
+          "message": "[CAPPL-122] return error fetch handler (#852)\n\n* fix: return error instead of os.Exiting\r\n\r\n* fix: align FetchResponse to have ExecutionError instead of success field\r\n\r\n* fix: add error_message field",
+          "timestamp": "2024-10-16T11:41:36+02:00",
+          "tree_id": "10ca44fbe955863f640f37a62a1a8372ab7d5536",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/935b2eeecf569610f556a42abfba702b94d27c79"
+        },
+        "date": 1729071754314,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 452.9,
+            "unit": "ns/op",
+            "extra": "2568079 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 520.5,
+            "unit": "ns/op",
+            "extra": "2300023 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28293,
+            "unit": "ns/op",
+            "extra": "42372 times\n4 procs"
           }
         ]
       }

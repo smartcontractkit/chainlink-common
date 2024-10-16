@@ -89,20 +89,19 @@ func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {
 }
 
 type PanelOptions struct {
-	Datasource   string
-	Title        string
-	Description  string
-	Span         uint32
-	Height       uint32
-	Decimals     float64
-	Unit         string
-	NoValue      string
-	Min          *float64
-	Max          *float64
-	Query        []Query
-	Threshold    *ThresholdOptions
-	Transform    *TransformOptions
-	AlertOptions *AlertOptions
+	Datasource  string
+	Title       string
+	Description string
+	Span        uint32
+	Height      uint32
+	Decimals    float64
+	Unit        string
+	NoValue     string
+	Min         *float64
+	Max         *float64
+	Query       []Query
+	Threshold   *ThresholdOptions
+	Transform   *TransformOptions
 }
 
 type Panel struct {
@@ -215,15 +214,6 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		newPanel.WithTransformation(newTransform(options.Transform))
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			statPanelBuilder: newPanel,
-			alertBuilder:     NewAlertRule(options.AlertOptions),
-		}
-	}
-
 	return &Panel{
 		statPanelBuilder: newPanel,
 	}
@@ -231,6 +221,7 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 
 type TimeSeriesPanelOptions struct {
 	*PanelOptions
+	AlertOptions      *AlertOptions
 	FillOpacity       float64
 	ScaleDistribution common.ScaleDistribution
 	LegendOptions     *LegendOptions
@@ -340,15 +331,6 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		newPanel.WithTransformation(newTransform(options.Transform))
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			gaugePanelBuilder: newPanel,
-			alertBuilder:      NewAlertRule(options.AlertOptions),
-		}
-	}
-
 	return &Panel{
 		gaugePanelBuilder: newPanel,
 	}
@@ -391,15 +373,6 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		newPanel.WithTransformation(newTransform(options.Transform))
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			tablePanelBuilder: newPanel,
-			alertBuilder:      NewAlertRule(options.AlertOptions),
-		}
-	}
-
 	return &Panel{
 		tablePanelBuilder: newPanel,
 	}
@@ -438,15 +411,6 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 
 	if options.Transform != nil {
 		newPanel.WithTransformation(newTransform(options.Transform))
-	}
-
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			logPanelBuilder: newPanel,
-			alertBuilder:    NewAlertRule(options.AlertOptions),
-		}
 	}
 
 	return &Panel{
@@ -490,15 +454,6 @@ func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
 
 	if options.Transform != nil {
 		newPanel.WithTransformation(newTransform(options.Transform))
-	}
-
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			heatmapBuilder: newPanel,
-			alertBuilder:   NewAlertRule(options.AlertOptions),
-		}
 	}
 
 	return &Panel{

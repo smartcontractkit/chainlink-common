@@ -348,54 +348,54 @@ func headlines(p *Props) []*grafana.Panel {
 			},
 			Min: grafana.Pointer[float64](0),
 			Max: grafana.Pointer[float64](100),
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
-				Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
-				Tags: map[string]string{
-					"severity": "warning",
+		},
+		LegendOptions: &grafana.LegendOptions{
+			DisplayMode: common.LegendDisplayModeList,
+			Placement:   common.LegendPlacementRight,
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
+			Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "15m",
+			Tags: map[string]string{
+				"severity": "warning",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `health{` + p.AlertsFilters + `}`,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
 				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `health{` + p.AlertsFilters + `}`,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
+			},
+			QueryRefCondition: "D",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ReduceExpression: &grafana.ReduceExpression{
+						Expression: "A",
+						Reducer:    expr.TypeReduceReducerMean,
 					},
 				},
-				QueryRefCondition: "D",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ReduceExpression: &grafana.ReduceExpression{
-							Expression: "A",
-							Reducer:    expr.TypeReduceReducerMean,
-						},
+				{
+					RefID: "C",
+					MathExpression: &grafana.MathExpression{
+						Expression: "$B * 100",
 					},
-					{
-						RefID: "C",
-						MathExpression: &grafana.MathExpression{
-							Expression: "$B * 100",
-						},
-					},
-					{
-						RefID: "D",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "C",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{90, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+				},
+				{
+					RefID: "D",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "C",
+						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+							{
+								Params: []float64{90, 0},
+								Type:   expr.TypeThresholdTypeLt,
 							},
 						},
 					},
 				},
 			},
-		},
-		LegendOptions: &grafana.LegendOptions{
-			DisplayMode: common.LegendDisplayModeList,
-			Placement:   common.LegendPlacementRight,
 		},
 	}))
 
@@ -443,34 +443,34 @@ func headlines(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `ETH Balance is lower than threshold`,
-				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
-				NoDataState: alerting.RuleNoDataStateOK,
-				Tags: map[string]string{
-					"severity": "critical",
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `ETH Balance is lower than threshold`,
+			Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "15m",
+			NoDataState: alerting.RuleNoDataStateOK,
+			Tags: map[string]string{
+				"severity": "critical",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `eth_balance{` + p.AlertsFilters + `}`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
 				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `eth_balance{` + p.AlertsFilters + `}`,
-						Instant:    true,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "B",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+			},
+			QueryRefCondition: "B",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "A",
+						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+							{
+								Params: []float64{1, 0},
+								Type:   expr.TypeThresholdTypeLt,
 							},
 						},
 					},
@@ -492,34 +492,34 @@ func headlines(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `Solana Balance is lower than threshold`,
-				Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
-				NoDataState: alerting.RuleNoDataStateOK,
-				Tags: map[string]string{
-					"severity": "critical",
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `Solana Balance is lower than threshold`,
+			Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "15m",
+			NoDataState: alerting.RuleNoDataStateOK,
+			Tags: map[string]string{
+				"severity": "critical",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `solana_balance{` + p.AlertsFilters + `}`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
 				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `solana_balance{` + p.AlertsFilters + `}`,
-						Instant:    true,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "B",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+			},
+			QueryRefCondition: "B",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "A",
+						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+							{
+								Params: []float64{1, 0},
+								Type:   expr.TypeThresholdTypeLt,
 							},
 						},
 					},
@@ -845,34 +845,34 @@ func headTracker(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `No Headers Received`,
-				Description: `{{ index $labels "` + p.platformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "10m",
-				NoDataState: alerting.RuleNoDataStateOK,
-				Tags: map[string]string{
-					"severity": "critical",
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `No Headers Received`,
+			Description: `{{ index $labels "` + p.platformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "10m",
+			NoDataState: alerting.RuleNoDataStateOK,
+			Tags: map[string]string{
+				"severity": "critical",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `increase(head_tracker_heads_received{` + p.AlertsFilters + `}[10m])`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
 				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `increase(head_tracker_heads_received{` + p.AlertsFilters + `}[10m])`,
-						Instant:    true,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "B",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+			},
+			QueryRefCondition: "B",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "A",
+						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+							{
+								Params: []float64{1, 0},
+								Type:   expr.TypeThresholdTypeLt,
 							},
 						},
 					},

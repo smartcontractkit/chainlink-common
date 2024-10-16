@@ -92,6 +92,10 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 	}
 }
 
+func (b *Builder) AddAlert(alerts ...*alerting.RuleBuilder) {
+	b.alertsBuilder = append(b.alertsBuilder, alerts...)
+}
+
 func (b *Builder) AddContactPoint(contactPoints ...*alerting.ContactPointBuilder) {
 	b.contactPointsBuilder = append(b.contactPointsBuilder, contactPoints...)
 }

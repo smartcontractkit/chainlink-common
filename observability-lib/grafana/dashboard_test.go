@@ -32,33 +32,33 @@ func TestGenerateJSON(t *testing.T) {
 						Legend: `{{account}}`,
 					},
 				},
-				AlertOptions: &grafana.AlertOptions{
-					Summary:     `ETH Balance is lower than threshold`,
-					Description: `ETH Balance critically low at {{ index $values "A" }}`,
-					RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-					For:         "1m",
-					Tags: map[string]string{
-						"severity": "warning",
+			},
+			AlertOptions: &grafana.AlertOptions{
+				Summary:     `ETH Balance is lower than threshold`,
+				Description: `ETH Balance critically low at {{ index $values "A" }}`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "1m",
+				Tags: map[string]string{
+					"severity": "warning",
+				},
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `eth_balance`,
+						Instant:    true,
+						RefID:      "A",
+						Datasource: "datasource-uid",
 					},
-					Query: []grafana.RuleQuery{
-						{
-							Expr:       `eth_balance`,
-							Instant:    true,
-							RefID:      "A",
-							Datasource: "datasource-uid",
-						},
-					},
-					QueryRefCondition: "B",
-					Condition: []grafana.ConditionQuery{
-						{
-							RefID: "B",
-							ThresholdExpression: &grafana.ThresholdExpression{
-								Expression: "A",
-								ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-									{
-										Params: []float64{2, 0},
-										Type:   expr.TypeThresholdTypeLt,
-									},
+				},
+				QueryRefCondition: "B",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "A",
+							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
+								{
+									Params: []float64{2, 0},
+									Type:   expr.TypeThresholdTypeLt,
 								},
 							},
 						},

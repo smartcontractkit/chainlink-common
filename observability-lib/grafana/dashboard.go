@@ -81,7 +81,11 @@ func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 			alert.RuleGroup = *db.Dashboard.Title
 			alert.FolderUID = folder.UID
 			alert.Annotations["__dashboardUid__"] = *newDashboard.UID
-			alert.Annotations["__panelId__"] = panelIDByTitle(db.Dashboard, alert.Title)
+
+			panelId := panelIDByTitle(db.Dashboard, alert.Title)
+			if panelId != "" {
+				alert.Annotations["__panelId__"] = panelIDByTitle(db.Dashboard, alert.Title)
+			}
 
 			_, _, errPostAlertRule := grafanaClient.PostAlertRule(alert)
 			if errPostAlertRule != nil {
@@ -136,7 +140,7 @@ func panelIDByTitle(db *dashboard.Dashboard, title string) string {
 		}
 	}
 
-	return "0"
+	return ""
 }
 
 type DeleteOptions struct {

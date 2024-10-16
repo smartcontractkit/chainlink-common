@@ -22,25 +22,32 @@ func (cfg ActionConfig) New(w *sdk.WorkflowSpecFactory, ref string, input Action
 	return step.AddTo(w)
 }
 
+// ActionOutputsElemWrapper allows access to field from an sdk.CapDefinition[ActionOutputsElem]
+func ActionOutputsElemWrapper(raw sdk.CapDefinition[ActionOutputsElem]) ActionOutputsElemCap {
+	wrapped, ok := raw.(ActionOutputsElemCap)
+	if ok {
+		return wrapped
+	}
+	return &actionOutputsElemCap{CapDefinition: raw}
+}
+
 type ActionOutputsElemCap interface {
 	sdk.CapDefinition[ActionOutputsElem]
 	Results() ActionOutputsElemResultsCap
 	private()
 }
 
-// ActionOutputsElemCapFromStep should only be called from generated code to assure type safety
-func ActionOutputsElemCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[ActionOutputsElem]) ActionOutputsElemCap {
-	raw := step.AddTo(w)
-	return &actionOutputsElem{CapDefinition: raw}
-}
-
-type actionOutputsElem struct {
+type actionOutputsElemCap struct {
 	sdk.CapDefinition[ActionOutputsElem]
 }
 
-func (*actionOutputsElem) private() {}
-func (c *actionOutputsElem) Results() ActionOutputsElemResultsCap {
-	return &actionOutputsElemResults{CapDefinition: sdk.AccessField[ActionOutputsElem, ActionOutputsElemResults](c.CapDefinition, "results")}
+func (*actionOutputsElemCap) private() {}
+func (c *actionOutputsElemCap) Results() ActionOutputsElemResultsCap {
+	return ActionOutputsElemResultsWrapper(sdk.AccessField[ActionOutputsElem, ActionOutputsElemResults](c.CapDefinition, "results"))
+}
+
+func ConstantActionOutputsElem(value ActionOutputsElem) ActionOutputsElemCap {
+	return &actionOutputsElemCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewActionOutputsElemFromFields(
@@ -64,25 +71,32 @@ func (c *simpleActionOutputsElem) Results() ActionOutputsElemResultsCap {
 
 func (c *simpleActionOutputsElem) private() {}
 
+// ActionOutputsElemResultsWrapper allows access to field from an sdk.CapDefinition[ActionOutputsElemResults]
+func ActionOutputsElemResultsWrapper(raw sdk.CapDefinition[ActionOutputsElemResults]) ActionOutputsElemResultsCap {
+	wrapped, ok := raw.(ActionOutputsElemResultsCap)
+	if ok {
+		return wrapped
+	}
+	return &actionOutputsElemResultsCap{CapDefinition: raw}
+}
+
 type ActionOutputsElemResultsCap interface {
 	sdk.CapDefinition[ActionOutputsElemResults]
 	AdaptedThing() sdk.CapDefinition[string]
 	private()
 }
 
-// ActionOutputsElemResultsCapFromStep should only be called from generated code to assure type safety
-func ActionOutputsElemResultsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[ActionOutputsElemResults]) ActionOutputsElemResultsCap {
-	raw := step.AddTo(w)
-	return &actionOutputsElemResults{CapDefinition: raw}
-}
-
-type actionOutputsElemResults struct {
+type actionOutputsElemResultsCap struct {
 	sdk.CapDefinition[ActionOutputsElemResults]
 }
 
-func (*actionOutputsElemResults) private() {}
-func (c *actionOutputsElemResults) AdaptedThing() sdk.CapDefinition[string] {
+func (*actionOutputsElemResultsCap) private() {}
+func (c *actionOutputsElemResultsCap) AdaptedThing() sdk.CapDefinition[string] {
 	return sdk.AccessField[ActionOutputsElemResults, string](c.CapDefinition, "adapted_thing")
+}
+
+func ConstantActionOutputsElemResults(value ActionOutputsElemResults) ActionOutputsElemResultsCap {
+	return &actionOutputsElemResultsCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewActionOutputsElemResultsFromFields(

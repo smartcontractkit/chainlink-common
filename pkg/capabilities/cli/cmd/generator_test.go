@@ -53,6 +53,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = trigger.CoolOutput()
 			_ = expectedOutput
+
+			trigger = basictrigger.ConstantTriggerOutputs(basictrigger.TriggerOutputs{}) //nolint
 		})
 	})
 
@@ -76,6 +78,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = action.AdaptedThing()
 			_ = expectedOutput
+
+			action = basicaction.ConstantActionOutputs(basicaction.ActionOutputs{}) //nolint
 		})
 	})
 
@@ -103,6 +107,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedSigsField sdk.CapDefinition[[]string] //nolint
 			expectedSigsField = consensus.Sigs()
 			_ = expectedSigsField
+
+			consensus = basicconsensus.ConstantConsensusOutputs(basicconsensus.ConsensusOutputs{}) //nolint
 		})
 	})
 

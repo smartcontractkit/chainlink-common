@@ -167,6 +167,62 @@ func (s *server) RunUDF(ctx context.Context, request *keystorepb.RunUDFRequest) 
 	return &keystorepb.RunUDFResponse{Data: data}, err
 }
 
+func (s *server) Import(ctx context.Context, request *keystorepb.ImportRequest) (*keystorepb.ImportResponse, error) {
+	keyIDs, err := s.impl.Import(ctx, request.KeyType, request.Data, request.Tags)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.ImportResponse{KeyID: keyIDs}, err
+}
+
+func (s *server) Export(ctx context.Context, request *keystorepb.ExportRequest) (*keystorepb.ExportResponse, error) {
+	data, err := s.impl.Export(ctx, request.KeyID)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.ExportResponse{Data: data}, err
+}
+
+func (s *server) Create(ctx context.Context, request *keystorepb.CreateRequest) (*keystorepb.CreateResponse, error) {
+	keyIDS, err := s.impl.Create(ctx, request.KeyType, request.Tags)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.CreateResponse{KeyID: keyIDS}, err
+}
+
+func (s *server) Delete(ctx context.Context, request *keystorepb.DeleteRequest) (*keystorepb.DeleteResponse, error) {
+	err := s.impl.Delete(ctx, request.KeyID)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.DeleteResponse{}, err
+}
+
+func (s *server) AddTag(ctx context.Context, request *keystorepb.AddTagRequest) (*keystorepb.AddTagResponse, error) {
+	err := s.impl.AddTag(ctx, request.KeyID, request.Tag)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.AddTagResponse{}, err
+}
+
+func (s *server) RemoveTag(ctx context.Context, request *keystorepb.RemoveTagRequest) (*keystorepb.RemoveTagResponse, error) {
+	err := s.impl.RemoveTag(ctx, request.KeyID, request.Tag)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.RemoveTagResponse{}, err
+}
+
+func (s *server) ListTags(ctx context.Context, request *keystorepb.ListTagsRequest) (*keystorepb.ListTagsResponse, error) {
+	tags, err := s.impl.ListTags(ctx, request.KeyID)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.ListTagsResponse{Tags: tags}, nil
+}
+
 func (c *Client) Import(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error) {
 	reply, err := c.grpc.Import(ctx, &keystorepb.ImportRequest{
 		KeyType: keyType,

@@ -1,0 +1,174 @@
+package host
+
+import (
+	"encoding/binary"
+	"testing"
+
+	"github.com/bytecodealliance/wasmtime-go/v23"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
+)
+
+func Test_createEmitFn(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		emitFn := createEmitFn(
+			logger.Test(t),
+			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
+				return nil
+			}),
+			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.CustomEmitMessage{
+					Message: "hello, world",
+					Labels: &pb.Map{
+						Fields: map[string]*pb.Value{
+							"foo": {
+								Value: &pb.Value_StringValue{
+									StringValue: "bar",
+								},
+							},
+						},
+					},
+				})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+		)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		assert.Equal(t, ErrnoSuccess, gotCode)
+	})
+
+	t.Run("success without labels", func(t *testing.T) {
+		emitFn := createEmitFn(
+			logger.Test(t),
+			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
+				return nil
+			}),
+			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.CustomEmitMessage{})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+		)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		assert.Equal(t, ErrnoSuccess, gotCode)
+	})
+
+	t.Run("failure to read", func(t *testing.T) {
+		emitFn := createEmitFn(
+			logger.Test(t),
+			nil,
+			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				return nil, assert.AnError
+			}),
+		)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("failure to emit", func(t *testing.T) {
+		emitFn := createEmitFn(
+			logger.Test(t),
+			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
+				return assert.AnError
+			}),
+			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.CustomEmitMessage{})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+		)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("bad read failure to unmarshal protos", func(t *testing.T) {
+		emitFn := createEmitFn(
+			logger.Test(t),
+			nil,
+			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				return []byte("not proto bufs"), nil
+			}),
+		)
+		gotCode := emitFn(new(wasmtime.Caller), 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+}
+
+func Test_read(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		memory := []byte("hello, world")
+		got, err := read(memory, 0, int32(len(memory)))
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("hello, world"), got)
+	})
+
+	t.Run("out of bounds", func(t *testing.T) {
+		memory := []byte("hello, world")
+		_, err := read(memory, 0, int32(len(memory)+1))
+		assert.Error(t, err)
+	})
+
+	t.Run("fails invalid access", func(t *testing.T) {
+		memory := []byte("hello, world")
+		_, err := read(memory, 0, -1)
+		assert.Error(t, err)
+
+		_, err = read(memory, -1, 1)
+		assert.Error(t, err)
+	})
+
+	t.Run("memory is read only", func(t *testing.T) {
+		memory := []byte("hello, world")
+		copy, err := read(memory, 0, int32(len(memory)))
+		assert.NoError(t, err)
+
+		// mutate copy
+		copy[0] = 'H'
+		assert.Equal(t, []byte("Hello, world"), copy)
+
+		// original memory is unchanged
+		assert.Equal(t, []byte("hello, world"), memory)
+	})
+}
+
+func Test_write(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		giveSrc := []byte("hello, world")
+		memory := make([]byte, 12)
+		n := write(memory, giveSrc, 0, int32(len(giveSrc)))
+		assert.Equal(t, n, int64(len(giveSrc)))
+		assert.Equal(t, []byte("hello, world"), memory[:len(giveSrc)])
+	})
+
+	t.Run("out of bounds", func(t *testing.T) {
+		giveSrc := []byte("hello, world")
+		memory := make([]byte, len(giveSrc)-1)
+		n := write(memory, giveSrc, 0, int32(len(giveSrc)))
+		assert.Equal(t, n, int64(-1))
+	})
+
+	t.Run("fails invalid access", func(t *testing.T) {
+		giveSrc := []byte("hello, world")
+		memory := make([]byte, len(giveSrc))
+		n := write(memory, giveSrc, 0, -1)
+		assert.Equal(t, n, int64(-1))
+
+		n = write(memory, giveSrc, -1, 1)
+		assert.Equal(t, n, int64(-1))
+	})
+}
+
+func Test_writeUInt32(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		memory := make([]byte, 4)
+		n := writeUInt32(memory, 0, 42)
+		wantBuf := make([]byte, 4)
+		binary.LittleEndian.PutUint32(wantBuf, 42)
+		assert.Equal(t, n, int64(4))
+		assert.Equal(t, wantBuf, memory)
+	})
+}

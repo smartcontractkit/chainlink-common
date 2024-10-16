@@ -72,7 +72,7 @@ message FetchRequest {
 }
 
 message FetchResponse {
-  bool success = 1;
+  bool executionError = 1;
   string errorMessage = 2;
   uint32 statusCode = 3; // NOTE: this is actually a uint8, but proto doesn't support this.
   values.Map headers = 4;

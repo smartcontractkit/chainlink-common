@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/events/pb";
+
+package events;
+
+import "values/pb/values.proto";
+
+message OperationalEvent {
+  string message = 1;
+  values.Map labels = 2;
+}
+

@@ -141,10 +141,13 @@ func emitFn(msg string, labels map[string]any) error {
 		return err
 	}
 
-	b, err := proto.Marshal(&wasmpb.CustomEmitMessage{
+	b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
 		Message: msg,
 		Labels:  values.ProtoMap(vm),
 	})
+	if err != nil {
+		return err
+	}
 
 	ptr, ptrlen := bufferToPointerLen(b)
 	errno := emit(ptr, ptrlen)

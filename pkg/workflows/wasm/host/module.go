@@ -516,7 +516,7 @@ func createEmitFn(
 			return ErrnoFault
 		}
 
-		msg := &wasmpb.CustomEmitMessage{}
+		msg := &wasmpb.EmitMessageRequest{}
 		err = proto.Unmarshal(b, msg)
 		if err != nil {
 			logErr(err)

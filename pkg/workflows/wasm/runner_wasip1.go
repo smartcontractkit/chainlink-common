@@ -24,7 +24,7 @@ func log(respptr unsafe.Pointer, respptrlen int32)
 func fetch(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32
 
 //go:wasmimport env emit
-func emit(pbptr unsafe.Pointer, pblen int32) int32
+func emit(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32
 
 func NewRunner() *Runner {
 	l := logger.NewWithSync(&wasmWriteSyncer{})
@@ -35,7 +35,7 @@ func NewRunner() *Runner {
 			return &Runtime{
 				logger:  l,
 				fetchFn: createFetchFn(sdkConfig, l),
-				emitFn:  emitFn,
+				emitFn:  createEmitFn(sdkConfig, l, emit),
 			}
 		},
 		args: os.Args,
@@ -126,36 +126,12 @@ func createFetchFn(
 		}
 
 		return sdk.FetchResponse{
-			Success:    response.Success,
 			StatusCode: uint8(response.StatusCode),
 			Headers:    headersResp,
 			Body:       response.Body,
 		}, nil
 	}
 	return fetchFn
-}
-
-func emitFn(msg string, labels map[string]any) error {
-	vm, err := values.NewMap(labels)
-	if err != nil {
-		return err
-	}
-
-	b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
-		Message: msg,
-		Labels:  values.ProtoMap(vm),
-	})
-	if err != nil {
-		return err
-	}
-
-	ptr, ptrlen := bufferToPointerLen(b)
-	errno := emit(ptr, ptrlen)
-	if errno != 0 {
-		os.Exit(CodeRunnerErr)
-	}
-
-	return nil
 }
 
 type wasmWriteSyncer struct{}
@@ -165,11 +141,4 @@ func (wws *wasmWriteSyncer) Write(p []byte) (n int, err error) {
 	ptr, ptrlen := bufferToPointerLen(p)
 	log(ptr, ptrlen)
 	return int(ptrlen), nil
-}
-
-const uint32Size = int32(4)
-
-// bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
-func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
-	return unsafe.Pointer(&buf[0]), int32(len(buf))
 }

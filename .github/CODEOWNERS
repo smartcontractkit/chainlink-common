@@ -7,7 +7,7 @@
 /observability-lib/ @Atrax1
 
 /pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
-/pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag
+/pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag @pablolagreca 
 /pkg/monitoring/ @topliceanu @pedrovsg
 /pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/workflows/ @smartcontractkit/keystone

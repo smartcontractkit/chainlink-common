@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729100176092,
+  "lastUpdate": 1729112715226,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3654,6 +3654,48 @@ window.BENCHMARK_DATA = {
             "value": 28510,
             "unit": "ns/op",
             "extra": "42538 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b6966277c23bf71bf68b4c4b4d3d832c4a9671ed",
+          "message": "pkg/codec: add bix-framework & foundations as CODEOWNERS (#859)",
+          "timestamp": "2024-10-16T17:04:10-04:00",
+          "tree_id": "8ce32900802f9ef99684e19c3d37c715e72ccc2d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b6966277c23bf71bf68b4c4b4d3d832c4a9671ed"
+        },
+        "date": 1729112714426,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 475.5,
+            "unit": "ns/op",
+            "extra": "2564451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 511.9,
+            "unit": "ns/op",
+            "extra": "2329320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28995,
+            "unit": "ns/op",
+            "extra": "42513 times\n4 procs"
           }
         ]
       }

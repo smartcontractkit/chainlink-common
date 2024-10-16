@@ -107,12 +107,9 @@ func NewRunner() *Runner {
 						headersResp[k] = v
 					}
 
-					if response.ErrorMessage != "" {
-						return sdk.FetchResponse{}, errors.New(response.ErrorMessage)
-					}
-
 					return sdk.FetchResponse{
 						ExecutionError: response.ExecutionError,
+						ErrorMessage:   response.ErrorMessage,
 						StatusCode:     uint8(response.StatusCode),
 						Headers:        headersResp,
 						Body:           response.Body,

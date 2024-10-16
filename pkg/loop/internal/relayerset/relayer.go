@@ -93,8 +93,8 @@ func (r *relayerClient) Name() string {
 	return name
 }
 
-func (r *relayerClient) LatestHead(_ context.Context) (types.Head, error) {
-	latestHead, err := r.relayerSetClient.RelayerLatestHead(context.Background(), r.relayerID)
+func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
+	latestHead, err := r.relayerSetClient.RelayerLatestHead(ctx, r.relayerID)
 	if err != nil {
 		r.log.Error("error getting latestHead", "error", err)
 		return types.Head{}, err

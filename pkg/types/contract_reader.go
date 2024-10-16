@@ -17,10 +17,6 @@ const (
 	ErrNotFound                    = NotFoundError("not found")
 )
 
-type BlockMetaData struct {
-	Height uint64
-}
-
 // ContractReader defines essential read operations a chain should implement for reading contract values and events.
 type ContractReader interface {
 	services.Service
@@ -50,8 +46,8 @@ type ContractReader interface {
 	// Passing in a *values.Value as the returnVal will encode the return value as an appropriate value.Value instance.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
-	// GetLatestValueWithBlockMetaData should be used in the same was as GetLatestValue, but also returns the block metadata.
-	GetLatestValueWithBlockMetaData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (BlockMetaData, error)
+	// GetLatestValueWithHeadData should be used in the same was as GetLatestValue, but also returns the head data.
+	GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error)
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
@@ -137,8 +133,8 @@ func (UnimplementedContractReader) GetLatestValue(ctx context.Context, readIdent
 	return UnimplementedError("ContractReader.GetLatestValue unimplemented")
 }
 
-func (UnimplementedContractReader) GetLatestValueWithBlockMetaData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (BlockMetaData, error) {
-	return BlockMetaData{}, UnimplementedError("ContractReader.GetLatestValueWithBlockMetaData unimplemented")
+func (UnimplementedContractReader) GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error) {
+	return Head{}, UnimplementedError("ContractReader.GetLatestValueWithBlockMetaData unimplemented")
 }
 
 func (UnimplementedContractReader) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error) {

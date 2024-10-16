@@ -11,3 +11,8 @@ message OperationalEvent {
   values.Map labels = 2;
 }
 
+// Used by custom compute to send any beholder errors
+// back.
+message OperationalEventResponse {
+  string errMsg = 1;
+}

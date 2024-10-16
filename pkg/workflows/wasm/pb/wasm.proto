@@ -76,7 +76,11 @@ message FetchResponse {
   bytes body = 5;
 }
 
-message CustomEmitMessage {
+message EmitMessageRequest {
   string message = 1;
   values.Map labels = 2;
 }
+
+message Error { string message = 1; }
+
+message EmitMessageResponse { Error error = 1; }

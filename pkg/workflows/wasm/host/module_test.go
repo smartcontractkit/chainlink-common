@@ -21,7 +21,7 @@ func Test_createEmitFn(t *testing.T) {
 				return nil
 			}),
 			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.CustomEmitMessage{
+				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
 					Message: "hello, world",
 					Labels: &pb.Map{
 						Fields: map[string]*pb.Value{
@@ -48,7 +48,7 @@ func Test_createEmitFn(t *testing.T) {
 				return nil
 			}),
 			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.CustomEmitMessage{})
+				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{})
 				assert.NoError(t, err)
 				return b, nil
 			}),
@@ -76,7 +76,7 @@ func Test_createEmitFn(t *testing.T) {
 				return assert.AnError
 			}),
 			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.CustomEmitMessage{})
+				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{})
 				assert.NoError(t, err)
 				return b, nil
 			}),

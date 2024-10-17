@@ -135,7 +135,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 	runner := &Runner{
 		args:         []string{"wasm", str},
 		sendResponse: responseFn,
-		sdkFactory:   func(cfg *RuntimeConfig) *Runtime { return nil },
+		sdkFactory:   func(cfg *RuntimeConfig, _ ...func(*RuntimeConfig)) *Runtime { return nil },
 	}
 	runner.Run(workflow)
 

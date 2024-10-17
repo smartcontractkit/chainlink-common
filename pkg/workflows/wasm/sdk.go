@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"unsafe"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -20,6 +21,20 @@ type Runtime struct {
 
 type RuntimeConfig struct {
 	MaxFetchResponseSizeBytes int64
+	RequestID                 *string
+	MetaData                  *capabilities.RequestMetadata
+}
+
+func WithRequestMetaData(md *capabilities.RequestMetadata) func(*RuntimeConfig) {
+	return func(rc *RuntimeConfig) {
+		rc.MetaData = md
+	}
+}
+
+func WithRequestID(id string) func(*RuntimeConfig) {
+	return func(rc *RuntimeConfig) {
+		rc.RequestID = &id
+	}
 }
 
 const (

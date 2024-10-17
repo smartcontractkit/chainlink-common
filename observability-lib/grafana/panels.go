@@ -88,14 +88,6 @@ func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {
 	}
 }
 
-type ColorSchemeOptions struct {
-	Mode dashboard.FieldColorModeId
-}
-
-func newColorScheme(options *ColorSchemeOptions) *dashboard.FieldColorBuilder {
-	return dashboard.NewFieldColorBuilder().Mode(options.Mode)
-}
-
 type PanelOptions struct {
 	Datasource  string
 	Title       string
@@ -110,6 +102,7 @@ type PanelOptions struct {
 	Query       []Query
 	Threshold   *ThresholdOptions
 	Transform   *TransformOptions
+	ColorScheme dashboard.FieldColorModeId
 }
 
 type Panel struct {
@@ -222,6 +215,10 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		newPanel.WithTransformation(newTransform(options.Transform))
 	}
 
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
 	return &Panel{
 		statPanelBuilder: newPanel,
 	}
@@ -229,11 +226,11 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 
 type TimeSeriesPanelOptions struct {
 	*PanelOptions
-	AlertOptions       *AlertOptions
-	FillOpacity        float64
-	ScaleDistribution  common.ScaleDistribution
-	LegendOptions      *LegendOptions
-	ColorSchemeOptions *ColorSchemeOptions
+	AlertOptions      *AlertOptions
+	FillOpacity       float64
+	ScaleDistribution common.ScaleDistribution
+	LegendOptions     *LegendOptions
+	ThresholdStyle    common.GraphThresholdsStyleMode
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
@@ -280,14 +277,18 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 
 	if options.Threshold != nil {
 		newPanel.Thresholds(newThresholds(options.Threshold))
+
+		if options.ThresholdStyle != "" {
+			newPanel.ThresholdsStyle(common.NewGraphThresholdsStyleConfigBuilder().Mode(options.ThresholdStyle))
+		}
 	}
 
 	if options.Transform != nil {
 		newPanel.WithTransformation(newTransform(options.Transform))
 	}
 
-	if options.ColorSchemeOptions != nil {
-		newPanel.ColorScheme(newColorScheme(options.ColorSchemeOptions))
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
 	if options.AlertOptions != nil {
@@ -386,6 +387,10 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		newPanel.WithTransformation(newTransform(options.Transform))
 	}
 
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
 	return &Panel{
 		tablePanelBuilder: newPanel,
 	}
@@ -424,6 +429,10 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 
 	if options.Transform != nil {
 		newPanel.WithTransformation(newTransform(options.Transform))
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
 	return &Panel{
@@ -467,6 +476,10 @@ func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
 
 	if options.Transform != nil {
 		newPanel.WithTransformation(newTransform(options.Transform))
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
 	return &Panel{

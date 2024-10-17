@@ -1,8 +1,6 @@
 module github.com/smartcontractkit/chainlink-common
 
-go 1.22.0
-
-toolchain go1.22.7
+go 1.23
 
 require (
 	github.com/andybalholm/brotli v1.1.0

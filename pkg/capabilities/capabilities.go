@@ -1,6 +1,7 @@
 package capabilities
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"regexp"
@@ -51,6 +52,26 @@ func (c CapabilityType) IsValid() error {
 	}
 
 	return fmt.Errorf("invalid capability type: %s", c)
+}
+
+func (c CapabilityType) cmpOrder() int {
+	switch c {
+	case CapabilityTypeTrigger:
+		return 0
+	case CapabilityTypeAction:
+		return 1
+	case CapabilityTypeConsensus:
+		return 2
+	case CapabilityTypeTarget:
+		return 3
+	case CapabilityTypeUnknown:
+		return 4
+	default:
+		return 5
+	}
+}
+func (c CapabilityType) Compare(c2 CapabilityType) int {
+	return cmp.Compare(c.cmpOrder(), c2.cmpOrder())
 }
 
 // CapabilityResponse is a struct for the Execute response of a capability.

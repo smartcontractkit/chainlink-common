@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729157840858,
+  "lastUpdate": 1729159002840,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3736,6 +3736,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "BenchmarkKeystore_Sign/ed25519/in-process",
             "value": 28253,
+            "unit": "ns/op",
+            "extra": "42488 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "80c6a3362575898e16c120ac9e24ece63816d909",
+          "message": "contract reader api change for block meta data (#855)\n\n* contract reader api change for meta data\r\n\r\n* add to unimplemented contract reader\r\n\r\n* update to use Head struct for meta data\r\n\r\n* typo\r\n\r\n* another typo",
+          "timestamp": "2024-10-17T10:55:39+01:00",
+          "tree_id": "bc1fafea3017c0ef78144f1e3c0671a803332587",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/80c6a3362575898e16c120ac9e24ece63816d909"
+        },
+        "date": 1729159002165,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 461.9,
+            "unit": "ns/op",
+            "extra": "2507300 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 514.7,
+            "unit": "ns/op",
+            "extra": "2336270 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28257,
             "unit": "ns/op",
             "extra": "42488 times\n4 procs"
           }

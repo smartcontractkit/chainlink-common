@@ -45,6 +45,8 @@ func ExampleNewClient() {
 	for range 10 {
 		err := beholder.GetEmitter().Emit(context.Background(), payloadBytes,
 			"beholder_data_schema", "/custom-message/versions/1", // required
+			"node_csa_key", "node_csa_val", // required
+			"node_csa_signature", "mode_csa_signature_val", // required
 			"beholder_data_type", "custom_message",
 			"foo", "bar",
 		)
@@ -105,6 +107,8 @@ func ExampleNewNoopClient() {
 
 	err := beholder.GetEmitter().Emit(context.Background(), []byte("test message"),
 		"beholder_data_schema", "/custom-message/versions/1", // required
+		"node_csa_key", "node_csa_val", // required
+		"node_csa_signature", "mode_csa_signature_val", // required
 	)
 	if err != nil {
 		log.Printf("Error emitting message: %v", err)

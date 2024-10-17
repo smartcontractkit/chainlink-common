@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729112715226,
+  "lastUpdate": 1729157840858,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3696,6 +3696,48 @@ window.BENCHMARK_DATA = {
             "value": 28995,
             "unit": "ns/op",
             "extra": "42513 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bf362d3dd312f82031bbf3ac42b9268d4c4aaaef",
+          "message": "Add a non-wasip1 version of NewRunner (#838)",
+          "timestamp": "2024-10-17T10:36:06+01:00",
+          "tree_id": "f0add02fd2467fcc6f9f24c097e3e84e414c03a8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bf362d3dd312f82031bbf3ac42b9268d4c4aaaef"
+        },
+        "date": 1729157839671,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 471.1,
+            "unit": "ns/op",
+            "extra": "2677143 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.3,
+            "unit": "ns/op",
+            "extra": "2341243 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28253,
+            "unit": "ns/op",
+            "extra": "42488 times\n4 procs"
           }
         ]
       }

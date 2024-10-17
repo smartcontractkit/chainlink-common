@@ -1,5 +1,6 @@
 package types
 
+/*
 import (
 	"context"
 
@@ -19,3 +20,4 @@ type CCIPOCR3ExecuteProvider interface {
 	ReportCodec(ctx context.Context) (ccipocr3.ExecutePluginCodec, error)
 	MsgHasher(ctx context.Context) (ccipocr3.MessageHasher, error)
 }
+*/

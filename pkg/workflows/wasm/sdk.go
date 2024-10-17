@@ -46,7 +46,7 @@ func (r *Runtime) Emit(msg string, labels map[string]any) error {
 	return r.emitFn(msg, labels)
 }
 
-// createEmitFn injects config and logger to implement an adapter for the runtime Emit() method
+// createEmitFn injects dependencies to implement an adapter for the wasm imported emit method
 // that handles marshalling and unmarshalling messages for the WASM to act on.
 func createEmitFn(
 	sdkConfig *RuntimeConfig,

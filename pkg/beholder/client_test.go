@@ -49,7 +49,9 @@ func TestClient(t *testing.T) {
 			"byte_key_1":           []byte("byte_val_1"),
 			"str_slice_key_1":      []string{"str_val_1", "str_val_2"},
 			"nil_key_1":            nil,
-			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
+			"beholder_data_schema": "/schemas/ids/1001",      // Required field, URI
+			"node_csa_key":         "node_csa_val",           // Required
+			"node_csa_signature":   "mode_csa_signature_val", // Required
 		}
 	}
 	defaultMessageBody := []byte("body bytes")
@@ -168,6 +170,8 @@ func TestEmitterMessageValidation(t *testing.T) {
 			name: "Invalid URI",
 			attrs: Attributes{
 				"beholder_data_schema": "example-schema",
+				"node_csa_key":         "node_csa_val",           // Required
+				"node_csa_signature":   "mode_csa_signature_val", // Required
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
@@ -177,6 +181,8 @@ func TestEmitterMessageValidation(t *testing.T) {
 			exporterCalledTimes: 1,
 			attrs: Attributes{
 				"beholder_data_schema": "/example-schema/versions/1",
+				"node_csa_key":         "node_csa_val",           // Required
+				"node_csa_signature":   "mode_csa_signature_val", // Required
 			},
 			expectedError: "",
 		},

@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
@@ -22,9 +23,9 @@ type Metadata struct {
 	// The version of the CL node.
 	NodeVersion string
 	// mTLS public key for the node operator. This is used as an identity key but with the added benefit of being able to provide signatures.
-	NodeCsaKey string
+	NodeCsaKey string `validate:"required"`
 	// Signature from CSA private key.
-	NodeCsaSignature string
+	NodeCsaSignature string `validate:"required"`
 	DonID            string
 	// The RDD network name the CL node is operating with.
 	NetworkName          []string
@@ -41,6 +42,7 @@ type Metadata struct {
 	CapabilityVersion         string
 	CapabilityName            string
 	NetworkChainID            string
+	Timestamp                 time.Time
 }
 
 func (m Metadata) Attributes() Attributes {
@@ -61,6 +63,7 @@ func (m Metadata) Attributes() Attributes {
 		"capability_version":          m.CapabilityVersion,
 		"capability_name":             m.CapabilityName,
 		"network_chain_id":            m.NetworkChainID,
+		"timestamp":                   m.Timestamp,
 	}
 }
 
@@ -160,6 +163,8 @@ func OtelAttr(key string, value any) otellog.KeyValue {
 		return otellog.Bool(key, v)
 	case []byte:
 		return otellog.Bytes(key, v)
+	case time.Time:
+		return otellog.Int64(key, v.Unix())
 	case nil:
 		return otellog.Empty(key)
 	case otellog.Value:
@@ -211,13 +216,15 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 			m.CapabilityName = v.(string)
 		case "network_chain_id":
 			m.NetworkChainID = v.(string)
+		case "timestamp":
+			m.Timestamp = v.(time.Time)
 		}
 	}
 	return m
 }
 
 func NewMetadata(attrs Attributes) *Metadata {
-	m := &Metadata{}
+	m := &Metadata{Timestamp: time.Now().UTC()}
 	m.FromAttributes(attrs)
 	return m
 }

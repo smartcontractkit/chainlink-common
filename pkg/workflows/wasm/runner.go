@@ -26,7 +26,7 @@ var _ sdk.Runner = (*Runner)(nil)
 
 type Runner struct {
 	sendResponse func(payload *wasmpb.Response)
-	sdkFactory   func(cfg *RuntimeConfig) *Runtime
+	sdkFactory   func(cfg *RuntimeConfig, opts ...func(*RuntimeConfig)) *Runtime
 	args         []string
 	req          *wasmpb.Request
 }
@@ -163,7 +163,7 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 		}
 	}
 
-	sdk := r.sdkFactory(drc)
+	sdk := r.sdkFactory(drc, WithRequestID(id), WithRequestMetaData(&creq.Metadata))
 
 	resp, err := fn(sdk, creq)
 	if err != nil {

@@ -31,7 +31,11 @@ func NewRunner() *Runner {
 
 	return &Runner{
 		sendResponse: sendResponseFn,
-		sdkFactory: func(sdkConfig *RuntimeConfig) *Runtime {
+		sdkFactory: func(sdkConfig *RuntimeConfig, opts ...func(*RuntimeConfig)) *Runtime {
+			for _, opt := range opts {
+				opt(sdkConfig)
+			}
+
 			return &Runtime{
 				logger:  l,
 				fetchFn: createFetchFn(sdkConfig, l),

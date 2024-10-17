@@ -21,8 +21,9 @@ type FetchRequest struct {
 }
 
 type FetchResponse struct {
-	Success    bool           `json:"success"`           // true if HTTP request was successful
-	StatusCode uint8          `json:"statusCode"`        // HTTP status code
-	Headers    map[string]any `json:"headers,omitempty"` // HTTP headers
-	Body       []byte         `json:"body,omitempty"`    // HTTP response body
+	ExecutionError bool           `json:"executionError"`         // true if there were non-HTTP errors. false if HTTP request was sent regardless of status (2xx, 4xx, 5xx)
+	ErrorMessage   string         `json:"errorMessage,omitempty"` // error message in case of failure
+	StatusCode     uint8          `json:"statusCode"`             // HTTP status code
+	Headers        map[string]any `json:"headers,omitempty"`      // HTTP headers
+	Body           []byte         `json:"body,omitempty"`         // HTTP response body
 }

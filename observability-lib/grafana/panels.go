@@ -88,6 +88,14 @@ func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {
 	}
 }
 
+type ColorSchemeOptions struct {
+	Mode dashboard.FieldColorModeId
+}
+
+func newColorScheme(options *ColorSchemeOptions) *dashboard.FieldColorBuilder {
+	return dashboard.NewFieldColorBuilder().Mode(options.Mode)
+}
+
 type PanelOptions struct {
 	Datasource  string
 	Title       string
@@ -221,10 +229,11 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 
 type TimeSeriesPanelOptions struct {
 	*PanelOptions
-	AlertOptions      *AlertOptions
-	FillOpacity       float64
-	ScaleDistribution common.ScaleDistribution
-	LegendOptions     *LegendOptions
+	AlertOptions       *AlertOptions
+	FillOpacity        float64
+	ScaleDistribution  common.ScaleDistribution
+	LegendOptions      *LegendOptions
+	ColorSchemeOptions *ColorSchemeOptions
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
@@ -275,6 +284,10 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 
 	if options.Transform != nil {
 		newPanel.WithTransformation(newTransform(options.Transform))
+	}
+
+	if options.ColorSchemeOptions != nil {
+		newPanel.ColorScheme(newColorScheme(options.ColorSchemeOptions))
 	}
 
 	if options.AlertOptions != nil {

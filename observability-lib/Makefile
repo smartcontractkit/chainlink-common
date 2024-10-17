@@ -13,3 +13,7 @@ lint:
 .PHONY: test
 test:
 	go test -v ./...
+
+.PHONY: regenerate
+regenerate:
+	go test -v ./dashboards/... -generate=1

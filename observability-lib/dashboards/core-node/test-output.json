@@ -6,6 +6,7 @@
       "Node"
     ],
     "timezone": "browser",
+    "editable": true,
     "graphTooltip": 0,
     "time": {
       "from": "now-30m",
@@ -13,7 +14,7 @@
     },
     "fiscalYearStartMonth": 0,
     "refresh": "30s",
-    "schemaVersion": 0,
+    "schemaVersion": 39,
     "panels": [
       {
         "type": "row",
@@ -30,10 +31,10 @@
       },
       {
         "type": "stat",
-        "id": 0,
+        "id": 1,
         "targets": [
           {
-            "expr": "version{instance=~\"${instance}\", }",
+            "expr": "version{}",
             "instant": true,
             "range": false,
             "format": "",
@@ -59,6 +60,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -68,7 +70,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -82,10 +84,10 @@
       },
       {
         "type": "stat",
-        "id": 1,
+        "id": 2,
         "targets": [
           {
-            "expr": "uptime_seconds{instance=~\"${instance}\", }",
+            "expr": "uptime_seconds{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -109,6 +111,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -118,7 +121,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -132,10 +135,10 @@
       },
       {
         "type": "stat",
-        "id": 2,
+        "id": 3,
         "targets": [
           {
-            "expr": "sum(eth_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "expr": "sum(eth_balance{}) by (instance, account)",
             "instant": true,
             "range": false,
             "format": "",
@@ -161,6 +164,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -170,7 +174,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -201,10 +205,10 @@
       },
       {
         "type": "stat",
-        "id": 3,
+        "id": 4,
         "targets": [
           {
-            "expr": "sum(solana_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "expr": "sum(solana_balance{}) by (instance, account)",
             "instant": true,
             "range": false,
             "format": "",
@@ -230,6 +234,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -239,7 +244,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -270,10 +275,10 @@
       },
       {
         "type": "timeseries",
-        "id": 4,
+        "id": 5,
         "targets": [
           {
-            "expr": "100 * (avg(avg_over_time(health{instance=~\"${instance}\", }[15m])) by (instance, service_id, version, service, cluster, env))",
+            "expr": "100 * (avg(avg_over_time(health{}[15m])) by (instance, service_id, version, service, cluster, env))",
             "format": "",
             "legendFormat": "{{instance}} - {{service_id}}",
             "refId": ""
@@ -322,10 +327,10 @@
       },
       {
         "type": "stat",
-        "id": 5,
+        "id": 6,
         "targets": [
           {
-            "expr": "100 * avg(avg_over_time(health{instance=~\"${instance}\", }[15m])) by (instance, service_id, version, service, cluster, env) \u003c 90",
+            "expr": "100 * avg(avg_over_time(health{}[15m])) by (instance, service_id, version, service, cluster, env) \u003c 90",
             "format": "",
             "legendFormat": "{{instance}} - {{service_id}}",
             "refId": ""
@@ -349,6 +354,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -358,7 +364,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -393,10 +399,10 @@
       },
       {
         "type": "timeseries",
-        "id": 6,
+        "id": 7,
         "targets": [
           {
-            "expr": "sum(eth_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "expr": "sum(eth_balance{}) by (instance, account)",
             "format": "",
             "legendFormat": "{{instance}} - {{account}}",
             "refId": ""
@@ -443,10 +449,10 @@
       },
       {
         "type": "timeseries",
-        "id": 7,
+        "id": 8,
         "targets": [
           {
-            "expr": "sum(solana_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "expr": "sum(solana_balance{}) by (instance, account)",
             "format": "",
             "legendFormat": "{{instance}} - {{account}}",
             "refId": ""
@@ -493,10 +499,10 @@
       },
       {
         "type": "stat",
-        "id": 8,
+        "id": 9,
         "targets": [
           {
-            "expr": "process_open_fds{instance=~\"${instance}\", }",
+            "expr": "process_open_fds{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -520,6 +526,7 @@
           "justifyMode": "auto",
           "textMode": "value",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -529,7 +536,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -543,10 +550,10 @@
       },
       {
         "type": "stat",
-        "id": 9,
+        "id": 10,
         "targets": [
           {
-            "expr": "go_info{instance=~\"${instance}\", }",
+            "expr": "go_info{}",
             "instant": true,
             "range": false,
             "format": "",
@@ -572,6 +579,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -581,7 +589,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -608,28 +616,28 @@
       },
       {
         "type": "timeseries",
-        "id": 10,
+        "id": 11,
         "targets": [
           {
-            "expr": "sum(db_conns_max{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(db_conns_max{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Max",
             "refId": ""
           },
           {
-            "expr": "sum(db_conns_open{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(db_conns_open{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Open",
             "refId": ""
           },
           {
-            "expr": "sum(db_conns_used{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(db_conns_used{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Used",
             "refId": ""
           },
           {
-            "expr": "sum(db_conns_wait{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(db_conns_wait{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - Wait",
             "refId": ""
@@ -676,10 +684,10 @@
       },
       {
         "type": "timeseries",
-        "id": 11,
+        "id": 12,
         "targets": [
           {
-            "expr": "sum(db_wait_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(db_wait_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -726,10 +734,10 @@
       },
       {
         "type": "timeseries",
-        "id": 12,
+        "id": 13,
         "targets": [
           {
-            "expr": "sum(db_wait_time_seconds{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(db_wait_time_seconds{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -789,22 +797,22 @@
       },
       {
         "type": "timeseries",
-        "id": 13,
+        "id": 14,
         "targets": [
           {
-            "expr": "histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le))",
+            "expr": "histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{}[$__rate_interval])) by (le))",
             "format": "",
             "legendFormat": "p90",
             "refId": ""
           },
           {
-            "expr": "histogram_quantile(0.95, sum(rate(sql_query_timeout_percent_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le))",
+            "expr": "histogram_quantile(0.95, sum(rate(sql_query_timeout_percent_bucket{}[$__rate_interval])) by (le))",
             "format": "",
             "legendFormat": "p95",
             "refId": ""
           },
           {
-            "expr": "histogram_quantile(0.99, sum(rate(sql_query_timeout_percent_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le))",
+            "expr": "histogram_quantile(0.99, sum(rate(sql_query_timeout_percent_bucket{}[$__rate_interval])) by (le))",
             "format": "",
             "legendFormat": "p99",
             "refId": ""
@@ -864,10 +872,10 @@
       },
       {
         "type": "timeseries",
-        "id": 14,
+        "id": 15,
         "targets": [
           {
-            "expr": "sum(head_tracker_current_head{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(head_tracker_current_head{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -914,10 +922,10 @@
       },
       {
         "type": "stat",
-        "id": 15,
+        "id": 16,
         "targets": [
           {
-            "expr": "head_tracker_current_head{instance=~\"${instance}\", }",
+            "expr": "head_tracker_current_head{}",
             "instant": true,
             "range": false,
             "format": "",
@@ -943,6 +951,7 @@
           "justifyMode": "auto",
           "textMode": "value",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -952,7 +961,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -966,10 +975,10 @@
       },
       {
         "type": "timeseries",
-        "id": 16,
+        "id": 17,
         "targets": [
           {
-            "expr": "rate(head_tracker_heads_received{instance=~\"${instance}\", }[1m])",
+            "expr": "rate(head_tracker_heads_received{}[1m])",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1016,10 +1025,10 @@
       },
       {
         "type": "timeseries",
-        "id": 17,
+        "id": 18,
         "targets": [
           {
-            "expr": "head_tracker_very_old_head{instance=~\"${instance}\", }",
+            "expr": "head_tracker_very_old_head{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1066,10 +1075,10 @@
       },
       {
         "type": "timeseries",
-        "id": 18,
+        "id": 19,
         "targets": [
           {
-            "expr": "rate(head_tracker_connection_errors{instance=~\"${instance}\", }[1m])",
+            "expr": "rate(head_tracker_connection_errors{}[1m])",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1129,10 +1138,10 @@
       },
       {
         "type": "timeseries",
-        "id": 19,
+        "id": 20,
         "targets": [
           {
-            "expr": "sum(unconfirmed_transactions{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(unconfirmed_transactions{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1179,10 +1188,10 @@
       },
       {
         "type": "timeseries",
-        "id": 20,
+        "id": 21,
         "targets": [
           {
-            "expr": "sum(max_unconfirmed_tx_age{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(max_unconfirmed_tx_age{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1229,10 +1238,10 @@
       },
       {
         "type": "timeseries",
-        "id": 21,
+        "id": 22,
         "targets": [
           {
-            "expr": "sum(max_unconfirmed_blocks{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(max_unconfirmed_blocks{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -1292,10 +1301,10 @@
       },
       {
         "type": "timeseries",
-        "id": 22,
+        "id": 23,
         "targets": [
           {
-            "expr": "sum(tx_manager_num_confirmed_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "expr": "sum(tx_manager_num_confirmed_transactions{}) by (blockchain, chainID, instance)",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
@@ -1342,10 +1351,10 @@
       },
       {
         "type": "timeseries",
-        "id": 23,
+        "id": 24,
         "targets": [
           {
-            "expr": "sum(tx_manager_num_successful_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "expr": "sum(tx_manager_num_successful_transactions{}) by (blockchain, chainID, instance)",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
@@ -1392,10 +1401,10 @@
       },
       {
         "type": "timeseries",
-        "id": 24,
+        "id": 25,
         "targets": [
           {
-            "expr": "sum(tx_manager_num_tx_reverted{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "expr": "sum(tx_manager_num_tx_reverted{}) by (blockchain, chainID, instance)",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
@@ -1442,10 +1451,10 @@
       },
       {
         "type": "timeseries",
-        "id": 25,
+        "id": 26,
         "targets": [
           {
-            "expr": "sum(tx_manager_num_gas_bumps{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "expr": "sum(tx_manager_num_gas_bumps{}) by (blockchain, chainID, instance)",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
@@ -1492,10 +1501,10 @@
       },
       {
         "type": "timeseries",
-        "id": 26,
+        "id": 27,
         "targets": [
           {
-            "expr": "sum(tx_manager_fwd_tx_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "expr": "sum(tx_manager_fwd_tx_count{}) by (blockchain, chainID, instance)",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
@@ -1542,10 +1551,10 @@
       },
       {
         "type": "timeseries",
-        "id": 27,
+        "id": 28,
         "targets": [
           {
-            "expr": "sum(tx_manager_tx_attempt_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "expr": "sum(tx_manager_tx_attempt_count{}) by (blockchain, chainID, instance)",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
@@ -1592,10 +1601,10 @@
       },
       {
         "type": "timeseries",
-        "id": 28,
+        "id": 29,
         "targets": [
           {
-            "expr": "sum(tx_manager_gas_bump_exceeds_limit{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "expr": "sum(tx_manager_gas_bump_exceeds_limit{}) by (blockchain, chainID, instance)",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
@@ -1642,16 +1651,16 @@
       },
       {
         "type": "timeseries",
-        "id": 29,
+        "id": 30,
         "targets": [
           {
-            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
+            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{}[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Time Until broadcast",
+        "title": "TX Manager Time Until Broadcast",
         "description": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
         "transparent": false,
         "datasource": {
@@ -1692,16 +1701,16 @@
       },
       {
         "type": "timeseries",
-        "id": 30,
+        "id": 31,
         "targets": [
           {
-            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
+            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{}[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
             "refId": ""
           }
         ],
-        "title": "TX Manager Time Until confirmed",
+        "title": "TX Manager Time Until Confirmed",
         "description": "The amount of time elapsed from a transaction being broadcast to being included in a block",
         "transparent": false,
         "datasource": {
@@ -1755,10 +1764,10 @@
       },
       {
         "type": "stat",
-        "id": 31,
+        "id": 32,
         "targets": [
           {
-            "expr": "count(log_poller_query_duration_sum{instance=~\"${instance}\", }) by (evmChainID)",
+            "expr": "count(log_poller_query_duration_sum{}) by (evmChainID)",
             "format": "",
             "legendFormat": "chainId: {{evmChainID}}",
             "refId": ""
@@ -1782,6 +1791,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1791,7 +1801,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1805,16 +1815,16 @@
       },
       {
         "type": "timeseries",
-        "id": 32,
+        "id": 33,
         "targets": [
           {
-            "expr": "avg by (query, instance) (sum by (query, job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "expr": "avg by (query, instance) (sum by (query, job) (rate(log_poller_query_duration_count{}[$__rate_interval])))",
             "format": "",
             "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
           },
           {
-            "expr": "avg (sum by(instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "expr": "avg (sum by(instance) (rate(log_poller_query_duration_count{}[$__rate_interval])))",
             "format": "",
             "legendFormat": "Total",
             "refId": ""
@@ -1861,10 +1871,10 @@
       },
       {
         "type": "timeseries",
-        "id": 33,
+        "id": 34,
         "targets": [
           {
-            "expr": "avg by (instance, type) (sum by (type, instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "expr": "avg by (instance, type) (sum by (type, instance) (rate(log_poller_query_duration_count{}[$__rate_interval])))",
             "format": "",
             "legendFormat": "{{instance}} - {{type}}",
             "refId": ""
@@ -1911,10 +1921,10 @@
       },
       {
         "type": "timeseries",
-        "id": 34,
+        "id": 35,
         "targets": [
           {
-            "expr": "avg by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "avg by (instance, query) (log_poller_query_dataset_size{})",
             "format": "",
             "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
@@ -1961,10 +1971,10 @@
       },
       {
         "type": "timeseries",
-        "id": 35,
+        "id": 36,
         "targets": [
           {
-            "expr": "max by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "max by (instance, query) (log_poller_query_dataset_size{})",
             "format": "",
             "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
@@ -2011,10 +2021,10 @@
       },
       {
         "type": "timeseries",
-        "id": 36,
+        "id": 37,
         "targets": [
           {
-            "expr": "max by (evmChainID) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "expr": "max by (evmChainID) (log_poller_query_dataset_size{})",
             "format": "",
             "legendFormat": "{{evmChainID}}",
             "refId": ""
@@ -2061,10 +2071,10 @@
       },
       {
         "type": "timeseries",
-        "id": 37,
+        "id": 38,
         "targets": [
           {
-            "expr": "histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "expr": "histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{}[$__rate_interval])) by (le, instance, query)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
@@ -2111,10 +2121,10 @@
       },
       {
         "type": "timeseries",
-        "id": 38,
+        "id": 39,
         "targets": [
           {
-            "expr": "histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "expr": "histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{}[$__rate_interval])) by (le, instance, query)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
@@ -2161,10 +2171,10 @@
       },
       {
         "type": "timeseries",
-        "id": 39,
+        "id": 40,
         "targets": [
           {
-            "expr": "histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "expr": "histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{}[$__rate_interval])) by (le, instance, query)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{query}}",
             "refId": ""
@@ -2211,10 +2221,10 @@
       },
       {
         "type": "timeseries",
-        "id": 40,
+        "id": 41,
         "targets": [
           {
-            "expr": "avg by (evmChainID) (log_poller_logs_inserted{instance=~\"${instance}\", })",
+            "expr": "avg by (evmChainID) (log_poller_logs_inserted{})",
             "format": "",
             "legendFormat": "{{evmChainID}}",
             "refId": ""
@@ -2261,10 +2271,10 @@
       },
       {
         "type": "timeseries",
-        "id": 41,
+        "id": 42,
         "targets": [
           {
-            "expr": "avg by (evmChainID) (rate(log_poller_logs_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
+            "expr": "avg by (evmChainID) (rate(log_poller_logs_inserted{}[$__rate_interval]))",
             "format": "",
             "legendFormat": "{{evmChainID}}",
             "refId": ""
@@ -2311,10 +2321,10 @@
       },
       {
         "type": "timeseries",
-        "id": 42,
+        "id": 43,
         "targets": [
           {
-            "expr": "avg by (evmChainID) (log_poller_blocks_inserted{instance=~\"${instance}\", })",
+            "expr": "avg by (evmChainID) (log_poller_blocks_inserted{})",
             "format": "",
             "legendFormat": "{{evmChainID}}",
             "refId": ""
@@ -2361,10 +2371,10 @@
       },
       {
         "type": "timeseries",
-        "id": 43,
+        "id": 44,
         "targets": [
           {
-            "expr": "avg by (evmChainID) (rate(log_poller_blocks_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
+            "expr": "avg by (evmChainID) (rate(log_poller_blocks_inserted{}[$__rate_interval]))",
             "format": "",
             "legendFormat": "{{evmChainID}}",
             "refId": ""
@@ -2424,10 +2434,10 @@
       },
       {
         "type": "timeseries",
-        "id": 44,
+        "id": 45,
         "targets": [
           {
-            "expr": "sum(feeds_job_proposal_requests{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(feeds_job_proposal_requests{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -2474,10 +2484,10 @@
       },
       {
         "type": "timeseries",
-        "id": 45,
+        "id": 46,
         "targets": [
           {
-            "expr": "sum(feeds_job_proposal_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(feeds_job_proposal_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -2537,10 +2547,10 @@
       },
       {
         "type": "timeseries",
-        "id": 46,
+        "id": 47,
         "targets": [
           {
-            "expr": "sum(mailbox_load_percent{instance=~\"${instance}\", }) by (capacity, name, instance)",
+            "expr": "sum(mailbox_load_percent{}) by (capacity, name, instance)",
             "format": "",
             "legendFormat": "{{instance}} - Capacity: {{capacity}} - {{name}}",
             "refId": ""
@@ -2600,10 +2610,10 @@
       },
       {
         "type": "timeseries",
-        "id": 47,
+        "id": 48,
         "targets": [
           {
-            "expr": "sum(log_panic_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(log_panic_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - panic",
             "refId": ""
@@ -2650,10 +2660,10 @@
       },
       {
         "type": "timeseries",
-        "id": 48,
+        "id": 49,
         "targets": [
           {
-            "expr": "sum(log_fatal_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(log_fatal_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - fatal",
             "refId": ""
@@ -2700,10 +2710,10 @@
       },
       {
         "type": "timeseries",
-        "id": 49,
+        "id": 50,
         "targets": [
           {
-            "expr": "sum(log_critical_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(log_critical_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - critical",
             "refId": ""
@@ -2750,10 +2760,10 @@
       },
       {
         "type": "timeseries",
-        "id": 50,
+        "id": 51,
         "targets": [
           {
-            "expr": "sum(log_warn_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(log_warn_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - warn",
             "refId": ""
@@ -2800,10 +2810,10 @@
       },
       {
         "type": "timeseries",
-        "id": 51,
+        "id": 52,
         "targets": [
           {
-            "expr": "sum(log_error_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(log_error_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - error",
             "refId": ""
@@ -2863,10 +2873,10 @@
       },
       {
         "type": "timeseries",
-        "id": 52,
+        "id": 53,
         "targets": [
           {
-            "expr": "sum(rate(log_panic_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "sum(rate(log_panic_count{}[$__rate_interval])) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - error",
             "refId": ""
@@ -2913,10 +2923,10 @@
       },
       {
         "type": "timeseries",
-        "id": 53,
+        "id": 54,
         "targets": [
           {
-            "expr": "sum(rate(log_fatal_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "sum(rate(log_fatal_count{}[$__rate_interval])) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - error",
             "refId": ""
@@ -2963,10 +2973,10 @@
       },
       {
         "type": "timeseries",
-        "id": 54,
+        "id": 55,
         "targets": [
           {
-            "expr": "sum(rate(log_critical_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "sum(rate(log_critical_count{}[$__rate_interval])) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - error",
             "refId": ""
@@ -3013,10 +3023,10 @@
       },
       {
         "type": "timeseries",
-        "id": 55,
+        "id": 56,
         "targets": [
           {
-            "expr": "sum(rate(log_warn_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "sum(rate(log_warn_count{}[$__rate_interval])) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - error",
             "refId": ""
@@ -3063,10 +3073,10 @@
       },
       {
         "type": "timeseries",
-        "id": 56,
+        "id": 57,
         "targets": [
           {
-            "expr": "sum(rate(log_error_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "sum(rate(log_error_count{}[$__rate_interval])) by (instance)",
             "format": "",
             "legendFormat": "{{instance}} - error",
             "refId": ""
@@ -3126,10 +3136,10 @@
       },
       {
         "type": "timeseries",
-        "id": 57,
+        "id": 58,
         "targets": [
           {
-            "expr": "evm_pool_rpc_node_highest_seen_block{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_highest_seen_block{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -3176,10 +3186,10 @@
       },
       {
         "type": "timeseries",
-        "id": 58,
+        "id": 59,
         "targets": [
           {
-            "expr": "evm_pool_rpc_node_num_seen_blocks{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_num_seen_blocks{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -3226,10 +3236,10 @@
       },
       {
         "type": "timeseries",
-        "id": 59,
+        "id": 60,
         "targets": [
           {
-            "expr": "evm_pool_rpc_node_polls_total{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_polls_total{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -3276,10 +3286,10 @@
       },
       {
         "type": "timeseries",
-        "id": 60,
+        "id": 61,
         "targets": [
           {
-            "expr": "evm_pool_rpc_node_polls_failed{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_polls_failed{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -3326,10 +3336,10 @@
       },
       {
         "type": "timeseries",
-        "id": 61,
+        "id": 62,
         "targets": [
           {
-            "expr": "evm_pool_rpc_node_polls_success{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_polls_success{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -3389,10 +3399,10 @@
       },
       {
         "type": "stat",
-        "id": 62,
+        "id": 63,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Alive\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"Alive\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3416,6 +3426,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3425,7 +3436,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3439,10 +3450,10 @@
       },
       {
         "type": "stat",
-        "id": 63,
+        "id": 64,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Closed\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"Closed\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3466,6 +3477,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3475,7 +3487,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3489,10 +3501,10 @@
       },
       {
         "type": "stat",
-        "id": 64,
+        "id": 65,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Dialed\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"Dialed\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3516,6 +3528,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3525,7 +3538,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3539,10 +3552,10 @@
       },
       {
         "type": "stat",
-        "id": 65,
+        "id": 66,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"InvalidChainID\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"InvalidChainID\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3566,6 +3579,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3575,7 +3589,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3589,10 +3603,10 @@
       },
       {
         "type": "stat",
-        "id": 66,
+        "id": 67,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"OutOfSync\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"OutOfSync\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3616,6 +3630,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3625,7 +3640,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3639,10 +3654,10 @@
       },
       {
         "type": "stat",
-        "id": 67,
+        "id": 68,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Undialed\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"Undialed\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3666,6 +3681,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3675,7 +3691,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3689,10 +3705,10 @@
       },
       {
         "type": "stat",
-        "id": 68,
+        "id": 69,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Unreachable\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"Unreachable\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3716,6 +3732,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3725,7 +3742,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3739,10 +3756,10 @@
       },
       {
         "type": "stat",
-        "id": 69,
+        "id": 70,
         "targets": [
           {
-            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Unusable\"}) by (instance, chainId)",
+            "expr": "sum(multi_node_states{state=\"Unusable\"}) by (instance, chainId)",
             "format": "",
             "legendFormat": "{{instance}} - {{chainId}}",
             "refId": ""
@@ -3766,6 +3783,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -3775,7 +3793,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -3802,10 +3820,10 @@
       },
       {
         "type": "timeseries",
-        "id": 70,
+        "id": 71,
         "targets": [
           {
-            "expr": "sum(increase(evm_pool_rpc_node_calls_success{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName)",
+            "expr": "sum(increase(evm_pool_rpc_node_calls_success{}[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{}[$__rate_interval])) by (instance, evmChainID, nodeName)",
             "format": "",
             "legendFormat": "{{instance}} - {{nodeName}}",
             "refId": ""
@@ -3874,10 +3892,10 @@
       },
       {
         "type": "timeseries",
-        "id": 71,
+        "id": 72,
         "targets": [
           {
-            "expr": "sum(increase(evm_pool_rpc_node_dials_failed{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName)",
+            "expr": "sum(increase(evm_pool_rpc_node_dials_failed{}[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{}[$__rate_interval])) by (instance, evmChainID, nodeName)",
             "format": "",
             "legendFormat": "{{instance}} - {{evmChainID}} - {{nodeName}}",
             "refId": ""
@@ -3946,40 +3964,40 @@
       },
       {
         "type": "timeseries",
-        "id": 72,
+        "id": 73,
         "targets": [
           {
-            "expr": "evm_pool_rpc_node_num_transitions_to_alive{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_num_transitions_to_alive{}",
             "format": "",
             "legendFormat": "Alive",
             "refId": ""
           },
           {
-            "expr": "evm_pool_rpc_node_num_transitions_to_in_sync{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_num_transitions_to_in_sync{}",
             "format": "",
             "legendFormat": "InSync",
             "refId": ""
           },
           {
-            "expr": "evm_pool_rpc_node_num_transitions_to_out_of_sync{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_num_transitions_to_out_of_sync{}",
             "format": "",
             "legendFormat": "OutOfSync",
             "refId": ""
           },
           {
-            "expr": "evm_pool_rpc_node_num_transitions_to_unreachable{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_num_transitions_to_unreachable{}",
             "format": "",
             "legendFormat": "UnReachable",
             "refId": ""
           },
           {
-            "expr": "evm_pool_rpc_node_num_transitions_to_invalid_chain_id{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_num_transitions_to_invalid_chain_id{}",
             "format": "",
             "legendFormat": "InvalidChainID",
             "refId": ""
           },
           {
-            "expr": "evm_pool_rpc_node_num_transitions_to_unusable{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_num_transitions_to_unusable{}",
             "format": "",
             "legendFormat": "TransitionToUnusable",
             "refId": ""
@@ -4026,10 +4044,10 @@
       },
       {
         "type": "timeseries",
-        "id": 73,
+        "id": 74,
         "targets": [
           {
-            "expr": "evm_pool_rpc_node_states{instance=~\"${instance}\", }",
+            "expr": "evm_pool_rpc_node_states{}",
             "format": "",
             "legendFormat": "{{instance}} - {{evmChainID}} - {{state}}",
             "refId": ""
@@ -4076,10 +4094,10 @@
       },
       {
         "type": "timeseries",
-        "id": 74,
+        "id": 75,
         "targets": [
           {
-            "expr": "sum(increase(evm_pool_rpc_node_verifies_success{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
+            "expr": "sum(increase(evm_pool_rpc_node_verifies_success{}[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{}[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
             "format": "",
             "legendFormat": "{{instance}} - {{evmChainID}} - {{nodeName}}",
             "refId": ""
@@ -4126,10 +4144,10 @@
       },
       {
         "type": "timeseries",
-        "id": 75,
+        "id": 76,
         "targets": [
           {
-            "expr": "sum(increase(evm_pool_rpc_node_verifies_failed{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
+            "expr": "sum(increase(evm_pool_rpc_node_verifies_failed{}[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{}[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
             "format": "",
             "legendFormat": "{{instance}} - {{evmChainID}} - {{nodeName}}",
             "refId": ""
@@ -4189,10 +4207,10 @@
       },
       {
         "type": "timeseries",
-        "id": 76,
+        "id": 77,
         "targets": [
           {
-            "expr": "histogram_quantile(0.90, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
+            "expr": "histogram_quantile(0.90, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{}[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{rpcCallName}}",
             "refId": ""
@@ -4239,10 +4257,10 @@
       },
       {
         "type": "timeseries",
-        "id": 77,
+        "id": 78,
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
+            "expr": "histogram_quantile(0.95, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{}[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{rpcCallName}}",
             "refId": ""
@@ -4289,10 +4307,10 @@
       },
       {
         "type": "timeseries",
-        "id": 78,
+        "id": 79,
         "targets": [
           {
-            "expr": "histogram_quantile(0.99, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
+            "expr": "histogram_quantile(0.99, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{}[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
             "format": "",
             "legendFormat": "{{instance}} - {{rpcCallName}}",
             "refId": ""
@@ -4352,10 +4370,10 @@
       },
       {
         "type": "timeseries",
-        "id": 79,
+        "id": 80,
         "targets": [
           {
-            "expr": "sum(gas_updater_all_gas_price_percentiles{instance=~\"${instance}\", }) by (instance, evmChainID, percentile)",
+            "expr": "sum(gas_updater_all_gas_price_percentiles{}) by (instance, evmChainID, percentile)",
             "format": "",
             "legendFormat": "{{instance}} - {{evmChainID}} - {{percentile}}",
             "refId": ""
@@ -4402,10 +4420,10 @@
       },
       {
         "type": "timeseries",
-        "id": 80,
+        "id": 81,
         "targets": [
           {
-            "expr": "sum(gas_updater_all_tip_cap_percentiles{instance=~\"${instance}\", }) by (instance, evmChainID, percentile)",
+            "expr": "sum(gas_updater_all_tip_cap_percentiles{}) by (instance, evmChainID, percentile)",
             "format": "",
             "legendFormat": "{{instance}} - {{evmChainID}} - {{percentile}}",
             "refId": ""
@@ -4452,10 +4470,10 @@
       },
       {
         "type": "timeseries",
-        "id": 81,
+        "id": 82,
         "targets": [
           {
-            "expr": "sum(gas_updater_set_gas_price{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(gas_updater_set_gas_price{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4502,10 +4520,10 @@
       },
       {
         "type": "timeseries",
-        "id": 82,
+        "id": 83,
         "targets": [
           {
-            "expr": "sum(gas_updater_set_tip_cap{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(gas_updater_set_tip_cap{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4552,10 +4570,10 @@
       },
       {
         "type": "timeseries",
-        "id": 83,
+        "id": 84,
         "targets": [
           {
-            "expr": "sum(gas_updater_current_base_fee{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(gas_updater_current_base_fee{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4602,10 +4620,10 @@
       },
       {
         "type": "timeseries",
-        "id": 84,
+        "id": 85,
         "targets": [
           {
-            "expr": "sum(block_history_estimator_connectivity_failure_count{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(block_history_estimator_connectivity_failure_count{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -4665,10 +4683,10 @@
       },
       {
         "type": "timeseries",
-        "id": 85,
+        "id": 86,
         "targets": [
           {
-            "expr": "pipeline_task_execution_time{instance=~\"${instance}\", } / 1e6",
+            "expr": "pipeline_task_execution_time{} / 1e6",
             "format": "",
             "legendFormat": "{{instance}} JobID: {{job_id}}",
             "refId": ""
@@ -4715,10 +4733,10 @@
       },
       {
         "type": "timeseries",
-        "id": 86,
+        "id": 87,
         "targets": [
           {
-            "expr": "pipeline_run_errors{instance=~\"${instance}\", }",
+            "expr": "pipeline_run_errors{}",
             "format": "",
             "legendFormat": "{{instance}} JobID: {{job_id}}",
             "refId": ""
@@ -4765,10 +4783,10 @@
       },
       {
         "type": "timeseries",
-        "id": 87,
+        "id": 88,
         "targets": [
           {
-            "expr": "pipeline_run_total_time_to_completion{instance=~\"${instance}\", } / 1e6",
+            "expr": "pipeline_run_total_time_to_completion{} / 1e6",
             "format": "",
             "legendFormat": "{{instance}} JobID: {{job_id}}",
             "refId": ""
@@ -4815,10 +4833,10 @@
       },
       {
         "type": "timeseries",
-        "id": 88,
+        "id": 89,
         "targets": [
           {
-            "expr": "pipeline_tasks_total_finished{instance=~\"${instance}\", }",
+            "expr": "pipeline_tasks_total_finished{}",
             "format": "",
             "legendFormat": "{{instance}} JobID: {{job_id}}",
             "refId": ""
@@ -4878,10 +4896,10 @@
       },
       {
         "type": "timeseries",
-        "id": 89,
+        "id": 90,
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, sum(rate(service_gonic_request_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, path, method))",
+            "expr": "histogram_quantile(0.95, sum(rate(service_gonic_request_duration_bucket{}[$__rate_interval])) by (instance, le, path, method))",
             "format": "",
             "legendFormat": "{{instance}} - {{method}} - {{path}}",
             "refId": ""
@@ -4928,10 +4946,10 @@
       },
       {
         "type": "timeseries",
-        "id": 90,
+        "id": 91,
         "targets": [
           {
-            "expr": "sum(rate(service_gonic_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, path, method, code)",
+            "expr": "sum(rate(service_gonic_requests_total{}[$__rate_interval])) by (instance, path, method, code)",
             "format": "",
             "legendFormat": "{{instance}} - {{method}} - {{path}} - {{code}}",
             "refId": ""
@@ -4978,10 +4996,10 @@
       },
       {
         "type": "timeseries",
-        "id": 91,
+        "id": 92,
         "targets": [
           {
-            "expr": "avg(rate(service_gonic_request_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_request_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "avg(rate(service_gonic_request_size_bytes_sum{}[$__rate_interval])) by (instance)/avg(rate(service_gonic_request_size_bytes_count{}[$__rate_interval])) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5028,10 +5046,10 @@
       },
       {
         "type": "timeseries",
-        "id": 92,
+        "id": 93,
         "targets": [
           {
-            "expr": "avg(rate(service_gonic_response_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_response_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "expr": "avg(rate(service_gonic_response_size_bytes_sum{}[$__rate_interval])) by (instance)/avg(rate(service_gonic_response_size_bytes_count{}[$__rate_interval])) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5091,10 +5109,10 @@
       },
       {
         "type": "timeseries",
-        "id": 93,
+        "id": 94,
         "targets": [
           {
-            "expr": "sum(rate(promhttp_metric_handler_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, code)",
+            "expr": "sum(rate(promhttp_metric_handler_requests_total{}[$__rate_interval])) by (instance, code)",
             "format": "",
             "legendFormat": "{{instance}} - {{code}}",
             "refId": ""
@@ -5154,10 +5172,10 @@
       },
       {
         "type": "timeseries",
-        "id": 94,
+        "id": 95,
         "targets": [
           {
-            "expr": "sum(go_threads{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(go_threads{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5204,10 +5222,10 @@
       },
       {
         "type": "stat",
-        "id": 95,
+        "id": 96,
         "targets": [
           {
-            "expr": "sum(go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(go_memstats_heap_alloc_bytes{}) by (instance)",
             "format": "",
             "legendFormat": "",
             "refId": ""
@@ -5231,6 +5249,7 @@
           "justifyMode": "auto",
           "textMode": "value",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -5240,7 +5259,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -5254,10 +5273,10 @@
       },
       {
         "type": "timeseries",
-        "id": 96,
+        "id": 97,
         "targets": [
           {
-            "expr": "sum(go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }) by (instance)",
+            "expr": "sum(go_memstats_heap_alloc_bytes{}) by (instance)",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5304,34 +5323,34 @@
       },
       {
         "type": "timeseries",
-        "id": 97,
+        "id": 98,
         "targets": [
           {
-            "expr": "go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_heap_alloc_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Alloc",
             "refId": ""
           },
           {
-            "expr": "go_memstats_heap_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_heap_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Sys",
             "refId": ""
           },
           {
-            "expr": "go_memstats_heap_idle_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_heap_idle_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Idle",
             "refId": ""
           },
           {
-            "expr": "go_memstats_heap_inuse_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_heap_inuse_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - InUse",
             "refId": ""
           },
           {
-            "expr": "go_memstats_heap_released_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_heap_released_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Released",
             "refId": ""
@@ -5378,52 +5397,52 @@
       },
       {
         "type": "timeseries",
-        "id": 98,
+        "id": 99,
         "targets": [
           {
-            "expr": "go_memstats_mspan_inuse_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_mspan_inuse_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Total InUse",
             "refId": ""
           },
           {
-            "expr": "go_memstats_mspan_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_mspan_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Total Sys",
             "refId": ""
           },
           {
-            "expr": "go_memstats_mcache_inuse_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_mcache_inuse_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Cache InUse",
             "refId": ""
           },
           {
-            "expr": "go_memstats_mcache_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_mcache_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Cache Sys",
             "refId": ""
           },
           {
-            "expr": "go_memstats_buck_hash_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_buck_hash_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Hash Sys",
             "refId": ""
           },
           {
-            "expr": "go_memstats_gc_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_gc_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - GC Sys",
             "refId": ""
           },
           {
-            "expr": "go_memstats_other_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_other_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - bytes of memory are used for other runtime allocations",
             "refId": ""
           },
           {
-            "expr": "go_memstats_next_gc_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_next_gc_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Next GC",
             "refId": ""
@@ -5470,16 +5489,16 @@
       },
       {
         "type": "timeseries",
-        "id": 99,
+        "id": 100,
         "targets": [
           {
-            "expr": "go_memstats_stack_inuse_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_stack_inuse_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - InUse",
             "refId": ""
           },
           {
-            "expr": "go_memstats_stack_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_stack_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}} - Sys",
             "refId": ""
@@ -5526,10 +5545,10 @@
       },
       {
         "type": "timeseries",
-        "id": 100,
+        "id": 101,
         "targets": [
           {
-            "expr": "go_memstats_sys_bytes{instance=~\"${instance}\", }",
+            "expr": "go_memstats_sys_bytes{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5576,10 +5595,10 @@
       },
       {
         "type": "timeseries",
-        "id": 101,
+        "id": 102,
         "targets": [
           {
-            "expr": "go_memstats_mallocs_total{instance=~\"${instance}\", } - go_memstats_frees_total{instance=~\"${instance}\", }",
+            "expr": "go_memstats_mallocs_total{} - go_memstats_frees_total{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5626,10 +5645,10 @@
       },
       {
         "type": "timeseries",
-        "id": 102,
+        "id": 103,
         "targets": [
           {
-            "expr": "rate(go_memstats_mallocs_total{instance=~\"${instance}\", }[1m])",
+            "expr": "rate(go_memstats_mallocs_total{}[1m])",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5676,10 +5695,10 @@
       },
       {
         "type": "timeseries",
-        "id": 103,
+        "id": 104,
         "targets": [
           {
-            "expr": "rate(go_memstats_lookups_total{instance=~\"${instance}\", }[1m])",
+            "expr": "rate(go_memstats_lookups_total{}[1m])",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5726,10 +5745,10 @@
       },
       {
         "type": "timeseries",
-        "id": 104,
+        "id": 105,
         "targets": [
           {
-            "expr": "go_goroutines{instance=~\"${instance}\", }",
+            "expr": "go_goroutines{}",
             "format": "",
             "legendFormat": "{{instance}}",
             "refId": ""
@@ -5781,6 +5800,7 @@
           "type": "query",
           "name": "instance",
           "label": "Instance",
+          "description": "",
           "query": "label_values(instance)",
           "datasource": {
             "uid": "Prometheus"
@@ -5862,7 +5882,7 @@
               {
                 "evaluator": {
                   "params": [
-                    90,
+                    1,
                     0
                   ],
                   "type": "lt"

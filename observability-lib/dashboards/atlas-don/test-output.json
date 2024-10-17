@@ -6,6 +6,7 @@
       "ocr2"
     ],
     "timezone": "browser",
+    "editable": true,
     "graphTooltip": 0,
     "time": {
       "from": "now-30m",
@@ -13,7 +14,7 @@
     },
     "fiscalYearStartMonth": 0,
     "refresh": "30s",
-    "schemaVersion": 0,
+    "schemaVersion": 39,
     "panels": [
       {
         "type": "row",
@@ -30,10 +31,10 @@
       },
       {
         "type": "stat",
-        "id": 0,
+        "id": 1,
         "targets": [
           {
-            "expr": "bool:ocr2_telemetry_down{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", } == 1",
+            "expr": "bool:ocr2_telemetry_down{} == 1",
             "format": "",
             "legendFormat": "{{job}} | {{report_type}}",
             "refId": ""
@@ -57,6 +58,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -66,7 +68,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -97,7 +99,7 @@
       },
       {
         "type": "stat",
-        "id": 1,
+        "id": 2,
         "targets": [
           {
             "expr": "bool:ocr2_oracle_telemetry_down_except_telemetry_down{job=~\"${job}\", oracle!=\"csa_unknown\"} == 1",
@@ -133,6 +135,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -142,74 +145,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
-          "orientation": "horizontal"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "",
-            "decimals": 0,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "value": null,
-                  "color": "default"
-                },
-                {
-                  "value": 0,
-                  "color": "green"
-                },
-                {
-                  "value": 0.99,
-                  "color": "red"
-                }
-              ]
-            },
-            "noValue": "No data"
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "stat",
-        "id": 2,
-        "targets": [
-          {
-            "expr": "bool:ocr2_feed_reporting_failure_except_feed_telemetry_down{job=~\"${job}\", oracle!=\"csa_unknown\"} == 1",
-            "format": "",
-            "legendFormat": "{{feed_id_name}} on {{job}}",
-            "refId": ""
-          }
-        ],
-        "title": "Feeds reporting failure",
-        "description": "Which feeds are failing to report?",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 8,
-          "x": 16,
-          "y": 1
-        },
-        "options": {
-          "graphMode": "none",
-          "colorMode": "value",
-          "justifyMode": "auto",
-          "textMode": "name",
-          "wideLayout": true,
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ]
-          },
-          "text": {
-            "titleSize": 10,
-            "valueSize": 18
-          },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -243,14 +179,14 @@
         "id": 3,
         "targets": [
           {
-            "expr": "bool:ocr2_feed_telemetry_down_except_telemetry_down{job=~\"${job}\"} == 1",
+            "expr": "bool:ocr2_feed_reporting_failure_except_feed_telemetry_down{job=~\"${job}\", oracle!=\"csa_unknown\"} == 1",
             "format": "",
             "legendFormat": "{{feed_id_name}} on {{job}}",
             "refId": ""
           }
         ],
-        "title": "Feed telemetry Down",
-        "description": "Which feeds are not receiving any telemetry?",
+        "title": "Feeds reporting failure",
+        "description": "Which feeds are failing to report?",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
@@ -258,8 +194,8 @@
         "gridPos": {
           "h": 4,
           "w": 8,
-          "x": 0,
-          "y": 5
+          "x": 16,
+          "y": 1
         },
         "options": {
           "graphMode": "none",
@@ -267,6 +203,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -276,7 +213,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -308,6 +245,74 @@
       {
         "type": "stat",
         "id": 4,
+        "targets": [
+          {
+            "expr": "bool:ocr2_feed_telemetry_down_except_telemetry_down{job=~\"${job}\"} == 1",
+            "format": "",
+            "legendFormat": "{{feed_id_name}} on {{job}}",
+            "refId": ""
+          }
+        ],
+        "title": "Feed telemetry Down",
+        "description": "Which feeds are not receiving any telemetry?",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 8,
+          "x": 0,
+          "y": 5
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "name",
+          "wideLayout": true,
+          "showPercentChange": false,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "percentChangeColorMode": "standard",
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "default"
+                },
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 0.99,
+                  "color": "red"
+                }
+              ]
+            },
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 5,
         "targets": [
           {
             "expr": "bool:ocr2_oracle_blind_except_telemetry_down{job=~\"${job}\"} == 1",
@@ -343,6 +348,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -352,7 +358,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -383,7 +389,7 @@
       },
       {
         "type": "stat",
-        "id": 5,
+        "id": 6,
         "targets": [
           {
             "expr": "bool:ocr2_oracle_feed_no_observations_except_oracle_blind_except_feed_reporting_failure_except_feed_telemetry_down{job=~\"${job}\"} == 1",
@@ -419,6 +425,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -428,7 +435,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -472,10 +479,10 @@
       },
       {
         "type": "stat",
-        "id": 6,
+        "id": 7,
         "targets": [
           {
-            "expr": "sum(ocr2_contract_oracle_active{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }) by (contract, oracle)",
+            "expr": "sum(ocr2_contract_oracle_active{}) by (contract, oracle)",
             "format": "",
             "legendFormat": "{{oracle}}",
             "refId": ""
@@ -508,6 +515,7 @@
           "justifyMode": "auto",
           "textMode": "name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -517,7 +525,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -561,22 +569,22 @@
       },
       {
         "type": "timeseries",
-        "id": 7,
+        "id": 8,
         "targets": [
           {
-            "expr": "ocr2_contract_config_n{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_n{}",
             "format": "",
             "legendFormat": "{{feed_id}}",
             "refId": ""
           },
           {
-            "expr": "ocr2_contract_config_r_max{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_r_max{}",
             "format": "",
             "legendFormat": "Max nodes",
             "refId": ""
           },
           {
-            "expr": "avg(2 * ocr2_contract_config_f{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", } + 1)",
+            "expr": "avg(2 * ocr2_contract_config_f{} + 1)",
             "format": "",
             "legendFormat": "Min nodes",
             "refId": ""
@@ -637,7 +645,7 @@
       },
       {
         "type": "timeseries",
-        "id": 8,
+        "id": 9,
         "targets": [
           {
             "expr": "sum by (sender, receiver) (increase(ocr2_telemetry_p2p_received_total{job=~\"${job}\"}[5m]))",
@@ -687,7 +695,7 @@
       },
       {
         "type": "timeseries",
-        "id": 9,
+        "id": 10,
         "targets": [
           {
             "expr": "sum by (sender, receiver) (rate(ocr2_telemetry_p2p_received_total{job=~\"${job}\"}[5m]))",
@@ -737,10 +745,10 @@
       },
       {
         "type": "timeseries",
-        "id": 10,
+        "id": 11,
         "targets": [
           {
-            "expr": "ocr2_telemetry_observation{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_telemetry_observation{}",
             "format": "",
             "legendFormat": "{{oracle}}",
             "refId": ""
@@ -787,10 +795,10 @@
       },
       {
         "type": "timeseries",
-        "id": 11,
+        "id": 12,
         "targets": [
           {
-            "expr": "rate(ocr2_telemetry_message_observe_total{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }[5m])",
+            "expr": "rate(ocr2_telemetry_message_observe_total{}[5m])",
             "format": "",
             "legendFormat": "{{oracle}}",
             "refId": ""
@@ -850,10 +858,10 @@
       },
       {
         "type": "timeseries",
-        "id": 12,
+        "id": 13,
         "targets": [
           {
-            "expr": "ocr2_telemetry_feed_agreed_epoch{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_telemetry_feed_agreed_epoch{}",
             "format": "",
             "legendFormat": "{{feed_id}}",
             "refId": ""
@@ -900,10 +908,10 @@
       },
       {
         "type": "timeseries",
-        "id": 13,
+        "id": 14,
         "targets": [
           {
-            "expr": "ocr2_telemetry_epoch_round{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_telemetry_epoch_round{}",
             "format": "",
             "legendFormat": "{{oracle}}",
             "refId": ""
@@ -950,10 +958,10 @@
       },
       {
         "type": "timeseries",
-        "id": 14,
+        "id": 15,
         "targets": [
           {
-            "expr": "rate(ocr2_telemetry_round_started_total{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }[1m])",
+            "expr": "rate(ocr2_telemetry_round_started_total{}[1m])",
             "format": "",
             "legendFormat": "{{oracle}}",
             "refId": ""
@@ -1000,10 +1008,10 @@
       },
       {
         "type": "timeseries",
-        "id": 15,
+        "id": 16,
         "targets": [
           {
-            "expr": "rate(ocr2_telemetry_ingested_total{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }[1m])",
+            "expr": "rate(ocr2_telemetry_ingested_total{}[1m])",
             "format": "",
             "legendFormat": "{{oracle}}",
             "refId": ""
@@ -1063,10 +1071,10 @@
       },
       {
         "type": "stat",
-        "id": 16,
+        "id": 17,
         "targets": [
           {
-            "expr": "ocr2_contract_config_alpha{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_alpha{}",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
@@ -1090,6 +1098,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1099,7 +1108,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1113,10 +1122,10 @@
       },
       {
         "type": "stat",
-        "id": 17,
+        "id": 18,
         "targets": [
           {
-            "expr": "ocr2_contract_config_delta_c_seconds{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_delta_c_seconds{}",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
@@ -1140,6 +1149,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1149,7 +1159,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1163,10 +1173,10 @@
       },
       {
         "type": "stat",
-        "id": 18,
+        "id": 19,
         "targets": [
           {
-            "expr": "ocr2_contract_config_delta_grace_seconds{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_delta_grace_seconds{}",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
@@ -1190,6 +1200,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1199,7 +1210,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1213,10 +1224,10 @@
       },
       {
         "type": "stat",
-        "id": 19,
+        "id": 20,
         "targets": [
           {
-            "expr": "ocr2_contract_config_delta_progress_seconds{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_delta_progress_seconds{}",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
@@ -1240,6 +1251,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1249,7 +1261,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1263,10 +1275,10 @@
       },
       {
         "type": "stat",
-        "id": 20,
+        "id": 21,
         "targets": [
           {
-            "expr": "ocr2_contract_config_delta_resend_seconds{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_delta_resend_seconds{}",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
@@ -1290,6 +1302,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1299,7 +1312,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1313,10 +1326,10 @@
       },
       {
         "type": "stat",
-        "id": 21,
+        "id": 22,
         "targets": [
           {
-            "expr": "ocr2_contract_config_delta_round_seconds{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_delta_round_seconds{}",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
@@ -1340,6 +1353,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1349,7 +1363,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1363,10 +1377,10 @@
       },
       {
         "type": "stat",
-        "id": 22,
+        "id": 23,
         "targets": [
           {
-            "expr": "ocr2_contract_config_delta_stage_seconds{contract=~\"${contract}\", feed_id=~\"${feed_id}\", namespace=\"otpe2\", job=~\"${job}\", }",
+            "expr": "ocr2_contract_config_delta_stage_seconds{}",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
@@ -1390,6 +1404,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -1399,7 +1414,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -1418,6 +1433,7 @@
           "type": "query",
           "name": "job",
           "label": "Job",
+          "description": "",
           "query": "label_values(up{namespace=\"otpe2\"}, job)",
           "datasource": {
             "uid": "Prometheus"
@@ -1438,6 +1454,7 @@
           "type": "query",
           "name": "contract",
           "label": "Contract",
+          "description": "",
           "query": "label_values(ocr2_contract_config_f{job=\"$job\"}, contract)",
           "datasource": {
             "uid": "Prometheus"
@@ -1458,6 +1475,7 @@
           "type": "query",
           "name": "feed_id",
           "label": "Feed ID",
+          "description": "",
           "query": "label_values(ocr2_contract_config_f{job=\"$job\", contract=\"$contract\"}, feed_id)",
           "datasource": {
             "uid": "Prometheus"

@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/events"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -69,6 +70,10 @@ func createEmitFn(
 	emit func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
 ) func(string, map[string]any) error {
 	emitFn := func(msg string, labels map[string]any) error {
+		if sdkConfig.MetaData != nil {
+			labels = events.FromRequest(*sdkConfig.MetaData).MergeMap(labels)
+		}
+
 		vm, err := values.NewMap(labels)
 		if err != nil {
 			return err

@@ -70,6 +70,7 @@ func TestRunner(t *testing.T) {
 		tTransform := sdk.Compute2[basictrigger.TriggerOutputs, basicaction.ActionOutputs, bool](
 			workflow,
 			"transform",
+			nil,
 			sdk.Compute2Inputs[basictrigger.TriggerOutputs, basicaction.ActionOutputs]{Arg0: trigger, Arg1: hardCodedInput},
 			func(SDK sdk.Runtime, tr basictrigger.TriggerOutputs, hc basicaction.ActionOutputs) (bool, error) {
 				assert.Equal(t, "hard-coded", hc.AdaptedThing)
@@ -259,7 +260,7 @@ func TestCompute(t *testing.T) {
 	t.Run("Inputs don't loose integer types when any is deserialized to", func(t *testing.T) {
 		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
 		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
-		toMap := sdk.Compute1(workflow, "tomap", sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, i0 string) (map[string]any, error) {
+		toMap := sdk.Compute1(workflow, "tomap", nil, sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, i0 string) (map[string]any, error) {
 			v, err := strconv.Atoi(i0)
 			if err != nil {
 				return nil, err
@@ -268,7 +269,7 @@ func TestCompute(t *testing.T) {
 			return map[string]any{"a": int64(v)}, nil
 		})
 
-		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[map[string]any]{Arg0: toMap.Value()}, func(runtime sdk.Runtime, input map[string]any) (any, error) {
+		sdk.Compute1(workflow, "compute", nil, sdk.Compute1Inputs[map[string]any]{Arg0: toMap.Value()}, func(runtime sdk.Runtime, input map[string]any) (any, error) {
 			actual := input["a"]
 			if int64(100) != actual {
 				return nil, fmt.Errorf("expected uint64(100), got %v of type %T", actual, actual)
@@ -342,6 +343,7 @@ func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecF
 	tTransform := sdk.Compute1[basictrigger.TriggerOutputs, bool](
 		workflow,
 		"transform",
+		nil,
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		actionTransform)
 

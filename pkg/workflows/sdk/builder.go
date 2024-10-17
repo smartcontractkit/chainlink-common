@@ -238,3 +238,35 @@ func AnyMap[M ~map[string]any](inputs CapMap) CapDefinition[M] {
 
 	return components
 }
+
+// Alt 1:
+func XSecrets() string {
+	return "$(ENV.secrets)"
+}
+
+func XSecretNamed(name string) string {
+	return fmt.Sprintf("$(ENV.secrets.%s)", name)
+}
+
+// Alt 2:
+type Secrets struct {
+	keys []string
+}
+
+func (s Secrets) Named(key string) Secrets {
+	if s.keys == nil {
+		s.keys = []string{}
+	}
+	return Secrets{
+		keys: append(s.keys, key),
+	}
+}
+
+func (s Secrets) Ref() string {
+	if len(s.keys) == 0 {
+		return "$(ENV.secrets)"
+	}
+
+	str := strings.Join(s.keys, ".")
+	return fmt.Sprintf("$(ENV.secrets.%s)", str)
+}

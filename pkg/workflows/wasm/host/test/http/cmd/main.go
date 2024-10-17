@@ -25,6 +25,7 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 	sdk.Compute1[basictrigger.TriggerOutputs, bool](
 		workflow,
 		"transform",
+		nil,
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
 			_, err := http.Get("https://google.com")

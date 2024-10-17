@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729173149194,
+  "lastUpdate": 1729177614807,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3864,6 +3864,48 @@ window.BENCHMARK_DATA = {
             "value": 28275,
             "unit": "ns/op",
             "extra": "42387 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dimitrios.kouveris@smartcontract.com",
+            "name": "dimitris",
+            "username": "dimkouv"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "92541641510fd337b88aefc2a229d4fa2d35eae4",
+          "message": "Revert \"change rmnreport struct (#861)\" (#863)\n\nThis reverts commit b283b1e14fa6ae215d3b644d0c48a2b25edbea1e.",
+          "timestamp": "2024-10-17T16:05:49+01:00",
+          "tree_id": "6765121a0a8e1a3073f5a4f36d886830e62b6716",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/92541641510fd337b88aefc2a229d4fa2d35eae4"
+        },
+        "date": 1729177613929,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.3,
+            "unit": "ns/op",
+            "extra": "2515840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 514.8,
+            "unit": "ns/op",
+            "extra": "2347476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28284,
+            "unit": "ns/op",
+            "extra": "42454 times\n4 procs"
           }
         ]
       }

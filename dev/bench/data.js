@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729160234122,
+  "lastUpdate": 1729173149194,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3822,6 +3822,48 @@ window.BENCHMARK_DATA = {
             "value": 28480,
             "unit": "ns/op",
             "extra": "42464 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dimitrios.kouveris@smartcontract.com",
+            "name": "dimitris",
+            "username": "dimkouv"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b283b1e14fa6ae215d3b644d0c48a2b25edbea1e",
+          "message": "change rmnreport struct (#861)",
+          "timestamp": "2024-10-17T14:51:27+01:00",
+          "tree_id": "208c7092b6622a261aee2ba3a23faf5586865fbf",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b283b1e14fa6ae215d3b644d0c48a2b25edbea1e"
+        },
+        "date": 1729173148668,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 472.4,
+            "unit": "ns/op",
+            "extra": "2522518 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 519.3,
+            "unit": "ns/op",
+            "extra": "2327547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28275,
+            "unit": "ns/op",
+            "extra": "42387 times\n4 procs"
           }
         ]
       }

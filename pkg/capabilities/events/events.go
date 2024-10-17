@@ -9,6 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -34,6 +35,33 @@ type EmitMetadata struct {
 	CapabilityID              string // optional
 	CapabilityVersion         string // optional
 	CapabilityName            string // optional
+}
+
+func FromRequest(md capabilities.RequestMetadata) EmitMetadata {
+	return EmitMetadata{
+		WorkflowOwner:       md.WorkflowOwner,
+		WorkflowID:          md.WorkflowID,
+		WorkflowName:        md.WorkflowName,
+		WorkflowExecutionID: md.WorkflowExecutionID,
+	}
+}
+
+func (e EmitMetadata) MergeMap(m map[string]any) map[string]any {
+	merged := make(map[string]any, 0)
+	for k, v := range m {
+		merged[k] = v
+	}
+
+	merged[labelWorkflowOwner] = e.WorkflowOwner
+	merged[labelWorkflowID] = e.WorkflowID
+	merged[labelWorkflowExecutionID] = e.WorkflowExecutionID
+	merged[labelWorkflowName] = e.WorkflowName
+	merged[labelCapabilityContractAddress] = e.CapabilityContractAddress
+	merged[labelCapabilityID] = e.CapabilityID
+	merged[labelCapabilityVersion] = e.CapabilityVersion
+	merged[labelCapabilityName] = e.CapabilityName
+
+	return merged
 }
 
 func (e EmitMetadata) merge(otherE EmitMetadata) EmitMetadata {

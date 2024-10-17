@@ -7,6 +7,7 @@
       ""
     ],
     "timezone": "browser",
+    "editable": true,
     "graphTooltip": 0,
     "time": {
       "from": "now-1d",
@@ -14,7 +15,7 @@
     },
     "fiscalYearStartMonth": 0,
     "refresh": "30s",
-    "schemaVersion": 0,
+    "schemaVersion": 39,
     "panels": [
       {
         "type": "row",
@@ -67,6 +68,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -76,7 +78,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -147,6 +149,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -156,7 +159,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -227,6 +230,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -236,7 +240,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -320,6 +324,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -329,7 +334,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -400,6 +405,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -409,7 +415,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -480,6 +486,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -489,7 +496,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -560,6 +567,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -569,7 +577,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {

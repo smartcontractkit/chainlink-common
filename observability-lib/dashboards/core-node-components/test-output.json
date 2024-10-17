@@ -7,6 +7,7 @@
       "Components"
     ],
     "timezone": "browser",
+    "editable": true,
     "graphTooltip": 0,
     "time": {
       "from": "now-30m",
@@ -14,7 +15,7 @@
     },
     "fiscalYearStartMonth": 0,
     "refresh": "30s",
-    "schemaVersion": 0,
+    "schemaVersion": 39,
     "panels": [
       {
         "type": "stat",
@@ -45,6 +46,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -54,7 +56,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "vertical"
         },
         "fieldConfig": {

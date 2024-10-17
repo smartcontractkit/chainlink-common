@@ -387,11 +387,9 @@ func headlines(p *Props) []*grafana.Panel {
 					RefID: "D",
 					ThresholdExpression: &grafana.ThresholdExpression{
 						Expression: "C",
-						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-							{
-								Params: []float64{90, 0},
-								Type:   expr.TypeThresholdTypeLt,
-							},
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
 				},
@@ -467,11 +465,9 @@ func headlines(p *Props) []*grafana.Panel {
 					RefID: "B",
 					ThresholdExpression: &grafana.ThresholdExpression{
 						Expression: "A",
-						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-							{
-								Params: []float64{1, 0},
-								Type:   expr.TypeThresholdTypeLt,
-							},
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
 				},
@@ -516,11 +512,9 @@ func headlines(p *Props) []*grafana.Panel {
 					RefID: "B",
 					ThresholdExpression: &grafana.ThresholdExpression{
 						Expression: "A",
-						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-							{
-								Params: []float64{1, 0},
-								Type:   expr.TypeThresholdTypeLt,
-							},
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
 				},
@@ -869,11 +863,9 @@ func headTracker(p *Props) []*grafana.Panel {
 					RefID: "B",
 					ThresholdExpression: &grafana.ThresholdExpression{
 						Expression: "A",
-						ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-							{
-								Params: []float64{1, 0},
-								Type:   expr.TypeThresholdTypeLt,
-							},
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
 				},

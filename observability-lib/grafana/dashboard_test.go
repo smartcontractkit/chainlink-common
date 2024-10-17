@@ -3,7 +3,6 @@ package grafana_test
 import (
 	"testing"
 
-	"github.com/grafana/grafana-foundation-sdk/go/expr"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 	"github.com/stretchr/testify/require"
 )
@@ -55,11 +54,9 @@ func TestGenerateJSON(t *testing.T) {
 						RefID: "B",
 						ThresholdExpression: &grafana.ThresholdExpression{
 							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{2, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{2},
+								Type:   grafana.TypeThresholdTypeLt,
 							},
 						},
 					},

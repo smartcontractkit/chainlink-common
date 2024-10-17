@@ -49,6 +49,8 @@ const (
 	fetchBinaryCmd        = "test/fetch/cmd"
 	randBinaryLocation    = "test/rand/cmd/testmodule.wasm"
 	randBinaryCmd         = "test/rand/cmd"
+	emitBinaryLocation    = "test/emit/cmd/testmodule.wasm"
+	emitBinaryCmd         = "test/emit/cmd"
 )
 
 func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
@@ -185,6 +187,84 @@ func Test_Compute_Logs(t *testing.T) {
 		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
 		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
 	}
+}
+
+func Test_Compute_Emit(t *testing.T) {
+	binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
+
+	lggr := logger.Test(t)
+
+	req := &wasmpb.Request{
+		Id: uuid.New().String(),
+		Message: &wasmpb.Request_ComputeRequest{
+			ComputeRequest: &wasmpb.ComputeRequest{
+				Request: &capabilitiespb.CapabilityRequest{
+					Inputs: &valuespb.Map{},
+					Config: &valuespb.Map{},
+					Metadata: &capabilitiespb.RequestMetadata{
+						ReferenceId: "transform",
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("success", func(t *testing.T) {
+		m, err := NewModule(&ModuleConfig{
+			Logger: lggr,
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return nil, nil
+			},
+			Emitter: sdk.EmitterFunc(func(msg string, kvs map[string]any) error {
+				t.Helper()
+
+				assert.Equal(t, "testing emit", msg)
+				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
+				return nil
+			}),
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		_, err = m.Run(req)
+		assert.Nil(t, err)
+	})
+
+	t.Run("failure on emit", func(t *testing.T) {
+		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: lggr,
+			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return nil, nil
+			},
+			Emitter: sdk.EmitterFunc(func(msg string, kvs map[string]any) error {
+				t.Helper()
+
+				assert.Equal(t, "testing emit", msg)
+				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
+				return assert.AnError
+			}),
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		_, err = m.Run(req)
+		assert.Error(t, err)
+		require.Len(t, logs.AllUntimed(), 1)
+
+		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{Level: zapcore.ErrorLevel, Message: fmt.Sprintf("error emitting message: %s", assert.AnError)},
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+		}
+	})
 }
 
 func Test_Compute_Fetch(t *testing.T) {

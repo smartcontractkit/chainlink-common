@@ -7,9 +7,23 @@ import (
 
 var BreakErr = capabilities.ErrStopExecution
 
+type Emitter interface {
+	// Emit sends a message with the given message and labels to the configured collector.
+	Emit(msg string, labels map[string]any) error
+}
+
+type EmitterFunc func(msg string, labels map[string]any) error
+
+func (f EmitterFunc) Emit(msg string, labels map[string]any) error {
+	return f(msg, labels)
+}
+
+// Guest interface
 type Runtime interface {
 	Logger() logger.Logger
 	Fetch(req FetchRequest) (FetchResponse, error)
+
+	Emitter
 }
 
 type FetchRequest struct {

@@ -69,21 +69,41 @@ func Test_createEmitFn(t *testing.T) {
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
-	t.Run("failure to read", func(t *testing.T) {
+	t.Run("successfully write error to memory on failure to read", func(t *testing.T) {
+		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
+			Error: &wasmpb.Error{
+				Message: assert.AnError.Error(),
+			},
+		})
+		assert.NoError(t, err)
+
 		emitFn := createEmitFn(
 			logger.Test(t),
 			nil,
 			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
 			}),
-			nil,
-			nil,
+			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
+				return 0
+			}),
+			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
+				return 0
+			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		gotCode := emitFn(new(wasmtime.Caller), 0, int32(len(respBytes)), 0, 0)
+		assert.Equal(t, ErrnoSuccess, gotCode, "code mismatch")
 	})
 
-	t.Run("failure to emit", func(t *testing.T) {
+	t.Run("failure to emit writes error to memory", func(t *testing.T) {
+		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
+			Error: &wasmpb.Error{
+				Message: assert.AnError.Error(),
+			},
+		})
+		assert.NoError(t, err)
+
 		emitFn := createEmitFn(
 			logger.Test(t),
 			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
@@ -95,9 +115,11 @@ func Test_createEmitFn(t *testing.T) {
 				return b, nil
 			}),
 			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
 				return 0
 			}),
 			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
 				return 0
 			}),
 		)
@@ -106,17 +128,35 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("bad read failure to unmarshal protos", func(t *testing.T) {
+		badData := []byte("not proto bufs")
+		msg := &wasmpb.EmitMessageRequest{}
+		marshallErr := proto.Unmarshal(badData, msg)
+		assert.Error(t, marshallErr)
+
+		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
+			Error: &wasmpb.Error{
+				Message: marshallErr.Error(),
+			},
+		})
+		assert.NoError(t, err)
+
 		emitFn := createEmitFn(
 			logger.Test(t),
 			nil,
 			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				return []byte("not proto bufs"), nil
+				return badData, nil
 			}),
-			nil,
-			nil,
+			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
+				return 0
+			}),
+			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
+				return 0
+			}),
 		)
 		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 }
 
@@ -145,12 +185,12 @@ func Test_read(t *testing.T) {
 
 	t.Run("memory is read only", func(t *testing.T) {
 		memory := []byte("hello, world")
-		copy, err := read(memory, 0, int32(len(memory)))
+		copied, err := read(memory, 0, int32(len(memory)))
 		assert.NoError(t, err)
 
 		// mutate copy
-		copy[0] = 'H'
-		assert.Equal(t, []byte("Hello, world"), copy)
+		copied[0] = 'H'
+		assert.Equal(t, []byte("Hello, world"), copied)
 
 		// original memory is unchanged
 		assert.Equal(t, []byte("hello, world"), memory)

@@ -18,11 +18,11 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v23"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/adapters/beholder"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -129,7 +129,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.Emitter == nil {
-		modCfg.Emitter = beholder.NewEmitter()
+		modCfg.Emitter = sdk.EmitterFunc(beholderEmitter)
 	}
 
 	logger := modCfg.Logger
@@ -509,6 +509,21 @@ func createEmitFn(
 
 		return ErrnoSuccess
 	}
+}
+
+// Emit sends a message to the Beholder service via the custmsg package's labeler.  Each label is
+// expected to be a string.
+func beholderEmitter(msg string, labels map[string]any) error {
+	validated := make(map[string]string, len(labels))
+	for k, v := range labels {
+		str, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("label %s is not a string", k)
+		}
+		validated[k] = str
+	}
+
+	return custmsg.NewLabeler().WithMapLabels(validated).SendLogAsCustomMessage(msg)
 }
 
 // UnsafeWriterFunc defines behavior for writing directly to wasm memory.  A source slice of bytes

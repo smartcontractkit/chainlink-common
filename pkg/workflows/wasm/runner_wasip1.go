@@ -3,6 +3,7 @@ package wasm
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 	"unsafe"
 
@@ -85,7 +86,7 @@ func createFetchFn(
 	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
 		headerspb, err := values.NewMap(req.Headers)
 		if err != nil {
-			os.Exit(CodeInvalidRequest)
+			return sdk.FetchResponse{}, fmt.Errorf("failed to create headers map: %w", err)
 		}
 
 		b, err := proto.Marshal(&wasmpb.FetchRequest{
@@ -96,7 +97,7 @@ func createFetchFn(
 			TimeoutMs: req.TimeoutMs,
 		})
 		if err != nil {
-			os.Exit(CodeInvalidRequest)
+			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)
 		}
 		reqptr, reqptrlen := bufferToPointerLen(b)
 
@@ -108,15 +109,14 @@ func createFetchFn(
 
 		errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
 		if errno != 0 {
-			os.Exit(CodeRunnerErr)
+			return sdk.FetchResponse{}, errors.New("failed to execute fetch")
 		}
 
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
 		response := &wasmpb.FetchResponse{}
 		err = proto.Unmarshal(respBuffer[:responseSize], response)
 		if err != nil {
-			l.Errorw("failed to unmarshal fetch response", "error", err.Error())
-			os.Exit(CodeInvalidResponse)
+			return sdk.FetchResponse{}, fmt.Errorf("failed to unmarshal fetch response: %w", err)
 		}
 
 		fields := response.Headers.GetFields()
@@ -125,14 +125,12 @@ func createFetchFn(
 			headersResp[k] = v
 		}
 
-		if response.ErrorMessage != "" {
-			return sdk.FetchResponse{}, errors.New(response.ErrorMessage)
-		}
-
 		return sdk.FetchResponse{
-			StatusCode: uint8(response.StatusCode),
-			Headers:    headersResp,
-			Body:       response.Body,
+			ExecutionError: response.ExecutionError,
+			ErrorMessage:   response.ErrorMessage,
+			StatusCode:     uint8(response.StatusCode),
+			Headers:        headersResp,
+			Body:           response.Body,
 		}, nil
 	}
 	return fetchFn

@@ -1,5 +1,7 @@
 package ccipocr3
 
+import "bytes"
+
 // CommitPluginReport contains the necessary information to commit CCIP
 // messages from potentially many source chains, to a single destination chain.
 //
@@ -15,18 +17,17 @@ package ccipocr3
 // RMNSignatures, if RMN is configured for some lanes involved in the commitment.
 // A report with RMN signatures but without merkle roots is invalid.
 type CommitPluginReport struct {
-	MerkleRoots   []MerkleRootChain   `json:"merkleRoots"`
-	PriceUpdates  PriceUpdates        `json:"priceUpdates"`
-	RMNSignatures []RMNECDSASignature `json:"rmnSignatures"`
-}
+	MerkleRoots  []MerkleRootChain `json:"merkleRoots"`
+	PriceUpdates PriceUpdates      `json:"priceUpdates"`
 
-// Deprecated: don't use this constructor, just create a CommitPluginReport struct directly.
-// Will be removed in a future version once all uses have been replaced.
-func NewCommitPluginReport(merkleRoots []MerkleRootChain, tokenPriceUpdates []TokenPrice, gasPriceUpdate []GasPriceChain) CommitPluginReport {
-	return CommitPluginReport{
-		MerkleRoots:  merkleRoots,
-		PriceUpdates: PriceUpdates{TokenPriceUpdates: tokenPriceUpdates, GasPriceUpdates: gasPriceUpdate},
-	}
+	// RMNSignatures are the ECDSA signatures from the RMN signing nodes on the RMNReport structure.
+	// For more details see the contract here: https://github.com/smartcontractkit/chainlink/blob/7ba0f37134a618375542079ff1805fe2224d7916/contracts/src/v0.8/ccip/interfaces/IRMNV2.sol#L8-L12
+	RMNSignatures []RMNECDSASignature `json:"rmnSignatures"`
+
+	// RMNRawVs is a 256-bit bitmap. A bit is set if the v value of the signature is 28,
+	// and unset if the v value is 27.
+	// Note that this implies that the maximum number of RMN signatures is 256.
+	RMNRawVs BigInt `json:"rmnRawVs"`
 }
 
 // IsEmpty returns true if the CommitPluginReport is empty
@@ -37,42 +38,33 @@ func (r CommitPluginReport) IsEmpty() bool {
 		len(r.RMNSignatures) == 0
 }
 
+// MerkleRootChain Mirroring https://github.com/smartcontractkit/chainlink/blob/cd5c78959575f593b27fd83d8766086d0c678487/contracts/src/v0.8/ccip/libraries/Internal.sol#L356-L362
 type MerkleRootChain struct {
-	ChainSel     ChainSelector `json:"chain"`
-	SeqNumsRange SeqNumRange   `json:"seqNumsRange"`
-	MerkleRoot   Bytes32       `json:"merkleRoot"`
+	ChainSel      ChainSelector `json:"chain"`
+	OnRampAddress Bytes         `json:"onRampAddress"`
+	SeqNumsRange  SeqNumRange   `json:"seqNumsRange"`
+	MerkleRoot    Bytes32       `json:"merkleRoot"`
+}
+
+func (m MerkleRootChain) Equals(other MerkleRootChain) bool {
+	return m.ChainSel == other.ChainSel &&
+		bytes.Equal(m.OnRampAddress, other.OnRampAddress) &&
+		m.SeqNumsRange == other.SeqNumsRange &&
+		m.MerkleRoot == other.MerkleRoot
 }
 
 func NewMerkleRootChain(
 	chainSel ChainSelector,
+	onRampAddress Bytes,
 	seqNumsRange SeqNumRange,
 	merkleRoot Bytes32,
 ) MerkleRootChain {
 	return MerkleRootChain{
-		ChainSel:     chainSel,
-		SeqNumsRange: seqNumsRange,
-		MerkleRoot:   merkleRoot,
+		ChainSel:      chainSel,
+		OnRampAddress: onRampAddress,
+		SeqNumsRange:  seqNumsRange,
+		MerkleRoot:    merkleRoot,
 	}
-}
-
-// RMNECDSASignature is the ECDSA signature from a single RMN node
-// on the RMN "Report" structure that consists of:
-//  1. the destination chain ID
-//  2. the destination chain selector
-//  3. the rmn remote contract address
-//  4. the offramp address
-//  5. the rmn home config digest
-//  6. the dest lane updates array, which is a struct that consists of:
-//     * source chain selector
-//     * min sequence number
-//     * max sequence number
-//     * the merkle root of the messages in the above range
-//     * the onramp address (in bytes, for EVM, abi-encoded)
-//
-// For more details see the contract here: https://github.com/smartcontractkit/chainlink/blob/7ba0f37134a618375542079ff1805fe2224d7916/contracts/src/v0.8/ccip/interfaces/IRMNV2.sol#L8-L12
-type RMNECDSASignature struct {
-	R Bytes32 `json:"r"`
-	S Bytes32 `json:"s"`
 }
 
 type PriceUpdates struct {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd"
 )
@@ -18,6 +19,7 @@ var goWorkflowTestTemplate string
 
 var dir = flag.String("dir", "", fmt.Sprintf("Directory to search for %s files, if a file is provided, the directory it is in will be used", cmd.CapabilitySchemaFilePattern.String()))
 var localPrefix = flag.String("local_prefix", "github.com/smartcontractkit", "The local prefix to use when formatting go files")
+var extraUrls = flag.String("extra_urls", "", "Comma separated list of extra URLs to fetch schemas from")
 
 func main() {
 	flag.Parse()
@@ -40,7 +42,13 @@ func run(dir string) error {
 		tmp := "github.com/smartcontractkit"
 		localPrefix = &tmp
 	}
-	return cmd.GenerateTypes(dir, *localPrefix, []cmd.WorkflowHelperGenerator{
+
+	var extras []string
+	if extraUrls != nil && *extraUrls != "" {
+		extras = strings.Split(*extraUrls, ",")
+	}
+
+	return cmd.GenerateTypes(dir, *localPrefix, extras, []cmd.WorkflowHelperGenerator{
 		&cmd.TemplateWorkflowGeneratorHelper{
 			Templates: map[string]cmd.TemplateAndCondition{
 				"{{.BaseName|ToSnake}}_builders_generated.go":              cmd.BaseGenerate{TemplateValue: goWorkflowTemplate},

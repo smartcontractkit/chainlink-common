@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 	"github.com/spf13/cobra"
 )
 
@@ -10,20 +11,23 @@ var GenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate Grafana Dashboard JSON",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		jsonDashboard, err := GetDashboardJSON(&CommandOptions{
-			Name:                  cmd.Flag("dashboard-name").Value.String(),
-			FolderName:            cmd.Flag("dashboard-folder").Value.String(),
-			Platform:              cmd.Flag("platform").Value.String(),
-			TypeDashboard:         cmd.Flag("type").Value.String(),
-			MetricsDataSourceName: cmd.Flag("metrics-datasource").Value.String(),
-			LogsDataSourceName:    cmd.Flag("logs-datasource").Value.String(),
+		dashboard, err := BuildDashboardWithType(&BuildOptions{
+			Name:              cmd.Flag("dashboard-name").Value.String(),
+			Platform:          grafana.TypePlatform(cmd.Flag("platform").Value.String()),
+			TypeDashboard:     TypeDashboard(cmd.Flag("type").Value.String()),
+			MetricsDataSource: grafana.NewDataSource(cmd.Flag("metrics-datasource").Value.String(), ""),
+			LogsDataSource:    grafana.NewDataSource(cmd.Flag("logs-datasource").Value.String(), ""),
 		})
-
 		if err != nil {
 			return err
 		}
 
-		fmt.Print(string(jsonDashboard))
+		dashboardJSON, errDashboardJSON := dashboard.GenerateJSON()
+		if errDashboardJSON != nil {
+			return errDashboardJSON
+		}
+
+		fmt.Print(string(dashboardJSON))
 
 		return nil
 	},

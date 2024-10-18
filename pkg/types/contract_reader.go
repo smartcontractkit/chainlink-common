@@ -43,7 +43,11 @@ type ContractReader interface {
 	// Note that implementations should ignore extra fields in params that are not expected in the call to allow easier
 	// use across chains and contract versions.
 	// Similarly, when using a struct for returnVal, fields in the return value that are not on-chain will not be set.
+	// Passing in a *values.Value as the returnVal will encode the return value as an appropriate value.Value instance.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
+
+	// GetLatestValueWithHeadData should be used in the same way as GetLatestValue, but also returns the head data.
+	GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error)
 
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
@@ -60,6 +64,8 @@ type ContractReader interface {
 
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+
+	mustEmbedUnimplementedContractReader()
 }
 
 // BatchGetLatestValuesRequest string is contract name.
@@ -93,9 +99,10 @@ func (brr *BatchReadResult) SetResult(returnValue any, err error) {
 }
 
 type Head struct {
-	Identifier string
-	Hash       []byte
-	Timestamp  uint64
+	Height string
+	Hash   []byte
+	// Timestamp is in Unix time
+	Timestamp uint64
 }
 
 type Sequence struct {
@@ -117,3 +124,53 @@ func (bc BoundContract) ReadIdentifier(readName string) string {
 func (bc BoundContract) String() string {
 	return bc.Address + "-" + bc.Name
 }
+
+type UnimplementedContractReader struct{}
+
+var _ ContractReader = UnimplementedContractReader{}
+
+func (UnimplementedContractReader) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	return UnimplementedError("ContractReader.GetLatestValue unimplemented")
+}
+
+func (UnimplementedContractReader) GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error) {
+	return Head{}, UnimplementedError("ContractReader.GetLatestValueWithHeadData unimplemented")
+}
+
+func (UnimplementedContractReader) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error) {
+	return nil, UnimplementedError("ContractReader.BatchGetLatestValues unimplemented")
+}
+
+func (UnimplementedContractReader) Bind(ctx context.Context, bindings []BoundContract) error {
+	return UnimplementedError("ContractReader.Bind unimplemented")
+}
+
+func (UnimplementedContractReader) Unbind(ctx context.Context, bindings []BoundContract) error {
+	return UnimplementedError("ContractReader.Unbind unimplemented")
+}
+
+func (UnimplementedContractReader) QueryKey(ctx context.Context, boundContract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error) {
+	return nil, UnimplementedError("ContractReader.QueryKey unimplemented")
+}
+
+func (UnimplementedContractReader) Start(context.Context) error {
+	return UnimplementedError("ContractReader.Start unimplemented")
+}
+
+func (UnimplementedContractReader) Close() error {
+	return UnimplementedError("ContractReader.Close unimplemented")
+}
+
+func (UnimplementedContractReader) HealthReport() map[string]error {
+	panic(UnimplementedError("ContractReader.HealthReport unimplemented"))
+}
+
+func (UnimplementedContractReader) Name() string {
+	panic(UnimplementedError("ContractReader.Name unimplemented"))
+}
+
+func (UnimplementedContractReader) Ready() error {
+	return UnimplementedError("ContractReader.Ready unimplemented")
+}
+
+func (UnimplementedContractReader) mustEmbedUnimplementedContractReader() {}

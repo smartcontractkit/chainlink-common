@@ -68,13 +68,13 @@ type ExecutionFactoryService struct {
 
 // NewExecutionService returns a new [*ExecutionFactoryService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewExecutionService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.CCIPExecProvider) *ExecutionFactoryService {
+func NewExecutionService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, srcProvider types.CCIPExecProvider, dstProvider types.CCIPExecProvider, srcChain uint32, dstChain uint32, sourceTokenAddress string) *ExecutionFactoryService {
 	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
 		plug, ok := instance.(types.CCIPExecutionFactoryGenerator)
 		if !ok {
 			return nil, fmt.Errorf("expected CCIPExecutionFactoryGenerator but got %T", instance)
 		}
-		return plug.NewExecutionFactory(ctx, provider)
+		return plug.NewExecutionFactory(ctx, srcProvider, dstProvider, int64(srcChain), int64(dstChain), sourceTokenAddress)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "CCIPExecutionService")
@@ -84,9 +84,9 @@ func NewExecutionService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &efs
 }
 
-func (m *ExecutionFactoryService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
-	if err := m.Wait(); err != nil {
+func (m *ExecutionFactoryService) NewReportingPlugin(ctx context.Context, config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(config)
+	return m.Service.NewReportingPlugin(ctx, config)
 }

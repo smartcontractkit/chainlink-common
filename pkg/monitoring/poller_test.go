@@ -31,7 +31,7 @@ func TestPoller(t *testing.T) {
 			0,
 			0,
 			4,
-			5,
+			6,
 		},
 		{
 			"slow fetching, quick polling, no buffering",
@@ -42,7 +42,7 @@ func TestPoller(t *testing.T) {
 			0,
 			0,
 			20,
-			50,
+			60,
 		},
 		{
 			"fast fetch, fast polling, insufficient buffering, tons of backpressure",
@@ -53,7 +53,7 @@ func TestPoller(t *testing.T) {
 			200 * time.Millisecond, // time it gets the "consumer" to process a message. It will only be able to process 1000/200=5 updates per second.
 			5,
 			4,
-			5,
+			6,
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {

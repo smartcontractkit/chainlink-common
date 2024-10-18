@@ -5,6 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "google/protobuf/empty.proto";
+import "contract_reader.proto";
 
 service PluginRelayer {
   rpc NewRelayer (NewRelayerRequest) returns (NewRelayerReply) {}
@@ -46,6 +47,7 @@ service Relayer {
   rpc NewConfigProvider (NewConfigProviderRequest) returns (NewConfigProviderReply) {}
   rpc NewPluginProvider (NewPluginProviderRequest) returns (NewPluginProviderReply) {}
 
+  rpc LatestHead (LatestHeadRequest) returns (LatestHeadReply) {}
   rpc GetChainStatus (GetChainStatusRequest) returns (GetChainStatusReply) {}
   rpc ListNodeStatuses (ListNodeStatusesRequest) returns (ListNodeStatusesReply) {}
   rpc Transact (TransactionRequest) returns (google.protobuf.Empty) {}
@@ -106,6 +108,13 @@ message NewConfigProviderRequest {
 // NewConfigProviderReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewConfigProvider].
 message NewConfigProviderReply {
   uint32 configProviderID = 1;
+}
+
+message LatestHeadRequest {}
+
+// LatestHeadReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.LatestHeadReply].
+message LatestHeadReply {
+  Head head = 1;
 }
 
 message GetChainStatusRequest {}

@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/pb";
+
+package sdk;
+
+import "capabilities/pb/capabilities.proto";
+import "values/pb/values.proto";
+import "google/protobuf/empty.proto";
+
+message RuntimeConfig {
+   int64 maxFetchResponseSizeBytes = 1;
+}
+
+message ComputeRequest {
+  capabilities.CapabilityRequest request = 1;
+  RuntimeConfig runtimeConfig = 2;
+}
+
+message Request {
+  string id = 1;
+  bytes config = 2;
+
+  oneof message {
+    ComputeRequest computeRequest = 3;
+    google.protobuf.Empty specRequest = 4;
+  }
+}
+
+message ComputeResponse {
+  capabilities.CapabilityResponse response = 1;
+}
+
+message StepInputs {
+  string outputRef = 1;
+  values.Map mapping = 2;
+}
+
+message StepDefinition {
+  string id = 1;
+  string ref = 2;
+  StepInputs inputs = 3;
+  values.Map config = 4;
+  string capabilityType = 5;
+}
+
+message WorkflowSpec {
+  string name = 1;
+  string owner = 2;
+  repeated StepDefinition triggers = 3;
+  repeated StepDefinition actions = 4;
+  repeated StepDefinition consensus = 5;
+  repeated StepDefinition targets = 6;
+}
+
+message Response {
+  string id = 1;
+  string errMsg = 2;
+
+  oneof message {
+    ComputeResponse computeResponse = 3;
+    WorkflowSpec specResponse = 4;
+  }
+}
+
+message FetchRequest {
+  string url = 1;
+  string method = 2;
+  values.Map headers = 3;
+  bytes body = 4;
+  uint32 timeoutMs = 5;
+}
+
+message FetchResponse {
+  bool executionError = 1;
+  string errorMessage = 2;
+  uint32 statusCode = 3; // NOTE: this is actually a uint8, but proto doesn't support this.
+  values.Map headers = 4;
+  bytes body = 5;
+}

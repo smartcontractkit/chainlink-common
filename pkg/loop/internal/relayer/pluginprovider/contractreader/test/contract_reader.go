@@ -26,6 +26,7 @@ var (
 
 // staticContractReader is a static implementation of ContractReaderTester
 type staticContractReader struct {
+	types.UnimplementedContractReader
 	address        string
 	contractName   string
 	contractMethod string
@@ -64,7 +65,6 @@ func (c staticContractReader) GetLatestValue(_ context.Context, readName string,
 		return fmt.Errorf("%w: expected report context %v but got %v", types.ErrInvalidType, comp, readName)
 	}
 
-	//gotParams, ok := params.(*map[string]string)
 	gotParams, ok := params.(*map[string]any)
 	if !ok {
 		return fmt.Errorf("%w: Invalid parameter type received in GetLatestValue. Expected %T but received %T", types.ErrInvalidEncoding, c.params, params)

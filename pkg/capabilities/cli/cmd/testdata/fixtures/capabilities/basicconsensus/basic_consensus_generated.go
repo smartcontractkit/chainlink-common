@@ -25,7 +25,7 @@ type ConsensusConfig struct {
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 
 	// The interval in seconds after which a new trigger event is generated.
-	Number int `json:"number" yaml:"number" mapstructure:"number"`
+	Number uint64 `json:"number" yaml:"number" mapstructure:"number"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

@@ -6,7 +6,7 @@ package basictargettest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 
 // Target registers a new capability mock with the runner

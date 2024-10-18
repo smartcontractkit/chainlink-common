@@ -41,7 +41,9 @@ func TestTransmitter(t *testing.T) {
 		clockwork.NewFakeClock(),
 		10*time.Second,
 		mockAggregatorFactory,
-		func(config *values.Map) (pbtypes.Encoder, error) { return &encoder{}, nil },
+		func(_ string, _ *values.Map, _ logger.Logger) (pbtypes.Encoder, error) {
+			return &encoder{}, nil
+		},
 		lggr,
 		10,
 	)
@@ -127,7 +129,9 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 		clockwork.NewFakeClock(),
 		10*time.Second,
 		mockAggregatorFactory,
-		func(config *values.Map) (pbtypes.Encoder, error) { return &encoder{}, nil },
+		func(_ string, _ *values.Map, _ logger.Logger) (pbtypes.Encoder, error) {
+			return &encoder{}, nil
+		},
 		lggr,
 		10,
 	)

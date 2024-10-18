@@ -20,6 +20,7 @@ message GetLatestValueRequest {
   string read_identifier = 1;
   Confidence confidence = 2;
   VersionedBytes params = 3;
+  bool as_value_type = 4;
 }
 
 // BatchGetLatestValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -32,6 +33,7 @@ message QueryKeyRequest {
   BoundContract contract = 1;
   QueryKeyFilter filter = 2;
   LimitAndSort limit_and_sort = 3;
+  bool as_value_type = 4;
 }
 
 // BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Bind].
@@ -87,7 +89,7 @@ message BatchReadResult {
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Head].
 message Head {
-  string identifier = 1;
+  string height = 1;
   bytes hash = 2;
   uint64 timestamp = 3;
 }
@@ -148,7 +150,7 @@ message Or {
 }
 
 message ValueComparator  {
-  string  value = 1;
+  VersionedBytes value = 1;
   ComparisonOperator operator = 2;
 }
 

@@ -19,26 +19,33 @@ type Builder struct {
 }
 
 type BuilderOptions struct {
-	Tags     []string
-	Refresh  string
-	TimeFrom string
-	TimeTo   string
-	TimeZone string
+	Name       string
+	Tags       []string
+	Refresh    string
+	TimeFrom   string
+	TimeTo     string
+	TimeZone   string
+	AlertsTags map[string]string
 }
 
-func NewBuilder(options *DashboardOptions, builderOptions *BuilderOptions) *Builder {
-	if builderOptions.TimeZone == "" {
-		builderOptions.TimeZone = common.TimeZoneBrowser
+func NewBuilder(options *BuilderOptions) *Builder {
+	if options.TimeZone == "" {
+		options.TimeZone = common.TimeZoneBrowser
 	}
 
-	return &Builder{
+	builder := &Builder{
 		dashboardBuilder: dashboard.NewDashboardBuilder(options.Name).
-			Tags(builderOptions.Tags).
-			Refresh(builderOptions.Refresh).
-			Time(builderOptions.TimeFrom, builderOptions.TimeTo).
-			Timezone(builderOptions.TimeZone),
-		alertsTags: options.AlertsTags,
+			Tags(options.Tags).
+			Refresh(options.Refresh).
+			Time(options.TimeFrom, options.TimeTo).
+			Timezone(options.TimeZone),
 	}
+
+	if options.AlertsTags != nil {
+		builder.alertsTags = options.AlertsTags
+	}
+
+	return builder
 }
 
 func (b *Builder) AddVars(items ...cog.Builder[dashboard.VariableModel]) {
@@ -51,15 +58,15 @@ func (b *Builder) AddRow(title string) {
 	b.dashboardBuilder.WithRow(dashboard.NewRowBuilder(title))
 }
 
-func (b *Builder) GetPanelCounter() uint32 {
+func (b *Builder) getPanelCounter() uint32 {
 	res := b.panelCounter
-	b.panelCounter = Inc(&b.panelCounter)
+	b.panelCounter = inc(&b.panelCounter)
 	return res
 }
 
 func (b *Builder) AddPanel(panel ...*Panel) {
 	for _, item := range panel {
-		panelID := b.GetPanelCounter()
+		panelID := b.getPanelCounter()
 		if item.statPanelBuilder != nil {
 			item.statPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.statPanelBuilder)

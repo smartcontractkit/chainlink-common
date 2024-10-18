@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 type ChainComponentsInterfaceTester[T TestingT[T]] interface {
@@ -42,6 +43,10 @@ const (
 	MethodSettingUint64                         = "setAlterablePrimitiveValue"
 	MethodTriggeringEvent                       = "triggerEvent"
 	EventName                                   = "SomeEvent"
+	EventNameField                              = EventName + ".Field"
+	ProtoTest                                   = "ProtoTest"
+	ProtoTestIntComparator                      = ProtoTest + ".IntComparator"
+	ProtoTestStringComparator                   = ProtoTest + ".StringComparator"
 	EventWithFilterName                         = "SomeEventToFilter"
 	AnyContractName                             = "TestContract"
 	AnySecondContractName                       = "Not" + AnyContractName
@@ -60,6 +65,88 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	tests := []testcase[T]{
 		{
+			name: "Gets the latest value as a values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				firstItem := CreateTestStruct(0, tester)
+
+				contracts := tester.GetBindings(t)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
+
+				secondItem := CreateTestStruct(1, tester)
+
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
+
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				params := &LatestParams{I: 1}
+				var value values.Value
+
+				err := cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, &value)
+				require.NoError(t, err)
+
+				actual := TestStruct{}
+				err = value.UnwrapTo(&actual)
+				require.NoError(t, err)
+				assert.Equal(t, &firstItem, &actual)
+
+				params = &LatestParams{I: 2}
+				err = cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, &value)
+				require.NoError(t, err)
+
+				actual = TestStruct{}
+				err = value.UnwrapTo(&actual)
+				require.NoError(t, err)
+				assert.Equal(t, &secondItem, &actual)
+			},
+		},
+
+		{
+			name: "Get latest value without arguments and with primitive return as a values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0]
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				var value values.Value
+				err := cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodReturningUint64), primitives.Unconfirmed, nil, &value)
+				require.NoError(t, err)
+
+				var prim uint64
+				err = value.UnwrapTo(&prim)
+				require.NoError(t, err)
+
+				assert.Equal(t, AnyValueToReadWithoutAnArgument, prim)
+			},
+		},
+		{
+			name: "Get latest value without arguments and with slice return as a values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0]
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				var value values.Value
+				err := cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodReturningUint64Slice), primitives.Unconfirmed, nil, &value)
+				require.NoError(t, err)
+
+				var slice []uint64
+				err = value.UnwrapTo(&slice)
+				require.NoError(t, err)
+				assert.Equal(t, AnySliceToReadWithoutAnArgument, slice)
+			},
+		},
+		{
 			name: "Gets the latest value",
 			test: func(t T) {
 				ctx := tests.Context(t)
@@ -74,7 +161,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
+				bound := BindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 
@@ -95,7 +182,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 
@@ -128,7 +215,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				txID := SubmitTransactionToCW(t, tester, MethodSettingUint64, PrimitiveArgs{Value: 10}, contracts[0], types.Unconfirmed)
 
 				var prim1 uint64
-				bound := bindingsByName(bindings, callArgs.ContractName)[0]
+				bound := BindingsByName(bindings, callArgs.ContractName)[0]
 
 				require.Error(t, cr.GetLatestValue(ctx, bound.ReadIdentifier(callArgs.ReadName), primitives.Finalized, callArgs.Params, &prim1))
 
@@ -151,7 +238,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnySecondContractName)[0]
+				bound := BindingsByName(bindings, AnySecondContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 
@@ -167,7 +254,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 
@@ -186,7 +273,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				testStruct.Account = nil
 
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				cr := tester.GetContractReader(t)
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -208,7 +295,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				contracts := tester.GetBindings(t)
@@ -220,7 +307,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts, contracts[0], types.Unconfirmed)
 
 				result := &TestStruct{}
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Unconfirmed, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
@@ -232,7 +319,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				ts1 := CreateTestStruct[T](2, tester)
@@ -240,7 +327,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				txID := SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, bindings[0], types.Unconfirmed)
 
 				result := &TestStruct{}
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Finalized, nil, &result)
 					return err != nil && assert.ErrorContains(t, err, types.ErrNotFound.Error())
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
@@ -251,12 +338,12 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ts2 := CreateTestStruct[T](3, tester)
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, bindings[0], types.Unconfirmed)
 
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Finalized, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts1)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Unconfirmed, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts2)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
@@ -268,7 +355,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 
@@ -283,7 +370,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				ts0 := CreateTestStruct(0, tester)
@@ -320,7 +407,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				// setup test data
 				firstItem := CreateTestStruct(1, tester)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				batchCallEntry := make(BatchCallEntry)
 				batchCallEntry[bound] = ContractBatchEntry{{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &firstItem}}
@@ -358,7 +445,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				var primitiveReturnValue uint64
 				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				batchGetLatestValuesRequest[bound] = []types.BatchRead{
 					{
@@ -388,8 +475,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
 				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
-				bound1 := bindingsByName(bindings, AnyContractName)[0]
-				bound2 := bindingsByName(bindings, AnySecondContractName)[0]
+				bound1 := BindingsByName(bindings, AnyContractName)[0]
+				bound2 := BindingsByName(bindings, AnySecondContractName)[0]
 
 				batchGetLatestValuesRequest[bound1] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
 				batchGetLatestValuesRequest[bound2] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
@@ -419,7 +506,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				var sliceReturnValue []uint64
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				batchGetLatestValueRequest[bound] = []types.BatchRead{{ReadName: MethodReturningUint64Slice, Params: nil, ReturnVal: &sliceReturnValue}}
 
@@ -446,7 +533,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				actual := &TestStructWithExtraField{}
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				batchGetLatestValueRequest[bound] = []types.BatchRead{{ReadName: MethodReturningSeenStruct, Params: testStruct, ReturnVal: actual}}
 
@@ -474,7 +561,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				for i := 0; i < 10; i++ {
 					// setup test data
@@ -510,8 +597,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
-				bound1 := bindingsByName(bindings, AnyContractName)[0]
-				bound2 := bindingsByName(bindings, AnySecondContractName)[0]
+				bound1 := BindingsByName(bindings, AnyContractName)[0]
+				bound2 := BindingsByName(bindings, AnySecondContractName)[0]
 
 				for i := 0; i < 10; i++ {
 					// setup test data
@@ -557,8 +644,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			test: func(t T) {
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
-				bound1 := bindingsByName(bindings, AnyContractName)[0]
-				bound2 := bindingsByName(bindings, AnySecondContractName)[0]
+				bound1 := BindingsByName(bindings, AnyContractName)[0]
+				bound2 := BindingsByName(bindings, AnySecondContractName)[0]
 
 				for i := 0; i < 10; i++ {
 					// setup call data and set invalid params that cause an error
@@ -598,7 +685,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
 
@@ -616,19 +703,146 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				bindings := tester.GetBindings(t)
 
 				require.NoError(t, cr.Bind(ctx, bindings))
-				bound := bindingsByName(bindings, AnyContractName)[0]
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				ts1 := CreateTestStruct[T](0, tester)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
+				ts2 := CreateTestStruct[T](1, tester)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
+
+				ts := &TestStruct{}
+				require.Eventually(t, func() bool {
+					// sequences from queryKey without limit and sort should be in descending order
+					sequences, err := cr.QueryKey(ctx, boundContract, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+		{
+			name: "QueryKey returns sequence data properly as values.Value",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				ts1 := CreateTestStruct[T](0, tester)
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, bindings[0], types.Unconfirmed)
 				ts2 := CreateTestStruct[T](1, tester)
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, bindings[0], types.Unconfirmed)
 
-				ts := &TestStruct{}
-				assert.Eventually(t, func() bool {
+				var value values.Value
+
+				require.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
-					sequences, err := cr.QueryKey(ctx, bound, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
-					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
+					sequences, err := cr.QueryKey(ctx, bound, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &value)
+					if err != nil || len(sequences) != 2 {
+						return false
+					}
+
+					data1 := *sequences[1].Data.(*values.Value)
+					ts := TestStruct{}
+					err = data1.UnwrapTo(&ts)
+					require.NoError(t, err)
+					assert.Equal(t, &ts1, &ts)
+
+					data2 := *sequences[0].Data.(*values.Value)
+					ts = TestStruct{}
+					err = data2.UnwrapTo(&ts)
+					require.NoError(t, err)
+					assert.Equal(t, &ts2, &ts)
+
+					return true
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+		{
+			name: "QueryKey can filter data with value comparator",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				ts1 := CreateTestStruct[T](0, tester)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
+				ts2 := CreateTestStruct[T](15, tester)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
+				ts3 := CreateTestStruct[T](35, tester)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
+
+				ts := &TestStruct{}
+				require.Eventually(t, func() bool {
+					// sequences from queryKey without limit and sort should be in descending order
+					sequences, err := cr.QueryKey(ctx, boundContract, query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+						query.Comparator("Field",
+							primitives.ValueComparator{
+								Value:    *ts2.Field,
+								Operator: primitives.Gte,
+							},
+							primitives.ValueComparator{
+								Value:    *ts3.Field,
+								Operator: primitives.Lte,
+							}),
+					},
+					}, query.LimitAndSort{}, ts)
+					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts2, sequences[1].Data) && reflect.DeepEqual(&ts3, sequences[0].Data)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*500)
+			},
+		},
+		{
+			name: "QueryKey can limit results with cursor",
+			test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				// keep this an even number such that the cursor limit can be in batches of 2
+				testStructs := make([]TestStruct, 4)
+
+				// create test structs in sequence
+				for idx := range testStructs {
+					testStructs[idx] = CreateTestStruct(idx*2, tester)
+
+					_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, testStructs[idx], boundContract, types.Unconfirmed)
+				}
+
+				require.Eventually(t, func() bool {
+					var allSequences []types.Sequence
+
+					filter := query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+						query.Confidence(primitives.Finalized),
+					}}
+					limit := query.LimitAndSort{
+						SortBy: []query.SortBy{query.NewSortBySequence(query.Asc)},
+						Limit:  query.CountLimit(2),
+					}
+
+					for idx := 0; idx < len(testStructs)/2; idx++ {
+						// sequences from queryKey without limit and sort should be in descending order
+						sequences, err := cr.QueryKey(ctx, boundContract, filter, limit, &TestStruct{})
+
+						require.NoError(t, err)
+
+						if len(sequences) == 0 {
+							continue
+						}
+
+						limit.Limit = query.CursorLimit(sequences[len(sequences)-1].Cursor, query.CursorFollowing, 2)
+						allSequences = append(allSequences, sequences...)
+					}
+
+					return len(allSequences) == len(testStructs) &&
+						reflect.DeepEqual(&testStructs[0], allSequences[0].Data) &&
+						reflect.DeepEqual(&testStructs[len(testStructs)-1], allSequences[len(testStructs)-1].Data)
+				}, tester.MaxWaitTimeForEvents(), 500*time.Millisecond)
 			},
 		},
 	}
@@ -636,7 +850,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 	runTests(t, tester, tests)
 }
 
-func bindingsByName(bindings []types.BoundContract, name string) []types.BoundContract {
+func BindingsByName(bindings []types.BoundContract, name string) []types.BoundContract {
 	named := make([]types.BoundContract, 0, len(bindings))
 
 	for idx := range bindings {

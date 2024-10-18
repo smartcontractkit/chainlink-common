@@ -125,7 +125,7 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 	}
 	o.aggregators[request.Metadata.WorkflowID] = agg
 
-	encoder, err := o.encoderFactory(c.EncoderConfig)
+	encoder, err := o.encoderFactory(c.Encoder, c.EncoderConfig, o.lggr)
 	if err != nil {
 		return err
 	}
@@ -143,13 +143,17 @@ func (o *capability) getAggregator(workflowID string) (types.Aggregator, error) 
 	return agg, nil
 }
 
-func (o *capability) getEncoder(workflowID string) (types.Encoder, error) {
+func (o *capability) getEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
 	enc, ok := o.encoders[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no aggregator found for workflowID %s", workflowID)
 	}
 
 	return enc, nil
+}
+
+func (o *capability) getEncoderByName(encoderName string, config *values.Map) (types.Encoder, error) {
+	return o.encoderFactory(encoderName, config, o.lggr)
 }
 
 func (o *capability) getRegisteredWorkflowsIDs() []string {
@@ -278,6 +282,8 @@ func (o *capability) queueRequestForProcessing(
 		WorkflowDonID:            metadata.WorkflowDonID,
 		WorkflowDonConfigVersion: metadata.WorkflowDonConfigVersion,
 		Observations:             i.Observations,
+		OverriddenEncoderName:    i.EncoderName,
+		OverriddenEncoderConfig:  i.EncoderConfig,
 		KeyID:                    c.KeyID,
 		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}

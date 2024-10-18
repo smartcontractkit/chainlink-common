@@ -261,7 +261,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 
 	broker := r.BrokerExt
 
-	return WrapProviderClientConnection(rargs.ProviderType, cc, broker)
+	return WrapProviderClientConnection(ctx, rargs.ProviderType, cc, broker)
 }
 
 type PluginProviderClient interface {
@@ -269,13 +269,15 @@ type PluginProviderClient interface {
 	goplugin.GRPCClientConn
 }
 
-func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterface, broker *net.BrokerExt) (PluginProviderClient, error) {
+func WrapProviderClientConnection(ctx context.Context, providerType string, cc grpc.ClientConnInterface, broker *net.BrokerExt) (PluginProviderClient, error) {
 	// TODO: Remove this when we have fully transitioned all relayers to running in LOOPPs.
 	// This allows callers to type assert a PluginProvider into a product provider type (eg. MedianProvider)
 	// for interoperability with legacy code.
 	switch providerType {
 	case string(types.Median):
-		return median.NewProviderClient(broker, cc), nil
+		pc := median.NewProviderClient(broker, cc)
+		pc.RmUnimplemented(ctx)
+		return pc, nil
 	case string(types.GenericPlugin):
 		return ocr2.NewPluginProviderClient(broker, cc), nil
 	case string(types.OCR3Capability):
@@ -302,6 +304,19 @@ func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterfa
 
 func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.LLOProvider, error) {
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
+}
+
+func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
+	reply, err := r.relayer.LatestHead(ctx, &pb.LatestHeadRequest{})
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	return types.Head{
+		Height:    reply.Head.Height,
+		Hash:      reply.Head.Hash,
+		Timestamp: reply.Head.Timestamp,
+	}, nil
 }
 
 func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
@@ -655,6 +670,21 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 	}
 
 	return id, err
+}
+
+func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest) (*pb.LatestHeadReply, error) {
+	head, err := r.impl.LatestHead(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.LatestHeadReply{
+		Head: &pb.Head{
+			Height:    head.Height,
+			Hash:      head.Hash,
+			Timestamp: head.Timestamp,
+		},
+	}, nil
 }
 
 func (r *relayerServer) GetChainStatus(ctx context.Context, request *pb.GetChainStatusRequest) (*pb.GetChainStatusReply, error) {

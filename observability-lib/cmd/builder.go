@@ -3,13 +3,13 @@ package cmd
 import (
 	"errors"
 
+	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/atlas-don"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/capabilities"
+	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/core-node"
+	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/core-node-components"
+	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/k8s-resources"
+	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/nop-ocr"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
-
-	atlasdon "github.com/smartcontractkit/chainlink-common/observability-lib/atlas-don"
-	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/core-node"
-	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/core-node-components"
-	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/k8s-resources"
-	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/nop-ocr"
 )
 
 type TypeDashboard string
@@ -23,6 +23,7 @@ const (
 	TypeDashboardDONOCR3            TypeDashboard = "don-ocr3"
 	TypeDashboardNOPOCR2            TypeDashboard = "nop-ocr2"
 	TypeDashboardNOPOCR3            TypeDashboard = "nop-ocr3"
+	TypeDashboardCapabilities       TypeDashboard = "capabilities"
 )
 
 type OCRVersion string
@@ -35,60 +36,79 @@ const (
 
 type BuildOptions struct {
 	Name              string
-	FolderUID         string
 	Platform          grafana.TypePlatform
 	TypeDashboard     TypeDashboard
 	MetricsDataSource *grafana.DataSource
 	LogsDataSource    *grafana.DataSource
-	AlertsTags        map[string]string
-	SlackWebhookURL   string
-	SlackToken        string
 	SlackChannel      string
+	SlackWebhookURL   string
+	AlertsTags        map[string]string
+	AlertsFilters     string
 }
 
-func Build(options *BuildOptions) (*grafana.Dashboard, error) {
-	var db *grafana.Dashboard
-	var err error
-
-	dashboardOptions := &grafana.DashboardOptions{
-		Name:              options.Name,
-		MetricsDataSource: options.MetricsDataSource,
-		FolderUID:         options.FolderUID,
-		Platform:          options.Platform,
-		AlertsTags:        options.AlertsTags,
-		SlackWebhookURL:   options.SlackWebhookURL,
-		SlackToken:        options.SlackToken,
-		SlackChannel:      options.SlackChannel,
-	}
-
+func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
 	switch options.TypeDashboard {
 	case TypeDashboardCoreNode:
-		db, err = corenode.NewDashboard(dashboardOptions)
+		return corenode.NewDashboard(&corenode.Props{
+			Name:              options.Name,
+			Platform:          options.Platform,
+			MetricsDataSource: options.MetricsDataSource,
+			SlackChannel:      options.SlackChannel,
+			SlackWebhookURL:   options.SlackWebhookURL,
+			AlertsTags:        options.AlertsTags,
+			AlertsFilters:     options.AlertsFilters,
+		})
 	case TypeDashboardCoreNodeComponents:
-		db, err = corenodecomponents.NewDashboard(dashboardOptions)
+		return corenodecomponents.NewDashboard(&corenodecomponents.Props{
+			Name:              options.Name,
+			Platform:          options.Platform,
+			MetricsDataSource: options.MetricsDataSource,
+			LogsDataSource:    options.LogsDataSource,
+		})
 	case TypeDashboardCoreNodeResources:
 		if options.Platform != grafana.TypePlatformKubernetes {
 			return nil, errors.New("core-node-resources dashboard is only available for kubernetes")
 		}
-		db, err = k8sresources.NewDashboard(dashboardOptions)
+		return k8sresources.NewDashboard(&k8sresources.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+		})
 	case TypeDashboardDONOCR:
-		dashboardOptions.OCRVersion = string(OCRVersionOCR)
-		db, err = atlasdon.NewDashboard(dashboardOptions)
+		return atlasdon.NewDashboard(&atlasdon.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+			OCRVersion:        string(OCRVersionOCR),
+		})
 	case TypeDashboardDONOCR2:
-		dashboardOptions.OCRVersion = string(OCRVersionOCR2)
-		db, err = atlasdon.NewDashboard(dashboardOptions)
+		return atlasdon.NewDashboard(&atlasdon.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+			OCRVersion:        string(OCRVersionOCR2),
+		})
 	case TypeDashboardDONOCR3:
-		dashboardOptions.OCRVersion = string(OCRVersionOCR3)
-		db, err = atlasdon.NewDashboard(dashboardOptions)
+		return atlasdon.NewDashboard(&atlasdon.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+			OCRVersion:        string(OCRVersionOCR3),
+		})
 	case TypeDashboardNOPOCR2:
-		dashboardOptions.OCRVersion = string(OCRVersionOCR2)
-		db, err = nopocr.NewDashboard(dashboardOptions)
+		return nopocr.NewDashboard(&nopocr.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+			OCRVersion:        string(OCRVersionOCR2),
+		})
 	case TypeDashboardNOPOCR3:
-		dashboardOptions.OCRVersion = string(OCRVersionOCR3)
-		db, err = nopocr.NewDashboard(dashboardOptions)
+		return nopocr.NewDashboard(&nopocr.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+			OCRVersion:        string(OCRVersionOCR3),
+		})
+	case TypeDashboardCapabilities:
+		return capabilities.NewDashboard(&capabilities.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+		})
 	default:
 		return nil, errors.New("invalid dashboard type")
 	}
-
-	return db, err
 }

@@ -1,0 +1,6090 @@
+{
+  "Dashboard": {
+    "title": "Core Node Dashboard",
+    "tags": [
+      "Core",
+      "Node"
+    ],
+    "timezone": "browser",
+    "graphTooltip": 0,
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "fiscalYearStartMonth": 0,
+    "refresh": "30s",
+    "schemaVersion": 0,
+    "panels": [
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Headlines",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "stat",
+        "id": 0,
+        "targets": [
+          {
+            "expr": "version{instance=~\"${instance}\", }",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "Version: {{version}} https://github.com/smartcontractkit/chainlink/commit/{{commit}} https://github.com/smartcontractkit/chainlink/tree/release/{{version}}",
+            "refId": ""
+          }
+        ],
+        "title": "App Version",
+        "description": "app version with commit and branch links",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 0,
+          "y": 1
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
+          "justifyMode": "auto",
+          "textMode": "name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 1,
+        "targets": [
+          {
+            "expr": "uptime_seconds{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Uptime",
+        "description": "instance uptime",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 12,
+          "y": 1
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 2,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 2,
+        "targets": [
+          {
+            "expr": "sum(eth_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "{{instance}} - {{account}}",
+            "refId": ""
+          }
+        ],
+        "title": "ETH Balance Summary",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 0,
+          "y": 5
+        },
+        "options": {
+          "graphMode": "line",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "default"
+                },
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 0.99,
+                  "color": "green"
+                }
+              ]
+            },
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 3,
+        "targets": [
+          {
+            "expr": "sum(solana_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "{{instance}} - {{account}}",
+            "refId": ""
+          }
+        ],
+        "title": "Solana Balance Summary",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 12,
+          "y": 5
+        },
+        "options": {
+          "graphMode": "line",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "default"
+                },
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 0.99,
+                  "color": "green"
+                }
+              ]
+            },
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 4,
+        "targets": [
+          {
+            "expr": "100 * (avg(avg_over_time(health{instance=~\"${instance}\", }[15m])) by (instance, service_id, version, service, cluster, env))",
+            "format": "",
+            "legendFormat": "{{instance}} - {{service_id}}",
+            "refId": ""
+          }
+        ],
+        "title": "Health Avg by Service over 15m",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 16,
+          "x": 0,
+          "y": 9
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "min": 0,
+            "max": 100,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 5,
+        "targets": [
+          {
+            "expr": "100 * avg(avg_over_time(health{instance=~\"${instance}\", }[15m])) by (instance, service_id, version, service, cluster, env) \u003c 90",
+            "format": "",
+            "legendFormat": "{{instance}} - {{service_id}}",
+            "refId": ""
+          }
+        ],
+        "title": "Health Avg by Service over 15m with health \u003c 90%",
+        "description": "Only displays services with health average \u003c 90%",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 9
+        },
+        "options": {
+          "graphMode": "line",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "green"
+                },
+                {
+                  "value": 1,
+                  "color": "red"
+                },
+                {
+                  "value": 80,
+                  "color": "orange"
+                },
+                {
+                  "value": 99,
+                  "color": "green"
+                }
+              ]
+            },
+            "noValue": "All services healthy"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 6,
+        "targets": [
+          {
+            "expr": "sum(eth_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{account}}",
+            "refId": ""
+          }
+        ],
+        "title": "ETH Balance",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 15
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 7,
+        "targets": [
+          {
+            "expr": "sum(solana_balance{instance=~\"${instance}\", }) by (instance, account)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{account}}",
+            "refId": ""
+          }
+        ],
+        "title": "SOL Balance",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 15
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 8,
+        "targets": [
+          {
+            "expr": "process_open_fds{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Open File Descriptors",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 21
+        },
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 9,
+        "targets": [
+          {
+            "expr": "go_info{instance=~\"${instance}\", }",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "{{exported_version}}",
+            "refId": ""
+          }
+        ],
+        "title": "Go Version",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 6,
+          "y": 21
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
+          "justifyMode": "auto",
+          "textMode": "name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "AppDBConnections",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 25
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 10,
+        "targets": [
+          {
+            "expr": "sum(db_conns_max{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - Max",
+            "refId": ""
+          },
+          {
+            "expr": "sum(db_conns_open{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - Open",
+            "refId": ""
+          },
+          {
+            "expr": "sum(db_conns_used{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - Used",
+            "refId": ""
+          },
+          {
+            "expr": "sum(db_conns_wait{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - Wait",
+            "refId": ""
+          }
+        ],
+        "title": "DB Connections",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 26
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Conn",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 11,
+        "targets": [
+          {
+            "expr": "sum(db_wait_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "DB Wait Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 12,
+        "targets": [
+          {
+            "expr": "sum(db_wait_time_seconds{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "DB Wait Time",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Sec",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "SQLQueries",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 38
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 13,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.9, sum(rate(sql_query_timeout_percent_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le))",
+            "format": "",
+            "legendFormat": "p90",
+            "refId": ""
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(sql_query_timeout_percent_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le))",
+            "format": "",
+            "legendFormat": "p95",
+            "refId": ""
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(sql_query_timeout_percent_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le))",
+            "format": "",
+            "legendFormat": "p99",
+            "refId": ""
+          }
+        ],
+        "title": "SQL Query Timeout Percent",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 39
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "HeadTracker",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 45
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 14,
+        "targets": [
+          {
+            "expr": "sum(head_tracker_current_head{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Current Head",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 18,
+          "x": 0,
+          "y": 46
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 15,
+        "targets": [
+          {
+            "expr": "head_tracker_current_head{instance=~\"${instance}\", }",
+            "instant": true,
+            "range": false,
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Current Head Summary",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 46
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
+          "justifyMode": "auto",
+          "textMode": "value",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 16,
+        "targets": [
+          {
+            "expr": "rate(head_tracker_heads_received{instance=~\"${instance}\", }[1m])",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Heads Received Rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 52
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 17,
+        "targets": [
+          {
+            "expr": "head_tracker_very_old_head{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Very Old Head",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 58
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 18,
+        "targets": [
+          {
+            "expr": "rate(head_tracker_connection_errors{instance=~\"${instance}\", }[1m])",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Head Tracker Connection Errors Rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 58
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "HeadReporter",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 64
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 19,
+        "targets": [
+          {
+            "expr": "sum(unconfirmed_transactions{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Unconfirmed Transactions",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 65
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Tx",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 20,
+        "targets": [
+          {
+            "expr": "sum(max_unconfirmed_tx_age{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Unconfirmed TX Age",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 65
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 21,
+        "targets": [
+          {
+            "expr": "sum(max_unconfirmed_blocks{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Unconfirmed TX Blocks",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 65
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Blocks",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "TxManager",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 71
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 22,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_num_confirmed_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Confirmed",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 72
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 23,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_num_successful_transactions{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Successful",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 72
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 24,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_num_tx_reverted{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Reverted",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 72
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 25,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_num_gas_bumps{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Gas Bumps",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 72
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 26,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_fwd_tx_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Forwarded",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 78
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 27,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_tx_attempt_count{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Attempts",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 78
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 28,
+        "targets": [
+          {
+            "expr": "sum(tx_manager_gas_bump_exceeds_limit{instance=~\"${instance}\", }) by (blockchain, chainID, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Gas Bump Exceeds Limit",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 78
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 29,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Time Until broadcast",
+        "description": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 78
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 30,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, blockchain, chainID)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{blockchain}} - {{chainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "TX Manager Time Until confirmed",
+        "description": "The amount of time elapsed from a transaction being broadcast to being included in a block",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 84
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "LogPoller",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 90
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "stat",
+        "id": 31,
+        "targets": [
+          {
+            "expr": "count(log_poller_query_duration_sum{instance=~\"${instance}\", }) by (evmChainID)",
+            "format": "",
+            "legendFormat": "chainId: {{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Goroutines per ChainId",
+        "description": "goroutines per chainId",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 91
+        },
+        "options": {
+          "graphMode": "line",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 32,
+        "targets": [
+          {
+            "expr": "avg by (query, instance) (sum by (query, job) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          },
+          {
+            "expr": "avg (sum by(instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "format": "",
+            "legendFormat": "Total",
+            "refId": ""
+          }
+        ],
+        "title": "RPS",
+        "description": "requests per second",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 91
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 33,
+        "targets": [
+          {
+            "expr": "avg by (instance, type) (sum by (type, instance) (rate(log_poller_query_duration_count{instance=~\"${instance}\", }[$__rate_interval])))",
+            "format": "",
+            "legendFormat": "{{instance}} - {{type}}",
+            "refId": ""
+          }
+        ],
+        "title": "RPS by Type",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 97
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 34,
+        "targets": [
+          {
+            "expr": "avg by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Avg number of logs returned",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 97
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 35,
+        "targets": [
+          {
+            "expr": "max by (instance, query) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Max number of logs returned",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 103
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 36,
+        "targets": [
+          {
+            "expr": "max by (evmChainID) (log_poller_query_dataset_size{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Logs returned by chain",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 103
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 37,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.5, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Queries duration by query 0.5 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 109
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 38,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.9, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Queries duration by query 0.9 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 115
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 39,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(log_poller_query_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (le, instance, query)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{query}}",
+            "refId": ""
+          }
+        ],
+        "title": "Queries duration by query 0.99 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 121
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 40,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (log_poller_logs_inserted{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Number of logs inserted",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 127
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 41,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (rate(log_poller_logs_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Logs insertion rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 127
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 42,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (log_poller_blocks_inserted{instance=~\"${instance}\", })",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Number of blocks inserted",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 133
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 43,
+        "targets": [
+          {
+            "expr": "avg by (evmChainID) (rate(log_poller_blocks_inserted{instance=~\"${instance}\", }[$__rate_interval]))",
+            "format": "",
+            "legendFormat": "{{evmChainID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Blocks insertion rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 133
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 2,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Feeds Jobs",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 139
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 44,
+        "targets": [
+          {
+            "expr": "sum(feeds_job_proposal_requests{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Feeds Job Proposal Requests",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 140
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 45,
+        "targets": [
+          {
+            "expr": "sum(feeds_job_proposal_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Feeds Job Proposal Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 140
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Mailbox",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 146
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 46,
+        "targets": [
+          {
+            "expr": "sum(mailbox_load_percent{instance=~\"${instance}\", }) by (capacity, name, instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - Capacity: {{capacity}} - {{name}}",
+            "refId": ""
+          }
+        ],
+        "title": "Mailbox Load Percent",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 147
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Logs Counters",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 153
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 47,
+        "targets": [
+          {
+            "expr": "sum(log_panic_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - panic",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - panic",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 154
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 48,
+        "targets": [
+          {
+            "expr": "sum(log_fatal_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - fatal",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - fatal",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 154
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 49,
+        "targets": [
+          {
+            "expr": "sum(log_critical_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - critical",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - critical",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 154
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 50,
+        "targets": [
+          {
+            "expr": "sum(log_warn_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - warn",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - warn",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 160
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 51,
+        "targets": [
+          {
+            "expr": "sum(log_error_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Counter - error",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 160
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Logs Rate",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 166
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 52,
+        "targets": [
+          {
+            "expr": "sum(rate(log_panic_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - panic",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 167
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 53,
+        "targets": [
+          {
+            "expr": "sum(rate(log_fatal_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - fatal",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 167
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 54,
+        "targets": [
+          {
+            "expr": "sum(rate(log_critical_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - critical",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 167
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 55,
+        "targets": [
+          {
+            "expr": "sum(rate(log_warn_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - warn",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 173
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 56,
+        "targets": [
+          {
+            "expr": "sum(rate(log_error_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}} - error",
+            "refId": ""
+          }
+        ],
+        "title": "Logs Rate - error",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 173
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "EvmPoolLifecycle",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 179
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 57,
+        "targets": [
+          {
+            "expr": "evm_pool_rpc_node_highest_seen_block{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool Highest Seen Block",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 180
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 58,
+        "targets": [
+          {
+            "expr": "evm_pool_rpc_node_num_seen_blocks{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool Num Seen Blocks",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 180
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 59,
+        "targets": [
+          {
+            "expr": "evm_pool_rpc_node_polls_total{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool Node Polls Total",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 186
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 60,
+        "targets": [
+          {
+            "expr": "evm_pool_rpc_node_polls_failed{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool Node Polls Failed",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 186
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 61,
+        "targets": [
+          {
+            "expr": "evm_pool_rpc_node_polls_success{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool Node Polls Success",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 192
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Block",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Node RPC State",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 198
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "stat",
+        "id": 62,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Alive\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC Alive",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 199
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 63,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Closed\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC Closed",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 199
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 64,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Dialed\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC Dialed",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 199
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 65,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"InvalidChainID\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC InvalidChainID",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 199
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 66,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"OutOfSync\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC OutOfSync",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 205
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 67,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Undialed\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC Undialed",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 205
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 68,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Unreachable\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC Unreachable",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 205
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 69,
+        "targets": [
+          {
+            "expr": "sum(multi_node_states{instance=~\"${instance}\", state=\"Unusable\"}) by (instance, chainId)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{chainId}}",
+            "refId": ""
+          }
+        ],
+        "title": "Node RPC Unusable",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 205
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "EVM Pool RPC Node Metrics (App)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 211
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 70,
+        "targets": [
+          {
+            "expr": "sum(increase(evm_pool_rpc_node_calls_success{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{nodeName}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Calls Success Rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 212
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "default"
+                },
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 0.8,
+                  "color": "orange"
+                },
+                {
+                  "value": 0.99,
+                  "color": "green"
+                }
+              ]
+            },
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 71,
+        "targets": [
+          {
+            "expr": "sum(increase(evm_pool_rpc_node_dials_failed{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_calls_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{nodeName}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Dials Failure Rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 218
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "default"
+                },
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 0.8,
+                  "color": "orange"
+                },
+                {
+                  "value": 0.99,
+                  "color": "green"
+                }
+              ]
+            },
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 72,
+        "targets": [
+          {
+            "expr": "evm_pool_rpc_node_num_transitions_to_alive{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "Alive",
+            "refId": ""
+          },
+          {
+            "expr": "evm_pool_rpc_node_num_transitions_to_in_sync{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "InSync",
+            "refId": ""
+          },
+          {
+            "expr": "evm_pool_rpc_node_num_transitions_to_out_of_sync{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "OutOfSync",
+            "refId": ""
+          },
+          {
+            "expr": "evm_pool_rpc_node_num_transitions_to_unreachable{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "UnReachable",
+            "refId": ""
+          },
+          {
+            "expr": "evm_pool_rpc_node_num_transitions_to_invalid_chain_id{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "InvalidChainID",
+            "refId": ""
+          },
+          {
+            "expr": "evm_pool_rpc_node_num_transitions_to_unusable{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "TransitionToUnusable",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Transitions",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 224
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 73,
+        "targets": [
+          {
+            "expr": "evm_pool_rpc_node_states{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{state}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node States",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 224
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 74,
+        "targets": [
+          {
+            "expr": "sum(increase(evm_pool_rpc_node_verifies_success{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
+            "format": "",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{nodeName}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Verifies Success Rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 230
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 75,
+        "targets": [
+          {
+            "expr": "sum(increase(evm_pool_rpc_node_verifies_failed{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) / sum(increase(evm_pool_rpc_node_verifies{instance=~\"${instance}\", }[$__rate_interval])) by (instance, evmChainID, nodeName) * 100",
+            "format": "",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{nodeName}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Verifies Failure Rate",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 230
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "EVM Pool RPC Node Latencies (App)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 236
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 76,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.90, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{rpcCallName}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Calls Latency 0.90 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 237
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 77,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{rpcCallName}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Calls Latency 0.95 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 243
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 78,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(evm_pool_rpc_node_rpc_call_time_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, rpcCallName)) / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} - {{rpcCallName}}",
+            "refId": ""
+          }
+        ],
+        "title": "EVM Pool RPC Node Calls Latency 0.99 quantile",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 249
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Block History Estimator",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 255
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 79,
+        "targets": [
+          {
+            "expr": "sum(gas_updater_all_gas_price_percentiles{instance=~\"${instance}\", }) by (instance, evmChainID, percentile)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{percentile}}",
+            "refId": ""
+          }
+        ],
+        "title": "Gas Updater All Gas Price Percentiles",
+        "description": "Gas price at given percentile",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 256
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "gwei",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 80,
+        "targets": [
+          {
+            "expr": "sum(gas_updater_all_tip_cap_percentiles{instance=~\"${instance}\", }) by (instance, evmChainID, percentile)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{evmChainID}} - {{percentile}}",
+            "refId": ""
+          }
+        ],
+        "title": "Gas Updater All Tip Cap Percentiles",
+        "description": "Tip cap at given percentile",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 262
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 81,
+        "targets": [
+          {
+            "expr": "sum(gas_updater_set_gas_price{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Gas Updater Set Gas Price",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 268
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 82,
+        "targets": [
+          {
+            "expr": "sum(gas_updater_set_tip_cap{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Gas Updater Set Tip Cap",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 268
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 83,
+        "targets": [
+          {
+            "expr": "sum(gas_updater_current_base_fee{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Gas Updater Current Base Fee",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 274
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 84,
+        "targets": [
+          {
+            "expr": "sum(block_history_estimator_connectivity_failure_count{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Block History Estimator Connectivity Failure Count",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 274
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Pipeline Metrics (Runner)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 280
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 85,
+        "targets": [
+          {
+            "expr": "pipeline_task_execution_time{instance=~\"${instance}\", } / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} JobID: {{job_id}}",
+            "refId": ""
+          }
+        ],
+        "title": "Pipeline Task Execution Time",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 281
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 86,
+        "targets": [
+          {
+            "expr": "pipeline_run_errors{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} JobID: {{job_id}}",
+            "refId": ""
+          }
+        ],
+        "title": "Pipeline Run Errors",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 287
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 87,
+        "targets": [
+          {
+            "expr": "pipeline_run_total_time_to_completion{instance=~\"${instance}\", } / 1e6",
+            "format": "",
+            "legendFormat": "{{instance}} JobID: {{job_id}}",
+            "refId": ""
+          }
+        ],
+        "title": "Pipeline Run Total Time to Completion",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 293
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 88,
+        "targets": [
+          {
+            "expr": "pipeline_tasks_total_finished{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} JobID: {{job_id}}",
+            "refId": ""
+          }
+        ],
+        "title": "Pipeline Tasks Total Finished",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 299
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "HTTP API",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 305
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 89,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(service_gonic_request_duration_bucket{instance=~\"${instance}\", }[$__rate_interval])) by (instance, le, path, method))",
+            "format": "",
+            "legendFormat": "{{instance}} - {{method}} - {{path}}",
+            "refId": ""
+          }
+        ],
+        "title": "Request Duration p95",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 306
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 90,
+        "targets": [
+          {
+            "expr": "sum(rate(service_gonic_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, path, method, code)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{method}} - {{path}} - {{code}}",
+            "refId": ""
+          }
+        ],
+        "title": "Request Total Rate over interval",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 312
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 91,
+        "targets": [
+          {
+            "expr": "avg(rate(service_gonic_request_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_request_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Average Request Size",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 318
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 92,
+        "targets": [
+          {
+            "expr": "avg(rate(service_gonic_response_size_bytes_sum{instance=~\"${instance}\", }[$__rate_interval])) by (instance)/avg(rate(service_gonic_response_size_bytes_count{instance=~\"${instance}\", }[$__rate_interval])) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Response Size",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 318
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "PromHTTP",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 324
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 93,
+        "targets": [
+          {
+            "expr": "sum(rate(promhttp_metric_handler_requests_total{instance=~\"${instance}\", }[$__rate_interval])) by (instance, code)",
+            "format": "",
+            "legendFormat": "{{instance}} - {{code}}",
+            "refId": ""
+          }
+        ],
+        "title": "HTTP rate by return code",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 325
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Go Metrics",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 331
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 94,
+        "targets": [
+          {
+            "expr": "sum(go_threads{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Threads",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 332
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 95,
+        "targets": [
+          {
+            "expr": "sum(go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Heap Allocations Stats",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 338
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "none",
+          "justifyMode": "auto",
+          "textMode": "value",
+          "wideLayout": true,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "showPercentChange": false,
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 96,
+        "targets": [
+          {
+            "expr": "sum(go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }) by (instance)",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Heap allocations Graph",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 344
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 97,
+        "targets": [
+          {
+            "expr": "go_memstats_heap_alloc_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Alloc",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_heap_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Sys",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_heap_idle_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Idle",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_heap_inuse_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - InUse",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_heap_released_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Released",
+            "refId": ""
+          }
+        ],
+        "title": "Heap Usage",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 350
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 98,
+        "targets": [
+          {
+            "expr": "go_memstats_mspan_inuse_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Total InUse",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_mspan_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Total Sys",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_mcache_inuse_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Cache InUse",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_mcache_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Cache Sys",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_buck_hash_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Hash Sys",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_gc_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - GC Sys",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_other_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - bytes of memory are used for other runtime allocations",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_next_gc_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Next GC",
+            "refId": ""
+          }
+        ],
+        "title": "Memory in Off-Heap",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 350
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 99,
+        "targets": [
+          {
+            "expr": "go_memstats_stack_inuse_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - InUse",
+            "refId": ""
+          },
+          {
+            "expr": "go_memstats_stack_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}} - Sys",
+            "refId": ""
+          }
+        ],
+        "title": "Memory in Stack",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 356
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 100,
+        "targets": [
+          {
+            "expr": "go_memstats_sys_bytes{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Total Used Memory",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 356
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 101,
+        "targets": [
+          {
+            "expr": "go_memstats_mallocs_total{instance=~\"${instance}\", } - go_memstats_frees_total{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Number of Live Objects",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 362
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 102,
+        "targets": [
+          {
+            "expr": "rate(go_memstats_mallocs_total{instance=~\"${instance}\", }[1m])",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Rate of Objects Allocated",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 362
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 103,
+        "targets": [
+          {
+            "expr": "rate(go_memstats_lookups_total{instance=~\"${instance}\", }[1m])",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Rate of a Pointer Dereferences",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 368
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 104,
+        "targets": [
+          {
+            "expr": "go_goroutines{instance=~\"${instance}\", }",
+            "format": "",
+            "legendFormat": "{{instance}}",
+            "refId": ""
+          }
+        ],
+        "title": "Goroutines",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 368
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "decimals": 1,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 2,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "type": "query",
+          "name": "instance",
+          "label": "Instance",
+          "query": "label_values(instance)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": true,
+          "sort": 1,
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {}
+  },
+  "Alerts": [
+    {
+      "annotations": {
+        "description": "Component {{ index $labels \"service_id\" }} uptime in the last 15m is {{ index $values \"A\" }}%",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Uptime less than 90% over last 15 minutes on one component in a Node"
+      },
+      "condition": "D",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "health{}",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "mean",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "$B * 100",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "math"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    90,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "C",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "D",
+            "type": "threshold"
+          },
+          "refId": "D",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
+        "severity": "warning"
+      },
+      "noDataState": "NoData",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "Health Avg by Service over 15m"
+    },
+    {
+      "annotations": {
+        "description": "ETH Balance critically low at {{ index $values \"A\" }} on {{ index $labels \"instance\" }}",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "ETH Balance is lower than threshold"
+      },
+      "condition": "B",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "eth_balance{}",
+            "instant": true,
+            "range": false,
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    1,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "B",
+            "type": "threshold"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
+        "severity": "critical"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "ETH Balance"
+    },
+    {
+      "annotations": {
+        "description": "Solana Balance critically low at {{ index $values \"A\" }} on {{ index $labels \"instance\" }}",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Solana Balance is lower than threshold"
+      },
+      "condition": "B",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "solana_balance{}",
+            "instant": true,
+            "range": false,
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    1,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "B",
+            "type": "threshold"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
+        "severity": "critical"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "SOL Balance"
+    },
+    {
+      "annotations": {
+        "description": "{{ index $labels \"instance\" }} on ChainID {{ index $labels \"ChainID\" }} has received {{ index $values \"A\" }} heads over 10 minutes.",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "No Headers Received"
+      },
+      "condition": "B",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "increase(head_tracker_heads_received{}[10m])",
+            "instant": true,
+            "range": false,
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    1,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "B",
+            "type": "threshold"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "10m",
+      "labels": {
+        "severity": "critical"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "Head Tracker Heads Received Rate"
+    }
+  ],
+  "ContactPoints": null,
+  "NotificationPolicies": [
+    {
+      "group_by": [
+        "grafana_folder",
+        "alertname"
+      ],
+      "receiver": "chainlink-slack"
+    }
+  ]
+}

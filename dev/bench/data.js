@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729262319431,
+  "lastUpdate": 1729269086221,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3990,6 +3990,48 @@ window.BENCHMARK_DATA = {
             "value": 28212,
             "unit": "ns/op",
             "extra": "42534 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.farber@smartcontract.com",
+            "name": "Juan Farber",
+            "username": "Farber98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a9f995ebb98b9ef7facfc7033c650512c5745cd1",
+          "message": "[BCFR-147][common] - Add codec chain agnostic modifier for converting byte array address to string (#818)\n\n* initial ideation of chain agnostic modifier\r\n\r\n* fix existing tests and remove go-eth\r\n\r\n* fix ci lint\r\n\r\n* codec tests draft\r\n\r\n* added address field transf\r\n\r\n* fix codec tests\r\n\r\n* separate hooks\r\n\r\n* add solana support\r\n\r\n* fix solana and remove prints\r\n\r\n* cleanups\r\n\r\n* go mod dep\r\n\r\n* chain agnostic modifier\r\n\r\n* tidy and lint\r\n\r\n* addressing comments\r\n\r\n* reuse modifier base logic to simplify things + refactors\r\n\r\n---------\r\n\r\nCo-authored-by: Awbrey Hughlett <awbrey.hughlett@smartcontract.com>\r\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2024-10-18T18:30:14+02:00",
+          "tree_id": "5a46c2d0bbc2d268b8828a53883959a7cbf66c67",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a9f995ebb98b9ef7facfc7033c650512c5745cd1"
+        },
+        "date": 1729269085751,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 455.3,
+            "unit": "ns/op",
+            "extra": "2546512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 521.7,
+            "unit": "ns/op",
+            "extra": "2313135 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28339,
+            "unit": "ns/op",
+            "extra": "42295 times\n4 procs"
           }
         ]
       }

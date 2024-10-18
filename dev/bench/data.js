@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729246414769,
+  "lastUpdate": 1729262319431,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3948,6 +3948,48 @@ window.BENCHMARK_DATA = {
             "value": 28297,
             "unit": "ns/op",
             "extra": "42434 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "samsondav@protonmail.com",
+            "name": "Sam",
+            "username": "samsondav"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5248d7c4468aeddd5b42c383760174c6115e6416",
+          "message": "Add types for Retirement Report (#835)\n\nCo-authored-by: Bruno Moura <brunotm@gmail.com>",
+          "timestamp": "2024-10-18T10:37:28-04:00",
+          "tree_id": "4e298e9afa58a66ab53dc068a3e1957d6ca85a65",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5248d7c4468aeddd5b42c383760174c6115e6416"
+        },
+        "date": 1729262318333,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 477.5,
+            "unit": "ns/op",
+            "extra": "2625934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 527.3,
+            "unit": "ns/op",
+            "extra": "2315359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28212,
+            "unit": "ns/op",
+            "extra": "42534 times\n4 procs"
           }
         ]
       }

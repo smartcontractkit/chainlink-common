@@ -22,6 +22,10 @@ const (
 	labelWorkflowName        = "workflow_name"
 )
 
+// Length of responses are encoded into 4 byte buffers in little endian.  uint32Size is the size
+// of that buffer.
+const uint32Size = int32(4)
+
 type Runtime struct {
 	fetchFn func(req sdk.FetchRequest) (sdk.FetchResponse, error)
 	emitFn  func(msg string, labels map[string]any) error
@@ -102,13 +106,16 @@ func createEmitFn(
 			return err
 		}
 
-		// Prepare the request to be sent to the host memory
+		// Prepare the request to be sent to the host memory by allocating space for the
+		// response and response length buffers.
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
 		respptr, _ := bufferToPointerLen(respBuffer)
 
 		resplenBuffer := make([]byte, uint32Size)
 		resplenptr, _ := bufferToPointerLen(resplenBuffer)
 
+		// The request buffer is the wasm memory, get a pointer to the first element and the length
+		// of the protobuf message.
 		reqptr, reqptrlen := bufferToPointerLen(b)
 
 		// Emit the message via the method imported from the host
@@ -134,8 +141,6 @@ func createEmitFn(
 
 	return emitFn
 }
-
-const uint32Size = int32(4)
 
 // bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
 func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {

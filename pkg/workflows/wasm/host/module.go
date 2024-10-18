@@ -77,6 +77,8 @@ type ModuleConfig struct {
 	IsUncompressed bool
 	Fetch          func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
 
+	// Emitter is the function that will be called when the emit function is called in the WASM module.
+	// Implementation should emit to external consumer.
 	Emitter sdk.Emitter
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
@@ -434,7 +436,7 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.C
 	}
 }
 
-// createEmitFn injects dependencies and builds the emit function used within the WASM.  Errors in
+// createEmitFn injects dependencies and builds the emit function exposed by the WASM.  Errors in
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
@@ -511,8 +513,8 @@ func createEmitFn(
 	}
 }
 
-// Emit sends a message to the Beholder service via the custmsg package's labeler.  Each label is
-// expected to be a string.
+// beholderEmitter sends a message to the Beholder service via the custmsg package's labeler.  Each label is
+// expected to be a string.  Fails if any label is not a string.
 func beholderEmitter(msg string, labels map[string]any) error {
 	validated := make(map[string]string, len(labels))
 	for k, v := range labels {
@@ -534,7 +536,8 @@ type UnsafeWriterFunc func(c *wasmtime.Caller, src []byte, ptr, len int32) int64
 // by the ptr.
 type UnsafeFixedLengthWriterFunc func(c *wasmtime.Caller, ptr int32, val uint32) int64
 
-// UnsafeReaderFunc abstractly defines the behavior of reading from WASM memory.
+// UnsafeReaderFunc abstractly defines the behavior of reading from WASM memory.  Returns a copy of
+// the memory at the given pointer and size.
 type UnsafeReaderFunc func(c *wasmtime.Caller, ptr, len int32) ([]byte, error)
 
 // wasmMemoryAccessor is the default implementation for unsafely accessing the memory of the WASM module.
@@ -547,6 +550,8 @@ func wasmRead(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
 	return read(wasmMemoryAccessor(caller), ptr, size)
 }
 
+// Read acts on a byte slice that should represent an unsafely accessed slice of memory.  It returns
+// a copy of the memory at the given pointer and size.
 func read(memory []byte, ptr int32, size int32) ([]byte, error) {
 	if size < 0 || ptr < 0 {
 		return nil, fmt.Errorf("invalid memory access: ptr: %d, size: %d", ptr, size)
@@ -571,6 +576,7 @@ func wasmWriteUInt32(caller *wasmtime.Caller, ptr int32, val uint32) int64 {
 	return writeUInt32(wasmMemoryAccessor(caller), ptr, val)
 }
 
+// writeUInt32 binary encodes and writes a uint32 to the memory at the given pointer.
 func writeUInt32(memory []byte, ptr int32, val uint32) int64 {
 	uint32Size := int32(4)
 	buffer := make([]byte, uint32Size)
@@ -578,6 +584,7 @@ func writeUInt32(memory []byte, ptr int32, val uint32) int64 {
 	return write(memory, buffer, ptr, uint32Size)
 }
 
+// write copies the given src byte slice into the memory at the given pointer and size.
 func write(memory, src []byte, ptr, size int32) int64 {
 	if size < 0 || ptr < 0 {
 		return -1

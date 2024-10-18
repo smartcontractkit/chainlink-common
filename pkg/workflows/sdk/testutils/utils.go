@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -11,11 +12,15 @@ import (
 )
 
 func AssertWorkflowSpec(t *testing.T, expectedSpec, testWorkflowSpec sdk.WorkflowSpec) {
-	expected, err := json.Marshal(expectedSpec)
-	require.NoError(t, err)
+	var b bytes.Buffer
+	e := json.NewEncoder(&b)
+	e.SetIndent("", "  ")
+	require.NoError(t, e.Encode(expectedSpec))
+	expected := b.String()
 
-	actual, err := json.Marshal(testWorkflowSpec)
-	require.NoError(t, err)
+	b.Reset()
+	require.NoError(t, e.Encode(testWorkflowSpec))
+	actual := b.String()
 
-	assert.Equal(t, string(expected), string(actual))
+	assert.Equal(t, expected, actual)
 }

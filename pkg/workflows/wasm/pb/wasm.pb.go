@@ -671,11 +671,12 @@ type FetchResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ExecutionError bool     `protobuf:"varint,1,opt,name=executionError,proto3" json:"executionError,omitempty"`
-	ErrorMessage   string   `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
-	StatusCode     uint32   `protobuf:"varint,3,opt,name=statusCode,proto3" json:"statusCode,omitempty"` // NOTE: this is actually a uint8, but proto doesn't support this.
-	Headers        *pb1.Map `protobuf:"bytes,4,opt,name=headers,proto3" json:"headers,omitempty"`
-	Body           []byte   `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
+	ExecutionError bool   `protobuf:"varint,1,opt,name=executionError,proto3" json:"executionError,omitempty"`
+	ErrorMessage   string `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
+	// NOTE: this is actually a uint8, but proto doesn't support this.
+	StatusCode uint32   `protobuf:"varint,3,opt,name=statusCode,proto3" json:"statusCode,omitempty"`
+	Headers    *pb1.Map `protobuf:"bytes,4,opt,name=headers,proto3" json:"headers,omitempty"`
+	Body       []byte   `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
 }
 
 func (x *FetchResponse) Reset() {

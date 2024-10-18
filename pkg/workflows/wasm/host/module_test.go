@@ -5,14 +5,17 @@ import (
 	"testing"
 
 	"github.com/bytecodealliance/wasmtime-go/v23"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/proto"
 )
 
+// Test_createEmitFn tests that the emit function used by the module is created correctly.  Memory
+// access functions are injected as mocks.
 func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		emitFn := createEmitFn(

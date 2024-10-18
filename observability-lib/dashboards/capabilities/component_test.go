@@ -12,11 +12,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/capabilities"
 )
 
-var generate = flag.Bool("generate", false, "generate test output")
-var fileOutput = "test-output.json"
+var update = flag.Bool("update", false, "update golden test files")
+
+const fileOutput = "test-output.json"
 
 func TestGenerateFile(t *testing.T) {
-	if *generate == false {
+	if *update == false {
 		t.Skip("skipping test")
 	}
 

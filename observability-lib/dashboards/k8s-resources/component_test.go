@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var generate = flag.Bool("generate", false, "generate test output")
+var update = flag.Bool("update", false, "update golden test files")
 var fileOutput = "test-output.json"
 
 func TestGenerateFile(t *testing.T) {
-	if *generate == false {
+	if *update == false {
 		t.Skip("skipping test")
 	}
 

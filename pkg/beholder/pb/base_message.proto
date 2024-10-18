@@ -13,5 +13,5 @@ message BaseMessage {
   string msg=1;
   // https://protobuf.dev/programming-guides/proto3/#maps
   // In go: if Value is empty for a key, nothing will be serialized
-  map<string, values.Value> labels=2;
+  values.Map labels = 2;
 }

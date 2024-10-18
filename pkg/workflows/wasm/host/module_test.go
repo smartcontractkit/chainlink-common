@@ -164,20 +164,20 @@ func Test_createEmitFn(t *testing.T) {
 }
 
 func Test_read(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
+	t.Run("successfully read from slice", func(t *testing.T) {
 		memory := []byte("hello, world")
 		got, err := read(memory, 0, int32(len(memory)))
 		assert.NoError(t, err)
 		assert.Equal(t, []byte("hello, world"), got)
 	})
 
-	t.Run("out of bounds", func(t *testing.T) {
+	t.Run("fail to read because out of bounds request", func(t *testing.T) {
 		memory := []byte("hello, world")
 		_, err := read(memory, 0, int32(len(memory)+1))
 		assert.Error(t, err)
 	})
 
-	t.Run("fails invalid access", func(t *testing.T) {
+	t.Run("fails to read because of invalid pointer or length", func(t *testing.T) {
 		memory := []byte("hello, world")
 		_, err := read(memory, 0, -1)
 		assert.Error(t, err)
@@ -186,7 +186,7 @@ func Test_read(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("memory is read only", func(t *testing.T) {
+	t.Run("validate that memory is read only once copied", func(t *testing.T) {
 		memory := []byte("hello, world")
 		copied, err := read(memory, 0, int32(len(memory)))
 		assert.NoError(t, err)
@@ -201,7 +201,7 @@ func Test_read(t *testing.T) {
 }
 
 func Test_write(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
+	t.Run("successfully write to slice", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, 12)
 		n := write(memory, giveSrc, 0, int32(len(giveSrc)))
@@ -209,14 +209,14 @@ func Test_write(t *testing.T) {
 		assert.Equal(t, []byte("hello, world"), memory[:len(giveSrc)])
 	})
 
-	t.Run("out of bounds", func(t *testing.T) {
+	t.Run("cannot write to slice because memory too small", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, len(giveSrc)-1)
 		n := write(memory, giveSrc, 0, int32(len(giveSrc)))
 		assert.Equal(t, n, int64(-1))
 	})
 
-	t.Run("fails invalid access", func(t *testing.T) {
+	t.Run("fails to write to invalid access", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, len(giveSrc))
 		n := write(memory, giveSrc, 0, -1)
@@ -227,6 +227,7 @@ func Test_write(t *testing.T) {
 	})
 }
 
+// Test_writeUInt32 tests that a uint32 is written to memory correctly.
 func Test_writeUInt32(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		memory := make([]byte, 4)

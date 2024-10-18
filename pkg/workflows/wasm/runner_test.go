@@ -206,46 +206,43 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 	assert.Equal(t, &gotSpec, spc)
 }
 
+// Test_createEmitFn validates the runtime's emit function implementation.  Uses mocks of the
+// imported wasip1 emit function.
 func Test_createEmitFn(t *testing.T) {
 	var (
 		l         = logger.Test(t)
 		sdkConfig = &RuntimeConfig{
 			MaxFetchResponseSizeBytes: 1_000,
+			MetaData: &capabilities.RequestMetadata{
+				WorkflowID:          "workflow_id",
+				WorkflowExecutionID: "workflow_execution_id",
+				WorkflowName:        "workflow_name",
+				WorkflowOwner:       "workflow_owner_address",
+			},
+		}
+		giveMsg    = "testing guest"
+		giveLabels = map[string]any{
+			"some-key": "some-value",
 		}
 	)
 
 	t.Run("success", func(t *testing.T) {
-		var (
-			giveMsg    = "testing guest"
-			giveLabels = map[string]any{
-				"some-key": "some-value",
-			}
-			err    error
-			emitFn = createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
-				return 0
-			})
-		)
-
-		err = emitFn(giveMsg, giveLabels)
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
 		assert.NoError(t, err)
 	})
 
 	t.Run("successfully read error message when emit fails", func(t *testing.T) {
-		var (
-			giveMsg    = "testing guest"
-			giveLabels = map[string]any{
-				"some-key": "some-value",
-			}
-			resp = &wasmpb.EmitMessageResponse{
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			// marshall the protobufs
+			b, err := proto.Marshal(&wasmpb.EmitMessageResponse{
 				Error: &wasmpb.Error{
 					Message: assert.AnError.Error(),
 				},
-			}
-		)
-
-		emitFn := createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
-			// marshall the protobufs
-			b, err := proto.Marshal(resp)
+			})
 			assert.NoError(t, err)
 
 			// write the marshalled response message to memory
@@ -257,23 +254,18 @@ func Test_createEmitFn(t *testing.T) {
 			binary.LittleEndian.PutUint32(respLen, uint32(len(b)))
 
 			return 0
-		})
-		err := emitFn(giveMsg, giveLabels)
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, assert.AnError.Error())
 	})
 
 	t.Run("fail to deserialize response from memory", func(t *testing.T) {
-		var (
-			giveMsg    = "testing guest"
-			giveLabels = map[string]any{
-				"some-key": "some-value",
-			}
-			resp = assert.AnError.Error()
-		)
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			// b is a non-protobuf byte slice
+			b := []byte(assert.AnError.Error())
 
-		emitFn := createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
-			b := []byte(resp)
 			// write the marshalled response message to memory
 			resp := unsafe.Slice((*byte)(respptr), len(b))
 			copy(resp, b)
@@ -283,25 +275,21 @@ func Test_createEmitFn(t *testing.T) {
 			binary.LittleEndian.PutUint32(respLen, uint32(len(b)))
 
 			return 0
-		})
-		err := emitFn(giveMsg, giveLabels)
+		}
+
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
 		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to unmarshal")
+		assert.ErrorContains(t, err, "invalid wire-format data")
 	})
 
 	t.Run("fail with nonzero code from emit", func(t *testing.T) {
-		var (
-			giveMsg    = "testing guest"
-			giveLabels = map[string]any{
-				"some-key": "some-value",
-			}
-		)
-
-		emitFn := createEmitFn(sdkConfig, l, func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
 			return 42
-		})
-		err := emitFn(giveMsg, giveLabels)
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
 		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to emit")
+		assert.ErrorContains(t, err, "emit failed with errno 42")
 	})
 }

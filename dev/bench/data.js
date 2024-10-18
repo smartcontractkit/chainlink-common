@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729177614807,
+  "lastUpdate": 1729246414769,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -3906,6 +3906,48 @@ window.BENCHMARK_DATA = {
             "value": 28284,
             "unit": "ns/op",
             "extra": "42454 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "309a9a3d51098ef1f5fb263428339a6faa64b45c",
+          "message": "[CAPPL-66] Add custom_message package (#864)",
+          "timestamp": "2024-10-18T11:12:31+01:00",
+          "tree_id": "caf987fb7839dd87abb8edadb2fa1ae482cf0864",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/309a9a3d51098ef1f5fb263428339a6faa64b45c"
+        },
+        "date": 1729246414248,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 461.9,
+            "unit": "ns/op",
+            "extra": "2653500 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.5,
+            "unit": "ns/op",
+            "extra": "2347964 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28297,
+            "unit": "ns/op",
+            "extra": "42434 times\n4 procs"
           }
         ]
       }

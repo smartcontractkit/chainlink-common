@@ -3,7 +3,9 @@ package testutils_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,7 +54,7 @@ func TestRunner(t *testing.T) {
 		assert.True(t, helper.transformTriggerCalled)
 		consensus := consensusMock.GetStepDecoded("consensus")
 		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
-		require.Len(t, consensus.Input.Observations, 1)
+		require.NotNil(t, consensus.Input.Observations[0])
 
 		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()
@@ -82,7 +84,7 @@ func TestRunner(t *testing.T) {
 		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 			Encoder:       "Test",
 			EncoderConfig: ocr3.EncoderConfig{},
-		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 		chainwriter.TargetConfig{
 			Address:    "0x123",
@@ -253,6 +255,39 @@ func TestRunner(t *testing.T) {
 	})
 }
 
+func TestCompute(t *testing.T) {
+	t.Run("Inputs don't loose integer types when any is deserialized to", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
+		toMap := sdk.Compute1(workflow, "tomap", sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, i0 string) (map[string]any, error) {
+			v, err := strconv.Atoi(i0)
+			if err != nil {
+				return nil, err
+			}
+
+			return map[string]any{"a": int64(v)}, nil
+		})
+
+		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[map[string]any]{Arg0: toMap.Value()}, func(runtime sdk.Runtime, input map[string]any) (any, error) {
+			actual := input["a"]
+			if int64(100) != actual {
+				return nil, fmt.Errorf("expected uint64(100), got %v of type %T", actual, actual)
+			}
+
+			return actual, nil
+		})
+
+		runner := testutils.NewRunner(tests.Context(t))
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "100"}, nil
+		})
+
+		runner.Run(workflow)
+
+		require.NoError(t, runner.Err())
+	})
+}
+
 func registrationWorkflow() (*sdk.WorkflowSpecFactory, map[string]any, map[string]any) {
 	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
 	testTriggerConfig := map[string]any{"something": "from nothing"}
@@ -315,7 +350,7 @@ func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecF
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder: "Test", EncoderConfig: ocr3.EncoderConfig{},
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 	chainwriter.TargetConfig{
 		Address:    "0x123",

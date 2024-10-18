@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -336,7 +337,7 @@ func (it *fakeContractReaderInterfaceTester) GenerateBlocksTillConfidenceLevel(t
 }
 
 func (it *fakeContractReaderInterfaceTester) MaxWaitTimeForEvents() time.Duration {
-	return time.Millisecond * 100
+	return time.Millisecond * 1000
 }
 
 type valConfidencePair struct {
@@ -607,7 +608,7 @@ func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract,
 		}
 
 		var sequences []types.Sequence
-		for _, trigger := range f.triggers[bc.String()] {
+		for idx, trigger := range f.triggers[bc.String()] {
 			doAppend := true
 			for _, expr := range filter.Expressions {
 				if primitive, ok := expr.Primitive.(*primitives.Comparator); ok {
@@ -621,21 +622,39 @@ func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract,
 					}
 				}
 			}
-			if len(filter.Expressions) == 0 || doAppend {
+
+			var skipAppend bool
+			if limitAndSort.HasCursorLimit() {
+				cursor, err := strconv.Atoi(limitAndSort.Limit.Cursor)
+				if err != nil {
+					return nil, err
+				}
+
+				// assume CursorFollowing order for now
+				if cursor >= idx {
+					skipAppend = true
+				}
+			}
+
+			if (len(filter.Expressions) == 0 || doAppend) && !skipAppend {
 				if isValueType {
 					value, err := values.Wrap(trigger.testStruct)
 					if err != nil {
 						return nil, err
 					}
-					sequences = append(sequences, types.Sequence{Data: &value})
+					sequences = append(sequences, types.Sequence{Cursor: strconv.Itoa(idx), Data: &value})
 				} else {
-					sequences = append(sequences, types.Sequence{Data: trigger.testStruct})
+					sequences = append(sequences, types.Sequence{Cursor: fmt.Sprintf("%d", idx), Data: trigger.testStruct})
 				}
+			}
+
+			if limitAndSort.Limit.Count > 0 && len(sequences) >= int(limitAndSort.Limit.Count) {
+				break
 			}
 		}
 
 		if isValueType {
-			if !limitAndSort.HasSequenceSort() {
+			if !limitAndSort.HasSequenceSort() && !limitAndSort.HasCursorLimit() {
 				sort.Slice(sequences, func(i, j int) bool {
 					valI := *sequences[i].Data.(*values.Value)
 					valJ := *sequences[j].Data.(*values.Value)
@@ -662,7 +681,7 @@ func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract,
 				})
 			}
 		} else {
-			if !limitAndSort.HasSequenceSort() {
+			if !limitAndSort.HasSequenceSort() && !limitAndSort.HasCursorLimit() {
 				sort.Slice(sequences, func(i, j int) bool {
 					if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
 						return false
@@ -1006,12 +1025,12 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract, anySecondContract, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
@@ -1060,20 +1079,20 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract2, anySecondContract2, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID1, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract1, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract1, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID2, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract2, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract2, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anySecondContractID1, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract1, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract1, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anySecondContractID2, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract2, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract2, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)

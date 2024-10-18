@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"slices"
 	"time"
 
+	"github.com/smartcontractkit/libocr/quorumhelper"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -21,6 +23,7 @@ import (
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
@@ -125,6 +128,13 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			lggr.Errorw("observations are not a list")
 			continue
 		}
+
+		var cfgProto *pb.Map
+		if rq.OverriddenEncoderConfig != nil {
+			cp := values.Proto(rq.OverriddenEncoderConfig).GetMapValue()
+			cfgProto = cp
+		}
+
 		newOb := &pbtypes.Observation{
 			Observations: listProto,
 			Id: &pbtypes.Id{
@@ -137,6 +147,8 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 				ReportId:                 rq.ReportID,
 				KeyId:                    rq.KeyID,
 			},
+			OverriddenEncoderName:   rq.OverriddenEncoderName,
+			OverriddenEncoderConfig: cfgProto,
 		}
 
 		obs.Observations = append(obs.Observations, newOb)
@@ -149,20 +161,47 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
 }
 
-func (r *reportingPlugin) ValidateObservation(outctx ocr3types.OutcomeContext, query types.Query, ao types.AttributedObservation) error {
+func (r *reportingPlugin) ValidateObservation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, ao types.AttributedObservation) error {
 	return nil
 }
 
-func (r *reportingPlugin) ObservationQuorum(outctx ocr3types.OutcomeContext, query types.Query) (ocr3types.Quorum, error) {
-	return ocr3types.QuorumTwoFPlusOne, nil
+func (r *reportingPlugin) ObservationQuorum(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (bool, error) {
+	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, r.config.N, r.config.F, aos), nil
 }
 
-func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
+func shaForOverriddenEncoder(obs *pbtypes.Observation) (string, error) {
+	hash := sha256.New()
+	_, err := hash.Write([]byte(obs.OverriddenEncoderName))
+	if err != nil {
+		return "", fmt.Errorf("could not write encoder name to hash: %w", err)
+	}
+
+	marshalled, err := proto.MarshalOptions{Deterministic: true}.Marshal(obs.OverriddenEncoderConfig)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal overridden encoder: %w", err)
+	}
+
+	_, err = hash.Write(marshalled)
+	if err != nil {
+		return "", fmt.Errorf("could not write encoder config to hash: %w", err)
+	}
+
+	return string(hash.Sum([]byte{})), nil
+}
+
+type encoderConfig struct {
+	name   string
+	config *pb.Map
+}
+
+func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
 	execIDToOracleObservations := map[string]map[ocrcommon.OracleID][]values.Value{}
 	seenWorkflowIDs := map[string]int{}
 	var sortedTimestamps []*timestamppb.Timestamp
 	var finalTimestamp *timestamppb.Timestamp
+	execIDToEncoderShaToCount := map[string]map[string]int{}
+	shaToEncoder := map[string]encoderConfig{}
 	for _, attributedObservation := range attributedObservations {
 		obs := &pbtypes.Observations{}
 		err := proto.Unmarshal(attributedObservation.Observation, obs)
@@ -209,6 +248,21 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 				execIDToOracleObservations[weid] = make(map[ocrcommon.OracleID][]values.Value)
 			}
 			execIDToOracleObservations[weid][attributedObservation.Observer] = obsList.Underlying
+
+			sha, err := shaForOverriddenEncoder(request)
+			if err != nil {
+				r.lggr.Errorw("could not calculate sha for overridden encoder", "error", err, "observation", obs)
+				continue
+			}
+
+			shaToEncoder[sha] = encoderConfig{
+				name:   request.OverriddenEncoderName,
+				config: request.OverriddenEncoderConfig,
+			}
+			if _, ok := execIDToEncoderShaToCount[weid]; !ok {
+				execIDToEncoderShaToCount[weid] = map[string]int{}
+			}
+			execIDToEncoderShaToCount[weid][sha]++
 		}
 	}
 
@@ -282,7 +336,7 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 			continue
 		}
 
-		outcome, err2 := agg.Aggregate(workflowOutcome, obs, r.config.F)
+		outcome, err2 := agg.Aggregate(lggr, workflowOutcome, obs, r.config.F)
 		if err2 != nil {
 			lggr.Errorw("error aggregating outcome", "error", err2)
 			return nil, err
@@ -296,6 +350,35 @@ func (r *reportingPlugin) Outcome(outctx ocr3types.OutcomeContext, query types.Q
 		}
 
 		outcome.Timestamp = finalTimestamp
+
+		shaToCount, ok := execIDToEncoderShaToCount[weid.WorkflowExecutionId]
+		if !ok {
+			lggr.Debugw("could not find any encoder shas matching weid requested in the query")
+			continue
+		}
+
+		// Note: no need to check the observation count here,
+		// we've checked this above when we checked the observations count.
+		var encCfg *encoderConfig
+		for sha, count := range shaToCount {
+			if count >= 2*r.config.F+1 {
+				encoderCfg, ok := shaToEncoder[sha]
+				if !ok {
+					lggr.Debugw("could not find encoder matching sha")
+					continue
+				}
+
+				lggr.Debugw("consensus reached on overridden encoder", "encoderName", encoderCfg.name)
+				encCfg = &encoderCfg
+				break
+			}
+		}
+
+		if encCfg != nil {
+			lggr.Debugw("overridden encoder set", "name", encCfg.name, "cfg", encCfg.config)
+			outcome.EncoderName = encCfg.name
+			outcome.EncoderConfig = encCfg.config
+		}
 
 		report := &pbtypes.Report{
 			Outcome: outcome,
@@ -350,14 +433,14 @@ func marshalReportInfo(info *pbtypes.ReportInfo, keyID string) ([]byte, error) {
 	return ip, nil
 }
 
-func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportWithInfo[[]byte], error) {
+func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
 	o := &pbtypes.Outcome{}
 	err := proto.Unmarshal(outcome, o)
 	if err != nil {
 		return nil, err
 	}
 
-	reports := []ocr3types.ReportWithInfo[[]byte]{}
+	reports := []ocr3types.ReportPlus[[]byte]{}
 
 	for _, report := range o.CurrentReports {
 		if report == nil {
@@ -375,14 +458,13 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 			continue
 		}
 
-		r.lggr.Debugw("generating reports", "len", len(o.CurrentReports), "shouldReport", report.Outcome.ShouldReport, "executionID", report.Id.WorkflowExecutionId)
-
 		lggr := logger.With(
 			r.lggr,
 			"workflowID", report.Id.WorkflowId,
 			"executionID", report.Id.WorkflowExecutionId,
 			"shouldReport", report.Outcome.ShouldReport,
 		)
+		lggr.Debugw("generating reports", "len", len(o.CurrentReports))
 
 		outcome, id := report.Outcome, report.Id
 
@@ -434,27 +516,33 @@ func (r *reportingPlugin) Reports(seqNr uint64, outcome ocr3types.Outcome) ([]oc
 
 			mv, err := values.FromMapValueProto(newOutcome.EncodableOutcome)
 			if err != nil {
-				r.lggr.Errorw("could not decode map from map value proto", "error", err)
+				lggr.Errorw("could not decode map from map value proto", "error", err)
 				continue
 			}
 
-			rawReport, err = encoder.Encode(context.Background(), *mv)
+			rawReport, err = encoder.Encode(ctx, *mv)
 			if err != nil {
-				r.lggr.Errorw("could not encode report for workflow", "error", err)
+				if cerr := ctx.Err(); cerr != nil {
+					lggr.Errorw("report encoding cancelled", "err", cerr)
+					return nil, cerr
+				}
+				lggr.Errorw("could not encode report for workflow", "error", err)
 				continue
 			}
 		}
 
 		infob, err := marshalReportInfo(info, id.KeyId)
 		if err != nil {
-			r.lggr.Errorw("could not marshal id into ReportWithInfo", "error", err)
+			lggr.Errorw("could not marshal id into ReportWithInfo", "error", err)
 			continue
 		}
 
 		// Append every report, even if shouldReport = false, to let the transmitter mark the step as complete.
-		reports = append(reports, ocr3types.ReportWithInfo[[]byte]{
-			Report: rawReport,
-			Info:   infob,
+		reports = append(reports, ocr3types.ReportPlus[[]byte]{
+			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
+				Report: rawReport,
+				Info:   infob,
+			},
 		})
 	}
 

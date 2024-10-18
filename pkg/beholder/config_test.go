@@ -27,11 +27,32 @@ func ExampleConfig() {
 		// Message Emitter
 		EmitterExportTimeout:  1 * time.Second,
 		EmitterBatchProcessor: true,
+		// OTel message log exporter retry config
+		EmitterExporterRetryConfig: beholder.RetryConfig{
+			Enabled:         false,
+			InitialInterval: 5 * time.Second,
+			MaxInterval:     30 * time.Second,
+			MaxElapsedTime:  time.Minute,
+		},
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
+		// OTel trace exporter retry config
+		TraceExporterRetryConfig: beholder.RetryConfig{
+			Enabled:         false,
+			InitialInterval: 5 * time.Second,
+			MaxInterval:     30 * time.Second,
+			MaxElapsedTime:  time.Minute,
+		},
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
+		// OTel metric exporter retry config
+		MetricExporterRetryConfig: beholder.RetryConfig{
+			Enabled:         false,
+			InitialInterval: 5 * time.Second,
+			MaxInterval:     30 * time.Second,
+			MaxElapsedTime:  time.Minute,
+		},
 		// Log
 		LogExportTimeout:  1 * time.Second,
 		LogBatchProcessor: true,

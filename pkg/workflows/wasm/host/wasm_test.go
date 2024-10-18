@@ -192,19 +192,19 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
 		expected := sdk.FetchResponse{
-			Success:    true,
-			Body:       []byte("valid-response"),
-			StatusCode: http.StatusOK,
-			Headers:    map[string]any{},
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger: logger.Test(t),
 			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
-					Success:    expected.Success,
-					Body:       expected.Body,
-					StatusCode: uint32(expected.StatusCode),
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
 		}, binary)
@@ -240,19 +240,19 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
 		expected := sdk.FetchResponse{
-			Success:    true,
-			Body:       []byte("valid-response"),
-			StatusCode: http.StatusOK,
-			Headers:    map[string]any{},
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger: logger.Test(t),
 			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
-					Success:    expected.Success,
-					Body:       expected.Body,
-					StatusCode: uint32(expected.StatusCode),
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
 		}, binary)

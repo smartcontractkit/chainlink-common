@@ -26,7 +26,7 @@ func (e errStopExecution) Error() string {
 }
 
 func (e errStopExecution) Is(err error) bool {
-	return err.Error() == errStopExecutionMsg
+	return strings.Contains(err.Error(), errStopExecutionMsg)
 }
 
 // CapabilityType enum values.

@@ -50,6 +50,7 @@ type PluginArgs struct {
 type RelayArgs struct {
 	ExternalJobID      uuid.UUID
 	JobID              int32
+	OracleSpecID       int32
 	ContractID         string
 	New                bool   // Whether this is a first time job add.
 	RelayConfig        []byte // The specific configuration of a given relayer instance. Will vary by relayer type.

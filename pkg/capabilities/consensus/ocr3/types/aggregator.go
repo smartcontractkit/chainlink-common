@@ -36,7 +36,7 @@ func (m *Metadata) padWorkflowName() {
 type Aggregator interface {
 	// Called by the Outcome() phase of OCR reporting.
 	// The inner array of observations corresponds to elements listed in "inputs.observations" section.
-	Aggregate(previousOutcome *AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*AggregationOutcome, error)
+	Aggregate(lggr logger.Logger, previousOutcome *AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*AggregationOutcome, error)
 }
 
 func AppendMetadata(outcome *AggregationOutcome, meta *Metadata) (*AggregationOutcome, error) {

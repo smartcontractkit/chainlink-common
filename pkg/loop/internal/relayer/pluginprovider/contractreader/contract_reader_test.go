@@ -1025,12 +1025,12 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract, anySecondContract, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
@@ -1079,20 +1079,20 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract2, anySecondContract2, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID1, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract1, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract1, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID2, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnyContract2, sequences[1].Data) && reflect.DeepEqual(ts2AnyContract2, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anySecondContractID1, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract1, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract1, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
-			assert.Eventually(t, func() bool {
+			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anySecondContractID2, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
 				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract2, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract2, sequences[0].Data)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)

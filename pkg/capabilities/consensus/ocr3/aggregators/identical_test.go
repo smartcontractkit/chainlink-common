@@ -14,7 +14,7 @@ import (
 
 func TestDataFeedsAggregator_Aggregate(t *testing.T) {
 	config := getConfig(t, nil)
-	agg, err := aggregators.NewIdenticalAggregator(*config, logger.Nop())
+	agg, err := aggregators.NewIdenticalAggregator(*config)
 	require.NoError(t, err)
 
 	observations := map[commontypes.OracleID][]values.Value{
@@ -23,7 +23,7 @@ func TestDataFeedsAggregator_Aggregate(t *testing.T) {
 		2: {values.NewString("a")},
 		3: {values.NewString("a")},
 	}
-	outcome, err := agg.Aggregate(nil, observations, 1)
+	outcome, err := agg.Aggregate(logger.Nop(), nil, observations, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
 	require.Equal(t, "", outcome.EncoderName)
@@ -38,7 +38,7 @@ func TestDataFeedsAggregator_Aggregate(t *testing.T) {
 
 func TestDataFeedsAggregator_Aggregate_OverrideWithKeys(t *testing.T) {
 	config := getConfig(t, []string{"outcome"})
-	agg, err := aggregators.NewIdenticalAggregator(*config, logger.Nop())
+	agg, err := aggregators.NewIdenticalAggregator(*config)
 	require.NoError(t, err)
 
 	observations := map[commontypes.OracleID][]values.Value{
@@ -47,7 +47,7 @@ func TestDataFeedsAggregator_Aggregate_OverrideWithKeys(t *testing.T) {
 		2: {values.NewString("a")},
 		3: {values.NewString("a")},
 	}
-	outcome, err := agg.Aggregate(nil, observations, 1)
+	outcome, err := agg.Aggregate(logger.Nop(), nil, observations, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
 	require.Equal(t, "", outcome.EncoderName)
@@ -62,7 +62,7 @@ func TestDataFeedsAggregator_Aggregate_OverrideWithKeys(t *testing.T) {
 
 func TestDataFeedsAggregator_Aggregate_NoConsensus(t *testing.T) {
 	config := getConfig(t, []string{"outcome"})
-	agg, err := aggregators.NewIdenticalAggregator(*config, logger.Nop())
+	agg, err := aggregators.NewIdenticalAggregator(*config)
 	require.NoError(t, err)
 
 	encoderStr := "evm"
@@ -76,7 +76,7 @@ func TestDataFeedsAggregator_Aggregate_NoConsensus(t *testing.T) {
 		2: {values.NewString("b"), encoderName, encoderCfg},
 		3: {values.NewString("a"), encoderName, encoderCfg},
 	}
-	outcome, err := agg.Aggregate(nil, observations, 1)
+	outcome, err := agg.Aggregate(logger.Nop(), nil, observations, 1)
 	require.Nil(t, outcome)
 	require.ErrorContains(t, err, "can't reach consensus on observations with index 0")
 }

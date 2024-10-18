@@ -36,18 +36,18 @@ type counter struct {
 
 var _ types.Aggregator = (*identicalAggregator)(nil)
 
-func (a *identicalAggregator) Aggregate(_ *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
+func (a *identicalAggregator) Aggregate(lggr logger.Logger, _ *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	counters := []map[[32]byte]*counter{}
 	for i := 0; i < a.config.ExpectedObservationsLen; i++ {
 		counters = append(counters, map[[32]byte]*counter{})
 	}
 	for nodeID, nodeObservations := range observations {
 		if len(nodeObservations) == 0 || nodeObservations[0] == nil {
-			a.lggr.Warnf("node %d contributed with empty observations", nodeID)
+			lggr.Warnf("node %d contributed with empty observations", nodeID)
 			continue
 		}
 		if len(nodeObservations) != a.config.ExpectedObservationsLen {
-			a.lggr.Warnf("node %d contributed with an incorrect number of observations %d - ignoring them", nodeID, len(nodeObservations))
+			lggr.Warnf("node %d contributed with an incorrect number of observations %d - ignoring them", nodeID, len(nodeObservations))
 			continue
 		}
 		for idx, observation := range nodeObservations {
@@ -102,14 +102,13 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 	}, nil
 }
 
-func NewIdenticalAggregator(config values.Map, lggr logger.Logger) (*identicalAggregator, error) {
+func NewIdenticalAggregator(config values.Map) (*identicalAggregator, error) {
 	parsedConfig, err := ParseConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config (%+v): %w", config, err)
 	}
 	return &identicalAggregator{
 		config: parsedConfig,
-		lggr:   lggr,
 	}, nil
 }
 

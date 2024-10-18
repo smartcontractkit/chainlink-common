@@ -60,7 +60,7 @@ func TestClient(t *testing.T) {
 		exporterFactory := func(...otlploggrpc.Option) (sdklog.Exporter, error) {
 			return exporterMock, nil
 		}
-		client, err := newClient(TestDefaultConfig(), exporterFactory)
+		client, err := newGRPCClient(TestDefaultConfig(), exporterFactory)
 		if err != nil {
 			t.Fatalf("Error creating beholder client: %v", err)
 		}
@@ -173,7 +173,7 @@ func TestClient(t *testing.T) {
 
 func TestEmitterMessageValidation(t *testing.T) {
 	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
-		client, err := newClient(
+		client, err := newGRPCClient(
 			TestDefaultConfig(),
 			// Override exporter factory which is used by Client
 			func(...otlploggrpc.Option) (sdklog.Exporter, error) {
@@ -286,4 +286,41 @@ func TestClient_ForPackage(t *testing.T) {
 
 func otelMustNotErr(t *testing.T) otel.ErrorHandlerFunc {
 	return func(err error) { t.Fatalf("otel error: %v", err) }
+}
+
+func TestNewClient(t *testing.T) {
+	t.Run("both endpoints set", func(t *testing.T) {
+		client, err := NewClient(Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			OtelExporterHTTPEndpoint: "http-endpoint",
+		})
+		assert.Error(t, err)
+		assert.Nil(t, client)
+		assert.Equal(t, "only one exporter endpoint should be set", err.Error())
+	})
+
+	t.Run("no endpoints set", func(t *testing.T) {
+		client, err := NewClient(Config{})
+		assert.Error(t, err)
+		assert.Nil(t, client)
+		assert.Equal(t, "at least one exporter endpoint should be set", err.Error())
+	})
+
+	t.Run("GRPC endpoint set", func(t *testing.T) {
+		client, err := NewClient(Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &Client{}, client)
+	})
+
+	t.Run("HTTP endpoint set", func(t *testing.T) {
+		client, err := NewClient(Config{
+			OtelExporterHTTPEndpoint: "http-endpoint",
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &Client{}, client)
+	})
 }

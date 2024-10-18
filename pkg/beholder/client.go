@@ -6,6 +6,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	otellog "go.opentelemetry.io/otel/log"
@@ -53,17 +54,31 @@ type Client struct {
 // NewClient creates a new Client with initialized OpenTelemetry components
 // To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler)
 func NewClient(cfg Config) (*Client, error) {
+	if cfg.OtelExporterGRPCEndpoint != "" && cfg.OtelExporterHTTPEndpoint != "" {
+		return nil, errors.New("only one exporter endpoint should be set")
+	}
+	if cfg.OtelExporterGRPCEndpoint == "" && cfg.OtelExporterHTTPEndpoint == "" {
+		return nil, errors.New("at least one exporter endpoint should be set")
+	}
+	if cfg.OtelExporterHTTPEndpoint != "" {
+		factory := func(options ...otlploghttp.Option) (sdklog.Exporter, error) {
+			// note: context is unused internally
+			return otlploghttp.New(context.Background(), options...) //nolint
+		}
+		return newHTTPClient(cfg, factory)
+	}
+
 	factory := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		// note: context is unused internally
 		return otlploggrpc.New(context.Background(), options...) //nolint
 	}
-	return newClient(cfg, factory)
+	return newGRPCClient(cfg, factory)
 }
 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
+func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	noop := NewNoopClient()
 	if err != nil {

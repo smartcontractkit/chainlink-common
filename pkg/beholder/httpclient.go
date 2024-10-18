@@ -19,16 +19,6 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// NewHTTPClient creates a new Client with initialized OpenTelemetry components
-// To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler)
-func NewHTTPClient(cfg Config) (*Client, error) {
-	factory := func(options ...otlploghttp.Option) (sdklog.Exporter, error) {
-		// note: context is unused internally
-		return otlploghttp.New(context.Background(), options...) //nolint
-	}
-	return newHTTPClient(cfg, factory)
-}
-
 // Used for testing to override the default exporter
 type otlploghttpFactory func(options ...otlploghttp.Option) (sdklog.Exporter, error)
 

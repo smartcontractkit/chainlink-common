@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/big"
 	"reflect"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/shopspring/decimal"
@@ -76,6 +77,8 @@ func Wrap(v any) (Value, error) {
 		return NewFloat64(float64(tv)), nil
 	case *big.Int:
 		return NewBigInt(tv), nil
+	case time.Time:
+		return NewTime(tv), nil
 	case nil:
 		return nil, nil
 
@@ -94,6 +97,12 @@ func Wrap(v any) (Value, error) {
 	case *Int64:
 		return tv, nil
 	case *Float64:
+		return tv, nil
+	case *Bool:
+		return tv, nil
+	case *BigInt:
+		return tv, nil
+	case *Time:
 		return tv, nil
 	}
 

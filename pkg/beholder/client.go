@@ -261,6 +261,7 @@ type shutdowner interface {
 func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
+	// note: context is used internally
 	exporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
@@ -287,6 +288,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
 
+	// note: context is unused internally
 	exporter, err := otlpmetricgrpc.New(
 		ctx,
 		otlpmetricgrpc.WithTLSCredentials(creds),

@@ -152,6 +152,7 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	if tlsConfig != nil {
 		tlsConfigOption = otlptracehttp.WithTLSClientConfig(tlsConfig)
 	}
+	// note: context is unused internally
 	exporter, err := otlptracehttp.New(ctx,
 		tlsConfigOption,
 		otlptracehttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
@@ -182,6 +183,7 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 	if tlsConfig != nil {
 		tlsConfigOption = otlpmetrichttp.WithTLSClientConfig(tlsConfig)
 	}
+	// note: context is unused internally
 	exporter, err := otlpmetrichttp.New(ctx,
 		tlsConfigOption,
 		otlpmetrichttp.WithEndpoint(config.OtelExporterHTTPEndpoint),

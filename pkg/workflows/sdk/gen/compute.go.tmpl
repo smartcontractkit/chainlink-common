@@ -48,12 +48,15 @@ func Compute{{.}}[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSp
             return capabilities.CapabilityResponse{}, err
         }
 
-        // verify against any schema
+        // verify against any schema by marshalling and unmarshalling
         ji, err := json.Marshal(inputs)
         if err != nil {
             return capabilities.CapabilityResponse{}, err
         }
-        if err := json.Unmarshal(ji, &inputs); err != nil {
+
+        // use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+        var tmp runtime{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]
+        if err := json.Unmarshal(ji, &tmp); err != nil {
             return capabilities.CapabilityResponse{}, err
         }
 

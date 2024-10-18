@@ -118,6 +118,18 @@ func TestPrometheusExporter(t *testing.T) {
 			chainConfig.GetNetworkID(),     // networkID
 			chainConfig.GetNetworkName(),   // networkName
 		).Once()
+		metrics.On("SetOffchainAggregatorAnswersLatestTimestamp",
+			float64(envelope1.LatestTimestamp.Unix()), // latestTimestamp
+			feedConfig.GetID(),                        // contractAddress
+			feedConfig.GetID(),                        // feedID
+			chainConfig.GetChainID(),                  // chainID
+			feedConfig.GetContractStatus(),            // contractStatus
+			feedConfig.GetContractType(),              // contractType
+			feedConfig.GetName(),                      // feedName
+			feedConfig.GetPath(),                      // feedPath
+			chainConfig.GetNetworkID(),                // networkID
+			chainConfig.GetNetworkName(),              // networkName
+		).Once()
 		metrics.On("SetOffchainAggregatorJuelsPerFeeCoinRaw",
 			toFloat64(envelope1.JuelsPerFeeCoin),
 			feedConfig.GetID(),
@@ -264,6 +276,18 @@ func TestPrometheusExporter(t *testing.T) {
 			feedConfig.GetPath(),           // feedPath
 			chainConfig.GetNetworkID(),     // networkID
 			chainConfig.GetNetworkName(),   // networkName
+		).Once()
+		metrics.On("SetOffchainAggregatorAnswersLatestTimestamp",
+			float64(envelope2.LatestTimestamp.Unix()), // latestTimestamp
+			feedConfig.GetID(),                        // contractAddress
+			feedConfig.GetID(),                        // feedID
+			chainConfig.GetChainID(),                  // chainID
+			feedConfig.GetContractStatus(),            // contractStatus
+			feedConfig.GetContractType(),              // contractType
+			feedConfig.GetName(),                      // feedName
+			feedConfig.GetPath(),                      // feedPath
+			chainConfig.GetNetworkID(),                // networkID
+			chainConfig.GetNetworkName(),              // networkName
 		).Once()
 		metrics.On("SetOffchainAggregatorJuelsPerFeeCoinRaw",
 			toFloat64(envelope2.JuelsPerFeeCoin),
@@ -478,6 +502,18 @@ func TestPrometheusExporter(t *testing.T) {
 			feedConfig.GetPath(),           // feedPath
 			chainConfig.GetNetworkID(),     // networkID
 			chainConfig.GetNetworkName(),   // networkName
+		).Once()
+		metrics.On("SetOffchainAggregatorAnswersLatestTimestamp",
+			float64(envelope1.LatestTimestamp.Unix()), // latestTimestamp
+			feedConfig.GetID(),                        // contractAddress
+			feedConfig.GetID(),                        // feedID
+			chainConfig.GetChainID(),                  // chainID
+			feedConfig.GetContractStatus(),            // contractStatus
+			feedConfig.GetContractType(),              // contractType
+			feedConfig.GetName(),                      // feedName
+			feedConfig.GetPath(),                      // feedPath
+			chainConfig.GetNetworkID(),                // networkID
+			chainConfig.GetNetworkName(),              // networkName
 		).Once()
 		metrics.On("SetOffchainAggregatorJuelsPerFeeCoinRaw",
 			toFloat64(envelope1.JuelsPerFeeCoin),

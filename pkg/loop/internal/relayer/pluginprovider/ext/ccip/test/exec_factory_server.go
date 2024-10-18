@@ -83,7 +83,7 @@ func runExecReportingPluginFactory(t *testing.T, factory types.ReportingPluginFa
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(reportingplugintest.Factory.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(tests.Context(t), reportingplugintest.Factory.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })

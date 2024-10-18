@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/oraclefactory";
+
+package loop;
+
+import "google/protobuf/duration.proto";
+
+message LocalConfig {
+	google.protobuf.Duration blockchain_timeout = 1;
+	uint32 contract_config_confirmations = 2;
+    bool skip_contract_config_confirmations = 3;
+	google.protobuf.Duration contract_config_tracker_poll_interval = 4;
+	google.protobuf.Duration contract_transmitter_transmit_timeout = 5;
+	google.protobuf.Duration database_timeout = 6;
+	google.protobuf.Duration min_ocr2_max_duration_query = 7;
+	string development_mode = 8;
+}
+
+message NewOracleRequest {
+    LocalConfig local_config = 1;
+    uint32 reporting_plugin_factory_service_id = 2;
+    uint32 contract_config_tracker_id = 3;
+    uint32 contract_transmitter_id = 4;
+    uint32 offchain_config_digester_id = 5; 
+}
+
+message NewOracleReply {
+    uint32 oracle_id = 1;
+}
+
+service OracleFactory {
+    rpc NewOracle(NewOracleRequest) returns (NewOracleReply) {}
+}

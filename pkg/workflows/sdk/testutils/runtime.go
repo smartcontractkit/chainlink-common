@@ -1,9 +1,19 @@
 package testutils
 
 import (
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-type runtime struct{}
+type NoopRuntime struct{}
 
-var _ sdk.Runtime = &runtime{}
+var _ sdk.Runtime = &NoopRuntime{}
+
+func (nr *NoopRuntime) Fetch(sdk.FetchRequest) (sdk.FetchResponse, error) {
+	return sdk.FetchResponse{}, nil
+}
+
+func (nr *NoopRuntime) Logger() logger.Logger {
+	l, _ := logger.New()
+	return l
+}

@@ -198,6 +198,18 @@ func (p *prometheusExporter) exportEnvelope(envelope Envelope) {
 		p.chainConfig.GetNetworkID(),
 		p.chainConfig.GetNetworkName(),
 	)
+	p.metrics.SetOffchainAggregatorAnswersLatestTimestamp(
+		float64(envelope.LatestTimestamp.Unix()),
+		p.feedConfig.GetID(),
+		p.feedConfig.GetID(),
+		p.chainConfig.GetChainID(),
+		p.feedConfig.GetContractStatus(),
+		p.feedConfig.GetContractType(),
+		p.feedConfig.GetName(),
+		p.feedConfig.GetPath(),
+		p.chainConfig.GetNetworkID(),
+		p.chainConfig.GetNetworkName(),
+	)
 	juelsPerFeeCoin := toFloat64(envelope.JuelsPerFeeCoin)
 	p.metrics.SetOffchainAggregatorJuelsPerFeeCoinRaw(
 		juelsPerFeeCoin,

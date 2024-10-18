@@ -6,14 +6,10 @@
 
 /observability-lib/ @Atrax1
 
-/pkg/capabilities/ @smartcontractkit/keystone
-/pkg/codec/ @nolag
-/pkg/loop/ @smartcontractkit/foundations
+/pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
+/pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag @pablolagreca 
 /pkg/monitoring/ @topliceanu @pedrovsg
-/pkg/services/ @smartcontractkit/foundations
-/pkg/sqlutil/ @smartcontractkit/foundations
-/pkg/timeutil/ @smartcontractkit/foundations
-/pkg/values/ @smartcontractkit/keystone
+/pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/workflows/ @smartcontractkit/keystone
 /pkg/beholder/ @smartcontractkit/realtime
 /pkg/types/ccipocr3 @smartcontractkit/ccip-offchain

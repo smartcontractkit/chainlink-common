@@ -79,6 +79,12 @@ func newClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	sharedLogExporter, err := otlploggrpcNew(
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+		otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
+			Enabled:         cfg.EmitterExporterRetryConfig.Enabled,
+			InitialInterval: cfg.EmitterExporterRetryConfig.InitialInterval,
+			MaxInterval:     cfg.EmitterExporterRetryConfig.MaxInterval,
+			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.MaxElapsedTime,
+		}),
 	)
 	if err != nil {
 		return noop, err
@@ -250,6 +256,12 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	exporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
+			Enabled:         config.TraceExporterRetryConfig.Enabled,
+			InitialInterval: config.TraceExporterRetryConfig.InitialInterval,
+			MaxInterval:     config.TraceExporterRetryConfig.MaxInterval,
+			MaxElapsedTime:  config.TraceExporterRetryConfig.MaxElapsedTime,
+		}),
 	)
 	if err != nil {
 		return nil, err
@@ -277,6 +289,12 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		ctx,
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
+			Enabled:         config.MetricExporterRetryConfig.Enabled,
+			InitialInterval: config.MetricExporterRetryConfig.InitialInterval,
+			MaxInterval:     config.MetricExporterRetryConfig.MaxInterval,
+			MaxElapsedTime:  config.MetricExporterRetryConfig.MaxElapsedTime,
+		}),
 	)
 	if err != nil {
 		return nil, err

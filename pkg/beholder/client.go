@@ -80,15 +80,14 @@ type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, er
 
 func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
-	noop := NewNoopClient()
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	creds := insecure.NewCredentials()
 	if !cfg.InsecureConnection && cfg.CACertFile != "" {
 		creds, err = credentials.NewClientTLSFromFile(cfg.CACertFile, "")
 		if err != nil {
-			return noop, err
+			return nil, err
 		}
 	}
 	sharedLogExporter, err := otlploggrpcNew(
@@ -96,7 +95,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 
 	// Logger
@@ -117,7 +116,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		baseResource,
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	loggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(loggerResource),
@@ -128,14 +127,14 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
 	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
@@ -158,7 +157,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		baseResource,
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 
 	messageLoggerProvider := sdklog.NewLoggerProvider(

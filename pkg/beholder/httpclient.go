@@ -35,10 +35,9 @@ func newCertFromFile(certFile string) (*x509.CertPool, error) {
 }
 
 func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
-	noop := NewNoopClient()
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	var tlsConfig *tls.Config
 	if !cfg.InsecureConnection {
@@ -48,7 +47,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		if cfg.CACertFile != "" {
 			rootCAs, e := newCertFromFile(cfg.CACertFile)
 			if e != nil {
-				return noop, e
+				return nil, e
 			}
 			tlsConfig.RootCAs = rootCAs
 		}
@@ -62,7 +61,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		otlploghttp.WithEndpoint(cfg.OtelExporterHTTPEndpoint),
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 
 	// Logger
@@ -83,7 +82,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		baseResource,
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	loggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(loggerResource),
@@ -94,14 +93,14 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	// Tracer
 	tracerProvider, err := newHTTPTracerProvider(cfg, baseResource, tlsConfig)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
 	meterProvider, err := newHTTPMeterProvider(cfg, baseResource, tlsConfig)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
@@ -124,7 +123,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		baseResource,
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 
 	messageLoggerProvider := sdklog.NewLoggerProvider(

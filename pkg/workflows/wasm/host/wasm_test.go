@@ -202,24 +202,34 @@ func Test_Compute_Emit(t *testing.T) {
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
 					Metadata: &capabilitiespb.RequestMetadata{
-						ReferenceId: "transform",
+						ReferenceId:         "transform",
+						WorkflowId:          "workflow-id",
+						WorkflowName:        "workflow-name",
+						WorkflowOwner:       "workflow-owner",
+						WorkflowExecutionId: "workflow-execution-id",
 					},
 				},
 			},
 		},
 	}
 
-	t.Run("success", func(t *testing.T) {
+	fetchFunc := func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+		return nil, nil
+	}
+
+	t.Run("successfully call emit with metadata in labels", func(t *testing.T) {
 		m, err := NewModule(&ModuleConfig{
 			Logger: lggr,
-			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return nil, nil
-			},
+			Fetch:  fetchFunc,
 			Emitter: sdk.EmitterFunc(func(msg string, kvs map[string]any) error {
 				t.Helper()
 
 				assert.Equal(t, "testing emit", msg)
 				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
+				assert.Equal(t, "workflow-id", kvs["workflow_id"])
+				assert.Equal(t, "workflow-name", kvs["workflow_name"])
+				assert.Equal(t, "workflow-owner", kvs["workflow_owner_address"])
+				assert.Equal(t, "workflow-execution-id", kvs["workflow_execution_id"])
 				return nil
 			}),
 		}, binary)
@@ -231,19 +241,22 @@ func Test_Compute_Emit(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("failure on emit", func(t *testing.T) {
+	t.Run("failure on emit writes to error chain and logs", func(t *testing.T) {
 		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
 		m, err := NewModule(&ModuleConfig{
 			Logger: lggr,
-			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return nil, nil
-			},
+			Fetch:  fetchFunc,
 			Emitter: sdk.EmitterFunc(func(msg string, kvs map[string]any) error {
 				t.Helper()
 
 				assert.Equal(t, "testing emit", msg)
 				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
+				assert.Equal(t, "workflow-id", kvs["workflow_id"])
+				assert.Equal(t, "workflow-name", kvs["workflow_name"])
+				assert.Equal(t, "workflow-owner", kvs["workflow_owner_address"])
+				assert.Equal(t, "workflow-execution-id", kvs["workflow_execution_id"])
+
 				return assert.AnError
 			}),
 		}, binary)
@@ -253,6 +266,8 @@ func Test_Compute_Emit(t *testing.T) {
 
 		_, err = m.Run(req)
 		assert.Error(t, err)
+		assert.ErrorContains(t, err, assert.AnError.Error())
+
 		require.Len(t, logs.AllUntimed(), 1)
 
 		expectedEntries := []Entry{
@@ -264,6 +279,38 @@ func Test_Compute_Emit(t *testing.T) {
 			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
 			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
 		}
+	})
+
+	t.Run("failure on emit due to missing workflow identifying metadata", func(t *testing.T) {
+		lggr := logger.Test(t)
+
+		m, err := NewModule(&ModuleConfig{
+			Logger:  lggr,
+			Fetch:   fetchFunc,
+			Emitter: nil, // never called
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req = &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+
+		_, err = m.Run(req)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "failed to create emission")
 	})
 }
 

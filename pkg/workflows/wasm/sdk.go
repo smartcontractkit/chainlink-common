@@ -2,16 +2,23 @@ package wasm
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/events"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	"google.golang.org/protobuf/proto"
+)
+
+const (
+	labelWorkflowOwner       = "workflow_owner_address"
+	labelWorkflowID          = "workflow_id"
+	labelWorkflowExecutionID = "workflow_execution_id"
+	labelWorkflowName        = "workflow_name"
 )
 
 type Runtime struct {
@@ -62,7 +69,7 @@ func (r *Runtime) Emit(msg string, labels map[string]any) error {
 	return r.emitFn(msg, labels)
 }
 
-// createEmitFn injects dependencies to implement an adapter for the wasm imported emit method
+// createEmitFn builds the runtime's emit function implementation, which is a function
 // that handles marshalling and unmarshalling messages for the WASM to act on.
 func createEmitFn(
 	sdkConfig *RuntimeConfig,
@@ -70,15 +77,22 @@ func createEmitFn(
 	emit func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
 ) func(string, map[string]any) error {
 	emitFn := func(msg string, labels map[string]any) error {
-		if sdkConfig.MetaData != nil {
-			labels = events.FromRequest(*sdkConfig.MetaData).MergeMap(labels)
+		// Prepare the labels to be emitted
+		if sdkConfig.MetaData == nil {
+			return NewEmissionError(fmt.Errorf("metadata is required to emit"))
+		}
+
+		labels, err := toEmitLabels(sdkConfig.MetaData, labels)
+		if err != nil {
+			return NewEmissionError(err)
 		}
 
 		vm, err := values.NewMap(labels)
 		if err != nil {
-			return err
+			return NewEmissionError(fmt.Errorf("could not wrap labels to map: %w", err))
 		}
 
+		// Marshal the message and labels into a protobuf message
 		b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
 			Message: msg,
 			Labels:  values.ProtoMap(vm),
@@ -87,6 +101,7 @@ func createEmitFn(
 			return err
 		}
 
+		// Prepare the request to be sent to the host memory
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
 		respptr, _ := bufferToPointerLen(respBuffer)
 
@@ -94,21 +109,23 @@ func createEmitFn(
 		resplenptr, _ := bufferToPointerLen(resplenBuffer)
 
 		reqptr, reqptrlen := bufferToPointerLen(b)
+
+		// Emit the message via the method imported from the host
 		errno := emit(respptr, resplenptr, reqptr, reqptrlen)
 		if errno != 0 {
-			return fmt.Errorf("failed to emit with: %d", errno)
+			return NewEmissionError(fmt.Errorf("emit failed with errno %d", errno))
 		}
 
+		// Attempt to read and handle the response from the host memory
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
 		response := &wasmpb.EmitMessageResponse{}
-
 		if err := proto.Unmarshal(respBuffer[:responseSize], response); err != nil {
 			l.Errorw("failed to unmarshal emit response", "error", err.Error())
-			return fmt.Errorf("failed to unmarshal emit response: %w", err)
+			return NewEmissionError(err)
 		}
 
 		if response.Error != nil && response.Error.Message != "" {
-			return fmt.Errorf("failed to emit with: %s", response.Error.Message)
+			return NewEmissionError(errors.New(response.Error.Message))
 		}
 
 		return nil
@@ -122,4 +139,38 @@ const uint32Size = int32(4)
 // bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
 func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
 	return unsafe.Pointer(&buf[0]), int32(len(buf))
+}
+
+// toEmitLabels ensures that the required metadata is present in the labels map
+func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]any) (map[string]any, error) {
+	if md.WorkflowID == "" {
+		return nil, fmt.Errorf("must provide workflow id to emit event")
+	}
+
+	if md.WorkflowName == "" {
+		return nil, fmt.Errorf("must provide workflow name to emit event")
+	}
+
+	if md.WorkflowOwner == "" {
+		return nil, fmt.Errorf("must provide workflow owner to emit event")
+	}
+
+	labels[labelWorkflowExecutionID] = md.WorkflowExecutionID
+	labels[labelWorkflowOwner] = md.WorkflowOwner
+	labels[labelWorkflowID] = md.WorkflowID
+	labels[labelWorkflowName] = md.WorkflowName
+	return labels, nil
+}
+
+// EmissionError wraps all errors that occur during the emission process for the runtime to handle.
+type EmissionError struct {
+	Wrapped error
+}
+
+func NewEmissionError(err error) *EmissionError {
+	return &EmissionError{Wrapped: err}
+}
+
+func (e *EmissionError) Error() string {
+	return fmt.Errorf("failed to create emission: %w", e.Wrapped).Error()
 }

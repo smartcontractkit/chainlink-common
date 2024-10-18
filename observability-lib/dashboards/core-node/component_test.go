@@ -43,11 +43,13 @@ func TestGenerateFile(t *testing.T) {
 	if errFile != nil {
 		panic(errFile)
 	}
-	defer file.Close()
 	writeString, err := file.WriteString(string(json))
 	if err != nil {
 		t.Errorf("Error writing to file: %v", writeString)
 	}
+	t.Cleanup(func() {
+		file.Close()
+	})
 }
 
 func TestNewDashboard(t *testing.T) {

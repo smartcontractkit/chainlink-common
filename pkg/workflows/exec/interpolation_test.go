@@ -247,6 +247,50 @@ func TestInterpolateEnv(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestInterpolateEnv_Secrets(t *testing.T) {
+	c := map[string]any{
+		"fidelityAPIKey": "$(ENV.secrets.fidelity)",
+	}
+	_, err := exec.FindAndInterpolateEnvVars(c, exec.Env{})
+	assert.ErrorContains(t, err, `invalid env token: could not find "fidelity" in ENV.secrets`)
+
+	c = map[string]any{
+		"fidelityAPIKey": "$(ENV.secrets.fidelity.foo)",
+	}
+	_, err = exec.FindAndInterpolateEnvVars(c, exec.Env{})
+	assert.ErrorContains(t, err, `invalid env token: must contain two or three elements`)
+
+	c = map[string]any{
+		"secrets": "$(ENV.secrets)",
+	}
+	secrets := map[string]string{
+		"foo": "fooSecret",
+		"bar": "barSecret",
+	}
+	got, err := exec.FindAndInterpolateEnvVars(
+		c,
+		exec.Env{Secrets: secrets})
+	require.NoError(t, err)
+	assert.Equal(t, got, map[string]any{
+		"secrets": secrets,
+	})
+
+	c = map[string]any{
+		"secrets": "$(ENV.secrets.foo)",
+	}
+	secrets = map[string]string{
+		"foo": "fooSecret",
+		"bar": "barSecret",
+	}
+	got, err = exec.FindAndInterpolateEnvVars(
+		c,
+		exec.Env{Secrets: secrets})
+	require.NoError(t, err)
+	assert.Equal(t, got, map[string]any{
+		"secrets": "fooSecret",
+	})
+}
+
 type fakeResults map[string]*exec.Result
 
 func (f fakeResults) ResultForStep(s string) (*exec.Result, bool) {

@@ -19,6 +19,24 @@ func NewLabeler() Labeler {
 	return Labeler{labels: make(map[string]string)}
 }
 
+// WithMapLabels adds multiple key-value pairs to the CustomMessageLabeler for transmission
+// With SendLogAsCustomMessage
+func (c Labeler) WithMapLabels(labels map[string]string) Labeler {
+	newCustomMessageLabeler := NewLabeler()
+
+	// Copy existing labels from the current agent
+	for k, v := range c.labels {
+		newCustomMessageLabeler.labels[k] = v
+	}
+
+	// Add new key-value pairs
+	for k, v := range labels {
+		newCustomMessageLabeler.labels[k] = v
+	}
+
+	return newCustomMessageLabeler
+}
+
 // With adds multiple key-value pairs to the CustomMessageLabeler for transmission With SendLogAsCustomMessage
 func (c Labeler) With(keyValues ...string) Labeler {
 	newCustomMessageLabeler := NewLabeler()

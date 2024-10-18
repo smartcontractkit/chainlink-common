@@ -233,12 +233,15 @@ func NewMetadata(attrs Attributes) *Metadata {
 
 func NewMetadataValidator() *validator.Validate {
 	validate := validator.New()
-	validate.RegisterValidation("no_double_underscore", func(fl validator.FieldLevel) bool {
+	err := validate.RegisterValidation("no_double_underscore", func(fl validator.FieldLevel) bool {
 		if str, ok := fl.Field().Interface().(string); ok {
 			return !strings.Contains(str, "__")
 		}
 		return true
 	})
+	if err != nil {
+		panic(err)
+	}
 	return validate
 }
 

@@ -15,6 +15,9 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	}
 
 	props.platformOpts = platformPanelOpts()
+	if props.Tested {
+		props.platformOpts.LabelQuery = ""
+	}
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:     props.Name,

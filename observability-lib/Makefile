@@ -12,4 +12,8 @@ lint:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test ./...
+
+.PHONY: update
+update:
+	go test ./dashboards/... -update=1

@@ -17,6 +17,7 @@ type Props struct {
 	MetricsDataSource *grafana.DataSource  // MetricsDataSource is the datasource for querying metrics
 	LogsDataSource    *grafana.DataSource  // LogsDataSource is the datasource for querying logs
 	platformOpts      platformOpts
+	Tested            bool
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms

@@ -16,6 +16,7 @@ type Props struct {
 	MetricsDataSource *grafana.DataSource // MetricsDataSource is the datasource for querying metrics
 	OCRVersion        string              // OCRVersion is the version of the OCR (ocr, ocr2, ocr3)
 	platformOpts      platformOpts
+	Tested            bool
 }
 
 // PlatformPanelOpts generate different queries depending on params

@@ -1,6 +1,7 @@
 package values
 
 import (
+	"bytes"
 	"math"
 	"math/big"
 	"reflect"
@@ -332,6 +333,85 @@ func Test_StructWrapUnwrap(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, expected, unwrapped)
+}
+
+// Reproduction of types that work
+func Test_DoubleWrapProtoUnwrap_Success(t *testing.T) {
+	wrapInt, err := Wrap(int64(100))
+	require.NoError(t, err)
+	wrapDeci, err := Wrap(decimal.NewFromInt(32))
+	require.NoError(t, err)
+	wrapFloat, err := Wrap(float64(1.2))
+	require.NoError(t, err)
+	wrapBuffer, err := Wrap(bytes.NewBufferString("immabuffer").Bytes())
+	require.NoError(t, err)
+	wrapString, err := Wrap("wrapme")
+	require.NoError(t, err)
+
+	valuesMap, err := NewMap(map[string]any{
+		"Int64":   wrapInt,
+		"Decimal": wrapDeci,
+		"Float":   wrapFloat,
+		"Buffer":  wrapBuffer,
+		"String":  wrapString,
+	})
+	require.NoError(t, err)
+
+	// Note: pb.Map is expected format of output from a Consensus Capability Aggregator
+	protoMap := Proto(valuesMap).GetMapValue()
+
+	mapFromProto, err := FromMapValueProto(protoMap)
+	require.NoError(t, err)
+	unwrappedMap, err := mapFromProto.Unwrap()
+	require.NoError(t, err)
+
+	expectedMap := map[string]any{
+		"Int64":   int64(100),
+		"Decimal": decimal.NewFromInt(32),
+		"Float":   float64(1.2),
+		"Buffer":  bytes.NewBufferString("immabuffer").Bytes(),
+		"String":  "wrapme",
+	}
+	require.Equal(
+		t,
+		expectedMap,
+		unwrappedMap,
+	)
+}
+
+// Reproduction of types that fail
+func Test_DoubleWrapProtoUnwrap_Fail(t *testing.T) {
+	wrapBool, err := Wrap(false)
+	require.NoError(t, err)
+	wrapBI, err := Wrap(big.NewInt(1))
+	require.NoError(t, err)
+	wrapT, err := Wrap(time.Now())
+	require.NoError(t, err)
+
+	valuesMap, err := NewMap(map[string]any{
+		"Bool": wrapBool,
+		"BI":   wrapBI,
+		"T":    wrapT,
+	})
+	require.NoError(t, err)
+
+	// Note: pb.Map is expected format of output from a Consensus Capability Aggregator
+	protoMap := Proto(valuesMap).GetMapValue()
+
+	mapFromProto, err := FromMapValueProto(protoMap)
+	require.NoError(t, err)
+	unwrappedMap, err := mapFromProto.Unwrap()
+	require.NoError(t, err)
+
+	expectedMap := map[string]any{
+		"Bool": false,
+		"BI":   big.NewInt(1),
+		"T":    time.Now(),
+	}
+	require.Equal(t, expectedMap, unwrappedMap)
+	// Error:      	Not equal:
+	//     	        expected: map[string]interface {}{"BI":1, "Bool":false, "T":time.Date(2024, time.October, 17, 17, 4, 19, 439326015, time.Local)}
+	//     	        actual  : map[string]interface {}{"BI":map[string]interface {}{"Underlying":1}, "Bool":map[string]interface {}{"Underlying":false}, "T":map[string]interface {}{}}
 }
 
 func Test_SameUnderlyingTypes(t *testing.T) {

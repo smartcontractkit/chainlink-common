@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729269086221,
+  "lastUpdate": 1729333047497,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4032,6 +4032,48 @@ window.BENCHMARK_DATA = {
             "value": 28339,
             "unit": "ns/op",
             "extra": "42295 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b3695e6094ac20ef03130d09069bbd051cdc4266",
+          "message": "fix(observability-lib): improvements and fixes (#850)\n\n* fix(observability-lib): improvements and fixes\r\n\r\n* chore(observability-lib): refactor tests to compare json output\r\n\r\n* feat(observability-lib): can create alerts without attaching to a panel\r\n\r\n* feat(observability-lib): add colorscheme option to timeseries panel\r\n\r\n* feat(observability-lib): upgrade grafana sdk to latest version\r\n\r\n* fix(observability-lib): colorscheme for all panel type\r\n\r\n* fix(observability-lib): remove verbose flag test in Makefile\r\n\r\n* chore(observability-lib): change flag name for updating golden test file\r\n\r\n* chore(observability-lib): use t.cleanup instead of defer",
+          "timestamp": "2024-10-19T12:16:24+02:00",
+          "tree_id": "3b002eee8ca9dec61db76c7ebddbae8dc275f40e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b3695e6094ac20ef03130d09069bbd051cdc4266"
+        },
+        "date": 1729333047030,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.6,
+            "unit": "ns/op",
+            "extra": "2676412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 511.3,
+            "unit": "ns/op",
+            "extra": "2291624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28298,
+            "unit": "ns/op",
+            "extra": "42525 times\n4 procs"
           }
         ]
       }

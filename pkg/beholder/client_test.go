@@ -212,24 +212,44 @@ func TestEmitterMessageValidation(t *testing.T) {
 			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
 		},
 		{
-			name: "Invalid BeholderDomain",
+			name: "Invalid Beholder domain (double underscore)",
 			attrs: Attributes{
 				"beholder_data_schema": "/example-schema/versions/1",
 				"beholder_entity":      "TestEntity",
 				"beholder_domain":      "Test__Domain",
 			},
 			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'no_double_underscore' tag",
+			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
 		},
 		{
-			name: "Invalid BeholderEntity",
+			name: "Invalid Beholder domain (special characters)",
+			attrs: Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "TestEntity",
+				"beholder_domain":      "TestDomain*$",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
+		},
+		{
+			name: "Invalid Beholder entity (double underscore)",
 			attrs: Attributes{
 				"beholder_data_schema": "/example-schema/versions/1",
 				"beholder_entity":      "Test__Entity",
 				"beholder_domain":      "TestDomain",
 			},
 			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'no_double_underscore' tag",
+			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
+		},
+		{
+			name: "Invalid Beholder entity (special characters)",
+			attrs: Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "TestEntity*$",
+				"beholder_domain":      "TestDomain",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
 		},
 		{
 			name:                "Valid Attributes",
@@ -237,6 +257,16 @@ func TestEmitterMessageValidation(t *testing.T) {
 			attrs: Attributes{
 				"beholder_domain":      "TestDomain",
 				"beholder_entity":      "TestEntity",
+				"beholder_data_schema": "/example-schema/versions/1",
+			},
+			expectedError: "",
+		},
+		{
+			name:                "Valid Attributes (special characters)",
+			exporterCalledTimes: 1,
+			attrs: Attributes{
+				"beholder_domain":      "Test.Domain_42-1",
+				"beholder_entity":      "Test.Entity_42-1",
 				"beholder_data_schema": "/example-schema/versions/1",
 			},
 			expectedError: "",

@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -17,8 +18,8 @@ type Message struct {
 type Metadata struct {
 	//	REQUIRED FIELDS
 	// Schema Registry URI to fetch schema
-	BeholderDomain     string `validate:"required,no_double_underscore"`
-	BeholderEntity     string `validate:"required,no_double_underscore"`
+	BeholderDomain     string `validate:"required,domain_entity"`
+	BeholderEntity     string `validate:"required,domain_entity"`
 	BeholderDataSchema string `validate:"required,uri"`
 
 	// OPTIONAL FIELDS
@@ -231,11 +232,21 @@ func NewMetadata(attrs Attributes) *Metadata {
 	return m
 }
 
+// validDomainAndEntityRegex allows for alphanumeric characters and ._-
+var validDomainAndEntityRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
+
 func NewMetadataValidator() *validator.Validate {
 	validate := validator.New()
-	err := validate.RegisterValidation("no_double_underscore", func(fl validator.FieldLevel) bool {
-		if str, ok := fl.Field().Interface().(string); ok {
-			return !strings.Contains(str, "__")
+	err := validate.RegisterValidation("domain_entity", func(fl validator.FieldLevel) bool {
+		str, isStr := fl.Field().Interface().(string)
+		if !isStr {
+			return false
+		}
+		if strings.Contains(str, "__") {
+			return false
+		}
+		if !validDomainAndEntityRegex.MatchString(str) {
+			return false
 		}
 		return true
 	})

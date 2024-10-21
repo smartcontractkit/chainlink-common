@@ -59,8 +59,8 @@ func (b *Builder) AddRow(title string) {
 }
 
 func (b *Builder) getPanelCounter() uint32 {
-	res := b.panelCounter
 	b.panelCounter = inc(&b.panelCounter)
+	res := b.panelCounter
 	return res
 }
 
@@ -82,11 +82,18 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 		} else if item.logPanelBuilder != nil {
 			item.logPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.logPanelBuilder)
+		} else if item.heatmapBuilder != nil {
+			item.heatmapBuilder.Id(panelID)
+			b.dashboardBuilder.WithPanel(item.heatmapBuilder)
 		}
 		if item.alertBuilder != nil {
 			b.alertsBuilder = append(b.alertsBuilder, item.alertBuilder)
 		}
 	}
+}
+
+func (b *Builder) AddAlert(alerts ...*alerting.RuleBuilder) {
+	b.alertsBuilder = append(b.alertsBuilder, alerts...)
 }
 
 func (b *Builder) AddContactPoint(contactPoints ...*alerting.ContactPointBuilder) {

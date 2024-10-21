@@ -22,6 +22,7 @@ import (
 // - hard code -> [HardCodeModifierConfig]
 // - extract element -> [ElementExtractorModifierConfig]
 // - epoch to time -> [EpochToTimeModifierConfig]
+// - address to string -> [AddressBytesToStringModifierConfig]
 type ModifiersConfig []ModifierConfig
 
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
@@ -52,6 +53,8 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &EpochToTimeModifierConfig{}
 		case ModifierExtractProperty:
 			(*m)[i] = &PropertyExtractorConfig{}
+		case ModifierAddressToString:
+			(*m)[i] = &AddressBytesToStringModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -84,6 +87,7 @@ const (
 	ModifierExtractElement  ModifierType = "extract element"
 	ModifierEpochToTime     ModifierType = "epoch to time"
 	ModifierExtractProperty ModifierType = "extract property"
+	ModifierAddressToString ModifierType = "address to string"
 )
 
 type ModifierConfig interface {
@@ -221,6 +225,25 @@ func (c *PropertyExtractorConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (
 func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[PropertyExtractorConfig]{
 		Type: ModifierExtractProperty,
+		T:    c,
+	})
+}
+
+// AddressBytesToStringModifierConfig is used to transform address byte fields into string fields.
+// It holds the list of fields that should be modified and the chain-specific logic to do the modifications.
+type AddressBytesToStringModifierConfig struct {
+	Fields []string
+	// Modifier is skipped in JSON serialization, will be injected later.
+	Modifier AddressModifier `json:"-"`
+}
+
+func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewAddressBytesToStringModifier(c.Fields, c.Modifier), nil
+}
+
+func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[AddressBytesToStringModifierConfig]{
+		Type: ModifierAddressToString,
 		T:    c,
 	})
 }

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -60,8 +61,37 @@ func (r *Runtime) Logger() logger.Logger {
 	return r.logger
 }
 
-func (r *Runtime) Emit(req sdk.EmitRequest) error {
-	return r.emitFn(req.Msg, req.Labels)
+func (r *Runtime) Emitter() sdk.EmitLabeler {
+	return newWasmGuestEmitter(r.emitFn)
+}
+
+type wasmGuestEmitter struct {
+	base   custmsg.Labeler
+	emitFn func(string, map[string]any) error
+	labels map[string]string
+}
+
+func newWasmGuestEmitter(emitFn func(string, map[string]any) error) wasmGuestEmitter {
+	return wasmGuestEmitter{
+		emitFn: emitFn,
+		labels: make(map[string]string),
+		base:   custmsg.NewLabeler(),
+	}
+}
+
+func (w wasmGuestEmitter) Emit(msg string) error {
+	newLabels := make(map[string]any)
+	for k, v := range w.labels {
+		newLabels[k] = v
+	}
+	return w.emitFn(msg, newLabels)
+}
+
+func (w wasmGuestEmitter) With(keyValues ...string) sdk.EmitLabeler {
+	newEmitter := newWasmGuestEmitter(w.emitFn)
+	newEmitter.base = w.base.With(keyValues...)
+	newEmitter.labels = newEmitter.base.Labels()
+	return newEmitter
 }
 
 // createEmitFn builds the runtime's emit function implementation, which is a function

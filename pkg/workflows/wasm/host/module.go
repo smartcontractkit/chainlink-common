@@ -489,12 +489,12 @@ func createEmitFn(
 			return writeErr(err)
 		}
 
-		msg, validated, err := toEmissible(b)
+		msg, labels, err := toEmissible(b)
 		if err != nil {
 			return writeErr(err)
 		}
 
-		if err := e.WithMapLabels(validated).Emit(msg); err != nil {
+		if err := e.WithMapLabels(labels).Emit(msg); err != nil {
 			return writeErr(err)
 		}
 

@@ -7,13 +7,22 @@ import (
 
 var BreakErr = capabilities.ErrStopExecution
 
+type EmitLabeler interface {
+	// Emit sends a message to the labeler's destination.
+	Emit(string) error
+
+	// With sets the labels for the message to be emitted.  Labels are passed as key-value pairs
+	// and are cumulative.
+	With(kvs ...string) EmitLabeler
+}
+
 // Guest interface
 type Runtime interface {
 	Logger() logger.Logger
 	Fetch(req FetchRequest) (FetchResponse, error)
 
-	// Emit sends a message with the given message and labels to the configured collector.
-	Emit(req EmitRequest) error
+	// Emitter sends the given message and labels to the configured collector.
+	Emitter() EmitLabeler
 }
 
 type FetchRequest struct {
@@ -30,9 +39,4 @@ type FetchResponse struct {
 	StatusCode     uint8          `json:"statusCode"`             // HTTP status code
 	Headers        map[string]any `json:"headers,omitempty"`      // HTTP headers
 	Body           []byte         `json:"body,omitempty"`         // HTTP response body
-}
-
-type EmitRequest struct {
-	Msg    string         `json:"msg"`              // Message to emit
-	Labels map[string]any `json:"labels,omitempty"` // Labels to attach to the message
 }

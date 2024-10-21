@@ -18,6 +18,6 @@ func (nr *NoopRuntime) Logger() logger.Logger {
 	return l
 }
 
-func (nr *NoopRuntime) Emit(req sdk.EmitRequest) error {
+func (nr *NoopRuntime) Emitter() sdk.EmitLabeler {
 	return nil
 }

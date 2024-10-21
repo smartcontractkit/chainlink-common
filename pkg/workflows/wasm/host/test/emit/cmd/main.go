@@ -22,13 +22,9 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 		"transform",
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
-			err := rsdk.Emit(sdk.EmitRequest{
-				Msg: "testing emit",
-				Labels: map[string]any{
-					"test-string-field-key": "this is a test field content",
-				},
-			})
-			if err != nil {
+			if err := rsdk.Emitter().
+				With("test-string-field-key", "this is a test field content").
+				Emit("testing emit"); err != nil {
 				return false, err
 			}
 			return true, nil

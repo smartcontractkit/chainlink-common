@@ -68,6 +68,13 @@ type DeterminismConfig struct {
 	Seed int64
 }
 
+type Emitter interface {
+	// Emit sends a message to an external consumer.
+	//
+	// TODO(mstreet3): make the module context aware.
+	Emit(msg string, labels map[string]any) error
+}
+
 type ModuleConfig struct {
 	TickInterval   time.Duration
 	Timeout        *time.Duration
@@ -79,7 +86,7 @@ type ModuleConfig struct {
 
 	// Emitter is the function that will be called when the emit function is called in the WASM module.
 	// Implementation should emit to external consumer.
-	Emitter sdk.Emitter
+	Emitter Emitter
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
@@ -441,9 +448,9 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.C
 func createEmitFn(
 	l logger.Logger,
 	e sdk.Emitter,
-	reader UnsafeReaderFunc,
-	writer UnsafeWriterFunc,
-	sizeWriter UnsafeFixedLengthWriterFunc,
+	reader unsafeReaderFunc,
+	writer unsafeWriterFunc,
+	sizeWriter unsafeFixedLengthWriterFunc,
 ) func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
 	logErr := func(err error) {
 		l.Errorf("error emitting message: %s", err)
@@ -528,17 +535,17 @@ func beholderEmitter(msg string, labels map[string]any) error {
 	return custmsg.NewLabeler().WithMapLabels(validated).SendLogAsCustomMessage(msg)
 }
 
-// UnsafeWriterFunc defines behavior for writing directly to wasm memory.  A source slice of bytes
+// unsafeWriterFunc defines behavior for writing directly to wasm memory.  A source slice of bytes
 // is written to the location defined by the ptr.
-type UnsafeWriterFunc func(c *wasmtime.Caller, src []byte, ptr, len int32) int64
+type unsafeWriterFunc func(c *wasmtime.Caller, src []byte, ptr, len int32) int64
 
-// UnsafeFixedLengthWriterFunc defines behavior for writing a uint32 value to wasm memory at the location defined
+// unsafeFixedLengthWriterFunc defines behavior for writing a uint32 value to wasm memory at the location defined
 // by the ptr.
-type UnsafeFixedLengthWriterFunc func(c *wasmtime.Caller, ptr int32, val uint32) int64
+type unsafeFixedLengthWriterFunc func(c *wasmtime.Caller, ptr int32, val uint32) int64
 
-// UnsafeReaderFunc abstractly defines the behavior of reading from WASM memory.  Returns a copy of
+// unsafeReaderFunc abstractly defines the behavior of reading from WASM memory.  Returns a copy of
 // the memory at the given pointer and size.
-type UnsafeReaderFunc func(c *wasmtime.Caller, ptr, len int32) ([]byte, error)
+type unsafeReaderFunc func(c *wasmtime.Caller, ptr, len int32) ([]byte, error)
 
 // wasmMemoryAccessor is the default implementation for unsafely accessing the memory of the WASM module.
 func wasmMemoryAccessor(caller *wasmtime.Caller) []byte {

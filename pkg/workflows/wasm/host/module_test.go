@@ -23,7 +23,7 @@ func Test_createEmitFn(t *testing.T) {
 			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
 				return nil
 			}),
-			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
 					Message: "hello, world",
 					Labels: &pb.Map{
@@ -39,10 +39,10 @@ func Test_createEmitFn(t *testing.T) {
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
 				return 0
 			}),
-			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
 				return 0
 			}),
 		)
@@ -56,15 +56,15 @@ func Test_createEmitFn(t *testing.T) {
 			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
 				return nil
 			}),
-			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
 				return 0
 			}),
-			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
 				return 0
 			}),
 		)
@@ -83,14 +83,14 @@ func Test_createEmitFn(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
 			nil,
-			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
 			}),
-			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
 				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
 				return 0
 			}),
-			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
 				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
 				return 0
 			}),
@@ -112,16 +112,16 @@ func Test_createEmitFn(t *testing.T) {
 			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
 				return assert.AnError
 			}),
-			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
 				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
 				return 0
 			}),
-			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
 				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
 				return 0
 			}),
@@ -146,14 +146,14 @@ func Test_createEmitFn(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
 			nil,
-			UnsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return badData, nil
 			}),
-			UnsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
 				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
 				return 0
 			}),
-			UnsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
 				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
 				return 0
 			}),

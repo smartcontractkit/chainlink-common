@@ -87,7 +87,7 @@ func (e *Engine) EmitHealthErr(err error) { e.emitHealthErr(err) }
 func (e *Engine) SetHealthCond(condition string, err error) {
 	e.condsMu.Lock()
 	defer e.condsMu.Unlock()
-	e.conds[condition] = fmt.Errorf("%s: %e", condition, err)
+	e.conds[condition] = fmt.Errorf("%s: %w", condition, err)
 }
 
 // ClearHealthCond removes a condition and error recorded by SetHealthCond.

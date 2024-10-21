@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729527795478,
+  "lastUpdate": 1729535204975,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4158,6 +4158,48 @@ window.BENCHMARK_DATA = {
             "value": 28656,
             "unit": "ns/op",
             "extra": "42507 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4b45ad16ad7fa0b865decac91f60aa77b91bf147",
+          "message": "TT-1303 INFOPLAT-1372 Add support for OTLP/HTTP exporters for beholder sdk (#830)\n\n* TT-1303 Add support for OTLP/HTTP exporters\r\n\r\n* TT-1303 Add support for OTLP/HTTP exporters: enable case when InsecureConnection:false and CACertFile is not set\r\n\r\n* insecureskipverify true\r\n\r\n* revert insecureSkipVerify true\r\n\r\n* Consolidate NewGRPCClient, NewHTTPClient into single constructor\r\n\r\n* Return nil on error from Client constructors\r\n\r\n* Add comment for used/unused context\r\n\r\n---------\r\n\r\nCo-authored-by: gheorghestrimtu <studentcuza@gmail.com>\r\nCo-authored-by: 4of9 <177086174+4of9@users.noreply.github.com>\r\nCo-authored-by: Geert G <117188496+cll-gg@users.noreply.github.com>\r\nCo-authored-by: Clement <clement.erena78@gmail.com>",
+          "timestamp": "2024-10-21T20:25:00+02:00",
+          "tree_id": "70996dbfecb4f518aeed6e31560db2f05734f493",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4b45ad16ad7fa0b865decac91f60aa77b91bf147"
+        },
+        "date": 1729535204200,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458,
+            "unit": "ns/op",
+            "extra": "2680203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 525.5,
+            "unit": "ns/op",
+            "extra": "2360708 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28312,
+            "unit": "ns/op",
+            "extra": "42427 times\n4 procs"
           }
         ]
       }

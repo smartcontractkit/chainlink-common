@@ -76,8 +76,8 @@ func (c *Client) VerifyBatch(ctx context.Context, keyID []byte, data [][]byte) (
 	return reply.Valid, nil
 }
 
-func (c *Client) List(ctx context.Context, tags []string) ([][]byte, error) {
-	reply, err := c.grpc.List(ctx, &keystorepb.ListRequest{
+func (c *Client) ListKeys(ctx context.Context, tags []string) ([][]byte, error) {
+	reply, err := c.grpc.ListKeys(ctx, &keystorepb.ListKeysRequest{
 		Tags: tags,
 	})
 
@@ -87,11 +87,11 @@ func (c *Client) List(ctx context.Context, tags []string) ([][]byte, error) {
 	return reply.KeyIDs, nil
 }
 
-func (c *Client) RunUDF(ctx context.Context, udfName string, keyID []byte, data []byte) ([]byte, error) {
+func (c *Client) RunUDF(ctx context.Context, name string, keyID []byte, data []byte) ([]byte, error) {
 	reply, err := c.grpc.RunUDF(ctx, &keystorepb.RunUDFRequest{
-		UdfName: udfName,
-		KeyID:   keyID,
-		Data:    data,
+		Name:  name,
+		KeyID: keyID,
+		Data:  data,
 	})
 
 	if err != nil {
@@ -100,131 +100,8 @@ func (c *Client) RunUDF(ctx context.Context, udfName string, keyID []byte, data 
 	return reply.Data, nil
 }
 
-var _ keystorepb.KeystoreServer = (*server)(nil)
-
-type server struct {
-	*net.BrokerExt
-	keystorepb.UnimplementedKeystoreServer
-
-	impl Methods
-}
-
-func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl Methods) error {
-	keystorepb.RegisterKeystoreServer(server, newKeystoreServer(broker, brokerCfg, impl))
-	return nil
-}
-
-func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl Methods) *server {
-	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "KeystoreServer")
-	return &server{BrokerExt: &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
-}
-
-func (s *server) Sign(ctx context.Context, request *keystorepb.SignRequest) (*keystorepb.SignResponse, error) {
-	data, err := s.impl.Sign(ctx, request.KeyID, request.Data)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.SignResponse{Data: data}, err
-}
-
-func (s *server) SignBatch(ctx context.Context, request *keystorepb.SignBatchRequest) (*keystorepb.SignBatchResponse, error) {
-	data, err := s.impl.SignBatch(ctx, request.KeyID, request.Data)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.SignBatchResponse{Data: data}, err
-}
-
-func (s *server) Verify(ctx context.Context, request *keystorepb.VerifyRequest) (*keystorepb.VerifyResponse, error) {
-	valid, err := s.impl.Verify(ctx, request.KeyID, request.Data)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.VerifyResponse{Valid: valid}, err
-}
-
-func (s *server) VerifyBatch(ctx context.Context, request *keystorepb.VerifyBatchRequest) (*keystorepb.VerifyBatchResponse, error) {
-	valid, err := s.impl.VerifyBatch(ctx, request.KeyID, request.Data)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.VerifyBatchResponse{Valid: valid}, err
-}
-
-func (s *server) List(ctx context.Context, request *keystorepb.ListRequest) (*keystorepb.ListResponse, error) {
-	keyIDs, err := s.impl.List(ctx, request.Tags)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.ListResponse{KeyIDs: keyIDs}, err
-}
-
-func (s *server) RunUDF(ctx context.Context, request *keystorepb.RunUDFRequest) (*keystorepb.RunUDFResponse, error) {
-	data, err := s.impl.RunUDF(ctx, request.UdfName, request.KeyID, request.Data)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.RunUDFResponse{Data: data}, err
-}
-
-func (s *server) Import(ctx context.Context, request *keystorepb.ImportRequest) (*keystorepb.ImportResponse, error) {
-	keyIDs, err := s.impl.Import(ctx, request.KeyType, request.Data, request.Tags)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.ImportResponse{KeyID: keyIDs}, err
-}
-
-func (s *server) Export(ctx context.Context, request *keystorepb.ExportRequest) (*keystorepb.ExportResponse, error) {
-	data, err := s.impl.Export(ctx, request.KeyID)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.ExportResponse{Data: data}, err
-}
-
-func (s *server) Create(ctx context.Context, request *keystorepb.CreateRequest) (*keystorepb.CreateResponse, error) {
-	keyIDs, err := s.impl.Create(ctx, request.KeyType, request.Tags)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.CreateResponse{KeyID: keyIDs}, err
-}
-
-func (s *server) Delete(ctx context.Context, request *keystorepb.DeleteRequest) (*keystorepb.DeleteResponse, error) {
-	err := s.impl.Delete(ctx, request.KeyID)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.DeleteResponse{}, err
-}
-
-func (s *server) AddTag(ctx context.Context, request *keystorepb.AddTagRequest) (*keystorepb.AddTagResponse, error) {
-	err := s.impl.AddTag(ctx, request.KeyID, request.Tag)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.AddTagResponse{}, err
-}
-
-func (s *server) RemoveTag(ctx context.Context, request *keystorepb.RemoveTagRequest) (*keystorepb.RemoveTagResponse, error) {
-	err := s.impl.RemoveTag(ctx, request.KeyID, request.Tag)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.RemoveTagResponse{}, err
-}
-
-func (s *server) ListTags(ctx context.Context, request *keystorepb.ListTagsRequest) (*keystorepb.ListTagsResponse, error) {
-	tags, err := s.impl.ListTags(ctx, request.KeyID)
-	if err != nil {
-		return nil, err
-	}
-	return &keystorepb.ListTagsResponse{Tags: tags}, nil
-}
-
-func (c *Client) Import(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error) {
-	reply, err := c.grpc.Import(ctx, &keystorepb.ImportRequest{
+func (c *Client) ImportKey(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error) {
+	reply, err := c.grpc.ImportKey(ctx, &keystorepb.ImportKeyRequest{
 		KeyType: keyType,
 		Data:    data,
 		Tags:    tags,
@@ -236,8 +113,8 @@ func (c *Client) Import(ctx context.Context, keyType string, data []byte, tags [
 	return reply.KeyID, nil
 }
 
-func (c *Client) Export(ctx context.Context, keyID []byte) ([]byte, error) {
-	reply, err := c.grpc.Export(ctx, &keystorepb.ExportRequest{
+func (c *Client) ExportKey(ctx context.Context, keyID []byte) ([]byte, error) {
+	reply, err := c.grpc.ExportKey(ctx, &keystorepb.ExportKeyRequest{
 		KeyID: keyID,
 	})
 
@@ -247,8 +124,8 @@ func (c *Client) Export(ctx context.Context, keyID []byte) ([]byte, error) {
 	return reply.Data, nil
 }
 
-func (c *Client) Create(ctx context.Context, keyType string, tags []string) ([]byte, error) {
-	reply, err := c.grpc.Create(ctx, &keystorepb.CreateRequest{
+func (c *Client) CreateKey(ctx context.Context, keyType string, tags []string) ([]byte, error) {
+	reply, err := c.grpc.CreateKey(ctx, &keystorepb.CreateKeyRequest{
 		KeyType: keyType,
 		Tags:    tags,
 	})
@@ -259,8 +136,8 @@ func (c *Client) Create(ctx context.Context, keyType string, tags []string) ([]b
 	return reply.KeyID, nil
 }
 
-func (c *Client) Delete(ctx context.Context, keyID []byte) error {
-	_, err := c.grpc.Delete(ctx, &keystorepb.DeleteRequest{
+func (c *Client) DeleteKey(ctx context.Context, keyID []byte) error {
+	_, err := c.grpc.DeleteKey(ctx, &keystorepb.DeleteKeyRequest{
 		KeyID: keyID,
 	})
 
@@ -303,4 +180,127 @@ func (c *Client) ListTags(ctx context.Context, keyID []byte) ([]string, error) {
 		return nil, err
 	}
 	return reply.Tags, nil
+}
+
+var _ keystorepb.KeystoreServer = (*server)(nil)
+
+type server struct {
+	*net.BrokerExt
+	keystorepb.UnimplementedKeystoreServer
+
+	impl GRPCService
+}
+
+func RegisterKeystoreServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl GRPCService) error {
+	keystorepb.RegisterKeystoreServer(server, newKeystoreServer(broker, brokerCfg, impl))
+	return nil
+}
+
+func newKeystoreServer(broker net.Broker, brokerCfg net.BrokerConfig, impl GRPCService) *server {
+	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "KeystoreServer")
+	return &server{BrokerExt: &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl: impl}
+}
+
+func (s *server) Sign(ctx context.Context, request *keystorepb.SignRequest) (*keystorepb.SignResponse, error) {
+	data, err := s.impl.Sign(ctx, request.KeyID, request.Data)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.SignResponse{Data: data}, err
+}
+
+func (s *server) SignBatch(ctx context.Context, request *keystorepb.SignBatchRequest) (*keystorepb.SignBatchResponse, error) {
+	data, err := s.impl.SignBatch(ctx, request.KeyID, request.Data)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.SignBatchResponse{Data: data}, err
+}
+
+func (s *server) Verify(ctx context.Context, request *keystorepb.VerifyRequest) (*keystorepb.VerifyResponse, error) {
+	valid, err := s.impl.Verify(ctx, request.KeyID, request.Data)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.VerifyResponse{Valid: valid}, err
+}
+
+func (s *server) VerifyBatch(ctx context.Context, request *keystorepb.VerifyBatchRequest) (*keystorepb.VerifyBatchResponse, error) {
+	valid, err := s.impl.VerifyBatch(ctx, request.KeyID, request.Data)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.VerifyBatchResponse{Valid: valid}, err
+}
+
+func (s *server) ListKeys(ctx context.Context, request *keystorepb.ListKeysRequest) (*keystorepb.ListKeysResponse, error) {
+	keyIDs, err := s.impl.ListKeys(ctx, request.Tags)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.ListKeysResponse{KeyIDs: keyIDs}, err
+}
+
+func (s *server) RunUDF(ctx context.Context, request *keystorepb.RunUDFRequest) (*keystorepb.RunUDFResponse, error) {
+	data, err := s.impl.RunUDF(ctx, request.Name, request.KeyID, request.Data)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.RunUDFResponse{Data: data}, err
+}
+
+func (s *server) ImportKey(ctx context.Context, request *keystorepb.ImportKeyRequest) (*keystorepb.ImportKeyResponse, error) {
+	keyIDs, err := s.impl.ImportKey(ctx, request.KeyType, request.Data, request.Tags)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.ImportKeyResponse{KeyID: keyIDs}, err
+}
+
+func (s *server) ExportKey(ctx context.Context, request *keystorepb.ExportKeyRequest) (*keystorepb.ExportKeyResponse, error) {
+	data, err := s.impl.ExportKey(ctx, request.KeyID)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.ExportKeyResponse{Data: data}, err
+}
+
+func (s *server) CreateKey(ctx context.Context, request *keystorepb.CreateKeyRequest) (*keystorepb.CreateKeyResponse, error) {
+	keyIDs, err := s.impl.CreateKey(ctx, request.KeyType, request.Tags)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.CreateKeyResponse{KeyID: keyIDs}, err
+}
+
+func (s *server) DeleteKey(ctx context.Context, request *keystorepb.DeleteKeyRequest) (*keystorepb.DeleteKeyResponse, error) {
+	err := s.impl.DeleteKey(ctx, request.KeyID)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.DeleteKeyResponse{}, err
+}
+
+func (s *server) AddTag(ctx context.Context, request *keystorepb.AddTagRequest) (*keystorepb.AddTagResponse, error) {
+	err := s.impl.AddTag(ctx, request.KeyID, request.Tag)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.AddTagResponse{}, err
+}
+
+func (s *server) RemoveTag(ctx context.Context, request *keystorepb.RemoveTagRequest) (*keystorepb.RemoveTagResponse, error) {
+	err := s.impl.RemoveTag(ctx, request.KeyID, request.Tag)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.RemoveTagResponse{}, err
+}
+
+func (s *server) ListTags(ctx context.Context, request *keystorepb.ListTagsRequest) (*keystorepb.ListTagsResponse, error) {
+	tags, err := s.impl.ListTags(ctx, request.KeyID)
+	if err != nil {
+		return nil, err
+	}
+	return &keystorepb.ListTagsResponse{Tags: tags}, nil
 }

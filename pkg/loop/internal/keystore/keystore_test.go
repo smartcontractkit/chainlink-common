@@ -66,7 +66,7 @@ func TestKeystore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, r4, verifyBatch)
 
-	r5, err := ks.List(ctx, tags)
+	r5, err := ks.ListKeys(ctx, tags)
 	require.NoError(t, err)
 	require.Equal(t, r5, list)
 
@@ -74,19 +74,19 @@ func TestKeystore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, r6, runUDF)
 
-	r7, err := ks.Import(ctx, keyType, data, tags)
+	r7, err := ks.ImportKey(ctx, keyType, data, tags)
 	require.NoError(t, err)
 	require.Equal(t, r7, importResponse)
 
-	r8, err := ks.Export(ctx, keyID)
+	r8, err := ks.ExportKey(ctx, keyID)
 	require.NoError(t, err)
 	require.Equal(t, r8, export)
 
-	r9, err := ks.Create(ctx, keyType, tags)
+	r9, err := ks.CreateKey(ctx, keyType, tags)
 	require.NoError(t, err)
 	require.Equal(t, r9, create)
 
-	err = ks.Delete(ctx, keyID)
+	err = ks.DeleteKey(ctx, keyID)
 	require.ErrorContains(t, err, errDelete.Error())
 
 	err = ks.AddTag(ctx, keyID, tag)
@@ -130,7 +130,7 @@ type testKeystorePlugin struct {
 	log logger.Logger
 	plugin.NetRPCUnsupportedPlugin
 	brokerExt *net.BrokerExt
-	impl      Methods
+	impl      GRPCService
 }
 
 func (r *testKeystorePlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
@@ -218,7 +218,7 @@ func (t testKeystore) VerifyBatch(ctx context.Context, _keyID []byte, _dataList 
 	return verifyBatch, errors.Join(checkKeyID(_keyID), checkDataList(_dataList))
 }
 
-func (t testKeystore) List(ctx context.Context, _tags []string) ([][]byte, error) {
+func (t testKeystore) ListKeys(ctx context.Context, _tags []string) ([][]byte, error) {
 	return list, checkTags(_tags)
 }
 
@@ -226,19 +226,19 @@ func (t testKeystore) RunUDF(ctx context.Context, _udfName string, _keyID []byte
 	return runUDF, errors.Join(checkUdfName(_udfName), checkKeyID(_keyID), checkData(_data))
 }
 
-func (t testKeystore) Import(ctx context.Context, _keyType string, _data []byte, _tags []string) ([]byte, error) {
+func (t testKeystore) ImportKey(ctx context.Context, _keyType string, _data []byte, _tags []string) ([]byte, error) {
 	return importResponse, errors.Join(checkKeyType(_keyType), checkData(_data), checkTags(_tags))
 }
 
-func (t testKeystore) Export(ctx context.Context, _keyID []byte) ([]byte, error) {
+func (t testKeystore) ExportKey(ctx context.Context, _keyID []byte) ([]byte, error) {
 	return export, checkKeyID(_keyID)
 }
 
-func (t testKeystore) Create(ctx context.Context, _keyType string, _tags []string) ([]byte, error) {
+func (t testKeystore) CreateKey(ctx context.Context, _keyType string, _tags []string) ([]byte, error) {
 	return create, errors.Join(checkKeyType(_keyType), checkTags(_tags))
 }
 
-func (t testKeystore) Delete(ctx context.Context, _keyID []byte) error {
+func (t testKeystore) DeleteKey(ctx context.Context, _keyID []byte) error {
 	return errors.Join(errDelete, checkKeyID(_keyID))
 }
 

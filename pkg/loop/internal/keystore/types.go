@@ -6,23 +6,23 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// Methods This interface contains all the functionalities of the GRPC layer of the LOOPP keystore
-type Methods interface {
+// GRPCService This interface contains all the functionalities of the GRPC layer of the LOOPP keystore
+type GRPCService interface {
 	services.Service
 	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
 	SignBatch(ctx context.Context, keyID []byte, data [][]byte) ([][]byte, error)
 	Verify(ctx context.Context, keyID []byte, data []byte) (bool, error)
 	VerifyBatch(ctx context.Context, keyID []byte, data [][]byte) ([]bool, error)
 
-	List(ctx context.Context, tags []string) ([][]byte, error)
+	ListKeys(ctx context.Context, tags []string) ([][]byte, error)
 
-	RunUDF(ctx context.Context, udfName string, keyID []byte, data []byte) ([]byte, error)
+	RunUDF(ctx context.Context, name string, keyID []byte, data []byte) ([]byte, error)
 
-	Import(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error)
-	Export(ctx context.Context, keyID []byte) ([]byte, error)
+	ImportKey(ctx context.Context, keyType string, data []byte, tags []string) ([]byte, error)
+	ExportKey(ctx context.Context, keyID []byte) ([]byte, error)
 
-	Create(ctx context.Context, keyType string, tags []string) ([]byte, error)
-	Delete(ctx context.Context, keyID []byte) error
+	CreateKey(ctx context.Context, keyType string, tags []string) ([]byte, error)
+	DeleteKey(ctx context.Context, keyID []byte) error
 
 	AddTag(ctx context.Context, keyID []byte, tag string) error
 	RemoveTag(ctx context.Context, keyID []byte, tag string) error

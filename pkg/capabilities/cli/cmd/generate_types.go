@@ -102,7 +102,7 @@ func schemaFilesFromDir(dir string) ([]string, error) {
 		schemaPaths = append(schemaPaths, path)
 		return nil
 	}); err != nil {
-		return nil, fmt.Errorf("error walking the directory %v: %v", dir, err)
+		return nil, fmt.Errorf("error walking the directory %v: %w", dir, err)
 	}
 	return schemaPaths, nil
 }

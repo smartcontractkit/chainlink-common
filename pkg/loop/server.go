@@ -58,7 +58,7 @@ func newServer(loggerName string) (*Server, error) {
 
 	lggr, err := NewLogger()
 	if err != nil {
-		return nil, fmt.Errorf("error creating logger: %s", err)
+		return nil, fmt.Errorf("error creating logger: %w", err)
 	}
 	lggr = logger.Named(lggr, loggerName)
 	s.Logger = logger.Sugared(lggr)

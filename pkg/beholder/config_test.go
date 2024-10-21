@@ -26,16 +26,37 @@ func ExampleConfig() {
 		// Message Emitter
 		EmitterExportTimeout:  1 * time.Second,
 		EmitterBatchProcessor: true,
+		// OTel message log exporter retry config
+		EmitterExporterRetryConfig: beholder.RetryConfig{
+			Enabled:         false,
+			InitialInterval: 5 * time.Second,
+			MaxInterval:     30 * time.Second,
+			MaxElapsedTime:  time.Minute,
+		},
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
+		// OTel trace exporter retry config
+		TraceExporterRetryConfig: beholder.RetryConfig{
+			Enabled:         false,
+			InitialInterval: 5 * time.Second,
+			MaxInterval:     30 * time.Second,
+			MaxElapsedTime:  time.Minute,
+		},
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
+		// OTel metric exporter retry config
+		MetricExporterRetryConfig: beholder.RetryConfig{
+			Enabled:         false,
+			InitialInterval: 5 * time.Second,
+			MaxInterval:     30 * time.Second,
+			MaxElapsedTime:  time.Minute,
+		},
 		// Log
 		LogExportTimeout:  1 * time.Second,
 		LogBatchProcessor: true,
 	}
 	fmt.Printf("%+v", config)
 	// Output:
-	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholderclient slice:<nil>}}] EmitterExportTimeout:1s EmitterBatchProcessor:true TraceSampleRatio:1 TraceBatchTimeout:1s TraceSpanExporter:<nil> MetricReaderInterval:1s LogExportTimeout:1s LogBatchProcessor:true}
+	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholderclient slice:<nil>}}] EmitterExportTimeout:1s EmitterBatchProcessor:true EmitterExporterRetryConfig:{Enabled:false InitialInterval:5s MaxInterval:30s MaxElapsedTime:1m0s} TraceSampleRatio:1 TraceBatchTimeout:1s TraceSpanExporter:<nil> TraceExporterRetryConfig:{Enabled:false InitialInterval:5s MaxInterval:30s MaxElapsedTime:1m0s} MetricReaderInterval:1s MetricExporterRetryConfig:{Enabled:false InitialInterval:5s MaxInterval:30s MaxElapsedTime:1m0s} LogExportTimeout:1s LogBatchProcessor:true}
 }

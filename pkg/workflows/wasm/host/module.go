@@ -21,7 +21,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -69,10 +68,17 @@ type DeterminismConfig struct {
 }
 
 type Emitter interface {
-	// Emit sends a message to an external consumer.
+	// Emit sends a message with the given message and labels to the configured collector.
 	//
-	// TODO(mstreet3): make the module context aware.
+	// TODO(mstreet3): Emit and custmsg.Labeler should be context aware.  Update signature once
+	// WASM can support context.
 	Emit(msg string, labels map[string]any) error
+}
+
+type emitterFunc func(msg string, labels map[string]any) error
+
+func (f emitterFunc) Emit(msg string, labels map[string]any) error {
+	return f(msg, labels)
 }
 
 type ModuleConfig struct {
@@ -138,7 +144,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.Emitter == nil {
-		modCfg.Emitter = sdk.EmitterFunc(beholderEmitter)
+		modCfg.Emitter = emitterFunc(beholderEmitter)
 	}
 
 	logger := modCfg.Logger
@@ -447,7 +453,7 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.C
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
-	e sdk.Emitter,
+	e Emitter,
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,

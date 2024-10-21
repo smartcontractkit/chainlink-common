@@ -35,19 +35,7 @@ type Runtime struct {
 type RuntimeConfig struct {
 	MaxFetchResponseSizeBytes int64
 	RequestID                 *string
-	MetaData                  *capabilities.RequestMetadata
-}
-
-func WithRequestMetaData(md *capabilities.RequestMetadata) func(*RuntimeConfig) {
-	return func(rc *RuntimeConfig) {
-		rc.MetaData = md
-	}
-}
-
-func WithRequestID(id string) func(*RuntimeConfig) {
-	return func(rc *RuntimeConfig) {
-		rc.RequestID = &id
-	}
+	Metadata                  *capabilities.RequestMetadata
 }
 
 const (
@@ -70,8 +58,8 @@ func (r *Runtime) Logger() logger.Logger {
 	return r.logger
 }
 
-func (r *Runtime) Emit(msg string, labels map[string]any) error {
-	return r.emitFn(msg, labels)
+func (r *Runtime) Emit(req sdk.EmitRequest) error {
+	return r.emitFn(req.Msg, req.Labels)
 }
 
 // createEmitFn builds the runtime's emit function implementation, which is a function
@@ -83,11 +71,11 @@ func createEmitFn(
 ) func(string, map[string]any) error {
 	emitFn := func(msg string, labels map[string]any) error {
 		// Prepare the labels to be emitted
-		if sdkConfig.MetaData == nil {
+		if sdkConfig.Metadata == nil {
 			return NewEmissionError(fmt.Errorf("metadata is required to emit"))
 		}
 
-		labels, err := toEmitLabels(sdkConfig.MetaData, labels)
+		labels, err := toEmitLabels(sdkConfig.Metadata, labels)
 		if err != nil {
 			return NewEmissionError(err)
 		}

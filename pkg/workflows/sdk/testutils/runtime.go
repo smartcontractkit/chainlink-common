@@ -18,6 +18,6 @@ func (nr *NoopRuntime) Logger() logger.Logger {
 	return l
 }
 
-func (nr *NoopRuntime) Emit(msg string, labels map[string]interface{}) error {
+func (nr *NoopRuntime) Emit(req sdk.EmitRequest) error {
 	return nil
 }

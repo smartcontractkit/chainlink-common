@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -33,10 +32,7 @@ func NewRunner() *Runner {
 
 	return &Runner{
 		sendResponse: sendResponseFn,
-		sdkFactory: func(sdkConfig *RuntimeConfig, id string, md *capabilities.RequestMetadata, opts ...func(*RuntimeConfig)) *Runtime {
-			sdkConfig.RequestID = &id
-			sdkConfig.Metadata = md
-
+		sdkFactory: func(sdkConfig *RuntimeConfig, opts ...func(*RuntimeConfig)) *Runtime {
 			for _, opt := range opts {
 				opt(sdkConfig)
 			}

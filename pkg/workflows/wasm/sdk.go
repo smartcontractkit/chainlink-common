@@ -42,9 +42,11 @@ const (
 	defaultMaxFetchResponseSizeBytes = 5 * 1024
 )
 
-func defaultRuntimeConfig() *RuntimeConfig {
+func defaultRuntimeConfig(id string, md *capabilities.RequestMetadata) *RuntimeConfig {
 	return &RuntimeConfig{
 		MaxFetchResponseSizeBytes: defaultMaxFetchResponseSizeBytes,
+		RequestID:                 &id,
+		Metadata:                  md,
 	}
 }
 

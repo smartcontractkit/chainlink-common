@@ -74,8 +74,8 @@ func (p *ProviderClient) OnchainConfigCodec() median.OnchainConfigCodec {
 	return p.onchainConfigCodec
 }
 
-func (p *ProviderClient) ContractReader() types.ContractReader {
-	return p.contractReader
+func (m *ProviderClient) ContractReader() types.ContractReader {
+	return m.contractReader
 }
 
 func (p *ProviderClient) Codec() types.Codec {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729333047497,
+  "lastUpdate": 1729506973868,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4074,6 +4074,48 @@ window.BENCHMARK_DATA = {
             "value": 28298,
             "unit": "ns/op",
             "extra": "42525 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "39a6e78c028689698295c6b5d7ab208c4990f5e8",
+          "message": "[CAPPL-132] Add secrets interpolation (#862)",
+          "timestamp": "2024-10-21T11:35:00+01:00",
+          "tree_id": "4cd69fa2ac348865dbbe794a2236accf220f9535",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/39a6e78c028689698295c6b5d7ab208c4990f5e8"
+        },
+        "date": 1729506972720,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.2,
+            "unit": "ns/op",
+            "extra": "2698375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.2,
+            "unit": "ns/op",
+            "extra": "2351166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28319,
+            "unit": "ns/op",
+            "extra": "40802 times\n4 procs"
           }
         ]
       }

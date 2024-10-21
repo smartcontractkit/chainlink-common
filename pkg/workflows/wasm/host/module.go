@@ -66,22 +66,11 @@ type DeterminismConfig struct {
 	Seed int64
 }
 
-type Emitter interface {
-	// Emit sends a message with the given message and labels to the configured collector.
-	//
-	// TODO(mstreet3): Emit and custmsg.Labeler should be context aware.  Update signature once
-	// WASM can support context.
-	Emit(msg string, labels map[string]any) error
-}
-
-type emitterFunc func(msg string, labels map[string]any) error
-
-func (f emitterFunc) Emit(msg string, labels map[string]any) error {
-	return f(msg, labels)
-}
-
 type EmitLabeler interface {
+	// Emit sends a message to the labeler's destination.
 	Emit(string) error
+
+	// WithMapLabels sets the labels for the message to be emitted.  Labels are cumulative.
 	WithMapLabels(map[string]string) EmitLabeler
 }
 
@@ -94,12 +83,7 @@ type ModuleConfig struct {
 	IsUncompressed bool
 	Fetch          func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
 
-	// emitter is the function that will be called when the emit function is called in the WASM module.
-	// Implementation should emit to external consumer.  Private because a real emitter should be adapted
-	// from the Labeler.
-	emitter Emitter
-
-	// TODO(mstreet3): Provide the labeler from the capability
+	// Labeler is used to emit messages from the module.
 	Labeler EmitLabeler
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
@@ -151,14 +135,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		}
 	}
 
-	if modCfg.Labeler != nil {
-		modCfg.emitter = emitterFunc(createLabelerAdapter(modCfg.Labeler))
-	}
-
-	if modCfg.emitter == nil {
-		modCfg.emitter = emitterFunc(func(msg string, labels map[string]any) error {
-			return fmt.Errorf("emit not implemented")
-		})
+	if modCfg.Labeler == nil {
+		modCfg.Labeler = &unimplementedEmitLabeler{}
 	}
 
 	logger := modCfg.Logger
@@ -301,7 +279,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"emit",
-		createEmitFn(logger, modCfg.emitter, wasmRead, wasmWrite, wasmWriteUInt32),
+		createEmitFn(logger, modCfg.Labeler, wasmRead, wasmWrite, wasmWriteUInt32),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping emit func: %w", err)
@@ -467,7 +445,7 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.C
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
-	e Emitter,
+	e EmitLabeler,
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,
@@ -511,28 +489,12 @@ func createEmitFn(
 			return writeErr(err)
 		}
 
-		msg := &wasmpb.EmitMessageRequest{}
-		err = proto.Unmarshal(b, msg)
+		msg, validated, err := toEmissible(b)
 		if err != nil {
 			return writeErr(err)
 		}
 
-		vl, err := values.FromMapValueProto(msg.Labels)
-		if err != nil {
-			return writeErr(err)
-		}
-
-		// Handle the case of no labels before unwrapping.
-		if vl == nil {
-			vl = values.EmptyMap()
-		}
-
-		var labels map[string]any
-		if err := vl.UnwrapTo(&labels); err != nil {
-			return writeErr(err)
-		}
-
-		if err := e.Emit(msg.Message, labels); err != nil {
+		if err := e.WithMapLabels(validated).Emit(msg); err != nil {
 			return writeErr(err)
 		}
 
@@ -540,25 +502,56 @@ func createEmitFn(
 	}
 }
 
-// createLabelerAdapter creates a function that sends a message to the labeler's destination.  Each label is
-// expected to be a string.  Fails if any label is not a string.
-func createLabelerAdapter(l EmitLabeler) func(msg string, labels map[string]any) error {
-	return func(msg string, labels map[string]any) error {
-		if l == nil {
-			return errors.New("labeler is nil")
-		}
+type unimplementedEmitLabeler struct{}
 
-		validated := make(map[string]string, len(labels))
-		for k, v := range labels {
-			str, ok := v.(string)
-			if !ok {
-				return fmt.Errorf("label %s is not a string", k)
-			}
-			validated[k] = str
-		}
+func (u *unimplementedEmitLabeler) Emit(string) error {
+	return errors.New("unimplemented")
+}
 
-		return l.WithMapLabels(validated).Emit(msg)
+func (u *unimplementedEmitLabeler) WithMapLabels(map[string]string) EmitLabeler {
+	return u
+}
+
+func toEmissible(b []byte) (string, map[string]string, error) {
+	msg := &wasmpb.EmitMessageRequest{}
+	if err := proto.Unmarshal(b, msg); err != nil {
+		return "", nil, err
 	}
+
+	validated, err := toValidatedLabels(msg)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return msg.Message, validated, nil
+}
+
+func toValidatedLabels(msg *wasmpb.EmitMessageRequest) (map[string]string, error) {
+	vl, err := values.FromMapValueProto(msg.Labels)
+	if err != nil {
+		return nil, err
+	}
+
+	// Handle the case of no labels before unwrapping.
+	if vl == nil {
+		vl = values.EmptyMap()
+	}
+
+	var labels map[string]any
+	if err := vl.UnwrapTo(&labels); err != nil {
+		return nil, err
+	}
+
+	validated := make(map[string]string, len(labels))
+	for k, v := range labels {
+		str, ok := v.(string)
+		if !ok {
+			return nil, fmt.Errorf("label %s is not a string", k)
+		}
+		validated[k] = str
+	}
+
+	return validated, nil
 }
 
 // unsafeWriterFunc defines behavior for writing directly to wasm memory.  A source slice of bytes

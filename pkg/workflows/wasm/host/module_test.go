@@ -13,13 +13,31 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
+type mockEmitLabeler struct {
+	e      func(string, map[string]string) error
+	labels map[string]string
+}
+
+func (m *mockEmitLabeler) Emit(msg string) error {
+	return m.e(msg, m.labels)
+}
+
+func (m *mockEmitLabeler) WithMapLabels(labels map[string]string) EmitLabeler {
+	m.labels = labels
+	return m
+}
+
+func newMockEmitLabeler(e func(string, map[string]string) error) EmitLabeler {
+	return &mockEmitLabeler{e: e}
+}
+
 // Test_createEmitFn tests that the emit function used by the module is created correctly.  Memory
 // access functions are injected as mocks.
 func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
-			emitterFunc(func(_ string, _ map[string]any) error {
+			newMockEmitLabeler(func(_ string, _ map[string]string) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -52,7 +70,7 @@ func Test_createEmitFn(t *testing.T) {
 	t.Run("success without labels", func(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
-			emitterFunc(func(_ string, _ map[string]any) error {
+			newMockEmitLabeler(func(_ string, _ map[string]string) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -108,7 +126,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			emitterFunc(func(_ string, _ map[string]any) error {
+			newMockEmitLabeler(func(_ string, _ map[string]string) error {
 				return assert.AnError
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -235,5 +253,81 @@ func Test_writeUInt32(t *testing.T) {
 		binary.LittleEndian.PutUint32(wantBuf, 42)
 		assert.Equal(t, n, int64(4))
 		assert.Equal(t, wantBuf, memory)
+	})
+}
+
+func Test_toValidatedLabels(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		msg := &wasmpb.EmitMessageRequest{
+			Labels: &pb.Map{
+				Fields: map[string]*pb.Value{
+					"test": {
+						Value: &pb.Value_StringValue{
+							StringValue: "value",
+						},
+					},
+				},
+			},
+		}
+		wantLabels := map[string]string{
+			"test": "value",
+		}
+		gotLabels, err := toValidatedLabels(msg)
+		assert.NoError(t, err)
+		assert.Equal(t, wantLabels, gotLabels)
+	})
+
+	t.Run("success with empty labels", func(t *testing.T) {
+		msg := &wasmpb.EmitMessageRequest{}
+		wantLabels := map[string]string{}
+		gotLabels, err := toValidatedLabels(msg)
+		assert.NoError(t, err)
+		assert.Equal(t, wantLabels, gotLabels)
+	})
+
+	t.Run("fails with non string", func(t *testing.T) {
+		msg := &wasmpb.EmitMessageRequest{
+			Labels: &pb.Map{
+				Fields: map[string]*pb.Value{
+					"test": {
+						Value: &pb.Value_Int64Value{
+							Int64Value: *proto.Int64(42),
+						},
+					},
+				},
+			},
+		}
+		_, err := toValidatedLabels(msg)
+		assert.Error(t, err)
+	})
+}
+
+func Test_toEmissible(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		msg := &wasmpb.EmitMessageRequest{
+			Message: "hello, world",
+			Labels: &pb.Map{
+				Fields: map[string]*pb.Value{
+					"test": {
+						Value: &pb.Value_StringValue{
+							StringValue: "value",
+						},
+					},
+				},
+			},
+		}
+
+		b, err := proto.Marshal(msg)
+		assert.NoError(t, err)
+
+		gotMsg, gotLabels, err := toEmissible(b)
+		assert.NoError(t, err)
+		assert.Equal(t, "hello, world", gotMsg)
+		assert.Equal(t, map[string]string{"test": "value"}, gotLabels)
+	})
+
+	t.Run("fails with bad message", func(t *testing.T) {
+		_, _, err := toEmissible([]byte("not proto bufs"))
+		assert.Error(t, err)
 	})
 }

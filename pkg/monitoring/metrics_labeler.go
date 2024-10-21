@@ -8,7 +8,7 @@ func NewMetricsLabeler() MetricsLabeler {
 	return MetricsLabeler{Labels: make(map[string]string)}
 }
 
-// With adds multiple key-value pairs to the CustomMessageLabeler for transmission With SendLogAsCustomMessage
+// With adds multiple key-value pairs to the MetricsLabeler to eventually be consumed by a Beholder metrics resource
 func (c MetricsLabeler) With(keyValues ...string) MetricsLabeler {
 	newCustomMetricsLabeler := NewMetricsLabeler()
 

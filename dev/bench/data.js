@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729535204975,
+  "lastUpdate": 1729539930151,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4200,6 +4200,48 @@ window.BENCHMARK_DATA = {
             "value": 28312,
             "unit": "ns/op",
             "extra": "42427 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d48f9ab7b31ee1de80e487f24e90413cad037756",
+          "message": "(fix): Unsupported types when nesting Value in ValuesMap (#866)\n\n* (test): Reproduce bug with Value into ValueMap to Proto\r\n\r\n* (fix): Correctly handle already wrapped BigInt, Bool, & Time nested in a Map",
+          "timestamp": "2024-10-21T15:44:29-04:00",
+          "tree_id": "58a91d21580a20aafb0e5edfa64e971d1f8f170f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d48f9ab7b31ee1de80e487f24e90413cad037756"
+        },
+        "date": 1729539929709,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 462.1,
+            "unit": "ns/op",
+            "extra": "2688417 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.1,
+            "unit": "ns/op",
+            "extra": "2327098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28252,
+            "unit": "ns/op",
+            "extra": "42440 times\n4 procs"
           }
         ]
       }

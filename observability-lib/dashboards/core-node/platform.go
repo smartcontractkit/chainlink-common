@@ -24,6 +24,7 @@ type Props struct {
 	AlertsTags        map[string]string    // AlertsTags is the tags to map with notification policy
 	AlertsFilters     string               // AlertsFilters is the filters to apply to alerts
 	platformOpts      platformOpts
+	Tested            bool
 }
 
 // PlatformPanelOpts generate different queries for "docker" and "k8s" deployment platforms

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729539930151,
+  "lastUpdate": 1729544996275,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4242,6 +4242,48 @@ window.BENCHMARK_DATA = {
             "value": 28252,
             "unit": "ns/op",
             "extra": "42440 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177086174+4of9@users.noreply.github.com",
+            "name": "4of9",
+            "username": "4of9"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2acfad0b9592ede3b6d0652b8907f6c55b930415",
+          "message": "Beholder: Add domain and entity to metadata (#846)\n\n* Add BeholderDomain and BeholderEntity to Metadata\r\n\r\n* Panic on init error\r\n\r\n* Add additional domain & entity validation\r\n\r\n* Return error instead of panic",
+          "timestamp": "2024-10-21T16:09:01-05:00",
+          "tree_id": "842bf4262598cee1337a8fd80a10b88805bcb4be",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2acfad0b9592ede3b6d0652b8907f6c55b930415"
+        },
+        "date": 1729544995772,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.4,
+            "unit": "ns/op",
+            "extra": "2674351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 506.2,
+            "unit": "ns/op",
+            "extra": "2378367 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28253,
+            "unit": "ns/op",
+            "extra": "42169 times\n4 procs"
           }
         ]
       }

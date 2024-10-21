@@ -133,6 +133,10 @@ func (*interfaceTesterBase) GetAccountBytes(i int) []byte {
 	return []byte{ib, ib + 1, ib + 2, ib + 3, ib + 4, ib + 5, ib + 6, ib + 7}
 }
 
+func (t *interfaceTesterBase) GetAccountString(i int) string {
+	return string(t.GetAccountBytes(i))
+}
+
 type bigEndianInterfaceTester struct {
 	interfaceTesterBase
 	lenient bool
@@ -170,6 +174,8 @@ func (b *bigEndianInterfaceTester) encode(t *testing.T, bytes []byte, ts TestStr
 	}
 	bytes = append(bytes, byte(len(ts.Account)))
 	bytes = append(bytes, ts.Account...)
+	bytes = rawbin.BigEndian.AppendUint32(bytes, uint32(len(ts.AccountStr)))
+	bytes = append(bytes, []byte(ts.AccountStr)...)
 	bytes = append(bytes, byte(len(ts.Accounts)))
 	for _, account := range ts.Accounts {
 		bytes = append(bytes, byte(len(account)))
@@ -249,6 +255,7 @@ func newTestStructCodec(t *testing.T, builder encodings.Builder) encodings.TypeC
 		{Name: "OracleID", Codec: builder.OracleID()},
 		{Name: "OracleIDs", Codec: oIDs},
 		{Name: "Account", Codec: acc},
+		{Name: "AccountStr", Codec: sCodec},
 		{Name: "Accounts", Codec: accs},
 		{Name: "BigField", Codec: bi},
 		{Name: "NestedDynamicStruct", Codec: midDynamicCodec},

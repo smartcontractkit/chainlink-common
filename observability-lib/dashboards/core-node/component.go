@@ -34,6 +34,9 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	}
 
 	props.platformOpts = platformPanelOpts(props.Platform)
+	if props.Tested {
+		props.platformOpts.LabelQuery = ""
+	}
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:       props.Name,
@@ -345,54 +348,52 @@ func headlines(p *Props) []*grafana.Panel {
 			},
 			Min: grafana.Pointer[float64](0),
 			Max: grafana.Pointer[float64](100),
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
-				Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
-				Tags: map[string]string{
-					"severity": "warning",
-				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `health{` + p.AlertsFilters + `}`,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "D",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ReduceExpression: &grafana.ReduceExpression{
-							Expression: "A",
-							Reducer:    expr.TypeReduceReducerMean,
-						},
-					},
-					{
-						RefID: "C",
-						MathExpression: &grafana.MathExpression{
-							Expression: "$B * 100",
-						},
-					},
-					{
-						RefID: "D",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "C",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{90, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 		LegendOptions: &grafana.LegendOptions{
 			DisplayMode: common.LegendDisplayModeList,
 			Placement:   common.LegendPlacementRight,
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
+			Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "15m",
+			Tags: map[string]string{
+				"severity": "warning",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `health{` + p.AlertsFilters + `}`,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
+				},
+			},
+			QueryRefCondition: "D",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ReduceExpression: &grafana.ReduceExpression{
+						Expression: "A",
+						Reducer:    expr.TypeReduceReducerMean,
+					},
+				},
+				{
+					RefID: "C",
+					MathExpression: &grafana.MathExpression{
+						Expression: "$B * 100",
+					},
+				},
+				{
+					RefID: "D",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "C",
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
+						},
+					},
+				},
+			},
 		},
 	}))
 
@@ -440,35 +441,33 @@ func headlines(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `ETH Balance is lower than threshold`,
-				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
-				NoDataState: alerting.RuleNoDataStateOK,
-				Tags: map[string]string{
-					"severity": "critical",
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `ETH Balance is lower than threshold`,
+			Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "15m",
+			NoDataState: alerting.RuleNoDataStateOK,
+			Tags: map[string]string{
+				"severity": "critical",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `eth_balance{` + p.AlertsFilters + `}`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
 				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `eth_balance{` + p.AlertsFilters + `}`,
-						Instant:    true,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "B",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
-							},
+			},
+			QueryRefCondition: "B",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "A",
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
 				},
@@ -489,35 +488,33 @@ func headlines(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `Solana Balance is lower than threshold`,
-				Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
-				NoDataState: alerting.RuleNoDataStateOK,
-				Tags: map[string]string{
-					"severity": "critical",
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `Solana Balance is lower than threshold`,
+			Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "15m",
+			NoDataState: alerting.RuleNoDataStateOK,
+			Tags: map[string]string{
+				"severity": "critical",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `solana_balance{` + p.AlertsFilters + `}`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
 				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `solana_balance{` + p.AlertsFilters + `}`,
-						Instant:    true,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "B",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
-							},
+			},
+			QueryRefCondition: "B",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "A",
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
 				},
@@ -842,35 +839,33 @@ func headTracker(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `No Headers Received`,
-				Description: `{{ index $labels "` + p.platformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "10m",
-				NoDataState: alerting.RuleNoDataStateOK,
-				Tags: map[string]string{
-					"severity": "critical",
+		},
+		AlertOptions: &grafana.AlertOptions{
+			Summary:     `No Headers Received`,
+			Description: `{{ index $labels "` + p.platformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
+			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+			For:         "10m",
+			NoDataState: alerting.RuleNoDataStateOK,
+			Tags: map[string]string{
+				"severity": "critical",
+			},
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `increase(head_tracker_heads_received{` + p.AlertsFilters + `}[10m])`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: p.MetricsDataSource.UID,
 				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `increase(head_tracker_heads_received{` + p.AlertsFilters + `}[10m])`,
-						Instant:    true,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "B",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
-							},
+			},
+			QueryRefCondition: "B",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "A",
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{1},
+							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
 				},
@@ -970,57 +965,146 @@ func headReporter(p *Props) []*grafana.Panel {
 func txManager(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	txStatus := map[string]string{
-		"num_confirmed_transactions":  "Confirmed",
-		"num_successful_transactions": "Successful",
-		"num_tx_reverted":             "Reverted",
-		"num_gas_bumps":               "Gas Bumps",
-		"fwd_tx_count":                "Forwarded",
-		"tx_attempt_count":            "Attempts",
-		"gas_bump_exceeds_limit":      "Gas Bump Exceeds Limit",
-	}
-
-	for status, title := range txStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource: p.MetricsDataSource.Name,
-				Title:      "TX Manager " + title,
-				Span:       6,
-				Height:     6,
-				Query: []grafana.Query{
-					{
-						Expr:   `sum(tx_manager_` + status + `{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
-						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Confirmed",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_confirmed_transactions{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 				},
 			},
-		}))
-	}
+		},
+	}))
 
-	txUntilStatus := map[string]string{
-		"broadcast": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
-		"confirmed": "The amount of time elapsed from a transaction being broadcast to being included in a block",
-	}
-
-	for status, description := range txUntilStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource:  p.MetricsDataSource.Name,
-				Title:       "TX Manager Time Until " + status,
-				Description: description,
-				Span:        6,
-				Height:      6,
-				Decimals:    1,
-				Unit:        "ms",
-				Query: []grafana.Query{
-					{
-						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
-						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Successful",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_successful_transactions{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 				},
 			},
-		}))
-	}
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Reverted",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_tx_reverted{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Gas Bumps",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_gas_bumps{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Forwarded",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_fwd_tx_count{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Attempts",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_tx_attempt_count{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Gas Bump Exceeds Limit",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_gas_bump_exceeds_limit{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "TX Manager Time Until Broadcast",
+			Description: "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
+			Span:        6,
+			Height:      6,
+			Decimals:    1,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "TX Manager Time Until Confirmed",
+			Description: "The amount of time elapsed from a transaction being broadcast to being included in a block",
+			Span:        6,
+			Height:      6,
+			Decimals:    1,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
 
 	return panels
 }

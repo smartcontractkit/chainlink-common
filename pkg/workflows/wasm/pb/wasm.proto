@@ -8,9 +8,7 @@ import "capabilities/pb/capabilities.proto";
 import "values/pb/values.proto";
 import "google/protobuf/empty.proto";
 
-message RuntimeConfig {
-   int64 maxFetchResponseSizeBytes = 1;
-}
+message RuntimeConfig { int64 maxFetchResponseSizeBytes = 1; }
 
 message ComputeRequest {
   capabilities.CapabilityRequest request = 1;
@@ -27,9 +25,7 @@ message Request {
   }
 }
 
-message ComputeResponse {
-  capabilities.CapabilityResponse response = 1;
-}
+message ComputeResponse { capabilities.CapabilityResponse response = 1; }
 
 message StepInputs {
   string outputRef = 1;
@@ -74,7 +70,18 @@ message FetchRequest {
 message FetchResponse {
   bool executionError = 1;
   string errorMessage = 2;
-  uint32 statusCode = 3; // NOTE: this is actually a uint8, but proto doesn't support this.
+
+  // NOTE: this is actually a uint8, but proto doesn't support this.
+  uint32 statusCode = 3;
   values.Map headers = 4;
   bytes body = 5;
 }
+
+message EmitMessageRequest {
+  string message = 1;
+  values.Map labels = 2;
+}
+
+message Error { string message = 1; }
+
+message EmitMessageResponse { Error error = 1; }

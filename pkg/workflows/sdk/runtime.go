@@ -7,9 +7,13 @@ import (
 
 var BreakErr = capabilities.ErrStopExecution
 
+// Guest interface
 type Runtime interface {
 	Logger() logger.Logger
 	Fetch(req FetchRequest) (FetchResponse, error)
+
+	// Emit sends a message with the given message and labels to the configured collector.
+	Emit(req EmitRequest) error
 }
 
 type FetchRequest struct {
@@ -26,4 +30,9 @@ type FetchResponse struct {
 	StatusCode     uint8          `json:"statusCode"`             // HTTP status code
 	Headers        map[string]any `json:"headers,omitempty"`      // HTTP headers
 	Body           []byte         `json:"body,omitempty"`         // HTTP response body
+}
+
+type EmitRequest struct {
+	Msg    string         `json:"msg"`              // Message to emit
+	Labels map[string]any `json:"labels,omitempty"` // Labels to attach to the message
 }

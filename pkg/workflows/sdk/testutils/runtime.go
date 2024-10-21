@@ -17,3 +17,7 @@ func (nr *NoopRuntime) Logger() logger.Logger {
 	l, _ := logger.New()
 	return l
 }
+
+func (nr *NoopRuntime) Emit(req sdk.EmitRequest) error {
+	return nil
+}

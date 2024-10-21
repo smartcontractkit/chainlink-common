@@ -26,7 +26,7 @@ var _ sdk.Runner = (*Runner)(nil)
 
 type Runner struct {
 	sendResponse func(payload *wasmpb.Response)
-	sdkFactory   func(cfg *RuntimeConfig) *Runtime
+	sdkFactory   func(cfg *RuntimeConfig, opts ...func(*RuntimeConfig)) *Runtime
 	args         []string
 	req          *wasmpb.Request
 }
@@ -156,7 +156,7 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 	}
 
 	// Extract the config from the request
-	drc := defaultRuntimeConfig()
+	drc := defaultRuntimeConfig(id, &creq.Metadata)
 	if rc := computeReq.GetRuntimeConfig(); rc != nil {
 		if rc.MaxFetchResponseSizeBytes != 0 {
 			drc.MaxFetchResponseSizeBytes = rc.MaxFetchResponseSizeBytes

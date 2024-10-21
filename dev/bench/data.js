@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729506973868,
+  "lastUpdate": 1729527795478,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4116,6 +4116,48 @@ window.BENCHMARK_DATA = {
             "value": 28319,
             "unit": "ns/op",
             "extra": "40802 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vyzaldysanchez@gmail.com",
+            "name": "Vyzaldy Sanchez",
+            "username": "vyzaldysanchez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "32bc8c118af44e58cda8e78dd4d5a0abc931c2df",
+          "message": "Add `MetricsLabeler` to `custmsg` pkg (#869)\n\n* Adds `MetricsLabeler` to `custmsg` pkg\r\n\r\n* Moves labeler to correct pkg\r\n\r\n* Update pkg/monitoring/metrics_labeler.go\r\n\r\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>\r\n\r\n---------\r\n\r\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2024-10-21T10:22:10-06:00",
+          "tree_id": "bc6a5f56f338c584cb319f8a6828e290ca25af7e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/32bc8c118af44e58cda8e78dd4d5a0abc931c2df"
+        },
+        "date": 1729527794354,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.4,
+            "unit": "ns/op",
+            "extra": "2670903 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.4,
+            "unit": "ns/op",
+            "extra": "2320904 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28656,
+            "unit": "ns/op",
+            "extra": "42507 times\n4 procs"
           }
         ]
       }

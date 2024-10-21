@@ -135,7 +135,9 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 	runner := &Runner{
 		args:         []string{"wasm", str},
 		sendResponse: responseFn,
-		sdkFactory:   func(cfg *RuntimeConfig, _ ...func(*RuntimeConfig)) *Runtime { return nil },
+		sdkFactory: func(cfg *RuntimeConfig, id string, md *capabilities.RequestMetadata, _ ...func(*RuntimeConfig)) *Runtime {
+			return nil
+		},
 	}
 	runner.Run(workflow)
 
@@ -213,7 +215,7 @@ func Test_createEmitFn(t *testing.T) {
 		l         = logger.Test(t)
 		sdkConfig = &RuntimeConfig{
 			MaxFetchResponseSizeBytes: 1_000,
-			MetaData: &capabilities.RequestMetadata{
+			Metadata: &capabilities.RequestMetadata{
 				WorkflowID:          "workflow_id",
 				WorkflowExecutionID: "workflow_execution_id",
 				WorkflowName:        "workflow_name",

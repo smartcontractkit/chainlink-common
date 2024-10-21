@@ -10,7 +10,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -20,7 +19,7 @@ func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
-			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
+			emitterFunc(func(_ string, _ map[string]any) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -53,7 +52,7 @@ func Test_createEmitFn(t *testing.T) {
 	t.Run("success without labels", func(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
-			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
+			emitterFunc(func(_ string, _ map[string]any) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -109,7 +108,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			sdk.EmitterFunc(func(_ string, _ map[string]any) error {
+			emitterFunc(func(_ string, _ map[string]any) error {
 				return assert.AnError
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {

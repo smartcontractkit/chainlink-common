@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -26,7 +27,7 @@ var _ sdk.Runner = (*Runner)(nil)
 
 type Runner struct {
 	sendResponse func(payload *wasmpb.Response)
-	sdkFactory   func(cfg *RuntimeConfig, opts ...func(*RuntimeConfig)) *Runtime
+	sdkFactory   func(cfg *RuntimeConfig, id string, md *capabilities.RequestMetadata, opts ...func(*RuntimeConfig)) *Runtime
 	args         []string
 	req          *wasmpb.Request
 }
@@ -163,7 +164,7 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 		}
 	}
 
-	sdk := r.sdkFactory(drc, WithRequestID(id), WithRequestMetaData(&creq.Metadata))
+	sdk := r.sdkFactory(drc, id, &creq.Metadata)
 
 	resp, err := fn(sdk, creq)
 	if err != nil {

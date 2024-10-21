@@ -221,7 +221,7 @@ func Test_Compute_Emit(t *testing.T) {
 		m, err := NewModule(&ModuleConfig{
 			Logger: lggr,
 			Fetch:  fetchFunc,
-			Emitter: sdk.EmitterFunc(func(msg string, kvs map[string]any) error {
+			Emitter: emitterFunc(func(msg string, kvs map[string]any) error {
 				t.Helper()
 
 				assert.Equal(t, "testing emit", msg)
@@ -247,7 +247,7 @@ func Test_Compute_Emit(t *testing.T) {
 		m, err := NewModule(&ModuleConfig{
 			Logger: lggr,
 			Fetch:  fetchFunc,
-			Emitter: sdk.EmitterFunc(func(msg string, kvs map[string]any) error {
+			Emitter: emitterFunc(func(msg string, kvs map[string]any) error {
 				t.Helper()
 
 				assert.Equal(t, "testing emit", msg)

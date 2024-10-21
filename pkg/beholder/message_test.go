@@ -129,7 +129,10 @@ func ExampleMetadata() {
 }
 
 func ExampleValidate() {
-	validate := beholder.NewMetadataValidator()
+	validate, err := beholder.NewMetadataValidator()
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	metadata := beholder.Metadata{
 		BeholderDomain: "TestDomain",

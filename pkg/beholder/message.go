@@ -235,7 +235,7 @@ func NewMetadata(attrs Attributes) *Metadata {
 // validDomainAndEntityRegex allows for alphanumeric characters and ._-
 var validDomainAndEntityRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
-func NewMetadataValidator() *validator.Validate {
+func NewMetadataValidator() (*validator.Validate, error) {
 	validate := validator.New()
 	err := validate.RegisterValidation("domain_entity", func(fl validator.FieldLevel) bool {
 		str, isStr := fl.Field().Interface().(string)
@@ -251,13 +251,16 @@ func NewMetadataValidator() *validator.Validate {
 		return true
 	})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return validate
+	return validate, nil
 }
 
 func (m *Metadata) Validate() error {
-	validate := NewMetadataValidator()
+	validate, err := NewMetadataValidator()
+	if err != nil {
+		return err
+	}
 	return validate.Struct(m)
 }
 

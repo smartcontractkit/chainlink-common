@@ -18,7 +18,6 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v23"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
@@ -81,6 +80,11 @@ func (f emitterFunc) Emit(msg string, labels map[string]any) error {
 	return f(msg, labels)
 }
 
+type EmitLabeler interface {
+	Emit(string) error
+	WithMapLabels(map[string]string) EmitLabeler
+}
+
 type ModuleConfig struct {
 	TickInterval   time.Duration
 	Timeout        *time.Duration
@@ -90,9 +94,13 @@ type ModuleConfig struct {
 	IsUncompressed bool
 	Fetch          func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
 
-	// Emitter is the function that will be called when the emit function is called in the WASM module.
-	// Implementation should emit to external consumer.
-	Emitter Emitter
+	// emitter is the function that will be called when the emit function is called in the WASM module.
+	// Implementation should emit to external consumer.  Private because a real emitter should be adapted
+	// from the Labeler.
+	emitter Emitter
+
+	// TODO(mstreet3): Provide the labeler from the capability
+	Labeler EmitLabeler
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
@@ -143,8 +151,14 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		}
 	}
 
-	if modCfg.Emitter == nil {
-		modCfg.Emitter = emitterFunc(beholderEmitter)
+	if modCfg.Labeler != nil {
+		modCfg.emitter = emitterFunc(createLabelerAdapter(modCfg.Labeler))
+	}
+
+	if modCfg.emitter == nil {
+		modCfg.emitter = emitterFunc(func(msg string, labels map[string]any) error {
+			return fmt.Errorf("emit not implemented")
+		})
 	}
 
 	logger := modCfg.Logger
@@ -287,7 +301,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"emit",
-		createEmitFn(logger, modCfg.Emitter, wasmRead, wasmWrite, wasmWriteUInt32),
+		createEmitFn(logger, modCfg.emitter, wasmRead, wasmWrite, wasmWriteUInt32),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping emit func: %w", err)
@@ -526,19 +540,25 @@ func createEmitFn(
 	}
 }
 
-// beholderEmitter sends a message to the Beholder service via the custmsg package's labeler.  Each label is
+// createLabelerAdapter creates a function that sends a message to the labeler's destination.  Each label is
 // expected to be a string.  Fails if any label is not a string.
-func beholderEmitter(msg string, labels map[string]any) error {
-	validated := make(map[string]string, len(labels))
-	for k, v := range labels {
-		str, ok := v.(string)
-		if !ok {
-			return fmt.Errorf("label %s is not a string", k)
+func createLabelerAdapter(l EmitLabeler) func(msg string, labels map[string]any) error {
+	return func(msg string, labels map[string]any) error {
+		if l == nil {
+			return errors.New("labeler is nil")
 		}
-		validated[k] = str
-	}
 
-	return custmsg.NewLabeler().WithMapLabels(validated).SendLogAsCustomMessage(msg)
+		validated := make(map[string]string, len(labels))
+		for k, v := range labels {
+			str, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("label %s is not a string", k)
+			}
+			validated[k] = str
+		}
+
+		return l.WithMapLabels(validated).Emit(msg)
+	}
 }
 
 // unsafeWriterFunc defines behavior for writing directly to wasm memory.  A source slice of bytes

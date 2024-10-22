@@ -81,7 +81,7 @@ func clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTime
 	uint64Size := int32(8)
 	trg := make([]byte, uint64Size)
 	binary.LittleEndian.PutUint64(trg, uint64(val))
-	copyBuffer(caller, trg, resultTimestamp, uint64Size)
+	wasmWrite(caller, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
 }
 
@@ -105,7 +105,7 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 		return ErrnoInval
 	}
 
-	subs, err := safeMem(caller, subscriptionptr, nsubscriptions*subscriptionLen)
+	subs, err := wasmRead(caller, subscriptionptr, nsubscriptions*subscriptionLen)
 	if err != nil {
 		return ErrnoFault
 	}
@@ -176,13 +176,13 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 	binary.LittleEndian.PutUint32(rne, uint32(nsubscriptions))
 
 	// Write the number of events to `resultNevents`
-	size := copyBuffer(caller, rne, resultNevents, uint32Size)
+	size := wasmWrite(caller, rne, resultNevents, uint32Size)
 	if size == -1 {
 		return ErrnoFault
 	}
 
 	// Write the events to `events`
-	size = copyBuffer(caller, events, eventsptr, nsubscriptions*eventsLen)
+	size = wasmWrite(caller, events, eventsptr, nsubscriptions*eventsLen)
 	if size == -1 {
 		return ErrnoFault
 	}
@@ -221,7 +221,7 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 		}
 
 		// Copy the random bytes into the wasm module memory
-		if n := copyBuffer(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
+		if n := wasmWrite(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
 			return ErrnoFault
 		}
 

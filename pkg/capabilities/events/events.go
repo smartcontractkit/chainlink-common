@@ -14,14 +14,14 @@ import (
 
 const (
 	// Duplicates the attributes in beholder/message.go::Metadata
-	labelWorkflowOwner             = "workflow_owner_address"
-	labelWorkflowID                = "workflow_id"
-	labelWorkflowExecutionID       = "workflow_execution_id"
-	labelWorkflowName              = "workflow_name"
-	labelCapabilityContractAddress = "capability_contract_address"
-	labelCapabilityID              = "capability_id"
-	labelCapabilityVersion         = "capability_version"
-	labelCapabilityName            = "capability_name"
+	LabelWorkflowOwner             = "workflow_owner_address"
+	LabelWorkflowID                = "workflow_id"
+	LabelWorkflowExecutionID       = "workflow_execution_id"
+	LabelWorkflowName              = "workflow_name"
+	LabelCapabilityContractAddress = "capability_contract_address"
+	LabelCapabilityID              = "capability_id"
+	LabelCapabilityVersion         = "capability_version"
+	LabelCapabilityName            = "capability_name"
 )
 
 type EmitMetadata struct {
@@ -93,35 +93,35 @@ func (e EmitMetadata) attrs() []any {
 	a := []any{}
 
 	if e.WorkflowOwner != "" {
-		a = append(a, labelWorkflowOwner, e.WorkflowOwner)
+		a = append(a, LabelWorkflowOwner, e.WorkflowOwner)
 	}
 
 	if e.WorkflowID != "" {
-		a = append(a, labelWorkflowID, e.WorkflowID)
+		a = append(a, LabelWorkflowID, e.WorkflowID)
 	}
 
 	if e.WorkflowExecutionID != "" {
-		a = append(a, labelWorkflowExecutionID, e.WorkflowExecutionID)
+		a = append(a, LabelWorkflowExecutionID, e.WorkflowExecutionID)
 	}
 
 	if e.WorkflowName != "" {
-		a = append(a, labelWorkflowName, e.WorkflowName)
+		a = append(a, LabelWorkflowName, e.WorkflowName)
 	}
 
 	if e.CapabilityContractAddress != "" {
-		a = append(a, labelCapabilityContractAddress, e.CapabilityContractAddress)
+		a = append(a, LabelCapabilityContractAddress, e.CapabilityContractAddress)
 	}
 
 	if e.CapabilityID != "" {
-		a = append(a, labelCapabilityID, e.CapabilityID)
+		a = append(a, LabelCapabilityID, e.CapabilityID)
 	}
 
 	if e.CapabilityVersion != "" {
-		a = append(a, labelCapabilityVersion, e.CapabilityVersion)
+		a = append(a, LabelCapabilityVersion, e.CapabilityVersion)
 	}
 
 	if e.CapabilityName != "" {
-		a = append(a, labelCapabilityName, e.CapabilityName)
+		a = append(a, LabelCapabilityName, e.CapabilityName)
 	}
 
 	return a

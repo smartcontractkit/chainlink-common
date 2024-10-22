@@ -9,18 +9,12 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/events"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
-)
-
-const (
-	labelWorkflowOwner       = "workflow_owner_address"
-	labelWorkflowID          = "workflow_id"
-	labelWorkflowExecutionID = "workflow_execution_id"
-	labelWorkflowName        = "workflow_name"
 )
 
 // Length of responses are encoded into 4 byte buffers in little endian.  uint32Size is the size
@@ -181,10 +175,10 @@ func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]any) (map[
 		return nil, fmt.Errorf("must provide workflow owner to emit event")
 	}
 
-	labels[labelWorkflowExecutionID] = md.WorkflowExecutionID
-	labels[labelWorkflowOwner] = md.WorkflowOwner
-	labels[labelWorkflowID] = md.WorkflowID
-	labels[labelWorkflowName] = md.WorkflowName
+	labels[events.LabelWorkflowExecutionID] = md.WorkflowExecutionID
+	labels[events.LabelWorkflowOwner] = md.WorkflowOwner
+	labels[events.LabelWorkflowID] = md.WorkflowID
+	labels[events.LabelWorkflowName] = md.WorkflowName
 	return labels, nil
 }
 

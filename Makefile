@@ -47,3 +47,8 @@ lint-workspace:
 
 lint:
 	@./script/lint.sh $(GOLANGCI_LINT_VERSION) "$(GOLANGCI_LINT_COMMON_OPTS)" $(GOLANGCI_LINT_DIRECTORY) "--new-from-rev=origin/main"
+
+.PHONY: gorelease
+gorelease:
+	go install golang.org/x/exp/cmd/gorelease@latest
+	gorelease

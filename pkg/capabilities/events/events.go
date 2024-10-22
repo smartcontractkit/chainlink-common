@@ -176,14 +176,14 @@ func (e *Emitter) Emit(ctx context.Context, msg Message) error {
 	bytes, err := proto.Marshal(&pb.BaseMessage{
 		// any empty values will not be serialized (including the key)
 		Labels: map[string]string{
-			labelWorkflowID:                nmd.WorkflowID,
-			labelWorkflowName:              nmd.WorkflowName,
-			labelWorkflowOwner:             nmd.WorkflowOwner,
-			labelCapabilityContractAddress: nmd.CapabilityContractAddress,
-			labelCapabilityID:              nmd.CapabilityID,
-			labelCapabilityVersion:         nmd.CapabilityVersion,
-			labelCapabilityName:            nmd.CapabilityName,
-			labelWorkflowExecutionID:       nmd.WorkflowExecutionID,
+			LabelWorkflowID:                nmd.WorkflowID,
+			LabelWorkflowName:              nmd.WorkflowName,
+			LabelWorkflowOwner:             nmd.WorkflowOwner,
+			LabelCapabilityContractAddress: nmd.CapabilityContractAddress,
+			LabelCapabilityID:              nmd.CapabilityID,
+			LabelCapabilityVersion:         nmd.CapabilityVersion,
+			LabelCapabilityName:            nmd.CapabilityName,
+			LabelWorkflowExecutionID:       nmd.WorkflowExecutionID,
 		},
 		Msg: msg.Msg,
 	})

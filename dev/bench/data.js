@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729544996275,
+  "lastUpdate": 1729583840930,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4284,6 +4284,48 @@ window.BENCHMARK_DATA = {
             "value": 28253,
             "unit": "ns/op",
             "extra": "42169 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "120329946+george-dorin@users.noreply.github.com",
+            "name": "george-dorin",
+            "username": "george-dorin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f3cd964c341d2a27edd4d758fb0c45adc9c8bd2d",
+          "message": "LOOPP Keystore (#837)\n\n* Initial draft\r\n\r\n* Add keystore service\r\n\r\n* Wire keystore factory\r\n\r\n* Update keystore proto namespace\r\n\r\n* Update keystore service\r\n\r\n* Add internal methods for keystores\r\n\r\n* Clean up Keystore GRPC methods\r\n\r\n* Add tests\r\n\r\n* Remove unused file\r\n\r\n* Update protoc version\r\n\r\n* Fix lint\r\n\r\n* Rename keystore interface methods\r\nExplain UDF method",
+          "timestamp": "2024-10-22T10:56:05+03:00",
+          "tree_id": "43ebbb302e26a17b0e0ce3fc76f2b385d0e21f7d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f3cd964c341d2a27edd4d758fb0c45adc9c8bd2d"
+        },
+        "date": 1729583839704,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 448.2,
+            "unit": "ns/op",
+            "extra": "2679843 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508.5,
+            "unit": "ns/op",
+            "extra": "2315956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28350,
+            "unit": "ns/op",
+            "extra": "42361 times\n4 procs"
           }
         ]
       }

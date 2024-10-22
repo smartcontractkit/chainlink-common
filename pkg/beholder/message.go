@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-  "time"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"

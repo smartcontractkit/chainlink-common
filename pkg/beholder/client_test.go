@@ -50,10 +50,10 @@ func TestClient(t *testing.T) {
 			"byte_key_1":           []byte("byte_val_1"),
 			"str_slice_key_1":      []string{"str_val_1", "str_val_2"},
 			"nil_key_1":            nil,
-			"beholder_domain":      "TestDomain",        // Required field
-			"beholder_entity":      "TestEntity",        // Required field
-			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
-      "node_csa_key":         "node_csa_val",           // Required
+			"beholder_domain":      "TestDomain",             // Required field
+			"beholder_entity":      "TestEntity",             // Required field
+			"beholder_data_schema": "/schemas/ids/1001",      // Required field, URI
+			"node_csa_key":         "node_csa_val",           // Required
 			"node_csa_signature":   "mode_csa_signature_val", // Required
 		}
 	}

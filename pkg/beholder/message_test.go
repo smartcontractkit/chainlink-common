@@ -134,14 +134,13 @@ func ExampleMetadata_Validate() {
 		fmt.Println(err)
 	}
 
-
 	metadata := beholder.Metadata{
 		BeholderDomain: "TestDomain",
 		BeholderEntity: "TestEntity",
 	}
 	metadata.NodeCsaKey = "test_key"
 	metadata.NodeCsaSignature = "test_signature"
-  
+
 	if err := validate.Struct(metadata); err != nil {
 		fmt.Println(err)
 	}

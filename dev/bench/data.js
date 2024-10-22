@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729597053910,
+  "lastUpdate": 1729612995818,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4368,6 +4368,48 @@ window.BENCHMARK_DATA = {
             "value": 28274,
             "unit": "ns/op",
             "extra": "42349 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9225bc1a857e6395f446094786c74cdd07cfa73e",
+          "message": "[cappl-86] feat(workflows/wasm): emit msgs to beholder (#845)\n\n* wip(wasm): adds Emit to Runtime interface\r\n\r\nWIP on Runtime with panics\r\n\r\n* refactor(wasm): separte funcs out of NewRunner\r\n\r\n* refactor(wasm): shifts logging related funcs around\r\n\r\n* feat(wasm): adds custom pb message\r\n\r\n* feat(wasm): calls emit from guest runner\r\n\r\n* refactor(workflows): splits out emitter interface + docstring\r\n\r\n* feat(host): defines a beholder adapter for emitter\r\n\r\n* wip(host): implement host side emit\r\n\r\n* refactor(wasm/host): abstracts read and write to wasm\r\n\r\n* protos wip\r\n\r\n* feat(wasm): emits error response\r\n\r\n* refactor(wasm/host): write all failures from wasm to memory\r\n\r\n* feat(wasm): inject metadata into module\r\n\r\n* feat(events+wasm): pull emit md from req md\r\n\r\n* feat(custmsg): creates labels from map\r\n\r\n* feat(wasm): adds tests and validates labels\r\n\r\n* feat(wasm/host): use custmsg implementation for calling beholder\r\n\r\n* chore(wasm+host): docstrings and lint\r\n\r\n* chore(host): new emitter iface + private func types\r\n\r\n* chore(multi) review comments\r\n\r\n* chore(wasm): add id and md to config directly\r\n\r\n* refactor(custmsg+host): adapter labeler from config for emit\r\n\r\n* refactor(wasm): remove emitter from mod config\r\n\r\n* refactor(custmsg+wasm): expose emitlabeler on guest\r\n\r\n* refactor(wasm+sdk): EmitLabeler to MessageEmitter\r\n\r\n* refactor(wasm+events): share label keys\r\n\r\n* refactor(wasm+values): use map[string]string directly",
+          "timestamp": "2024-10-22T17:02:10+01:00",
+          "tree_id": "2424df4681667f7ae41421475dbb6d8b0cf8b6e6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9225bc1a857e6395f446094786c74cdd07cfa73e"
+        },
+        "date": 1729612994746,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 457.6,
+            "unit": "ns/op",
+            "extra": "2654148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 519.4,
+            "unit": "ns/op",
+            "extra": "2359779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28357,
+            "unit": "ns/op",
+            "extra": "39499 times\n4 procs"
           }
         ]
       }

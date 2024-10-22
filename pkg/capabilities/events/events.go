@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 )
 
+// Duplicates the attributes in beholder/message.go::Metadata
 const (
-	// Duplicates the attributes in beholder/message.go::Metadata
 	LabelWorkflowOwner             = "workflow_owner_address"
 	LabelWorkflowID                = "workflow_id"
 	LabelWorkflowExecutionID       = "workflow_execution_id"

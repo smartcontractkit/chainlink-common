@@ -18,7 +18,7 @@ jobs:
         run: go build -v ./...
 
       - name: Unit Tests
-        run: GORACE="log_path=$PWD/race" go test -race ./... -coverpkg=./... -coverprofile=pkg_coverage.out
+        run: GORACE="log_path=$PWD/race" go test -race ./... -coverpkg=./... -coverprofile=coverage.txt
 
       - name: Print Races
         if: failure()
@@ -42,20 +42,13 @@ jobs:
         if: failure()
         run: find . -type f|fgrep '/testdata/fuzz/'|while read f; do echo $f; cat $f; done
 
-      - name: Upload Fuzz Tests Failing Inputs
-        if: failure()
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        with:
-          name: failing-fuzz-inputs
-          path: "**/testdata/fuzz/**"
-
       - name: Upload Go test results
         if: always()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: go-test-results
           path: |
-            ./pkg_coverage.out
+            ./coverage.txt
             ./race.*
 
   check-tidy:

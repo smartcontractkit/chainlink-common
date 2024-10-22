@@ -7,13 +7,13 @@ import (
 
 var BreakErr = capabilities.ErrStopExecution
 
-type EmitLabeler interface {
+type MessageEmitter interface {
 	// Emit sends a message to the labeler's destination.
 	Emit(string) error
 
 	// With sets the labels for the message to be emitted.  Labels are passed as key-value pairs
 	// and are cumulative.
-	With(kvs ...string) EmitLabeler
+	With(kvs ...string) MessageEmitter
 }
 
 // Guest interface
@@ -22,7 +22,7 @@ type Runtime interface {
 	Fetch(req FetchRequest) (FetchResponse, error)
 
 	// Emitter sends the given message and labels to the configured collector.
-	Emitter() EmitLabeler
+	Emitter() MessageEmitter
 }
 
 type FetchRequest struct {

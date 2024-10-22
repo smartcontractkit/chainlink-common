@@ -13,22 +13,22 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-type mockEmitLabeler struct {
+type mockMessageEmitter struct {
 	e      func(string, map[string]string) error
 	labels map[string]string
 }
 
-func (m *mockEmitLabeler) Emit(msg string) error {
+func (m *mockMessageEmitter) Emit(msg string) error {
 	return m.e(msg, m.labels)
 }
 
-func (m *mockEmitLabeler) WithMapLabels(labels map[string]string) EmitLabeler {
+func (m *mockMessageEmitter) WithMapLabels(labels map[string]string) MessageEmitter {
 	m.labels = labels
 	return m
 }
 
-func newMockEmitLabeler(e func(string, map[string]string) error) EmitLabeler {
-	return &mockEmitLabeler{e: e}
+func newMockMessageEmitter(e func(string, map[string]string) error) MessageEmitter {
+	return &mockMessageEmitter{e: e}
 }
 
 // Test_createEmitFn tests that the emit function used by the module is created correctly.  Memory
@@ -37,7 +37,7 @@ func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
-			newMockEmitLabeler(func(_ string, _ map[string]string) error {
+			newMockMessageEmitter(func(_ string, _ map[string]string) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -70,7 +70,7 @@ func Test_createEmitFn(t *testing.T) {
 	t.Run("success without labels", func(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
-			newMockEmitLabeler(func(_ string, _ map[string]string) error {
+			newMockMessageEmitter(func(_ string, _ map[string]string) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -126,7 +126,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			newMockEmitLabeler(func(_ string, _ map[string]string) error {
+			newMockMessageEmitter(func(_ string, _ map[string]string) error {
 				return assert.AnError
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {

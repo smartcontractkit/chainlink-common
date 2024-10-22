@@ -66,12 +66,12 @@ type DeterminismConfig struct {
 	Seed int64
 }
 
-type EmitLabeler interface {
+type MessageEmitter interface {
 	// Emit sends a message to the labeler's destination.
 	Emit(string) error
 
 	// WithMapLabels sets the labels for the message to be emitted.  Labels are cumulative.
-	WithMapLabels(map[string]string) EmitLabeler
+	WithMapLabels(map[string]string) MessageEmitter
 }
 
 type ModuleConfig struct {
@@ -84,7 +84,7 @@ type ModuleConfig struct {
 	Fetch          func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
 
 	// Labeler is used to emit messages from the module.
-	Labeler EmitLabeler
+	Labeler MessageEmitter
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
@@ -136,7 +136,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.Labeler == nil {
-		modCfg.Labeler = &unimplementedEmitLabeler{}
+		modCfg.Labeler = &unimplementedMessageEmitter{}
 	}
 
 	logger := modCfg.Logger
@@ -445,7 +445,7 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.C
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
-	e EmitLabeler,
+	e MessageEmitter,
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,
@@ -502,13 +502,13 @@ func createEmitFn(
 	}
 }
 
-type unimplementedEmitLabeler struct{}
+type unimplementedMessageEmitter struct{}
 
-func (u *unimplementedEmitLabeler) Emit(string) error {
+func (u *unimplementedMessageEmitter) Emit(string) error {
 	return errors.New("unimplemented")
 }
 
-func (u *unimplementedEmitLabeler) WithMapLabels(map[string]string) EmitLabeler {
+func (u *unimplementedMessageEmitter) WithMapLabels(map[string]string) MessageEmitter {
 	return u
 }
 

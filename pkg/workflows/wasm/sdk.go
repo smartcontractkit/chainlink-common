@@ -61,7 +61,7 @@ func (r *Runtime) Logger() logger.Logger {
 	return r.logger
 }
 
-func (r *Runtime) Emitter() sdk.EmitLabeler {
+func (r *Runtime) Emitter() sdk.MessageEmitter {
 	return newWasmGuestEmitter(r.emitFn)
 }
 
@@ -87,7 +87,7 @@ func (w wasmGuestEmitter) Emit(msg string) error {
 	return w.emitFn(msg, newLabels)
 }
 
-func (w wasmGuestEmitter) With(keyValues ...string) sdk.EmitLabeler {
+func (w wasmGuestEmitter) With(keyValues ...string) sdk.MessageEmitter {
 	newEmitter := newWasmGuestEmitter(w.emitFn)
 	newEmitter.base = w.base.With(keyValues...)
 	newEmitter.labels = newEmitter.base.Labels()

@@ -23,7 +23,7 @@ const uint32Size = int32(4)
 
 type Runtime struct {
 	fetchFn func(req sdk.FetchRequest) (sdk.FetchResponse, error)
-	emitFn  func(msg string, labels map[string]any) error
+	emitFn  func(msg string, labels map[string]string) error
 	logger  logger.Logger
 }
 
@@ -61,11 +61,11 @@ func (r *Runtime) Emitter() sdk.MessageEmitter {
 
 type wasmGuestEmitter struct {
 	base   custmsg.Labeler
-	emitFn func(string, map[string]any) error
+	emitFn func(string, map[string]string) error
 	labels map[string]string
 }
 
-func newWasmGuestEmitter(emitFn func(string, map[string]any) error) wasmGuestEmitter {
+func newWasmGuestEmitter(emitFn func(string, map[string]string) error) wasmGuestEmitter {
 	return wasmGuestEmitter{
 		emitFn: emitFn,
 		labels: make(map[string]string),
@@ -74,11 +74,7 @@ func newWasmGuestEmitter(emitFn func(string, map[string]any) error) wasmGuestEmi
 }
 
 func (w wasmGuestEmitter) Emit(msg string) error {
-	newLabels := make(map[string]any)
-	for k, v := range w.labels {
-		newLabels[k] = v
-	}
-	return w.emitFn(msg, newLabels)
+	return w.emitFn(msg, w.labels)
 }
 
 func (w wasmGuestEmitter) With(keyValues ...string) sdk.MessageEmitter {
@@ -94,8 +90,8 @@ func createEmitFn(
 	sdkConfig *RuntimeConfig,
 	l logger.Logger,
 	emit func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
-) func(string, map[string]any) error {
-	emitFn := func(msg string, labels map[string]any) error {
+) func(string, map[string]string) error {
+	emitFn := func(msg string, labels map[string]string) error {
 		// Prepare the labels to be emitted
 		if sdkConfig.Metadata == nil {
 			return NewEmissionError(fmt.Errorf("metadata is required to emit"))
@@ -162,7 +158,7 @@ func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
 }
 
 // toEmitLabels ensures that the required metadata is present in the labels map
-func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]any) (map[string]any, error) {
+func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]string) (map[string]string, error) {
 	if md.WorkflowID == "" {
 		return nil, fmt.Errorf("must provide workflow id to emit event")
 	}

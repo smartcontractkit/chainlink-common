@@ -223,7 +223,7 @@ func Test_createEmitFn(t *testing.T) {
 			},
 		}
 		giveMsg    = "testing guest"
-		giveLabels = map[string]any{
+		giveLabels = map[string]string{
 			"some-key": "some-value",
 		}
 	)

@@ -537,21 +537,12 @@ func toValidatedLabels(msg *wasmpb.EmitMessageRequest) (map[string]string, error
 		vl = values.EmptyMap()
 	}
 
-	var labels map[string]any
+	var labels map[string]string
 	if err := vl.UnwrapTo(&labels); err != nil {
 		return nil, err
 	}
 
-	validated := make(map[string]string, len(labels))
-	for k, v := range labels {
-		str, ok := v.(string)
-		if !ok {
-			return nil, fmt.Errorf("label %s is not a string", k)
-		}
-		validated[k] = str
-	}
-
-	return validated, nil
+	return labels, nil
 }
 
 // unsafeWriterFunc defines behavior for writing directly to wasm memory.  A source slice of bytes

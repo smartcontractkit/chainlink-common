@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729630590986,
+  "lastUpdate": 1729638846713,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4494,6 +4494,48 @@ window.BENCHMARK_DATA = {
             "value": 29650,
             "unit": "ns/op",
             "extra": "42439 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "84d3ef9662b7c36787231434286b2acdb9d83942",
+          "message": "golangci-lint: add rules (#872)\n\n* golangci-lint: add rules\r\n\r\n* bump golangci-lint\r\n\r\n* Bump ci-lint-go action version to include only-new-issues config\r\n\r\n---------\r\n\r\nCo-authored-by: Alexandr Yepishev <alexandr.yepishev@smartcontract.com>",
+          "timestamp": "2024-10-22T18:12:57-05:00",
+          "tree_id": "f83067cc6c9da5a8450841b269f1197eb91e96e6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/84d3ef9662b7c36787231434286b2acdb9d83942"
+        },
+        "date": 1729638845652,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.8,
+            "unit": "ns/op",
+            "extra": "2677696 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 506.6,
+            "unit": "ns/op",
+            "extra": "2366748 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28323,
+            "unit": "ns/op",
+            "extra": "41473 times\n4 procs"
           }
         ]
       }

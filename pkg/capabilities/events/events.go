@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 const (
@@ -167,16 +165,27 @@ func (e *Emitter) Emit(ctx context.Context, msg Message) error {
 		return errors.New("must provide workflow name to emit event")
 	}
 
-	wm, err := values.WrapMap(msg.Labels)
-	if err != nil {
-		return fmt.Errorf("could not wrap map: %w", err)
-	}
-
-	pm := values.ProtoMap(wm)
+	// TODO un-comment after INFOPLAT-1386
+	//wm, err := values.WrapMap(msg.Labels)
+	//if err != nil {
+	//	return fmt.Errorf("could not wrap map: %w", err)
+	//}
+	//
+	//pm := values.ProtoMap(wm)
 
 	bytes, err := proto.Marshal(&pb.BaseMessage{
-		Labels: pm,
-		Msg:    msg.Msg,
+		// any empty values will not be serialized (including the key)
+		Labels: map[string]string{
+			labelWorkflowID:                nmd.WorkflowID,
+			labelWorkflowName:              nmd.WorkflowName,
+			labelWorkflowOwner:             nmd.WorkflowOwner,
+			labelCapabilityContractAddress: nmd.CapabilityContractAddress,
+			labelCapabilityID:              nmd.CapabilityID,
+			labelCapabilityVersion:         nmd.CapabilityVersion,
+			labelCapabilityName:            nmd.CapabilityName,
+			labelWorkflowExecutionID:       nmd.WorkflowExecutionID,
+		},
+		Msg: msg.Msg,
 	})
 	if err != nil {
 		return fmt.Errorf("could not marshal operational event: %w", err)

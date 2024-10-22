@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729583840930,
+  "lastUpdate": 1729597053910,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4326,6 +4326,48 @@ window.BENCHMARK_DATA = {
             "value": 28350,
             "unit": "ns/op",
             "extra": "42361 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yepishevsanya@gmail.com",
+            "name": "chudilka1",
+            "username": "chudilka1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ceeb47375a5679524c088fe04a66105efc1f7a71",
+          "message": "Exclude tests and mocks from SonarQube coverage + Add LLM Error Reporter\n\n* Exclude tests and mocks from capabilities SonarQube coverage\r\n\r\n* Add LLM Action Error Reporter workflow\r\n\r\n* Fix Golangci-lint issues\r\n\r\n* Update golangci-version\r\n\r\n* Fix Golangci-lint issues",
+          "timestamp": "2024-10-22T14:36:29+03:00",
+          "tree_id": "aca8291d89e0bea4ff8c270a0fe1b7d6215ed008",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ceeb47375a5679524c088fe04a66105efc1f7a71"
+        },
+        "date": 1729597053385,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 454.7,
+            "unit": "ns/op",
+            "extra": "2641339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 511.8,
+            "unit": "ns/op",
+            "extra": "2362430 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28274,
+            "unit": "ns/op",
+            "extra": "42349 times\n4 procs"
           }
         ]
       }

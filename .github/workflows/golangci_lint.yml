@@ -13,6 +13,6 @@ jobs:
       - name: golangci-lint
         uses: smartcontractkit/.github/actions/ci-lint-go@5f5ebd52cb13f4b8530cd3005ec7ec3180840219 # v0.2.5
         with:
-          golangci-lint-version: v1.60.1
+          golangci-lint-version: v1.61.0
           go-version-file: go.mod
           

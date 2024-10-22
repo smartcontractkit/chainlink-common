@@ -44,9 +44,14 @@ func (*cannotEncode) UnmarshalText() error {
 type interfaceTesterBase struct{}
 
 var anyAccountBytes = []byte{1, 2, 3}
+var anyAccountString = string(anyAccountBytes)
 
 func (it *interfaceTesterBase) GetAccountBytes(_ int) []byte {
 	return anyAccountBytes
+}
+
+func (it *interfaceTesterBase) GetAccountString(_ int) string {
+	return anyAccountString
 }
 
 func (it *interfaceTesterBase) Name() string {

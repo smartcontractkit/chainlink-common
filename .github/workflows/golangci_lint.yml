@@ -5,23 +5,14 @@ on: [pull_request]
 jobs:
   golangci-lint:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-      - name: Set up Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version-file: "go.mod"
-      - name: Build binary
-        shell: bash
-        run: go build ./...
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86 # v6.1.0
+        uses: smartcontractkit/.github/actions/ci-lint-go@5f5ebd52cb13f4b8530cd3005ec7ec3180840219 # v0.2.5
         with:
-          version: v1.60.1
-          # only-new-issues is only applicable to PRs, otherwise it is always set to false
-          only-new-issues: true
-          args: --out-format colored-line-number,checkstyle:golangci-lint-report.xml
-      - name: Print lint report artifact
-        if: failure()
-        shell: bash
-        run: cat ./golangci-lint-report.xml
+          golangci-lint-version: v1.60.1
+          go-version-file: go.mod
+          

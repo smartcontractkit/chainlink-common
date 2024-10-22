@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729612995818,
+  "lastUpdate": 1729618856102,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4410,6 +4410,48 @@ window.BENCHMARK_DATA = {
             "value": 28357,
             "unit": "ns/op",
             "extra": "39499 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vyzaldysanchez@gmail.com",
+            "name": "Vyzaldy Sanchez",
+            "username": "vyzaldysanchez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8b1c952d3911d4157b67523b75880648b5515e0b",
+          "message": "Move labelers to new pkg (#875)\n\n* Moves labelers to new pkg\r\n\r\n* Moves labelers to top level pkgs",
+          "timestamp": "2024-10-22T13:39:57-04:00",
+          "tree_id": "9c43a53be655b931fea5168907fac16cf325d335",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8b1c952d3911d4157b67523b75880648b5515e0b"
+        },
+        "date": 1729618855375,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.8,
+            "unit": "ns/op",
+            "extra": "2652798 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 529.1,
+            "unit": "ns/op",
+            "extra": "2280459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28416,
+            "unit": "ns/op",
+            "extra": "40540 times\n4 procs"
           }
         ]
       }

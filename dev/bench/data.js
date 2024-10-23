@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729693550650,
+  "lastUpdate": 1729704163415,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4620,6 +4620,48 @@ window.BENCHMARK_DATA = {
             "value": 28281,
             "unit": "ns/op",
             "extra": "42451 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "989addce9e4330dc0b92a4c3e1bfb336d43f9d1c",
+          "message": "Bump settings (#884)\n\n* Bump settings\r\n\r\n* Fix test\r\n\r\n---------\r\n\r\nCo-authored-by: Vyzaldy Sanchez <vyzaldysanchez@gmail.com>",
+          "timestamp": "2024-10-23T13:21:44-04:00",
+          "tree_id": "f4d1ce4170bb760897633755ca487b3d74dca25f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/989addce9e4330dc0b92a4c3e1bfb336d43f9d1c"
+        },
+        "date": 1729704162701,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 445.9,
+            "unit": "ns/op",
+            "extra": "2676320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 528.2,
+            "unit": "ns/op",
+            "extra": "2224357 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28283,
+            "unit": "ns/op",
+            "extra": "42369 times\n4 procs"
           }
         ]
       }

@@ -19,17 +19,35 @@ func NewLabeler() Labeler {
 	return Labeler{labels: make(map[string]string)}
 }
 
+// WithMapLabels adds multiple key-value pairs to the CustomMessageLabeler for transmission
+// With SendLogAsCustomMessage
+func (l Labeler) WithMapLabels(labels map[string]string) Labeler {
+	newCustomMessageLabeler := NewLabeler()
+
+	// Copy existing labels from the current agent
+	for k, v := range l.labels {
+		newCustomMessageLabeler.labels[k] = v
+	}
+
+	// Add new key-value pairs
+	for k, v := range labels {
+		newCustomMessageLabeler.labels[k] = v
+	}
+
+	return newCustomMessageLabeler
+}
+
 // With adds multiple key-value pairs to the CustomMessageLabeler for transmission With SendLogAsCustomMessage
-func (c Labeler) With(keyValues ...string) Labeler {
+func (l Labeler) With(keyValues ...string) Labeler {
 	newCustomMessageLabeler := NewLabeler()
 
 	if len(keyValues)%2 != 0 {
 		// If an odd number of key-value arguments is passed, return the original CustomMessageLabeler unchanged
-		return c
+		return l
 	}
 
 	// Copy existing labels from the current agent
-	for k, v := range c.labels {
+	for k, v := range l.labels {
 		newCustomMessageLabeler.labels[k] = v
 	}
 
@@ -43,10 +61,22 @@ func (c Labeler) With(keyValues ...string) Labeler {
 	return newCustomMessageLabeler
 }
 
+func (l Labeler) Emit(msg string) error {
+	return sendLogAsCustomMessageW(msg, l.labels)
+}
+
+func (l Labeler) Labels() map[string]string {
+	copied := make(map[string]string, len(l.labels))
+	for k, v := range l.labels {
+		copied[k] = v
+	}
+	return copied
+}
+
 // SendLogAsCustomMessage emits a BaseMessage With msg and labels as data.
 // any key in labels that is not part of orderedLabelKeys will not be transmitted
-func (c Labeler) SendLogAsCustomMessage(msg string) error {
-	return sendLogAsCustomMessageW(msg, c.labels)
+func (l Labeler) SendLogAsCustomMessage(msg string) error {
+	return sendLogAsCustomMessageW(msg, l.labels)
 }
 
 func sendLogAsCustomMessageW(msg string, labels map[string]string) error {

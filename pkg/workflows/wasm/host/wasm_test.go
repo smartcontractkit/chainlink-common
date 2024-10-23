@@ -2,6 +2,7 @@ package host
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -77,9 +79,11 @@ func createTestBinary(outputPath, path string, compress bool, t *testing.T) []by
 }
 
 func Test_GetWorkflowSpec(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	spec, err := GetWorkflowSpec(
+		ctx,
 		&ModuleConfig{
 			Logger: logger.Test(t),
 		},
@@ -93,9 +97,11 @@ func Test_GetWorkflowSpec(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
 	spec, err := GetWorkflowSpec(
+		ctx,
 		&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
@@ -110,9 +116,11 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
+	ctx := tests.Context(t)
 	failBinary := createTestBinary(failureBinaryCmd, failureBinaryLocation, true, t)
 
 	_, err := GetWorkflowSpec(
+		ctx,
 		&ModuleConfig{
 			Logger: logger.Test(t),
 		},
@@ -124,10 +132,12 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_Timeout(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	d := time.Duration(0)
 	_, err := GetWorkflowSpec(
+		ctx,
 		&ModuleConfig{
 			Timeout: &d,
 			Logger:  logger.Test(t),
@@ -140,12 +150,13 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 }
 
 func Test_Compute_Logs(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
 
 	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 	m, err := NewModule(&ModuleConfig{
 		Logger: logger,
-		Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+		Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 			return nil, nil
 		},
 	}, binary)
@@ -167,7 +178,7 @@ func Test_Compute_Logs(t *testing.T) {
 			},
 		},
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.Nil(t, err)
 
 	require.Len(t, logs.AllUntimed(), 1)
@@ -191,6 +202,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
 	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
+		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -200,7 +212,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 		m, err := NewModule(&ModuleConfig{
 			Logger: logger.Test(t),
-			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
@@ -226,7 +238,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				},
 			},
 		}
-		response, err := m.Run(req)
+		response, err := m.Run(ctx, req)
 		assert.Nil(t, err)
 
 		actual := sdk.FetchResponse{}
@@ -239,6 +251,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
+		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -248,7 +261,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 		m, err := NewModule(&ModuleConfig{
 			Logger: logger.Test(t),
-			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
@@ -277,7 +290,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				},
 			},
 		}
-		response, err := m.Run(req)
+		response, err := m.Run(ctx, req)
 		assert.Nil(t, err)
 
 		actual := sdk.FetchResponse{}
@@ -290,11 +303,12 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("NOK_fetch_error_returned", func(t *testing.T) {
+		ctx := tests.Context(t)
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
 		m, err := NewModule(&ModuleConfig{
 			Logger: logger,
-			Fetch: func(req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return nil, assert.AnError
 			},
 		}, binary)
@@ -316,7 +330,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				},
 			},
 		}
-		_, err = m.Run(req)
+		_, err = m.Run(ctx, req)
 		assert.NotNil(t, err)
 		require.Len(t, logs.AllUntimed(), 1)
 
@@ -333,25 +347,32 @@ func Test_Compute_Fetch(t *testing.T) {
 }
 
 func TestModule_Errors(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
-	_, err = m.Run(nil)
-	assert.ErrorContains(t, err, "invariant violation: invalid request to runner")
+	_, err = m.Run(ctx, nil)
+	assert.ErrorContains(t, err, "invalid request: can't be nil")
 
 	req := &wasmpb.Request{
+		Id: "",
+	}
+	_, err = m.Run(ctx, req)
+	assert.ErrorContains(t, err, "invalid request: can't be empty")
+
+	req = &wasmpb.Request{
 		Id: uuid.New().String(),
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.ErrorContains(t, err, "invalid request: message must be SpecRequest or ComputeRequest")
 
 	req = &wasmpb.Request{
 		Id:      uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{},
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.ErrorContains(t, err, "invalid compute request: nil request")
 
 	m.Start()
@@ -368,11 +389,12 @@ func TestModule_Errors(t *testing.T) {
 			},
 		},
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.ErrorContains(t, err, "invalid compute request: could not find compute function for id doesnt-exist")
 }
 
 func TestModule_Sandbox_Memory(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
@@ -384,11 +406,12 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 		Id:      uuid.New().String(),
 		Message: &wasmpb.Request_SpecRequest{},
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.ErrorContains(t, err, "exit status 2")
 }
 
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
@@ -402,7 +425,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	}
 
 	start := time.Now()
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	end := time.Now()
 
 	// The binary sleeps for 1 hour,
@@ -413,6 +436,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 }
 
 func TestModule_Sandbox_Timeout(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
@@ -426,12 +450,13 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 		Message: &wasmpb.Request_SpecRequest{},
 	}
 
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 
 	assert.ErrorContains(t, err, "interrupt")
 }
 
 func TestModule_Sandbox_CantReadFiles(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
@@ -453,11 +478,12 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 			},
 		},
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.ErrorContains(t, err, "open /tmp/file")
 }
 
 func TestModule_Sandbox_CantCreateDir(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
@@ -479,11 +505,12 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 			},
 		},
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.ErrorContains(t, err, "mkdir")
 }
 
 func TestModule_Sandbox_HTTPRequest(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
@@ -505,11 +532,12 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 			},
 		},
 	}
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.NotNil(t, err)
 }
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
+	ctx := tests.Context(t)
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
@@ -535,7 +563,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 		},
 	}
 	// This will return an error if FOO == BAR in the WASM binary
-	_, err = m.Run(req)
+	_, err = m.Run(ctx, req)
 	assert.Nil(t, err)
 }
 
@@ -555,6 +583,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		},
 	}
 	t.Run("success: deterministic override via module config", func(t *testing.T) {
+		ctx := tests.Context(t)
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
 		m, err := NewModule(&ModuleConfig{
@@ -567,11 +596,12 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 
 		m.Start()
 
-		_, err = m.Run(req)
+		_, err = m.Run(ctx, req)
 		assert.Nil(t, err)
 	})
 
 	t.Run("success: default module config is non deterministic", func(t *testing.T) {
+		ctx := tests.Context(t)
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
 		m, err := NewModule(&ModuleConfig{
@@ -581,7 +611,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 
 		m.Start()
 
-		_, err = m.Run(req)
+		_, err = m.Run(ctx, req)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "expected deterministic output")
 	})

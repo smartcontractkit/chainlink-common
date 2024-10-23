@@ -11,6 +11,7 @@ type Runtime struct {
 }
 
 type RuntimeConfig struct {
+	requestID                 string
 	MaxFetchResponseSizeBytes int64
 }
 
@@ -18,8 +19,9 @@ const (
 	defaultMaxFetchResponseSizeBytes = 5 * 1024
 )
 
-func defaultRuntimeConfig() *RuntimeConfig {
+func defaultRuntimeConfig(requestID string) *RuntimeConfig {
 	return &RuntimeConfig{
+		requestID:                 requestID,
 		MaxFetchResponseSizeBytes: defaultMaxFetchResponseSizeBytes,
 	}
 }

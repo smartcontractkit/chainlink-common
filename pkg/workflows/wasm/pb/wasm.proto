@@ -69,6 +69,7 @@ message FetchRequest {
   values.Map headers = 3;
   bytes body = 4;
   uint32 timeoutMs = 5;
+  string id = 6;
 }
 
 message FetchResponse {

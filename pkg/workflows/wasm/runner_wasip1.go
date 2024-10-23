@@ -72,6 +72,7 @@ func NewRunner() *Runner {
 					}
 
 					b, err := proto.Marshal(&wasmpb.FetchRequest{
+						Id:        sdkConfig.requestID,
 						Url:       req.URL,
 						Method:    req.Method,
 						Headers:   values.ProtoMap(headerspb),

@@ -14,11 +14,11 @@ import (
 )
 
 type identicalAggregator struct {
-	config aggregatorConfig
+	config identicalAggConfig
 	lggr   logger.Logger
 }
 
-type aggregatorConfig struct {
+type identicalAggConfig struct {
 	// Length of the list of observations that each node is expected to provide.
 	// Aggregator's output (i.e. EncodableOutcome) will be a values.Map with the same
 	// number of elements and keyed by indices 0,1,2,... (unless KeyOverrides are provided).
@@ -103,7 +103,7 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 }
 
 func NewIdenticalAggregator(config values.Map) (*identicalAggregator, error) {
-	parsedConfig, err := ParseConfig(config)
+	parsedConfig, err := ParseConfigIdenticalAggregator(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config (%+v): %w", config, err)
 	}
@@ -112,10 +112,10 @@ func NewIdenticalAggregator(config values.Map) (*identicalAggregator, error) {
 	}, nil
 }
 
-func ParseConfig(config values.Map) (aggregatorConfig, error) {
-	parsedConfig := aggregatorConfig{}
+func ParseConfigIdenticalAggregator(config values.Map) (identicalAggConfig, error) {
+	parsedConfig := identicalAggConfig{}
 	if err := config.UnwrapTo(&parsedConfig); err != nil {
-		return aggregatorConfig{}, err
+		return identicalAggConfig{}, err
 	}
 	if parsedConfig.ExpectedObservationsLen == 0 {
 		parsedConfig.ExpectedObservationsLen = 1

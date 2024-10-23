@@ -87,7 +87,7 @@ func (e *EnvConfig) parse() error {
 	var err error
 	e.DatabaseURL, err = getDatabaseURL()
 	if err != nil {
-		return fmt.Errorf("failed to parse %s: %q", envDatabaseURL, err)
+		return fmt.Errorf("failed to parse %s: %w", envDatabaseURL, err)
 	}
 
 	e.PrometheusPort, err = strconv.Atoi(promPortStr)

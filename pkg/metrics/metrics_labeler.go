@@ -1,16 +1,16 @@
-package monitoring
+package metrics
 
-type MetricsLabeler struct {
+type Labeler struct {
 	Labels map[string]string
 }
 
-func NewMetricsLabeler() MetricsLabeler {
-	return MetricsLabeler{Labels: make(map[string]string)}
+func NewLabeler() Labeler {
+	return Labeler{Labels: make(map[string]string)}
 }
 
-// With adds multiple key-value pairs to the MetricsLabeler to eventually be consumed by a Beholder metrics resource
-func (c MetricsLabeler) With(keyValues ...string) MetricsLabeler {
-	newCustomMetricsLabeler := NewMetricsLabeler()
+// With adds multiple key-value pairs to the Labeler to eventually be consumed by a Beholder metrics resource
+func (c Labeler) With(keyValues ...string) Labeler {
+	newCustomMetricsLabeler := NewLabeler()
 
 	if len(keyValues)%2 != 0 {
 		// If an odd number of key-value arguments is passed, return the original CustomMessageLabeler unchanged

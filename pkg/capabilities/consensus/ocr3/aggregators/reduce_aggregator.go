@@ -41,6 +41,9 @@ type ReduceAggConfig struct {
 	OutputFieldName string `mapstructure:"outputFieldName" json:"outputFieldName" default:"Reports"`
 	// The structure surrounding the report data that is put on to "OutputFieldName"
 	ReportFormat string `mapstructure:"reportFormat" json:"reportFormat" default:"map" jsonschema:"enum=map,enum=array"`
+	// Optional key name, that when given will contain a nested map with designated Fields moved into it
+	// If given, one or more fields must be given SubMapField: true
+	SubMapKey string `mapstructure:"subMapKey" json:"subMapKey" default:""`
 }
 
 type AggregationField struct {
@@ -61,6 +64,9 @@ type AggregationField struct {
 	// * percent - a percentage deviation
 	// * absolute - an unsigned numeric difference
 	DeviationType string `mapstructure:"deviationType" json:"deviationType,omitempty" jsonschema:"enum=percent,enum=absolute,enum=none"`
+	// If enabled, this field will be moved from the top level map
+	// into a nested map on the key defined by "SubMapKey"
+	SubMapField bool `mapstructure:"subMapField"  json:"subMapField,omitempty"`
 }
 
 type reduceAggregator struct {
@@ -115,7 +121,24 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 		}
 	}
 
-	// If none of the AggregationFields define deviation, always report
+	// if SubMapKey is provided, move fields in a nested map
+	if len(a.config.SubMapKey) > 0 {
+		subMap := map[string]any{}
+		for _, field := range a.config.Fields {
+			if field.SubMapField {
+				if len(field.OutputKey) > 0 {
+					subMap[field.OutputKey] = report[field.OutputKey]
+					delete(report, field.OutputKey)
+				} else {
+					subMap[field.InputKey] = report[field.InputKey]
+					delete(report, field.InputKey)
+				}
+			}
+		}
+		report[a.config.SubMapKey] = subMap
+	}
+
+	// if none of the AggregationFields define deviation, always report
 	hasNoDeviation := true
 	for _, field := range a.config.Fields {
 		if field.DeviationType != DEVIATION_TYPE_NONE {
@@ -423,6 +446,7 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 	if len(parsedConfig.Fields) == 0 {
 		return ReduceAggConfig{}, errors.New("reduce aggregator must contain config for Fields to aggregate")
 	}
+	hasSubMapField := false
 	for i, field := range parsedConfig.Fields {
 		if len(field.DeviationType) == 0 {
 			field.DeviationType = DEVIATION_TYPE_NONE
@@ -447,6 +471,15 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 		if len(field.DeviationString) > 0 && field.DeviationType == DEVIATION_TYPE_NONE {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field cannot have deviation with a deviation type of %s", DEVIATION_TYPE_NONE)
 		}
+		if field.SubMapField {
+			hasSubMapField = true
+		}
+	}
+	if len(parsedConfig.SubMapKey) > 0 && !hasSubMapField {
+		return ReduceAggConfig{}, fmt.Errorf("sub Map key %s given, but no fields are marked as sub map fields", parsedConfig.SubMapKey)
+	}
+	if hasSubMapField && len(parsedConfig.SubMapKey) == 0 {
+		return ReduceAggConfig{}, errors.New("fields are marked as sub Map fields, but no sub map key given")
 	}
 	if len(parsedConfig.OutputFieldName) == 0 {
 		parsedConfig.OutputFieldName = DEFAULT_OUTPUT_FIELD_NAME

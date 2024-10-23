@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729717019723,
+  "lastUpdate": 1729719692729,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4746,6 +4746,48 @@ window.BENCHMARK_DATA = {
             "value": 28253,
             "unit": "ns/op",
             "extra": "42460 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "780e3d4c3ea9c7d55ede72c42bdb2188d01babdc",
+          "message": "refactor(custmsg+wasm): adjust message emitter iface (#885)",
+          "timestamp": "2024-10-23T17:40:34-04:00",
+          "tree_id": "d2ea33ef9b31f11dd7f9c2280886e28e75a13504",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/780e3d4c3ea9c7d55ede72c42bdb2188d01babdc"
+        },
+        "date": 1729719692268,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.9,
+            "unit": "ns/op",
+            "extra": "2685976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 524.6,
+            "unit": "ns/op",
+            "extra": "2307256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28183,
+            "unit": "ns/op",
+            "extra": "42445 times\n4 procs"
           }
         ]
       }

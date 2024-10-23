@@ -69,7 +69,7 @@ func newWasmGuestEmitter(emitFn func(string, map[string]string) error) wasmGuest
 	return wasmGuestEmitter{
 		emitFn: emitFn,
 		labels: make(map[string]string),
-		base:   custmsg.NewLabeler(),
+		base:   custmsg.NewMessageEmitter(),
 	}
 }
 

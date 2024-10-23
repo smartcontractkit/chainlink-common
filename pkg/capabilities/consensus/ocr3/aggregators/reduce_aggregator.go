@@ -21,6 +21,19 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
+const (
+	AGGREGATION_METHOD_MEDIAN = "median"
+	AGGREGATION_METHOD_MODE   = "mode"
+	DEVIATION_TYPE_NONE       = "none"
+	DEVIATION_TYPE_PERCENT    = "percent"
+	DEVIATION_TYPE_ABSOLUTE   = "absolute"
+	REPORT_FORMAT_MAP         = "map"
+	REPORT_FORMAT_ARRAY       = "array"
+
+	DEFAULT_REPORT_FORMAT     = REPORT_FORMAT_MAP
+	DEFAULT_OUTPUT_FIELD_NAME = "Reports"
+)
+
 type ReduceAggConfig struct {
 	// Configuration on how to aggregate one or more data points
 	Fields []AggregationField `mapstructure:"fields"  required:"true"`
@@ -82,7 +95,7 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			return nil, fmt.Errorf("unable to reduce on method %s, err: %s", field.Method, err.Error())
 		}
 
-		if field.DeviationType != "none" {
+		if field.DeviationType != DEVIATION_TYPE_NONE {
 			oldValue := (*currentState)[field.InputKey]
 			currDeviation, err := deviation(field.DeviationType, oldValue, singleValue)
 			if oldValue != nil && err != nil {
@@ -91,6 +104,7 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			if oldValue == nil || currDeviation.GreaterThan(field.Deviation) {
 				shouldReport = true
 			}
+			lggr.Debugw("checked deviation", "key", field.InputKey, "deviationType", field.DeviationType, "currentDeviation", currDeviation.String(), "targetDeviation", field.Deviation.String(), "shouldReport", shouldReport)
 		}
 
 		(*currentState)[field.InputKey] = singleValue
@@ -101,15 +115,16 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 		}
 	}
 
-	// If no AggregationField defines deviation, always report
+	// If none of the AggregationFields define deviation, always report
 	hasNoDeviation := true
 	for _, field := range a.config.Fields {
-		if field.DeviationType != "none" {
+		if field.DeviationType != DEVIATION_TYPE_NONE {
 			hasNoDeviation = false
 			break
 		}
 	}
 	if hasNoDeviation {
+		lggr.Debugw("no deviation defined, reporting")
 		shouldReport = true
 	}
 
@@ -159,7 +174,7 @@ func (a *reduceAggregator) initializeCurrentState(lggr logger.Logger, previousOu
 		}
 	}
 
-	zeroValue, _ := values.Wrap(decimal.NewFromInt(0))
+	zeroValue := values.NewDecimal(decimal.Zero)
 	for _, field := range a.config.Fields {
 		if _, ok := currentState[field.InputKey]; !ok {
 			currentState[field.InputKey] = zeroValue
@@ -189,7 +204,9 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 			continue
 		}
 
-		// extract the value from complex types and re-wrap them
+		// if the observation data is a complex type, extract the value using the inputKey
+		// values are then re-wrapped here to handle aggregating against Value types
+		// which is used for mode aggregation
 		switch val := val.(type) {
 		case map[string]interface{}:
 			_, ok := val[aggregationKey]
@@ -230,9 +247,9 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 
 func reduce(method string, items []values.Value) (values.Value, error) {
 	switch method {
-	case "median":
+	case AGGREGATION_METHOD_MEDIAN:
 		return median(items)
-	case "mode":
+	case AGGREGATION_METHOD_MODE:
 		return mode(items)
 	default:
 		return nil, fmt.Errorf("unsupported aggregation method %s", method)
@@ -351,9 +368,9 @@ func deviation(method string, previousValue values.Value, nextValue values.Value
 	diff := prevDeci.Sub(nextDeci).Abs()
 
 	switch method {
-	case "absolute":
+	case DEVIATION_TYPE_ABSOLUTE:
 		return diff, nil
-	case "percent":
+	case DEVIATION_TYPE_PERCENT:
 		if prevDeci.Cmp(decimal.NewFromInt(0)) == 0 {
 			if diff.Cmp(decimal.NewFromInt(0)) == 0 {
 				return decimal.NewFromInt(0), nil
@@ -375,6 +392,15 @@ func formatReport(report map[string]any, format string) (any, error) {
 	default:
 		return nil, errors.New("unsupported report format")
 	}
+}
+
+func isOneOf(toCheck string, options []string) bool {
+	for _, option := range options {
+		if toCheck == option {
+			return true
+		}
+	}
+	return false
 }
 
 func NewReduceAggregator(config values.Map) (types.Aggregator, error) {
@@ -399,36 +425,36 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 	}
 	for i, field := range parsedConfig.Fields {
 		if len(field.DeviationType) == 0 {
-			field.DeviationType = "none"
-			parsedConfig.Fields[i].DeviationType = "none"
+			field.DeviationType = DEVIATION_TYPE_NONE
+			parsedConfig.Fields[i].DeviationType = DEVIATION_TYPE_NONE
 		}
-		if field.DeviationType != "absolute" && field.DeviationType != "percent" && field.DeviationType != "none" {
-			return ReduceAggConfig{}, fmt.Errorf("invalid config DeviationType. received: %s. options: absolute, percent, none", field.DeviationType)
+		if !isOneOf(field.DeviationType, []string{DEVIATION_TYPE_ABSOLUTE, DEVIATION_TYPE_PERCENT, DEVIATION_TYPE_NONE}) {
+			return ReduceAggConfig{}, fmt.Errorf("invalid config DeviationType. received: %s. options: [%s, %s, %s]", field.DeviationType, DEVIATION_TYPE_ABSOLUTE, DEVIATION_TYPE_PERCENT, DEVIATION_TYPE_NONE)
 		}
-		if field.DeviationType != "none" && field.DeviationType != "" && len(field.DeviationString) == 0 {
+		if field.DeviationType != DEVIATION_TYPE_NONE && len(field.DeviationString) == 0 {
 			return ReduceAggConfig{}, errors.New("aggregation field deviation must contain DeviationString amount")
 		}
-		if field.DeviationType != "none" && len(field.DeviationString) > 0 {
+		if field.DeviationType != DEVIATION_TYPE_NONE && len(field.DeviationString) > 0 {
 			deci, err := decimal.NewFromString(field.DeviationString)
 			if err != nil {
 				return ReduceAggConfig{}, fmt.Errorf("reduce aggregator could not parse deviation decimal from string %s", field.DeviationString)
 			}
 			parsedConfig.Fields[i].Deviation = deci
 		}
-		if len(field.Method) == 0 || (field.Method != "median" && field.Method != "mode") {
-			return ReduceAggConfig{}, errors.New("aggregation field must contain method. options: median, mode")
+		if len(field.Method) == 0 || !isOneOf(field.Method, []string{AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE}) {
+			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE)
 		}
-		if len(field.DeviationString) > 0 && field.DeviationType == "none" {
-			return ReduceAggConfig{}, errors.New("aggregation field cannot have deviation with a deviation type of none")
+		if len(field.DeviationString) > 0 && field.DeviationType == DEVIATION_TYPE_NONE {
+			return ReduceAggConfig{}, fmt.Errorf("aggregation field cannot have deviation with a deviation type of %s", DEVIATION_TYPE_NONE)
 		}
 	}
 	if len(parsedConfig.OutputFieldName) == 0 {
-		parsedConfig.OutputFieldName = "Reports"
+		parsedConfig.OutputFieldName = DEFAULT_OUTPUT_FIELD_NAME
 	}
 	if len(parsedConfig.ReportFormat) == 0 {
-		parsedConfig.ReportFormat = "map"
+		parsedConfig.ReportFormat = DEFAULT_REPORT_FORMAT
 	}
-	if parsedConfig.ReportFormat != "map" && parsedConfig.ReportFormat != "array" {
+	if !isOneOf(parsedConfig.ReportFormat, []string{REPORT_FORMAT_ARRAY, REPORT_FORMAT_MAP}) {
 		return ReduceAggConfig{}, fmt.Errorf("invalid config ReportFormat. received: %s. options: map, array", parsedConfig.ReportFormat)
 	}
 

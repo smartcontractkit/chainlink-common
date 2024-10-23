@@ -95,7 +95,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 	authenticator, err := NewAuthenticator(cfg)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	sharedLogExporter, err := otlploggrpcNew(
 		otlploggrpc.WithTLSCredentials(creds),

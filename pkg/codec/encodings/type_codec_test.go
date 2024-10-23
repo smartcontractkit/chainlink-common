@@ -172,7 +172,9 @@ func (b *bigEndianInterfaceTester) encode(t *testing.T, bytes []byte, ts TestStr
 	for _, oid := range ts.OracleIDs {
 		bytes = append(bytes, byte(oid))
 	}
-	bytes = append(bytes, ts.AccountStruct.Account[:]...)
+	bytes = append(bytes, byte(len(ts.AccountStruct.Account)))
+	bytes = append(bytes, ts.AccountStruct.Account...)
+	bytes = rawbin.BigEndian.AppendUint32(bytes, uint32(len(ts.AccountStruct.AccountStr)))
 	bytes = append(bytes, []byte(ts.AccountStruct.AccountStr)...)
 	bytes = append(bytes, byte(len(ts.Accounts)))
 	for _, account := range ts.Accounts {
@@ -298,8 +300,8 @@ func (b *bigEndianInterfaceTester) GetCodec(t *testing.T) types.Codec {
 	}
 
 	mod, err := codec.NewHardCoder(map[string]any{
-		"BigField": ts.BigField.String(),
-		"Account":  ts.AccountStruct.Account,
+		"BigField":              ts.BigField.String(),
+		"AccountStruct.Account": ts.AccountStruct.Account,
 	}, map[string]any{"ExtraField": AnyExtraValue}, codec.BigIntHook)
 	require.NoError(t, err)
 

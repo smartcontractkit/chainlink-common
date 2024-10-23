@@ -325,7 +325,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				cr := tester.GetCodec(t)
 				modified := CreateTestStruct[*testing.T](0, tester)
 				modified.BigField = nil
-				modified.AccountStruct = AccountStruct{}
+				modified.AccountStruct.Account = nil
 				actual, err := cr.Encode(ctx, modified, TestItemWithConfigExtra)
 				require.NoError(t, err)
 

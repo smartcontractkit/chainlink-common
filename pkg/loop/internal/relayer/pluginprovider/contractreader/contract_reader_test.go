@@ -484,7 +484,10 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 		rv := returnVal.(*TestStructWithExtraField)
 		rv.TestStruct = *pv
 		rv.ExtraField = AnyExtraValue
-		rv.Account = anyAccountBytes
+		rv.AccountStruct = AccountStruct{
+			Account:    anyAccountBytes,
+			AccountStr: anyAccountString,
+		}
 		rv.BigField = big.NewInt(2)
 		return nil
 	} else if strings.HasSuffix(readIdentifier, EventName) {
@@ -569,7 +572,10 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
 			} else if req.ReadName == MethodReturningSeenStruct {
 				ts := *req.Params.(*TestStruct)
-				ts.Account = anyAccountBytes
+				ts.AccountStruct = AccountStruct{
+					Account:    anyAccountBytes,
+					AccountStr: anyAccountString,
+				}
 				ts.BigField = big.NewInt(2)
 				returnVal = &TestStructWithExtraField{
 					TestStruct: ts,

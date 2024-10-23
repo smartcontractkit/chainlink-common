@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729704163415,
+  "lastUpdate": 1729716195515,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4662,6 +4662,48 @@ window.BENCHMARK_DATA = {
             "value": 28283,
             "unit": "ns/op",
             "extra": "42369 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.farber@smartcontract.com",
+            "name": "Juan Farber",
+            "username": "Farber98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "86c89e29937d98bbce13bb7673c072f6c4b53343",
+          "message": "Fix Foundry Shared Tests CI (#882)",
+          "timestamp": "2024-10-23T22:42:19+02:00",
+          "tree_id": "194e5605eea13037c328efae2a3870674abc9d81",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/86c89e29937d98bbce13bb7673c072f6c4b53343"
+        },
+        "date": 1729716194995,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 448,
+            "unit": "ns/op",
+            "extra": "2664765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 528.9,
+            "unit": "ns/op",
+            "extra": "2353148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28276,
+            "unit": "ns/op",
+            "extra": "42488 times\n4 procs"
           }
         ]
       }

@@ -476,6 +476,63 @@ func Test_Compute_Fetch(t *testing.T) {
 			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
 		}
 	})
+
+	t.Run("OK_context_propagation", func(t *testing.T) {
+		type testkey string
+		var key testkey = "test-key"
+		var expectedValue string = "test-value"
+
+		expected := sdk.FetchResponse{
+			ExecutionError: false,
+			Body:           []byte(expectedValue),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
+		}
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           []byte(ctx.Value(key).(string)),
+					StatusCode:     uint32(expected.StatusCode),
+				}, nil
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+					RuntimeConfig: &wasmpb.RuntimeConfig{
+						MaxFetchResponseSizeBytes: 2 * 1024,
+					},
+				},
+			},
+		}
+
+		ctx := context.WithValue(tests.Context(t), key, expectedValue)
+		response, err := m.Run(ctx, req)
+		assert.Nil(t, err)
+
+		actual := sdk.FetchResponse{}
+		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
+		require.NoError(t, err)
+		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, actual)
+	})
 }
 
 func TestModule_Errors(t *testing.T) {

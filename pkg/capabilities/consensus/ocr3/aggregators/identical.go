@@ -15,7 +15,6 @@ import (
 
 type identicalAggregator struct {
 	config identicalAggConfig
-	lggr   logger.Logger
 }
 
 type identicalAggConfig struct {

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	otellog "go.opentelemetry.io/otel/log"
 
@@ -110,6 +109,8 @@ func testMetadata() beholder.Metadata {
 		WorkflowOwnerAddress:      "test_owner_address",
 		WorkflowSpecID:            "test_spec_id",
 		WorkflowExecutionID:       "test_execution_id",
+		BeholderDomain:            "TestDomain",               // required field
+		BeholderEntity:            "TestEntity",               // required field
 		BeholderDataSchema:        "/schemas/ids/test_schema", // required field, URI
 		CapabilityContractAddress: "test_contract_address",
 		CapabilityID:              "test_capability_id",
@@ -123,14 +124,20 @@ func ExampleMetadata() {
 	fmt.Printf("%#v\n", m)
 	fmt.Println(m.Attributes())
 	// Output:
-	// beholder.Metadata{BeholderDataSchema:"/schemas/ids/test_schema", NodeVersion:"v1.0.0", NodeCsaKey:"test_key", NodeCsaSignature:"test_signature", DonID:"test_don_id", NetworkName:[]string{"test_network"}, WorkflowID:"test_workflow_id", WorkflowName:"test_workflow_name", WorkflowOwnerAddress:"test_owner_address", WorkflowSpecID:"test_spec_id", WorkflowExecutionID:"test_execution_id", CapabilityContractAddress:"test_contract_address", CapabilityID:"test_capability_id", CapabilityVersion:"test_capability_version", CapabilityName:"test_capability_name", NetworkChainID:"test_chain_id"}
-	// map[beholder_data_schema:/schemas/ids/test_schema capability_contract_address:test_contract_address capability_id:test_capability_id capability_name:test_capability_name capability_version:test_capability_version don_id:test_don_id network_chain_id:test_chain_id network_name:[test_network] node_csa_key:test_key node_csa_signature:test_signature node_version:v1.0.0 workflow_execution_id:test_execution_id workflow_id:test_workflow_id workflow_name:test_workflow_name workflow_owner_address:test_owner_address workflow_spec_id:test_spec_id]
+	// beholder.Metadata{BeholderDomain:"TestDomain", BeholderEntity:"TestEntity", BeholderDataSchema:"/schemas/ids/test_schema", NodeVersion:"v1.0.0", NodeCsaKey:"test_key", NodeCsaSignature:"test_signature", DonID:"test_don_id", NetworkName:[]string{"test_network"}, WorkflowID:"test_workflow_id", WorkflowName:"test_workflow_name", WorkflowOwnerAddress:"test_owner_address", WorkflowSpecID:"test_spec_id", WorkflowExecutionID:"test_execution_id", CapabilityContractAddress:"test_contract_address", CapabilityID:"test_capability_id", CapabilityVersion:"test_capability_version", CapabilityName:"test_capability_name", NetworkChainID:"test_chain_id"}
+	// map[beholder_data_schema:/schemas/ids/test_schema beholder_domain:TestDomain beholder_entity:TestEntity capability_contract_address:test_contract_address capability_id:test_capability_id capability_name:test_capability_name capability_version:test_capability_version don_id:test_don_id network_chain_id:test_chain_id network_name:[test_network] node_csa_key:test_key node_csa_signature:test_signature node_version:v1.0.0 workflow_execution_id:test_execution_id workflow_id:test_workflow_id workflow_name:test_workflow_name workflow_owner_address:test_owner_address workflow_spec_id:test_spec_id]
 }
 
-func ExampleValidate() {
-	validate := validator.New()
+func ExampleMetadata_Validate() {
+	validate, err := beholder.NewMetadataValidator()
+	if err != nil {
+		fmt.Println(err)
+	}
 
-	metadata := beholder.Metadata{}
+	metadata := beholder.Metadata{
+		BeholderDomain: "TestDomain",
+		BeholderEntity: "TestEntity",
+	}
 	if err := validate.Struct(metadata); err != nil {
 		fmt.Println(err)
 	}

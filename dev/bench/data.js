@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729648416822,
+  "lastUpdate": 1729693550650,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4578,6 +4578,48 @@ window.BENCHMARK_DATA = {
             "value": 28366,
             "unit": "ns/op",
             "extra": "42446 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "485f3f97cdbd0abc80e3a6263364ddabefa6d7f0",
+          "message": "pkg/utils: add NewSleeperTaskCtx(WorkerCtx) (#868)",
+          "timestamp": "2024-10-23T09:24:48-05:00",
+          "tree_id": "6000a766085f467bf0546afd35613d17a5daf981",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/485f3f97cdbd0abc80e3a6263364ddabefa6d7f0"
+        },
+        "date": 1729693550131,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 492.4,
+            "unit": "ns/op",
+            "extra": "2650452 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.5,
+            "unit": "ns/op",
+            "extra": "2333247 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28281,
+            "unit": "ns/op",
+            "extra": "42451 times\n4 procs"
           }
         ]
       }

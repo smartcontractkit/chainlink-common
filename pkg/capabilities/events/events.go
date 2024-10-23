@@ -9,10 +9,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-// Duplicates the attributes in beholder/message.go::Metadata
 const (
+	// Duplicates the attributes in beholder/message.go::Metadata
 	LabelWorkflowOwner             = "workflow_owner_address"
 	LabelWorkflowID                = "workflow_id"
 	LabelWorkflowExecutionID       = "workflow_execution_id"
@@ -166,27 +167,16 @@ func (e *Emitter) Emit(ctx context.Context, msg Message) error {
 		return errors.New("must provide workflow name to emit event")
 	}
 
-	// TODO un-comment after INFOPLAT-1386
-	//wm, err := values.WrapMap(msg.Labels)
-	//if err != nil {
-	//	return fmt.Errorf("could not wrap map: %w", err)
-	//}
-	//
-	//pm := values.ProtoMap(wm)
+	wm, err := values.WrapMap(msg.Labels)
+	if err != nil {
+		return fmt.Errorf("could not wrap map: %w", err)
+	}
+
+	pm := values.ProtoMap(wm)
 
 	bytes, err := proto.Marshal(&pb.BaseMessage{
-		// any empty values will not be serialized (including the key)
-		Labels: map[string]string{
-			LabelWorkflowID:                nmd.WorkflowID,
-			LabelWorkflowName:              nmd.WorkflowName,
-			LabelWorkflowOwner:             nmd.WorkflowOwner,
-			LabelCapabilityContractAddress: nmd.CapabilityContractAddress,
-			LabelCapabilityID:              nmd.CapabilityID,
-			LabelCapabilityVersion:         nmd.CapabilityVersion,
-			LabelCapabilityName:            nmd.CapabilityName,
-			LabelWorkflowExecutionID:       nmd.WorkflowExecutionID,
-		},
-		Msg: msg.Msg,
+		Labels: pm,
+		Msg:    msg.Msg,
 	})
 	if err != nil {
 		return fmt.Errorf("could not marshal operational event: %w", err)

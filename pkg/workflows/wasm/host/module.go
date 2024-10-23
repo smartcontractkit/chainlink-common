@@ -342,7 +342,10 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	}
 
 	// we add the request context to the store to make it available to the Fetch fn
-	m.requestStore.add(request.Id, &RequestData{ctx: ctx})
+	err := m.requestStore.add(request.Id, &RequestData{ctx: ctx})
+	if err != nil {
+		return nil, fmt.Errorf("error adding ctx to the store: %w", err)
+	}
 
 	store := wasmtime.NewStore(m.engine)
 	defer store.Close()

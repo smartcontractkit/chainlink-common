@@ -39,15 +39,9 @@ func (r *store) add(id string, req *RequestData) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	storedReq, found := r.m[id]
-	if found && req.response != nil {
+	_, found := r.m[id]
+	if found {
 		return fmt.Errorf("error storing response: response already exists for id: %s", id)
-	}
-
-	// we only add the response as the context has already been added
-	if found && req.response == nil {
-		r.m[id].response = storedReq.response
-		return nil
 	}
 
 	r.m[id] = req

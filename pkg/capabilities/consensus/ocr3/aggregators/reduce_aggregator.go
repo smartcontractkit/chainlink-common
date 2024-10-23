@@ -53,7 +53,9 @@ type AggregationField struct {
 	// The key that the aggregated data is put under
 	// If omitted, the InputKey will be used
 	OutputKey string `mapstructure:"outputKey" json:"outputKey"`
-	// How the data set should be aggregated
+	// How the data set should be aggregated to a single value
+	// * median - take the centermost value of the sorted data set of observations. can only be used on numeric types.
+	// * mode - take the most frequent value. if tied, use the "first".
 	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode" required:"true"`
 	// An optional check to only report when the difference from the previous report exceeds a certain threshold.
 	// Can only be used when the field is of a numeric type: string, decimal, int64, big.Int, time.Time, float64
@@ -153,22 +155,22 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 
 	stateValuesMap, err := values.WrapMap(currentState)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("aggregate state wrapmap error: %s", err.Error())
 	}
 	stateBytes, err := proto.Marshal(values.ProtoMap(stateValuesMap))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("aggregate state proto marshal error: %s", err.Error())
 	}
 
 	toWrap, err := formatReport(report, a.config.ReportFormat)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("aggregate formatReport error: %s", err.Error())
 	}
 	reportValuesMap, err := values.NewMap(map[string]any{
 		a.config.OutputFieldName: toWrap,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("aggregate new map error: %s", err.Error())
 	}
 	reportProtoMap := values.Proto(reportValuesMap).GetMapValue()
 
@@ -189,11 +191,11 @@ func (a *reduceAggregator) initializeCurrentState(lggr logger.Logger, previousOu
 		proto.Unmarshal(previousOutcome.Metadata, pb)
 		mv, err := values.FromMapValueProto(pb)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("initializeCurrentState FromMapValueProto error: %s", err.Error())
 		}
 		err = mv.UnwrapTo(currentState)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("initializeCurrentState FromMapValueProto error: %s", err.Error())
 		}
 	}
 
@@ -275,15 +277,20 @@ func reduce(method string, items []values.Value) (values.Value, error) {
 	case AGGREGATION_METHOD_MODE:
 		return mode(items)
 	default:
+		// invariant, config should be validated
 		return nil, fmt.Errorf("unsupported aggregation method %s", method)
 	}
 }
 
 func median(items []values.Value) (values.Value, error) {
 	if len(items) == 0 {
+		// invariant, as long as f > 0 there should be items
 		return nil, errors.New("items cannot be empty")
 	}
-	sortAsDecimal(items)
+	err := sortAsDecimal(items)
+	if err != nil {
+		return nil, err
+	}
 	return items[(len(items)-1)/2], nil
 }
 
@@ -338,6 +345,7 @@ func toDecimal(item values.Value) (decimal.Decimal, error) {
 
 func mode(items []values.Value) (values.Value, error) {
 	if len(items) == 0 {
+		// invariant, as long as f > 0 there should be items
 		return nil, errors.New("items cannot be empty")
 	}
 
@@ -345,6 +353,7 @@ func mode(items []values.Value) (values.Value, error) {
 	for _, item := range items {
 		marshalled, err := proto.MarshalOptions{Deterministic: true}.Marshal(values.Proto(item))
 		if err != nil {
+			// invariant: values should always be able to be proto marshalled
 			return nil, err
 		}
 		sha := sha256.Sum256(marshalled)

@@ -6,5 +6,5 @@ import "math"
 
 func main() {
 	// allocate more bytes than the binary should be able to access, 64 megs
-	_ = make([]byte, int64(128*math.Pow(10, 6)))
+	_ = make([]byte, int64(512*math.Pow(10, 6)))
 }

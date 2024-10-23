@@ -56,8 +56,8 @@ func (r *respStore) get(id string) (*wasmpb.Response, error) {
 
 var (
 	defaultTickInterval = 100 * time.Millisecond
-	defaultTimeout      = 300 * time.Millisecond
-	defaultMaxMemoryMBs = 64
+	defaultTimeout      = 2 * time.Second
+	defaultMaxMemoryMBs = 256
 	DefaultInitialFuel  = uint64(100_000_000)
 )
 

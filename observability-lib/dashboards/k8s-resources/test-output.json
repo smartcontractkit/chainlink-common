@@ -8,6 +8,7 @@
       "Resources"
     ],
     "timezone": "browser",
+    "editable": true,
     "graphTooltip": 0,
     "time": {
       "from": "now-30m",
@@ -15,7 +16,7 @@
     },
     "fiscalYearStartMonth": 0,
     "refresh": "30s",
-    "schemaVersion": 0,
+    "schemaVersion": 39,
     "panels": [
       {
         "type": "row",
@@ -32,7 +33,7 @@
       },
       {
         "type": "stat",
-        "id": 0,
+        "id": 1,
         "targets": [
           {
             "expr": "100 * sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests{cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -61,6 +62,7 @@
           "justifyMode": "auto",
           "textMode": "value",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -70,7 +72,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -84,7 +86,7 @@
       },
       {
         "type": "stat",
-        "id": 1,
+        "id": 2,
         "targets": [
           {
             "expr": "100 * sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -113,6 +115,7 @@
           "justifyMode": "auto",
           "textMode": "value",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -122,7 +125,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -136,7 +139,7 @@
       },
       {
         "type": "stat",
-        "id": 2,
+        "id": 3,
         "targets": [
           {
             "expr": "100 * sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\", image!=\"\"}) by (container) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_requests{cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -165,6 +168,7 @@
           "justifyMode": "auto",
           "textMode": "value",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -174,7 +178,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -188,7 +192,7 @@
       },
       {
         "type": "stat",
-        "id": 3,
+        "id": 4,
         "targets": [
           {
             "expr": "100 * sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\", container!=\"\", image!=\"\"}) by (container) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
@@ -217,6 +221,7 @@
           "justifyMode": "auto",
           "textMode": "value",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -226,7 +231,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -253,7 +258,7 @@
       },
       {
         "type": "stat",
-        "id": 4,
+        "id": 5,
         "targets": [
           {
             "expr": "sum(increase(kube_pod_container_status_restarts_total{pod=~\"$pod\", namespace=~\"${namespace}\"}[$__rate_interval])) by (pod)",
@@ -280,6 +285,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -289,7 +295,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -303,7 +309,7 @@
       },
       {
         "type": "stat",
-        "id": 5,
+        "id": 6,
         "targets": [
           {
             "expr": "sum(container_oom_events_total{pod=~\"$pod\", namespace=~\"${namespace}\"}) by (pod)",
@@ -330,6 +336,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -339,7 +346,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -353,7 +360,7 @@
       },
       {
         "type": "stat",
-        "id": 6,
+        "id": 7,
         "targets": [
           {
             "expr": "kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\", pod=~\"$pod\", namespace=~\"${namespace}\"}",
@@ -380,6 +387,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -389,7 +397,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "horizontal"
         },
         "fieldConfig": {
@@ -416,7 +424,7 @@
       },
       {
         "type": "timeseries",
-        "id": 7,
+        "id": 8,
         "targets": [
           {
             "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~\"$pod\", namespace=~\"${namespace}\"}) by (pod)",
@@ -478,7 +486,7 @@
       },
       {
         "type": "timeseries",
-        "id": 8,
+        "id": 9,
         "targets": [
           {
             "expr": "sum(container_memory_rss{pod=~\"$pod\", namespace=~\"${namespace}\", container!=\"\"}) by (pod)",
@@ -553,7 +561,7 @@
       },
       {
         "type": "timeseries",
-        "id": 9,
+        "id": 10,
         "targets": [
           {
             "expr": "sum(irate(container_network_receive_bytes_total{pod=~\"$pod\", namespace=~\"${namespace}\"}[$__rate_interval])) by (pod)",
@@ -603,7 +611,7 @@
       },
       {
         "type": "timeseries",
-        "id": 10,
+        "id": 11,
         "targets": [
           {
             "expr": "sum(irate(container_network_transmit_bytes_total{pod=~\"$pod\", namespace=~\"${namespace}\"}[$__rate_interval])) by (pod)",
@@ -653,7 +661,7 @@
       },
       {
         "type": "timeseries",
-        "id": 11,
+        "id": 12,
         "targets": [
           {
             "expr": "avg(irate(container_network_receive_bytes_total{pod=~\"$pod\", namespace=~\"${namespace}\"}[$__rate_interval])) by (pod)",
@@ -703,7 +711,7 @@
       },
       {
         "type": "timeseries",
-        "id": 12,
+        "id": 13,
         "targets": [
           {
             "expr": "avg(irate(container_network_transmit_bytes_total{pod=~\"$pod\", namespace=~\"${namespace}\"}[$__rate_interval])) by (pod)",
@@ -766,7 +774,7 @@
       },
       {
         "type": "timeseries",
-        "id": 13,
+        "id": 14,
         "targets": [
           {
             "expr": "ceil(sum by(container, pod) (rate(container_fs_reads_total{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", container!=\"\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}[$__rate_interval]) + rate(container_fs_writes_total{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", container!=\"\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}[$__rate_interval])))",
@@ -816,7 +824,7 @@
       },
       {
         "type": "timeseries",
-        "id": 14,
+        "id": 15,
         "targets": [
           {
             "expr": "sum by(container, pod) (rate(container_fs_reads_bytes_total{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", container!=\"\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}[$__rate_interval]) + rate(container_fs_writes_bytes_total{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", container!=\"\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}[$__rate_interval]))",
@@ -871,6 +879,7 @@
           "type": "query",
           "name": "env",
           "label": "Environment",
+          "description": "",
           "query": "label_values(up, env)",
           "datasource": {
             "uid": "Prometheus"
@@ -891,6 +900,7 @@
           "type": "query",
           "name": "cluster",
           "label": "Cluster",
+          "description": "",
           "query": "label_values(up{env=\"$env\"}, cluster)",
           "datasource": {
             "uid": "Prometheus"
@@ -911,6 +921,7 @@
           "type": "query",
           "name": "namespace",
           "label": "Namespace",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\"}, namespace)",
           "datasource": {
             "uid": "Prometheus"
@@ -931,6 +942,7 @@
           "type": "query",
           "name": "job",
           "label": "Job",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\"}, job)",
           "datasource": {
             "uid": "Prometheus"
@@ -951,6 +963,7 @@
           "type": "query",
           "name": "pod",
           "label": "Pod",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", namespace=\"$namespace\", job=\"$job\"}, pod)",
           "datasource": {
             "uid": "Prometheus"

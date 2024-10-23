@@ -7,6 +7,7 @@
       "Components"
     ],
     "timezone": "browser",
+    "editable": true,
     "graphTooltip": 0,
     "time": {
       "from": "now-30m",
@@ -14,14 +15,14 @@
     },
     "fiscalYearStartMonth": 0,
     "refresh": "30s",
-    "schemaVersion": 0,
+    "schemaVersion": 39,
     "panels": [
       {
         "type": "stat",
-        "id": 0,
+        "id": 1,
         "targets": [
           {
-            "expr": "100 * avg(avg_over_time(health{blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env)",
+            "expr": "100 * avg(avg_over_time(health{service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env)",
             "format": "",
             "legendFormat": "{{service_id}}",
             "refId": ""
@@ -45,6 +46,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -54,7 +56,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "vertical"
         },
         "fieldConfig": {
@@ -89,10 +91,10 @@
       },
       {
         "type": "timeseries",
-        "id": 1,
+        "id": 2,
         "targets": [
           {
-            "expr": "100 * (health{blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", service_id=~\"${service_id}\"})",
+            "expr": "100 * (health{service_id=~\"${service_id}\"})",
             "format": "",
             "legendFormat": "{{service_id}}",
             "refId": ""
@@ -141,10 +143,10 @@
       },
       {
         "type": "timeseries",
-        "id": 2,
+        "id": 3,
         "targets": [
           {
-            "expr": "100 * (avg(avg_over_time(health{blockchain=~\"${blockchain}\", product=~\"${product}\", network_type=~\"${network_type}\", component=~\"${component}\", service=~\"${service}\", env=~\"${env}\", cluster=~\"${cluster}\", service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env))",
+            "expr": "100 * (avg(avg_over_time(health{service_id=~\"${service_id}\"}[$interval])) by (service_id, version, service, cluster, env))",
             "format": "",
             "legendFormat": "{{service_id}}",
             "refId": ""
@@ -193,7 +195,7 @@
       },
       {
         "type": "logs",
-        "id": 3,
+        "id": 4,
         "targets": [
           {
             "expr": "{env=\"${env}\", cluster=\"${cluster}\", product=\"${product}\", network_type=\"${network_type}\", instance=~\"${service}\"} | json | level=~\"(error|panic|fatal|crit)\"",
@@ -228,6 +230,7 @@
           "type": "interval",
           "name": "interval",
           "label": "Interval",
+          "description": "",
           "query": "30s,1m,5m,15m,30m,1h,6h,12h",
           "current": {
             "selected": true,
@@ -243,6 +246,7 @@
           "type": "query",
           "name": "env",
           "label": "Environment",
+          "description": "",
           "query": "label_values(up, env)",
           "datasource": {
             "uid": "Prometheus"
@@ -263,6 +267,7 @@
           "type": "query",
           "name": "cluster",
           "label": "Cluster",
+          "description": "",
           "query": "label_values(up{env=\"$env\"}, cluster)",
           "datasource": {
             "uid": "Prometheus"
@@ -283,6 +288,7 @@
           "type": "query",
           "name": "blockchain",
           "label": "Blockchain",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\"}, blockchain)",
           "datasource": {
             "uid": "Prometheus"
@@ -303,6 +309,7 @@
           "type": "query",
           "name": "product",
           "label": "Product",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", blockchain=\"$blockchain\"}, product)",
           "datasource": {
             "uid": "Prometheus"
@@ -323,6 +330,7 @@
           "type": "query",
           "name": "network_type",
           "label": "Network Type",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", blockchain=\"$blockchain\", product=\"$product\"}, network_type)",
           "datasource": {
             "uid": "Prometheus"
@@ -343,6 +351,7 @@
           "type": "query",
           "name": "component",
           "label": "Component",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", blockchain=\"$blockchain\", network_type=\"$network_type\"}, component)",
           "datasource": {
             "uid": "Prometheus"
@@ -363,6 +372,7 @@
           "type": "query",
           "name": "service",
           "label": "Service",
+          "description": "",
           "query": "label_values(up{env=\"$env\", cluster=\"$cluster\", blockchain=\"$blockchain\", network_type=\"$network_type\", component=\"$component\"}, service)",
           "datasource": {
             "uid": "Prometheus"
@@ -383,6 +393,7 @@
           "type": "query",
           "name": "service_id",
           "label": "Service ID",
+          "description": "",
           "query": "label_values(health{cluster=\"$cluster\", blockchain=\"$blockchain\", network_type=\"$network_type\", component=\"$component\", service=\"$service\"}, service_id)",
           "datasource": {
             "uid": "Prometheus"

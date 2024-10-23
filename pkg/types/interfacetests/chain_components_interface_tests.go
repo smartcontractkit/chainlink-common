@@ -270,7 +270,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := tests.Context(t)
 				testStruct := CreateTestStruct(0, tester)
 				testStruct.BigField = nil
-				testStruct.Account = nil
+				testStruct.AccountStruct.Account = nil
 
 				bindings := tester.GetBindings(t)
 				bound := BindingsByName(bindings, AnyContractName)[0]
@@ -529,7 +529,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				// setup call data
 				testStruct := CreateTestStruct(0, tester)
 				testStruct.BigField = nil
-				testStruct.Account = nil
+				testStruct.AccountStruct.Account = nil
 				actual := &TestStructWithExtraField{}
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)

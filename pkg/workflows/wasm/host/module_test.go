@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -22,12 +23,21 @@ func (m *mockMessageEmitter) Emit(msg string) error {
 	return m.e(msg, m.labels)
 }
 
-func (m *mockMessageEmitter) WithMapLabels(labels map[string]string) MessageEmitter {
+func (m *mockMessageEmitter) WithMapLabels(labels map[string]string) custmsg.MessageEmitter {
 	m.labels = labels
 	return m
 }
 
-func newMockMessageEmitter(e func(string, map[string]string) error) MessageEmitter {
+func (m *mockMessageEmitter) With(keyValues ...string) custmsg.MessageEmitter {
+	// do nothing
+	return m
+}
+
+func (m *mockMessageEmitter) Labels() map[string]string {
+	return m.labels
+}
+
+func newMockMessageEmitter(e func(string, map[string]string) error) custmsg.MessageEmitter {
 	return &mockMessageEmitter{e: e}
 }
 

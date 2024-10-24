@@ -4,7 +4,7 @@ package ocr3cap
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 

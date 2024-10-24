@@ -22,7 +22,8 @@ func (g *GoStructReader) Read(src string) (map[string]Struct, string, []string, 
 		return nil, "", nil, err
 	}
 
-	return g.gatherStructs(node, fset, src), node.Name.Name, g.gatherImports(node), nil
+	structs := g.gatherStructs(node, fset, src)
+	return structs, node.Name.Name, g.gatherImports(node, structs), nil
 }
 
 func (g *GoStructReader) gatherStructs(node *ast.File, fset *token.FileSet, src string) map[string]Struct {
@@ -111,11 +112,7 @@ func (g *GoStructReader) configName(field *ast.Field) string {
 		return defaultName
 	}
 
-	// TODO gather imports that are required from here instead
-	// TODO tags
-	// This is safe because the generator used to create the structs from jsonschema
-	// will always have json tag if there's tags on the field, per configuration.
-	// The substring removes the quotes around that tag.
+	// Tags have string values, so we need to strip the quotes
 	tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1])
 	jsonTag := tag.Get("json")
 	if jsonTag != "" {
@@ -128,18 +125,34 @@ func (g *GoStructReader) configName(field *ast.Field) string {
 	return defaultName
 }
 
-func (g *GoStructReader) gatherImports(node *ast.File) []string {
-	// TODO this should really look at what's used before the . on fields
-	var imports []string
-	for _, imp := range node.Imports {
-		switch imp.Path.Value {
-		case `"reflect"`, `"fmt"`, `"encoding/json"`, `"regexp"`:
-		default:
-			importStr := imp.Path.Value
-			if imp.Name != nil {
-				importStr = imp.Name.Name + " " + importStr
+func (g *GoStructReader) gatherImports(node *ast.File, structs map[string]Struct) []string {
+	requiredImports := map[string]bool{}
+	for _, strct := range structs {
+		for _, field := range strct.Outputs {
+			parts := strings.Split(field.Type, ".")
+			if len(parts) > 1 {
+				requiredImports[parts[0]] = true
 			}
-			imports = append(imports, importStr)
+		}
+	}
+
+	var allValues []string
+	var imports []string
+	var check []bool
+	for _, imp := range node.Imports {
+		var importName string
+		if imp.Name != nil {
+			importName = imp.Name.Name
+		} else {
+			importParts := strings.Split(imp.Path.Value, "/")
+			importName = importParts[len(importParts)-1]
+		}
+		importName = strings.Trim(importName, "\"")
+
+		allValues = append(allValues, importName)
+		check = append(check, requiredImports[importName])
+		if requiredImports[importName] {
+			imports = append(imports, imp.Path.Value)
 		}
 	}
 

@@ -25,6 +25,7 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 	sdk.Compute1[basictrigger.TriggerOutputs, sdk.FetchResponse](
 		workflow,
 		"transform",
+		nil,
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (sdk.FetchResponse, error) {
 			return rsdk.Fetch(sdk.FetchRequest{

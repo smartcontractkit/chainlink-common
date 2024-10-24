@@ -100,6 +100,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 	sdk.Compute1(
 		workflow,
 		"compute",
+		nil,
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		computeFn,
 	)
@@ -170,6 +171,7 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 	sdk.Compute1(
 		workflow,
 		"compute",
+		nil,
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		computeFn,
 	)

@@ -137,7 +137,7 @@ func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams
 	})
 
 	trigger := notstreams.TriggerConfig{MaxFrequencyMs: 5000}.New(workflow)
-	computed := sdk.Compute1(workflow, "Compute", sdk.Compute1Inputs[notstreams.Feed]{Arg0: trigger}, fn)
+	computed := sdk.Compute1(workflow, "Compute", nil, sdk.Compute1Inputs[notstreams.Feed]{Arg0: trigger}, fn)
 
 	consensus := ocr3.DataFeedsConsensusConfig{
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{

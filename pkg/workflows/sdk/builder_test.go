@@ -364,10 +364,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
 		trigger := listtrigger.TriggerConfig{Name: "1"}.New(workflow)
 		asList := sdk.ToListDefinition[string](trigger.CoolOutput())
-		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
+		sdk.Compute1(workflow, "compute", nil, sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
 			return inputs[0], nil
 		})
-		sdk.Compute1(workflow, "compute again", sdk.Compute1Inputs[string]{Arg0: asList.Index(0)}, func(runtime sdk.Runtime, input string) (string, error) {
+		sdk.Compute1(workflow, "compute again", nil, sdk.Compute1Inputs[string]{Arg0: asList.Index(0)}, func(runtime sdk.Runtime, input string) (string, error) {
 			return input, nil
 		})
 
@@ -421,10 +421,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
 		trigger := basictrigger.TriggerConfig{Name: "1"}.New(workflow)
 		asList := sdk.ToListDefinition(sdk.ListOf(trigger.CoolOutput()))
-		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
+		sdk.Compute1(workflow, "compute", nil, sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
 			return inputs[0], nil
 		})
-		sdk.Compute1(workflow, "compute again", sdk.Compute1Inputs[string]{Arg0: asList.Index(0)}, func(runtime sdk.Runtime, input string) (string, error) {
+		sdk.Compute1(workflow, "compute again", nil, sdk.Compute1Inputs[string]{Arg0: asList.Index(0)}, func(runtime sdk.Runtime, input string) (string, error) {
 			return input, nil
 		})
 
@@ -478,10 +478,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
 		trigger := basictrigger.TriggerConfig{Name: "1"}.New(workflow)
 		list := sdk.ToListDefinition(sdk.ConstantDefinition([]string{"1", "2"}))
-		sdk.Compute2(workflow, "compute", sdk.Compute2Inputs[string, []string]{Arg0: trigger.CoolOutput(), Arg1: list}, func(_ sdk.Runtime, t string, l []string) (string, error) {
+		sdk.Compute2(workflow, "compute", nil, sdk.Compute2Inputs[string, []string]{Arg0: trigger.CoolOutput(), Arg1: list}, func(_ sdk.Runtime, t string, l []string) (string, error) {
 			return "", nil
 		})
-		sdk.Compute2(workflow, "compute again", sdk.Compute2Inputs[string, string]{Arg0: trigger.CoolOutput(), Arg1: list.Index(0)}, func(_ sdk.Runtime, t string, l string) (string, error) {
+		sdk.Compute2(workflow, "compute again", nil, sdk.Compute2Inputs[string, string]{Arg0: trigger.CoolOutput(), Arg1: list.Index(0)}, func(_ sdk.Runtime, t string, l string) (string, error) {
 			return "", nil
 		})
 
@@ -541,13 +541,13 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		workflow1 := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
 		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 0}
 		list := sdk.ListOf(trigger.New(workflow1).CoolOutput())
-		sdk.Compute1(workflow1, "compute", sdk.Compute1Inputs[[]string]{Arg0: list}, func(_ sdk.Runtime, inputs []string) (string, error) {
+		sdk.Compute1(workflow1, "compute", nil, sdk.Compute1Inputs[[]string]{Arg0: list}, func(_ sdk.Runtime, inputs []string) (string, error) {
 			return inputs[0], nil
 		})
 
 		workflow2 := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
 		anyList := sdk.AnyListOf(trigger.New(workflow2).CoolOutput())
-		sdk.Compute1(workflow2, "compute", sdk.Compute1Inputs[[]any]{Arg0: anyList}, func(_ sdk.Runtime, inputs []any) (any, error) {
+		sdk.Compute1(workflow2, "compute", nil, sdk.Compute1Inputs[[]any]{Arg0: anyList}, func(_ sdk.Runtime, inputs []any) (any, error) {
 			return inputs[0], nil
 		})
 

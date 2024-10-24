@@ -355,7 +355,7 @@ func headlines(p *Props) []*grafana.Panel {
 		},
 		AlertOptions: &grafana.AlertOptions{
 			Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
-			Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
+			Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "C" }}%`,
 			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 			For:         "15m",
 			Tags: map[string]string{
@@ -388,7 +388,7 @@ func headlines(p *Props) []*grafana.Panel {
 					ThresholdExpression: &grafana.ThresholdExpression{
 						Expression: "C",
 						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
-							Params: []float64{1},
+							Params: []float64{90},
 							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},

@@ -5825,7 +5825,7 @@
   "Alerts": [
     {
       "annotations": {
-        "description": "Component {{ index $labels \"service_id\" }} uptime in the last 15m is {{ index $values \"A\" }}%",
+        "description": "Component {{ index $labels \"service_id\" }} uptime in the last 15m is {{ index $values \"C\" }}%",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
         "summary": "Uptime less than 90% over last 15 minutes on one component in a Node"
       },
@@ -5882,7 +5882,7 @@
               {
                 "evaluator": {
                   "params": [
-                    1,
+                    90,
                     0
                   ],
                   "type": "lt"

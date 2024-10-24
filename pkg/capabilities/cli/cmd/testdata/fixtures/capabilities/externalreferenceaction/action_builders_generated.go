@@ -4,7 +4,7 @@ package externalreferenceaction
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	referenceaction "github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
@@ -20,7 +20,8 @@ func (cfg SomeConfig) New(w *sdk.WorkflowSpecFactory, ref string, input ActionIn
 	}
 
 	step := sdk.Step[referenceaction.SomeOutputs]{Definition: def}
-	return referenceaction.SomeOutputsCapFromStep(w, step)
+	raw := step.AddTo(w)
+	return referenceaction.SomeOutputsWrapper(raw)
 }
 
 type ActionInput = referenceaction.ActionInput

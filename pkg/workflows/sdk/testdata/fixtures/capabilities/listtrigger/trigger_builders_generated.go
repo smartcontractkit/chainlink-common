@@ -19,7 +19,17 @@ func (cfg TriggerConfig) New(w *sdk.WorkflowSpecFactory) TriggerOutputsCap {
 	}
 
 	step := sdk.Step[TriggerOutputs]{Definition: def}
-	return TriggerOutputsCapFromStep(w, step)
+	raw := step.AddTo(w)
+	return TriggerOutputsWrapper(raw)
+}
+
+// TriggerOutputsWrapper allows access to field from an sdk.CapDefinition[TriggerOutputs]
+func TriggerOutputsWrapper(raw sdk.CapDefinition[TriggerOutputs]) TriggerOutputsCap {
+	wrapped, ok := raw.(TriggerOutputsCap)
+	if ok {
+		return wrapped
+	}
+	return &triggerOutputsCap{CapDefinition: raw}
 }
 
 type TriggerOutputsCap interface {
@@ -28,19 +38,17 @@ type TriggerOutputsCap interface {
 	private()
 }
 
-// TriggerOutputsCapFromStep should only be called from generated code to assure type safety
-func TriggerOutputsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[TriggerOutputs]) TriggerOutputsCap {
-	raw := step.AddTo(w)
-	return &triggerOutputs{CapDefinition: raw}
-}
-
-type triggerOutputs struct {
+type triggerOutputsCap struct {
 	sdk.CapDefinition[TriggerOutputs]
 }
 
-func (*triggerOutputs) private() {}
-func (c *triggerOutputs) CoolOutput() sdk.CapDefinition[[]string] {
+func (*triggerOutputsCap) private() {}
+func (c *triggerOutputsCap) CoolOutput() sdk.CapDefinition[[]string] {
 	return sdk.AccessField[TriggerOutputs, []string](c.CapDefinition, "cool_output")
+}
+
+func ConstantTriggerOutputs(value TriggerOutputs) TriggerOutputsCap {
+	return &triggerOutputsCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewTriggerOutputsFromFields(

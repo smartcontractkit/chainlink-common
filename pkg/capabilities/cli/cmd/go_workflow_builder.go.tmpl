@@ -33,7 +33,8 @@ func (cfg {{.Config.Name}}) New(w *sdk.WorkflowSpecFactory, {{- if not .ID }}id 
     {{- if eq .CapabilityType "target" }}
     step.AddTo(w)
     {{- else if eq 0 .RootNumSlice }}
-    return {{.RootType.Name}}CapFromStep(w, step)
+    raw :=  step.AddTo(w)
+    return {{.RootType.Name}}Wrapper(raw)
     {{- else }}
     return step.AddTo(w)
     {{- end }}
@@ -41,54 +42,60 @@ func (cfg {{.Config.Name}}) New(w *sdk.WorkflowSpecFactory, {{- if not .ID }}id 
 {{- end }}
 
 {{ range $key, $value := .Types }}
+
+// {{$key}}Wrapper allows access to field from an sdk.CapDefinition[{{$key}}]
+func {{$key}}Wrapper(raw sdk.CapDefinition[{{$key}}]) {{$key}}Cap {
+    wrapped, ok := raw.({{$key}}Cap)
+    if ok {
+        return wrapped
+    }
+
+    {{- if .Outputs }}
+    return &{{$key|LowerFirst}}Cap{CapDefinition: raw}
+    {{- else }}
+    return {{$key}}Cap(raw)
+    {{- end }}
+}
+
 {{- if .Outputs }}
 type {{$key}}Cap interface {
     sdk.CapDefinition[{{ $key }}]
     {{- range $fieldName, $type := .Outputs }}
-        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-    {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
-        {{- else }}
+        {{- if or $type.WrapCap }}
     {{$fieldName}}() {{ $type.Type }}Cap
+        {{- else }}
+    {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
         {{- end }}
     {{- end }}
     private()
 }
 
-{{ if ne $.CapabilityType "target" }}
-// {{$key}}CapFromStep should only be called from generated code to assure type safety
-func {{$key}}CapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[{{$key}}]) {{$key}}Cap {
-    raw :=  step.AddTo(w)
-    return &{{$key|LowerFirst}}{CapDefinition: raw}
-}
-{{ end }}
-
-type {{$key|LowerFirst}} struct {
+type {{$key|LowerFirst}}Cap struct {
     sdk.CapDefinition[{{ $key }}]
 }
 
-func (*{{$key|LowerFirst}}) private() {}
+func (*{{$key|LowerFirst}}Cap) private() {}
 
     {{- range $fieldName, $type := .Outputs }}
-        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-func (c *{{$key|LowerFirst}}) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
-    return sdk.AccessField[{{$value.Name}}, {{Repeat "[]" $type.NumSlice}}{{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")
-}
+        {{- if or $type.WrapCap }}
+func (c *{{$key|LowerFirst}}Cap) {{$fieldName}}() {{ $type.Type }}Cap {
+     return {{ $type.Type }}Wrapper(sdk.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}"))
         {{- else }}
-func (c *{{$key|LowerFirst}}) {{$fieldName}}() {{ $type.Type }}Cap {
-           {{- if $type.Type|HasOutputs }}
-     return &{{ $type.Type | LowerFirst }}{ CapDefinition: sdk.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")}
-           {{- else }}
-     return {{ $type.Type }}Cap(sdk.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}"))
-           {{- end }}
-}
+func (c *{{$key|LowerFirst}}Cap) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
+    return sdk.AccessField[{{$value.Name}}, {{Repeat "[]" $type.NumSlice}}{{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")
         {{- end }}
+}
     {{- end }}
 
+func Constant{{$key}}(value {{$key}}) {{$key}}Cap {
+    return &{{$key|LowerFirst}}Cap{CapDefinition: sdk.ConstantDefinition(value)}
+}
+
 func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
-                                                                            {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-                                                                        {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}],
-                                                                            {{- else }}
+                                                                            {{- if or $type.WrapCap }}
                                                                         {{$fieldName|LowerFirst}} {{ $type.Type }}Cap,
+                                                                            {{- else }}
+                                                                        {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}],
                                                                             {{- end }}                                                                        {{- end }}) {{$key}}Cap {
     return &simple{{$key}}{
         CapDefinition: sdk.ComponentCapDefinition[{{$value.Name}}]{ {{- range $fieldName, $type := .Outputs }}
@@ -104,19 +111,19 @@ func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
 type simple{{$key}} struct {
     sdk.CapDefinition[{{ $key }}]
     {{- range $fieldName, $type := .Outputs }}
-        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-    {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
-        {{- else }}
+        {{- if $type.WrapCap }}
     {{$fieldName|LowerFirst}} {{ $type.Type }}Cap
+        {{- else }}
+    {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
         {{- end }}
     {{- end }}
 }
 
  {{- range $fieldName, $type := .Outputs }}
-        {{- if or $type.IsPrimitive (ne $type.NumSlice 0) }}
-func (c *simple{{$key}}) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
-        {{- else }}
+        {{- if or $type.WrapCap }}
 func (c *simple{{$key}}) {{$fieldName}}() {{ $type.Type }}Cap {
+        {{- else }}
+func (c *simple{{$key}}) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
         {{- end }}
     return c.{{$fieldName|LowerFirst}}
 }

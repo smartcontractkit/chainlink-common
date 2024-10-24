@@ -17,7 +17,17 @@ func (cfg MapActionConfig) New(w *sdk.WorkflowSpecFactory, ref string, input Map
 	}
 
 	step := sdk.Step[MapActionOutputs]{Definition: def}
-	return MapActionOutputsCapFromStep(w, step)
+	raw := step.AddTo(w)
+	return MapActionOutputsWrapper(raw)
+}
+
+// MapActionOutputsWrapper allows access to field from an sdk.CapDefinition[MapActionOutputs]
+func MapActionOutputsWrapper(raw sdk.CapDefinition[MapActionOutputs]) MapActionOutputsCap {
+	wrapped, ok := raw.(MapActionOutputsCap)
+	if ok {
+		return wrapped
+	}
+	return &mapActionOutputsCap{CapDefinition: raw}
 }
 
 type MapActionOutputsCap interface {
@@ -26,19 +36,17 @@ type MapActionOutputsCap interface {
 	private()
 }
 
-// MapActionOutputsCapFromStep should only be called from generated code to assure type safety
-func MapActionOutputsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[MapActionOutputs]) MapActionOutputsCap {
-	raw := step.AddTo(w)
-	return &mapActionOutputs{CapDefinition: raw}
-}
-
-type mapActionOutputs struct {
+type mapActionOutputsCap struct {
 	sdk.CapDefinition[MapActionOutputs]
 }
 
-func (*mapActionOutputs) private() {}
-func (c *mapActionOutputs) Payload() MapActionOutputsPayloadCap {
-	return MapActionOutputsPayloadCap(sdk.AccessField[MapActionOutputs, MapActionOutputsPayload](c.CapDefinition, "payload"))
+func (*mapActionOutputsCap) private() {}
+func (c *mapActionOutputsCap) Payload() MapActionOutputsPayloadCap {
+	return MapActionOutputsPayloadWrapper(sdk.AccessField[MapActionOutputs, MapActionOutputsPayload](c.CapDefinition, "payload"))
+}
+
+func ConstantMapActionOutputs(value MapActionOutputs) MapActionOutputsCap {
+	return &mapActionOutputsCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewMapActionOutputsFromFields(
@@ -61,6 +69,15 @@ func (c *simpleMapActionOutputs) Payload() MapActionOutputsPayloadCap {
 }
 
 func (c *simpleMapActionOutputs) private() {}
+
+// MapActionOutputsPayloadWrapper allows access to field from an sdk.CapDefinition[MapActionOutputsPayload]
+func MapActionOutputsPayloadWrapper(raw sdk.CapDefinition[MapActionOutputsPayload]) MapActionOutputsPayloadCap {
+	wrapped, ok := raw.(MapActionOutputsPayloadCap)
+	if ok {
+		return wrapped
+	}
+	return MapActionOutputsPayloadCap(raw)
+}
 
 type MapActionOutputsPayloadCap sdk.CapDefinition[MapActionOutputsPayload]
 

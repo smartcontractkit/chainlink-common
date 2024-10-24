@@ -20,7 +20,17 @@ func (cfg SomeConfig) New(w *sdk.WorkflowSpecFactory, ref string, input ActionIn
 	}
 
 	step := sdk.Step[SomeOutputs]{Definition: def}
-	return SomeOutputsCapFromStep(w, step)
+	raw := step.AddTo(w)
+	return SomeOutputsWrapper(raw)
+}
+
+// SomeOutputsWrapper allows access to field from an sdk.CapDefinition[SomeOutputs]
+func SomeOutputsWrapper(raw sdk.CapDefinition[SomeOutputs]) SomeOutputsCap {
+	wrapped, ok := raw.(SomeOutputsCap)
+	if ok {
+		return wrapped
+	}
+	return &someOutputsCap{CapDefinition: raw}
 }
 
 type SomeOutputsCap interface {
@@ -29,19 +39,17 @@ type SomeOutputsCap interface {
 	private()
 }
 
-// SomeOutputsCapFromStep should only be called from generated code to assure type safety
-func SomeOutputsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[SomeOutputs]) SomeOutputsCap {
-	raw := step.AddTo(w)
-	return &someOutputs{CapDefinition: raw}
-}
-
-type someOutputs struct {
+type someOutputsCap struct {
 	sdk.CapDefinition[SomeOutputs]
 }
 
-func (*someOutputs) private() {}
-func (c *someOutputs) AdaptedThing() sdk.CapDefinition[string] {
+func (*someOutputsCap) private() {}
+func (c *someOutputsCap) AdaptedThing() sdk.CapDefinition[string] {
 	return sdk.AccessField[SomeOutputs, string](c.CapDefinition, "adapted_thing")
+}
+
+func ConstantSomeOutputs(value SomeOutputs) SomeOutputsCap {
+	return &someOutputsCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewSomeOutputsFromFields(

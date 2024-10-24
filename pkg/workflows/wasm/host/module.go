@@ -19,6 +19,7 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v23"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
@@ -62,8 +63,8 @@ func (r *store) get(id string) (*RequestData, error) {
 
 var (
 	defaultTickInterval = 100 * time.Millisecond
-	defaultTimeout      = 300 * time.Millisecond
-	defaultMaxMemoryMBs = 64
+	defaultTimeout      = 2 * time.Second
+	defaultMaxMemoryMBs = 256
 	DefaultInitialFuel  = uint64(100_000_000)
 )
 
@@ -71,15 +72,6 @@ type DeterminismConfig struct {
 	// Seed is the seed used to generate cryptographically insecure random numbers in the module.
 	Seed int64
 }
-
-type MessageEmitter interface {
-	// Emit sends a message to the labeler's destination.
-	Emit(string) error
-
-	// WithMapLabels sets the labels for the message to be emitted.  Labels are cumulative.
-	WithMapLabels(map[string]string) MessageEmitter
-}
-
 type ModuleConfig struct {
 	TickInterval   time.Duration
 	Timeout        *time.Duration
@@ -90,7 +82,7 @@ type ModuleConfig struct {
 	Fetch          func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
 
 	// Labeler is used to emit messages from the module.
-	Labeler MessageEmitter
+	Labeler custmsg.MessageEmitter
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
@@ -481,7 +473,7 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig, store *store) func(call
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
-	e MessageEmitter,
+	e custmsg.MessageEmitter,
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,
@@ -544,8 +536,16 @@ func (u *unimplementedMessageEmitter) Emit(string) error {
 	return errors.New("unimplemented")
 }
 
-func (u *unimplementedMessageEmitter) WithMapLabels(map[string]string) MessageEmitter {
+func (u *unimplementedMessageEmitter) WithMapLabels(map[string]string) custmsg.MessageEmitter {
 	return u
+}
+
+func (u *unimplementedMessageEmitter) With(kvs ...string) custmsg.MessageEmitter {
+	return u
+}
+
+func (u *unimplementedMessageEmitter) Labels() map[string]string {
+	return nil
 }
 
 func toEmissible(b []byte) (string, map[string]string, error) {

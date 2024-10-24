@@ -533,6 +533,47 @@ func Test_Compute_Fetch(t *testing.T) {
 
 		assert.Equal(t, expected, actual)
 	})
+
+	t.Run("OK_context_cancelation", func(t *testing.T) {
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				select {
+				case <-ctx.Done():
+					return nil, assert.AnError
+				default:
+					return &wasmpb.FetchResponse{}, nil
+				}
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+					RuntimeConfig: &wasmpb.RuntimeConfig{
+						MaxFetchResponseSizeBytes: 2 * 1024,
+					},
+				},
+			},
+		}
+
+		ctx, cancel := context.WithCancel(tests.Context(t))
+		cancel()
+		_, err = m.Run(ctx, req)
+		require.NotNil(t, err)
+		assert.ErrorContains(t, err, "error executing runner: error executing custom compute: failed to execute fetch")
+	})
 }
 
 func TestModule_Errors(t *testing.T) {

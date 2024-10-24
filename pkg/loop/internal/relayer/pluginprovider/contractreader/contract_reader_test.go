@@ -297,6 +297,7 @@ func makeEncoder() cbor.EncMode {
 
 type fakeContractReaderInterfaceTester struct {
 	interfaceTesterBase
+	TestSelectionSupport
 	impl types.ContractReader
 	cw   fakeChainWriter
 }

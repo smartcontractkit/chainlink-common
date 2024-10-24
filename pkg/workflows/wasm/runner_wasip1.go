@@ -90,6 +90,7 @@ func createFetchFn(
 		}
 
 		b, err := proto.Marshal(&wasmpb.FetchRequest{
+			Id:        *sdkConfig.RequestID,
 			Url:       req.URL,
 			Method:    req.Method,
 			Headers:   values.ProtoMap(headerspb),

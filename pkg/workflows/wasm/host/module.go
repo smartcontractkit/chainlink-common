@@ -268,7 +268,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"fetch",
-		fetchFn(logger, modCfg, requestStore),
+		createFetchFn(logger, wasmRead, wasmWrite, wasmWriteUInt32, modCfg, requestStore),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping fetch func: %w", err)
@@ -418,10 +418,16 @@ func containsCode(err error, code int) bool {
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
 }
 
-func fetchFn(logger logger.Logger, modCfg *ModuleConfig, store *store) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+func createFetchFn(
+	logger logger.Logger,
+	reader unsafeReaderFunc,
+	writer unsafeWriterFunc,
+	sizeWriter unsafeFixedLengthWriterFunc,
+	modCfg *ModuleConfig, store *store,
+) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
 	logFetchErr := func(err error) { logger.Errorf("error calling fetch: %s", err.Error()) }
 	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-		b, innerErr := wasmRead(caller, reqptr, reqptrlen)
+		b, innerErr := reader(caller, reqptr, reqptrlen)
 		if innerErr != nil {
 			logFetchErr(innerErr)
 			return ErrnoFault
@@ -457,11 +463,11 @@ func fetchFn(logger logger.Logger, modCfg *ModuleConfig, store *store) func(call
 			return ErrnoFault
 		}
 
-		if size := wasmWrite(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
+		if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
 			return ErrnoFault
 		}
 
-		if size := wasmWriteUInt32(caller, resplenptr, uint32(len(respBytes))); size == -1 {
+		if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
 			return ErrnoFault
 		}
 

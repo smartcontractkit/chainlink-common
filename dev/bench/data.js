@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729719692729,
+  "lastUpdate": 1729799520817,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4788,6 +4788,48 @@ window.BENCHMARK_DATA = {
             "value": 28183,
             "unit": "ns/op",
             "extra": "42445 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eaedfe1e99c74bd75ab1683be6a72b90aae7fb25",
+          "message": "updating beholder for new domain model (#889)",
+          "timestamp": "2024-10-24T15:50:54-04:00",
+          "tree_id": "692e9ddd38dc9b24b87e43ea71157a10dd113efb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eaedfe1e99c74bd75ab1683be6a72b90aae7fb25"
+        },
+        "date": 1729799519584,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 447.2,
+            "unit": "ns/op",
+            "extra": "2686844 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 536.6,
+            "unit": "ns/op",
+            "extra": "2316738 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28287,
+            "unit": "ns/op",
+            "extra": "42417 times\n4 procs"
           }
         ]
       }

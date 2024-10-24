@@ -27,8 +27,8 @@ import (
 )
 
 type RequestData struct {
-	response *wasmpb.Response
-	ctx      context.Context
+	response    *wasmpb.Response
+	callWithCtx func(func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error)
 }
 
 type store struct {
@@ -341,7 +341,9 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	}
 
 	// we add the request context to the store to make it available to the Fetch fn
-	err := m.requestStore.add(request.Id, &RequestData{ctx: ctx})
+	err := m.requestStore.add(request.Id, &RequestData{callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+		return fn(ctx)
+	}})
 	if err != nil {
 		return nil, fmt.Errorf("error adding ctx to the store: %w", err)
 	}
@@ -455,12 +457,13 @@ func createFetchFn(
 			return ErrnoFault
 		}
 
-		if storedRequest.ctx == nil {
-			logFetchErr(errors.New("context is nil"))
-			return ErrnoFault
-		}
+		fetchResp, innerErr := storedRequest.callWithCtx(func(ctx context.Context) (*wasmpb.FetchResponse, error) {
+			if ctx == nil {
+				return nil, errors.New("context is nil")
+			}
 
-		fetchResp, innerErr := modCfg.Fetch(storedRequest.ctx, req)
+			return modCfg.Fetch(ctx, req)
+		})
 		if innerErr != nil {
 			logFetchErr(innerErr)
 			return ErrnoFault

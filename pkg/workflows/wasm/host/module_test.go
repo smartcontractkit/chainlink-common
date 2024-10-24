@@ -192,7 +192,8 @@ func Test_createEmitFn(t *testing.T) {
 	})
 }
 
-func Test_CreateFetchFn(t *testing.T) {
+func TestCreateFetchFn(t *testing.T) {
+	const testID = "test-id"
 	t.Run("OK-success", func(t *testing.T) {
 		store := &store{
 			m:  make(map[string]*RequestData),
@@ -200,15 +201,17 @@ func Test_CreateFetchFn(t *testing.T) {
 		}
 
 		// we add the request data to the store so that the fetch function can find it
-		store.m["test-id"] = &RequestData{
-			ctx: context.Background(),
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
 		}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: "test-id",
+					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
@@ -302,7 +305,7 @@ func Test_CreateFetchFn(t *testing.T) {
 			logger.Test(t),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: "test-id",
+					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
@@ -333,15 +336,17 @@ func Test_CreateFetchFn(t *testing.T) {
 		}
 
 		// we add the request data to the store so that the fetch function can find it
-		store.m["test-id"] = &RequestData{
-			ctx: nil,
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(nil)
+			},
 		}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: "test-id",
+					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
@@ -372,15 +377,17 @@ func Test_CreateFetchFn(t *testing.T) {
 		}
 
 		// we add the request data to the store so that the fetch function can find it
-		store.m["test-id"] = &RequestData{
-			ctx: context.Background(),
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
 		}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: "test-id",
+					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
@@ -411,15 +418,17 @@ func Test_CreateFetchFn(t *testing.T) {
 		}
 
 		// we add the request data to the store so that the fetch function can find it
-		store.m["test-id"] = &RequestData{
-			ctx: context.Background(),
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
 		}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: "test-id",
+					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
@@ -450,15 +459,17 @@ func Test_CreateFetchFn(t *testing.T) {
 		}
 
 		// we add the request data to the store so that the fetch function can find it
-		store.m["test-id"] = &RequestData{
-			ctx: context.Background(),
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
 		}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: "test-id",
+					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil

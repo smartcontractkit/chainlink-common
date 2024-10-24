@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
@@ -45,6 +46,7 @@ type Metadata struct {
 	CapabilityVersion         string
 	CapabilityName            string
 	NetworkChainID            string
+	Timestamp                 time.Time
 }
 
 func (m Metadata) Attributes() Attributes {
@@ -67,6 +69,7 @@ func (m Metadata) Attributes() Attributes {
 		"capability_version":          m.CapabilityVersion,
 		"capability_name":             m.CapabilityName,
 		"network_chain_id":            m.NetworkChainID,
+		"timestamp":                   m.Timestamp,
 	}
 }
 
@@ -166,6 +169,8 @@ func OtelAttr(key string, value any) otellog.KeyValue {
 		return otellog.Bool(key, v)
 	case []byte:
 		return otellog.Bytes(key, v)
+	case time.Time:
+		return otellog.Int64(key, v.Unix())
 	case nil:
 		return otellog.Empty(key)
 	case otellog.Value:
@@ -221,6 +226,8 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 			m.CapabilityName = v.(string)
 		case "network_chain_id":
 			m.NetworkChainID = v.(string)
+		case "timestamp":
+			m.Timestamp = v.(time.Time)
 		}
 	}
 	return m

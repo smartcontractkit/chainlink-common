@@ -61,6 +61,13 @@ func (r *store) get(id string) (*RequestData, error) {
 	return r.m[id], nil
 }
 
+func (r *store) delete(id string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	delete(r.m, id)
+}
+
 var (
 	defaultTickInterval = 100 * time.Millisecond
 	defaultTimeout      = 2 * time.Second
@@ -338,6 +345,8 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	if err != nil {
 		return nil, fmt.Errorf("error adding ctx to the store: %w", err)
 	}
+	// we delete the request data from the store when we're done
+	defer m.requestStore.delete(request.Id)
 
 	store := wasmtime.NewStore(m.engine)
 	defer store.Close()

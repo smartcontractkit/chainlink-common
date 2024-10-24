@@ -8,7 +8,22 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
+
+type MessageEmitter interface {
+	// Emit sends a message to the labeler's destination.
+	Emit(string) error
+
+	// WithMapLabels sets the labels for the message to be emitted.  Labels are cumulative.
+	WithMapLabels(map[string]string) MessageEmitter
+
+	// With adds multiple key-value pairs to the emission.
+	With(keyValues ...string) MessageEmitter
+
+	// Labels returns a view of the current labels.
+	Labels() map[string]string
+}
 
 type Labeler struct {
 	labels map[string]string
@@ -20,7 +35,7 @@ func NewLabeler() Labeler {
 
 // WithMapLabels adds multiple key-value pairs to the CustomMessageLabeler for transmission
 // With SendLogAsCustomMessage
-func (l Labeler) WithMapLabels(labels map[string]string) Labeler {
+func (l Labeler) WithMapLabels(labels map[string]string) MessageEmitter {
 	newCustomMessageLabeler := NewLabeler()
 
 	// Copy existing labels from the current agent
@@ -37,7 +52,7 @@ func (l Labeler) WithMapLabels(labels map[string]string) Labeler {
 }
 
 // With adds multiple key-value pairs to the CustomMessageLabeler for transmission With SendLogAsCustomMessage
-func (l Labeler) With(keyValues ...string) Labeler {
+func (l Labeler) With(keyValues ...string) MessageEmitter {
 	newCustomMessageLabeler := NewLabeler()
 
 	if len(keyValues)%2 != 0 {
@@ -79,22 +94,21 @@ func (l Labeler) SendLogAsCustomMessage(msg string) error {
 }
 
 func sendLogAsCustomMessageW(msg string, labels map[string]string) error {
-	// TODO un-comment after INFOPLAT-1386
 	// cast to map[string]any
-	//newLabels := map[string]any{}
-	//for k, v := range labels {
-	//	newLabels[k] = v
-	//}
+	newLabels := map[string]any{}
+	for k, v := range labels {
+		newLabels[k] = v
+	}
 
-	//m, err := values.NewMap(newLabels)
-	//if err != nil {
-	//	return fmt.Errorf("could not wrap labels to map: %w", err)
-	//}
+	m, err := values.NewMap(newLabels)
+	if err != nil {
+		return fmt.Errorf("could not wrap labels to map: %w", err)
+	}
 
 	// Define a custom protobuf payload to emit
 	payload := &pb.BaseMessage{
 		Msg:    msg,
-		Labels: labels,
+		Labels: values.ProtoMap(m),
 	}
 	payloadBytes, err := proto.Marshal(payload)
 	if err != nil {
@@ -103,7 +117,8 @@ func sendLogAsCustomMessageW(msg string, labels map[string]string) error {
 
 	err = beholder.GetEmitter().Emit(context.Background(), payloadBytes,
 		"beholder_data_schema", "/beholder-base-message/versions/1", // required
-		"beholder_data_type", "custom_message",
+		"beholder_domain", "chainlink", // required
+		"beholder_entity", "BaseMessage", // required
 	)
 	if err != nil {
 		return fmt.Errorf("sending custom message failed on emit: %w", err)

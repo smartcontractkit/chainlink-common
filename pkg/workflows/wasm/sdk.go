@@ -60,7 +60,7 @@ func (r *Runtime) Emitter() sdk.MessageEmitter {
 }
 
 type wasmGuestEmitter struct {
-	base   custmsg.Labeler
+	base   custmsg.MessageEmitter
 	emitFn func(string, map[string]string) error
 	labels map[string]string
 }

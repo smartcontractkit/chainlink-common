@@ -2,15 +2,17 @@ package ocr3cap
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/aggregators"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
 // Note this isn't generated because generics isn't supported in json schema
 
 type ReduceConsensusConfig[T any] struct {
-	Encoder       Encoder
-	EncoderConfig EncoderConfig
-	ReportID      ReportId
+	Encoder           Encoder
+	EncoderConfig     EncoderConfig
+	ReportID          ReportId
+	AggregationConfig aggregators.ReduceAggConfig
 }
 
 func (c ReduceConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string, input ReduceConsensusInput[T]) SignedReportCap {

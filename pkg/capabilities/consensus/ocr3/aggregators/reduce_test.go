@@ -1,7 +1,6 @@
 package aggregators_test
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -569,7 +568,6 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				require.NoError(t, err)
 
 				_, err = agg.Aggregate(logger.Nop(), tt.previousOutcome, tt.observationsFactory(), 1)
-				fmt.Println(err)
 				require.Error(t, err)
 			})
 		}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/aggregators"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -26,6 +27,13 @@ func TestReduceConsensus(t *testing.T) {
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
 		ReportID:      "0001",
+		AggregationConfig: aggregators.ReduceAggConfig{
+			Fields: []aggregators.AggregationField{
+				{
+					Method: "median",
+				},
+			},
+		},
 	}.New(workflow, "consensus", ocr3.ReduceConsensusInput[basictrigger.TriggerOutputs]{
 		Observation:   trigger,
 		Encoder:       "evm",

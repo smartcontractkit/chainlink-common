@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -53,6 +54,7 @@ func TestClient(t *testing.T) {
 			"beholder_domain":      "TestDomain",        // Required field
 			"beholder_entity":      "TestEntity",        // Required field
 			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
+			"timestamp":            time.Now().UTC(),
 		}
 	}
 	defaultMessageBody := []byte("body bytes")

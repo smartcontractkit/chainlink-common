@@ -30,14 +30,36 @@ func TestReduceConsensus(t *testing.T) {
 		AggregationConfig: aggregators.ReduceAggConfig{
 			Fields: []aggregators.AggregationField{
 				{
-					Method: "median",
+					InputKey:  "FeedID",
+					OutputKey: "FeedID",
+					Method:    "mode",
+				},
+				{
+					InputKey:        "Timestamp",
+					OutputKey:       "Timestamp",
+					Method:          "median",
+					DeviationString: "3600", // 1 hour in seconds
+					DeviationType:   "absolute",
+				},
+				{
+					InputKey:        "Price",
+					OutputKey:       "Price",
+					Method:          "median",
+					DeviationString: "0.05", // 5%
+					DeviationType:   "percent",
+					SubMapField:     true,
 				},
 			},
+			OutputFieldName: "Reports",
+			ReportFormat:    "array",
+			SubMapKey:       "Report",
 		},
 	}.New(workflow, "consensus", ocr3.ReduceConsensusInput[basictrigger.TriggerOutputs]{
-		Observation:   trigger,
-		Encoder:       "evm",
-		EncoderConfig: ocr3.EncoderConfig(map[string]any{"foo": "bar"}),
+		Observation: trigger,
+		Encoder:     "evm",
+		EncoderConfig: ocr3.EncoderConfig(map[string]any{
+			"abi": "(bytes32 FeedID, bytes Report, uint32 Timestamp)[] Reports",
+		}),
 	})
 
 	chainwriter.TargetConfig{
@@ -70,9 +92,11 @@ func TestReduceConsensus(t *testing.T) {
 				ID:  "offchain_reporting@1.0.0",
 				Ref: "consensus",
 				Inputs: sdk.StepInputs{Mapping: map[string]any{
-					"observations":  []any{"$(trigger.outputs)"},
-					"encoder":       "evm",
-					"encoderConfig": map[string]any{"foo": "bar"},
+					"observations": []any{"$(trigger.outputs)"},
+					"encoder":      "evm",
+					"encoderConfig": map[string]any{
+						"abi": "(bytes32 FeedID, bytes Report, uint32 Timestamp)[] Reports",
+					},
 				}},
 				Config: map[string]any{
 					"encoder":            "EVM",
@@ -80,16 +104,31 @@ func TestReduceConsensus(t *testing.T) {
 					"report_id":          "0001",
 					"aggregation_method": "reduce",
 					"aggregation_config": map[string]any{
+						"outputFieldName": "Reports",
+						"reportFormat":    "array",
+						"subMapKey":       "Report",
 						"Fields": []map[string]any{
 							{
-								"inputKey":  "",
-								"outputKey": "",
-								"method":    "median",
+								"inputKey":  "FeedID",
+								"outputKey": "FeedID",
+								"method":    "mode",
+							},
+							{
+								"inputKey":      "Timestamp",
+								"outputKey":     "Timestamp",
+								"method":        "median",
+								"deviation":     "3600",
+								"deviationType": "absolute",
+							},
+							{
+								"inputKey":      "Price",
+								"outputKey":     "Price",
+								"method":        "median",
+								"deviation":     "0.05",
+								"deviationType": "percent",
+								"subMapField":   true,
 							},
 						},
-						"outputFieldName": "",
-						"reportFormat":    "",
-						"subMapKey":       "",
 					},
 				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,

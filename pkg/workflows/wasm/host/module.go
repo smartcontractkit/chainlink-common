@@ -436,24 +436,24 @@ func createFetchFn(
 	sizeWriter unsafeFixedLengthWriterFunc,
 	modCfg *ModuleConfig, store *store,
 ) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-	logFetchErr := func(err error) { logger.Errorf("error calling fetch: %s", err.Error()) }
+	const errFetchSfx = "error calling fetch"
 	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
 		b, innerErr := reader(caller, reqptr, reqptrlen)
 		if innerErr != nil {
-			logFetchErr(innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
 		req := &wasmpb.FetchRequest{}
 		innerErr = proto.Unmarshal(b, req)
 		if innerErr != nil {
-			logFetchErr(innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
 		storedRequest, innerErr := store.get(req.Id)
 		if innerErr != nil {
-			logFetchErr(innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
@@ -465,13 +465,13 @@ func createFetchFn(
 			return modCfg.Fetch(ctx, req)
 		})
 		if innerErr != nil {
-			logFetchErr(innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
 		respBytes, innerErr := proto.Marshal(fetchResp)
 		if innerErr != nil {
-			logFetchErr(innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 

@@ -71,30 +71,22 @@ func generateSchemaTypes(schemaPath string, localPrefix string, content string, 
 		return err
 	}
 
-	return generateFromGoSrc(path.Dir(schemaPath), localPrefix, content, typeInfo, helpers, allFiles, fullPkg, func(string) bool {
+	generatedInfo, err := generatedInfoFromSrc(content, fullPkg, getCapID(typeInfo), typeInfo, func(string) bool {
 		return true
 	})
-}
-
-func generateFromGoSrc(
-	dir,
-	localPrefix,
-	content string,
-	typeInfo TypeInfo,
-	helpers []WorkflowHelperGenerator,
-	allFiles map[string]string,
-	fullPkg string,
-	includeType func(name string) bool) error {
-	structs, err := generatedInfoFromSrc(content, fullPkg, getCapID(typeInfo), typeInfo, includeType)
 	if err != nil {
 		return err
 	}
 
-	if err = generateHelpers(helpers, structs, allFiles); err != nil {
+	return generateFromGoSrc(generatedInfo, path.Dir(schemaPath), localPrefix, helpers, allFiles)
+}
+
+func generateFromGoSrc(generatedInfo GeneratedInfo, dir, localPrefix string, helpers []WorkflowHelperGenerator, allFiles map[string]string) error {
+	if err := generateHelpers(helpers, generatedInfo, allFiles); err != nil {
 		return err
 	}
 
-	if err = codegen.WriteFiles(dir, localPrefix, toolName, allFiles); err != nil {
+	if err := codegen.WriteFiles(dir, localPrefix, toolName, allFiles); err != nil {
 		return err
 	}
 

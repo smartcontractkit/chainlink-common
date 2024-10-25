@@ -8,7 +8,7 @@ encoded.
 
 	typeCodec, _ := binary.NewBigInt(32, true, binary.BigEndian())
 
-This allows us to encode and decode big.Int values using the big endian encoding using the encodings.TypeCodec interface.
+This allows us to encode and decode big.Int values with big endian encoding using the `encodings.TypeCodec` interface.
 
 	encodedBytes := []byte{}
 

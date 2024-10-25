@@ -3,7 +3,8 @@ Codec is an interface that provides encoding and decoding functionality for a sp
 Because there are many types that a ContractReader or ContractWriter can either accept or return, all encoding
 instructions provided by the codec are based on the type name.
 
-Take for instance a big.Int encoder where we want the output to be big endian binary encoded.
+Starting from the lowest level, take for instance a big.Int encoder where we want the output to be big endian binary
+encoded.
 
 	typeCodec, _ := binary.NewBigInt(32, true, binary.BigEndian())
 
@@ -22,8 +23,8 @@ creating a struct codec such as the one defined in encodings/struct.go.
 
 	tlCodec, _ := NewStructCodec([]NamedTypeCodec{{Name: "Value", Codec: typeCodec}})
 
-This provides a `TopLevelCodec` which a `TypedCodec` with a total size of all encoded elements. Going up another level,
-we create a `Codec` from a map of `TypedCodec` instances using `CodecFromTypeCodec`.
+This provides a `TopLevelCodec` which a `TypeCodec` with a total size of all encoded elements. Going up another level,
+we create a `Codec` from a map of `TypeCodec` instances using `CodecFromTypeCodec`.
 
 	codec := types.CodecFromTypeCodec{"SomeStruct": tlCodec}
 
@@ -36,13 +37,13 @@ we create a `Codec` from a map of `TypedCodec` instances using `CodecFromTypeCod
 	var someStruct SomeStruct
 	_ = codec.Decode(encodedStructBytes, &someStruct, "SomeStruct")
 
-Therefore `itemType` passed to `Encode` and `Decode` references the key in the map of `TypedCodec` instances. Also worth
+Therefore `itemType` passed to `Encode` and `Decode` references the key in the map of `TypeCodec` instances. Also worth
 noting that a `TopLevelCodec` can also be added to a `CodecFromTypeCodec` map. This allows for the `SizeAtTopLevel`
 method to be referenced when `GetMaxEncodingSize` is called on the `Codec`.
 
 Also, when the type is unknown to the caller, the decoded type for an `itemName` can be retrieved from the codec to be
 used for decoding. The `CreateType` method returns an instance of the expected type using reflection under the hood and
-the overall composition of `TypedCodec` instances.
+the overall composition of `TypeCodec` instances.
 
 	decodedStruct, _ := codec.CreateType("SomeStruct", false)
 	_ = codec.Decode(encodedStructBytes, &decodedStruct, "SomeStruct")
@@ -50,6 +51,11 @@ the overall composition of `TypedCodec` instances.
 The `encodings` package provides a `Builder` interface that allows for the creation of any encoding type. This is useful
 for creating custom encodings such as the EVM ABI encoding. An encoder implements the `Builder` interface and plugs
 directly into `TypeCodec`.
+
+From the perspective of a `ContractReader` instance, the `itemType` at the top level is the `readIdentifier` which
+can be imagined as `contractName + methodName` given that a contract method call returns some configured value that
+would need its own codec. Each implementation of `ContractReader` maps the names to codecs differently on the inside,
+but from the level of the interface, the `itemType` is the `readIdentifier`.
 */
 package types
 

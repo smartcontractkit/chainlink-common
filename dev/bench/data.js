@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729799520817,
+  "lastUpdate": 1729851256849,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4830,6 +4830,48 @@ window.BENCHMARK_DATA = {
             "value": 28287,
             "unit": "ns/op",
             "extra": "42417 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c968705809fc4f77fc08906954cc13305ff4bd73",
+          "message": "fix(observability-lib):health uptime value correct within node alert (#887)",
+          "timestamp": "2024-10-25T12:13:08+02:00",
+          "tree_id": "3e16f455d63d118e59935ba82f4ae97d7e150f7e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c968705809fc4f77fc08906954cc13305ff4bd73"
+        },
+        "date": 1729851255657,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.5,
+            "unit": "ns/op",
+            "extra": "2691213 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 509.4,
+            "unit": "ns/op",
+            "extra": "2363804 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28310,
+            "unit": "ns/op",
+            "extra": "39860 times\n4 procs"
           }
         ]
       }

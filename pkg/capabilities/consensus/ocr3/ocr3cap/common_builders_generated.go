@@ -10,6 +10,8 @@ type EncoderCap sdk.CapDefinition[Encoder]
 
 type EncoderConfigCap sdk.CapDefinition[EncoderConfig]
 
+type KeyIdCap sdk.CapDefinition[KeyId]
+
 type ReportIdCap sdk.CapDefinition[ReportId]
 
 type SignedReportCap interface {

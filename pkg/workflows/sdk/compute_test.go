@@ -86,6 +86,7 @@ func TestCompute(t *testing.T) {
 						"encoder":            ocr3.EncoderEVM,
 						"encoder_config":     ocr3.EncoderConfig{},
 						"report_id":          "0001",
+						"key_id":             "evm",
 					},
 					CapabilityType: capabilities.CapabilityTypeConsensus,
 				},
@@ -153,6 +154,7 @@ func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams
 		Encoder:           ocr3.EncoderEVM,
 		EncoderConfig:     ocr3.EncoderConfig{},
 		ReportId:          "0001",
+		KeyId:             "evm",
 	}.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
 		Observations: computed.Value(),
 	})

@@ -86,6 +86,7 @@ func TestOCR3Capability(t *testing.T) {
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "ffff",
+			"key_id":             "evm",
 		},
 	)
 	require.NoError(t, err)
@@ -147,6 +148,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 		},
 	)
 	require.NoError(t, err)
@@ -214,6 +216,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 			"request_timeout_ms": 10000,
 		},
 	)
@@ -279,6 +282,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 		"encoder":            "",
 		"encoder_config":     map[string]any{},
 		"report_id":          "000f",
+		"key_id":             "evm",
 	})
 	require.NoError(t, err)
 
@@ -325,6 +329,7 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 			"encoder":            "",
 			"encoder_config":     map[string]any{},
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 		})
 		require.NoError(t, err)
 
@@ -337,6 +342,7 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 		config, err := values.NewMap(map[string]any{
 			"aggregation_method": "data_feeds",
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 		})
 		require.NoError(t, err)
 
@@ -353,12 +359,29 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 			"encoder":            "",
 			"encoder_config":     map[string]any{},
 			"report_id":          "aa",
+			"key_id":             "evm",
 		})
 		require.NoError(t, err)
 
 		c, err := o.ValidateConfig(config)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "does not match pattern") // taken from the error json schema error message
+		require.Nil(t, c)
+	})
+
+	t.Run("InvalidConfig no key_id", func(t *testing.T) {
+		config, err := values.NewMap(map[string]any{
+			"aggregation_method": "data_feeds",
+			"aggregation_config": map[string]any{},
+			"encoder":            "",
+			"encoder_config":     map[string]any{},
+			"report_id":          "aaaa",
+		})
+		require.NoError(t, err)
+
+		c, err := o.ValidateConfig(config)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "missing properties: 'key_id'") // taken from the error json schema error message
 		require.Nil(t, c)
 	})
 }
@@ -382,6 +405,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "ffff",
+			"key_id":             "evm",
 		},
 	)
 	require.NoError(t, err)
@@ -441,6 +465,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "ffff",
+			"key_id":             "evm",
 		},
 	)
 	require.NoError(t, err)

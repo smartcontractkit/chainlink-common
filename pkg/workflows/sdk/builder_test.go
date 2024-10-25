@@ -62,6 +62,7 @@ type ModifiedConfig struct {
 	DefaultDeviation        string        `yaml:"default_deviation" json:"default_deviation"`
 	FeedInfo                []FeedInfo    `yaml:"feed_info" json:"feed_info"`
 	ReportID                ocr3.ReportId `yaml:"report_id" json:"report_id"`
+	KeyID                   ocr3.KeyId    `yaml:"key_id" json:"key_id"`
 	Encoder                 ocr3.Encoder
 	EncoderConfig           ocr3.EncoderConfig `yaml:"encoder_config" json:"encoder_config"`
 	ChainWriter             *chainwriter.TargetConfig
@@ -87,6 +88,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*sdk.WorkflowSpecFactory, error) {
 		Encoder:           conf.Encoder,
 		EncoderConfig:     conf.EncoderConfig,
 		ReportId:          conf.ReportID,
+		KeyId:             conf.KeyID,
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
 			AllowedPartialStaleness: conf.AllowedPartialStaleness,
 		},
@@ -167,6 +169,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*sdk.WorkflowSpecFactory, 
 		Encoder:           conf.Ocr.Encoder,
 		EncoderConfig:     conf.Ocr.EncoderConfig,
 		ReportId:          conf.Ocr.ReportID,
+		KeyId:             conf.Ocr.KeyID,
 	}
 
 	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
@@ -263,6 +266,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 							"Abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 						},
 						"report_id": "0001",
+						"key_id":    "evm",
 					},
 					CapabilityType: capabilities.CapabilityTypeConsensus,
 				},
@@ -676,6 +680,7 @@ type ModifiedConsensusConfig struct {
 	Encoder                 ocr3.Encoder                                   `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
 	EncoderConfig           ocr3.EncoderConfig                             `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
 	ReportID                ocr3.ReportId                                  `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+	KeyID                   ocr3.KeyId                                     `json:"key_id" yaml:"key_id" mapstructure:"key_id"`
 }
 
 func UnmarshalYaml[T any](raw []byte) (*T, error) {

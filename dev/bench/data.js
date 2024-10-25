@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729866455206,
+  "lastUpdate": 1729876205607,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4998,6 +4998,48 @@ window.BENCHMARK_DATA = {
             "value": 28358,
             "unit": "ns/op",
             "extra": "42345 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eed6b5f1be5d1d7b947ea57de81858e3bd6e8e62",
+          "message": "Reapply \"removing values.Map from BaseMessage proto as Beholder only supports root level protos (#876)\" (#881) (#886)\n\nThis reverts commit c5c856ee23d16d2ad55bd0d47e0b9e845cf37e78.",
+          "timestamp": "2024-10-25T13:09:01-04:00",
+          "tree_id": "d0ae0ed9ecebda8f686941a590efcfeb21a4865d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eed6b5f1be5d1d7b947ea57de81858e3bd6e8e62"
+        },
+        "date": 1729876204293,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 454.6,
+            "unit": "ns/op",
+            "extra": "2638561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 516.6,
+            "unit": "ns/op",
+            "extra": "2314929 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28743,
+            "unit": "ns/op",
+            "extra": "39628 times\n4 procs"
           }
         ]
       }

@@ -47,25 +47,25 @@ type ReduceAggConfig struct {
 }
 
 type AggregationField struct {
-	// The key to find a data point within the input data
-	// If omitted, the entire input will be used
-	InputKey string `mapstructure:"inputKey" json:"inputKey"`
-	// The key that the aggregated data is put under
-	// If omitted, the InputKey will be used
-	OutputKey string `mapstructure:"outputKey" json:"outputKey"`
-	// How the data set should be aggregated to a single value
-	// * median - take the centermost value of the sorted data set of observations. can only be used on numeric types.
-	// * mode - take the most frequent value. if tied, use the "first".
-	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode" required:"true"`
 	// An optional check to only report when the difference from the previous report exceeds a certain threshold.
 	// Can only be used when the field is of a numeric type: string, decimal, int64, big.Int, time.Time, float64
 	// If no deviation is provided on any field, there will always be a report once minimum observations are reached.
+	Deviation       decimal.Decimal `mapstructure:"-"  json:"-"`
 	DeviationString string          `mapstructure:"deviation"  json:"deviation,omitempty"`
-	Deviation       decimal.Decimal `mapstructure:"-"  json:",omitempty"`
 	// The format of the deviation being provided
 	// * percent - a percentage deviation
 	// * absolute - an unsigned numeric difference
 	DeviationType string `mapstructure:"deviationType" json:"deviationType,omitempty" jsonschema:"enum=percent,enum=absolute,enum=none"`
+	// The key to find a data point within the input data
+	// If omitted, the entire input will be used
+	InputKey string `mapstructure:"inputKey" json:"inputKey"`
+	// How the data set should be aggregated to a single value
+	// * median - take the centermost value of the sorted data set of observations. can only be used on numeric types.
+	// * mode - take the most frequent value. if tied, use the "first".
+	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode" required:"true"`
+	// The key that the aggregated data is put under
+	// If omitted, the InputKey will be used
+	OutputKey string `mapstructure:"outputKey" json:"outputKey"`
 	// If enabled, this field will be moved from the top level map
 	// into a nested map on the key defined by "SubMapKey"
 	SubMapField bool `mapstructure:"subMapField"  json:"subMapField,omitempty"`

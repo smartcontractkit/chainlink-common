@@ -21,9 +21,10 @@ func (c ReduceConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string, in
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
+			"aggregation_method": "reduce",
+			"aggregation_config": c.AggregationConfig,
 			"encoder":            c.Encoder,
 			"encoder_config":     c.EncoderConfig,
-			"aggregation_method": "reduce",
 			"report_id":          c.ReportID,
 		},
 		CapabilityType: capabilities.CapabilityTypeConsensus,

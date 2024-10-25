@@ -77,8 +77,20 @@ func TestReduceConsensus(t *testing.T) {
 				Config: map[string]any{
 					"encoder":            "EVM",
 					"encoder_config":     map[string]any{},
-					"aggregation_method": "reduce",
 					"report_id":          "0001",
+					"aggregation_method": "reduce",
+					"aggregation_config": map[string]any{
+						"Fields": []map[string]any{
+							{
+								"inputKey":  "",
+								"outputKey": "",
+								"method":    "median",
+							},
+						},
+						"outputFieldName": "",
+						"reportFormat":    "",
+						"subMapKey":       "",
+					},
 				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},

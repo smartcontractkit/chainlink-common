@@ -80,13 +80,14 @@ type DeterminismConfig struct {
 	Seed int64
 }
 type ModuleConfig struct {
-	TickInterval   time.Duration
-	Timeout        *time.Duration
-	MaxMemoryMBs   int64
-	InitialFuel    uint64
-	Logger         logger.Logger
-	IsUncompressed bool
-	Fetch          func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+	TickInterval     time.Duration
+	Timeout          *time.Duration
+	MaxMemoryMBs     int64
+	InitialFuel      uint64
+	Logger           logger.Logger
+	IsUncompressed   bool
+	Fetch            func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+	MaxFetchRequests int64
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -137,6 +138,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		modCfg.Fetch = func(context.Context, *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 			return nil, fmt.Errorf("fetch not implemented")
 		}
+	}
+
+	if modCfg.MaxFetchRequests == 0 {
+		modCfg.MaxFetchRequests = 5
 	}
 
 	if modCfg.Labeler == nil {
@@ -417,7 +422,7 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 			return nil, innerErr
 		}
 
-		return nil, fmt.Errorf("error executing runner: %s: %w", storedRequest.response.ErrMsg, innerErr)
+		return nil, fmt.Errorf("error executing runner: %s: %w", storedRequest.response.ErrMsg, err)
 	case containsCode(err, wasm.CodeHostErr):
 		return nil, fmt.Errorf("invariant violation: host errored during sendResponse")
 	default:
@@ -434,10 +439,20 @@ func createFetchFn(
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,
-	modCfg *ModuleConfig, store *store,
+	modCfg *ModuleConfig,
+	store *store,
 ) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-	const errFetchSfx = "error calling fetch"
+	fetchCounter := int64(0)
 	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+		const errFetchSfx = "error calling fetch"
+
+		// limit the number of fetch calls we can make per request
+		if fetchCounter >= modCfg.MaxFetchRequests {
+			logger.Errorf("%s: max number of fetch request %d exceeded", errFetchSfx, modCfg.MaxFetchRequests)
+			return ErrnoFault
+		}
+		defer func() { fetchCounter++ }()
+
 		b, innerErr := reader(caller, reqptr, reqptrlen)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)

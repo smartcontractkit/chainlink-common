@@ -1,3 +1,56 @@
+/*
+Codec is an interface that provides encoding and decoding functionality for a specific type identified by a name.
+Because there are many types that a ContractReader or ContractWriter can either accept or return, all encoding
+instructions provided by the codec are based on the type name.
+
+Take for instance a big.Int encoder where we want the output to be big endian binary encoded.
+
+	typeCodec, _ := binary.NewBigInt(32, true, binary.BigEndian())
+
+This allows us to encode and decode big.Int values using the big endian encoding using the encodings.TypeCodec interface.
+
+	encodedBytes := []byte{}
+
+	originalValue := big.NewInt(42)
+	encodedBytes, _ = typeCodec.Encode(originalValue, encodedBytes) // new encoded bytes are appended to existing
+
+	value := new(big.Int)
+	_ = typeCodec.Decode(encodedBytes, value)
+
+The additional encodings.TypeCodec methods such as `GetType() reflect.Type` allow composition. This is useful for
+creating a struct codec such as the one defined in encodings/struct.go.
+
+	tlCodec, _ := NewStructCodec([]NamedTypeCodec{{Name: "Value", Codec: typeCodec}})
+
+This provides a `TopLevelCodec` which a `TypedCodec` with a total size of all encoded elements. Going up another level,
+we create a `Codec` from a map of `TypedCodec` instances using `CodecFromTypeCodec`.
+
+	codec := types.CodecFromTypeCodec{"SomeStruct": tlCodec}
+
+	type SomeStruct struct {
+		Value *big.Int
+	}
+
+	encodedStructBytes, _ := codec.Encode(SomeStruct{Value: big.NewInt(42)}, "SomeStruct")
+
+	var someStruct SomeStruct
+	_ = codec.Decode(encodedStructBytes, &someStruct, "SomeStruct")
+
+Therefore `itemType` passed to `Encode` and `Decode` references the key in the map of `TypedCodec` instances. Also worth
+noting that a `TopLevelCodec` can also be added to a `CodecFromTypeCodec` map. This allows for the `SizeAtTopLevel`
+method to be referenced when `GetMaxEncodingSize` is called on the `Codec`.
+
+Also, when the type is unknown to the caller, the decoded type for an `itemName` can be retrieved from the codec to be
+used for decoding. The `CreateType` method returns an instance of the expected type using reflection under the hood and
+the overall composition of `TypedCodec` instances.
+
+	decodedStruct, _ := codec.CreateType("SomeStruct", false)
+	_ = codec.Decode(encodedStructBytes, &decodedStruct, "SomeStruct")
+
+The `encodings` package provides a `Builder` interface that allows for the creation of any encoding type. This is useful
+for creating custom encodings such as the EVM ABI encoding. An encoder implements the `Builder` interface and plugs
+directly into `TypeCodec`.
+*/
 package types
 
 import (

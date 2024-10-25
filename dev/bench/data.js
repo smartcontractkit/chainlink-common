@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729851256849,
+  "lastUpdate": 1729862510155,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4872,6 +4872,48 @@ window.BENCHMARK_DATA = {
             "value": 28310,
             "unit": "ns/op",
             "extra": "39860 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cfad021395954c9dd55ffe5d8e8ac2eb41661b25",
+          "message": "[CAPPL-121] context propagation (#883)\n\nfeat: context propagation",
+          "timestamp": "2024-10-25T15:20:45+02:00",
+          "tree_id": "0d98ae14a3c8e3f14f9aee432a2dec6d81513027",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cfad021395954c9dd55ffe5d8e8ac2eb41661b25"
+        },
+        "date": 1729862509642,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.8,
+            "unit": "ns/op",
+            "extra": "2690922 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 535.1,
+            "unit": "ns/op",
+            "extra": "2325992 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28382,
+            "unit": "ns/op",
+            "extra": "42391 times\n4 procs"
           }
         ]
       }

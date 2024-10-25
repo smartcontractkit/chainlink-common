@@ -263,6 +263,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 							"Abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 						},
 						"report_id": "0001",
+						"key_id":    "evm",
 					},
 					CapabilityType: capabilities.CapabilityTypeConsensus,
 				},

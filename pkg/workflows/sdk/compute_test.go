@@ -86,6 +86,7 @@ func TestCompute(t *testing.T) {
 						"encoder":            ocr3.EncoderEVM,
 						"encoder_config":     ocr3.EncoderConfig{},
 						"report_id":          "0001",
+						"key_id":             "evm",
 					},
 					CapabilityType: capabilities.CapabilityTypeConsensus,
 				},

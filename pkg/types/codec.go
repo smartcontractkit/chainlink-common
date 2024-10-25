@@ -23,8 +23,8 @@ creating a struct codec such as the one defined in encodings/struct.go.
 
 	tlCodec, _ := NewStructCodec([]NamedTypeCodec{{Name: "Value", Codec: typeCodec}})
 
-This provides a `TopLevelCodec` which a `TypeCodec` with a total size of all encoded elements. Going up another level,
-we create a `Codec` from a map of `TypeCodec` instances using `CodecFromTypeCodec`.
+This provides a `TopLevelCodec` which is a `TypeCodec` with a total size of all encoded elements. Going up another
+level, we create a `Codec` from a map of `TypeCodec` instances using `CodecFromTypeCodec`.
 
 	codec := types.CodecFromTypeCodec{"SomeStruct": tlCodec}
 

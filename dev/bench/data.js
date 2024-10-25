@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729865127233,
+  "lastUpdate": 1729866455206,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -4956,6 +4956,48 @@ window.BENCHMARK_DATA = {
             "value": 28291,
             "unit": "ns/op",
             "extra": "42240 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "99d0b847a001140721c757c1caae4a9c52c281a0",
+          "message": "Allow user structs to be generated as capability definitions. (#873)",
+          "timestamp": "2024-10-25T10:26:36-04:00",
+          "tree_id": "29afcfa71bf4f32112785d644e087f0516fa5a93",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/99d0b847a001140721c757c1caae4a9c52c281a0"
+        },
+        "date": 1729866454670,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.8,
+            "unit": "ns/op",
+            "extra": "2674561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517,
+            "unit": "ns/op",
+            "extra": "2343962 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28358,
+            "unit": "ns/op",
+            "extra": "42345 times\n4 procs"
           }
         ]
       }

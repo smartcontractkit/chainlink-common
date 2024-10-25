@@ -58,7 +58,34 @@ func generateFromSchema(schemaPath, localPrefix string, cfgInfo ConfigInfo, help
 
 	allFiles[file] = content
 	typeInfo := cfgInfo.SchemaToTypeInfo[schemaPath]
-	structs, err := generatedInfoFromSrc(content, getCapID(typeInfo), typeInfo)
+	err = generateSchemaTypes(schemaPath, localPrefix, content, typeInfo, helpers, allFiles)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func generateSchemaTypes(schemaPath string, localPrefix string, content string, typeInfo TypeInfo, helpers []WorkflowHelperGenerator, allFiles map[string]string) error {
+	fullPkg, err := packageFromSchemaID(typeInfo.SchemaID)
+	if err != nil {
+		return err
+	}
+
+	return generateFromGoSrc(path.Dir(schemaPath), localPrefix, content, typeInfo, helpers, allFiles, fullPkg, func(string) bool {
+		return true
+	})
+}
+
+func generateFromGoSrc(
+	dir,
+	localPrefix,
+	content string,
+	typeInfo TypeInfo,
+	helpers []WorkflowHelperGenerator,
+	allFiles map[string]string,
+	fullPkg string,
+	includeType func(name string) bool) error {
+	structs, err := generatedInfoFromSrc(content, fullPkg, getCapID(typeInfo), typeInfo, includeType)
 	if err != nil {
 		return err
 	}
@@ -67,11 +94,11 @@ func generateFromSchema(schemaPath, localPrefix string, cfgInfo ConfigInfo, help
 		return err
 	}
 
-	if err = codegen.WriteFiles(path.Dir(schemaPath), localPrefix, toolName, allFiles); err != nil {
+	if err = codegen.WriteFiles(dir, localPrefix, toolName, allFiles); err != nil {
 		return err
 	}
 
-	fmt.Println("Generated types for", schemaPath)
+	fmt.Println("Generated types for", dir)
 	return nil
 }
 
@@ -102,7 +129,7 @@ func schemaFilesFromDir(dir string) ([]string, error) {
 		schemaPaths = append(schemaPaths, path)
 		return nil
 	}); err != nil {
-		return nil, fmt.Errorf("error walking the directory %v: %v", dir, err)
+		return nil, fmt.Errorf("error walking the directory %v: %w", dir, err)
 	}
 	return schemaPaths, nil
 }

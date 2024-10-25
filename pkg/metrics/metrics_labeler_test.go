@@ -1,4 +1,4 @@
-package monitoring
+package metrics
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 
 // tests CustomMessageAgent does not share state across new instances created by `With`
 func Test_CustomMessageAgent(t *testing.T) {
-	cma := NewMetricsLabeler()
+	cma := NewLabeler()
 	cma1 := cma.With("key1", "value1")
 	cma2 := cma1.With("key2", "value2")
 

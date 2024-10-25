@@ -2,6 +2,7 @@ package host
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -18,43 +19,24 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v23"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-// safeMem returns a copy of the wasm module memory at the given pointer and size.
-func safeMem(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
-	mem := caller.GetExport("memory").Memory()
-	data := mem.UnsafeData(caller)
-	if ptr+size > int32(len(data)) {
-		return nil, errors.New("out of bounds memory access")
-	}
-
-	cd := make([]byte, size)
-	copy(cd, data[ptr:ptr+size])
-	return cd, nil
+type RequestData struct {
+	response    *wasmpb.Response
+	callWithCtx func(func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error)
 }
 
-// copyBuffer copies the given src byte slice into the wasm module memory at the given pointer and size.
-func copyBuffer(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
-	mem := caller.GetExport("memory").Memory()
-	rawData := mem.UnsafeData(caller)
-	if int32(len(rawData)) < ptr+size {
-		return -1
-	}
-	buffer := rawData[ptr : ptr+size]
-	dataLen := int64(len(src))
-	copy(buffer, src)
-	return dataLen
-}
-
-type respStore struct {
-	m  map[string]*wasmpb.Response
+type store struct {
+	m  map[string]*RequestData
 	mu sync.RWMutex
 }
 
-func (r *respStore) add(id string, resp *wasmpb.Response) error {
+func (r *store) add(id string, req *RequestData) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -63,26 +45,33 @@ func (r *respStore) add(id string, resp *wasmpb.Response) error {
 		return fmt.Errorf("error storing response: response already exists for id: %s", id)
 	}
 
-	r.m[id] = resp
+	r.m[id] = req
 	return nil
 }
 
-func (r *respStore) get(id string) (*wasmpb.Response, error) {
+func (r *store) get(id string) (*RequestData, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	_, found := r.m[id]
 	if !found {
-		return nil, fmt.Errorf("could not find response for id %s", id)
+		return nil, fmt.Errorf("could not find request data for id %s", id)
 	}
 
 	return r.m[id], nil
 }
 
+func (r *store) delete(id string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	delete(r.m, id)
+}
+
 var (
 	defaultTickInterval = 100 * time.Millisecond
-	defaultTimeout      = 300 * time.Millisecond
-	defaultMaxMemoryMBs = 64
+	defaultTimeout      = 2 * time.Second
+	defaultMaxMemoryMBs = 256
 	DefaultInitialFuel  = uint64(100_000_000)
 )
 
@@ -90,7 +79,6 @@ type DeterminismConfig struct {
 	// Seed is the seed used to generate cryptographically insecure random numbers in the module.
 	Seed int64
 }
-
 type ModuleConfig struct {
 	TickInterval   time.Duration
 	Timeout        *time.Duration
@@ -98,7 +86,10 @@ type ModuleConfig struct {
 	InitialFuel    uint64
 	Logger         logger.Logger
 	IsUncompressed bool
-	Fetch          func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+	Fetch          func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+
+	// Labeler is used to emit messages from the module.
+	Labeler custmsg.MessageEmitter
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
@@ -110,7 +101,7 @@ type Module struct {
 	module *wasmtime.Module
 	linker *wasmtime.Linker
 
-	r *respStore
+	requestStore *store
 
 	cfg *ModuleConfig
 
@@ -143,9 +134,13 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.Fetch == nil {
-		modCfg.Fetch = func(*wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+		modCfg.Fetch = func(context.Context, *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 			return nil, fmt.Errorf("fetch not implemented")
 		}
+	}
+
+	if modCfg.Labeler == nil {
+		modCfg.Labeler = &unimplementedMessageEmitter{}
 	}
 
 	logger := modCfg.Logger
@@ -192,15 +187,15 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, fmt.Errorf("error creating wasi linker: %w", err)
 	}
 
-	r := &respStore{
-		m: map[string]*wasmpb.Response{},
+	requestStore := &store{
+		m: map[string]*RequestData{},
 	}
 
 	err = linker.FuncWrap(
 		"env",
 		"sendResponse",
 		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
-			b, innerErr := safeMem(caller, ptr, ptrlen)
+			b, innerErr := wasmRead(caller, ptr, ptrlen)
 			if innerErr != nil {
 				logger.Errorf("error calling sendResponse: %s", err)
 				return ErrnoFault
@@ -209,15 +204,16 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 			var resp wasmpb.Response
 			innerErr = proto.Unmarshal(b, &resp)
 			if innerErr != nil {
-				logger.Errorf("error calling sendResponse: %s", err)
+				logger.Errorf("error calling sendResponse: %s", innerErr)
 				return ErrnoFault
 			}
 
-			innerErr = r.add(resp.Id, &resp)
+			storedReq, innerErr := requestStore.get(resp.Id)
 			if innerErr != nil {
-				logger.Errorf("error calling sendResponse: %s", err)
+				logger.Errorf("error calling sendResponse: %s", innerErr)
 				return ErrnoFault
 			}
+			storedReq.response = &resp
 
 			return ErrnoSuccess
 		},
@@ -230,7 +226,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		"env",
 		"log",
 		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
-			b, innerErr := safeMem(caller, ptr, ptrlen)
+			b, innerErr := wasmRead(caller, ptr, ptrlen)
 			if innerErr != nil {
 				logger.Errorf("error calling log: %s", err)
 				return
@@ -279,10 +275,19 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"fetch",
-		fetchFn(logger, modCfg),
+		createFetchFn(logger, wasmRead, wasmWrite, wasmWriteUInt32, modCfg, requestStore),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping fetch func: %w", err)
+	}
+
+	err = linker.FuncWrap(
+		"env",
+		"emit",
+		createEmitFn(logger, modCfg.Labeler, wasmRead, wasmWrite, wasmWriteUInt32),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error wrapping emit func: %w", err)
 	}
 
 	m := &Module{
@@ -290,7 +295,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		module: mod,
 		linker: linker,
 
-		r: r,
+		requestStore: requestStore,
 
 		cfg: modCfg,
 
@@ -326,7 +331,25 @@ func (m *Module) Close() {
 	m.module.Close()
 }
 
-func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
+func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
+	if request == nil {
+		return nil, fmt.Errorf("invalid request: can't be nil")
+	}
+
+	if request.Id == "" {
+		return nil, fmt.Errorf("invalid request: can't be empty")
+	}
+
+	// we add the request context to the store to make it available to the Fetch fn
+	err := m.requestStore.add(request.Id, &RequestData{callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+		return fn(ctx)
+	}})
+	if err != nil {
+		return nil, fmt.Errorf("error adding ctx to the store: %w", err)
+	}
+	// we delete the request data from the store when we're done
+	defer m.requestStore.delete(request.Id)
+
 	store := wasmtime.NewStore(m.engine)
 	defer store.Close()
 
@@ -374,22 +397,27 @@ func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
 	_, err = start.Call(store)
 	switch {
 	case containsCode(err, wasm.CodeSuccess):
-		resp, innerErr := m.r.get(request.Id)
+		storedRequest, innerErr := m.requestStore.get(request.Id)
 		if innerErr != nil {
 			return nil, innerErr
 		}
-		return resp, nil
+
+		if storedRequest.response == nil {
+			return nil, fmt.Errorf("could not find response for id %s", request.Id)
+		}
+
+		return storedRequest.response, nil
 	case containsCode(err, wasm.CodeInvalidResponse):
 		return nil, fmt.Errorf("invariant violation: error marshaling response")
 	case containsCode(err, wasm.CodeInvalidRequest):
 		return nil, fmt.Errorf("invariant violation: invalid request to runner")
 	case containsCode(err, wasm.CodeRunnerErr):
-		resp, innerErr := m.r.get(request.Id)
+		storedRequest, innerErr := m.requestStore.get(request.Id)
 		if innerErr != nil {
 			return nil, innerErr
 		}
 
-		return nil, fmt.Errorf("error executing runner: %s: %w", resp.ErrMsg, innerErr)
+		return nil, fmt.Errorf("error executing runner: %s: %w", storedRequest.response.ErrMsg, innerErr)
 	case containsCode(err, wasm.CodeHostErr):
 		return nil, fmt.Errorf("invariant violation: host errored during sendResponse")
 	default:
@@ -401,47 +429,243 @@ func containsCode(err error, code int) bool {
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
 }
 
-func fetchFn(logger logger.Logger, modCfg *ModuleConfig) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-	const fetchErrSfx = "error calling fetch"
+func createFetchFn(
+	logger logger.Logger,
+	reader unsafeReaderFunc,
+	writer unsafeWriterFunc,
+	sizeWriter unsafeFixedLengthWriterFunc,
+	modCfg *ModuleConfig, store *store,
+) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+	const errFetchSfx = "error calling fetch"
 	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-		b, innerErr := safeMem(caller, reqptr, reqptrlen)
+		b, innerErr := reader(caller, reqptr, reqptrlen)
 		if innerErr != nil {
-			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
 		req := &wasmpb.FetchRequest{}
 		innerErr = proto.Unmarshal(b, req)
 		if innerErr != nil {
-			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
-		fetchResp, innerErr := modCfg.Fetch(req)
+		storedRequest, innerErr := store.get(req.Id)
 		if innerErr != nil {
-			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
+			return ErrnoFault
+		}
+
+		fetchResp, innerErr := storedRequest.callWithCtx(func(ctx context.Context) (*wasmpb.FetchResponse, error) {
+			if ctx == nil {
+				return nil, errors.New("context is nil")
+			}
+
+			return modCfg.Fetch(ctx, req)
+		})
+		if innerErr != nil {
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
 		respBytes, innerErr := proto.Marshal(fetchResp)
 		if innerErr != nil {
-			logger.Errorf("%s: %s", fetchErrSfx, innerErr)
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
 
-		size := copyBuffer(caller, respBytes, respptr, int32(len(respBytes)))
-		if size == -1 {
+		if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
 			return ErrnoFault
 		}
 
-		uint32Size := int32(4)
-		resplenBytes := make([]byte, uint32Size)
-		binary.LittleEndian.PutUint32(resplenBytes, uint32(len(respBytes)))
-		size = copyBuffer(caller, resplenBytes, resplenptr, uint32Size)
-		if size == -1 {
+		if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
 			return ErrnoFault
 		}
 
 		return ErrnoSuccess
 	}
+}
+
+// createEmitFn injects dependencies and builds the emit function exposed by the WASM.  Errors in
+// Emit, if any, are returned in the Error Message of the response.
+func createEmitFn(
+	l logger.Logger,
+	e custmsg.MessageEmitter,
+	reader unsafeReaderFunc,
+	writer unsafeWriterFunc,
+	sizeWriter unsafeFixedLengthWriterFunc,
+) func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
+	logErr := func(err error) {
+		l.Errorf("error emitting message: %s", err)
+	}
+
+	return func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
+		// writeErr marshals and writes an error response to wasm
+		writeErr := func(err error) int32 {
+			logErr(err)
+
+			resp := &wasmpb.EmitMessageResponse{
+				Error: &wasmpb.Error{
+					Message: err.Error(),
+				},
+			}
+
+			respBytes, perr := proto.Marshal(resp)
+			if perr != nil {
+				logErr(perr)
+				return ErrnoFault
+			}
+
+			if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
+				logErr(errors.New("failed to write response"))
+				return ErrnoFault
+			}
+
+			if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
+				logErr(errors.New("failed to write response length"))
+				return ErrnoFault
+			}
+
+			return ErrnoSuccess
+		}
+
+		b, err := reader(caller, msgptr, msglen)
+		if err != nil {
+			return writeErr(err)
+		}
+
+		msg, labels, err := toEmissible(b)
+		if err != nil {
+			return writeErr(err)
+		}
+
+		if err := e.WithMapLabels(labels).Emit(msg); err != nil {
+			return writeErr(err)
+		}
+
+		return ErrnoSuccess
+	}
+}
+
+type unimplementedMessageEmitter struct{}
+
+func (u *unimplementedMessageEmitter) Emit(string) error {
+	return errors.New("unimplemented")
+}
+
+func (u *unimplementedMessageEmitter) WithMapLabels(map[string]string) custmsg.MessageEmitter {
+	return u
+}
+
+func (u *unimplementedMessageEmitter) With(kvs ...string) custmsg.MessageEmitter {
+	return u
+}
+
+func (u *unimplementedMessageEmitter) Labels() map[string]string {
+	return nil
+}
+
+func toEmissible(b []byte) (string, map[string]string, error) {
+	msg := &wasmpb.EmitMessageRequest{}
+	if err := proto.Unmarshal(b, msg); err != nil {
+		return "", nil, err
+	}
+
+	validated, err := toValidatedLabels(msg)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return msg.Message, validated, nil
+}
+
+func toValidatedLabels(msg *wasmpb.EmitMessageRequest) (map[string]string, error) {
+	vl, err := values.FromMapValueProto(msg.Labels)
+	if err != nil {
+		return nil, err
+	}
+
+	// Handle the case of no labels before unwrapping.
+	if vl == nil {
+		vl = values.EmptyMap()
+	}
+
+	var labels map[string]string
+	if err := vl.UnwrapTo(&labels); err != nil {
+		return nil, err
+	}
+
+	return labels, nil
+}
+
+// unsafeWriterFunc defines behavior for writing directly to wasm memory.  A source slice of bytes
+// is written to the location defined by the ptr.
+type unsafeWriterFunc func(c *wasmtime.Caller, src []byte, ptr, len int32) int64
+
+// unsafeFixedLengthWriterFunc defines behavior for writing a uint32 value to wasm memory at the location defined
+// by the ptr.
+type unsafeFixedLengthWriterFunc func(c *wasmtime.Caller, ptr int32, val uint32) int64
+
+// unsafeReaderFunc abstractly defines the behavior of reading from WASM memory.  Returns a copy of
+// the memory at the given pointer and size.
+type unsafeReaderFunc func(c *wasmtime.Caller, ptr, len int32) ([]byte, error)
+
+// wasmMemoryAccessor is the default implementation for unsafely accessing the memory of the WASM module.
+func wasmMemoryAccessor(caller *wasmtime.Caller) []byte {
+	return caller.GetExport("memory").Memory().UnsafeData(caller)
+}
+
+// wasmRead returns a copy of the wasm module memory at the given pointer and size.
+func wasmRead(caller *wasmtime.Caller, ptr int32, size int32) ([]byte, error) {
+	return read(wasmMemoryAccessor(caller), ptr, size)
+}
+
+// Read acts on a byte slice that should represent an unsafely accessed slice of memory.  It returns
+// a copy of the memory at the given pointer and size.
+func read(memory []byte, ptr int32, size int32) ([]byte, error) {
+	if size < 0 || ptr < 0 {
+		return nil, fmt.Errorf("invalid memory access: ptr: %d, size: %d", ptr, size)
+	}
+
+	if ptr+size > int32(len(memory)) {
+		return nil, errors.New("out of bounds memory access")
+	}
+
+	cd := make([]byte, size)
+	copy(cd, memory[ptr:ptr+size])
+	return cd, nil
+}
+
+// wasmWrite copies the given src byte slice into the wasm module memory at the given pointer and size.
+func wasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
+	return write(wasmMemoryAccessor(caller), src, ptr, size)
+}
+
+// wasmWriteUInt32 binary encodes and writes a uint32 to the wasm module memory at the given pointer.
+func wasmWriteUInt32(caller *wasmtime.Caller, ptr int32, val uint32) int64 {
+	return writeUInt32(wasmMemoryAccessor(caller), ptr, val)
+}
+
+// writeUInt32 binary encodes and writes a uint32 to the memory at the given pointer.
+func writeUInt32(memory []byte, ptr int32, val uint32) int64 {
+	uint32Size := int32(4)
+	buffer := make([]byte, uint32Size)
+	binary.LittleEndian.PutUint32(buffer, val)
+	return write(memory, buffer, ptr, uint32Size)
+}
+
+// write copies the given src byte slice into the memory at the given pointer and size.
+func write(memory, src []byte, ptr, size int32) int64 {
+	if size < 0 || ptr < 0 {
+		return -1
+	}
+
+	if int32(len(memory)) < ptr+size {
+		return -1
+	}
+	buffer := memory[ptr : ptr+size]
+	dataLen := int64(len(src))
+	copy(buffer, src)
+	return dataLen
 }

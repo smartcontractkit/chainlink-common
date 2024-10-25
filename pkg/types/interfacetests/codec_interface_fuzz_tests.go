@@ -37,10 +37,12 @@ func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester) {
 				DifferentField: differentField,
 				OracleID:       commontypes.OracleID(oracleId),
 				OracleIDs:      oids,
-				Account:        tester.GetAccountBytes(accountSeed),
-				AccountStr:     tester.GetAccountString(accountSeed),
-				Accounts:       [][]byte{tester.GetAccountBytes(accountsSeed + 1), tester.GetAccountBytes(accountsSeed + 2)},
-				BigField:       big.NewInt(bigField),
+				AccountStruct: AccountStruct{
+					Account:    tester.GetAccountBytes(accountSeed),
+					AccountStr: tester.GetAccountString(accountSeed),
+				},
+				Accounts: [][]byte{tester.GetAccountBytes(accountsSeed + 1), tester.GetAccountBytes(accountsSeed + 2)},
+				BigField: big.NewInt(bigField),
 				NestedDynamicStruct: MidLevelDynamicTestStruct{
 					FixedBytes: fb,
 					Inner: InnerDynamicTestStruct{

@@ -43,7 +43,8 @@ method to be referenced when `GetMaxEncodingSize` is called on the `Codec`.
 
 Also, when the type is unknown to the caller, the decoded type for an `itemName` can be retrieved from the codec to be
 used for decoding. The `CreateType` method returns an instance of the expected type using reflection under the hood and
-the overall composition of `TypeCodec` instances.
+the overall composition of `TypeCodec` instances. This allows proper types to be conveyed to the caller through the
+GRPC interface where data may be JSON encoded, passed through GRPC, and JSON decoded on the other side.
 
 	decodedStruct, _ := codec.CreateType("SomeStruct", false)
 	_ = codec.Decode(encodedStructBytes, &decodedStruct, "SomeStruct")

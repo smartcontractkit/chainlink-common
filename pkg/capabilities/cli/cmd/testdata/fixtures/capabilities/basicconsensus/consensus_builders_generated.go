@@ -20,7 +20,17 @@ func (cfg ConsensusConfig) New(w *sdk.WorkflowSpecFactory, ref string, input Con
 	}
 
 	step := sdk.Step[ConsensusOutputs]{Definition: def}
-	return ConsensusOutputsCapFromStep(w, step)
+	raw := step.AddTo(w)
+	return ConsensusOutputsWrapper(raw)
+}
+
+// ConsensusOutputsWrapper allows access to field from an sdk.CapDefinition[ConsensusOutputs]
+func ConsensusOutputsWrapper(raw sdk.CapDefinition[ConsensusOutputs]) ConsensusOutputsCap {
+	wrapped, ok := raw.(ConsensusOutputsCap)
+	if ok {
+		return wrapped
+	}
+	return &consensusOutputsCap{CapDefinition: raw}
 }
 
 type ConsensusOutputsCap interface {
@@ -30,22 +40,20 @@ type ConsensusOutputsCap interface {
 	private()
 }
 
-// ConsensusOutputsCapFromStep should only be called from generated code to assure type safety
-func ConsensusOutputsCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[ConsensusOutputs]) ConsensusOutputsCap {
-	raw := step.AddTo(w)
-	return &consensusOutputs{CapDefinition: raw}
-}
-
-type consensusOutputs struct {
+type consensusOutputsCap struct {
 	sdk.CapDefinition[ConsensusOutputs]
 }
 
-func (*consensusOutputs) private() {}
-func (c *consensusOutputs) Consensus() sdk.CapDefinition[[]string] {
+func (*consensusOutputsCap) private() {}
+func (c *consensusOutputsCap) Consensus() sdk.CapDefinition[[]string] {
 	return sdk.AccessField[ConsensusOutputs, []string](c.CapDefinition, "consensus")
 }
-func (c *consensusOutputs) Sigs() sdk.CapDefinition[[]string] {
+func (c *consensusOutputsCap) Sigs() sdk.CapDefinition[[]string] {
 	return sdk.AccessField[ConsensusOutputs, []string](c.CapDefinition, "sigs")
+}
+
+func ConstantConsensusOutputs(value ConsensusOutputs) ConsensusOutputsCap {
+	return &consensusOutputsCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewConsensusOutputsFromFields(

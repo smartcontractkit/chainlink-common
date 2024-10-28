@@ -19,6 +19,7 @@ type Props struct {
 	Name              string               // Name is the name of the dashboard
 	Platform          grafana.TypePlatform // Platform is infrastructure deployment platform: docker or k8s
 	MetricsDataSource *grafana.DataSource  // MetricsDataSource is the datasource for querying metrics
+	LogsDataSource    *grafana.DataSource  // LogsDataSource is the datasource for querying logs
 	SlackChannel      string               // SlackChannel is the channel to send alerts to
 	SlackWebhookURL   string               // SlackWebhookURL is the URL to send alerts to
 	AlertsTags        map[string]string    // AlertsTags is the tags to map with notification policy

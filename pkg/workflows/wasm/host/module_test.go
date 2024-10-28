@@ -1,7 +1,9 @@
 package host
 
 import (
+	"context"
 	"encoding/binary"
+	"sync"
 	"testing"
 
 	"github.com/bytecodealliance/wasmtime-go/v23"
@@ -187,6 +189,309 @@ func Test_createEmitFn(t *testing.T) {
 		)
 		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
+	})
+}
+
+func TestCreateFetchFn(t *testing.T) {
+	const testID = "test-id"
+	t.Run("OK-success", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		// we add the request data to the store so that the fetch function can find it
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.FetchRequest{
+					Id: testID,
+				})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{}, nil
+				},
+				MaxFetchRequests: 5,
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoSuccess, gotCode)
+	})
+
+	t.Run("NOK-fetch_fails_to_read_from_store", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				return nil, assert.AnError
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{}, nil
+				},
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("NOK-fetch_fails_to_unmarshal_request", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				return []byte("bad-request-payload"), nil
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{}, nil
+				},
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("NOK-fetch_fails_to_find_id_in_store", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.FetchRequest{
+					Id: testID,
+				})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{}, nil
+				},
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("NOK-fetch_fails_stored_ctx_is_nil", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		// we add the request data to the store so that the fetch function can find it
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(nil)
+			},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.FetchRequest{
+					Id: testID,
+				})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{}, nil
+				},
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("NOK-fetch_returns_an_error", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		// we add the request data to the store so that the fetch function can find it
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.FetchRequest{
+					Id: testID,
+				})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return nil, assert.AnError
+				},
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("NOK-fetch_fails_to_write_response", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		// we add the request data to the store so that the fetch function can find it
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.FetchRequest{
+					Id: testID,
+				})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return -1
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return 0
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{}, nil
+				},
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
+	})
+
+	t.Run("NOK-fetch_fails_to_write_response_size", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+
+		// we add the request data to the store so that the fetch function can find it
+		store.m[testID] = &RequestData{
+			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
+				return fn(context.Background())
+			},
+		}
+
+		fetchFn := createFetchFn(
+			logger.Test(t),
+			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+				b, err := proto.Marshal(&wasmpb.FetchRequest{
+					Id: testID,
+				})
+				assert.NoError(t, err)
+				return b, nil
+			}),
+			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				return 0
+			}),
+			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+				return -1
+			}),
+			&ModuleConfig{
+				Logger: logger.Test(t),
+				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+					return &wasmpb.FetchResponse{}, nil
+				},
+			},
+			store,
+		)
+
+		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		assert.Equal(t, ErrnoFault, gotCode)
 	})
 }
 

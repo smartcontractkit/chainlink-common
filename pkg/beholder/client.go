@@ -188,7 +188,15 @@ func (c Client) Close() (err error) {
 }
 
 // Returns a new Client with the same configuration but with a different package name
+// Deprecated: Use ForName
 func (c Client) ForPackage(name string) Client {
+	return c.ForName(name)
+}
+
+// ForName returns a new Client with the same configuration but with a different name.
+// For global package-scoped telemetry, use the package name.
+// For injected component-scoped telemetry, use a fully qualified name that uniquely identifies this instance.
+func (c Client) ForName(name string) Client {
 	// Logger
 	logger := c.LoggerProvider.Logger(name)
 	// Tracer

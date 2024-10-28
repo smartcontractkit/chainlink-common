@@ -80,7 +80,6 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 		for name, value := range props.AlertsTags {
 			notificationPolicySlackOptions.ObjectMatchers = append(notificationPolicySlackOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
 		}
-
 		builder.AddNotificationPolicy(grafana.NewNotificationPolicy(notificationPolicySlackOptions))
 	}
 

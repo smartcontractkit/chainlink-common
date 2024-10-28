@@ -6,7 +6,7 @@ instructions provided by the codec are based on the type name.
 Starting from the lowest level, take for instance a big.Int encoder where we want the output to be big endian binary
 encoded.
 
-	typeCodec, _ := binary.NewBigInt(32, true, binary.BigEndian())
+	typeCodec, _ := binary.BigEndian().BigInt(32, true)
 
 This allows us to encode and decode big.Int values with big endian encoding using the `encodings.TypeCodec` interface.
 
@@ -15,24 +15,23 @@ This allows us to encode and decode big.Int values with big endian encoding usin
 	originalValue := big.NewInt(42)
 	encodedBytes, _ = typeCodec.Encode(originalValue, encodedBytes) // new encoded bytes are appended to existing
 
-	value := new(big.Int)
-	_ = typeCodec.Decode(encodedBytes, value)
+	value, _, _ := typeCodec.Decode(encodedBytes, value)
 
 The additional encodings.TypeCodec methods such as `GetType() reflect.Type` allow composition. This is useful for
 creating a struct codec such as the one defined in encodings/struct.go.
 
-	tlCodec, _ := NewStructCodec([]NamedTypeCodec{{Name: "Value", Codec: typeCodec}})
+	tlCodec, _ := encodings.NewStructCodec([]encodings.NamedTypeCodec{{Name: "Value", Codec: typeCodec}})
 
 This provides a `TopLevelCodec` which is a `TypeCodec` with a total size of all encoded elements. Going up another
 level, we create a `Codec` from a map of `TypeCodec` instances using `CodecFromTypeCodec`.
 
-	codec := types.CodecFromTypeCodec{"SomeStruct": tlCodec}
+	codec := encodings.CodecFromTypeCodec{"SomeStruct": tlCodec}
 
 	type SomeStruct struct {
 		Value *big.Int
 	}
 
-	encodedStructBytes, _ := codec.Encode(SomeStruct{Value: big.NewInt(42)}, "SomeStruct")
+	encodedStructBytes, _ := codec.Encode(ctx, SomeStruct{Value: big.NewInt(42)}, "SomeStruct")
 
 	var someStruct SomeStruct
 	_ = codec.Decode(encodedStructBytes, &someStruct, "SomeStruct")

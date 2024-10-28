@@ -70,10 +70,11 @@ func (r *store) delete(id string) {
 }
 
 var (
-	defaultTickInterval = 100 * time.Millisecond
-	defaultTimeout      = 2 * time.Second
-	defaultMaxMemoryMBs = 256
-	DefaultInitialFuel  = uint64(100_000_000)
+	defaultTickInterval     = 100 * time.Millisecond
+	defaultTimeout          = 2 * time.Second
+	defaultMaxMemoryMBs     = 256
+	DefaultInitialFuel      = uint64(100_000_000)
+	defaultMaxFetchRequests = int64(5)
 )
 
 type DeterminismConfig struct {
@@ -142,7 +143,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.MaxFetchRequests == 0 {
-		modCfg.MaxFetchRequests = 5
+		modCfg.MaxFetchRequests = defaultMaxFetchRequests
 	}
 
 	if modCfg.Labeler == nil {

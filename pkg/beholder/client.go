@@ -94,7 +94,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 		otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
-			Enabled:         cfg.EmitterExporterRetryConfig.Enabled,
+			Enabled:         cfg.EmitterExporterRetryConfig.Enabled(),
 			InitialInterval: cfg.EmitterExporterRetryConfig.InitialInterval,
 			MaxInterval:     cfg.EmitterExporterRetryConfig.MaxInterval,
 			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.MaxElapsedTime,
@@ -280,7 +280,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 		otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
-			Enabled:         config.TraceExporterRetryConfig.Enabled,
+			Enabled:         config.TraceExporterRetryConfig.Enabled(),
 			InitialInterval: config.TraceExporterRetryConfig.InitialInterval,
 			MaxInterval:     config.TraceExporterRetryConfig.MaxInterval,
 			MaxElapsedTime:  config.TraceExporterRetryConfig.MaxElapsedTime,
@@ -314,7 +314,7 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 		otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
-			Enabled:         config.MetricExporterRetryConfig.Enabled,
+			Enabled:         config.MetricExporterRetryConfig.Enabled(),
 			InitialInterval: config.MetricExporterRetryConfig.InitialInterval,
 			MaxInterval:     config.MetricExporterRetryConfig.MaxInterval,
 			MaxElapsedTime:  config.MetricExporterRetryConfig.MaxElapsedTime,

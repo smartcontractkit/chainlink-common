@@ -59,6 +59,12 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	sharedLogExporter, err := otlploghttpNew(
 		tlsConfigOption,
 		otlploghttp.WithEndpoint(cfg.OtelExporterHTTPEndpoint),
+		otlploghttp.WithRetry(otlploghttp.RetryConfig{
+			Enabled:         cfg.EmitterExporterRetryConfig.Enabled(),
+			InitialInterval: cfg.EmitterExporterRetryConfig.InitialInterval,
+			MaxInterval:     cfg.EmitterExporterRetryConfig.MaxInterval,
+			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.MaxElapsedTime,
+		}),
 	)
 	if err != nil {
 		return nil, err
@@ -156,6 +162,12 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	exporter, err := otlptracehttp.New(ctx,
 		tlsConfigOption,
 		otlptracehttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
+		otlptracehttp.WithRetry(otlptracehttp.RetryConfig{
+			Enabled:         config.TraceExporterRetryConfig.Enabled(),
+			InitialInterval: config.TraceExporterRetryConfig.InitialInterval,
+			MaxInterval:     config.TraceExporterRetryConfig.MaxInterval,
+			MaxElapsedTime:  config.TraceExporterRetryConfig.MaxElapsedTime,
+		}),
 	)
 	if err != nil {
 		return nil, err
@@ -187,6 +199,12 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 	exporter, err := otlpmetrichttp.New(ctx,
 		tlsConfigOption,
 		otlpmetrichttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
+		otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig{
+			Enabled:         config.MetricExporterRetryConfig.Enabled(),
+			InitialInterval: config.MetricExporterRetryConfig.InitialInterval,
+			MaxInterval:     config.MetricExporterRetryConfig.MaxInterval,
+			MaxElapsedTime:  config.MetricExporterRetryConfig.MaxElapsedTime,
+		}),
 	)
 	if err != nil {
 		return nil, err

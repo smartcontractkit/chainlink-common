@@ -47,7 +47,15 @@ type RetryConfig struct {
 	// MaxElapsedTime is the maximum amount of time (including retries) spent
 	// trying to send a request/batch.  Once this value is reached, the data
 	// is discarded.
+	// Set to zero to disable retry
 	MaxElapsedTime time.Duration
+}
+
+// Same defaults as used by the OTel SDK
+var defaultRetryConfig = RetryConfig{
+	InitialInterval: 5 * time.Second,
+	MaxInterval:     30 * time.Second,
+	MaxElapsedTime:  1 * time.Minute, // Retry is enabled
 }
 
 func (c *RetryConfig) Enabled() bool {
@@ -73,28 +81,16 @@ func DefaultConfig() Config {
 		EmitterExportTimeout:  1 * time.Second,
 		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
-		EmitterExporterRetryConfig: RetryConfig{
-			InitialInterval: 5 * time.Second,
-			MaxInterval:     30 * time.Second,
-			MaxElapsedTime:  0 * time.Minute, // Set to zero to disable retry
-		},
+		EmitterExporterRetryConfig: defaultRetryConfig,
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
 		// OTel trace exporter retry config
-		TraceExporterRetryConfig: RetryConfig{
-			InitialInterval: 5 * time.Second,
-			MaxInterval:     30 * time.Second,
-			MaxElapsedTime:  0 * time.Minute, // Set to zero to disable retry
-		},
+		TraceExporterRetryConfig: defaultRetryConfig,
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
 		// OTel metric exporter retry config
-		MetricExporterRetryConfig: RetryConfig{
-			InitialInterval: 5 * time.Second,
-			MaxInterval:     30 * time.Second,
-			MaxElapsedTime:  0 * time.Minute, // Set to zero to disable retry
-		},
+		MetricExporterRetryConfig: defaultRetryConfig,
 		// Log
 		LogExportTimeout:  1 * time.Second,
 		LogBatchProcessor: true,

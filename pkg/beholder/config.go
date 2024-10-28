@@ -20,15 +20,15 @@ type Config struct {
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	EmitterBatchProcessor      bool
-	EmitterExporterRetryConfig RetryConfig
+	EmitterExporterRetryConfig *RetryConfig
 	// OTel Trace
 	TraceSampleRatio         float64
 	TraceBatchTimeout        time.Duration
 	TraceSpanExporter        sdktrace.SpanExporter // optional additional exporter
-	TraceExporterRetryConfig RetryConfig
+	TraceExporterRetryConfig *RetryConfig
 	// OTel Metric
 	MetricReaderInterval      time.Duration
-	MetricExporterRetryConfig RetryConfig
+	MetricExporterRetryConfig *RetryConfig
 	// OTel Log
 	LogExportTimeout time.Duration
 	// Batch processing is enabled by default
@@ -58,10 +58,6 @@ var defaultRetryConfig = RetryConfig{
 	MaxElapsedTime:  1 * time.Minute, // Retry is enabled
 }
 
-func (c *RetryConfig) Enabled() bool {
-	return c.InitialInterval > 0 && c.MaxInterval > 0 && c.MaxElapsedTime > 0
-}
-
 const (
 	defaultPackageName = "beholder"
 )
@@ -81,16 +77,16 @@ func DefaultConfig() Config {
 		EmitterExportTimeout:  1 * time.Second,
 		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
-		EmitterExporterRetryConfig: defaultRetryConfig,
+		EmitterExporterRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
 		// OTel trace exporter retry config
-		TraceExporterRetryConfig: defaultRetryConfig,
+		TraceExporterRetryConfig: defaultRetryConfig.Copy(),
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
 		// OTel metric exporter retry config
-		MetricExporterRetryConfig: defaultRetryConfig,
+		MetricExporterRetryConfig: defaultRetryConfig.Copy(),
 		// Log
 		LogExportTimeout:  1 * time.Second,
 		LogBatchProcessor: true,
@@ -117,4 +113,39 @@ func TestDefaultConfigHTTPClient() Config {
 	config.OtelExporterGRPCEndpoint = ""
 	config.OtelExporterHTTPEndpoint = "localhost:4318"
 	return config
+}
+
+func (c *RetryConfig) Copy() *RetryConfig {
+	copy := *c
+	return &copy
+}
+
+// Calculate if retry is enabled
+func (c *RetryConfig) Enabled() bool {
+	if c == nil {
+		return false
+	}
+	return c.InitialInterval > 0 && c.MaxInterval > 0 && c.MaxElapsedTime > 0
+}
+
+// Implement getters for fields to avoid nil pointer dereference in case the config is not set
+func (c *RetryConfig) GetInitialInterval() time.Duration {
+	if c == nil {
+		return 0
+	}
+	return c.InitialInterval
+}
+
+func (c *RetryConfig) GetMaxInterval() time.Duration {
+	if c == nil {
+		return 0
+	}
+	return c.MaxInterval
+}
+
+func (c *RetryConfig) GetMaxElapsedTime() time.Duration {
+	if c == nil {
+		return 0
+	}
+	return c.MaxElapsedTime
 }

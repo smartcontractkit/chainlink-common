@@ -90,16 +90,20 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 	}
-	sharedLogExporter, err := otlploggrpcNew(
+	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
-		otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
+	}
+	if cfg.EmitterExporterRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
 			Enabled:         cfg.EmitterExporterRetryConfig.Enabled(),
-			InitialInterval: cfg.EmitterExporterRetryConfig.InitialInterval,
-			MaxInterval:     cfg.EmitterExporterRetryConfig.MaxInterval,
-			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.MaxElapsedTime,
-		}),
-	)
+			InitialInterval: cfg.EmitterExporterRetryConfig.GetInitialInterval(),
+			MaxInterval:     cfg.EmitterExporterRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	sharedLogExporter, err := otlploggrpcNew(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -275,17 +279,21 @@ type shutdowner interface {
 func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
-	// note: context is used internally
-	exporter, err := otlptracegrpc.New(ctx,
+	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-		otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
+	}
+	if config.TraceExporterRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
 			Enabled:         config.TraceExporterRetryConfig.Enabled(),
-			InitialInterval: config.TraceExporterRetryConfig.InitialInterval,
-			MaxInterval:     config.TraceExporterRetryConfig.MaxInterval,
-			MaxElapsedTime:  config.TraceExporterRetryConfig.MaxElapsedTime,
-		}),
-	)
+			InitialInterval: config.TraceExporterRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.TraceExporterRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.TraceExporterRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	// note: context is used internally
+	exporter, err := otlptracegrpc.New(ctx, exporterOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -307,19 +315,21 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 
 func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
-
-	// note: context is unused internally
-	exporter, err := otlpmetricgrpc.New(
-		ctx,
+	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-		otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
+	}
+	if config.MetricExporterRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		opts = append(opts, otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
 			Enabled:         config.MetricExporterRetryConfig.Enabled(),
-			InitialInterval: config.MetricExporterRetryConfig.InitialInterval,
-			MaxInterval:     config.MetricExporterRetryConfig.MaxInterval,
-			MaxElapsedTime:  config.MetricExporterRetryConfig.MaxElapsedTime,
-		}),
-	)
+			InitialInterval: config.MetricExporterRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.MetricExporterRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.MetricExporterRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	// note: context is unused internally
+	exporter, err := otlpmetricgrpc.New(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}

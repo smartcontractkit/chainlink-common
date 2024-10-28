@@ -56,16 +56,20 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	if tlsConfig != nil {
 		tlsConfigOption = otlploghttp.WithTLSClientConfig(tlsConfig)
 	}
-	sharedLogExporter, err := otlploghttpNew(
+	opts := []otlploghttp.Option{
 		tlsConfigOption,
 		otlploghttp.WithEndpoint(cfg.OtelExporterHTTPEndpoint),
-		otlploghttp.WithRetry(otlploghttp.RetryConfig{
+	}
+	if cfg.EmitterExporterRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		opts = append(opts, otlploghttp.WithRetry(otlploghttp.RetryConfig{
 			Enabled:         cfg.EmitterExporterRetryConfig.Enabled(),
-			InitialInterval: cfg.EmitterExporterRetryConfig.InitialInterval,
-			MaxInterval:     cfg.EmitterExporterRetryConfig.MaxInterval,
-			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.MaxElapsedTime,
-		}),
-	)
+			InitialInterval: cfg.EmitterExporterRetryConfig.GetInitialInterval(),
+			MaxInterval:     cfg.EmitterExporterRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	sharedLogExporter, err := otlploghttpNew(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,17 +162,21 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	if tlsConfig != nil {
 		tlsConfigOption = otlptracehttp.WithTLSClientConfig(tlsConfig)
 	}
-	// note: context is unused internally
-	exporter, err := otlptracehttp.New(ctx,
+	exporterOpts := []otlptracehttp.Option{
 		tlsConfigOption,
 		otlptracehttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
-		otlptracehttp.WithRetry(otlptracehttp.RetryConfig{
+	}
+	if config.TraceExporterRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		exporterOpts = append(exporterOpts, otlptracehttp.WithRetry(otlptracehttp.RetryConfig{
 			Enabled:         config.TraceExporterRetryConfig.Enabled(),
-			InitialInterval: config.TraceExporterRetryConfig.InitialInterval,
-			MaxInterval:     config.TraceExporterRetryConfig.MaxInterval,
-			MaxElapsedTime:  config.TraceExporterRetryConfig.MaxElapsedTime,
-		}),
-	)
+			InitialInterval: config.TraceExporterRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.TraceExporterRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.TraceExporterRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	// note: context is unused internally
+	exporter, err := otlptracehttp.New(ctx, exporterOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -195,17 +203,21 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 	if tlsConfig != nil {
 		tlsConfigOption = otlpmetrichttp.WithTLSClientConfig(tlsConfig)
 	}
-	// note: context is unused internally
-	exporter, err := otlpmetrichttp.New(ctx,
+	opts := []otlpmetrichttp.Option{
 		tlsConfigOption,
 		otlpmetrichttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
-		otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig{
+	}
+	if config.MetricExporterRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		opts = append(opts, otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig{
 			Enabled:         config.MetricExporterRetryConfig.Enabled(),
-			InitialInterval: config.MetricExporterRetryConfig.InitialInterval,
-			MaxInterval:     config.MetricExporterRetryConfig.MaxInterval,
-			MaxElapsedTime:  config.MetricExporterRetryConfig.MaxElapsedTime,
-		}),
-	)
+			InitialInterval: config.MetricExporterRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.MetricExporterRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.MetricExporterRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	// note: context is unused internally
+	exporter, err := otlpmetrichttp.New(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}

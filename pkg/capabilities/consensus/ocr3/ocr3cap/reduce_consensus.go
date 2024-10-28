@@ -31,7 +31,7 @@ func (c ReduceConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string, in
 	}
 
 	step := sdk.Step[SignedReport]{Definition: def}
-	return SignedReportCapFromStep(w, step)
+	return SignedReportWrapper(step.AddTo(w))
 }
 
 type ReduceConsensusInput[T any] struct {

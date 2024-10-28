@@ -3,7 +3,6 @@ package beholder
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -240,15 +239,17 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 // Open question: what are pros/cons for using use map[]any vs use otellog.KeyValue
 func (e messageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	message := NewMessage(body, attrKVs...)
+	record := message.OtelRecord()
 
 	if _, ok := message.Attrs["timestamp"]; !ok {
-		message.Attrs["timestamp"] = time.Now().UTC()
+		message.Attrs["timestamp"] = record.Timestamp()
 	}
 
 	if err := message.Validate(); err != nil {
 		return err
 	}
-	e.messageLogger.Emit(ctx, message.OtelRecord())
+
+	e.messageLogger.Emit(ctx, record)
 	return nil
 }
 

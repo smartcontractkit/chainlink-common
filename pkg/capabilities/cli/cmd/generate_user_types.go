@@ -14,7 +14,7 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 	}
 
 	generatedInfo := GeneratedInfo{}
-	var errs []error
+	err = errors.Join()
 	for i, file := range dir {
 		fileName := file.Name()
 		if file.IsDir() || !strings.HasSuffix(fileName, ".go") {
@@ -23,7 +23,7 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 
 		rawContent, err2 := os.ReadFile(path.Join(info.Dir, fileName))
 		if err2 != nil {
-			errs = append(errs, err2)
+			err = errors.Join(err, err2)
 		}
 
 		content := string(rawContent)
@@ -36,7 +36,7 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 		fileGeneratedInfo, err2 := generatedInfoFromSrc(content, "", getCapID(typeInfo), typeInfo, info.GenForStruct)
 
 		if err2 != nil {
-			errs = append(errs, err)
+			err = errors.Join(err, err2)
 			continue
 		}
 
@@ -49,8 +49,8 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 		}
 	}
 
-	if len(errs) > 0 {
-		return errors.Join(errs...)
+	if err != nil {
+		return errors.Join(err)
 	}
 
 	return generateFromGoSrc(generatedInfo, info.Dir, info.LocalPrefix, info.Helpers, map[string]string{})

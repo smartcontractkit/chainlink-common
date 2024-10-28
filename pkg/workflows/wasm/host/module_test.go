@@ -227,6 +227,7 @@ func TestCreateFetchFn(t *testing.T) {
 				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 					return &wasmpb.FetchResponse{}, nil
 				},
+				MaxFetchRequests: 5,
 			},
 			store,
 		)

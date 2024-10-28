@@ -255,6 +255,10 @@ func TestRunner(t *testing.T) {
 	})
 }
 
+type ComputeConfig struct {
+	Fidelity sdk.SecretValue
+}
+
 func TestCompute(t *testing.T) {
 	t.Run("Inputs don't loose integer types when any is deserialized to", func(t *testing.T) {
 		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
@@ -285,6 +289,34 @@ func TestCompute(t *testing.T) {
 		runner.Run(workflow)
 
 		require.NoError(t, runner.Err())
+	})
+
+	t.Run("Config interpolates secrets", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
+
+		conf := ComputeConfig{
+			Fidelity: sdk.Secret("fidelity"),
+		}
+		var gotC ComputeConfig
+		sdk.Compute1WithConfig(workflow, "tomap", &sdk.ComputeConfig[ComputeConfig]{Config: conf}, sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, c ComputeConfig, i0 string) (ComputeConfig, error) {
+			gotC = c
+			return c, nil
+		})
+
+		runner := testutils.NewRunner(tests.Context(t))
+		secretToken := "superSuperSecretToken"
+		runner.Secrets = map[string]string{
+			"fidelity": secretToken,
+		}
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "100"}, nil
+		})
+
+		runner.Run(workflow)
+
+		require.NoError(t, runner.Err())
+		assert.Equal(t, gotC.Fidelity, sdk.SecretValue(secretToken))
 	})
 }
 

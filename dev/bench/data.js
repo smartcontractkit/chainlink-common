@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730113885086,
+  "lastUpdate": 1730120600410,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5082,6 +5082,48 @@ window.BENCHMARK_DATA = {
             "value": 28284,
             "unit": "ns/op",
             "extra": "42291 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fcae9bd87a4214fd1ae78307f5b5cf757d0ba84a",
+          "message": "[CAPPL-128] limit the amount of fetch calls per request (#894)\n\n* feat: limit the amount of fetch calls per request\r\n\r\n* fix: move counter to a request level\r\n\r\n* fix: define defaultMaxFetchRequests as a const\r\n\r\n* fix: rename and change type of fetchRequestsCounter",
+          "timestamp": "2024-10-28T13:02:14Z",
+          "tree_id": "b84debd191db193fd6b2687750c350f26d4e3c0e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fcae9bd87a4214fd1ae78307f5b5cf757d0ba84a"
+        },
+        "date": 1730120599244,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.7,
+            "unit": "ns/op",
+            "extra": "2694259 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.7,
+            "unit": "ns/op",
+            "extra": "2284320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28293,
+            "unit": "ns/op",
+            "extra": "42439 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729876205607,
+  "lastUpdate": 1730113885086,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5040,6 +5040,48 @@ window.BENCHMARK_DATA = {
             "value": 28743,
             "unit": "ns/op",
             "extra": "39628 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8529bcce7eee0ba24ecdf1f96d3de792e9e7e497",
+          "message": "[CAPPL-132] Support secrets in the Builder SDK (#888)",
+          "timestamp": "2024-10-28T11:10:26Z",
+          "tree_id": "fba52b8514b1ba802d647773359463a60bfec60f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8529bcce7eee0ba24ecdf1f96d3de792e9e7e497"
+        },
+        "date": 1730113884530,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.7,
+            "unit": "ns/op",
+            "extra": "2691332 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 511.4,
+            "unit": "ns/op",
+            "extra": "2183187 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28284,
+            "unit": "ns/op",
+            "extra": "42291 times\n4 procs"
           }
         ]
       }

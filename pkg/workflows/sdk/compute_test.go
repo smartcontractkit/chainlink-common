@@ -1,6 +1,7 @@
 package sdk_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
@@ -129,6 +131,74 @@ func TestCompute(t *testing.T) {
 
 		assert.Equal(t, expected, computed.Value)
 	})
+
+	t.Run("compute supports passing in config via a struct", func(t *testing.T) {
+		computeFn := func(_ sdk.Runtime, config ComputeConfig, inputs basictrigger.TriggerOutputs) (ComputeOutput, error) {
+			return ComputeOutput{
+				MySecret: string(config.Fidelity),
+			}, nil
+		}
+		conf := ComputeConfig{Fidelity: sdk.Secret("fidelity")}
+		workflow := createComputeWithConfigWorkflow(
+			conf,
+			computeFn,
+		)
+		_, err := workflow.Spec()
+		require.NoError(t, err)
+
+		fn := workflow.GetFn("Compute")
+		require.NotNil(t, fn)
+
+		mc, err := values.WrapMap(conf)
+		require.NoError(t, err)
+
+		req := capabilities.CapabilityRequest{Inputs: nsf, Config: mc}
+		actual, err := fn(&testutils.NoopRuntime{}, req)
+		require.NoError(t, err)
+
+		expected, err := computeFn(nil, conf, basictrigger.TriggerOutputs{})
+		require.NoError(t, err)
+
+		uw, _ := actual.Value.Unwrap()
+		fmt.Printf("%+v", uw)
+
+		computed := &sdk.ComputeOutput[ComputeOutput]{}
+		err = actual.Value.UnwrapTo(computed)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, computed.Value)
+	})
+}
+
+type ComputeConfig struct {
+	Fidelity sdk.SecretValue
+}
+
+type ComputeOutput struct {
+	MySecret string
+}
+
+func createComputeWithConfigWorkflow(config ComputeConfig, fn func(_ sdk.Runtime, config ComputeConfig, input basictrigger.TriggerOutputs) (ComputeOutput, error)) *sdk.WorkflowSpecFactory {
+	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
+		Owner: "owner",
+		Name:  "name",
+	})
+
+	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
+	trigger := triggerCfg.New(workflow)
+
+	cc := &sdk.ComputeConfig[ComputeConfig]{
+		Config: config,
+	}
+	sdk.Compute1WithConfig(
+		workflow,
+		"Compute",
+		cc,
+		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+		fn,
+	)
+
+	return workflow
 }
 
 func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams.Feed, error)) *sdk.WorkflowSpecFactory {

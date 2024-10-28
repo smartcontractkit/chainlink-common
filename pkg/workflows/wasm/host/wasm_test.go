@@ -29,30 +29,32 @@ import (
 )
 
 const (
-	successBinaryLocation = "test/success/cmd/testmodule.wasm"
-	successBinaryCmd      = "test/success/cmd"
-	failureBinaryLocation = "test/fail/cmd/testmodule.wasm"
-	failureBinaryCmd      = "test/fail/cmd"
-	oomBinaryLocation     = "test/oom/cmd/testmodule.wasm"
-	oomBinaryCmd          = "test/oom/cmd"
-	sleepBinaryLocation   = "test/sleep/cmd/testmodule.wasm"
-	sleepBinaryCmd        = "test/sleep/cmd"
-	filesBinaryLocation   = "test/files/cmd/testmodule.wasm"
-	filesBinaryCmd        = "test/files/cmd"
-	dirsBinaryLocation    = "test/dirs/cmd/testmodule.wasm"
-	dirsBinaryCmd         = "test/dirs/cmd"
-	httpBinaryLocation    = "test/http/cmd/testmodule.wasm"
-	httpBinaryCmd         = "test/http/cmd"
-	envBinaryLocation     = "test/env/cmd/testmodule.wasm"
-	envBinaryCmd          = "test/env/cmd"
-	logBinaryLocation     = "test/log/cmd/testmodule.wasm"
-	logBinaryCmd          = "test/log/cmd"
-	fetchBinaryLocation   = "test/fetch/cmd/testmodule.wasm"
-	fetchBinaryCmd        = "test/fetch/cmd"
-	randBinaryLocation    = "test/rand/cmd/testmodule.wasm"
-	randBinaryCmd         = "test/rand/cmd"
-	emitBinaryLocation    = "test/emit/cmd/testmodule.wasm"
-	emitBinaryCmd         = "test/emit/cmd"
+	successBinaryLocation    = "test/success/cmd/testmodule.wasm"
+	successBinaryCmd         = "test/success/cmd"
+	failureBinaryLocation    = "test/fail/cmd/testmodule.wasm"
+	failureBinaryCmd         = "test/fail/cmd"
+	oomBinaryLocation        = "test/oom/cmd/testmodule.wasm"
+	oomBinaryCmd             = "test/oom/cmd"
+	sleepBinaryLocation      = "test/sleep/cmd/testmodule.wasm"
+	sleepBinaryCmd           = "test/sleep/cmd"
+	filesBinaryLocation      = "test/files/cmd/testmodule.wasm"
+	filesBinaryCmd           = "test/files/cmd"
+	dirsBinaryLocation       = "test/dirs/cmd/testmodule.wasm"
+	dirsBinaryCmd            = "test/dirs/cmd"
+	httpBinaryLocation       = "test/http/cmd/testmodule.wasm"
+	httpBinaryCmd            = "test/http/cmd"
+	envBinaryLocation        = "test/env/cmd/testmodule.wasm"
+	envBinaryCmd             = "test/env/cmd"
+	logBinaryLocation        = "test/log/cmd/testmodule.wasm"
+	logBinaryCmd             = "test/log/cmd"
+	fetchBinaryLocation      = "test/fetch/cmd/testmodule.wasm"
+	fetchBinaryCmd           = "test/fetch/cmd"
+	fetchlimitBinaryLocation = "test/fetchlimit/cmd/testmodule.wasm"
+	fetchlimitBinaryCmd      = "test/fetchlimit/cmd"
+	randBinaryLocation       = "test/rand/cmd/testmodule.wasm"
+	randBinaryCmd            = "test/rand/cmd"
+	emitBinaryLocation       = "test/emit/cmd/testmodule.wasm"
+	emitBinaryCmd            = "test/emit/cmd"
 )
 
 func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
@@ -574,6 +576,182 @@ func Test_Compute_Fetch(t *testing.T) {
 		require.NotNil(t, err)
 		assert.ErrorContains(t, err, "error executing runner: error executing custom compute: failed to execute fetch")
 	})
+
+	t.Run("NOK_exceed_amout_of_defined_max_fetch_calls", func(t *testing.T) {
+		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
+		ctx := tests.Context(t)
+		expected := sdk.FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
+		}
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     uint32(expected.StatusCode),
+				}, nil
+			},
+			MaxFetchRequests: 1,
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.NotNil(t, err)
+	})
+
+	t.Run("NOK_exceed_amout_of_default_max_fetch_calls", func(t *testing.T) {
+		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
+		ctx := tests.Context(t)
+		expected := sdk.FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
+		}
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     uint32(expected.StatusCode),
+				}, nil
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.NotNil(t, err)
+	})
+
+	t.Run("OK_making_up_to_max_fetch_calls", func(t *testing.T) {
+		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
+		ctx := tests.Context(t)
+		expected := sdk.FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
+		}
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     uint32(expected.StatusCode),
+				}, nil
+			},
+			MaxFetchRequests: 6,
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.Nil(t, err)
+	})
+
+	t.Run("OK_multiple_request_reusing_module", func(t *testing.T) {
+		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
+		ctx := tests.Context(t)
+		expected := sdk.FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
+		}
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     uint32(expected.StatusCode),
+				}, nil
+			},
+			MaxFetchRequests: 6,
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.Nil(t, err)
+
+		// we can reuse the request because after completion it gets deleted from the store
+		_, err = m.Run(ctx, req)
+		require.Nil(t, err)
+	})
+
 }
 
 func TestModule_Errors(t *testing.T) {

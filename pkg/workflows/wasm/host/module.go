@@ -27,6 +27,7 @@ import (
 )
 
 type RequestData struct {
+	counter     int64
 	response    *wasmpb.Response
 	callWithCtx func(func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error)
 }
@@ -440,18 +441,10 @@ func createFetchFn(
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,
 	modCfg *ModuleConfig,
-	store *store,
+	requestStore *store,
 ) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-	fetchCounter := int64(0)
 	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
 		const errFetchSfx = "error calling fetch"
-
-		// limit the number of fetch calls we can make per request
-		if fetchCounter >= modCfg.MaxFetchRequests {
-			logger.Errorf("%s: max number of fetch request %d exceeded", errFetchSfx, modCfg.MaxFetchRequests)
-			return ErrnoFault
-		}
-		defer func() { fetchCounter++ }()
 
 		b, innerErr := reader(caller, reqptr, reqptrlen)
 		if innerErr != nil {
@@ -466,11 +459,18 @@ func createFetchFn(
 			return ErrnoFault
 		}
 
-		storedRequest, innerErr := store.get(req.Id)
+		storedRequest, innerErr := requestStore.get(req.Id)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return ErrnoFault
 		}
+
+		// limit the number of fetch calls we can make per request
+		if storedRequest.counter >= modCfg.MaxFetchRequests {
+			logger.Errorf("%s: max number of fetch request %d exceeded", errFetchSfx, modCfg.MaxFetchRequests)
+			return ErrnoFault
+		}
+		defer func() { storedRequest.counter++ }()
 
 		fetchResp, innerErr := storedRequest.callWithCtx(func(ctx context.Context) (*wasmpb.FetchResponse, error) {
 			if ctx == nil {

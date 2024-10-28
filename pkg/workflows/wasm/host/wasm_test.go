@@ -705,6 +705,53 @@ func Test_Compute_Fetch(t *testing.T) {
 		require.Nil(t, err)
 	})
 
+	t.Run("OK_multiple_request_reusing_module", func(t *testing.T) {
+		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
+		ctx := tests.Context(t)
+		expected := sdk.FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]any{},
+		}
+
+		m, err := NewModule(&ModuleConfig{
+			Logger: logger.Test(t),
+			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				return &wasmpb.FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     uint32(expected.StatusCode),
+				}, nil
+			},
+			MaxFetchRequests: 6,
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.Nil(t, err)
+
+		// we can reuse the request because after completion it gets deleted from the store
+		_, err = m.Run(ctx, req)
+		require.Nil(t, err)
+	})
+
 }
 
 func TestModule_Errors(t *testing.T) {

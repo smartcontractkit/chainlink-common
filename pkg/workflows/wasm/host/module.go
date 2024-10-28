@@ -27,9 +27,9 @@ import (
 )
 
 type RequestData struct {
-	counter     int64
-	response    *wasmpb.Response
-	callWithCtx func(func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error)
+	fetchRequestsCounter int
+	response             *wasmpb.Response
+	callWithCtx          func(func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error)
 }
 
 type store struct {
@@ -74,7 +74,7 @@ var (
 	defaultTimeout          = 2 * time.Second
 	defaultMaxMemoryMBs     = 256
 	DefaultInitialFuel      = uint64(100_000_000)
-	defaultMaxFetchRequests = int64(5)
+	defaultMaxFetchRequests = 5
 )
 
 type DeterminismConfig struct {
@@ -89,7 +89,7 @@ type ModuleConfig struct {
 	Logger           logger.Logger
 	IsUncompressed   bool
 	Fetch            func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
-	MaxFetchRequests int64
+	MaxFetchRequests int
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -467,11 +467,11 @@ func createFetchFn(
 		}
 
 		// limit the number of fetch calls we can make per request
-		if storedRequest.counter >= modCfg.MaxFetchRequests {
+		if storedRequest.fetchRequestsCounter >= modCfg.MaxFetchRequests {
 			logger.Errorf("%s: max number of fetch request %d exceeded", errFetchSfx, modCfg.MaxFetchRequests)
 			return ErrnoFault
 		}
-		defer func() { storedRequest.counter++ }()
+		storedRequest.fetchRequestsCounter++
 
 		fetchResp, innerErr := storedRequest.callWithCtx(func(ctx context.Context) (*wasmpb.FetchResponse, error) {
 			if ctx == nil {

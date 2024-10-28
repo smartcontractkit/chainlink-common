@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730128697909,
+  "lastUpdate": 1730157207426,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5166,6 +5166,48 @@ window.BENCHMARK_DATA = {
             "value": 28603,
             "unit": "ns/op",
             "extra": "42501 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c8207d66824c48aa54d330b05b9818290d43a76",
+          "message": "feat(observability-lib): improve alerting provisioning (#893)\n\n* feat(observability-lib): improve alerting provisioning\r\n\r\n* feat(observability-lib): node general dashboard add log panel\r\n\r\n* feat(observability-lib): add notification template for pagerduty\r\n\r\n* chore(observability-lib): update ref files for tests",
+          "timestamp": "2024-10-29T00:12:30+01:00",
+          "tree_id": "ebb16e4107f09d6c2e895b1e8121ff2c5640963c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7c8207d66824c48aa54d330b05b9818290d43a76"
+        },
+        "date": 1730157206864,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 447.4,
+            "unit": "ns/op",
+            "extra": "2685238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 516.7,
+            "unit": "ns/op",
+            "extra": "2318488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28292,
+            "unit": "ns/op",
+            "extra": "42346 times\n4 procs"
           }
         ]
       }

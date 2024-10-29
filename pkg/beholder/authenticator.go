@@ -7,7 +7,8 @@ import (
 )
 
 type Authenticator struct {
-	headers map[string]string
+	headers   map[string]string
+	publicKey []byte
 }
 
 func NewAuthenticator(config Config) (*Authenticator, error) {
@@ -23,11 +24,16 @@ func NewAuthenticator(config Config) (*Authenticator, error) {
 		headers = config.AuthenticatorHeaders
 	}
 
-	return &Authenticator{headers}, nil
+	pubKey := config.AuthenticatorPublicKey
+	return &Authenticator{headers, pubKey}, nil
 }
 
 func (a *Authenticator) GetHeaders() map[string]string {
 	return maps.Clone(a.headers)
+}
+
+func (a *Authenticator) GetPubKey() []byte {
+	return a.publicKey
 }
 
 func validateAuthConfig(c Config) error {
@@ -35,8 +41,10 @@ func validateAuthConfig(c Config) error {
 		return errors.New("cannot configure both authenticator signer and authenticator header value")
 	}
 
-	if c.AuthenticatorSigner != nil && len(c.AuthenticatorPublicKey) == 0 {
-		return errors.New("authenticator public key must be configured when authenticator signer is configured")
+	if c.AuthenticatorSigner != nil || len(c.AuthenticatorHeaders) > 0 {
+		if len(c.AuthenticatorPublicKey) == 0 {
+			return errors.New("authenticator public key must be set when signer or headers are configured")
+		}
 	}
 
 	return nil
@@ -51,7 +59,7 @@ var authHeaderVersion = "1"
 // deriveAuthHeaders creates the auth header value to be included on requests.
 // The current format for the header is:
 //
-// <version>:<public_key_hex>:<signature_hex>
+// <version>:<authenticator_public_key_hex>:<signature_hex>
 //
 // where the byte value of <public_key_hex> is what's being signed
 func deriveAuthHeaders(config Config) map[string]string {

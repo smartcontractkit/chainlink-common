@@ -1,6 +1,7 @@
 package loop
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -90,6 +91,11 @@ func (s *Server) start() error {
 		if tracingConfig.Enabled {
 			attributes = tracingConfig.Attributes()
 		}
+
+		authPubKey, err := hex.DecodeString(envCfg.TelemetryAuthPubKeyHex)
+		if err != nil {
+			return fmt.Errorf("failed to decode telemetry auth public key hex: %w", err)
+		}
 		beholderCfg := beholder.Config{
 			InsecureConnection:       envCfg.TelemetryInsecureConnection,
 			CACertFile:               envCfg.TelemetryCACertFile,
@@ -97,6 +103,7 @@ func (s *Server) start() error {
 			ResourceAttributes:       append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
 			TraceSampleRatio:         envCfg.TelemetryTraceSampleRatio,
 			AuthenticatorHeaders:     envCfg.TelemetryAuthHeaders,
+			AuthenticatorPublicKey:   authPubKey,
 		}
 
 		if tracingConfig.Enabled {

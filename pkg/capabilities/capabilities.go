@@ -71,6 +71,7 @@ type RequestMetadata struct {
 type RegistrationMetadata struct {
 	WorkflowID    string
 	WorkflowOwner string
+	ReferenceID   string
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -345,6 +346,10 @@ type RemoteTargetConfig struct {
 	RequestHashExcludedAttributes []string
 }
 
+type RemoteExecutableConfig struct {
+	RequestHashExcludedAttributes []string
+}
+
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
@@ -369,7 +374,8 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 }
 
 type CapabilityConfiguration struct {
-	DefaultConfig       *values.Map
-	RemoteTriggerConfig *RemoteTriggerConfig
-	RemoteTargetConfig  *RemoteTargetConfig
+	DefaultConfig          *values.Map
+	RemoteTriggerConfig    *RemoteTriggerConfig
+	RemoteTargetConfig     *RemoteTargetConfig
+	RemoteExecutableConfig *RemoteExecutableConfig
 }

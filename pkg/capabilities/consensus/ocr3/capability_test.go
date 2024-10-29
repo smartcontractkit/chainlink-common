@@ -137,7 +137,7 @@ func TestOCR3Capability(t *testing.T) {
 			require.NoError(t, err)
 
 			resp := <-respCh
-			assert.Nil(t, resp.Err)
+			assert.NoError(t, resp.Err)
 
 			assert.Equal(t, mresp, resp.Value)
 		})

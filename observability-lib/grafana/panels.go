@@ -236,10 +236,6 @@ type TimeSeriesPanelOptions struct {
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 	setDefaults(options.PanelOptions)
 
-	if options.FillOpacity == 0 {
-		options.FillOpacity = 2
-	}
-
 	if options.ScaleDistribution == "" {
 		options.ScaleDistribution = common.ScaleDistributionLinear
 	}
@@ -398,6 +394,7 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 
 type LogPanelOptions struct {
 	*PanelOptions
+	PrettifyJSON bool
 }
 
 func NewLogPanel(options *LogPanelOptions) *Panel {
@@ -409,7 +406,8 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		Description(options.Description).
 		Span(options.Span).
 		Height(options.Height).
-		NoValue(options.NoValue)
+		NoValue(options.NoValue).
+		PrettifyLogMessage(options.PrettifyJSON)
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)

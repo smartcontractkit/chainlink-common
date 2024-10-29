@@ -1,3 +1,34 @@
+package types
+
+import (
+	"context"
+)
+
+const (
+	ErrFieldNotFound   = InvalidArgumentError("field not found")
+	ErrInvalidEncoding = InvalidArgumentError("invalid encoding")
+	ErrSliceWrongLen   = InvalidArgumentError("slice is wrong length")
+	ErrNotASlice       = InvalidArgumentError("element is not a slice")
+)
+
+type Encoder interface {
+	Encode(ctx context.Context, item any, itemType string) ([]byte, error)
+	// GetMaxEncodingSize returns the max size in bytes if n elements are supplied for all top level dynamically sized elements.
+	// If no elements are dynamically sized, the returned value will be the same for all n.
+	// If there are multiple levels of dynamically sized elements, or itemType cannot be found,
+	// ErrInvalidType will be returned.
+	GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error)
+}
+
+type Decoder interface {
+	Decode(ctx context.Context, raw []byte, into any, itemType string) error
+	// GetMaxDecodingSize returns the max size in bytes if n elements are supplied for all top level dynamically sized elements.
+	// If no elements are dynamically sized, the returned value will be the same for all n.
+	// If there are multiple levels of dynamically sized elements, or itemType cannot be found,
+	// ErrInvalidType will be returned.
+	GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error)
+}
+
 /*
 Codec is an interface that provides encoding and decoding functionality for a specific type identified by a name.
 Because there are many types that a ContractReader or ContractWriter can either accept or return, all encoding
@@ -57,37 +88,6 @@ can be imagined as `contractName + methodName` given that a contract method call
 would need its own codec. Each implementation of `ContractReader` maps the names to codecs differently on the inside,
 but from the level of the interface, the `itemType` is the `readIdentifier`.
 */
-package types
-
-import (
-	"context"
-)
-
-const (
-	ErrFieldNotFound   = InvalidArgumentError("field not found")
-	ErrInvalidEncoding = InvalidArgumentError("invalid encoding")
-	ErrSliceWrongLen   = InvalidArgumentError("slice is wrong length")
-	ErrNotASlice       = InvalidArgumentError("element is not a slice")
-)
-
-type Encoder interface {
-	Encode(ctx context.Context, item any, itemType string) ([]byte, error)
-	// GetMaxEncodingSize returns the max size in bytes if n elements are supplied for all top level dynamically sized elements.
-	// If no elements are dynamically sized, the returned value will be the same for all n.
-	// If there are multiple levels of dynamically sized elements, or itemType cannot be found,
-	// ErrInvalidType will be returned.
-	GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error)
-}
-
-type Decoder interface {
-	Decode(ctx context.Context, raw []byte, into any, itemType string) error
-	// GetMaxDecodingSize returns the max size in bytes if n elements are supplied for all top level dynamically sized elements.
-	// If no elements are dynamically sized, the returned value will be the same for all n.
-	// If there are multiple levels of dynamically sized elements, or itemType cannot be found,
-	// ErrInvalidType will be returned.
-	GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error)
-}
-
 type Codec interface {
 	Encoder
 	Decoder

@@ -9,9 +9,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/codec/encodings/binary"
 )
 
-// Example provides a minimal example of constructing and using a codec. Refer to the codec docs in pkg/types/codec.go
-// for more explanation. For even more detail, refer to the Example in pkg/codec/example_test.go.
-func Example() {
+// ExampleCodec provides a minimal example of constructing and using a codec. For more detail, refer to the Example in
+// pkg/codec/example_test.go.
+func ExampleCodec() {
+	ctx := context.Background()
 	typeCodec, _ := binary.BigEndian().BigInt(32, true)
 
 	// start with empty encoded bytes
@@ -33,13 +34,13 @@ func Example() {
 	}
 
 	originalStruct := SomeStruct{Value: big.NewInt(42)}
-	encodedStructBytes, _ := codec.Encode(context.Background(), originalStruct, "SomeStruct")
+	encodedStructBytes, _ := codec.Encode(ctx, originalStruct, "SomeStruct")
 
 	var someStruct SomeStruct
-	_ = codec.Decode(context.Background(), encodedStructBytes, &someStruct, "SomeStruct")
+	_ = codec.Decode(ctx, encodedStructBytes, &someStruct, "SomeStruct")
 
 	decodedStruct, _ := codec.CreateType("SomeStruct", false)
-	_ = codec.Decode(context.Background(), encodedStructBytes, &decodedStruct, "SomeStruct")
+	_ = codec.Decode(ctx, encodedStructBytes, &decodedStruct, "SomeStruct")
 
 	// encoded struct is equal to decoded struct using defined type and/or CreateType
 	fmt.Printf("%+v == %+v == %+v\n", originalStruct, someStruct, decodedStruct)

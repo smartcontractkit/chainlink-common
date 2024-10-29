@@ -548,6 +548,15 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 	return nil
 }
 
+func (f *fakeContractReader) GetLatestValueWithHeadData(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (*types.Head, error) {
+	err := f.GetLatestValue(context.Background(), readIdentifier, confidenceLevel, params, returnVal)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.Head{}, nil
+}
+
 func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	result := make(types.BatchGetLatestValuesResult)
 	for requestContract, requestContractBatch := range request {

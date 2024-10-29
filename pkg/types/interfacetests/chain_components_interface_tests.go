@@ -1,6 +1,7 @@
 package interfacetests
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -56,8 +57,32 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 
 const AnyExtraValue = 3
 
+type withHeadDataTester[T TestingT[T]] struct {
+	ChainComponentsInterfaceTester[T]
+}
+
+func (h *withHeadDataTester[T]) GetContractReader(t T) types.ContractReader {
+	h.ChainComponentsInterfaceTester.GetContractReader(t)
+	return &withHeadDataContractReader[T]{h.ChainComponentsInterfaceTester.GetContractReader(t), t}
+}
+
+type withHeadDataContractReader[T TestingT[T]] struct {
+	types.ContractReader
+	t T
+}
+
+func (h *withHeadDataContractReader[T]) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
+	headData, err := h.GetLatestValueWithHeadData(ctx, readIdentifier, confidenceLevel, params, returnVal)
+	if err != nil {
+		return err
+	}
+	assert.NotNil(h.t, headData)
+	return nil
+}
+
 func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
+	t.Run("GetLatestValueWithHeadData for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, &withHeadDataTester[T]{tester}, mockRun) })
 	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
 	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
 }

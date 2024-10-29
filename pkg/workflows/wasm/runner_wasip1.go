@@ -110,14 +110,19 @@ func createFetchFn(
 
 		errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
 		if errno != 0 {
-			return sdk.FetchResponse{}, errors.New("failed to execute fetch")
+			return sdk.FetchResponse{}, fmt.Errorf("fetch failed with errno %d", errno)
 		}
-
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
 		response := &wasmpb.FetchResponse{}
 		err = proto.Unmarshal(respBuffer[:responseSize], response)
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to unmarshal fetch response: %w", err)
+		}
+		if response.ExecutionError == true && response.ErrorMessage != "" {
+			return sdk.FetchResponse{
+				ExecutionError: response.ExecutionError,
+				ErrorMessage:   response.ErrorMessage,
+			}, errors.New(response.ErrorMessage)
 		}
 
 		fields := response.Headers.GetFields()
@@ -127,11 +132,9 @@ func createFetchFn(
 		}
 
 		return sdk.FetchResponse{
-			ExecutionError: response.ExecutionError,
-			ErrorMessage:   response.ErrorMessage,
-			StatusCode:     uint8(response.StatusCode),
-			Headers:        headersResp,
-			Body:           response.Body,
+			StatusCode: uint8(response.StatusCode),
+			Headers:    headersResp,
+			Body:       response.Body,
 		}, nil
 	}
 	return fetchFn

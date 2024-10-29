@@ -466,6 +466,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 		_, err = m.Run(ctx, req)
 		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, assert.AnError.Error())
 		require.Len(t, logs.AllUntimed(), 1)
 
 		expectedEntries := []Entry{
@@ -574,7 +575,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		cancel()
 		_, err = m.Run(ctx, req)
 		require.NotNil(t, err)
-		assert.ErrorContains(t, err, "error executing runner: error executing custom compute: failed to execute fetch")
+		assert.ErrorContains(t, err, fmt.Sprintf("error executing runner: error executing custom compute: %s", assert.AnError))
 	})
 
 	t.Run("NOK_exceed_amout_of_defined_max_fetch_calls", func(t *testing.T) {

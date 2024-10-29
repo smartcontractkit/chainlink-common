@@ -475,7 +475,7 @@
             "decimals": 3,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -537,7 +537,7 @@
             "decimals": 0,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -600,7 +600,7 @@
             "decimals": 0,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -650,7 +650,7 @@
             "decimals": 0,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -700,7 +700,7 @@
             "decimals": 0,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -750,7 +750,7 @@
             "decimals": 0,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -813,7 +813,7 @@
             "decimals": 2,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -863,7 +863,7 @@
             "decimals": 2,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }

@@ -69,7 +69,7 @@
             "decimals": 1,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -119,7 +119,7 @@
             "decimals": 1,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -169,7 +169,7 @@
             "decimals": 1,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -219,7 +219,7 @@
             "decimals": 1,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -269,7 +269,7 @@
             "decimals": 1,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }
@@ -319,7 +319,7 @@
             "decimals": 1,
             "noValue": "No data",
             "custom": {
-              "fillOpacity": 2,
+              "fillOpacity": 0,
               "scaleDistribution": {
                 "type": "linear"
               }

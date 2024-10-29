@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730157207426,
+  "lastUpdate": 1730219228767,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5208,6 +5208,48 @@ window.BENCHMARK_DATA = {
             "value": 28292,
             "unit": "ns/op",
             "extra": "42346 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3a12ebe6d7fe90a4fcd2cacac4877dd53b1ffb59",
+          "message": "Fix a bug where only one file is used for user type generation (#897)",
+          "timestamp": "2024-10-29T12:26:06-04:00",
+          "tree_id": "c87e7e0fa8632f9f18d11ca70f4d415f1080a672",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3a12ebe6d7fe90a4fcd2cacac4877dd53b1ffb59"
+        },
+        "date": 1730219227992,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.2,
+            "unit": "ns/op",
+            "extra": "2675689 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.5,
+            "unit": "ns/op",
+            "extra": "2350359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29595,
+            "unit": "ns/op",
+            "extra": "42415 times\n4 procs"
           }
         ]
       }

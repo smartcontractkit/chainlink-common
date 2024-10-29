@@ -117,7 +117,7 @@ func sendLogAsCustomMessageW(msg string, labels map[string]string) error {
 
 	err = beholder.GetEmitter().Emit(context.Background(), payloadBytes,
 		"beholder_data_schema", "/beholder-base-message/versions/1", // required
-		"beholder_domain", "chainlink", // required
+		"beholder_domain", "platform", // required
 		"beholder_entity", "BaseMessage", // required
 	)
 	if err != nil {

@@ -29,6 +29,7 @@ const (
 	DEVIATION_TYPE_ABSOLUTE   = "absolute"
 	REPORT_FORMAT_MAP         = "map"
 	REPORT_FORMAT_ARRAY       = "array"
+	REPORT_FORMAT_VALUE       = "value"
 
 	DEFAULT_REPORT_FORMAT     = REPORT_FORMAT_MAP
 	DEFAULT_OUTPUT_FIELD_NAME = "Reports"
@@ -40,7 +41,7 @@ type ReduceAggConfig struct {
 	// The top level field name that report data is put into
 	OutputFieldName string `mapstructure:"outputFieldName" json:"outputFieldName" default:"Reports"`
 	// The structure surrounding the report data that is put on to "OutputFieldName"
-	ReportFormat string `mapstructure:"reportFormat" json:"reportFormat" default:"map" jsonschema:"enum=map,enum=array"`
+	ReportFormat string `mapstructure:"reportFormat" json:"reportFormat" default:"map" jsonschema:"enum=map,enum=array,enum=value"`
 	// Optional key name, that when given will contain a nested map with designated Fields moved into it
 	// If given, one or more fields must be given SubMapField: true
 	SubMapKey string `mapstructure:"subMapKey" json:"subMapKey" default:""`
@@ -60,7 +61,7 @@ type AggregationField struct {
 	// If omitted, the entire input will be used
 	InputKey string `mapstructure:"inputKey" json:"inputKey"`
 	// How the data set should be aggregated to a single value
-	// * median - take the centermost value of the sorted data set of observations. can only be used on numeric types.
+	// * median - take the centermost value of the sorted data set of observations. can only be used on numeric types. not a true median, because no average if two middle values.
 	// * mode - take the most frequent value. if tied, use the "first".
 	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode" required:"true"`
 	// The key that the aggregated data is put under
@@ -77,6 +78,7 @@ type reduceAggregator struct {
 
 var _ types.Aggregator = (*reduceAggregator)(nil)
 
+// Condenses multiple observations into a single encodable outcome
 func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	if len(observations) < 2*f+1 {
 		return nil, fmt.Errorf("not enough observations, have %d want %d", len(observations), 2*f+1)
@@ -104,7 +106,7 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 		}
 
 		if field.DeviationType != DEVIATION_TYPE_NONE {
-			oldValue := (*currentState)[field.InputKey]
+			oldValue := (*currentState)[field.OutputKey]
 			currDeviation, err := deviation(field.DeviationType, oldValue, singleValue)
 			if oldValue != nil && err != nil {
 				return nil, fmt.Errorf("unable to determine deviation %s", err.Error())
@@ -112,10 +114,10 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			if oldValue == nil || currDeviation.GreaterThan(field.Deviation) {
 				shouldReport = true
 			}
-			lggr.Debugw("checked deviation", "key", field.InputKey, "deviationType", field.DeviationType, "currentDeviation", currDeviation.String(), "targetDeviation", field.Deviation.String(), "shouldReport", shouldReport)
+			lggr.Debugw("checked deviation", "key", field.OutputKey, "deviationType", field.DeviationType, "currentDeviation", currDeviation.String(), "targetDeviation", field.Deviation.String(), "shouldReport", shouldReport)
 		}
 
-		(*currentState)[field.InputKey] = singleValue
+		(*currentState)[field.OutputKey] = singleValue
 		if len(field.OutputKey) > 0 {
 			report[field.OutputKey] = singleValue
 		} else {
@@ -201,9 +203,9 @@ func (a *reduceAggregator) initializeCurrentState(lggr logger.Logger, previousOu
 
 	zeroValue := values.NewDecimal(decimal.Zero)
 	for _, field := range a.config.Fields {
-		if _, ok := currentState[field.InputKey]; !ok {
-			currentState[field.InputKey] = zeroValue
-			lggr.Debugw("initializing empty onchain state for feed", "fieldInputKey", field.InputKey)
+		if _, ok := currentState[field.OutputKey]; !ok {
+			currentState[field.OutputKey] = zeroValue
+			lggr.Debugw("initializing empty onchain state for feed", "fieldOutputKey", field.OutputKey)
 		}
 	}
 
@@ -417,10 +419,16 @@ func deviation(method string, previousValue values.Value, nextValue values.Value
 
 func formatReport(report map[string]any, format string) (any, error) {
 	switch format {
-	case "array":
+	case REPORT_FORMAT_ARRAY:
 		return []map[string]any{report}, nil
-	case "map":
+	case REPORT_FORMAT_MAP:
 		return report, nil
+	case REPORT_FORMAT_VALUE:
+		for _, value := range report {
+			return value, nil
+		}
+		// invariant: validation enforces only one output value
+		return nil, errors.New("value format must contain at least one output")
 	default:
 		return nil, errors.New("unsupported report format")
 	}
@@ -455,8 +463,21 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 	if len(parsedConfig.Fields) == 0 {
 		return ReduceAggConfig{}, errors.New("reduce aggregator must contain config for Fields to aggregate")
 	}
+	if len(parsedConfig.OutputFieldName) == 0 {
+		parsedConfig.OutputFieldName = DEFAULT_OUTPUT_FIELD_NAME
+	}
+	if len(parsedConfig.ReportFormat) == 0 {
+		parsedConfig.ReportFormat = DEFAULT_REPORT_FORMAT
+	}
+	if len(parsedConfig.Fields) > 1 && parsedConfig.ReportFormat == REPORT_FORMAT_VALUE {
+		return ReduceAggConfig{}, errors.New("report type of value can only have one field")
+	}
 	hasSubMapField := false
+	outputKeyCount := make(map[any]bool)
 	for i, field := range parsedConfig.Fields {
+		if (parsedConfig.ReportFormat == REPORT_FORMAT_ARRAY || parsedConfig.ReportFormat == REPORT_FORMAT_MAP) && len(field.OutputKey) == 0 {
+			return ReduceAggConfig{}, fmt.Errorf("report type %s or %s must have an OutputKey to put the result under", REPORT_FORMAT_ARRAY, REPORT_FORMAT_MAP)
+		}
 		if len(field.DeviationType) == 0 {
 			field.DeviationType = DEVIATION_TYPE_NONE
 			parsedConfig.Fields[i].DeviationType = DEVIATION_TYPE_NONE
@@ -483,6 +504,10 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 		if field.SubMapField {
 			hasSubMapField = true
 		}
+		if outputKeyCount[field.OutputKey] {
+			return ReduceAggConfig{}, errors.New("multiple fields have the same outputkey, which will overwrite each other")
+		}
+		outputKeyCount[field.OutputKey] = true
 	}
 	if len(parsedConfig.SubMapKey) > 0 && !hasSubMapField {
 		return ReduceAggConfig{}, fmt.Errorf("sub Map key %s given, but no fields are marked as sub map fields", parsedConfig.SubMapKey)
@@ -490,14 +515,8 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 	if hasSubMapField && len(parsedConfig.SubMapKey) == 0 {
 		return ReduceAggConfig{}, errors.New("fields are marked as sub Map fields, but no sub map key given")
 	}
-	if len(parsedConfig.OutputFieldName) == 0 {
-		parsedConfig.OutputFieldName = DEFAULT_OUTPUT_FIELD_NAME
-	}
-	if len(parsedConfig.ReportFormat) == 0 {
-		parsedConfig.ReportFormat = DEFAULT_REPORT_FORMAT
-	}
-	if !isOneOf(parsedConfig.ReportFormat, []string{REPORT_FORMAT_ARRAY, REPORT_FORMAT_MAP}) {
-		return ReduceAggConfig{}, fmt.Errorf("invalid config ReportFormat. received: %s. options: map, array", parsedConfig.ReportFormat)
+	if !isOneOf(parsedConfig.ReportFormat, []string{REPORT_FORMAT_ARRAY, REPORT_FORMAT_MAP, REPORT_FORMAT_VALUE}) {
+		return ReduceAggConfig{}, fmt.Errorf("invalid config ReportFormat. received: %s. options: %s, %s, %s", parsedConfig.ReportFormat, REPORT_FORMAT_ARRAY, REPORT_FORMAT_MAP, REPORT_FORMAT_VALUE)
 	}
 
 	return parsedConfig, nil

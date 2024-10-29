@@ -39,30 +39,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 			expectedOutcome     map[string]any
 		}{
 			{
-				name: "empty inputkey and outputkey",
-				fields: []aggregators.AggregationField{
-					{
-						Method: "median",
-					},
-				},
-				extraConfig: map[string]any{},
-				observationsFactory: func() map[commontypes.OracleID][]values.Value {
-					mockValue, err := values.Wrap(int64(100))
-					require.NoError(t, err)
-					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
-				},
-				shouldReport: true,
-				expectedOutcome: map[string]any{
-					"Reports": []any{
-						map[string]any{
-							"": int64(100),
-						},
-					},
-				},
-				expectedState: map[string]any{"": int64(100)},
-			},
-			{
-				name: "int64 median",
+				name: "aggregate on int64 median",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:  "FeedID",
@@ -105,13 +82,13 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"FeedID":         idABytes[:],
-					"BenchmarkPrice": int64(100),
-					"Timestamp":      int64(12341414929),
+					"FeedID":    idABytes[:],
+					"Timestamp": int64(12341414929),
+					"Price":     int64(100),
 				},
 			},
 			{
-				name: "decimal median",
+				name: "aggregate on decimal median",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:        "BenchmarkPrice",
@@ -138,11 +115,11 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"BenchmarkPrice": decimal.NewFromInt(32),
+					"Price": decimal.NewFromInt(32),
 				},
 			},
 			{
-				name: "float64 median",
+				name: "aggregate on float64 median",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:        "BenchmarkPrice",
@@ -169,11 +146,11 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"BenchmarkPrice": float64(1.2),
+					"Price": float64(1.2),
 				},
 			},
 			{
-				name: "time median",
+				name: "aggregate on time median",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:        "BenchmarkPrice",
@@ -200,11 +177,11 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"BenchmarkPrice": now.UTC(),
+					"Price": now.UTC(),
 				},
 			},
 			{
-				name: "big int median",
+				name: "aggregate on big int median",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:        "BenchmarkPrice",
@@ -231,11 +208,11 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"BenchmarkPrice": big.NewInt(100),
+					"Price": big.NewInt(100),
 				},
 			},
 			{
-				name: "buffer mode",
+				name: "aggregate on bytes mode",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:  "FeedID",
@@ -268,7 +245,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				},
 			},
 			{
-				name: "string mode",
+				name: "aggregate on string mode",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:  "BenchmarkPrice",
@@ -297,11 +274,11 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"BenchmarkPrice": "1",
+					"Price": "1",
 				},
 			},
 			{
-				name: "bool mode",
+				name: "aggregate on bool mode",
 				fields: []aggregators.AggregationField{
 					{
 						InputKey:  "BenchmarkPrice",
@@ -330,7 +307,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"BenchmarkPrice": true,
+					"Price": true,
 				},
 			},
 			{
@@ -356,7 +333,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 						},
 					},
 				},
-				expectedState: map[string]any{"": int64(1)},
+				expectedState: map[string]any{"Price": int64(1)},
 			},
 			{
 				name: "aggregate on list type",
@@ -381,7 +358,9 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 						},
 					},
 				},
-				expectedState: map[string]any{"1": "2"},
+				expectedState: map[string]any{
+					"Price": "2",
+				},
 			},
 			{
 				name: "submap",
@@ -432,13 +411,55 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				expectedState: map[string]any{
-					"FeedID":         idABytes[:],
-					"BenchmarkPrice": int64(100),
-					"Timestamp":      int64(12341414929),
+					"FeedID":    idABytes[:],
+					"Price":     int64(100),
+					"Timestamp": int64(12341414929),
 				},
 			},
-
-			// TODO: more tests
+			{
+				name: "report format value",
+				fields: []aggregators.AggregationField{
+					{
+						OutputKey: "Price",
+						Method:    "median",
+					},
+				},
+				extraConfig: map[string]any{
+					"reportFormat": "value",
+				},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.Wrap(1)
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
+				},
+				shouldReport: true,
+				expectedOutcome: map[string]any{
+					"Reports": int64(1),
+				},
+				expectedState: map[string]any{"Price": int64(1)},
+			},
+			{
+				name: "report format array",
+				fields: []aggregators.AggregationField{
+					{
+						OutputKey: "Price",
+						Method:    "median",
+					},
+				},
+				extraConfig: map[string]any{
+					"reportFormat": "array",
+				},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.Wrap(1)
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
+				},
+				shouldReport: true,
+				expectedOutcome: map[string]any{
+					"Reports": []any{map[string]any{"Price": 1}},
+				},
+				expectedState: map[string]any{"Price": int64(1)},
+			},
 		}
 		for _, tt := range cases {
 			t.Run(tt.name, func(t *testing.T) {
@@ -487,7 +508,8 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				previousOutcome: nil,
 				fields: []aggregators.AggregationField{
 					{
-						Method: "median",
+						Method:    "median",
+						OutputKey: "Price",
 					},
 				},
 				extraConfig: map[string]any{},
@@ -500,7 +522,8 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				previousOutcome: &types.AggregationOutcome{},
 				fields: []aggregators.AggregationField{
 					{
-						Method: "median",
+						Method:    "median",
+						OutputKey: "Price",
 					},
 				},
 				extraConfig: map[string]any{},
@@ -517,7 +540,8 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				},
 				fields: []aggregators.AggregationField{
 					{
-						Method: "median",
+						Method:    "median",
+						OutputKey: "Price",
 					},
 				},
 				extraConfig: map[string]any{},
@@ -550,7 +574,8 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				previousOutcome: nil,
 				fields: []aggregators.AggregationField{
 					{
-						Method: "median",
+						Method:    "median",
+						OutputKey: "Price",
 					},
 				},
 				extraConfig: map[string]any{},
@@ -574,6 +599,125 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 	})
 }
 
+func TestInputChanges(t *testing.T) {
+	fields := []aggregators.AggregationField{
+		{
+			InputKey:  "FeedID",
+			OutputKey: "FeedID",
+			Method:    "mode",
+		},
+		{
+			InputKey:        "BenchmarkPrice",
+			OutputKey:       "Price",
+			Method:          "median",
+			DeviationString: "10",
+			DeviationType:   "percent",
+		},
+		{
+			InputKey:        "Timestamp",
+			OutputKey:       "Timestamp",
+			Method:          "median",
+			DeviationString: "100",
+			DeviationType:   "absolute",
+		},
+	}
+	config := getConfigReduceAggregator(t, fields, map[string]any{})
+	agg, err := aggregators.NewReduceAggregator(*config)
+	require.NoError(t, err)
+
+	// First Round
+	mockValue1, err := values.WrapMap(map[string]any{
+		"FeedID":         idABytes[:],
+		"BenchmarkPrice": int64(100),
+		"Timestamp":      12341414929,
+	})
+	require.NoError(t, err)
+	pb := &pb.Map{}
+	outcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValue1}, 2: {mockValue1}, 3: {mockValue1}}, 1)
+	require.NoError(t, err)
+	shouldReport := true
+	require.Equal(t, shouldReport, outcome.ShouldReport)
+
+	// validate metadata
+	proto.Unmarshal(outcome.Metadata, pb)
+	vmap, err := values.FromMapValueProto(pb)
+	require.NoError(t, err)
+	state, err := vmap.Unwrap()
+	require.NoError(t, err)
+	expectedState1 := map[string]any{
+		"FeedID":    idABytes[:],
+		"Price":     int64(100),
+		"Timestamp": int64(12341414929),
+	}
+	require.Equal(t, expectedState1, state)
+
+	// validate encodable outcome
+	val, err := values.FromMapValueProto(outcome.EncodableOutcome)
+	require.NoError(t, err)
+	topLevelMap, err := val.Unwrap()
+	require.NoError(t, err)
+	mm, ok := topLevelMap.(map[string]any)
+	require.True(t, ok)
+
+	require.NoError(t, err)
+	expectedOutcome1 := map[string]any{
+		"Reports": []any{
+			map[string]any{
+				"FeedID":    idABytes[:],
+				"Timestamp": int64(12341414929),
+				"Price":     int64(100),
+			},
+		},
+	}
+	require.Equal(t, expectedOutcome1, mm)
+
+	// Second Round
+	mockValue2, err := values.WrapMap(map[string]any{
+		"FeedID":         true,
+		"Timestamp":      int64(12341414929),
+		"BenchmarkPrice": int64(100),
+	})
+	require.NoError(t, err)
+	outcome, err = agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValue2}, 2: {mockValue2}, 3: {mockValue2}}, 1)
+	require.NoError(t, err)
+	require.Equal(t, shouldReport, outcome.ShouldReport)
+
+	// validate metadata
+	proto.Unmarshal(outcome.Metadata, pb)
+	vmap, err = values.FromMapValueProto(pb)
+	require.NoError(t, err)
+	state, err = vmap.Unwrap()
+	require.NoError(t, err)
+	expectedState2 := map[string]any{
+		"FeedID":    true,
+		"Price":     int64(100),
+		"Timestamp": int64(12341414929),
+	}
+	require.Equal(t, expectedState2, state)
+
+	// validate encodable outcome
+	val, err = values.FromMapValueProto(outcome.EncodableOutcome)
+	require.NoError(t, err)
+	topLevelMap, err = val.Unwrap()
+	require.NoError(t, err)
+	mm, ok = topLevelMap.(map[string]any)
+	require.True(t, ok)
+
+	require.NoError(t, err)
+	expectedOutcome2 := map[string]any{
+		"Reports": []any{
+			map[string]any{
+				"FeedID":    true,
+				"Timestamp": int64(12341414929),
+				"Price":     int64(100),
+			},
+		},
+	}
+
+	require.Equal(t, expectedOutcome2, mm)
+
+}
+
 func TestMedianAggregator_ParseConfig(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		cases := []struct {
@@ -582,12 +726,13 @@ func TestMedianAggregator_ParseConfig(t *testing.T) {
 			outputFactory func() aggregators.ReduceAggConfig
 		}{
 			{
-				name: "no inputkey or outputkey",
+				name: "no inputkey",
 				inputFactory: func() map[string]any {
 					return map[string]any{
 						"fields": []aggregators.AggregationField{
 							{
-								Method: "median",
+								Method:    "median",
+								OutputKey: "Price",
 							},
 						},
 					}
@@ -597,7 +742,7 @@ func TestMedianAggregator_ParseConfig(t *testing.T) {
 						Fields: []aggregators.AggregationField{
 							{
 								InputKey:        "",
-								OutputKey:       "",
+								OutputKey:       "Price",
 								Method:          "median",
 								DeviationString: "",
 								Deviation:       decimal.Decimal{},
@@ -894,6 +1039,64 @@ func TestMedianAggregator_ParseConfig(t *testing.T) {
 								InputKey:  "FeedID",
 								OutputKey: "FeedID",
 								Method:    "median",
+							},
+						},
+					})
+					require.NoError(t, err)
+					return vMap
+				},
+			},
+			{
+				name: "clashing output keys",
+				configFactory: func() *values.Map {
+					vMap, err := values.NewMap(map[string]any{
+						"fields": []aggregators.AggregationField{
+							{
+								InputKey:  "FeedID",
+								OutputKey: "FeedID",
+								Method:    "median",
+							},
+							{
+								InputKey:  "FeedID",
+								OutputKey: "FeedID",
+								Method:    "median",
+							},
+						},
+					})
+					require.NoError(t, err)
+					return vMap
+				},
+			},
+			{
+				name: "map/array type, no output key",
+				configFactory: func() *values.Map {
+					vMap, err := values.NewMap(map[string]any{
+						"fields": []aggregators.AggregationField{
+							{
+								InputKey: "FeedID",
+								Method:   "median",
+							},
+						},
+					})
+					require.NoError(t, err)
+					return vMap
+				},
+			},
+			{
+				name: "report type value with multiple fields",
+				configFactory: func() *values.Map {
+					vMap, err := values.NewMap(map[string]any{
+						"reportFormat": "value",
+						"fields": []aggregators.AggregationField{
+							{
+								InputKey:  "FeedID",
+								Method:    "median",
+								OutputKey: "FeedID",
+							},
+							{
+								InputKey:  "Price",
+								Method:    "median",
+								OutputKey: "Price",
 							},
 						},
 					})

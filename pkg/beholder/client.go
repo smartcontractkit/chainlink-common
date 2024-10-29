@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -232,6 +233,21 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Add csa public key resource attribute
+	csaPublicKeyHex := "not-configured"
+	if len(cfg.AuthenticatorPublicKey) > 0 {
+		csaPublicKeyHex = fmt.Sprintf("%x", cfg.AuthenticatorPublicKey)
+	}
+	csaPublicKeyAttr := attribute.String("csa_public_key", csaPublicKeyHex)
+	resource, err = sdkresource.Merge(
+		sdkresource.NewSchemaless(csaPublicKeyAttr),
+		resource,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// Add custom resource attributes
 	resource, err = sdkresource.Merge(
 		sdkresource.NewSchemaless(cfg.ResourceAttributes...),

@@ -27,7 +27,7 @@ func (c *Client) GetDataSourceByName(name string) (*Datasource, *resty.Response,
 
 	statusCode := resp.StatusCode()
 	if statusCode != 200 {
-		return nil, resp, fmt.Errorf("error fetching datasource, received unexpected status code %d: %s", statusCode, resp.String())
+		return nil, resp, fmt.Errorf("error fetching datasource %s, received unexpected status code %d: %s", name, statusCode, resp.String())
 	}
 	return &grafanaResp, resp, nil
 }

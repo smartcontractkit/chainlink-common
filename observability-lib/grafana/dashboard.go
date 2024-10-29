@@ -40,6 +40,24 @@ type DeployOptions struct {
 	NotificationTemplates string
 }
 
+func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
+	for _, a := range alerts {
+		if a.Title == alert.Title {
+			return true
+		}
+	}
+	return false
+}
+
+func getAlertRuleByTitle(alerts []alerting.Rule, title string) *alerting.Rule {
+	for _, a := range alerts {
+		if a.Title == title {
+			return &a
+		}
+	}
+	return nil
+}
+
 func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 	grafanaClient := api.NewClient(
 		options.GrafanaURL,
@@ -70,9 +88,12 @@ func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 
 		// delete alert rules for the dashboard
 		for _, rule := range alertsRule {
-			_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
-			if errDeleteAlertRule != nil {
-				return errDeleteAlertRule
+			// delete alert rule only if it won't be created again from code
+			if !alertRuleExist(db.Alerts, rule) {
+				_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
+				if errDeleteAlertRule != nil {
+					return errDeleteAlertRule
+				}
 			}
 		}
 
@@ -86,10 +107,21 @@ func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 			if panelId != "" {
 				alert.Annotations["__panelId__"] = panelIDByTitle(db.Dashboard, alert.Title)
 			}
-
-			_, _, errPostAlertRule := grafanaClient.PostAlertRule(alert)
-			if errPostAlertRule != nil {
-				return errPostAlertRule
+			if alertRuleExist(alertsRule, alert) {
+				// update alert rule if it already exists
+				alertToUpdate := getAlertRuleByTitle(alertsRule, alert.Title)
+				if alertToUpdate != nil {
+					_, _, errPutAlertRule := grafanaClient.UpdateAlertRule(*alertToUpdate.Uid, alert)
+					if errPutAlertRule != nil {
+						return errPutAlertRule
+					}
+				}
+			} else {
+				// create alert rule if it doesn't exist
+				_, _, errPostAlertRule := grafanaClient.PostAlertRule(alert)
+				if errPostAlertRule != nil {
+					return errPostAlertRule
+				}
 			}
 		}
 	}

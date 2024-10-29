@@ -25,18 +25,21 @@ func TestAuthenticator_SignerAuth(t *testing.T) {
 		"X-Beholder-Node-Auth-Token": "1:746573742d7075626c69632d6b6579:746573742d7369676e6174757265",
 	}
 	assert.Equal(t, expectedHeaders, a.GetHeaders())
+	assert.Equal(t, c.AuthenticatorPublicKey, a.GetPubKey())
 }
 
 func TestAuthenticator_HeadersAuth(t *testing.T) {
 	// Authenticator should use the headers if they are set
 	expectedHeaders := map[string]string{"test-header-key": "test-header-value"}
 	c := beholder.Config{
-		AuthenticatorHeaders: expectedHeaders,
+		AuthenticatorHeaders:   expectedHeaders,
+		AuthenticatorPublicKey: []byte("test-public-key"),
 	}
 
 	a, err := beholder.NewAuthenticator(c)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedHeaders, a.GetHeaders())
+	assert.Equal(t, c.AuthenticatorPublicKey, a.GetPubKey())
 }
 
 func TestAuthenticator_NoAuth(t *testing.T) {
@@ -47,6 +50,7 @@ func TestAuthenticator_NoAuth(t *testing.T) {
 	assert.NoError(t, err)
 	expectedHeaders := map[string]string{}
 	assert.Equal(t, expectedHeaders, a.GetHeaders())
+	assert.Equal(t, []byte(nil), a.GetPubKey())
 }
 
 func TestAuthenticator_Config(t *testing.T) {
@@ -62,9 +66,19 @@ func TestAuthenticator_Config(t *testing.T) {
 	_, err = beholder.NewAuthenticator(c)
 	assert.Error(t, err)
 
-	// Configuring neither auth signer nor auth header should not error
+	// Configuring headers with no public key should error
 	c = defaultTestingConfig()
 	c.AuthenticatorSigner = nil
+	c.AuthenticatorHeaders = map[string]string{"test-header-key": "test-header-value"}
+	c.AuthenticatorPublicKey = nil
+	_, err = beholder.NewAuthenticator(c)
+	assert.Error(t, err)
+
+	// Configuring neither auth signer, nor auth heade, nor pub key should not error
+	c = defaultTestingConfig()
+	c.AuthenticatorSigner = nil
+	c.AuthenticatorPublicKey = nil
+	c.AuthenticatorHeaders = nil
 	_, err = beholder.NewAuthenticator(c)
 	assert.NoError(t, err)
 }

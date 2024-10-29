@@ -161,3 +161,96 @@ func (c *simpleMyType) T() sdk.CapDefinition[time.Time] {
 }
 
 func (c *simpleMyType) private() {}
+
+// MyType2Wrapper allows access to field from an sdk.CapDefinition[MyType2]
+func MyType2Wrapper(raw sdk.CapDefinition[MyType2]) MyType2Cap {
+	wrapped, ok := raw.(MyType2Cap)
+	if ok {
+		return wrapped
+	}
+	return &myType2Cap{CapDefinition: raw}
+}
+
+type MyType2Cap interface {
+	sdk.CapDefinition[MyType2]
+	I() sdk.CapDefinition[int]
+	Nested() MyNestedTypeCap
+	O() pkg2.OtherPackageCap
+	S() sdk.CapDefinition[string]
+	T() sdk.CapDefinition[time.Time]
+	private()
+}
+
+type myType2Cap struct {
+	sdk.CapDefinition[MyType2]
+}
+
+func (*myType2Cap) private() {}
+func (c *myType2Cap) I() sdk.CapDefinition[int] {
+	return sdk.AccessField[MyType2, int](c.CapDefinition, "I")
+}
+func (c *myType2Cap) Nested() MyNestedTypeCap {
+	return MyNestedTypeWrapper(sdk.AccessField[MyType2, MyNestedType](c.CapDefinition, "Nested"))
+}
+func (c *myType2Cap) O() pkg2.OtherPackageCap {
+	return pkg2.OtherPackageWrapper(sdk.AccessField[MyType2, pkg2.OtherPackage](c.CapDefinition, "O"))
+}
+func (c *myType2Cap) S() sdk.CapDefinition[string] {
+	return sdk.AccessField[MyType2, string](c.CapDefinition, "S")
+}
+func (c *myType2Cap) T() sdk.CapDefinition[time.Time] {
+	return sdk.AccessField[MyType2, time.Time](c.CapDefinition, "T")
+}
+
+func ConstantMyType2(value MyType2) MyType2Cap {
+	return &myType2Cap{CapDefinition: sdk.ConstantDefinition(value)}
+}
+
+func NewMyType2FromFields(
+	i sdk.CapDefinition[int],
+	nested MyNestedTypeCap,
+	o pkg2.OtherPackageCap,
+	s sdk.CapDefinition[string],
+	t sdk.CapDefinition[time.Time]) MyType2Cap {
+	return &simpleMyType2{
+		CapDefinition: sdk.ComponentCapDefinition[MyType2]{
+			"I":      i.Ref(),
+			"Nested": nested.Ref(),
+			"O":      o.Ref(),
+			"S":      s.Ref(),
+			"T":      t.Ref(),
+		},
+		i:      i,
+		nested: nested,
+		o:      o,
+		s:      s,
+		t:      t,
+	}
+}
+
+type simpleMyType2 struct {
+	sdk.CapDefinition[MyType2]
+	i      sdk.CapDefinition[int]
+	nested MyNestedTypeCap
+	o      pkg2.OtherPackageCap
+	s      sdk.CapDefinition[string]
+	t      sdk.CapDefinition[time.Time]
+}
+
+func (c *simpleMyType2) I() sdk.CapDefinition[int] {
+	return c.i
+}
+func (c *simpleMyType2) Nested() MyNestedTypeCap {
+	return c.nested
+}
+func (c *simpleMyType2) O() pkg2.OtherPackageCap {
+	return c.o
+}
+func (c *simpleMyType2) S() sdk.CapDefinition[string] {
+	return c.s
+}
+func (c *simpleMyType2) T() sdk.CapDefinition[time.Time] {
+	return c.t
+}
+
+func (c *simpleMyType2) private() {}

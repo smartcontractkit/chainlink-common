@@ -22,6 +22,8 @@ func TestGenerateUserTypes(t *testing.T) {
 	t.Run("generated types work as expected", func(t *testing.T) {
 		onlyVerifySyntax(func() {
 			myVal := pkg.ConstantMyType(pkg.MyType{I: 10})
+			// verify both types were generated from different files
+			pkg.ConstantMyType2(pkg.MyType2{I: 10})
 
 			var tmp sdk.CapDefinition[pkg.MyType] = myVal // nolint
 			_ = tmp

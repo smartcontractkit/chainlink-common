@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-
 	"strings"
 	"sync"
 	"time"
@@ -72,7 +71,6 @@ func (r *store) delete(id string) {
 var (
 	defaultTickInterval     = 100 * time.Millisecond
 	defaultTimeout          = 2 * time.Second
-	defaultMaxMemoryMBs     = 256
 	DefaultInitialFuel      = uint64(100_000_000)
 	defaultMaxFetchRequests = 5
 )
@@ -159,12 +157,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	if modCfg.Timeout == nil {
 		modCfg.Timeout = &defaultTimeout
 	}
-
-	// Take the max of the default and the configured max memory mbs.
-	// We do this because Go requires a minimum of 16 megabytes to run,
-	// and local testing has shown that with less than 64 mbs, some
-	// binaries may error sporadically.
-	modCfg.MaxMemoryMBs = int64(math.Max(float64(defaultMaxMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)

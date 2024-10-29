@@ -13,6 +13,7 @@ import (
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 )
 
+// Aggregates by the most frequent observation for each index of a data set
 type identicalAggregator struct {
 	config identicalAggConfig
 }

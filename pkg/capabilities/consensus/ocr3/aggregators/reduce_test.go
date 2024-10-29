@@ -456,7 +456,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				},
 				shouldReport: true,
 				expectedOutcome: map[string]any{
-					"Reports": []any{map[string]any{"Price": 1}},
+					"Reports": []any{map[string]any{"Price": int64(1)}},
 				},
 				expectedState: map[string]any{"Price": int64(1)},
 			},

@@ -60,10 +60,10 @@ func general(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource:  p.MetricsDataSource.Name,
-			Title:       "WorkflowsRunning",
+			Title:       "Workflows Running",
 			Description: "",
 			Span:        8,
-			Height:      6,
+			Height:      8,
 			Query: []grafana.Query{
 				{
 					Expr:   `sum(WorkflowsRunning{` + p.platformOpts.LabelQuery + `}) by (workflowOwner, workflowName)`,
@@ -98,6 +98,87 @@ func general(p *Props) []*grafana.Panel {
 							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflows Running by status",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(WorkflowsRunning{` + p.platformOpts.LabelQuery + `}) by (status)`,
+					Legend: "{{ status }}",
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflow Execution Latency",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(WorkflowExecutionLatency{` + p.platformOpts.LabelQuery + `}) by (workflowExecutionID)`,
+					Legend: "WorkflowExecID: {{workflowExecutionID}}",
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflow Step Error",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Query: []grafana.Query{
+				{
+					Expr:   `WorkflowStepError{` + p.platformOpts.LabelQuery + `}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Register Trigger Failure",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Query: []grafana.Query{
+				{
+					Expr:   `RegisterTriggerFailure{` + p.platformOpts.LabelQuery + `}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Capability Invocation",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Query: []grafana.Query{
+				{
+					Expr:   `CapabilityInvocation{` + p.platformOpts.LabelQuery + `}`,
+					Legend: "",
 				},
 			},
 		},

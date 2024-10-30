@@ -21,8 +21,9 @@ func TestGenerateFile(t *testing.T) {
 
 	testDashboard, err := NewDashboard(&Props{
 		Name:              "Workflows",
-		MetricsDataSource: grafana.NewDataSource("P5DCFC7561CCDE821", "P5DCFC7561CCDE821"),
-		LogsDataSource:    grafana.NewDataSource("P5DCFC7561CCDE821", "P5DCFC7561CCDE821"),
+		MetricsDataSource: grafana.NewDataSource("Prometheus", "1"),
+		LogsDataSource:    grafana.NewDataSource("Loki", "2"),
+		Tested:            true,
 	})
 	if err != nil {
 		t.Errorf("Error creating dashboard: %v", err)
@@ -54,8 +55,9 @@ func TestNewDashboard(t *testing.T) {
 	t.Run("NewDashboard creates a dashboard", func(t *testing.T) {
 		testDashboard, err := NewDashboard(&Props{
 			Name:              "Workflows",
-			MetricsDataSource: grafana.NewDataSource("P5DCFC7561CCDE821", "P5DCFC7561CCDE821"),
-			LogsDataSource:    grafana.NewDataSource("P5DCFC7561CCDE821", "P5DCFC7561CCDE821"),
+			MetricsDataSource: grafana.NewDataSource("Prometheus", "1"),
+			LogsDataSource:    grafana.NewDataSource("Loki", "2"),
+			Tested:            true,
 		})
 		if err != nil {
 			t.Errorf("Error creating dashboard: %v", err)

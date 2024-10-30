@@ -1,0 +1,485 @@
+{
+  "Dashboard": {
+    "title": "Workflows",
+    "tags": [
+      "Keystone"
+    ],
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 0,
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "fiscalYearStartMonth": 0,
+    "refresh": "30s",
+    "schemaVersion": 39,
+    "panels": [
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "General",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "timeseries",
+        "id": 1,
+        "targets": [
+          {
+            "expr": "sum(WorkflowsRunning{}) by (workflowOwner, workflowName)",
+            "format": "",
+            "legendFormat": "{{ workflowOwner }} - {{ workflowName }}",
+            "refId": ""
+          }
+        ],
+        "title": "Workflows Running",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 1
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 2,
+        "targets": [
+          {
+            "expr": "sum(WorkflowsRunning{}) by (status)",
+            "format": "",
+            "legendFormat": "{{ status }}",
+            "refId": ""
+          }
+        ],
+        "title": "Workflows Running by status",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 1
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 3,
+        "targets": [
+          {
+            "expr": "sum(WorkflowExecutionLatency{}) by (workflowExecutionID)",
+            "format": "",
+            "legendFormat": "WorkflowExecID: {{workflowExecutionID}}",
+            "refId": ""
+          }
+        ],
+        "title": "Workflow Execution Latency",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 1
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 4,
+        "targets": [
+          {
+            "expr": "WorkflowStepError{}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Workflow Step Error",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 9
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 5,
+        "targets": [
+          {
+            "expr": "RegisterTriggerFailure{}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Register Trigger Failure",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 9
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 6,
+        "targets": [
+          {
+            "expr": "CapabilityInvocation{}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Capability Invocation",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 9
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "type": "query",
+          "name": "env",
+          "label": "Environment",
+          "description": "",
+          "query": "label_values(WorkflowsRunning, env)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1
+        },
+        {
+          "type": "query",
+          "name": "cluster",
+          "label": "Cluster",
+          "description": "",
+          "query": "label_values(WorkflowsRunning{env=\"$env\"}, cluster)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1
+        },
+        {
+          "type": "query",
+          "name": "workflowOwner",
+          "label": "Workflow Owner",
+          "description": "",
+          "query": "label_values(WorkflowsRunning{env=\"$env\", cluster=\"$cluster\"}, workflowOwner)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1
+        },
+        {
+          "type": "query",
+          "name": "workflowName",
+          "label": "Workflow Name",
+          "description": "",
+          "query": "label_values(WorkflowsRunning{env=\"$env\", cluster=\"$cluster\", workflowOwner=\"$workflowOwner\"}, workflowName)",
+          "datasource": {
+            "uid": "Prometheus"
+          },
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "multi": false,
+          "sort": 1
+        }
+      ]
+    },
+    "annotations": {}
+  },
+  "Alerts": [
+    {
+      "annotations": {
+        "description": "The number of workflow running is  {{ index $values \"A\" }}%",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Keystone: No workflows are running"
+      },
+      "condition": "B",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "sum(WorkflowsRunning{})",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    1,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "B",
+            "type": "threshold"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
+        "severity": "critical"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "Workflows Running"
+    }
+  ],
+  "ContactPoints": null,
+  "NotificationPolicies": null
+}

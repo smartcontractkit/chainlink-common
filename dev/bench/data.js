@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730231348762,
+  "lastUpdate": 1730311822730,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5292,6 +5292,48 @@ window.BENCHMARK_DATA = {
             "value": 28302,
             "unit": "ns/op",
             "extra": "42434 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0c0f971b1e73fb7cf79372fadce77d20de34cbe7",
+          "message": "fix consensus cap encoder debug message (#900)",
+          "timestamp": "2024-10-30T14:09:22-04:00",
+          "tree_id": "66eb5d76c48cb67523e3785fdade7887f5557791",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0c0f971b1e73fb7cf79372fadce77d20de34cbe7"
+        },
+        "date": 1730311821995,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 448.2,
+            "unit": "ns/op",
+            "extra": "2681024 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 520.4,
+            "unit": "ns/op",
+            "extra": "2265238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28284,
+            "unit": "ns/op",
+            "extra": "42475 times\n4 procs"
           }
         ]
       }

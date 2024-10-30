@@ -34,11 +34,30 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 
 	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
 		VariableOption: &grafana.VariableOption{
+			Label: "Environment",
+			Name:  "env",
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(WorkflowsRunning, env)`,
+		Multi:      false,
+	}))
+
+	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
+			Label: "Cluster",
+			Name:  "cluster",
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(WorkflowsRunning{env="$env"}, cluster)`,
+	}))
+
+	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
 			Label: "Workflow Owner",
 			Name:  "workflowOwner",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(WorkflowsRunning, workflowOwner)`,
+		Query:      `label_values(WorkflowsRunning{env="$env", cluster="$cluster"}, workflowOwner)`,
 		Multi:      false,
 	}))
 
@@ -48,7 +67,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "workflowName",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(WorkflowsRunning{workflowOwner="$workflowOwner"}, workflowName)`,
+		Query:      `label_values(WorkflowsRunning{env="$env", cluster="$cluster", workflowOwner="$workflowOwner"}, workflowName)`,
 	}))
 
 	return variables

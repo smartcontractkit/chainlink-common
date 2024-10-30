@@ -62,6 +62,8 @@ func platformBuildOpts(props *Props) error {
 	if !props.Tested {
 		po := platformOpts{
 			LabelFilters: map[string]string{
+				"env":           `=~"${env}"`,
+				"cluster":       `=~"${cluster}"`,
 				"workflowOwner": `=~"${workflowOwner}"`,
 				"workflowName":  `=~"${workflowName}"`,
 			},

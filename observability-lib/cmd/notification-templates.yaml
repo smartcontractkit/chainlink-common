@@ -54,3 +54,12 @@ slack: |-
   {{ define "slack.chainlink.title" }}
     {{ template "alert_severity_prefix_emoji" . }} [{{- if gt (len .Alerts.Resolved) 0}}{{ .Status | toUpper }}{{- else }}{{ .CommonLabels.severity | toUpper }}{{- end }}:{{ .Alerts | len }}] {{ .CommonLabels.alertname }}
   {{ end }}
+
+pagerduty: |-
+  {{ define "pagerduty.chainlink.title" }}
+    [{{- if gt (len .Alerts.Resolved) 0}}{{ .Status | toUpper }}{{- else }}{{ .CommonLabels.severity | toUpper }}{{- end }}:{{ .Alerts | len }}] {{ .CommonLabels.alertname }}
+  {{ end }}
+
+  {{ define "pagerduty.chainlink.severity" }}
+    {{ if .CommonLabels.severity }}{{ .CommonLabels.severity | toLower }}{{ else }}critical{{ end }}
+  {{ end }}

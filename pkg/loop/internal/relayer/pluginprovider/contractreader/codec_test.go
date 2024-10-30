@@ -144,7 +144,10 @@ func (f *fakeCodec) Encode(_ context.Context, item any, itemType string) ([]byte
 		return []byte{}, nil
 	case interfacetests.TestItemWithConfigExtra:
 		ts := item.(*interfacetests.TestStruct)
-		ts.Account = anyAccountBytes
+		ts.AccountStruct = interfacetests.AccountStruct{
+			Account:    anyAccountBytes,
+			AccountStr: anyAccountString,
+		}
 		ts.BigField = big.NewInt(2)
 		return encoder.Marshal(ts)
 	case interfacetests.TestItemType, interfacetests.TestItemSliceType, interfacetests.TestItemArray2Type, interfacetests.TestItemArray1Type:

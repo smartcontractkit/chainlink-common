@@ -153,12 +153,16 @@ type MidLevelStaticTestStruct struct {
 	Inner      InnerStaticTestStruct
 }
 
+type AccountStruct struct {
+	Account    []byte
+	AccountStr string
+}
+
 type TestStruct struct {
 	Field               *int32
 	OracleID            commontypes.OracleID
 	OracleIDs           [32]commontypes.OracleID
-	Account             []byte
-	AccountStr          string
+	AccountStruct       AccountStruct
 	Accounts            [][]byte
 	DifferentField      string
 	BigField            *big.Int
@@ -175,8 +179,7 @@ type TestStructMissingField struct {
 	DifferentField      string
 	OracleID            commontypes.OracleID
 	OracleIDs           [32]commontypes.OracleID
-	Account             []byte
-	AccountStr          string
+	AccountStruct       AccountStruct
 	Accounts            [][]byte
 	BigField            *big.Int
 	NestedDynamicStruct MidLevelDynamicTestStruct
@@ -185,8 +188,7 @@ type TestStructMissingField struct {
 
 // compatibleTestStruct has fields in a different order
 type compatibleTestStruct struct {
-	Account             []byte
-	AccountStr          string
+	AccountStruct       AccountStruct
 	Accounts            [][]byte
 	BigField            *big.Int
 	DifferentField      string
@@ -217,11 +219,13 @@ func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	s := fmt.Sprintf("field%v", i)
 	fv := int32(i)
 	return TestStruct{
-		Field:          &fv,
-		OracleID:       commontypes.OracleID(i + 1),
-		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
-		Account:        tester.GetAccountBytes(i + 3),
-		AccountStr:     tester.GetAccountString(i + 3),
+		Field:     &fv,
+		OracleID:  commontypes.OracleID(i + 1),
+		OracleIDs: [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
+		AccountStruct: AccountStruct{
+			Account:    tester.GetAccountBytes(i),
+			AccountStr: tester.GetAccountString(i),
+		},
 		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
 		DifferentField: s,
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),

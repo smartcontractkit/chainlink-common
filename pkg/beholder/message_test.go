@@ -128,7 +128,7 @@ func ExampleMetadata() {
 	// map[beholder_data_schema:/schemas/ids/test_schema beholder_domain:TestDomain beholder_entity:TestEntity capability_contract_address:test_contract_address capability_id:test_capability_id capability_name:test_capability_name capability_version:test_capability_version don_id:test_don_id network_chain_id:test_chain_id network_name:[test_network] node_csa_key:test_key node_csa_signature:test_signature node_version:v1.0.0 workflow_execution_id:test_execution_id workflow_id:test_workflow_id workflow_name:test_workflow_name workflow_owner_address:test_owner_address workflow_spec_id:test_spec_id]
 }
 
-func ExampleValidate() {
+func ExampleMetadata_Validate() {
 	validate, err := beholder.NewMetadataValidator()
 	if err != nil {
 		fmt.Println(err)

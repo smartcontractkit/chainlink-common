@@ -33,6 +33,17 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 		}
 	}
 
+	if props.LogsDataSource == nil {
+		return nil, fmt.Errorf("LogsDataSource is required")
+	} else {
+		if props.LogsDataSource.Name == "" {
+			return nil, fmt.Errorf("LogsDataSource.Name is required")
+		}
+		if props.LogsDataSource.UID == "" {
+			return nil, fmt.Errorf("LogsDataSource.UID is required")
+		}
+	}
+
 	props.platformOpts = platformPanelOpts(props.Platform)
 	if props.Tested {
 		props.platformOpts.LabelQuery = ""
@@ -60,17 +71,17 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 				"color":     `{{ template "slack.chainlink.color" . }}`,
 			},
 		}))
-	}
 
-	notificationPolicyOptions := &grafana.NotificationPolicyOptions{
-		Receiver: "chainlink-slack",
-		GroupBy:  []string{"grafana_folder", "alertname"},
+		notificationPolicySlackOptions := &grafana.NotificationPolicyOptions{
+			Receiver: "chainlink-slack",
+			GroupBy:  []string{"grafana_folder", "alertname"},
+			Continue: grafana.Pointer(true),
+		}
+		for name, value := range props.AlertsTags {
+			notificationPolicySlackOptions.ObjectMatchers = append(notificationPolicySlackOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
+		}
+		builder.AddNotificationPolicy(grafana.NewNotificationPolicy(notificationPolicySlackOptions))
 	}
-	for name, value := range props.AlertsTags {
-		notificationPolicyOptions.ObjectMatchers = append(notificationPolicyOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
-	}
-
-	builder.AddNotificationPolicy(grafana.NewNotificationPolicy(notificationPolicyOptions))
 
 	builder.AddVars(vars(props)...)
 
@@ -147,7 +158,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "env",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up, env)`,
+			Query:      `label_values(uptime_seconds, env)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -156,7 +167,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "cluster",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env"}, cluster)`,
+			Query:      `label_values(uptime_seconds{env="$env"}, cluster)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -165,7 +176,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "namespace",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster"}, namespace)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster"}, namespace)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -174,7 +185,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "blockchain",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace"}, blockchain)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace"}, blockchain)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -183,7 +194,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "product",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain"}, product)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain"}, product)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -192,7 +203,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "network_type",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product"}, network_type)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product"}, network_type)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -201,8 +212,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "job",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product", network_type="$network_type"}, job)`,
-			Multi:      true,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product", network_type="$network_type"}, job)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -211,7 +221,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "pod",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", job="$job"}, pod)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", job="$job"}, pod)`,
 			Multi:      true,
 			IncludeAll: true,
 		}))
@@ -336,7 +346,7 @@ func headlines(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Health Avg by Service over 15m",
-			Span:       16,
+			Span:       24,
 			Height:     6,
 			Decimals:   1,
 			Unit:       "percent",
@@ -348,14 +358,24 @@ func headlines(p *Props) []*grafana.Panel {
 			},
 			Min: grafana.Pointer[float64](0),
 			Max: grafana.Pointer[float64](100),
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "green"},
+					{Value: grafana.Pointer[float64](50), Color: "red"},
+					{Value: grafana.Pointer[float64](70), Color: "orange"},
+					{Value: grafana.Pointer[float64](90), Color: "green"},
+				},
+			},
 		},
+		ThresholdStyle: common.GraphThresholdsStyleModeDashed,
 		LegendOptions: &grafana.LegendOptions{
 			DisplayMode: common.LegendDisplayModeList,
 			Placement:   common.LegendPlacementRight,
 		},
 		AlertOptions: &grafana.AlertOptions{
 			Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
-			Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
+			Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "C" }}%`,
 			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 			For:         "15m",
 			Tags: map[string]string{
@@ -388,7 +408,7 @@ func headlines(p *Props) []*grafana.Panel {
 					ThresholdExpression: &grafana.ThresholdExpression{
 						Expression: "C",
 						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
-							Params: []float64{1},
+							Params: []float64{90},
 							Type:   grafana.TypeThresholdTypeLt,
 						},
 					},
@@ -402,7 +422,7 @@ func headlines(p *Props) []*grafana.Panel {
 			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Health Avg by Service over 15m with health < 90%",
 			Description: "Only displays services with health average < 90%",
-			Span:        8,
+			Span:        24,
 			Height:      6,
 			Decimals:    1,
 			Unit:        "percent",
@@ -426,6 +446,22 @@ func headlines(p *Props) []*grafana.Panel {
 		GraphMode:   common.BigValueGraphModeLine,
 		TextMode:    common.BigValueTextModeValueAndName,
 		Orientation: common.VizOrientationHorizontal,
+	}))
+
+	panels = append(panels, grafana.NewLogPanel(&grafana.LogPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.LogsDataSource.Name,
+			Title:      "Logs with severity >= error",
+			Span:       24,
+			Height:     10,
+			Query: []grafana.Query{
+				{
+					Expr:   `{env="${env}", cluster="${cluster}", product="${product}", network_type="${network_type}", namespace="${namespace}", pod="${pod}"} | json | level=~"(error|panic|fatal|crit)"`,
+					Legend: "",
+				},
+			},
+		},
+		PrettifyJSON: true,
 	}))
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
@@ -1556,6 +1592,7 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Title:      "EVM Pool RPC Node Calls Success Rate",
 			Span:       24,
 			Height:     6,
+			Decimals:   2,
 			Unit:       "percentunit",
 			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{
@@ -1586,6 +1623,7 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Title:      "EVM Pool RPC Node Dials Failure Rate",
 			Span:       24,
 			Height:     6,
+			Decimals:   2,
 			Unit:       "percentunit",
 			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{

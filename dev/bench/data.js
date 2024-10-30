@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730311822730,
+  "lastUpdate": 1730324342562,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5334,6 +5334,48 @@ window.BENCHMARK_DATA = {
             "value": 28284,
             "unit": "ns/op",
             "extra": "42475 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a98d27835a2f792aa5553c037f63f87be08c89d2",
+          "message": "[CAPPL-214] Move secrets library; add decrypt function (#906)",
+          "timestamp": "2024-10-30T21:38:00Z",
+          "tree_id": "c3dc89c763ec2e95b5b23a752abc817b4226ffa7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a98d27835a2f792aa5553c037f63f87be08c89d2"
+        },
+        "date": 1730324342006,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.5,
+            "unit": "ns/op",
+            "extra": "2692136 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 509.7,
+            "unit": "ns/op",
+            "extra": "2357005 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28254,
+            "unit": "ns/op",
+            "extra": "42507 times\n4 procs"
           }
         ]
       }

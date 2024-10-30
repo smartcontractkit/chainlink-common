@@ -64,7 +64,7 @@ func TestGlobal(t *testing.T) {
 
 	// Get the auth headers
 	headers := authenticator.GetHeaders()
-	assert.Nil(t, headers)
+	assert.Equal(t, map[string]string{"X-Beholder-Node-Auth-Token": "noop-token"}, headers)
 }
 
 func TestClient_SetGlobalOtelProviders(t *testing.T) {

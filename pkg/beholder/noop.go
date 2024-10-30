@@ -36,7 +36,9 @@ func NewNoopClient() *Client {
 	messageEmitter := noopMessageEmitter{}
 
 	// Authenticator
-	authenticator := &Authenticator{}
+	authenticator := &Authenticator{
+		headers: map[string]string{"X-Beholder-Node-Auth-Token": "noop-token"},
+	}
 
 	return &Client{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, authenticator, noopOnClose}
 }

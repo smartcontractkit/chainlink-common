@@ -162,7 +162,11 @@ func getMap(envKeyPrefix string) map[string]string {
 	m := make(map[string]string)
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, envKeyPrefix) {
-			m[strings.TrimPrefix(env, envKeyPrefix)] = os.Getenv(env)
+			key, value, found := strings.Cut(env, "=")
+			if found {
+				key = strings.TrimPrefix(key, envKeyPrefix)
+				m[key] = value
+			}
 		}
 	}
 	return m

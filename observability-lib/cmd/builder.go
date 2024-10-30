@@ -8,6 +8,7 @@ import (
 	corenode "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/core-node"
 	corenodecomponents "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/core-node-components"
 	k8sresources "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/k8s-resources"
+	keystone_workflows "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/keystone-workflows"
 	nopocr "github.com/smartcontractkit/chainlink-common/observability-lib/dashboards/nop-ocr"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
@@ -24,6 +25,7 @@ const (
 	TypeDashboardNOPOCR2            TypeDashboard = "nop-ocr2"
 	TypeDashboardNOPOCR3            TypeDashboard = "nop-ocr3"
 	TypeDashboardCapabilities       TypeDashboard = "capabilities"
+	TypeDashboardKeystoneWorkflows  TypeDashboard = "keystone-workflows"
 )
 
 type OCRVersion string
@@ -108,6 +110,12 @@ func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
 		return capabilities.NewDashboard(&capabilities.Props{
 			Name:              options.Name,
 			MetricsDataSource: options.MetricsDataSource,
+		})
+	case TypeDashboardKeystoneWorkflows:
+		return keystone_workflows.NewDashboard(&keystone_workflows.Props{
+			Name:              options.Name,
+			MetricsDataSource: options.MetricsDataSource,
+			LogsDataSource:    options.LogsDataSource,
 		})
 	default:
 		return nil, errors.New("invalid dashboard type")

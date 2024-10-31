@@ -19,16 +19,16 @@ type Config struct {
 	EmitterExportTimeout time.Duration
 	// Batch processing is enabled by default
 	// Disable it only for testing
-	EmitterBatchProcessor      bool
-	EmitterExporterRetryConfig *RetryConfig
+	EmitterBatchProcessor bool
+	EmitterRetryConfig    *RetryConfig
 	// OTel Trace
-	TraceSampleRatio         float64
-	TraceBatchTimeout        time.Duration
-	TraceSpanExporter        sdktrace.SpanExporter // optional additional exporter
-	TraceExporterRetryConfig *RetryConfig
+	TraceSampleRatio  float64
+	TraceBatchTimeout time.Duration
+	TraceSpanExporter sdktrace.SpanExporter // optional additional exporter
+	TraceRetryConfig  *RetryConfig
 	// OTel Metric
 	MetricReaderInterval      time.Duration
-	MetricExporterRetryConfig *RetryConfig
+	MetricRetryConfig *RetryConfig
 	// OTel Log
 	LogExportTimeout time.Duration
 	// Batch processing is enabled by default
@@ -77,16 +77,16 @@ func DefaultConfig() Config {
 		EmitterExportTimeout:  1 * time.Second,
 		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
-		EmitterExporterRetryConfig: defaultRetryConfig.Copy(),
+		EmitterRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
 		// OTel trace exporter retry config
-		TraceExporterRetryConfig: defaultRetryConfig.Copy(),
+		TraceRetryConfig: defaultRetryConfig.Copy(),
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
 		// OTel metric exporter retry config
-		MetricExporterRetryConfig: defaultRetryConfig.Copy(),
+		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log
 		LogExportTimeout:  1 * time.Second,
 		LogBatchProcessor: true,
@@ -99,9 +99,9 @@ func TestDefaultConfig() Config {
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	// Retries are disabled for testing
-	config.EmitterExporterRetryConfig.MaxElapsedTime = 0 // Retry is disabled
-	config.TraceExporterRetryConfig.MaxElapsedTime = 0   // Retry is disabled
-	config.MetricExporterRetryConfig.MaxElapsedTime = 0  // Retry is disabled
+	config.EmitterRetryConfig.MaxElapsedTime = 0        // Retry is disabled
+	config.TraceRetryConfig.MaxElapsedTime = 0          // Retry is disabled
+	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
 	return config
 }
 

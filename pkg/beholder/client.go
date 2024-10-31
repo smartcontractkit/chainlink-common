@@ -94,13 +94,13 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
-	if cfg.EmitterExporterRetryConfig != nil {
+	if cfg.EmitterRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
-			Enabled:         cfg.EmitterExporterRetryConfig.Enabled(),
-			InitialInterval: cfg.EmitterExporterRetryConfig.GetInitialInterval(),
-			MaxInterval:     cfg.EmitterExporterRetryConfig.GetMaxInterval(),
-			MaxElapsedTime:  cfg.EmitterExporterRetryConfig.GetMaxElapsedTime(),
+			Enabled:         cfg.EmitterRetryConfig.Enabled(),
+			InitialInterval: cfg.EmitterRetryConfig.GetInitialInterval(),
+			MaxInterval:     cfg.EmitterRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  cfg.EmitterRetryConfig.GetMaxElapsedTime(),
 		}))
 	}
 	sharedLogExporter, err := otlploggrpcNew(opts...)
@@ -283,13 +283,13 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 	}
-	if config.TraceExporterRetryConfig != nil {
+	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		exporterOpts = append(exporterOpts, otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
-			Enabled:         config.TraceExporterRetryConfig.Enabled(),
-			InitialInterval: config.TraceExporterRetryConfig.GetInitialInterval(),
-			MaxInterval:     config.TraceExporterRetryConfig.GetMaxInterval(),
-			MaxElapsedTime:  config.TraceExporterRetryConfig.GetMaxElapsedTime(),
+			Enabled:         config.TraceRetryConfig.Enabled(),
+			InitialInterval: config.TraceRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.TraceRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.TraceRetryConfig.GetMaxElapsedTime(),
 		}))
 	}
 	// note: context is used internally
@@ -319,13 +319,13 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 	}
-	if config.MetricExporterRetryConfig != nil {
+	if config.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		opts = append(opts, otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
-			Enabled:         config.MetricExporterRetryConfig.Enabled(),
-			InitialInterval: config.MetricExporterRetryConfig.GetInitialInterval(),
-			MaxInterval:     config.MetricExporterRetryConfig.GetMaxInterval(),
-			MaxElapsedTime:  config.MetricExporterRetryConfig.GetMaxElapsedTime(),
+			Enabled:         config.MetricRetryConfig.Enabled(),
+			InitialInterval: config.MetricRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.MetricRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.MetricRetryConfig.GetMaxElapsedTime(),
 		}))
 	}
 	// note: context is unused internally

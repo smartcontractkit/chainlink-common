@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730382627335,
+  "lastUpdate": 1730391074723,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5418,6 +5418,48 @@ window.BENCHMARK_DATA = {
             "value": 28284,
             "unit": "ns/op",
             "extra": "42369 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2c5eeefca3f057846e2e346f4fda4deaaedef8d0",
+          "message": "(feat): New OCR3 Consensus Capability Aggregator: Reduce (#842)\n\n* (feat): New OCR3 consenus capability aggregator: Reduce\r\n\r\n* Refactor to be more dynamic\r\n\r\n* Add reduce consensus schema\r\n\r\n* Changes from review\r\n\r\n* (feat): Add subMaps\r\n\r\n* Add more unit tests\r\n\r\n* Use agg config in workflow sdk type\r\n\r\n* Pass through config values to workflow test\r\n\r\n* PoR example\r\n\r\n* Fix for upstream change\r\n\r\n* Changes from review: Keep state using OutputKeys, add new reportFormat value, more tests\r\n\r\n* fix test output type",
+          "timestamp": "2024-10-31T12:10:16-04:00",
+          "tree_id": "378c3c37fd44bb98c65f004c4e1281675df95a63",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2c5eeefca3f057846e2e346f4fda4deaaedef8d0"
+        },
+        "date": 1730391074198,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.8,
+            "unit": "ns/op",
+            "extra": "2652906 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 530.5,
+            "unit": "ns/op",
+            "extra": "2244826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28284,
+            "unit": "ns/op",
+            "extra": "42466 times\n4 procs"
           }
         ]
       }

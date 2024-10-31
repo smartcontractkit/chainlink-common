@@ -439,29 +439,55 @@ func createFetchFn(
 	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
 		const errFetchSfx = "error calling fetch"
 
+		// writeErr marshals and writes an error response to wasm
+		writeErr := func(err error) int32 {
+			resp := &wasmpb.FetchResponse{
+				ExecutionError: true,
+				ErrorMessage:   err.Error(),
+			}
+
+			respBytes, perr := proto.Marshal(resp)
+			if perr != nil {
+				logger.Errorf("%s: %s", errFetchSfx, perr)
+				return ErrnoFault
+			}
+
+			if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
+				logger.Errorf("%s: %s", errFetchSfx, errors.New("failed to write error response"))
+				return ErrnoFault
+			}
+
+			if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
+				logger.Errorf("%s: %s", errFetchSfx, errors.New("failed to write error response length"))
+				return ErrnoFault
+			}
+
+			return ErrnoSuccess
+		}
+
 		b, innerErr := reader(caller, reqptr, reqptrlen)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
-			return ErrnoFault
+			return writeErr(innerErr)
 		}
 
 		req := &wasmpb.FetchRequest{}
 		innerErr = proto.Unmarshal(b, req)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
-			return ErrnoFault
+			return writeErr(innerErr)
 		}
 
 		storedRequest, innerErr := requestStore.get(req.Id)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
-			return ErrnoFault
+			return writeErr(innerErr)
 		}
 
 		// limit the number of fetch calls we can make per request
 		if storedRequest.fetchRequestsCounter >= modCfg.MaxFetchRequests {
 			logger.Errorf("%s: max number of fetch request %d exceeded", errFetchSfx, modCfg.MaxFetchRequests)
-			return ErrnoFault
+			return writeErr(errors.New("max number of fetch requests exceeded"))
 		}
 		storedRequest.fetchRequestsCounter++
 
@@ -474,21 +500,21 @@ func createFetchFn(
 		})
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
-			return ErrnoFault
+			return writeErr(innerErr)
 		}
 
 		respBytes, innerErr := proto.Marshal(fetchResp)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
-			return ErrnoFault
+			return writeErr(innerErr)
 		}
 
 		if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
-			return ErrnoFault
+			return writeErr(errors.New("failed to write response"))
 		}
 
 		if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
-			return ErrnoFault
+			return writeErr(errors.New("failed to write response length"))
 		}
 
 		return ErrnoSuccess

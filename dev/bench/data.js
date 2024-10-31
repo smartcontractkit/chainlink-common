@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730391074723,
+  "lastUpdate": 1730406436197,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5460,6 +5460,48 @@ window.BENCHMARK_DATA = {
             "value": 28284,
             "unit": "ns/op",
             "extra": "42466 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bd86494c574b9e3819055653655c14f833772589",
+          "message": "[chore] Move validate function to secrets package (#908)",
+          "timestamp": "2024-10-31T16:26:15-04:00",
+          "tree_id": "fa02af95589a70459b3c4f2ac03eb41c7622392f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bd86494c574b9e3819055653655c14f833772589"
+        },
+        "date": 1730406435442,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.4,
+            "unit": "ns/op",
+            "extra": "2672859 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 520.4,
+            "unit": "ns/op",
+            "extra": "2349866 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28504,
+            "unit": "ns/op",
+            "extra": "42475 times\n4 procs"
           }
         ]
       }

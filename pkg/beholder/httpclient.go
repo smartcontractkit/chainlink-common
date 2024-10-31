@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"os"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -29,7 +28,7 @@ func newCertFromFile(certFile string) (*x509.CertPool, error) {
 	}
 	cp := x509.NewCertPool()
 	if !cp.AppendCertsFromPEM(b) {
-		return nil, fmt.Errorf("credentials: failed to append certificates")
+		return nil, errors.New("credentials: failed to append certificates")
 	}
 	return cp, nil
 }

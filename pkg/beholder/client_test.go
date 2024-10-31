@@ -2,12 +2,13 @@ package beholder
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -133,15 +134,15 @@ func TestClient(t *testing.T) {
 
 			// Simulate exporter error if configured
 			if tc.exporterMockErrorCount > 0 {
-				exporterMock.On("Export", mock.Anything, mock.Anything).Return(fmt.Errorf("an error occurred")).Times(tc.exporterMockErrorCount)
+				exporterMock.On("Export", mock.Anything, mock.Anything).Return(errors.New("an error occurred")).Times(tc.exporterMockErrorCount)
 			}
 			customAttributes := tc.makeCustomAttributes()
 			if tc.exporterOutputExpected {
 				exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Times(tc.messageCount).
 					Run(func(args mock.Arguments) {
-						assert.IsType(t, args.Get(1), []sdklog.Record{}, "Record type mismatch")
+						assert.IsType(t, []sdklog.Record{}, args.Get(1), "Record type mismatch")
 						records := args.Get(1).([]sdklog.Record)
-						assert.Equal(t, 1, len(records), "batching is disabled, expecte 1 record")
+						assert.Len(t, records, 1, "batching is disabled, expecte 1 record")
 						record := records[0]
 						assert.Equal(t, tc.messageBody, record.Body().AsBytes(), "Record body mismatch")
 						actualAttributeKeys := map[string]struct{}{}
@@ -154,7 +155,7 @@ func TestClient(t *testing.T) {
 							}
 							expectedKv := OtelAttr(key, expectedValue)
 							equal := kv.Value.Equal(expectedKv.Value)
-							assert.True(t, equal, fmt.Sprintf("Record attributes mismatch for key %v", key))
+							assert.True(t, equal, "Record attributes mismatch for key %v", key)
 							return true
 						})
 						for key := range customAttributes {
@@ -285,9 +286,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 				err := emitter.Emit(tests.Context(t), message.Body, tc.attrs)
 				// Assert expectations
 				if tc.expectedError != "" {
-					assert.ErrorContains(t, err, tc.expectedError)
+					require.ErrorContains(t, err, tc.expectedError)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				if tc.exporterCalledTimes > 0 {
 					exporterMock.AssertExpectations(t)
@@ -304,10 +305,10 @@ func TestClient_Close(t *testing.T) {
 	defer exporterMock.AssertExpectations(t)
 
 	client, err := NewStdoutClient()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = client.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	exporterMock.AssertExpectations(t)
 }
@@ -317,7 +318,7 @@ func TestClient_ForPackage(t *testing.T) {
 	defer exporterMock.AssertExpectations(t)
 	var b strings.Builder
 	client, err := NewWriterClient(&b)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	clientForTest := client.ForPackage("TestClient_ForPackage")
 
 	// Log
@@ -350,14 +351,14 @@ func TestNewClient(t *testing.T) {
 			OtelExporterGRPCEndpoint: "grpc-endpoint",
 			OtelExporterHTTPEndpoint: "http-endpoint",
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, client)
 		assert.Equal(t, "only one exporter endpoint should be set", err.Error())
 	})
 
 	t.Run("no endpoints set", func(t *testing.T) {
 		client, err := NewClient(Config{})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, client)
 		assert.Equal(t, "at least one exporter endpoint should be set", err.Error())
 	})
@@ -366,7 +367,7 @@ func TestNewClient(t *testing.T) {
 		client, err := NewClient(Config{
 			OtelExporterGRPCEndpoint: "grpc-endpoint",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.IsType(t, &Client{}, client)
 	})
@@ -375,7 +376,7 @@ func TestNewClient(t *testing.T) {
 		client, err := NewClient(Config{
 			OtelExporterHTTPEndpoint: "http-endpoint",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.IsType(t, &Client{}, client)
 	})

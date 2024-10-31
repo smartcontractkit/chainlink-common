@@ -27,8 +27,8 @@ type Config struct {
 	TraceSpanExporter sdktrace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
 	// OTel Metric
-	MetricReaderInterval      time.Duration
-	MetricRetryConfig *RetryConfig
+	MetricReaderInterval time.Duration
+	MetricRetryConfig    *RetryConfig
 	// OTel Log
 	LogExportTimeout time.Duration
 	// Batch processing is enabled by default
@@ -99,9 +99,9 @@ func TestDefaultConfig() Config {
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	// Retries are disabled for testing
-	config.EmitterRetryConfig.MaxElapsedTime = 0        // Retry is disabled
-	config.TraceRetryConfig.MaxElapsedTime = 0          // Retry is disabled
-	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
+	config.EmitterRetryConfig.MaxElapsedTime = 0 // Retry is disabled
+	config.TraceRetryConfig.MaxElapsedTime = 0   // Retry is disabled
+	config.MetricRetryConfig.MaxElapsedTime = 0  // Retry is disabled
 	return config
 }
 
@@ -116,8 +116,8 @@ func TestDefaultConfigHTTPClient() Config {
 }
 
 func (c *RetryConfig) Copy() *RetryConfig {
-	copy := *c
-	return &copy
+	newConfig := *c
+	return &newConfig
 }
 
 // Calculate if retry is enabled

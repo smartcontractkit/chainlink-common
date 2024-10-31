@@ -75,7 +75,7 @@ func WorkflowSpecToProto(spec *sdk.WorkflowSpec) (*WorkflowSpec, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error translating step definition to proto: %w", err)
 		}
-		ws.Targets = append(ws.Consensus, tt)
+		ws.Targets = append(ws.Targets, tt)
 	}
 
 	return ws, nil
@@ -163,7 +163,7 @@ func ProtoToWorkflowSpec(spec *WorkflowSpec) (*sdk.WorkflowSpec, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error translating step definition to proto: %w", err)
 		}
-		ws.Targets = append(ws.Consensus, tt)
+		ws.Targets = append(ws.Targets, tt)
 	}
 
 	return ws, nil

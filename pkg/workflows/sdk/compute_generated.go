@@ -95,6 +95,58 @@ func Compute1WithConfig[I0 any, O any, C any](w *WorkflowSpecFactory, ref string
 	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
 }
 
+func Compute1WithMetadata[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1Inputs[I0], compute func(Runtime, I0, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
+	def := StepDefinition{
+		ID:     "custom_compute@1.0.0",
+		Ref:    ref,
+		Inputs: input.ToSteps(),
+		Config: map[string]any{
+			"config": "$(ENV.config)",
+			"binary": "$(ENV.binary)",
+		},
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime1Inputs[I0]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime1Inputs[I0]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		output, err := compute(runtime, inputs.Arg0, request.Metadata)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+
 type Compute2Inputs[T0 any, T1 any] struct {
 	Arg0 CapDefinition[T0]
 	Arg1 CapDefinition[T1]

@@ -28,16 +28,16 @@ func ExampleConfig() {
 		EmitterExportTimeout:  1 * time.Second,
 		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
-		EmitterExporterRetryConfig: nil,
+		EmitterRetryConfig: nil,
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
 		// OTel trace exporter retry config
-		TraceExporterRetryConfig: nil,
+		TraceRetryConfig: nil,
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
 		// OTel metric exporter retry config
-		MetricExporterRetryConfig: nil,
+		MetricRetryConfig: nil,
 		// Log
 		LogExportTimeout:  1 * time.Second,
 		LogBatchProcessor: true,

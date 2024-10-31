@@ -235,13 +235,15 @@ func Test_Compute_Emit(t *testing.T) {
 	}
 
 	t.Run("successfully call emit with metadata in labels", func(t *testing.T) {
+		ctx := tests.Context(t)
 		m, err := NewModule(&ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
-			Labeler: newMockMessageEmitter(func(msg string, kvs map[string]string) error {
+			Labeler: newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
 				t.Helper()
 
+				assert.Equal(t, ctx, gotCtx)
 				assert.Equal(t, "testing emit", msg)
 				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
 				assert.Equal(t, "workflow-id", kvs["workflow_id"])
@@ -255,7 +257,6 @@ func Test_Compute_Emit(t *testing.T) {
 
 		m.Start()
 
-		ctx := tests.Context(t)
 		_, err = m.Run(ctx, req)
 		assert.Nil(t, err)
 	})
@@ -267,7 +268,7 @@ func Test_Compute_Emit(t *testing.T) {
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
-			Labeler: newMockMessageEmitter(func(msg string, kvs map[string]string) error {
+			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, kvs map[string]string) error {
 				t.Helper()
 
 				assert.Equal(t, "testing emit", msg)
@@ -309,7 +310,7 @@ func Test_Compute_Emit(t *testing.T) {
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
-			Labeler: newMockMessageEmitter(func(msg string, labels map[string]string) error {
+			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, labels map[string]string) error {
 				return nil
 			}), // never called
 		}, binary)

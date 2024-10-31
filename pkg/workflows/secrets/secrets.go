@@ -3,6 +3,7 @@ package secrets
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -150,4 +151,45 @@ func DecryptSecretsForNode(
 	}
 
 	return payload.Secrets, nil
+}
+
+func ValidateEncryptedSecrets(secretsData []byte, encryptionPublicKeys map[string][32]byte, workflowOwner string) error {
+	var encryptedSecrets EncryptedSecretsResult
+	err := json.Unmarshal(secretsData, &encryptedSecrets)
+	if err != nil {
+		return fmt.Errorf("failed to parse encrypted secrets JSON: %w", err)
+	}
+
+	if encryptedSecrets.Metadata.WorkflowOwner != workflowOwner {
+		return fmt.Errorf("the workflow owner in the encrypted secrets metadata: %s does not match the input workflow owner: %s", encryptedSecrets.Metadata.WorkflowOwner, workflowOwner)
+	}
+
+	// Verify that the encryptedSecrets values are all valid base64 strings
+	for _, encryptedSecret := range encryptedSecrets.EncryptedSecrets {
+		_, err := base64.StdEncoding.DecodeString(encryptedSecret)
+		if err != nil {
+			return fmt.Errorf("the encrypted secrets JSON payload contains encrypted secrets which are not in base64 format: %w", err)
+		}
+	}
+
+	// Check that the p2pIds keys in encryptedSecrets.EncryptedSecrets match the keys in encryptionPublicKeys
+	for p2pId := range encryptedSecrets.Metadata.NodePublicEncryptionKeys {
+		if _, ok := encryptedSecrets.EncryptedSecrets[p2pId]; !ok {
+			return fmt.Errorf("no encrypted secret found for node with p2pId: %s. Ensure secrets have been correctly encrypted for this DON", p2pId)
+		}
+	}
+
+	// Check that the encryptionPublicKey values in the encryptedSecrets metadata match the keys in encryptionPublicKeys
+	for p2pId, keyFromMetadata := range encryptedSecrets.Metadata.NodePublicEncryptionKeys {
+		encryptionPublicKey, ok := encryptionPublicKeys[p2pId]
+		if !ok {
+			return fmt.Errorf("encryption key not found for node with p2pId: %s. Ensure secrets have been correctly encrypted for this DON", p2pId)
+		}
+
+		if keyFromMetadata != hex.EncodeToString(encryptionPublicKey[:]) {
+			return fmt.Errorf("the encryption public key in the encrypted secrets metadata does not match the one in the workflow registry. Ensure secrets have been correctly encrypted for this DON")
+		}
+	}
+
+	return nil
 }

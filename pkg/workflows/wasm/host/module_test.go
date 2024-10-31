@@ -19,12 +19,12 @@ import (
 )
 
 type mockMessageEmitter struct {
-	e      func(string, map[string]string) error
+	e      func(context.Context, string, map[string]string) error
 	labels map[string]string
 }
 
 func (m *mockMessageEmitter) Emit(ctx context.Context, msg string) error {
-	return m.e(msg, m.labels)
+	return m.e(ctx, msg, m.labels)
 }
 
 func (m *mockMessageEmitter) WithMapLabels(labels map[string]string) custmsg.MessageEmitter {
@@ -41,7 +41,7 @@ func (m *mockMessageEmitter) Labels() map[string]string {
 	return m.labels
 }
 
-func newMockMessageEmitter(e func(string, map[string]string) error) custmsg.MessageEmitter {
+func newMockMessageEmitter(e func(context.Context, string, map[string]string) error) custmsg.MessageEmitter {
 	return &mockMessageEmitter{e: e}
 }
 
@@ -49,6 +49,10 @@ func newMockMessageEmitter(e func(string, map[string]string) error) custmsg.Mess
 // access functions are injected as mocks.
 func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		ctxKey := "key"
+		ctxValue := "test-value"
+		ctx := tests.Context(t)
+		ctx = context.WithValue(ctx, ctxKey, "test-value")
 		store := &store{
 			m:  make(map[string]*RequestData),
 			mu: sync.RWMutex{},
@@ -56,12 +60,14 @@ func Test_createEmitFn(t *testing.T) {
 		reqId := "random-id"
 		err := store.add(
 			reqId,
-			&RequestData{ctx: func() context.Context { return tests.Context(t) }})
+			&RequestData{ctx: func() context.Context { return ctx }})
 		require.NoError(t, err)
 		emitFn := createEmitFn(
 			logger.Test(t),
 			store,
-			newMockMessageEmitter(func(_ string, _ map[string]string) error {
+			newMockMessageEmitter(func(ctx context.Context, _ string, _ map[string]string) error {
+				v := ctx.Value(ctxKey)
+				assert.Equal(t, ctxValue, v)
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -100,7 +106,7 @@ func Test_createEmitFn(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
 			store,
-			newMockMessageEmitter(func(_ string, _ map[string]string) error {
+			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -170,7 +176,7 @@ func Test_createEmitFn(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
 			store,
-			newMockMessageEmitter(func(_ string, _ map[string]string) error {
+			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return assert.AnError
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {

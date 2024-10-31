@@ -8,6 +8,7 @@ import (
 
 	"github.com/bytecodealliance/wasmtime-go/v23"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -248,6 +249,11 @@ func TestCreateFetchFn(t *testing.T) {
 				return nil, assert.AnError
 			}),
 			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				// the error is handled and written to the buffer
+				resp := &wasmpb.FetchResponse{}
+				err := proto.Unmarshal(src, resp)
+				require.NoError(t, err)
+				assert.Equal(t, assert.AnError.Error(), resp.ErrorMessage)
 				return 0
 			}),
 			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
@@ -263,7 +269,7 @@ func TestCreateFetchFn(t *testing.T) {
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
 	t.Run("NOK-fetch_fails_to_unmarshal_request", func(t *testing.T) {
@@ -278,6 +284,12 @@ func TestCreateFetchFn(t *testing.T) {
 				return []byte("bad-request-payload"), nil
 			}),
 			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				// the error is handled and written to the buffer
+				resp := &wasmpb.FetchResponse{}
+				err := proto.Unmarshal(src, resp)
+				require.NoError(t, err)
+				expectedErr := "cannot parse invalid wire-format data"
+				assert.Contains(t, resp.ErrorMessage, expectedErr)
 				return 0
 			}),
 			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
@@ -293,7 +305,7 @@ func TestCreateFetchFn(t *testing.T) {
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
 	t.Run("NOK-fetch_fails_to_find_id_in_store", func(t *testing.T) {
@@ -312,6 +324,12 @@ func TestCreateFetchFn(t *testing.T) {
 				return b, nil
 			}),
 			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				// the error is handled and written to the buffer
+				resp := &wasmpb.FetchResponse{}
+				err := proto.Unmarshal(src, resp)
+				require.NoError(t, err)
+				expectedErr := "could not find request data for id test-id"
+				assert.Equal(t, expectedErr, resp.ErrorMessage)
 				return 0
 			}),
 			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
@@ -327,7 +345,7 @@ func TestCreateFetchFn(t *testing.T) {
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
 	t.Run("NOK-fetch_fails_stored_ctx_is_nil", func(t *testing.T) {
@@ -353,6 +371,12 @@ func TestCreateFetchFn(t *testing.T) {
 				return b, nil
 			}),
 			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				// the error is handled and written to the buffer
+				resp := &wasmpb.FetchResponse{}
+				err := proto.Unmarshal(src, resp)
+				require.NoError(t, err)
+				expectedErr := "context is nil"
+				assert.Equal(t, expectedErr, resp.ErrorMessage)
 				return 0
 			}),
 			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
@@ -363,12 +387,13 @@ func TestCreateFetchFn(t *testing.T) {
 				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 					return &wasmpb.FetchResponse{}, nil
 				},
+				MaxFetchRequests: 1,
 			},
 			store,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
 	t.Run("NOK-fetch_returns_an_error", func(t *testing.T) {
@@ -394,6 +419,12 @@ func TestCreateFetchFn(t *testing.T) {
 				return b, nil
 			}),
 			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+				// the error is handled and written to the buffer
+				resp := &wasmpb.FetchResponse{}
+				err := proto.Unmarshal(src, resp)
+				require.NoError(t, err)
+				expectedErr := assert.AnError.Error()
+				assert.Equal(t, expectedErr, resp.ErrorMessage)
 				return 0
 			}),
 			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
@@ -404,12 +435,13 @@ func TestCreateFetchFn(t *testing.T) {
 				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 					return nil, assert.AnError
 				},
+				MaxFetchRequests: 1,
 			},
 			store,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
+		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
 	t.Run("NOK-fetch_fails_to_write_response", func(t *testing.T) {

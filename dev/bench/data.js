@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730324342562,
+  "lastUpdate": 1730382627335,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5376,6 +5376,48 @@ window.BENCHMARK_DATA = {
             "value": 28254,
             "unit": "ns/op",
             "extra": "42507 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4dc0db60d95434d3d77fb37bde1757711c2f218a",
+          "message": "[CAPPL-195] preserve errors across the WASM boundary (#899)\n\n* feat: preserve errors across the WASM boundary\r\n\r\n---------\r\n\r\nCo-authored-by: Cedric <cedric.cordenier@smartcontract.com>",
+          "timestamp": "2024-10-31T14:49:29+01:00",
+          "tree_id": "1ff861dbc599ed0ccd3e2132d84a05e6b0c006a1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4dc0db60d95434d3d77fb37bde1757711c2f218a"
+        },
+        "date": 1730382626809,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.7,
+            "unit": "ns/op",
+            "extra": "2672193 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 523.9,
+            "unit": "ns/op",
+            "extra": "2120512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28284,
+            "unit": "ns/op",
+            "extra": "42369 times\n4 procs"
           }
         ]
       }

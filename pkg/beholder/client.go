@@ -94,13 +94,13 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
-	if cfg.EmitterRetryConfig != nil {
+	if cfg.LogRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
-			Enabled:         cfg.EmitterRetryConfig.Enabled(),
-			InitialInterval: cfg.EmitterRetryConfig.GetInitialInterval(),
-			MaxInterval:     cfg.EmitterRetryConfig.GetMaxInterval(),
-			MaxElapsedTime:  cfg.EmitterRetryConfig.GetMaxElapsedTime(),
+			Enabled:         cfg.LogRetryConfig.Enabled(),
+			InitialInterval: cfg.LogRetryConfig.GetInitialInterval(),
+			MaxInterval:     cfg.LogRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  cfg.LogRetryConfig.GetMaxElapsedTime(),
 		}))
 	}
 	sharedLogExporter, err := otlploggrpcNew(opts...)

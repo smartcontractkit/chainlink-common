@@ -20,7 +20,8 @@ type Config struct {
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	EmitterBatchProcessor bool
-	EmitterRetryConfig    *RetryConfig
+	// Retry config for shared log exporter, used by Emitter and Logger
+	LogRetryConfig *RetryConfig
 	// OTel Trace
 	TraceSampleRatio  float64
 	TraceBatchTimeout time.Duration
@@ -77,7 +78,7 @@ func DefaultConfig() Config {
 		EmitterExportTimeout:  1 * time.Second,
 		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
-		EmitterRetryConfig: defaultRetryConfig.Copy(),
+		LogRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
@@ -99,9 +100,9 @@ func TestDefaultConfig() Config {
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	// Retries are disabled for testing
-	config.EmitterRetryConfig.MaxElapsedTime = 0 // Retry is disabled
-	config.TraceRetryConfig.MaxElapsedTime = 0   // Retry is disabled
-	config.MetricRetryConfig.MaxElapsedTime = 0  // Retry is disabled
+	config.LogRetryConfig.MaxElapsedTime = 0    // Retry is disabled
+	config.TraceRetryConfig.MaxElapsedTime = 0  // Retry is disabled
+	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
 	return config
 }
 

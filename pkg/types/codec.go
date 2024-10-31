@@ -31,15 +31,15 @@ type Decoder interface {
 
 /*
 Codec is an interface that provides encoding and decoding functionality for a specific type identified by a name.
-Because there are many types that a ContractReader or ContractWriter can either accept or return, all encoding
+Because there are many types that a [ContractReader] or [ChainWriter] can either accept or return, all encoding
 instructions provided by the codec are based on the type name.
 
-Starting from the lowest level, take for instance a big.Int encoder where we want the output to be big endian binary
+Starting from the lowest level, take for instance a [big.Int] encoder where we want the output to be big endian binary
 encoded.
 
 	typeCodec, _ := binary.BigEndian().BigInt(32, true)
 
-This allows us to encode and decode big.Int values with big endian encoding using the `encodings.TypeCodec` interface.
+This allows us to encode and decode [big.Int] values with big endian encoding using the [encodings.TypeCodec] interface.
 
 	encodedBytes := []byte{}
 
@@ -48,13 +48,14 @@ This allows us to encode and decode big.Int values with big endian encoding usin
 
 	value, _, _ := typeCodec.Decode(encodedBytes, value)
 
-The additional encodings.TypeCodec methods such as `GetType() reflect.Type` allow composition. This is useful for
+The additional [encodings.TypeCodec] methods such as 'GetType() reflect.Type' allow composition. This is useful for
 creating a struct codec such as the one defined in encodings/struct.go.
 
 	tlCodec, _ := encodings.NewStructCodec([]encodings.NamedTypeCodec{{Name: "Value", Codec: typeCodec}})
 
-This provides a `TopLevelCodec` which is a `TypeCodec` with a total size of all encoded elements. Going up another
-level, we create a `Codec` from a map of `TypeCodec` instances using `CodecFromTypeCodec`.
+This provides a [encodings.TopLevelCodec] which is a [encodings.TypeCodec] with a total size of all encoded elements.
+Going up another level, we create a [Codec] from a map of [encodings.TypeCodec] instances using
+[encodings.CodecFromTypeCodec].
 
 	codec := encodings.CodecFromTypeCodec{"SomeStruct": tlCodec}
 
@@ -67,11 +68,11 @@ level, we create a `Codec` from a map of `TypeCodec` instances using `CodecFromT
 	var someStruct SomeStruct
 	_ = codec.Decode(encodedStructBytes, &someStruct, "SomeStruct")
 
-Therefore `itemType` passed to `Encode` and `Decode` references the key in the map of `TypeCodec` instances. Also worth
-noting that a `TopLevelCodec` can also be added to a `CodecFromTypeCodec` map. This allows for the `SizeAtTopLevel`
-method to be referenced when `GetMaxEncodingSize` is called on the `Codec`.
+Therefore 'itemType' passed to [Encode] and [Decode] references the key in the map of [encodings.TypeCodec] instances.
+Also worth noting that a `TopLevelCodec` can also be added to a `CodecFromTypeCodec` map. This allows for the
+[encodings.SizeAtTopLevel] method to be referenced when [encodings.GetMaxEncodingSize] is called on the [Codec].
 
-Also, when the type is unknown to the caller, the decoded type for an `itemName` can be retrieved from the codec to be
+Also, when the type is unknown to the caller, the decoded type for an 'itemName' can be retrieved from the codec to be
 used for decoding. The `CreateType` method returns an instance of the expected type using reflection under the hood and
 the overall composition of `TypeCodec` instances. This allows proper types to be conveyed to the caller through the
 GRPC interface where data may be JSON encoded, passed through GRPC, and JSON decoded on the other side.

@@ -9,8 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/codec/encodings/binary"
 )
 
-// ExampleCodec provides a minimal example of constructing and using a codec. For more detail, refer to the Example in
-// pkg/codec/example_test.go.
+// ExampleCodec provides a minimal example of constructing and using a codec.
 func ExampleCodec() {
 	ctx := context.Background()
 	typeCodec, _ := binary.BigEndian().BigInt(32, true)

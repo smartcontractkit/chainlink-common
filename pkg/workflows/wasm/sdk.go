@@ -109,8 +109,9 @@ func createEmitFn(
 
 		// Marshal the message and labels into a protobuf message
 		b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
-			Message: msg,
-			Labels:  values.ProtoMap(vm),
+			RequestId: *sdkConfig.RequestID,
+			Message:   msg,
+			Labels:    values.ProtoMap(vm),
 		})
 		if err != nil {
 			return err

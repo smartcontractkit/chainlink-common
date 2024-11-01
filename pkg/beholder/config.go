@@ -20,8 +20,6 @@ type Config struct {
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	EmitterBatchProcessor bool
-	// Retry config for shared log exporter, used by Emitter and Logger
-	LogRetryConfig *RetryConfig
 	// OTel Trace
 	TraceSampleRatio  float64
 	TraceBatchTimeout time.Duration
@@ -35,6 +33,8 @@ type Config struct {
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	LogBatchProcessor bool
+	// Retry config for shared log exporter, used by Emitter and Logger
+	LogRetryConfig *RetryConfig
 }
 
 type RetryConfig struct {

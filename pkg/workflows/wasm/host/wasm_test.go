@@ -57,7 +57,7 @@ const (
 	emitBinaryCmd            = "test/emit/cmd"
 )
 
-func createTestBinary(outputPath, path string, compress bool, t *testing.T) []byte {
+func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) []byte {
 	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
 	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
 
@@ -67,7 +67,7 @@ func createTestBinary(outputPath, path string, compress bool, t *testing.T) []by
 	binary, err := os.ReadFile(path)
 	require.NoError(t, err)
 
-	if !compress {
+	if uncompressed {
 		return binary
 	}
 
@@ -89,7 +89,8 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	spec, err := GetWorkflowSpec(
 		ctx,
 		&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 		},
 		binary,
 		[]byte(""),
@@ -108,7 +109,7 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 		ctx,
 		&ModuleConfig{
 			Logger:         logger.Test(t),
-			IsUncompressed: true,
+			IsUncompressed: false,
 		},
 		binary,
 		[]byte(""),
@@ -126,7 +127,8 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 	_, err := GetWorkflowSpec(
 		ctx,
 		&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 		},
 		failBinary,
 		[]byte(""),
@@ -143,8 +145,9 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	_, err := GetWorkflowSpec(
 		ctx,
 		&ModuleConfig{
-			Timeout: &d,
-			Logger:  logger.Test(t),
+			Timeout:        &d,
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 		},
 		binary, // use the success binary with a zero timeout
 		[]byte(""),
@@ -159,7 +162,8 @@ func Test_Compute_Logs(t *testing.T) {
 
 	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 	m, err := NewModule(&ModuleConfig{
-		Logger: logger,
+		Logger:         logger,
+		IsUncompressed: true,
 		Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 			return nil, nil
 		},
@@ -231,12 +235,15 @@ func Test_Compute_Emit(t *testing.T) {
 	}
 
 	t.Run("successfully call emit with metadata in labels", func(t *testing.T) {
+		ctx := tests.Context(t)
 		m, err := NewModule(&ModuleConfig{
-			Logger: lggr,
-			Fetch:  fetchFunc,
-			Labeler: newMockMessageEmitter(func(msg string, kvs map[string]string) error {
+			Logger:         lggr,
+			Fetch:          fetchFunc,
+			IsUncompressed: true,
+			Labeler: newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
 				t.Helper()
 
+				assert.Equal(t, ctx, gotCtx)
 				assert.Equal(t, "testing emit", msg)
 				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
 				assert.Equal(t, "workflow-id", kvs["workflow_id"])
@@ -250,7 +257,6 @@ func Test_Compute_Emit(t *testing.T) {
 
 		m.Start()
 
-		ctx := tests.Context(t)
 		_, err = m.Run(ctx, req)
 		assert.Nil(t, err)
 	})
@@ -259,9 +265,10 @@ func Test_Compute_Emit(t *testing.T) {
 		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: lggr,
-			Fetch:  fetchFunc,
-			Labeler: newMockMessageEmitter(func(msg string, kvs map[string]string) error {
+			Logger:         lggr,
+			Fetch:          fetchFunc,
+			IsUncompressed: true,
+			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, kvs map[string]string) error {
 				t.Helper()
 
 				assert.Equal(t, "testing emit", msg)
@@ -300,9 +307,10 @@ func Test_Compute_Emit(t *testing.T) {
 		lggr := logger.Test(t)
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: lggr,
-			Fetch:  fetchFunc,
-			Labeler: newMockMessageEmitter(func(msg string, labels map[string]string) error {
+			Logger:         lggr,
+			Fetch:          fetchFunc,
+			IsUncompressed: true,
+			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, labels map[string]string) error {
 				return nil
 			}), // never called
 		}, binary)
@@ -345,7 +353,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
@@ -394,7 +403,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
@@ -441,7 +451,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger,
+			Logger:         logger,
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return nil, assert.AnError
 			},
@@ -466,6 +477,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 		_, err = m.Run(ctx, req)
 		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, assert.AnError.Error())
 		require.Len(t, logs.AllUntimed(), 1)
 
 		expectedEntries := []Entry{
@@ -492,7 +504,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
@@ -538,7 +551,8 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK_context_cancelation", func(t *testing.T) {
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				select {
 				case <-ctx.Done():
@@ -574,7 +588,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		cancel()
 		_, err = m.Run(ctx, req)
 		require.NotNil(t, err)
-		assert.ErrorContains(t, err, "error executing runner: error executing custom compute: failed to execute fetch")
+		assert.ErrorContains(t, err, fmt.Sprintf("error executing runner: error executing custom compute: %s", assert.AnError))
 	})
 
 	t.Run("NOK_exceed_amout_of_defined_max_fetch_calls", func(t *testing.T) {
@@ -588,7 +602,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
@@ -631,7 +646,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
@@ -673,7 +689,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
@@ -716,7 +733,8 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return &wasmpb.FetchResponse{
 					ExecutionError: expected.ExecutionError,
@@ -758,7 +776,7 @@ func TestModule_Errors(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	_, err = m.Run(ctx, nil)
@@ -805,7 +823,7 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -822,7 +840,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -848,7 +866,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t), Timeout: &tmt}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -867,7 +885,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -894,7 +912,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -921,7 +939,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -948,7 +966,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -995,7 +1013,8 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 			Determinism: &DeterminismConfig{
 				Seed: 42,
 			},
@@ -1013,7 +1032,8 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
 		m, err := NewModule(&ModuleConfig{
-			Logger: logger.Test(t),
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
 		}, binary)
 		require.NoError(t, err)
 

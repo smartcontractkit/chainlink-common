@@ -146,7 +146,7 @@ func (o *capability) getAggregator(workflowID string) (types.Aggregator, error) 
 func (o *capability) getEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
 	enc, ok := o.encoders[workflowID]
 	if !ok {
-		return nil, fmt.Errorf("no aggregator found for workflowID %s", workflowID)
+		return nil, fmt.Errorf("no encoder found for workflowID %s", workflowID)
 	}
 
 	return enc, nil

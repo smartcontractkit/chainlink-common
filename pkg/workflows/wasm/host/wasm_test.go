@@ -83,6 +83,7 @@ func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) 
 }
 
 func Test_GetWorkflowSpec(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
@@ -102,6 +103,7 @@ func Test_GetWorkflowSpec(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
@@ -138,6 +140,7 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_Timeout(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
@@ -157,6 +160,7 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 }
 
 func Test_Compute_Logs(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
 
@@ -207,6 +211,7 @@ func Test_Compute_Logs(t *testing.T) {
 }
 
 func Test_Compute_Emit(t *testing.T) {
+	t.Parallel()
 	binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
 
 	lggr := logger.Test(t)
@@ -341,9 +346,11 @@ func Test_Compute_Emit(t *testing.T) {
 }
 
 func Test_Compute_Fetch(t *testing.T) {
+	t.Parallel()
 	binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
 	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
+		t.Parallel()
 		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
@@ -394,6 +401,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
+		t.Parallel()
 		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
@@ -447,6 +455,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("NOK_fetch_error_returned", func(t *testing.T) {
+		t.Parallel()
 		ctx := tests.Context(t)
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
@@ -492,6 +501,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("OK_context_propagation", func(t *testing.T) {
+		t.Parallel()
 		type testkey string
 		var key testkey = "test-key"
 		var expectedValue string = "test-value"
@@ -550,6 +560,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("OK_context_cancelation", func(t *testing.T) {
+		t.Parallel()
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
@@ -592,6 +603,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("NOK_exceed_amout_of_defined_max_fetch_calls", func(t *testing.T) {
+		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
@@ -636,6 +648,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("NOK_exceed_amout_of_default_max_fetch_calls", func(t *testing.T) {
+		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
@@ -679,6 +692,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("OK_making_up_to_max_fetch_calls", func(t *testing.T) {
+		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
@@ -723,6 +737,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	})
 
 	t.Run("OK_multiple_request_reusing_module", func(t *testing.T) {
+		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := tests.Context(t)
 		expected := sdk.FetchResponse{
@@ -773,6 +788,7 @@ func Test_Compute_Fetch(t *testing.T) {
 }
 
 func TestModule_Errors(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
@@ -837,6 +853,7 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 }
 
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
@@ -882,6 +899,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 }
 
 func TestModule_Sandbox_CantReadFiles(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
@@ -909,6 +927,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 }
 
 func TestModule_Sandbox_CantCreateDir(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
@@ -936,6 +955,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 }
 
 func TestModule_Sandbox_HTTPRequest(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
@@ -963,6 +983,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 }
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
+	t.Parallel()
 	ctx := tests.Context(t)
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
@@ -994,6 +1015,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 }
 
 func TestModule_Sandbox_RandomGet(t *testing.T) {
+	t.Parallel()
 	req := &wasmpb.Request{
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{

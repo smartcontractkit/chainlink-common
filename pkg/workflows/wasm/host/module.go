@@ -339,6 +339,7 @@ func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
+	defer wasi.Close()
 	wasi.SetArgv([]string{"wasi", reqstr})
 
 	store.SetWasi(wasi)

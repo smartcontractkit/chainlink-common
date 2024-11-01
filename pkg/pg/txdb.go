@@ -33,6 +33,13 @@ import (
 // See heavyweight.FullTestDB() as a convenience function to help you do this,
 // but please use sparingly because as it's name implies, it is expensive.
 func RegisterTxDb(dbURL string) error {
+	drivers := sql.Drivers()
+	for _, driver := range drivers {
+		if driver == string(TransactionWrappedPostgres) {
+			// TxDB driver already registered
+			return nil
+		}
+	}
 	testing.Init()
 	if !flag.Parsed() {
 		flag.Parse()

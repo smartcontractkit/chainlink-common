@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 
 	"google.golang.org/protobuf/proto"
 
@@ -97,6 +98,8 @@ func (r *Runner) parseRequest() (*wasmpb.Request, error) {
 	if len(r.args) != 2 {
 		return nil, errors.New("invalid request: request must contain a payload")
 	}
+	log.Println("r.args[0]: ", r.args[1])
+	log.Println("r.args[1]: ", r.args[1])
 
 	request := r.args[1]
 	if request == "" {

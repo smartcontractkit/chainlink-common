@@ -14,7 +14,7 @@ import (
 
 func NewSqlxDB(t testing.TB, dbURL string) *sqlx.DB {
 	tests.SkipShortDB(t)
-	err := RegisterTxDb(dbURL)
+	err := RegisterTxDb(tests.Context(t), dbURL)
 	if err != nil {
 		t.Errorf("failed to register txdb dialect: %s", err.Error())
 		return nil

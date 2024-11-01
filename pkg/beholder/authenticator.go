@@ -11,7 +11,7 @@ type Authenticator struct {
 	publicKey []byte
 }
 
-func NewAuthenticator(config Config) (*Authenticator, error) {
+func newAuthenticator(config Config) (*Authenticator, error) {
 	if err := validateAuthConfig(config); err != nil {
 		return nil, err
 	}

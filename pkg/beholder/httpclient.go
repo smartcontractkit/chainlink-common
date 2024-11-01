@@ -55,7 +55,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	if tlsConfig != nil {
 		tlsConfigOption = otlploghttp.WithTLSClientConfig(tlsConfig)
 	}
-	authenticator, err := NewAuthenticator(cfg)
+	authenticator, err := newAuthenticator(cfg)
 	if err != nil {
 		return nil, err
 	}

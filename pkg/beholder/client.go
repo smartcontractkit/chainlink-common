@@ -94,7 +94,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 	}
-	authenticator, err := NewAuthenticator(cfg)
+	authenticator, err := newAuthenticator(cfg)
 	if err != nil {
 		return nil, err
 	}

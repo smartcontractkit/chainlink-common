@@ -1,6 +1,7 @@
 package pg
 
 import (
+	"database/sql"
 	"os"
 	"testing"
 	"time"
@@ -51,5 +52,12 @@ func TestTxDBDriver(t *testing.T) {
 		// This approach is not ideal, but there is no better way to wait for independent goroutine to complete
 		time.Sleep(time.Second * 10)
 		ensureValuesPresent(t, db)
+	})
+
+	t.Run("Make sure calling sql.Register() can be called twice", func(t *testing.T) {
+		require.NoError(t, RegisterTxDb(tests.Context(t), "foo"))
+		require.NoError(t, RegisterTxDb(tests.Context(t), "bar"))
+		drivers := sql.Drivers()
+		assert.Contains(t, drivers, "txdb")
 	})
 }

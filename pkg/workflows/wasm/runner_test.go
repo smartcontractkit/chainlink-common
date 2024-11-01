@@ -213,6 +213,7 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 func Test_createEmitFn(t *testing.T) {
 	var (
 		l         = logger.Test(t)
+		reqId     = "random-id"
 		sdkConfig = &RuntimeConfig{
 			MaxFetchResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
@@ -221,6 +222,7 @@ func Test_createEmitFn(t *testing.T) {
 				WorkflowName:        "workflow_name",
 				WorkflowOwner:       "workflow_owner_address",
 			},
+			RequestID: &reqId,
 		}
 		giveMsg    = "testing guest"
 		giveLabels = map[string]string{

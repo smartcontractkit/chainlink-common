@@ -12,7 +12,7 @@ import (
 
 type MessageEmitter interface {
 	// Emit sends a message to the labeler's destination.
-	Emit(string) error
+	Emit(context.Context, string) error
 
 	// WithMapLabels sets the labels for the message to be emitted.  Labels are cumulative.
 	WithMapLabels(map[string]string) MessageEmitter
@@ -74,8 +74,8 @@ func (l Labeler) With(keyValues ...string) MessageEmitter {
 	return newCustomMessageLabeler
 }
 
-func (l Labeler) Emit(msg string) error {
-	return sendLogAsCustomMessageW(msg, l.labels)
+func (l Labeler) Emit(ctx context.Context, msg string) error {
+	return sendLogAsCustomMessageW(ctx, msg, l.labels)
 }
 
 func (l Labeler) Labels() map[string]string {
@@ -88,11 +88,11 @@ func (l Labeler) Labels() map[string]string {
 
 // SendLogAsCustomMessage emits a BaseMessage With msg and labels as data.
 // any key in labels that is not part of orderedLabelKeys will not be transmitted
-func (l Labeler) SendLogAsCustomMessage(msg string) error {
-	return sendLogAsCustomMessageW(msg, l.labels)
+func (l Labeler) SendLogAsCustomMessage(ctx context.Context, msg string) error {
+	return sendLogAsCustomMessageW(ctx, msg, l.labels)
 }
 
-func sendLogAsCustomMessageW(msg string, labels map[string]string) error {
+func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]string) error {
 	// TODO un-comment after INFOPLAT-1386
 	// cast to map[string]any
 	//newLabels := map[string]any{}
@@ -115,7 +115,7 @@ func sendLogAsCustomMessageW(msg string, labels map[string]string) error {
 		return fmt.Errorf("sending custom message failed to marshal protobuf: %w", err)
 	}
 
-	err = beholder.GetEmitter().Emit(context.Background(), payloadBytes,
+	err = beholder.GetEmitter().Emit(ctx, payloadBytes,
 		"beholder_data_schema", "/beholder-base-message/versions/1", // required
 		"beholder_domain", "platform", // required
 		"beholder_entity", "BaseMessage", // required

@@ -252,22 +252,24 @@ func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// WrapperModifierConfig wraps fields into subfields of a new struct.
+// WrapperModifierConfig wraps defined fields into their own structs where they become custom named fields.
 // Wrapper modifier does not maintain the original pointers.
 // Wrapper modifier config shouldn't edit fields that affect each other since the results are not deterministic.
 //
-//		For e.g.
-//			type example struct {
-//				A string
-//				B: {A, B, C}
-//				C :[{A, B, C}, {A, B, C}, {A, B, C}...],
-//				D string
-//			}
+//			For e.g.
+//				type example struct {
+//					A string
+//					B: {A, B, C}
+//					C :[{A, B, C}, {A, B, C}, {A, B, C}...],
+//					D string
+//				}
 //
-//	 with transformations defined as {"B.A": "X", "B.C": "Z", "B": "Y"}:
-//			1."B.A": "X" -> B: { A: {X} B C }
-//			2."B.C": "B" -> B: { A: {X} B C: {Z} }
-//			3."B":   "Y"   -> B: { Y: { A: {X} B C: {Z} } }
+//			 with transformations defined as {"B.A": "X", "B.C": "Z", "C.A": "Y", "D": "W"}:
+//					1."B.A": "X" -> B: { A: {X}; B; Cl }
+//					2."B.C": "Z" -> B: { A: {X}; B; C: {Z}; }
+//		            3."C.A": "Y" -> C :[{ A: {Y};, B;, C; }, { A: {Y}; B; C;}, { A: {Y}; B; C;}...]
+//					4."D":   "W" -> D: {W};
+//	      		result -> {A; B: { A: {X}; B; C: {Z}; }; C :[{ A: {Y}, B, C } { A: {Y}, B, C}, { A: {Y}, B, C}...]; D: {W};}
 type WrapperModifierConfig struct {
 	// Fields key defines the fields to be wrapped and the name of the wrapper struct.
 	// The field becomes a subfield of the wrapper struct where the name of the subfield is map value.

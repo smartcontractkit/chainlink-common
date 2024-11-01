@@ -81,6 +81,7 @@ message FetchResponse {
 message EmitMessageRequest {
   string message = 1;
   values.Map labels = 2;
+  string requestId = 3;
 }
 
 message Error { string message = 1; }

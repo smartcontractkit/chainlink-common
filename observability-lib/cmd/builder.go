@@ -53,6 +53,7 @@ func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
 			Name:              options.Name,
 			Platform:          options.Platform,
 			MetricsDataSource: options.MetricsDataSource,
+			LogsDataSource:    options.LogsDataSource,
 			SlackChannel:      options.SlackChannel,
 			SlackWebhookURL:   options.SlackWebhookURL,
 			AlertsTags:        options.AlertsTags,

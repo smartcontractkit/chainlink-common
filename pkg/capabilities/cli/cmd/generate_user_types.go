@@ -13,8 +13,9 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 		return err
 	}
 
-	var errs []error
-	for _, file := range dir {
+	generatedInfo := GeneratedInfo{}
+	err = errors.Join()
+	for i, file := range dir {
 		fileName := file.Name()
 		if file.IsDir() || !strings.HasSuffix(fileName, ".go") {
 			continue
@@ -22,7 +23,7 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 
 		rawContent, err2 := os.ReadFile(path.Join(info.Dir, fileName))
 		if err2 != nil {
-			return err2
+			err = errors.Join(err, err2)
 		}
 
 		content := string(rawContent)
@@ -32,14 +33,27 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 
 		typeInfo := TypeInfo{CapabilityType: "common"}
 
-		err2 = generateFromGoSrc(
-			info.Dir, info.LocalPrefix, content, typeInfo, info.Helpers, map[string]string{}, "", info.GenForStruct)
+		fileGeneratedInfo, err2 := generatedInfoFromSrc(content, "", getCapID(typeInfo), typeInfo, info.GenForStruct)
+
 		if err2 != nil {
-			errs = append(errs, err2)
+			err = errors.Join(err, err2)
+			continue
+		}
+
+		if i == 0 {
+			generatedInfo = fileGeneratedInfo
+		} else {
+			for name, strct := range fileGeneratedInfo.Types {
+				generatedInfo.Types[name] = strct
+			}
 		}
 	}
 
-	return errors.Join(errs...)
+	if err != nil {
+		return errors.Join(err)
+	}
+
+	return generateFromGoSrc(generatedInfo, info.Dir, info.LocalPrefix, info.Helpers, map[string]string{})
 }
 
 type UserGenerationInfo struct {

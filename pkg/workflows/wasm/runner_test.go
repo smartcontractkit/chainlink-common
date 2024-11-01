@@ -213,6 +213,7 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 func Test_createEmitFn(t *testing.T) {
 	var (
 		l         = logger.Test(t)
+		reqId     = "random-id"
 		sdkConfig = &RuntimeConfig{
 			MaxFetchResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
@@ -221,6 +222,7 @@ func Test_createEmitFn(t *testing.T) {
 				WorkflowName:        "workflow_name",
 				WorkflowOwner:       "workflow_owner_address",
 			},
+			RequestID: &reqId,
 		}
 		giveMsg    = "testing guest"
 		giveLabels = map[string]string{
@@ -293,5 +295,79 @@ func Test_createEmitFn(t *testing.T) {
 		err := runtimeEmit(giveMsg, giveLabels)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "emit failed with errno 42")
+	})
+}
+
+func Test_createFetchFn(t *testing.T) {
+	var (
+		l         = logger.Test(t)
+		requestID = uuid.New().String()
+		sdkConfig = &RuntimeConfig{
+			RequestID:                 &requestID,
+			MaxFetchResponseSizeBytes: 1_000,
+			Metadata: &capabilities.RequestMetadata{
+				WorkflowID:          "workflow_id",
+				WorkflowExecutionID: "workflow_execution_id",
+				WorkflowName:        "workflow_name",
+				WorkflowOwner:       "workflow_owner_address",
+			},
+		}
+	)
+
+	t.Run("OK-success", func(t *testing.T) {
+		hostFetch := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeFetch := createFetchFn(sdkConfig, l, hostFetch)
+		response, err := runtimeFetch(sdk.FetchRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, sdk.FetchResponse{
+			Headers: map[string]any{},
+		}, response)
+	})
+
+	t.Run("NOK-config_missing_request_id", func(t *testing.T) {
+		invalidConfig := &RuntimeConfig{
+			RequestID:                 nil,
+			MaxFetchResponseSizeBytes: 1_000,
+			Metadata: &capabilities.RequestMetadata{
+				WorkflowID:          "workflow_id",
+				WorkflowExecutionID: "workflow_execution_id",
+				WorkflowName:        "workflow_name",
+				WorkflowOwner:       "workflow_owner_address",
+			},
+		}
+		hostFetch := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeFetch := createFetchFn(invalidConfig, l, hostFetch)
+		_, err := runtimeFetch(sdk.FetchRequest{})
+		assert.ErrorContains(t, err, "request ID is required to fetch")
+	})
+
+	t.Run("NOK-fetch_returns_handled_error", func(t *testing.T) {
+		hostFetch := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			fetchResponse := &wasmpb.FetchResponse{
+				ExecutionError: true,
+				ErrorMessage:   assert.AnError.Error(),
+			}
+			respBytes, perr := proto.Marshal(fetchResponse)
+			if perr != nil {
+				return 0
+			}
+
+			// write the marshalled response message to memory
+			resp := unsafe.Slice((*byte)(respptr), len(respBytes))
+			copy(resp, respBytes)
+
+			// write the length of the response to memory in little endian
+			respLen := unsafe.Slice((*byte)(resplenptr), uint32Size)
+			binary.LittleEndian.PutUint32(respLen, uint32(len(respBytes)))
+
+			return 0
+		}
+		runtimeFetch := createFetchFn(sdkConfig, l, hostFetch)
+		_, err := runtimeFetch(sdk.FetchRequest{})
+		assert.ErrorContains(t, err, assert.AnError.Error())
 	})
 }

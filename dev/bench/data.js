@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730406436197,
+  "lastUpdate": 1730453970020,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5502,6 +5502,48 @@ window.BENCHMARK_DATA = {
             "value": 28504,
             "unit": "ns/op",
             "extra": "42475 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "33711d0c3de7406b3543fafc95c8d64134ab2ea0",
+          "message": "[CAPPL-182] Add context to message emitter (#909)\n\n* [CAPPL-182] Add context to message emitter\r\n\r\n* Run tests against uncompressed binaries by default\r\n\r\n* [chore] Move validate function to secrets package (#908)\r\n\r\n- Run tests against uncompressed binaries by default",
+          "timestamp": "2024-11-01T09:38:30Z",
+          "tree_id": "7aa6c284a34de66ac73bea458f4cbc5cda47869d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/33711d0c3de7406b3543fafc95c8d64134ab2ea0"
+        },
+        "date": 1730453969435,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.5,
+            "unit": "ns/op",
+            "extra": "2694564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.5,
+            "unit": "ns/op",
+            "extra": "2217003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28260,
+            "unit": "ns/op",
+            "extra": "42452 times\n4 procs"
           }
         ]
       }

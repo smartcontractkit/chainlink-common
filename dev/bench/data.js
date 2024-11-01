@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730490418417,
+  "lastUpdate": 1730492533674,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5628,6 +5628,48 @@ window.BENCHMARK_DATA = {
             "value": 28529,
             "unit": "ns/op",
             "extra": "42406 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177086174+4of9@users.noreply.github.com",
+            "name": "4of9",
+            "username": "4of9"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a99ee1eeb57b14f63ef4a613cf8d346a61a9521",
+          "message": "Fix loop getAttributes (#902)\n\n* Rename getAttributes to getMap\r\n\r\n* Fix getMap",
+          "timestamp": "2024-11-01T15:21:13-05:00",
+          "tree_id": "6293b259302453aaee38dc1f13ce90d6fa7e4ab7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9a99ee1eeb57b14f63ef4a613cf8d346a61a9521"
+        },
+        "date": 1730492533128,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 487.8,
+            "unit": "ns/op",
+            "extra": "2339157 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.2,
+            "unit": "ns/op",
+            "extra": "2332786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28265,
+            "unit": "ns/op",
+            "extra": "42416 times\n4 procs"
           }
         ]
       }

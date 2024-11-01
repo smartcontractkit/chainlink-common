@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730453970020,
+  "lastUpdate": 1730471907800,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5544,6 +5544,48 @@ window.BENCHMARK_DATA = {
             "value": 28260,
             "unit": "ns/op",
             "extra": "42452 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4b0948d48f16a864c3e9106469ee3024608aa56e",
+          "message": "pkg/capabilities/triggers: MercuryTriggerService.Name() use Logger.Name() (#907)",
+          "timestamp": "2024-11-01T09:37:26-05:00",
+          "tree_id": "7754fdd7ff7f2b3e289f6ff70568a726b020677a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4b0948d48f16a864c3e9106469ee3024608aa56e"
+        },
+        "date": 1730471907269,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 528.3,
+            "unit": "ns/op",
+            "extra": "1892893 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 507.6,
+            "unit": "ns/op",
+            "extra": "2358188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28286,
+            "unit": "ns/op",
+            "extra": "42351 times\n4 procs"
           }
         ]
       }

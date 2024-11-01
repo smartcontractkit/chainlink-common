@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730471907800,
+  "lastUpdate": 1730490418417,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5586,6 +5586,48 @@ window.BENCHMARK_DATA = {
             "value": 28286,
             "unit": "ns/op",
             "extra": "42351 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2780401fa0194459154776709515529afa572f6d",
+          "message": "inline documentation for working with the codec (#895)\n\ninline documentation for working with the codec\r\n\r\n---------\r\n\r\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2024-11-01T14:45:58-05:00",
+          "tree_id": "df8aa18d058849b4bf76d3af38bbcc7322bdb450",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2780401fa0194459154776709515529afa572f6d"
+        },
+        "date": 1730490417900,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 454.3,
+            "unit": "ns/op",
+            "extra": "2580826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 505.6,
+            "unit": "ns/op",
+            "extra": "2343070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28529,
+            "unit": "ns/op",
+            "extra": "42406 times\n4 procs"
           }
         ]
       }

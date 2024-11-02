@@ -166,6 +166,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	modCfg.MaxMemoryMBs = int64(math.Max(float64(500), float64(500)))
 
 	cfg := wasmtime.NewConfig()
+	defer cfg.Close()
 	cfg.SetEpochInterruption(true)
 	if modCfg.InitialFuel > 0 {
 		cfg.SetConsumeFuel(true)

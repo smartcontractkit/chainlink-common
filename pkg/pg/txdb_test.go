@@ -55,8 +55,8 @@ func TestTxDBDriver(t *testing.T) {
 	})
 
 	t.Run("Make sure calling sql.Register() can be called twice", func(t *testing.T) {
-		require.NoError(t, RegisterTxDb(tests.Context(t), "foo"))
-		require.NoError(t, RegisterTxDb(tests.Context(t), "bar"))
+		require.NoError(t, RegisterTxDb("foo"))
+		require.NoError(t, RegisterTxDb("bar"))
 		drivers := sql.Drivers()
 		assert.Contains(t, drivers, "txdb")
 	})

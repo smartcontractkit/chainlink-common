@@ -178,6 +178,9 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		cfg.SetConsumeFuel(true)
 	}
 
+	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+	cfg.CacheConfigLoadDefault()
+
 	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
 		rdr := brotli.NewReader(bytes.NewBuffer(binary))

@@ -101,10 +101,8 @@ type ModuleConfig struct {
 }
 
 type Module struct {
-	engine  *wasmtime.Engine
-	module  *wasmtime.Module
-	linker  *wasmtime.Linker
-	wconfig *wasmtime.Config
+	module *wasmtime.Module
+	linker *wasmtime.Linker
 
 	requestStore *store
 
@@ -172,16 +170,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	// binaries may error sporadically.
 	modCfg.MaxMemoryMBs = int64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 
-	cfg := wasmtime.NewConfig()
-	cfg.SetEpochInterruption(true)
-	if modCfg.InitialFuel > 0 {
-		cfg.SetConsumeFuel(true)
-	}
-
-	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
-	cfg.CacheConfigLoadDefault()
-
-	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
 		rdr := brotli.NewReader(bytes.NewBuffer(binary))
 		decompedBinary, err := io.ReadAll(rdr)
@@ -192,12 +180,12 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		binary = decompedBinary
 	}
 
-	mod, err := wasmtime.NewModule(engine, binary)
+	mod, err := wasmtime.NewModule(_globalEngine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
 
-	linker, err := newWasiLinker(modCfg, engine)
+	linker, err := newWasiLinker(modCfg, _globalEngine)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasi linker: %w", err)
 	}
@@ -243,10 +231,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	m := &Module{
-		engine:  engine,
-		module:  mod,
-		linker:  linker,
-		wconfig: cfg,
+		module: mod,
+		linker: linker,
 
 		requestStore: requestStore,
 
@@ -259,20 +245,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 }
 
 func (m *Module) Start() {
-	m.wg.Add(1)
-	go func() {
-		defer m.wg.Done()
-
-		ticker := time.NewTicker(m.cfg.TickInterval)
-		for {
-			select {
-			case <-m.stopCh:
-				return
-			case <-ticker.C:
-				m.engine.IncrementEpoch()
-			}
-		}
-	}()
 }
 
 func (m *Module) Close() {
@@ -280,9 +252,7 @@ func (m *Module) Close() {
 	m.wg.Wait()
 
 	m.linker.Close()
-	m.engine.Close()
 	m.module.Close()
-	m.wconfig.Close()
 }
 
 func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
@@ -302,7 +272,7 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	// we delete the request data from the store when we're done
 	defer m.requestStore.delete(request.Id)
 
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(_globalEngine)
 	defer store.Close()
 
 	reqpb, err := proto.Marshal(request)
@@ -732,4 +702,24 @@ func write(memory, src []byte, ptr, size int32) int64 {
 	dataLen := int64(len(src))
 	copy(buffer, src)
 	return dataLen
+}
+
+var _globalEngine *wasmtime.Engine
+
+func init() {
+	cfg := wasmtime.NewConfig()
+	cfg.SetEpochInterruption(true)
+	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+	cfg.CacheConfigLoadDefault()
+
+	_globalEngine = wasmtime.NewEngineWithConfig(cfg)
+	go func() {
+		ticker := time.NewTicker(1 * time.Millisecond)
+		for {
+			select {
+			case <-ticker.C:
+				_globalEngine.IncrementEpoch()
+			}
+		}
+	}()
 }

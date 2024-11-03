@@ -937,7 +937,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 
 func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	ctx := tests.Context(t)
-	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
@@ -960,6 +960,11 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	}
 	_, err = m.Run(ctx, req)
 	assert.NotNil(t, err)
+
+	for i := 0; i < 10000; i++ {
+		m.Run(ctx, req)
+		time.Sleep(50 * time.Millisecond)
+	}
 }
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {

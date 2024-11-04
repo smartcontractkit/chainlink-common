@@ -181,7 +181,7 @@ func TestMessage_OtelAttributes(t *testing.T) {
 		return strings.Compare(a.Key, b.Key)
 	})
 
-	assert.Equal(t, 3, len(otelAttrs))
+	assert.Len(t, otelAttrs, 3)
 	assert.Equal(t, "key_int", otelAttrs[0].Key)
 	assert.Equal(t, int64(1), otelAttrs[0].Value.AsInt64())
 	assert.Equal(t, "key_string", otelAttrs[1].Key)

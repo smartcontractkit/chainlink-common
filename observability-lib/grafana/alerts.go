@@ -158,7 +158,7 @@ func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 }
 
 type AlertOptions struct {
-	Name              string
+	Title             string
 	Summary           string
 	Description       string
 	RunbookURL        string
@@ -169,6 +169,7 @@ type AlertOptions struct {
 	Query             []RuleQuery
 	QueryRefCondition string
 	Condition         []ConditionQuery
+	PanelTitle        string
 }
 
 func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
@@ -188,16 +189,22 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 		options.QueryRefCondition = "A"
 	}
 
-	rule := alerting.NewRuleBuilder(options.Name).
+	annotations := map[string]string{
+		"summary":     options.Summary,
+		"description": options.Description,
+		"runbook_url": options.RunbookURL,
+	}
+
+	if options.PanelTitle != "" {
+		annotations["panel_title"] = options.PanelTitle
+	}
+
+	rule := alerting.NewRuleBuilder(options.Title).
 		For(options.For).
 		NoDataState(options.NoDataState).
 		ExecErrState(options.RuleExecErrState).
 		Condition(options.QueryRefCondition).
-		Annotations(map[string]string{
-			"summary":     options.Summary,
-			"description": options.Description,
-			"runbook_url": options.RunbookURL,
-		}).
+		Annotations(annotations).
 		Labels(options.Tags)
 
 	for _, query := range options.Query {

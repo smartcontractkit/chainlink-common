@@ -29,7 +29,7 @@ import (
 type RequestData struct {
 	fetchRequestsCounter int
 	response             *wasmpb.Response
-	callWithCtx          func(func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error)
+	ctx                  func() context.Context
 }
 
 type store struct {
@@ -72,7 +72,7 @@ func (r *store) delete(id string) {
 var (
 	defaultTickInterval     = 100 * time.Millisecond
 	defaultTimeout          = 2 * time.Second
-	defaultMaxMemoryMBs     = 256
+	defaultMinMemoryMBs     = 128
 	DefaultInitialFuel      = uint64(100_000_000)
 	defaultMaxFetchRequests = 5
 )
@@ -85,6 +85,7 @@ type ModuleConfig struct {
 	TickInterval     time.Duration
 	Timeout          *time.Duration
 	MaxMemoryMBs     int64
+	MinMemoryMBs     int64
 	InitialFuel      uint64
 	Logger           logger.Logger
 	IsUncompressed   bool
@@ -100,9 +101,10 @@ type ModuleConfig struct {
 }
 
 type Module struct {
-	engine *wasmtime.Engine
-	module *wasmtime.Module
-	linker *wasmtime.Linker
+	engine  *wasmtime.Engine
+	module  *wasmtime.Module
+	linker  *wasmtime.Linker
+	wconfig *wasmtime.Config
 
 	requestStore *store
 
@@ -160,11 +162,15 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		modCfg.Timeout = &defaultTimeout
 	}
 
-	// Take the max of the default and the configured max memory mbs.
+	if modCfg.MinMemoryMBs == 0 {
+		modCfg.MinMemoryMBs = int64(defaultMinMemoryMBs)
+	}
+
+	// Take the max of the min and the configured max memory mbs.
 	// We do this because Go requires a minimum of 16 megabytes to run,
-	// and local testing has shown that with less than 64 mbs, some
+	// and local testing has shown that with less than the min, some
 	// binaries may error sporadically.
-	modCfg.MaxMemoryMBs = int64(math.Max(float64(defaultMaxMemoryMBs), float64(modCfg.MaxMemoryMBs)))
+	modCfg.MaxMemoryMBs = int64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
@@ -172,8 +178,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		cfg.SetConsumeFuel(true)
 	}
 
-	engine := wasmtime.NewEngineWithConfig(cfg)
+	cfg.CacheConfigLoadDefault()
+	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 
+	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
 		rdr := brotli.NewReader(bytes.NewBuffer(binary))
 		decompedBinary, err := io.ReadAll(rdr)
@@ -201,29 +209,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"sendResponse",
-		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
-			b, innerErr := wasmRead(caller, ptr, ptrlen)
-			if innerErr != nil {
-				logger.Errorf("error calling sendResponse: %s", err)
-				return ErrnoFault
-			}
-
-			var resp wasmpb.Response
-			innerErr = proto.Unmarshal(b, &resp)
-			if innerErr != nil {
-				logger.Errorf("error calling sendResponse: %s", innerErr)
-				return ErrnoFault
-			}
-
-			storedReq, innerErr := requestStore.get(resp.Id)
-			if innerErr != nil {
-				logger.Errorf("error calling sendResponse: %s", innerErr)
-				return ErrnoFault
-			}
-			storedReq.response = &resp
-
-			return ErrnoSuccess
-		},
+		createSendResponseFn(logger, requestStore),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping sendResponse func: %w", err)
@@ -232,48 +218,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"log",
-		func(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
-			b, innerErr := wasmRead(caller, ptr, ptrlen)
-			if innerErr != nil {
-				logger.Errorf("error calling log: %s", err)
-				return
-			}
-
-			var raw map[string]interface{}
-			innerErr = json.Unmarshal(b, &raw)
-			if innerErr != nil {
-				return
-			}
-
-			level := raw["level"]
-			delete(raw, "level")
-
-			msg := raw["msg"].(string)
-			delete(raw, "msg")
-			delete(raw, "ts")
-
-			var args []interface{}
-			for k, v := range raw {
-				args = append(args, k, v)
-			}
-
-			switch level {
-			case "debug":
-				logger.Debugw(msg, args...)
-			case "info":
-				logger.Infow(msg, args...)
-			case "warn":
-				logger.Warnw(msg, args...)
-			case "error":
-				logger.Errorw(msg, args...)
-			case "panic":
-				logger.Panicw(msg, args...)
-			case "fatal":
-				logger.Fatalw(msg, args...)
-			default:
-				logger.Infow(msg, args...)
-			}
-		},
+		createLogFn(logger),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
@@ -291,16 +236,17 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	err = linker.FuncWrap(
 		"env",
 		"emit",
-		createEmitFn(logger, modCfg.Labeler, wasmRead, wasmWrite, wasmWriteUInt32),
+		createEmitFn(logger, requestStore, modCfg.Labeler, wasmRead, wasmWrite, wasmWriteUInt32),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping emit func: %w", err)
 	}
 
 	m := &Module{
-		engine: engine,
-		module: mod,
-		linker: linker,
+		engine:  engine,
+		module:  mod,
+		linker:  linker,
+		wconfig: cfg,
 
 		requestStore: requestStore,
 
@@ -336,6 +282,7 @@ func (m *Module) Close() {
 	m.linker.Close()
 	m.engine.Close()
 	m.module.Close()
+	m.wconfig.Close()
 }
 
 func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
@@ -348,9 +295,7 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	}
 
 	// we add the request context to the store to make it available to the Fetch fn
-	err := m.requestStore.add(request.Id, &RequestData{callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
-		return fn(ctx)
-	}})
+	err := m.requestStore.add(request.Id, &RequestData{ctx: func() context.Context { return ctx }})
 	if err != nil {
 		return nil, fmt.Errorf("error adding ctx to the store: %w", err)
 	}
@@ -368,6 +313,8 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
+	defer wasi.Close()
+
 	wasi.SetArgv([]string{"wasi", reqstr})
 
 	store.SetWasi(wasi)
@@ -436,6 +383,34 @@ func containsCode(err error, code int) bool {
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
 }
 
+// createSendResponseFn injects the dependency required by a WASM guest to
+// send a response back to the host.
+func createSendResponseFn(logger logger.Logger, requestStore *store) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+		b, innerErr := wasmRead(caller, ptr, ptrlen)
+		if innerErr != nil {
+			logger.Errorf("error calling sendResponse: %s", innerErr)
+			return ErrnoFault
+		}
+
+		var resp wasmpb.Response
+		innerErr = proto.Unmarshal(b, &resp)
+		if innerErr != nil {
+			logger.Errorf("error calling sendResponse: %s", innerErr)
+			return ErrnoFault
+		}
+
+		storedReq, innerErr := requestStore.get(resp.Id)
+		if innerErr != nil {
+			logger.Errorf("error calling sendResponse: %s", innerErr)
+			return ErrnoFault
+		}
+		storedReq.response = &resp
+
+		return ErrnoSuccess
+	}
+}
+
 func createFetchFn(
 	logger logger.Logger,
 	reader unsafeReaderFunc,
@@ -499,13 +474,7 @@ func createFetchFn(
 		}
 		storedRequest.fetchRequestsCounter++
 
-		fetchResp, innerErr := storedRequest.callWithCtx(func(ctx context.Context) (*wasmpb.FetchResponse, error) {
-			if ctx == nil {
-				return nil, errors.New("context is nil")
-			}
-
-			return modCfg.Fetch(ctx, req)
-		})
+		fetchResp, innerErr := modCfg.Fetch(storedRequest.ctx(), req)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return writeErr(innerErr)
@@ -533,6 +502,7 @@ func createFetchFn(
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
+	requestStore *store,
 	e custmsg.MessageEmitter,
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
@@ -577,12 +547,18 @@ func createEmitFn(
 			return writeErr(err)
 		}
 
-		msg, labels, err := toEmissible(b)
+		reqID, msg, labels, err := toEmissible(b)
 		if err != nil {
 			return writeErr(err)
 		}
 
-		if err := e.WithMapLabels(labels).Emit(msg); err != nil {
+		req, err := requestStore.get(reqID)
+		if err != nil {
+			logErr(fmt.Errorf("failed to get request from store: %s", err))
+			return writeErr(err)
+		}
+
+		if err := e.WithMapLabels(labels).Emit(req.ctx(), msg); err != nil {
 			return writeErr(err)
 		}
 
@@ -590,9 +566,55 @@ func createEmitFn(
 	}
 }
 
+// createLogFn injects dependencies and builds the log function exposed by the WASM.
+func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+		b, innerErr := wasmRead(caller, ptr, ptrlen)
+		if innerErr != nil {
+			logger.Errorf("error calling log: %s", innerErr)
+			return
+		}
+
+		var raw map[string]interface{}
+		innerErr = json.Unmarshal(b, &raw)
+		if innerErr != nil {
+			return
+		}
+
+		level := raw["level"]
+		delete(raw, "level")
+
+		msg := raw["msg"].(string)
+		delete(raw, "msg")
+		delete(raw, "ts")
+
+		var args []interface{}
+		for k, v := range raw {
+			args = append(args, k, v)
+		}
+
+		switch level {
+		case "debug":
+			logger.Debugw(msg, args...)
+		case "info":
+			logger.Infow(msg, args...)
+		case "warn":
+			logger.Warnw(msg, args...)
+		case "error":
+			logger.Errorw(msg, args...)
+		case "panic":
+			logger.Panicw(msg, args...)
+		case "fatal":
+			logger.Fatalw(msg, args...)
+		default:
+			logger.Infow(msg, args...)
+		}
+	}
+}
+
 type unimplementedMessageEmitter struct{}
 
-func (u *unimplementedMessageEmitter) Emit(string) error {
+func (u *unimplementedMessageEmitter) Emit(context.Context, string) error {
 	return errors.New("unimplemented")
 }
 
@@ -608,18 +630,18 @@ func (u *unimplementedMessageEmitter) Labels() map[string]string {
 	return nil
 }
 
-func toEmissible(b []byte) (string, map[string]string, error) {
+func toEmissible(b []byte) (string, string, map[string]string, error) {
 	msg := &wasmpb.EmitMessageRequest{}
 	if err := proto.Unmarshal(b, msg); err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	validated, err := toValidatedLabels(msg)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
-	return msg.Message, validated, nil
+	return msg.RequestId, msg.Message, validated, nil
 }
 
 func toValidatedLabels(msg *wasmpb.EmitMessageRequest) (map[string]string, error) {

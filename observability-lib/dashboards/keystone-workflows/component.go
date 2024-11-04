@@ -4,6 +4,7 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
@@ -38,7 +39,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "env",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(WorkflowsRunning, env)`,
+		Query:      `label_values(platform.engine.workflows.count, env)`,
 		Multi:      false,
 	}))
 
@@ -48,7 +49,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "cluster",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(WorkflowsRunning{env="$env"}, cluster)`,
+		Query:      `label_values(platform.engine.workflows.count{env="$env"}, cluster)`,
 	}))
 
 	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -57,7 +58,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "workflowOwner",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(WorkflowsRunning{env="$env", cluster="$cluster"}, workflowOwner)`,
+		Query:      `label_values(platform.engine.workflows.count{env="$env", cluster="$cluster"}, workflowOwner)`,
 		Multi:      false,
 	}))
 
@@ -67,7 +68,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "workflowName",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(WorkflowsRunning{env="$env", cluster="$cluster", workflowOwner="$workflowOwner"}, workflowName)`,
+		Query:      `label_values(platform.engine.workflows.count{env="$env", cluster="$cluster", workflowOwner="$workflowOwner"}, workflowName)`,
 	}))
 
 	return variables
@@ -85,7 +86,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(WorkflowsRunning{` + p.platformOpts.LabelQuery + `}) by (workflowOwner, workflowName)`,
+					Expr:   `sum(platform.engine.workflows.count{` + p.platformOpts.LabelQuery + `}) by (workflowOwner, workflowName)`,
 					Legend: "{{ workflowOwner }} - {{ workflowName }}",
 				},
 			},
@@ -101,7 +102,7 @@ func general(p *Props) []*grafana.Panel {
 			NoDataState: alerting.RuleNoDataStateOK,
 			Query: []grafana.RuleQuery{
 				{
-					Expr:       `sum(WorkflowsRunning{` + p.AlertsFilters + `})`,
+					Expr:       `sum(platform.engine.workflows.count{` + p.AlertsFilters + `})`,
 					RefID:      "A",
 					Datasource: p.MetricsDataSource.UID,
 				},
@@ -131,7 +132,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(WorkflowsRunning{` + p.platformOpts.LabelQuery + `}) by (status)`,
+					Expr:   `sum(platform.engine.workflows.count{` + p.platformOpts.LabelQuery + `}) by (status)`,
 					Legend: "{{ status }}",
 				},
 			},
@@ -148,7 +149,7 @@ func general(p *Props) []*grafana.Panel {
 			Unit:        "ms",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(WorkflowExecutionLatency{` + p.platformOpts.LabelQuery + `}) by (workflowExecutionID)`,
+					Expr:   `sum(platform.engine.workflow.time{` + p.platformOpts.LabelQuery + `}) by (workflowExecutionID)`,
 					Legend: "WorkflowExecID: {{workflowExecutionID}}",
 				},
 			},
@@ -164,7 +165,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `WorkflowStepError{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform.engine.workflow.errors{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},
@@ -180,7 +181,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `RegisterTriggerFailure{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform.engine.register_trigger.failures{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},
@@ -196,7 +197,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `CapabilityInvocation{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform.engine.capabilities_invoked.count{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},

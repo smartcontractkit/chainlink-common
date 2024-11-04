@@ -70,7 +70,7 @@ func TestWrapper(t *testing.T) {
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("RetypeToOffChain works on nested fields even if the field itself is already wrapped", func(t *testing.T) {
+	t.Run("RetypeToOffChain works on nested fields", func(t *testing.T) {
 		offChainType, err := nestedWrapper.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
 		assert.Equal(t, 4, offChainType.NumField())
@@ -311,7 +311,7 @@ func TestWrapper(t *testing.T) {
 		assert.Equal(t, rInput.Interface(), newInput)
 	})
 
-	t.Run("TransformToOnChain and TransformToOffChain works on nested fields even if the field itself was wrapped", func(t *testing.T) {
+	t.Run("TransformToOnChain and TransformToOffChain works on nested fields", func(t *testing.T) {
 		offChainType, err := nestedWrapper.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
 

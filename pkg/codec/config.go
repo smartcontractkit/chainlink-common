@@ -252,24 +252,58 @@ func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// WrapperModifierConfig wraps defined fields into their own structs where they become custom named fields.
+// WrapperModifierConfig replaces each field based on cfg map keys with a struct containing one field with the value of the original field which has is named based on map values.
 // Wrapper modifier does not maintain the original pointers.
 // Wrapper modifier config shouldn't edit fields that affect each other since the results are not deterministic.
 //
-//			For e.g.
-//				type example struct {
-//					A string
-//					B: {A, B, C}
-//					C :[{A, B, C}, {A, B, C}, {A, B, C}...],
-//					D string
-//				}
+//		Example #1:
 //
-//			 with transformations defined as {"B.A": "X", "B.C": "Z", "C.A": "Y", "D": "W"}:
-//					1."B.A": "X" -> B: { A: {X}; B; Cl }
-//					2."B.C": "Z" -> B: { A: {X}; B; C: {Z}; }
-//		            3."C.A": "Y" -> C :[{ A: {Y};, B;, C; }, { A: {Y}; B; C;}, { A: {Y}; B; C;}...]
-//					4."D":   "W" -> D: {W};
-//	      		result -> {A; B: { A: {X}; B; C: {Z}; }; C :[{ A: {Y}, B, C } { A: {Y}, B, C}, { A: {Y}, B, C}...]; D: {W};}
+//		Based on this input struct:
+//			type example struct {
+//				A string
+//			}
+//
+//		And the wrapper config defined as:
+//	 		{"D": "W"}
+//
+//		Result:
+//			type example struct {
+//				D
+//			}
+//
+//		where D is a struct that contains the original value of D under the name W:
+//			type D struct {
+//				W string
+//			}
+//
+//
+//		Example #2:
+//		Wrapper modifier works on any type of field, including nested fields or nested fields in slices etc.!
+//
+//		Based on this input struct:
+//			type example struct {
+//				A []B
+//			}
+//
+//			type B struct {
+//				C string
+//				D string
+//			}
+//
+//		And the wrapper config defined as:
+//	 		{"A.C": "E", "A.D": "F"}
+//
+//		Result:
+//			type example struct {
+//				A []B
+//			}
+//
+//			type B struct {
+//				C type struct { E string }
+//				D type struct { F string }
+//			}
+//
+//		Where each element of slice A under fields C.E and D.F retains the values of their respective input slice elements A.C and A.D .
 type WrapperModifierConfig struct {
 	// Fields key defines the fields to be wrapped and the name of the wrapper struct.
 	// The field becomes a subfield of the wrapper struct where the name of the subfield is map value.

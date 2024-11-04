@@ -5,7 +5,6 @@ import (
 	"reflect"
 )
 
-// NewWrapperModifier wraps fields into subfields of a new struct where the name of the struct is field name and the subfield name is map value.
 func NewWrapperModifier(fields map[string]string) Modifier {
 	m := &wrapperModifier{
 		modifierBase: modifierBase[string]{

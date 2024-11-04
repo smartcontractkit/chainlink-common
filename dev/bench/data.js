@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730492533674,
+  "lastUpdate": 1730718519672,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5670,6 +5670,48 @@ window.BENCHMARK_DATA = {
             "value": 28265,
             "unit": "ns/op",
             "extra": "42416 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3072d4cf1ba45f0711ec4afc33fa2c39dff33315",
+          "message": "[chore] Small optimizations (#912)\n\n* [chore] Make sure we clean up all WASM resources\r\n\r\n* Add cache settings",
+          "timestamp": "2024-11-04T11:07:37Z",
+          "tree_id": "ca31aeab267ac7011e39a31b0ff71592fcf87d8c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3072d4cf1ba45f0711ec4afc33fa2c39dff33315"
+        },
+        "date": 1730718519048,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.6,
+            "unit": "ns/op",
+            "extra": "2688072 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 525.8,
+            "unit": "ns/op",
+            "extra": "2365987 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28288,
+            "unit": "ns/op",
+            "extra": "42465 times\n4 procs"
           }
         ]
       }

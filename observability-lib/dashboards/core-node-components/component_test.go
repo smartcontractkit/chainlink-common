@@ -64,7 +64,7 @@ func TestNewDashboard(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error creating dashboard: %v", err)
 		}
-		require.IsType(t, grafana.Dashboard{}, *testDashboard)
+		require.IsType(t, grafana.Observability{}, *testDashboard)
 		require.Equal(t, "Core Node Components Dashboard", *testDashboard.Dashboard.Title)
 		json, errJSON := testDashboard.GenerateJSON()
 		if errJSON != nil {

@@ -14,7 +14,7 @@ import (
 )
 
 // NewDashboard creates a DON dashboard for the given OCR version
-func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+func NewDashboard(props *Props) (*grafana.Observability, error) {
 	if props.Name == "" {
 		return nil, fmt.Errorf("Name is required")
 	}

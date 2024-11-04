@@ -204,5 +204,37 @@ func general(p *Props) []*grafana.Panel {
 		},
 	}))
 
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Registry Syncer Failures",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Query: []grafana.Query{
+				{
+					Expr:   `platform.registry_syncer.sync.failures{` + p.platformOpts.LabelQuery + `}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Registry Syncer Launcher Failures",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Query: []grafana.Query{
+				{
+					Expr:   `platform.registry_syncer.launch.failures{` + p.platformOpts.LabelQuery + `}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+
 	return panels
 }

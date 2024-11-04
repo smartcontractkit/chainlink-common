@@ -3,6 +3,7 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -42,7 +43,7 @@ type DeployOptions struct {
 
 func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
 	for _, a := range alerts {
-		if a.Title == alert.Title {
+		if reflect.DeepEqual(a, alert) {
 			return true
 		}
 	}
@@ -103,9 +104,11 @@ func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 			alert.FolderUID = folder.UID
 			alert.Annotations["__dashboardUid__"] = *newDashboard.UID
 
-			panelId := panelIDByTitle(db.Dashboard, alert.Title)
+			panelId := panelIDByTitle(db.Dashboard, alert.Annotations["panel_title"])
+			// we can clean it up as it was only used to get the panelId
+			delete(alert.Annotations, "panel_title")
 			if panelId != "" {
-				alert.Annotations["__panelId__"] = panelIDByTitle(db.Dashboard, alert.Title)
+				alert.Annotations["__panelId__"] = panelId
 			}
 			if alertRuleExist(alertsRule, alert) {
 				// update alert rule if it already exists

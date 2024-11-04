@@ -72,7 +72,7 @@ func (r *store) delete(id string) {
 var (
 	defaultTickInterval     = 100 * time.Millisecond
 	defaultTimeout          = 2 * time.Second
-	defaultMaxMemoryMBs     = 256
+	defaultMinMemoryMBs     = 128
 	DefaultInitialFuel      = uint64(100_000_000)
 	defaultMaxFetchRequests = 5
 )
@@ -85,6 +85,7 @@ type ModuleConfig struct {
 	TickInterval     time.Duration
 	Timeout          *time.Duration
 	MaxMemoryMBs     int64
+	MinMemoryMBs     int64
 	InitialFuel      uint64
 	Logger           logger.Logger
 	IsUncompressed   bool
@@ -100,9 +101,10 @@ type ModuleConfig struct {
 }
 
 type Module struct {
-	engine *wasmtime.Engine
-	module *wasmtime.Module
-	linker *wasmtime.Linker
+	engine  *wasmtime.Engine
+	module  *wasmtime.Module
+	linker  *wasmtime.Linker
+	wconfig *wasmtime.Config
 
 	requestStore *store
 
@@ -160,11 +162,15 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		modCfg.Timeout = &defaultTimeout
 	}
 
-	// Take the max of the default and the configured max memory mbs.
+	if modCfg.MinMemoryMBs == 0 {
+		modCfg.MinMemoryMBs = int64(defaultMinMemoryMBs)
+	}
+
+	// Take the max of the min and the configured max memory mbs.
 	// We do this because Go requires a minimum of 16 megabytes to run,
-	// and local testing has shown that with less than 64 mbs, some
+	// and local testing has shown that with less than the min, some
 	// binaries may error sporadically.
-	modCfg.MaxMemoryMBs = int64(math.Max(float64(defaultMaxMemoryMBs), float64(modCfg.MaxMemoryMBs)))
+	modCfg.MaxMemoryMBs = int64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
@@ -172,8 +178,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		cfg.SetConsumeFuel(true)
 	}
 
-	engine := wasmtime.NewEngineWithConfig(cfg)
+	cfg.CacheConfigLoadDefault()
+	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 
+	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
 		rdr := brotli.NewReader(bytes.NewBuffer(binary))
 		decompedBinary, err := io.ReadAll(rdr)
@@ -235,9 +243,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	m := &Module{
-		engine: engine,
-		module: mod,
-		linker: linker,
+		engine:  engine,
+		module:  mod,
+		linker:  linker,
+		wconfig: cfg,
 
 		requestStore: requestStore,
 
@@ -273,6 +282,7 @@ func (m *Module) Close() {
 	m.linker.Close()
 	m.engine.Close()
 	m.module.Close()
+	m.wconfig.Close()
 }
 
 func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
@@ -303,6 +313,8 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
+	defer wasi.Close()
+
 	wasi.SetArgv([]string{"wasi", reqstr})
 
 	store.SetWasi(wasi)

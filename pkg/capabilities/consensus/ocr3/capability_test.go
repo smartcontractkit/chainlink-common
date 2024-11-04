@@ -101,6 +101,7 @@ func TestOCR3Capability(t *testing.T) {
 					"encoder_config":     map[string]any{},
 					"encoder":            "evm",
 					"report_id":          "ffff",
+					"key_id":             "evm",
 				},
 			)
 			require.NoError(t, err)

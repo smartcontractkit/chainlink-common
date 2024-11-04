@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/maps"
 
@@ -44,6 +43,8 @@ type Engine struct {
 	StopChan
 	logger.SugaredLogger
 
+	tracer trace.Tracer
+
 	wg sync.WaitGroup
 
 	emitHealthErr func(error)
@@ -52,6 +53,14 @@ type Engine struct {
 }
 
 // Go runs fn in a tracked goroutine that will block closing the service.
+//
+// If this operation runs continuously in the background, then do not trace it.
+// If this operation will terminate, consider tracing via Tracer:
+//
+//	v.e.Go(func(ctx context.Context) {
+//		ctx, span := v.e.Tracer().Start(ctx, "MyOperationName")
+//		defer span.End()
+//	})
 func (e *Engine) Go(fn func(context.Context)) {
 	e.wg.Add(1)
 	go func() {
@@ -65,6 +74,13 @@ func (e *Engine) Go(fn func(context.Context)) {
 // GoTick is like Go but calls fn for each tick.
 //
 //	v.e.GoTick(services.NewTicker(time.Minute), v.method)
+//
+// Consider tracing each tick via Tracer:
+//
+//	v.e.GoTick(services.NewTicker(time.Minute), func(ctx context.Context) {
+//		ctx, span := v.e.Tracer().Start(ctx, "MyOperationName")
+//		defer span.End()
+//	})
 func (e *Engine) GoTick(ticker *timeutil.Ticker, fn func(context.Context)) {
 	e.Go(func(ctx context.Context) {
 		defer ticker.Stop()
@@ -79,6 +95,11 @@ func (e *Engine) GoTick(ticker *timeutil.Ticker, fn func(context.Context)) {
 	})
 }
 
+// Tracer returns the otel tracer with service attributes included.
+func (e *Engine) Tracer() trace.Tracer {
+	return e.tracer
+}
+
 // EmitHealthErr records an error to be reported via the next call to Healthy().
 func (e *Engine) EmitHealthErr(err error) { e.emitHealthErr(err) }
 
@@ -87,7 +108,7 @@ func (e *Engine) EmitHealthErr(err error) { e.emitHealthErr(err) }
 func (e *Engine) SetHealthCond(condition string, err error) {
 	e.condsMu.Lock()
 	defer e.condsMu.Unlock()
-	e.conds[condition] = fmt.Errorf("%s: %e", condition, err)
+	e.conds[condition] = fmt.Errorf("%s: %w", condition, err)
 }
 
 // ClearHealthCond removes a condition and error recorded by SetHealthCond.
@@ -157,16 +178,14 @@ func (c Config) NewService(lggr logger.Logger) Service {
 	return c.new(logger.Sugared(lggr))
 }
 
-const scopeName = "github.com/smartcontractkit/chainlink-common/pkg/services"
-
 func (c Config) new(lggr logger.SugaredLogger) *service {
 	lggr = lggr.Named(c.Name)
 	s := &service{
-		tracer: otel.GetTracerProvider().Tracer(scopeName),
-		cfg:    c,
+		cfg: c,
 		eng: Engine{
 			StopChan:      make(StopChan),
 			SugaredLogger: lggr,
+			tracer:        otel.GetTracerProvider().Tracer(lggr.Name()),
 			conds:         make(map[string]error),
 		},
 	}
@@ -179,10 +198,9 @@ func (c Config) new(lggr logger.SugaredLogger) *service {
 
 type service struct {
 	StateMachine
-	tracer trace.Tracer
-	cfg    Config
-	eng    Engine
-	subs   []Service
+	cfg  Config
+	eng  Engine
+	subs []Service
 }
 
 // Ready implements [HealthReporter.Ready] and overrides and extends [utils.StartStopOnce.Ready()] to include [Config.SubServices]
@@ -218,10 +236,7 @@ func (s *service) Name() string { return s.eng.SugaredLogger.Name() }
 func (s *service) Start(ctx context.Context) error {
 	return s.StartOnce(s.cfg.Name, func() error {
 		var span trace.Span
-		ctx, span = s.tracer.Start(ctx, "Start", trace.WithAttributes(
-			attribute.String("service.name", s.cfg.Name),
-			attribute.String("service.instance", s.Name()), // full name from logger
-		))
+		ctx, span = s.eng.tracer.Start(ctx, "Start")
 		defer span.End()
 
 		s.eng.Info("Starting")

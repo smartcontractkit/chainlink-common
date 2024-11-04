@@ -87,7 +87,7 @@ func (e *EnvConfig) parse() error {
 	var err error
 	e.DatabaseURL, err = getDatabaseURL()
 	if err != nil {
-		return fmt.Errorf("failed to parse %s: %q", envDatabaseURL, err)
+		return fmt.Errorf("failed to parse %s: %w", envDatabaseURL, err)
 	}
 
 	e.PrometheusPort, err = strconv.Atoi(promPortStr)
@@ -105,7 +105,7 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
-		e.TracingAttributes = getAttributes(envTracingAttribute)
+		e.TracingAttributes = getMap(envTracingAttribute)
 		e.TracingSamplingRatio = getFloat64OrZero(envTracingSamplingRatio)
 		e.TracingTLSCertPath = os.Getenv(envTracingTLSCertPath)
 	}
@@ -122,7 +122,7 @@ func (e *EnvConfig) parse() error {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEndpoint, err)
 		}
 		e.TelemetryCACertFile = os.Getenv(envTelemetryCACertFile)
-		e.TelemetryAttributes = getAttributes(envTelemetryAttribute)
+		e.TelemetryAttributes = getMap(envTelemetryAttribute)
 		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
 	}
 	return nil
@@ -158,14 +158,18 @@ func getValidCollectorTarget() (string, error) {
 	return tracingCollectorTarget, nil
 }
 
-func getAttributes(envKeyPrefix string) map[string]string {
-	tracingAttributes := make(map[string]string)
+func getMap(envKeyPrefix string) map[string]string {
+	m := make(map[string]string)
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, envKeyPrefix) {
-			tracingAttributes[strings.TrimPrefix(env, envKeyPrefix)] = os.Getenv(env)
+			key, value, found := strings.Cut(env, "=")
+			if found {
+				key = strings.TrimPrefix(key, envKeyPrefix)
+				m[key] = value
+			}
 		}
 	}
-	return tracingAttributes
+	return m
 }
 
 // Any errors in parsing result in a sampling ratio of 0.0.

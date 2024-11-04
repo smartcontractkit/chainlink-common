@@ -2,6 +2,7 @@ package corenode
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
@@ -33,7 +34,21 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 		}
 	}
 
+	if props.LogsDataSource == nil {
+		return nil, fmt.Errorf("LogsDataSource is required")
+	} else {
+		if props.LogsDataSource.Name == "" {
+			return nil, fmt.Errorf("LogsDataSource.Name is required")
+		}
+		if props.LogsDataSource.UID == "" {
+			return nil, fmt.Errorf("LogsDataSource.UID is required")
+		}
+	}
+
 	props.platformOpts = platformPanelOpts(props.Platform)
+	if props.Tested {
+		props.platformOpts.LabelQuery = ""
+	}
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:       props.Name,
@@ -57,17 +72,17 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 				"color":     `{{ template "slack.chainlink.color" . }}`,
 			},
 		}))
-	}
 
-	notificationPolicyOptions := &grafana.NotificationPolicyOptions{
-		Receiver: "chainlink-slack",
-		GroupBy:  []string{"grafana_folder", "alertname"},
+		notificationPolicySlackOptions := &grafana.NotificationPolicyOptions{
+			Receiver: "chainlink-slack",
+			GroupBy:  []string{"grafana_folder", "alertname"},
+			Continue: grafana.Pointer(true),
+		}
+		for name, value := range props.AlertsTags {
+			notificationPolicySlackOptions.ObjectMatchers = append(notificationPolicySlackOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
+		}
+		builder.AddNotificationPolicy(grafana.NewNotificationPolicy(notificationPolicySlackOptions))
 	}
-	for name, value := range props.AlertsTags {
-		notificationPolicyOptions.ObjectMatchers = append(notificationPolicyOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
-	}
-
-	builder.AddNotificationPolicy(grafana.NewNotificationPolicy(notificationPolicyOptions))
 
 	builder.AddVars(vars(props)...)
 
@@ -144,7 +159,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "env",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up, env)`,
+			Query:      `label_values(uptime_seconds, env)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -153,7 +168,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "cluster",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env"}, cluster)`,
+			Query:      `label_values(uptime_seconds{env="$env"}, cluster)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -162,7 +177,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "namespace",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster"}, namespace)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster"}, namespace)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -171,7 +186,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "blockchain",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace"}, blockchain)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace"}, blockchain)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -180,7 +195,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "product",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain"}, product)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain"}, product)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -189,7 +204,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "network_type",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product"}, network_type)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product"}, network_type)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -198,8 +213,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "job",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product", network_type="$network_type"}, job)`,
-			Multi:      true,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", blockchain="$blockchain", product="$product", network_type="$network_type"}, job)`,
 		}))
 
 		variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -208,7 +222,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 				Name:  "pod",
 			},
 			Datasource: p.MetricsDataSource.Name,
-			Query:      `label_values(up{env="$env", cluster="$cluster", namespace="$namespace", job="$job"}, pod)`,
+			Query:      `label_values(uptime_seconds{env="$env", cluster="$cluster", namespace="$namespace", job="$job"}, pod)`,
 			Multi:      true,
 			IncludeAll: true,
 		}))
@@ -226,6 +240,50 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 	}
 
 	return variables
+}
+
+func healthAverageAlertRule(p *Props, threshold float64, tags map[string]string) grafana.AlertOptions {
+	return grafana.AlertOptions{
+		Title:       `Health Avg by Service is less than ` + strconv.FormatFloat(threshold, 'f', -1, 64) + `%`,
+		Summary:     `Uptime less than ` + strconv.FormatFloat(threshold, 'f', -1, 64) + `% over last 15 minutes on one component in a Node`,
+		Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "C" }}%`,
+		RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+		For:         "15m",
+		Tags:        tags,
+		Query: []grafana.RuleQuery{
+			{
+				Expr:       `health{` + p.AlertsFilters + `}`,
+				RefID:      "A",
+				Datasource: p.MetricsDataSource.UID,
+			},
+		},
+		QueryRefCondition: "D",
+		Condition: []grafana.ConditionQuery{
+			{
+				RefID: "B",
+				ReduceExpression: &grafana.ReduceExpression{
+					Expression: "A",
+					Reducer:    expr.TypeReduceReducerMean,
+				},
+			},
+			{
+				RefID: "C",
+				MathExpression: &grafana.MathExpression{
+					Expression: "$B * 100",
+				},
+			},
+			{
+				RefID: "D",
+				ThresholdExpression: &grafana.ThresholdExpression{
+					Expression: "C",
+					ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+						Params: []float64{threshold},
+						Type:   grafana.TypeThresholdTypeLt,
+					},
+				},
+			},
+		},
+	}
 }
 
 func headlines(p *Props) []*grafana.Panel {
@@ -333,7 +391,7 @@ func headlines(p *Props) []*grafana.Panel {
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
 			Title:      "Health Avg by Service over 15m",
-			Span:       16,
+			Span:       24,
 			Height:     6,
 			Decimals:   1,
 			Unit:       "percent",
@@ -345,54 +403,25 @@ func headlines(p *Props) []*grafana.Panel {
 			},
 			Min: grafana.Pointer[float64](0),
 			Max: grafana.Pointer[float64](100),
-			AlertOptions: &grafana.AlertOptions{
-				Summary:     `Uptime less than 90% over last 15 minutes on one component in a Node`,
-				Description: `Component {{ index $labels "service_id" }} uptime in the last 15m is {{ index $values "A" }}%`,
-				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-				For:         "15m",
-				Tags: map[string]string{
-					"severity": "warning",
-				},
-				Query: []grafana.RuleQuery{
-					{
-						Expr:       `health{` + p.AlertsFilters + `}`,
-						RefID:      "A",
-						Datasource: p.MetricsDataSource.UID,
-					},
-				},
-				QueryRefCondition: "D",
-				Condition: []grafana.ConditionQuery{
-					{
-						RefID: "B",
-						ReduceExpression: &grafana.ReduceExpression{
-							Expression: "A",
-							Reducer:    expr.TypeReduceReducerMean,
-						},
-					},
-					{
-						RefID: "C",
-						MathExpression: &grafana.MathExpression{
-							Expression: "$B * 100",
-						},
-					},
-					{
-						RefID: "D",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "C",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{90, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
-							},
-						},
-					},
+			Threshold: &grafana.ThresholdOptions{
+				Mode: dashboard.ThresholdsModeAbsolute,
+				Steps: []dashboard.Threshold{
+					{Value: nil, Color: "green"},
+					{Value: grafana.Pointer[float64](50), Color: "red"},
+					{Value: grafana.Pointer[float64](70), Color: "orange"},
+					{Value: grafana.Pointer[float64](90), Color: "green"},
 				},
 			},
 		},
+		ThresholdStyle: common.GraphThresholdsStyleModeDashed,
 		LegendOptions: &grafana.LegendOptions{
 			DisplayMode: common.LegendDisplayModeList,
 			Placement:   common.LegendPlacementRight,
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			healthAverageAlertRule(p, 90, map[string]string{"severity": "info"}),
+			healthAverageAlertRule(p, 70, map[string]string{"severity": "warning"}),
+			healthAverageAlertRule(p, 50, map[string]string{"severity": "critical"}),
 		},
 	}))
 
@@ -401,7 +430,7 @@ func headlines(p *Props) []*grafana.Panel {
 			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Health Avg by Service over 15m with health < 90%",
 			Description: "Only displays services with health average < 90%",
-			Span:        8,
+			Span:        24,
 			Height:      6,
 			Decimals:    1,
 			Unit:        "percent",
@@ -427,6 +456,22 @@ func headlines(p *Props) []*grafana.Panel {
 		Orientation: common.VizOrientationHorizontal,
 	}))
 
+	panels = append(panels, grafana.NewLogPanel(&grafana.LogPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.LogsDataSource.Name,
+			Title:      "Logs with severity >= error",
+			Span:       24,
+			Height:     10,
+			Query: []grafana.Query{
+				{
+					Expr:   `{env="${env}", cluster="${cluster}", product="${product}", network_type="${network_type}", namespace="${namespace}", pod="${pod}"} | json | level=~"(error|panic|fatal|crit)"`,
+					Legend: "",
+				},
+			},
+		},
+		PrettifyJSON: true,
+	}))
+
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource: p.MetricsDataSource.Name,
@@ -440,7 +485,9 @@ func headlines(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			{
 				Summary:     `ETH Balance is lower than threshold`,
 				Description: `ETH Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
@@ -463,11 +510,9 @@ func headlines(p *Props) []*grafana.Panel {
 						RefID: "B",
 						ThresholdExpression: &grafana.ThresholdExpression{
 							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{1},
+								Type:   grafana.TypeThresholdTypeLt,
 							},
 						},
 					},
@@ -489,7 +534,9 @@ func headlines(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{account}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			{
 				Summary:     `Solana Balance is lower than threshold`,
 				Description: `Solana Balance critically low at {{ index $values "A" }} on {{ index $labels "` + p.platformOpts.LabelFilter + `" }}`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
@@ -512,11 +559,9 @@ func headlines(p *Props) []*grafana.Panel {
 						RefID: "B",
 						ThresholdExpression: &grafana.ThresholdExpression{
 							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{1},
+								Type:   grafana.TypeThresholdTypeLt,
 							},
 						},
 					},
@@ -842,7 +887,9 @@ func headTracker(p *Props) []*grafana.Panel {
 					Legend: `{{` + p.platformOpts.LabelFilter + `}}`,
 				},
 			},
-			AlertOptions: &grafana.AlertOptions{
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			{
 				Summary:     `No Headers Received`,
 				Description: `{{ index $labels "` + p.platformOpts.LabelFilter + `" }} on ChainID {{ index $labels "ChainID" }} has received {{ index $values "A" }} heads over 10 minutes.`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
@@ -865,11 +912,9 @@ func headTracker(p *Props) []*grafana.Panel {
 						RefID: "B",
 						ThresholdExpression: &grafana.ThresholdExpression{
 							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{1, 0},
-									Type:   expr.TypeThresholdTypeLt,
-								},
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{1},
+								Type:   grafana.TypeThresholdTypeLt,
 							},
 						},
 					},
@@ -970,57 +1015,146 @@ func headReporter(p *Props) []*grafana.Panel {
 func txManager(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
-	txStatus := map[string]string{
-		"num_confirmed_transactions":  "Confirmed",
-		"num_successful_transactions": "Successful",
-		"num_tx_reverted":             "Reverted",
-		"num_gas_bumps":               "Gas Bumps",
-		"fwd_tx_count":                "Forwarded",
-		"tx_attempt_count":            "Attempts",
-		"gas_bump_exceeds_limit":      "Gas Bump Exceeds Limit",
-	}
-
-	for status, title := range txStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource: p.MetricsDataSource.Name,
-				Title:      "TX Manager " + title,
-				Span:       6,
-				Height:     6,
-				Query: []grafana.Query{
-					{
-						Expr:   `sum(tx_manager_` + status + `{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
-						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Confirmed",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_confirmed_transactions{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 				},
 			},
-		}))
-	}
+		},
+	}))
 
-	txUntilStatus := map[string]string{
-		"broadcast": "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
-		"confirmed": "The amount of time elapsed from a transaction being broadcast to being included in a block",
-	}
-
-	for status, description := range txUntilStatus {
-		panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-			PanelOptions: &grafana.PanelOptions{
-				Datasource:  p.MetricsDataSource.Name,
-				Title:       "TX Manager Time Until " + status,
-				Description: description,
-				Span:        6,
-				Height:      6,
-				Decimals:    1,
-				Unit:        "ms",
-				Query: []grafana.Query{
-					{
-						Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_` + status + `_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
-						Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
-					},
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Successful",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_successful_transactions{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
 				},
 			},
-		}))
-	}
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Reverted",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_tx_reverted{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Gas Bumps",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_num_gas_bumps{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Forwarded",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_fwd_tx_count{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Attempts",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_tx_attempt_count{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.MetricsDataSource.Name,
+			Title:      "TX Manager Gas Bump Exceeds Limit",
+			Span:       6,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `sum(tx_manager_gas_bump_exceeds_limit{` + p.platformOpts.LabelQuery + `}) by (blockchain, chainID, ` + p.platformOpts.LabelFilter + `)`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "TX Manager Time Until Broadcast",
+			Description: "The amount of time elapsed from when a transaction is enqueued to until it is broadcast",
+			Span:        6,
+			Height:      6,
+			Decimals:    1,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_broadcast_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "TX Manager Time Until Confirmed",
+			Description: "The amount of time elapsed from a transaction being broadcast to being included in a block",
+			Span:        6,
+			Height:      6,
+			Decimals:    1,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `histogram_quantile(0.9, sum(rate(tx_manager_time_until_tx_confirmed_bucket{` + p.platformOpts.LabelQuery + `}[$__rate_interval])) by (le, ` + p.platformOpts.LabelFilter + `, blockchain, chainID)) / 1e6`,
+					Legend: `{{` + p.platformOpts.LabelFilter + `}} - {{blockchain}} - {{chainID}}`,
+				},
+			},
+		},
+	}))
 
 	return panels
 }
@@ -1472,6 +1606,7 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Title:      "EVM Pool RPC Node Calls Success Rate",
 			Span:       24,
 			Height:     6,
+			Decimals:   2,
 			Unit:       "percentunit",
 			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{
@@ -1502,6 +1637,7 @@ func evmNodeRPC(p *Props) []*grafana.Panel {
 			Title:      "EVM Pool RPC Node Dials Failure Rate",
 			Span:       24,
 			Height:     6,
+			Decimals:   2,
 			Unit:       "percentunit",
 			Max:        grafana.Pointer[float64](1),
 			Query: []grafana.Query{

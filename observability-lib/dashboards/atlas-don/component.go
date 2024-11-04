@@ -31,6 +31,9 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 	}
 
 	props.platformOpts = platformPanelOpts(props.OCRVersion)
+	if props.Tested {
+		props.platformOpts.LabelQuery = ""
+	}
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
 		Name:     props.Name,

@@ -7,6 +7,7 @@
       ""
     ],
     "timezone": "browser",
+    "editable": true,
     "graphTooltip": 0,
     "time": {
       "from": "now-1d",
@@ -14,7 +15,7 @@
     },
     "fiscalYearStartMonth": 0,
     "refresh": "30s",
-    "schemaVersion": 0,
+    "schemaVersion": 39,
     "panels": [
       {
         "type": "row",
@@ -31,7 +32,7 @@
       },
       {
         "type": "stat",
-        "id": 0,
+        "id": 1,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_epoch_round{env=~\"${env}\", contract=~\"${contract}\"}[90s])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -67,6 +68,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -76,87 +78,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
-          "orientation": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percentunit",
-            "decimals": 2,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "value": null,
-                  "color": "default"
-                },
-                {
-                  "value": 0,
-                  "color": "red"
-                },
-                {
-                  "value": 0.8,
-                  "color": "orange"
-                },
-                {
-                  "value": 0.99,
-                  "color": "green"
-                }
-              ]
-            },
-            "noValue": "No data"
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "stat",
-        "id": 1,
-        "targets": [
-          {
-            "expr": "avg_over_time((sum(changes(_telemetry_message_observe_total{env=~\"${env}\", contract=~\"${contract}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
-            "format": "",
-            "legendFormat": "{{oracle}}",
-            "refId": ""
-          }
-        ],
-        "title": "Message Observe",
-        "description": "NOP have stopped sending messages for 3mins means NOP is unhealthy",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 10,
-          "w": 24,
-          "x": 0,
-          "y": 11
-        },
-        "transformations": [
-          {
-            "id": "renameByRegex",
-            "options": {
-              "regex": "/^(.*[\\\\\\/])/",
-              "renamePattern": ""
-            }
-          }
-        ],
-        "options": {
-          "graphMode": "line",
-          "colorMode": "value",
-          "justifyMode": "auto",
-          "textMode": "value_and_name",
-          "wideLayout": true,
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ]
-          },
-          "text": {
-            "titleSize": 10,
-            "valueSize": 18
-          },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -194,6 +116,87 @@
         "id": 2,
         "targets": [
           {
+            "expr": "avg_over_time((sum(changes(_telemetry_message_observe_total{env=~\"${env}\", contract=~\"${contract}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
+            "format": "",
+            "legendFormat": "{{oracle}}",
+            "refId": ""
+          }
+        ],
+        "title": "Message Observe",
+        "description": "NOP have stopped sending messages for 3mins means NOP is unhealthy",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 10,
+          "w": 24,
+          "x": 0,
+          "y": 11
+        },
+        "transformations": [
+          {
+            "id": "renameByRegex",
+            "options": {
+              "regex": "/^(.*[\\\\\\/])/",
+              "renamePattern": ""
+            }
+          }
+        ],
+        "options": {
+          "graphMode": "line",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "showPercentChange": false,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "percentChangeColorMode": "standard",
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "default"
+                },
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 0.8,
+                  "color": "orange"
+                },
+                {
+                  "value": 0.99,
+                  "color": "green"
+                }
+              ]
+            },
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 3,
+        "targets": [
+          {
             "expr": "avg_over_time((sum(changes(_telemetry_message_report_req_observation_total{env=~\"${env}\", contract=~\"${contract}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
             "format": "",
             "legendFormat": "{{oracle}}",
@@ -227,6 +230,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -236,7 +240,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -284,7 +288,7 @@
       },
       {
         "type": "stat",
-        "id": 3,
+        "id": 4,
         "targets": [
           {
             "expr": "avg_over_time((sum(changes(_telemetry_epoch_round{env=~\"${env}\", oracle=~\"${oracle}\"}[90s])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
@@ -320,6 +324,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -329,87 +334,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
-          "orientation": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percentunit",
-            "decimals": 2,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "value": null,
-                  "color": "default"
-                },
-                {
-                  "value": 0,
-                  "color": "red"
-                },
-                {
-                  "value": 0.8,
-                  "color": "orange"
-                },
-                {
-                  "value": 0.99,
-                  "color": "green"
-                }
-              ]
-            },
-            "noValue": "No data"
-          },
-          "overrides": null
-        }
-      },
-      {
-        "type": "stat",
-        "id": 4,
-        "targets": [
-          {
-            "expr": "avg_over_time((sum(changes(_telemetry_message_observe_total{env=~\"${env}\", oracle=~\"${oracle}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
-            "format": "",
-            "legendFormat": "{{contract}}",
-            "refId": ""
-          }
-        ],
-        "title": "Message Observe",
-        "description": "NOP have stopped sending messages for 3mins means NOP is unhealthy",
-        "transparent": false,
-        "datasource": {
-          "uid": "Prometheus"
-        },
-        "gridPos": {
-          "h": 32,
-          "w": 24,
-          "x": 0,
-          "y": 64
-        },
-        "transformations": [
-          {
-            "id": "renameByRegex",
-            "options": {
-              "regex": "/^(.*[\\\\\\/])/",
-              "renamePattern": ""
-            }
-          }
-        ],
-        "options": {
-          "graphMode": "line",
-          "colorMode": "value",
-          "justifyMode": "auto",
-          "textMode": "value_and_name",
-          "wideLayout": true,
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ]
-          },
-          "text": {
-            "titleSize": 10,
-            "valueSize": 18
-          },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -447,14 +372,14 @@
         "id": 5,
         "targets": [
           {
-            "expr": "avg_over_time((sum(changes(_telemetry_message_report_req_observation_total{env=~\"${env}\", oracle=~\"${oracle}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
+            "expr": "avg_over_time((sum(changes(_telemetry_message_observe_total{env=~\"${env}\", oracle=~\"${oracle}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
             "format": "",
             "legendFormat": "{{contract}}",
             "refId": ""
           }
         ],
-        "title": "Observations included in report",
-        "description": "NOP observations were not including in report for 3mins means NOP is unhealthy",
+        "title": "Message Observe",
+        "description": "NOP have stopped sending messages for 3mins means NOP is unhealthy",
         "transparent": false,
         "datasource": {
           "uid": "Prometheus"
@@ -463,7 +388,7 @@
           "h": 32,
           "w": 24,
           "x": 0,
-          "y": 96
+          "y": 64
         },
         "transformations": [
           {
@@ -480,6 +405,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -489,7 +415,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -527,6 +453,87 @@
         "id": 6,
         "targets": [
           {
+            "expr": "avg_over_time((sum(changes(_telemetry_message_report_req_observation_total{env=~\"${env}\", oracle=~\"${oracle}\"}[3m])) by (env, contract, feed_id, network_name, oracle) \u003ebool 0)[$__range:])",
+            "format": "",
+            "legendFormat": "{{contract}}",
+            "refId": ""
+          }
+        ],
+        "title": "Observations included in report",
+        "description": "NOP observations were not including in report for 3mins means NOP is unhealthy",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 32,
+          "w": 24,
+          "x": 0,
+          "y": 96
+        },
+        "transformations": [
+          {
+            "id": "renameByRegex",
+            "options": {
+              "regex": "/^(.*[\\\\\\/])/",
+              "renamePattern": ""
+            }
+          }
+        ],
+        "options": {
+          "graphMode": "line",
+          "colorMode": "value",
+          "justifyMode": "auto",
+          "textMode": "value_and_name",
+          "wideLayout": true,
+          "showPercentChange": false,
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ]
+          },
+          "text": {
+            "titleSize": 10,
+            "valueSize": 18
+          },
+          "percentChangeColorMode": "standard",
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "default"
+                },
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 0.8,
+                  "color": "orange"
+                },
+                {
+                  "value": 0.99,
+                  "color": "green"
+                }
+              ]
+            },
+            "noValue": "No data"
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "stat",
+        "id": 7,
+        "targets": [
+          {
             "expr": "avg_over_time((sum(changes(_telemetry_p2p_received_total{env=~\"${env}\", receiver=~\"${oracle}\"}[3m])) by (sender, receiver) \u003ebool 0)[$__range:])",
             "format": "",
             "legendFormat": "{{receiver}} \u003c {{sender}}",
@@ -560,6 +567,7 @@
           "justifyMode": "auto",
           "textMode": "value_and_name",
           "wideLayout": true,
+          "showPercentChange": false,
           "reduceOptions": {
             "calcs": [
               "last"
@@ -569,7 +577,7 @@
             "titleSize": 10,
             "valueSize": 18
           },
-          "showPercentChange": false,
+          "percentChangeColorMode": "standard",
           "orientation": "auto"
         },
         "fieldConfig": {
@@ -609,6 +617,7 @@
           "type": "query",
           "name": "env",
           "label": "Environment",
+          "description": "",
           "query": "label_values(_contract_config_f{}, env)",
           "datasource": {
             "uid": "Prometheus"
@@ -629,6 +638,7 @@
           "type": "query",
           "name": "contract",
           "label": "Contract",
+          "description": "",
           "query": "label_values(_contract_oracle_active{env=\"$env\"}, contract)",
           "datasource": {
             "uid": "Prometheus"
@@ -649,6 +659,7 @@
           "type": "query",
           "name": "oracle",
           "label": "NOP",
+          "description": "",
           "query": "label_values(_contract_oracle_active{env=\"$env\"}, oracle)",
           "datasource": {
             "uid": "Prometheus"

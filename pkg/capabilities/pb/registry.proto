@@ -23,12 +23,20 @@ message RemoteTargetConfig {
   repeated string requestHashExcludedAttributes = 1;
 }
 
+message RemoteExecutableConfig {
+  // A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote executable capability
+  // when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
+  // that the hash of logically identical requests is consistent.
+  repeated string requestHashExcludedAttributes = 1;
+}
+
 message CapabilityConfig {
   values.Map default_config = 1;
 
   oneof remote_config {
     RemoteTriggerConfig remote_trigger_config = 2;
     RemoteTargetConfig remote_target_config = 3;
+    RemoteExecutableConfig remote_executable_config = 4;
   }
 }
 

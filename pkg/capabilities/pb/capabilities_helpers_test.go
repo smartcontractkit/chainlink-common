@@ -119,3 +119,91 @@ func TestMarshalUnmarshalResponse(t *testing.T) {
 
 	require.Equal(t, resp, unmarshaled)
 }
+
+func TestRegisterToWorkflowRequestToProto(t *testing.T) {
+	req := capabilities.RegisterToWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    testWorkflowID,
+			WorkflowOwner: "0xaa",
+		},
+		Config: &values.Map{Underlying: map[string]values.Value{
+			testConfigKey: &values.String{Underlying: testConfigValue},
+		}},
+	}
+	pr := pb.RegisterToWorkflowRequestToProto(req)
+	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
+
+	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
+}
+
+func TestRegisterToWorkflowRequestFromProto(t *testing.T) {
+
+	configMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+
+	pr := &pb.RegisterToWorkflowRequest{
+		Metadata: &pb.RegistrationMetadata{
+			WorkflowId: testWorkflowID,
+		},
+		Config: values.ProtoMap(configMap),
+	}
+
+	req, err := pb.RegisterToWorkflowRequestFromProto(pr)
+	require.NoError(t, err)
+
+	expectedMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, capabilities.RegisterToWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    testWorkflowID,
+			WorkflowOwner: "",
+		},
+		Config: expectedMap,
+	}, req)
+}
+
+func TestUnregisterFromWorkflowRequestToProto(t *testing.T) {
+	req := capabilities.UnregisterFromWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID: testWorkflowID,
+		},
+		Config: &values.Map{Underlying: map[string]values.Value{
+			testConfigKey: &values.String{Underlying: testConfigValue},
+		}},
+	}
+	pr := pb.UnregisterFromWorkflowRequestToProto(req)
+	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
+	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
+}
+
+func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
+	configMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+
+	pr := &pb.UnregisterFromWorkflowRequest{
+		Metadata: &pb.RegistrationMetadata{
+			WorkflowId: testWorkflowID,
+		},
+		Config: values.ProtoMap(configMap),
+	}
+
+	req, err := pb.UnregisterFromWorkflowRequestFromProto(pr)
+	require.NoError(t, err)
+
+	expectedMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, capabilities.UnregisterFromWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID: testWorkflowID,
+		},
+		Config: expectedMap,
+	}, req)
+}

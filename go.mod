@@ -100,7 +100,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.30.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/multierr v1.11.0
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect

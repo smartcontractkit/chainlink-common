@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730737265925,
+  "lastUpdate": 1730737807625,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5796,6 +5796,48 @@ window.BENCHMARK_DATA = {
             "value": 28283,
             "unit": "ns/op",
             "extra": "42355 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eed4b097bcca4b0739774f9461bc9de29b1f0267",
+          "message": "INFOPLAT-1376 Be able to configure retries for beholder otel exporters (#867)\n\n* Enable retries for otel exporters\r\n\r\n* Remove Enabled field from Beholder RetryConfig\r\n\r\n* Use retry config in Beholder HTTP client\r\n\r\n* Use beholder retry config only if its set\r\n\r\n* Update pkg/beholder/config_test.go\r\n\r\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\r\n\r\n* Rename retry config fields\r\n\r\n* Fix golangci-lint errors\r\n\r\n* Rename EmitterRetryConfig -> LogRetryConfig\r\n\r\n* Move LogRetryConfig\r\n\r\n---------\r\n\r\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2024-11-04T17:28:59+01:00",
+          "tree_id": "c8835b4fe8be73bd6a01251a678b4b48e0a4c4ed",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eed4b097bcca4b0739774f9461bc9de29b1f0267"
+        },
+        "date": 1730737806391,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.2,
+            "unit": "ns/op",
+            "extra": "2663882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 505.5,
+            "unit": "ns/op",
+            "extra": "2197396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28272,
+            "unit": "ns/op",
+            "extra": "42481 times\n4 procs"
           }
         ]
       }

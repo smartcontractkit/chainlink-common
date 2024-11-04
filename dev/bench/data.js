@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730728549167,
+  "lastUpdate": 1730737265925,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5754,6 +5754,48 @@ window.BENCHMARK_DATA = {
             "value": 28657,
             "unit": "ns/op",
             "extra": "42364 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "d9732b30cbefb9e698f515b93d96ff11f89a2f94",
+          "message": "feat(observability-lib): multiple alert rules can be attached to panel (#913)\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2024-11-04T17:19:59+01:00",
+          "tree_id": "024adcf34c59dd5338e97122c624dce389b816f6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d9732b30cbefb9e698f515b93d96ff11f89a2f94"
+        },
+        "date": 1730737264722,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.1,
+            "unit": "ns/op",
+            "extra": "2655692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 555.3,
+            "unit": "ns/op",
+            "extra": "2358320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28283,
+            "unit": "ns/op",
+            "extra": "42355 times\n4 procs"
           }
         ]
       }

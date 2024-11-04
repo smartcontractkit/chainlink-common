@@ -109,8 +109,9 @@ func createEmitFn(
 
 		// Marshal the message and labels into a protobuf message
 		b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
-			Message: msg,
-			Labels:  values.ProtoMap(vm),
+			RequestId: *sdkConfig.RequestID,
+			Message:   msg,
+			Labels:    values.ProtoMap(vm),
 		})
 		if err != nil {
 			return err
@@ -150,6 +151,74 @@ func createEmitFn(
 	}
 
 	return emitFn
+}
+
+// createFetchFn injects dependencies and creates a fetch function that can be used by the WASM
+// binary.
+func createFetchFn(
+	sdkConfig *RuntimeConfig,
+	l logger.Logger,
+	fetch func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
+) func(sdk.FetchRequest) (sdk.FetchResponse, error) {
+	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
+		headerspb, err := values.NewMap(req.Headers)
+		if err != nil {
+			return sdk.FetchResponse{}, fmt.Errorf("failed to create headers map: %w", err)
+		}
+
+		if sdkConfig.RequestID == nil {
+			return sdk.FetchResponse{}, fmt.Errorf("request ID is required to fetch")
+		}
+
+		b, err := proto.Marshal(&wasmpb.FetchRequest{
+			Id:        *sdkConfig.RequestID,
+			Url:       req.URL,
+			Method:    req.Method,
+			Headers:   values.ProtoMap(headerspb),
+			Body:      req.Body,
+			TimeoutMs: req.TimeoutMs,
+		})
+		if err != nil {
+			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)
+		}
+		reqptr, reqptrlen := bufferToPointerLen(b)
+
+		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
+		respptr, _ := bufferToPointerLen(respBuffer)
+
+		resplenBuffer := make([]byte, uint32Size)
+		resplenptr, _ := bufferToPointerLen(resplenBuffer)
+
+		errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
+		if errno != 0 {
+			return sdk.FetchResponse{}, fmt.Errorf("fetch failed with errno %d", errno)
+		}
+		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+		response := &wasmpb.FetchResponse{}
+		err = proto.Unmarshal(respBuffer[:responseSize], response)
+		if err != nil {
+			return sdk.FetchResponse{}, fmt.Errorf("failed to unmarshal fetch response: %w", err)
+		}
+		if response.ExecutionError && response.ErrorMessage != "" {
+			return sdk.FetchResponse{
+				ExecutionError: response.ExecutionError,
+				ErrorMessage:   response.ErrorMessage,
+			}, errors.New(response.ErrorMessage)
+		}
+
+		fields := response.Headers.GetFields()
+		headersResp := make(map[string]any, len(fields))
+		for k, v := range fields {
+			headersResp[k] = v
+		}
+
+		return sdk.FetchResponse{
+			StatusCode: uint8(response.StatusCode),
+			Headers:    headersResp,
+			Body:       response.Body,
+		}, nil
+	}
+	return fetchFn
 }
 
 // bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.

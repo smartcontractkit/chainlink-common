@@ -86,8 +86,8 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 			item.heatmapBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.heatmapBuilder)
 		}
-		if item.alertBuilder != nil {
-			b.alertsBuilder = append(b.alertsBuilder, item.alertBuilder)
+		if item.alertBuilders != nil && len(item.alertBuilders) > 0 {
+			b.AddAlert(item.alertBuilders...)
 		}
 	}
 }

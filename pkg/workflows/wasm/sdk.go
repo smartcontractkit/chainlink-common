@@ -172,6 +172,7 @@ func createFetchFn(
 
 		b, err := proto.Marshal(&wasmpb.FetchRequest{
 			Id:                  *sdkConfig.RequestID,
+			WorkflowId:          sdkConfig.Metadata.WorkflowID,
 			WorkflowName:        sdkConfig.Metadata.WorkflowName,
 			WorkflowOwner:       sdkConfig.Metadata.WorkflowOwner,
 			WorkflowExecutionId: sdkConfig.Metadata.WorkflowExecutionID,

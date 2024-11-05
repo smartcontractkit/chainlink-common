@@ -3,7 +3,6 @@ package beholder
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -47,9 +46,6 @@ type Client struct {
 	TracerProvider        oteltrace.TracerProvider
 	MeterProvider         otelmetric.MeterProvider
 	MessageLoggerProvider otellog.LoggerProvider
-
-	// Authenticator
-	Authenticator *Authenticator
 
 	// OnClose
 	OnClose func() error
@@ -144,14 +140,14 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
-	tracerProvider, err := newTracerProvider(cfg, baseResource, creds, authenticator)
+	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
 	if err != nil {
 		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	meterProvider, err := newMeterProvider(cfg, baseResource, creds, authenticator)
+	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +191,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, authenticator, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes
@@ -254,8 +250,8 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 
 	// Add csa public key resource attribute
 	csaPublicKeyHex := "not-configured"
-	if len(cfg.AuthenticatorPublicKey) > 0 {
-		csaPublicKeyHex = fmt.Sprintf("%x", cfg.AuthenticatorPublicKey)
+	if len(cfg.AuthPublicKeyHex) > 0 {
+		csaPublicKeyHex = cfg.AuthPublicKeyHex
 	}
 	csaPublicKeyAttr := attribute.String("csa_public_key", csaPublicKeyHex)
 	resource, err = sdkresource.Merge(
@@ -300,7 +296,7 @@ type shutdowner interface {
 	Shutdown(ctx context.Context) error
 }
 
-func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials, authenticator *Authenticator) (*sdktrace.TracerProvider, error) {
+func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
 	exporterOpts := []otlptracegrpc.Option{
@@ -338,7 +334,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	return sdktrace.NewTracerProvider(opts...), nil
 }
 
-func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials, authenticator *Authenticator) (*sdkmetric.MeterProvider, error) {
+func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),

@@ -43,10 +43,6 @@ func GetEmitter() Emitter {
 	return GetClient().Emitter
 }
 
-func GetAuthenticator() *Authenticator {
-	return GetClient().Authenticator
-}
-
 // Sets global OTel logger, tracer, meter providers from Client.
 // Makes them accessible from anywhere in the code via global otel getters.
 // Any package that relies on go.opentelemetry.io will be able to pick up configured global providers

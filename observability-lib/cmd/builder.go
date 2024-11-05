@@ -46,7 +46,7 @@ type BuildOptions struct {
 	AlertsFilters     string
 }
 
-func BuildDashboardWithType(options *BuildOptions) (*grafana.Dashboard, error) {
+func BuildDashboardWithType(options *BuildOptions) (*grafana.Observability, error) {
 	switch options.TypeDashboard {
 	case TypeDashboardCoreNode:
 		return corenode.NewDashboard(&corenode.Props{

@@ -15,7 +15,7 @@ type Props struct {
 }
 
 // NewDashboard creates a Capabilities dashboard
-func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+func NewDashboard(props *Props) (*grafana.Observability, error) {
 	if props.Name == "" {
 		return nil, fmt.Errorf("Name is required")
 	}

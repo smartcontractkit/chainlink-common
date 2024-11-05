@@ -15,7 +15,7 @@ type Props struct {
 	MetricsDataSource *grafana.DataSource // MetricsDataSource is the datasource for querying metrics
 }
 
-func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+func NewDashboard(props *Props) (*grafana.Observability, error) {
 	if props.Name == "" {
 		return nil, fmt.Errorf("Name is required")
 	}

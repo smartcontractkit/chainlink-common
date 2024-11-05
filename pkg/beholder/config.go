@@ -32,9 +32,8 @@ type Config struct {
 	// Disable it only for testing
 	LogBatchProcessor bool
 
-	AuthenticatorPublicKey []byte
-	AuthenticatorSigner    func([]byte) []byte
-	AuthenticatorHeaders   map[string]string
+	AuthPublicKeyHex string
+	AuthHeaders      map[string]string
 }
 
 const (

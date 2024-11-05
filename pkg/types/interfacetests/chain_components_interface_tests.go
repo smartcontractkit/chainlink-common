@@ -17,38 +17,46 @@ import (
 )
 
 // GetLatestValue method
-const GetLatestValueAsValuesDotValue = "Gets the latest value as a values.Value"
-const GetLatestValueNoArgumentsAndPrimitiveReturnAsValuesDotValue = "Get latest value without arguments and with primitive return as a values.Value"
-const GetLatestValueNoArgumentsAndSliceReturnAsValueDotValue = "Get latest value without arguments and with slice return as a values.Value"
-const GetLatestValue = "Gets the latest value"
-const GetLatestValueWithPrimitiveReturn = "Get latest value without arguments and with primitive return"
-const GetLatestValueBasedOnConfidenceLevel = "Get latest value based on confidence level"
-const GetLatestValueFromMultipleContractsNamesSameFunction = "Get latest value allows multiple contract names to have the same function "
-const GetLatestValueWithModifiersUsingOwnMapstrctureOverrides = "Get latest value wraps config with modifiers using its own mapstructure overrides"
-const GetLatestValueNoArgumentsAndSliceReturn = "Get latest value without arguments and with slice return"
+const (
+	ContractReaderGetLatestValueAsValuesDotValue                              = "Gets the latest value as a values.Value"
+	ContractReaderGetLatestValueNoArgumentsAndPrimitiveReturnAsValuesDotValue = "Get latest value without arguments and with primitive return as a values.Value"
+	ContractReaderGetLatestValueNoArgumentsAndSliceReturnAsValueDotValue      = "Get latest value without arguments and with slice return as a values.Value"
+	ContractReaderGetLatestValue                                              = "Gets the latest value"
+	ContractReaderGetLatestValueWithPrimitiveReturn                           = "Get latest value without arguments and with primitive return"
+	ContractReaderGetLatestValueBasedOnConfidenceLevel                        = "Get latest value based on confidence level"
+	ContractReaderGetLatestValueFromMultipleContractsNamesSameFunction        = "Get latest value allows multiple contract names to have the same function "
+	ContractReaderGetLatestValueWithModifiersUsingOwnMapstrctureOverrides     = "Get latest value wraps config with modifiers using its own mapstructure overrides"
+	ContractReaderGetLatestValueNoArgumentsAndSliceReturn                     = "Get latest value without arguments and with slice return"
+)
 
 // GetLatestValue event
-const GetLatestValueGetsLatestForEvent = "Get latest value gets latest event"
-const GetLatestValueBasedOnConfidenceLevelForEvent = "Get latest event based on provided confidence level"
-const GetLatestValueReturnsNotFoundWhenNotTriggeredForEvent = "Get latest value returns not found if event was never triggered"
-const GetLatestValueWithFilteringForEvent = "Get latest value gets latest event with filtering"
+const (
+	ContractReaderGetLatestValueGetsLatestForEvent                      = "Get latest value gets latest event"
+	ContractReaderGetLatestValueBasedOnConfidenceLevelForEvent          = "Get latest event based on provided confidence level"
+	ContractReaderGetLatestValueReturnsNotFoundWhenNotTriggeredForEvent = "Get latest value returns not found if event was never triggered"
+	ContractReaderGetLatestValueWithFilteringForEvent                   = "Get latest value gets latest event with filtering"
+)
 
 // BatchGet
-const BatchGetLatestValue = "BatchGetLatestValues works"
-const BatchGetLatestValueNoArgumentsPrimitiveReturn = "BatchGetLatestValues works without arguments and with primitive return"
-const BatchGetLatestValueMultipleContractNamesSameFunction = "BatchGetLatestValues allows multiple contract names to have the same function Name"
-const BatchGetLatestValueNoArgumentsWithSliceReturn = "BatchGetLatestValue without arguments and with slice return"
-const BatchGetLatestValueWithModifiersOwnMapstructureOverride = "BatchGetLatestValues wraps config with modifiers using its own mapstructure overrides"
-const BatchGetLatestValueDifferentParamsResultsRetainOrder = "BatchGetLatestValues supports same read with different params and results retain order from request"
-const BatchGetLatestValueDifferentParamsResultsRetainOrderMultipleContracts = "BatchGetLatestValues supports same read with different params and results retain order from request even with multiple contracts"
-const BatchGetLatestValueSetsErrorsProperly = "BatchGetLatestValues sets errors properly"
+const (
+	ContractReaderBatchGetLatestValue                                                   = "BatchGetLatestValues works"
+	ContractReaderBatchGetLatestValueNoArgumentsPrimitiveReturn                         = "BatchGetLatestValues works without arguments and with primitive return"
+	ContractReaderBatchGetLatestValueMultipleContractNamesSameFunction                  = "BatchGetLatestValues allows multiple contract names to have the same function Name"
+	ContractReaderBatchGetLatestValueNoArgumentsWithSliceReturn                         = "BatchGetLatestValue without arguments and with slice return"
+	ContractReaderBatchGetLatestValueWithModifiersOwnMapstructureOverride               = "BatchGetLatestValues wraps config with modifiers using its own mapstructure overrides"
+	ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrder                  = "BatchGetLatestValues supports same read with different params and results retain order from request"
+	ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrderMultipleContracts = "BatchGetLatestValues supports same read with different params and results retain order from request even with multiple contracts"
+	ContractReaderBatchGetLatestValueSetsErrorsProperly                                 = "BatchGetLatestValues sets errors properly"
+)
 
 // Query key
-const QueryKeyNotFound = "QueryKey returns not found if sequence never happened"
-const QueryKeyReturnsData = "QueryKey returns sequence data properly"
-const QueryKeyReturnsDataAsValuesDotValue = "QueryKey returns sequence data properly as values.Value"
-const QueryKeyCanFilterWithValueComparator = "QueryKey can filter data with value comparator"
-const QueryKeyCanLimitResultsWithCursor = "QueryKey can limit results with cursor"
+const (
+	ContractReaderQueryKeyNotFound                     = "QueryKey returns not found if sequence never happened"
+	ContractReaderQueryKeyReturnsData                  = "QueryKey returns sequence data properly"
+	ContractReaderQueryKeyReturnsDataAsValuesDotValue  = "QueryKey returns sequence data properly as values.Value"
+	ContractReaderQueryKeyCanFilterWithValueComparator = "QueryKey can filter data with value comparator"
+	ContractReaderQueryKeyCanLimitResultsWithCursor    = "QueryKey can limit results with cursor"
+)
 
 type ChainComponentsInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
@@ -100,7 +108,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 
 	tests := []Testcase[T]{
 		{
-			Name: GetLatestValueAsValuesDotValue,
+			Name: ContractReaderGetLatestValueAsValuesDotValue,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				firstItem := CreateTestStruct(0, tester)
@@ -141,7 +149,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 		},
 
 		{
-			Name: GetLatestValueNoArgumentsAndPrimitiveReturnAsValuesDotValue,
+			Name: ContractReaderGetLatestValueNoArgumentsAndPrimitiveReturnAsValuesDotValue,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -162,7 +170,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueNoArgumentsAndSliceReturnAsValueDotValue,
+			Name: ContractReaderGetLatestValueNoArgumentsAndSliceReturnAsValueDotValue,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -182,7 +190,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValue,
+			Name: ContractReaderGetLatestValue,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				firstItem := CreateTestStruct(0, tester)
@@ -212,7 +220,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueWithPrimitiveReturn,
+			Name: ContractReaderGetLatestValueWithPrimitiveReturn,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -228,7 +236,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueBasedOnConfidenceLevel,
+			Name: ContractReaderGetLatestValueBasedOnConfidenceLevel,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -268,7 +276,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueFromMultipleContractsNamesSameFunction,
+			Name: ContractReaderGetLatestValueFromMultipleContractsNamesSameFunction,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -284,7 +292,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueNoArgumentsAndSliceReturn,
+			Name: ContractReaderGetLatestValueNoArgumentsAndSliceReturn,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -300,7 +308,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueWithModifiersUsingOwnMapstrctureOverrides,
+			Name: ContractReaderGetLatestValueWithModifiersUsingOwnMapstrctureOverrides,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				testStruct := CreateTestStruct(0, tester)
@@ -325,7 +333,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueGetsLatestForEvent,
+			Name: ContractReaderGetLatestValueGetsLatestForEvent,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -349,7 +357,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueBasedOnConfidenceLevelForEvent,
+			Name: ContractReaderGetLatestValueBasedOnConfidenceLevelForEvent,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -385,7 +393,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueReturnsNotFoundWhenNotTriggeredForEvent,
+			Name: ContractReaderGetLatestValueReturnsNotFoundWhenNotTriggeredForEvent,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -400,7 +408,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: GetLatestValueWithFilteringForEvent,
+			Name: ContractReaderGetLatestValueWithFilteringForEvent,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -438,7 +446,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 
 	testCases := []Testcase[T]{
 		{
-			Name: BatchGetLatestValue,
+			Name: ContractReaderBatchGetLatestValue,
 			Test: func(t T) {
 				// setup test data
 				firstItem := CreateTestStruct(1, tester)
@@ -475,7 +483,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			Name: BatchGetLatestValueNoArgumentsPrimitiveReturn,
+			Name: ContractReaderBatchGetLatestValueNoArgumentsPrimitiveReturn,
 			Test: func(t T) {
 				// setup call data
 				var primitiveReturnValue uint64
@@ -506,7 +514,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			Name: BatchGetLatestValueMultipleContractNamesSameFunction,
+			Name: ContractReaderBatchGetLatestValueMultipleContractNamesSameFunction,
 			Test: func(t T) {
 				var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
 				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
@@ -536,7 +544,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			Name: BatchGetLatestValueNoArgumentsWithSliceReturn,
+			Name: ContractReaderBatchGetLatestValueNoArgumentsWithSliceReturn,
 			Test: func(t T) {
 				// setup call data
 				var sliceReturnValue []uint64
@@ -560,7 +568,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			Name: BatchGetLatestValueWithModifiersOwnMapstructureOverride,
+			Name: ContractReaderBatchGetLatestValueWithModifiersOwnMapstructureOverride,
 			Test: func(t T) {
 				// setup call data
 				testStruct := CreateTestStruct(0, tester)
@@ -592,7 +600,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			Name: BatchGetLatestValueDifferentParamsResultsRetainOrder,
+			Name: ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrder,
 			Test: func(t T) {
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
@@ -628,7 +636,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			Name: BatchGetLatestValueDifferentParamsResultsRetainOrderMultipleContracts,
+			Name: ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrderMultipleContracts,
 			Test: func(t T) {
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
@@ -676,7 +684,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			Name: BatchGetLatestValueSetsErrorsProperly,
+			Name: ContractReaderBatchGetLatestValueSetsErrorsProperly,
 			Test: func(t T) {
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
@@ -716,7 +724,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T]) {
 	tests := []Testcase[T]{
 		{
-			Name: QueryKeyNotFound,
+			Name: ContractReaderQueryKeyNotFound,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -732,7 +740,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			},
 		},
 		{
-			Name: QueryKeyReturnsData,
+			Name: ContractReaderQueryKeyReturnsData,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -755,7 +763,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			},
 		},
 		{
-			Name: QueryKeyReturnsDataAsValuesDotValue,
+			Name: ContractReaderQueryKeyReturnsDataAsValuesDotValue,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -795,7 +803,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			},
 		},
 		{
-			Name: QueryKeyCanFilterWithValueComparator,
+			Name: ContractReaderQueryKeyCanFilterWithValueComparator,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -831,7 +839,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			},
 		},
 		{
-			Name: QueryKeyCanLimitResultsWithCursor,
+			Name: ContractReaderQueryKeyCanLimitResultsWithCursor,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)

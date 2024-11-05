@@ -58,7 +58,6 @@ func RegisterTxDb(dbURL string) error {
 
 	name := string(TransactionWrappedPostgres)
 	sql.Register(name, &txDriver{
-		abort: make(chan struct{}),
 		dbURL: dbURL,
 		conns: make(map[string]*conn),
 	})
@@ -75,7 +74,6 @@ var _ driver.SessionResetter = &conn{}
 // When `Close` is called, transaction is rolled back.
 type txDriver struct {
 	sync.Mutex
-	abort chan struct{}
 	db    *sql.DB
 	conns map[string]*conn
 
@@ -99,7 +97,7 @@ func (d *txDriver) Open(dsn string) (driver.Conn, error) {
 		if err != nil {
 			return nil, err
 		}
-		c = &conn{abort: d.abort, tx: tx, opened: 1, dsn: dsn}
+		c = &conn{abort: make(chan struct{}), tx: tx, opened: 1, dsn: dsn}
 		c.removeSelf = func() error {
 			return d.deleteConn(c)
 		}
@@ -118,20 +116,24 @@ func (d *txDriver) deleteConn(c *conn) error {
 	if d.conns[c.dsn] != c {
 		return nil // already been replaced
 	}
+
 	delete(d.conns, c.dsn)
+	close(c.abort) // abort any pending queries
+
 	if len(d.conns) == 0 && d.db != nil {
-		close(d.abort)
-		if err := d.db.Close(); err != nil {
-			return err
+		if d.db != nil {
+			if err := d.db.Close(); err != nil {
+				return err
+			}
+			d.db = nil
 		}
-		d.db = nil
 	}
 	return nil
 }
 
 type conn struct {
 	sync.Mutex
-	abort      <-chan struct{}
+	abort      chan struct{}
 	dsn        string
 	tx         *sql.Tx // tx may be shared by many conns, definitive one lives in the map keyed by DSN on the txDriver. Do not modify from conn
 	closed     bool
@@ -194,7 +196,7 @@ func (c *conn) IsValid() bool {
 	return !c.closed
 }
 
-func (c *conn) ResetSession(ctx context.Context) error {
+func (c *conn) ResetSession(_ context.Context) error {
 	// Ensure bad connections are reported: From database/sql/driver:
 	// If a connection is never returned to the connection pool but immediately reused, then
 	// ResetSession is called prior to reuse but IsValid is not called.
@@ -213,7 +215,7 @@ func (c *conn) CheckNamedValue(nv *driver.NamedValue) error {
 }
 
 // Implement the "QueryerContext" interface
-func (c *conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+func (c *conn) QueryContext(_ context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
 	c.Lock()
 	defer c.Unlock()
 	if c.closed {
@@ -233,7 +235,7 @@ func (c *conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 }
 
 // Implement the "ExecContext" interface
-func (c *conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+func (c *conn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
 	c.Lock()
 	defer c.Unlock()
 	if c.closed {
@@ -337,7 +339,7 @@ func (s stmt) Exec(args []driver.Value) (driver.Result, error) {
 }
 
 // Implement the "StmtExecContext" interface
-func (s *stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
+func (s *stmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
 	s.conn.Lock()
 	defer s.conn.Unlock()
 	if s.conn.closed {

@@ -59,6 +59,14 @@ message Response {
   }
 }
 
+// NOTE: This message was added because it is needed to be used as part of the request and for metrics.
+message FetchRequestMetadata {
+  string workflowId = 1;
+  string workflowName = 2;
+  string workflowOwner = 3;
+  string workflowExecutionId = 4;
+}
+
 message FetchRequest {
   string url = 1;
   string method = 2;
@@ -66,6 +74,7 @@ message FetchRequest {
   bytes body = 4;
   uint32 timeoutMs = 5;
   string id = 6;
+  FetchRequestMetadata metadata = 7;
 }
 
 message FetchResponse {

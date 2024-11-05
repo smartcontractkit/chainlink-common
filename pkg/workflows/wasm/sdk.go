@@ -171,16 +171,19 @@ func createFetchFn(
 		}
 
 		b, err := proto.Marshal(&wasmpb.FetchRequest{
-			Id:                  *sdkConfig.RequestID,
-			WorkflowId:          sdkConfig.Metadata.WorkflowID,
-			WorkflowName:        sdkConfig.Metadata.WorkflowName,
-			WorkflowOwner:       sdkConfig.Metadata.WorkflowOwner,
-			WorkflowExecutionId: sdkConfig.Metadata.WorkflowExecutionID,
-			Url:                 req.URL,
-			Method:              req.Method,
-			Headers:             values.ProtoMap(headerspb),
-			Body:                req.Body,
-			TimeoutMs:           req.TimeoutMs,
+			Id:        *sdkConfig.RequestID,
+			Url:       req.URL,
+			Method:    req.Method,
+			Headers:   values.ProtoMap(headerspb),
+			Body:      req.Body,
+			TimeoutMs: req.TimeoutMs,
+
+			Metadata: &wasmpb.FetchRequestMetadata{
+				WorkflowId:          sdkConfig.Metadata.WorkflowID,
+				WorkflowName:        sdkConfig.Metadata.WorkflowName,
+				WorkflowOwner:       sdkConfig.Metadata.WorkflowOwner,
+				WorkflowExecutionId: sdkConfig.Metadata.WorkflowExecutionID,
+			},
 		})
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)

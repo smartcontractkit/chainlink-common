@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730803847248,
+  "lastUpdate": 1730824459201,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5880,6 +5880,48 @@ window.BENCHMARK_DATA = {
             "value": 28389,
             "unit": "ns/op",
             "extra": "42421 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vyzaldysanchez@gmail.com",
+            "name": "Vyzaldy Sanchez",
+            "username": "vyzaldysanchez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e1b7c81d582aeb8d73642fc2c8e2cc04913569fe",
+          "message": "Extend `FetchRequest` fields for beholder support (#917)\n\n* Extends `FetchRequest` fields\r\n\r\n* Fixes proto version\r\n\r\n* Exposes `workflowId`\r\n\r\n* Adds proto comment\r\n\r\n* Adds metadata",
+          "timestamp": "2024-11-05T12:33:18-04:00",
+          "tree_id": "c8f0b9647eaa8978ad8ad040ba3c2a4367b9bf04",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e1b7c81d582aeb8d73642fc2c8e2cc04913569fe"
+        },
+        "date": 1730824458425,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.7,
+            "unit": "ns/op",
+            "extra": "2641656 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.4,
+            "unit": "ns/op",
+            "extra": "2376664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28531,
+            "unit": "ns/op",
+            "extra": "42415 times\n4 procs"
           }
         ]
       }

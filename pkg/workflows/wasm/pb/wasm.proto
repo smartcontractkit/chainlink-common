@@ -66,6 +66,8 @@ message FetchRequest {
   bytes body = 4;
   uint32 timeoutMs = 5;
   string id = 6;
+
+  // NOTE: The fields below are added because they are needed to be used as part of the request and for metrics.
   string workflowId = 7;
   string workflowName = 8;
   string workflowOwner = 9;

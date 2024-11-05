@@ -592,16 +592,17 @@ type FetchRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Url                 string   `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	Method              string   `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Headers             *pb1.Map `protobuf:"bytes,3,opt,name=headers,proto3" json:"headers,omitempty"`
-	Body                []byte   `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	TimeoutMs           uint32   `protobuf:"varint,5,opt,name=timeoutMs,proto3" json:"timeoutMs,omitempty"`
-	Id                  string   `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty"`
-	WorkflowId          string   `protobuf:"bytes,7,opt,name=workflowId,proto3" json:"workflowId,omitempty"`
-	WorkflowName        string   `protobuf:"bytes,8,opt,name=workflowName,proto3" json:"workflowName,omitempty"`
-	WorkflowOwner       string   `protobuf:"bytes,9,opt,name=workflowOwner,proto3" json:"workflowOwner,omitempty"`
-	WorkflowExecutionId string   `protobuf:"bytes,10,opt,name=workflowExecutionId,proto3" json:"workflowExecutionId,omitempty"`
+	Url       string   `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	Method    string   `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	Headers   *pb1.Map `protobuf:"bytes,3,opt,name=headers,proto3" json:"headers,omitempty"`
+	Body      []byte   `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	TimeoutMs uint32   `protobuf:"varint,5,opt,name=timeoutMs,proto3" json:"timeoutMs,omitempty"`
+	Id        string   `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty"`
+	// NOTE: The fields below are added because they are needed to be used as part of the request and for metrics.
+	WorkflowId          string `protobuf:"bytes,7,opt,name=workflowId,proto3" json:"workflowId,omitempty"`
+	WorkflowName        string `protobuf:"bytes,8,opt,name=workflowName,proto3" json:"workflowName,omitempty"`
+	WorkflowOwner       string `protobuf:"bytes,9,opt,name=workflowOwner,proto3" json:"workflowOwner,omitempty"`
+	WorkflowExecutionId string `protobuf:"bytes,10,opt,name=workflowExecutionId,proto3" json:"workflowExecutionId,omitempty"`
 }
 
 func (x *FetchRequest) Reset() {

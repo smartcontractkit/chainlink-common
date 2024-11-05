@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730737807625,
+  "lastUpdate": 1730803847248,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5838,6 +5838,48 @@ window.BENCHMARK_DATA = {
             "value": 28272,
             "unit": "ns/op",
             "extra": "42481 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "15c5bee0552195acd483d96cce1ac780333c07c9",
+          "message": "Add codec wrapper modifier (#905)\n\n* Add codec wrapper modifier\r\n\r\n* Fix WrapperModifierConfig description comment\r\n\r\n* Improve comments for wrapper modifier",
+          "timestamp": "2024-11-05T11:49:41+01:00",
+          "tree_id": "745a2016b0de2bc7fe38ac998b1387af4b815f40",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/15c5bee0552195acd483d96cce1ac780333c07c9"
+        },
+        "date": 1730803846570,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.8,
+            "unit": "ns/op",
+            "extra": "2673114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 507.1,
+            "unit": "ns/op",
+            "extra": "2137224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28389,
+            "unit": "ns/op",
+            "extra": "42421 times\n4 procs"
           }
         ]
       }

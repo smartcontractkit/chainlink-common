@@ -1,7 +1,6 @@
 package values
 
 import (
-	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -13,40 +12,6 @@ import (
 
 type Map struct {
 	Underlying map[string]Value
-}
-
-// TODO: this is temporary until the gateway can correctly unmarshal Web API trigger requests.
-func (m Map) MarshalJSON() ([]byte, error) {
-	tempMap := make(map[string]interface{})
-	var err error
-	for k, v := range m.Underlying {
-		tempMap[k], err = v.Unwrap()
-		if err != nil {
-			return nil, err
-		}
-	}
-	return json.Marshal(tempMap)
-}
-
-func (m *Map) UnmarshalJSON(data []byte) error {
-	tempMap := make(map[string]interface{})
-	if err := json.Unmarshal(data, &tempMap); err != nil {
-		return err
-	}
-
-	m.Underlying = make(map[string]Value)
-	for k, v := range tempMap {
-		switch tv := v.(type) {
-		case int64:
-			m.Underlying[k] = NewInt64(tv)
-		case string:
-			m.Underlying[k] = NewString(tv)
-		default:
-			m.Underlying[k] = nil
-		}
-	}
-
-	return nil
 }
 
 func EmptyMap() *Map {

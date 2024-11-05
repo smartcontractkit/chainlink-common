@@ -61,4 +61,24 @@ func TestTxDBDriver(t *testing.T) {
 		time.Sleep(time.Second * 2)
 		ensureValuesPresent(t, db)
 	})
+
+	t.Run("Test statement", func(t *testing.T) {
+		stmt, err := db.Prepare("SELECT id FROM txdb_test")
+		defer stmt.Close()
+		assert.NoError(t, err)
+		rows, err := stmt.Query()
+		assert.True(t, rows.Next())
+		var id string
+		rows.Scan(id)
+		assert.False(t, rows.Next())
+
+		_, err = stmt.Exec()
+		assert.NoError(t, err)
+
+		_, err = stmt.ExecContext(context.Background())
+		assert.NoError(t, err)
+
+		_, err = stmt.QueryContext(context.Background())
+		assert.NoError(t, err)
+	})
 }

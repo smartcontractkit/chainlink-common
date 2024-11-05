@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730824459201,
+  "lastUpdate": 1730831491838,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5922,6 +5922,48 @@ window.BENCHMARK_DATA = {
             "value": 28531,
             "unit": "ns/op",
             "extra": "42415 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1c901fd6191bf28e839b3d0a5b30854baefd995",
+          "message": "feat(observability-lib): builder to create independently grafana resources (#915)\n\n* feat(observability-lib): builder to create independently grafana resources\r\n\r\n* fix(observability-lib): notification policy matchers check",
+          "timestamp": "2024-11-05T19:30:26+01:00",
+          "tree_id": "55c2cbcaee95f6db1fcdc18050a3519713252942",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f1c901fd6191bf28e839b3d0a5b30854baefd995"
+        },
+        "date": 1730831491238,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.4,
+            "unit": "ns/op",
+            "extra": "2646678 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 522.5,
+            "unit": "ns/op",
+            "extra": "2376554 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28287,
+            "unit": "ns/op",
+            "extra": "42333 times\n4 procs"
           }
         ]
       }

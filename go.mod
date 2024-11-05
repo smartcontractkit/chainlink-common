@@ -27,10 +27,12 @@ require (
 	github.com/jpillora/backoff v1.0.0
 	github.com/lib/pq v1.10.9
 	github.com/linkedin/goavro/v2 v2.12.0
+	github.com/marcboeker/go-duckdb v1.8.2
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/riferrei/srclient v0.5.4
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
+	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartcontractkit/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7
 	github.com/smartcontractkit/libocr v0.0.0-20241007185508-adbe57025f12
@@ -61,6 +63,17 @@ require (
 	google.golang.org/grpc v1.66.1
 	google.golang.org/protobuf v1.34.2
 	sigs.k8s.io/yaml v1.4.0
+)
+
+require (
+	github.com/apache/arrow/go/v17 v17.0.0 // indirect
+	github.com/goccy/go-json v0.10.3 // indirect
+	github.com/google/flatbuffers v24.3.25+incompatible // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.21 // indirect
+	github.com/zeebo/xxh3 v1.0.2 // indirect
 )
 
 require (

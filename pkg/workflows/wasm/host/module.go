@@ -82,7 +82,7 @@ func (r *respStore) get(id string) (*wasmpb.Response, error) {
 var (
 	defaultTickInterval = 100 * time.Millisecond
 	defaultTimeout      = 300 * time.Millisecond
-	defaultMaxMemoryMBs = 64
+	defaultMaxMemoryMBs = 128
 	DefaultInitialFuel  = uint64(100_000_000)
 )
 
@@ -161,9 +161,9 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	// Take the max of the default and the configured max memory mbs.
 	// We do this because Go requires a minimum of 16 megabytes to run,
 	// and local testing has shown that with less than 64 mbs, some
-	// binaries may error sporadically.
-	// TODO: this is temporary so we don't hit OOM issues with compute steps.
-	modCfg.MaxMemoryMBs = int64(math.Max(float64(500), float64(500)))
+	// binaries may error sporadically. At 64 MB max memory, we have
+	// some OOM issues with compute steps while using debugger.
+	modCfg.MaxMemoryMBs = int64(math.Max(float64(defaultMaxMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 
 	cfg := wasmtime.NewConfig()
 	defer cfg.Close()

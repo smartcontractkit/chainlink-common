@@ -56,14 +56,10 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	if tlsConfig != nil {
 		tlsConfigOption = otlploghttp.WithTLSClientConfig(tlsConfig)
 	}
-	authenticator, err := newAuthenticator(cfg)
-	if err != nil {
-		return nil, err
-	}
 	sharedLogExporter, err := otlploghttpNew(
 		tlsConfigOption,
 		otlploghttp.WithEndpoint(cfg.OtelExporterHTTPEndpoint),
-		otlploghttp.WithHeaders(authenticator.GetHeaders()),
+		otlploghttp.WithHeaders(cfg.AuthHeaders),
 	)
 	if err != nil {
 		return nil, err
@@ -96,14 +92,14 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
-	tracerProvider, err := newHTTPTracerProvider(cfg, baseResource, tlsConfig, authenticator)
+	tracerProvider, err := newHTTPTracerProvider(cfg, baseResource, tlsConfig)
 	if err != nil {
 		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	meterProvider, err := newHTTPMeterProvider(cfg, baseResource, tlsConfig, authenticator)
+	meterProvider, err := newHTTPMeterProvider(cfg, baseResource, tlsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -147,10 +143,10 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, authenticator, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
 }
 
-func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsConfig *tls.Config, authenticator *Authenticator) (*sdktrace.TracerProvider, error) {
+func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsConfig *tls.Config) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
 	tlsConfigOption := otlptracehttp.WithInsecure()
@@ -161,7 +157,7 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	exporter, err := otlptracehttp.New(ctx,
 		tlsConfigOption,
 		otlptracehttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
-		otlptracehttp.WithHeaders(authenticator.GetHeaders()),
+		otlptracehttp.WithHeaders(config.AuthHeaders),
 	)
 	if err != nil {
 		return nil, err
@@ -182,7 +178,7 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	return sdktrace.NewTracerProvider(opts...), nil
 }
 
-func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConfig *tls.Config, authenticator *Authenticator) (*sdkmetric.MeterProvider, error) {
+func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConfig *tls.Config) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
 
 	tlsConfigOption := otlpmetrichttp.WithInsecure()
@@ -193,7 +189,7 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 	exporter, err := otlpmetrichttp.New(ctx,
 		tlsConfigOption,
 		otlpmetrichttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
-		otlpmetrichttp.WithHeaders(authenticator.GetHeaders()),
+		otlpmetrichttp.WithHeaders(config.AuthHeaders),
 	)
 	if err != nil {
 		return nil, err

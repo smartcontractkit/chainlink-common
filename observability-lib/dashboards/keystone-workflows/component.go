@@ -39,7 +39,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "env",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform.engine.workflows.count, env)`,
+		Query:      `label_values(platform_engine_workflows_count, env)`,
 		Multi:      false,
 	}))
 
@@ -49,7 +49,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "cluster",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform.engine.workflows.count{env="$env"}, cluster)`,
+		Query:      `label_values(platform_engine_workflows_count{env="$env"}, cluster)`,
 	}))
 
 	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
@@ -58,7 +58,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "workflowOwner",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform.engine.workflows.count{env="$env", cluster="$cluster"}, workflowOwner)`,
+		Query:      `label_values(platform_engine_workflows_count{env="$env", cluster="$cluster"}, workflowOwner)`,
 		Multi:      false,
 	}))
 
@@ -68,7 +68,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "workflowName",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform.engine.workflows.count{env="$env", cluster="$cluster", workflowOwner="$workflowOwner"}, workflowName)`,
+		Query:      `label_values(platform_engine_workflows_count{env="$env", cluster="$cluster", workflowOwner="$workflowOwner"}, workflowName)`,
 	}))
 
 	return variables
@@ -86,7 +86,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform.engine.workflows.count{` + p.platformOpts.LabelQuery + `}) by (workflowOwner, workflowName)`,
+					Expr:   `sum(platform_engine_workflows_count{` + p.platformOpts.LabelQuery + `}) by (workflowOwner, workflowName)`,
 					Legend: "{{ workflowOwner }} - {{ workflowName }}",
 				},
 			},
@@ -102,7 +102,7 @@ func general(p *Props) []*grafana.Panel {
 			NoDataState: alerting.RuleNoDataStateOK,
 			Query: []grafana.RuleQuery{
 				{
-					Expr:       `sum(platform.engine.workflows.count{` + p.AlertsFilters + `})`,
+					Expr:       `sum(platform_engine_workflows_count{` + p.AlertsFilters + `})`,
 					RefID:      "A",
 					Datasource: p.MetricsDataSource.UID,
 				},
@@ -132,7 +132,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform.engine.workflows.count{` + p.platformOpts.LabelQuery + `}) by (status)`,
+					Expr:   `sum(platform_engine_workflows_count{` + p.platformOpts.LabelQuery + `}) by (status)`,
 					Legend: "{{ status }}",
 				},
 			},
@@ -149,7 +149,7 @@ func general(p *Props) []*grafana.Panel {
 			Unit:        "ms",
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform.engine.workflow.time{` + p.platformOpts.LabelQuery + `}) by (workflowExecutionID)`,
+					Expr:   `sum(platform_engine_workflow_time{` + p.platformOpts.LabelQuery + `}) by (workflowExecutionID)`,
 					Legend: "WorkflowExecID: {{workflowExecutionID}}",
 				},
 			},
@@ -165,7 +165,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform.engine.workflow.errors{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_engine_workflow_errors{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},
@@ -181,7 +181,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform.engine.register_trigger.failures{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_engine_registertrigger_failures{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},
@@ -197,7 +197,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform.engine.capabilities_invoked.count{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_engine_capabilities_count{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},
@@ -213,7 +213,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform.registry_syncer.sync.failures{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_registrysyncer_sync_failures{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},
@@ -229,7 +229,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform.registry_syncer.launch.failures{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_registrysyncer_launch_failures{` + p.platformOpts.LabelQuery + `}`,
 					Legend: "",
 				},
 			},

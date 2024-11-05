@@ -33,7 +33,7 @@
         "id": 1,
         "targets": [
           {
-            "expr": "sum(platform.engine.workflows.count{}) by (workflowOwner, workflowName)",
+            "expr": "sum(platform_engine_workflows_count{}) by (workflowOwner, workflowName)",
             "format": "",
             "legendFormat": "{{ workflowOwner }} - {{ workflowName }}",
             "refId": ""
@@ -83,7 +83,7 @@
         "id": 2,
         "targets": [
           {
-            "expr": "sum(platform.engine.workflows.count{}) by (status)",
+            "expr": "sum(platform_engine_workflows_count{}) by (status)",
             "format": "",
             "legendFormat": "{{ status }}",
             "refId": ""
@@ -133,7 +133,7 @@
         "id": 3,
         "targets": [
           {
-            "expr": "sum(platform.engine.workflow.time{}) by (workflowExecutionID)",
+            "expr": "sum(platform_engine_workflow_time{}) by (workflowExecutionID)",
             "format": "",
             "legendFormat": "WorkflowExecID: {{workflowExecutionID}}",
             "refId": ""
@@ -183,7 +183,7 @@
         "id": 4,
         "targets": [
           {
-            "expr": "platform.engine.workflow.errors{}",
+            "expr": "platform_engine_workflow_errors{}",
             "format": "",
             "legendFormat": "",
             "refId": ""
@@ -233,7 +233,7 @@
         "id": 5,
         "targets": [
           {
-            "expr": "platform.engine.register_trigger.failures{}",
+            "expr": "platform_engine_registertrigger_failures{}",
             "format": "",
             "legendFormat": "",
             "refId": ""
@@ -283,7 +283,7 @@
         "id": 6,
         "targets": [
           {
-            "expr": "platform.engine.capabilities_invoked.count{}",
+            "expr": "platform_engine_capabilities_count{}",
             "format": "",
             "legendFormat": "",
             "refId": ""
@@ -336,7 +336,7 @@
           "name": "env",
           "label": "Environment",
           "description": "",
-          "query": "label_values(platform.engine.workflows.count, env)",
+          "query": "label_values(platform_engine_workflows_count, env)",
           "datasource": {
             "uid": "Prometheus"
           },
@@ -357,7 +357,7 @@
           "name": "cluster",
           "label": "Cluster",
           "description": "",
-          "query": "label_values(platform.engine.workflows.count{env=\"$env\"}, cluster)",
+          "query": "label_values(platform_engine_workflows_count{env=\"$env\"}, cluster)",
           "datasource": {
             "uid": "Prometheus"
           },
@@ -378,7 +378,7 @@
           "name": "workflowOwner",
           "label": "Workflow Owner",
           "description": "",
-          "query": "label_values(platform.engine.workflows.count{env=\"$env\", cluster=\"$cluster\"}, workflowOwner)",
+          "query": "label_values(platform_engine_workflows_count{env=\"$env\", cluster=\"$cluster\"}, workflowOwner)",
           "datasource": {
             "uid": "Prometheus"
           },
@@ -399,7 +399,7 @@
           "name": "workflowName",
           "label": "Workflow Name",
           "description": "",
-          "query": "label_values(platform.engine.workflows.count{env=\"$env\", cluster=\"$cluster\", workflowOwner=\"$workflowOwner\"}, workflowName)",
+          "query": "label_values(platform_engine_workflows_count{env=\"$env\", cluster=\"$cluster\", workflowOwner=\"$workflowOwner\"}, workflowName)",
           "datasource": {
             "uid": "Prometheus"
           },
@@ -431,7 +431,7 @@
         {
           "datasourceUid": "1",
           "model": {
-            "expr": "sum(platform.engine.workflows.count{})",
+            "expr": "sum(platform_engine_workflows_count{})",
             "legendFormat": "__auto",
             "refId": "A"
           },

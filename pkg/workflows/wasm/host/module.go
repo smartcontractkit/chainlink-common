@@ -112,7 +112,8 @@ type Module struct {
 
 	r *respStore
 
-	cfg *ModuleConfig
+	cfg     *ModuleConfig
+	wasmCfg *wasmtime.Config
 
 	wg     sync.WaitGroup
 	stopCh chan struct{}
@@ -166,7 +167,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	modCfg.MaxMemoryMBs = int64(math.Max(float64(defaultMaxMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 
 	cfg := wasmtime.NewConfig()
-	defer cfg.Close()
 	cfg.SetEpochInterruption(true)
 	if modCfg.InitialFuel > 0 {
 		cfg.SetConsumeFuel(true)
@@ -294,7 +294,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 		r: r,
 
-		cfg: modCfg,
+		cfg:     modCfg,
+		wasmCfg: cfg,
 
 		stopCh: make(chan struct{}),
 	}
@@ -326,6 +327,7 @@ func (m *Module) Close() {
 	m.linker.Close()
 	m.engine.Close()
 	m.module.Close()
+	m.wasmCfg.Close()
 }
 
 func (m *Module) Run(request *wasmpb.Request) (*wasmpb.Response, error) {

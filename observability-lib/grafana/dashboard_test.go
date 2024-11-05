@@ -66,12 +66,12 @@ func TestGenerateJSON(t *testing.T) {
 			},
 		}))
 
-		db, err := builder.Build()
+		o, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error building dashboard: %v", err)
 		}
 
-		json, err := db.GenerateJSON()
+		json, err := o.GenerateJSON()
 		require.IsType(t, json, []byte{})
 	})
 }

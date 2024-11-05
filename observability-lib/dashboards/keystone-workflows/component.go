@@ -4,13 +4,19 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+	"github.com/grafana/grafana-foundation-sdk/go/expr"
 
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
-func NewDashboard(props *Props) (*grafana.Dashboard, error) {
-	if err := platformBuildOpts(props); err != nil {
+func NewDashboard(props *Props) (*grafana.Observability, error) {
+	if err := validateInput(props); err != nil {
 		return nil, err
+	}
+	props.AlertsTitlePrefix = "[Keystone]"
+	props.QueryFilters = `env=~"${env}", cluster=~"${cluster}"`
+	props.AlertsTags = map[string]string{
+		"team": "keystone",
 	}
 
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
@@ -24,8 +30,36 @@ func NewDashboard(props *Props) (*grafana.Dashboard, error) {
 
 	builder.AddVars(vars(props)...)
 
-	builder.AddRow("General")
-	builder.AddPanel(general(props)...)
+	builder.AddRow("Engine")
+	builder.AddPanel(engine(props)...)
+
+	builder.AddRow("Registry Syncer")
+	builder.AddPanel(registrySyncer(props)...)
+
+	if props.SlackChannel != "" && props.SlackWebhookURL != "" {
+		builder.AddContactPoint(grafana.NewContactPoint(&grafana.ContactPointOptions{
+			Name: "keystone-slack",
+			Type: "slack",
+			Settings: map[string]interface{}{
+				"url":       props.SlackWebhookURL,
+				"recipient": props.SlackChannel,
+				"username":  "Keystone Alerts",
+				"title":     `{{ template "slack.chainlink.title" . }}`,
+				"text":      `{{ template "slack.chainlink.text" . }}`,
+				"color":     `{{ template "slack.chainlink.color" . }}`,
+			},
+		}))
+
+		notificationPolicySlackOptions := &grafana.NotificationPolicyOptions{
+			Receiver: "keystone-slack",
+			GroupBy:  []string{"grafana_folder", "alertname"},
+			Continue: grafana.Pointer(true),
+		}
+		for name, value := range props.AlertsTags {
+			notificationPolicySlackOptions.ObjectMatchers = append(notificationPolicySlackOptions.ObjectMatchers, alerting.ObjectMatcher{name, "=", value})
+		}
+		builder.AddNotificationPolicy(grafana.NewNotificationPolicy(notificationPolicySlackOptions))
+	}
 
 	return builder.Build()
 }
@@ -52,29 +86,10 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 		Query:      `label_values(platform_engine_workflows_count{env="$env"}, cluster)`,
 	}))
 
-	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
-		VariableOption: &grafana.VariableOption{
-			Label: "Workflow Owner",
-			Name:  "workflowOwner",
-		},
-		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform_engine_workflows_count{env="$env", cluster="$cluster"}, workflowOwner)`,
-		Multi:      false,
-	}))
-
-	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
-		VariableOption: &grafana.VariableOption{
-			Label: "Workflow Name",
-			Name:  "workflowName",
-		},
-		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform_engine_workflows_count{env="$env", cluster="$cluster", workflowOwner="$workflowOwner"}, workflowName)`,
-	}))
-
 	return variables
 }
 
-func general(p *Props) []*grafana.Panel {
+func engine(p *Props) []*grafana.Panel {
 	var panels []*grafana.Panel
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
@@ -86,36 +101,47 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform_engine_workflows_count{` + p.platformOpts.LabelQuery + `}) by (workflowOwner, workflowName)`,
+					Expr:   `sum(platform_engine_workflows_count{` + p.QueryFilters + `}) by (workflowOwner, workflowName)`,
 					Legend: "{{ workflowOwner }} - {{ workflowName }}",
 				},
 			},
 		},
-		AlertOptions: &grafana.AlertOptions{
-			Summary:     "Keystone: No workflows are running",
-			Description: `The number of workflow running is  {{ index $values "A" }}%`,
-			RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-			For:         "15m",
-			Tags: map[string]string{
-				"severity": "critical",
-			},
-			NoDataState: alerting.RuleNoDataStateOK,
-			Query: []grafana.RuleQuery{
-				{
-					Expr:       `sum(platform_engine_workflows_count{` + p.AlertsFilters + `})`,
-					RefID:      "A",
-					Datasource: p.MetricsDataSource.UID,
+		AlertsOptions: []grafana.AlertOptions{
+			{
+				Title:       p.AlertsTitlePrefix + "[Engine] No Workflows Running",
+				Summary:     "Platform Engine: No workflows are running",
+				Description: `{{ index $labels "job" }} number of workflow running is {{ index $values "B" }} in the last 1h`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "1h",
+				Tags: map[string]string{
+					"severity": "critical",
 				},
-			},
-			QueryRefCondition: "B",
-			Condition: []grafana.ConditionQuery{
-				{
-					RefID: "B",
-					ThresholdExpression: &grafana.ThresholdExpression{
-						Expression: "A",
-						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
-							Params: []float64{1},
-							Type:   grafana.TypeThresholdTypeLt,
+				NoDataState: alerting.RuleNoDataStateOK,
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `platform_engine_workflows_count{` + p.AlertsFilters + `}`,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "C",
+				// SUM(A) < 1
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ReduceExpression: &grafana.ReduceExpression{
+							Expression: "A",
+							Reducer:    expr.TypeReduceReducerSum,
+						},
+					},
+					{
+						RefID: "C",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "B",
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{1},
+								Type:   grafana.TypeThresholdTypeLt,
+							},
 						},
 					},
 				},
@@ -132,41 +158,8 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform_engine_workflows_count{` + p.platformOpts.LabelQuery + `}) by (status)`,
+					Expr:   `sum(platform_engine_workflows_count{` + p.QueryFilters + `}) by (status)`,
 					Legend: "{{ status }}",
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Workflow Execution Latency",
-			Description: "",
-			Span:        8,
-			Height:      8,
-			Unit:        "ms",
-			Query: []grafana.Query{
-				{
-					Expr:   `sum(platform_engine_workflow_time{` + p.platformOpts.LabelQuery + `}) by (workflowExecutionID)`,
-					Legend: "WorkflowExecID: {{workflowExecutionID}}",
-				},
-			},
-		},
-	}))
-
-	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Workflow Step Error",
-			Description: "",
-			Span:        8,
-			Height:      8,
-			Query: []grafana.Query{
-				{
-					Expr:   `platform_engine_workflow_errors{` + p.platformOpts.LabelQuery + `}`,
-					Legend: "",
 				},
 			},
 		},
@@ -181,8 +174,122 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_engine_registertrigger_failures{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_engine_registertrigger_failures{` + p.QueryFilters + `}`,
 					Legend: "",
+				},
+			},
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			{
+				Title:       p.AlertsTitlePrefix + "[Engine] Register Trigger Failure",
+				Summary:     "Platform Engine: More than 1 failure over last 15m",
+				Description: `{{ index $labels "job" }} registered {{ index $values "A" }} trigger failures in the last 15m`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "15m",
+				Tags: map[string]string{
+					"severity": "critical",
+				},
+				NoDataState: alerting.RuleNoDataStateOK,
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `platform_engine_registertrigger_failures{` + p.AlertsFilters + `}`,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "C",
+				// SUM(A) > 1
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ReduceExpression: &grafana.ReduceExpression{
+							Expression: "A",
+							Reducer:    expr.TypeReduceReducerSum,
+						},
+					},
+					{
+						RefID: "C",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "B",
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{1},
+								Type:   grafana.TypeThresholdTypeGt,
+							},
+						},
+					},
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflow Step Error",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Query: []grafana.Query{
+				{
+					Expr:   `platform_engine_workflow_errors{` + p.QueryFilters + `}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflow Execution Latency p99",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{` + p.QueryFilters + `}[$__rate_interval])) by (le, job, workflowExecutionID))`,
+					Legend: "WorkflowExecID: {{workflowExecutionID}}",
+				},
+			},
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			{
+				Title:       p.AlertsTitlePrefix + "[Engine] Workflow Execution Latency p99",
+				Summary:     "Workflow Execution latency (99th percentile) is high",
+				Description: `{{ index $labels "job" }} workflow latency is {{ index $values "B" }}ms`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "5m",
+				Tags: map[string]string{
+					"severity": "critical",
+				},
+				NoDataState: alerting.RuleNoDataStateOK,
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{` + p.AlertsFilters + `}[5m])) by (job, le))`,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "C",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ReduceExpression: &grafana.ReduceExpression{
+							Expression: "A",
+							Reducer:    expr.TypeReduceReducerMean,
+						},
+					},
+					{
+						RefID: "C",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "B",
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{900000},
+								Type:   grafana.TypeThresholdTypeGt,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -197,12 +304,18 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_engine_capabilities_count{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_engine_capabilities_count{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},
 		},
 	}))
+
+	return panels
+}
+
+func registrySyncer(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
 
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
@@ -213,7 +326,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_registrysyncer_sync_failures{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_registrysyncer_sync_failures{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},
@@ -229,7 +342,7 @@ func general(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_registrysyncer_launch_failures{` + p.platformOpts.LabelQuery + `}`,
+					Expr:   `platform_registrysyncer_launch_failures{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},

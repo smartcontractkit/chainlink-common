@@ -18,7 +18,7 @@
       {
         "type": "row",
         "collapsed": false,
-        "title": "General",
+        "title": "Engine",
         "gridPos": {
           "h": 1,
           "w": 24,
@@ -33,7 +33,7 @@
         "id": 1,
         "targets": [
           {
-            "expr": "sum(platform_engine_workflows_count{}) by (workflowOwner, workflowName)",
+            "expr": "sum(platform_engine_workflows_count{env=~\"${env}\", cluster=~\"${cluster}\"}) by (workflowOwner, workflowName)",
             "format": "",
             "legendFormat": "{{ workflowOwner }} - {{ workflowName }}",
             "refId": ""
@@ -83,7 +83,7 @@
         "id": 2,
         "targets": [
           {
-            "expr": "sum(platform_engine_workflows_count{}) by (status)",
+            "expr": "sum(platform_engine_workflows_count{env=~\"${env}\", cluster=~\"${cluster}\"}) by (status)",
             "format": "",
             "legendFormat": "{{ status }}",
             "refId": ""
@@ -133,13 +133,13 @@
         "id": 3,
         "targets": [
           {
-            "expr": "sum(platform_engine_workflow_time{}) by (workflowExecutionID)",
+            "expr": "platform_engine_registertrigger_failures{env=~\"${env}\", cluster=~\"${cluster}\"}",
             "format": "",
-            "legendFormat": "WorkflowExecID: {{workflowExecutionID}}",
+            "legendFormat": "",
             "refId": ""
           }
         ],
-        "title": "Workflow Execution Latency",
+        "title": "Register Trigger Failure",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -165,7 +165,7 @@
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "ms",
+            "unit": "",
             "decimals": 0,
             "noValue": "No data",
             "custom": {
@@ -183,7 +183,7 @@
         "id": 4,
         "targets": [
           {
-            "expr": "platform_engine_workflow_errors{}",
+            "expr": "platform_engine_workflow_errors{env=~\"${env}\", cluster=~\"${cluster}\"}",
             "format": "",
             "legendFormat": "",
             "refId": ""
@@ -233,13 +233,13 @@
         "id": 5,
         "targets": [
           {
-            "expr": "platform_engine_registertrigger_failures{}",
+            "expr": "histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{env=~\"${env}\", cluster=~\"${cluster}\"}[$__rate_interval])) by (le, job, workflowExecutionID))",
             "format": "",
-            "legendFormat": "",
+            "legendFormat": "WorkflowExecID: {{workflowExecutionID}}",
             "refId": ""
           }
         ],
-        "title": "Register Trigger Failure",
+        "title": "Workflow Execution Latency p99",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -249,6 +249,56 @@
           "h": 8,
           "w": 8,
           "x": 8,
+          "y": 9
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 6,
+        "targets": [
+          {
+            "expr": "platform_engine_capabilities_count{env=~\"${env}\", cluster=~\"${cluster}\"}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Capability Invocation",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
           "y": 9
         },
         "options": {
@@ -279,17 +329,30 @@
         }
       },
       {
+        "type": "row",
+        "collapsed": false,
+        "title": "Registry Syncer",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 17
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
         "type": "timeseries",
-        "id": 6,
+        "id": 7,
         "targets": [
           {
-            "expr": "platform_engine_capabilities_count{}",
+            "expr": "platform_registrysyncer_sync_failures{env=~\"${env}\", cluster=~\"${cluster}\"}",
             "format": "",
             "legendFormat": "",
             "refId": ""
           }
         ],
-        "title": "Capability Invocation",
+        "title": "Registry Syncer Failures",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -298,8 +361,58 @@
         "gridPos": {
           "h": 8,
           "w": 8,
-          "x": 16,
-          "y": 9
+          "x": 0,
+          "y": 18
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 8,
+        "targets": [
+          {
+            "expr": "platform_registrysyncer_launch_failures{env=~\"${env}\", cluster=~\"${cluster}\"}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Registry Syncer Launcher Failures",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 18
         },
         "options": {
           "legend": {
@@ -372,48 +485,6 @@
           },
           "multi": false,
           "sort": 1
-        },
-        {
-          "type": "query",
-          "name": "workflowOwner",
-          "label": "Workflow Owner",
-          "description": "",
-          "query": "label_values(platform_engine_workflows_count{env=\"$env\", cluster=\"$cluster\"}, workflowOwner)",
-          "datasource": {
-            "uid": "Prometheus"
-          },
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "multi": false,
-          "sort": 1
-        },
-        {
-          "type": "query",
-          "name": "workflowName",
-          "label": "Workflow Name",
-          "description": "",
-          "query": "label_values(platform_engine_workflows_count{env=\"$env\", cluster=\"$cluster\", workflowOwner=\"$workflowOwner\"}, workflowName)",
-          "datasource": {
-            "uid": "Prometheus"
-          },
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "multi": false,
-          "sort": 1
         }
       ]
     },
@@ -422,20 +493,37 @@
   "Alerts": [
     {
       "annotations": {
-        "description": "The number of workflow running is  {{ index $values \"A\" }}%",
+        "description": "{{ index $labels \"job\" }} number of workflow running is {{ index $values \"B\" }} in the last 1h",
+        "panel_title": "Workflows Running",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-        "summary": "Keystone: No workflows are running"
+        "summary": "Platform Engine: No workflows are running"
       },
-      "condition": "B",
+      "condition": "C",
       "data": [
         {
           "datasourceUid": "1",
           "model": {
-            "expr": "sum(platform_engine_workflows_count{})",
+            "expr": "platform_engine_workflows_count{}",
             "legendFormat": "__auto",
             "refId": "A"
           },
           "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "sum",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
           "relativeTimeRange": {
             "from": 600,
             "to": 0
@@ -455,13 +543,90 @@
                 }
               }
             ],
+            "expression": "B",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "threshold"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "1h",
+      "labels": {
+        "severity": "critical",
+        "team": "keystone"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "[Keystone][Engine] No Workflows Running"
+    },
+    {
+      "annotations": {
+        "description": "{{ index $labels \"job\" }} registered {{ index $values \"A\" }} trigger failures in the last 15m",
+        "panel_title": "Register Trigger Failure",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Platform Engine: More than 1 failure over last 15m"
+      },
+      "condition": "C",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "platform_engine_registertrigger_failures{}",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
             "expression": "A",
             "intervalMs": 1000,
             "maxDataPoints": 43200,
+            "reducer": "sum",
             "refId": "B",
-            "type": "threshold"
+            "type": "reduce"
           },
           "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    1,
+                    0
+                  ],
+                  "type": "gt"
+                }
+              }
+            ],
+            "expression": "B",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "threshold"
+          },
+          "refId": "C",
           "relativeTimeRange": {
             "from": 600,
             "to": 0
@@ -472,12 +637,90 @@
       "folderUID": "",
       "for": "15m",
       "labels": {
-        "severity": "critical"
+        "severity": "critical",
+        "team": "keystone"
       },
       "noDataState": "OK",
       "orgID": 0,
       "ruleGroup": "",
-      "title": "Workflows Running"
+      "title": "[Keystone][Engine] Register Trigger Failure"
+    },
+    {
+      "annotations": {
+        "description": "{{ index $labels \"job\" }} workflow latency is {{ index $values \"B\" }}ms",
+        "panel_title": "Workflow Execution Latency p99",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Workflow Execution latency (99th percentile) is high"
+      },
+      "condition": "C",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{}[5m])) by (job, le))",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "mean",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    900000,
+                    0
+                  ],
+                  "type": "gt"
+                }
+              }
+            ],
+            "expression": "B",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "threshold"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "5m",
+      "labels": {
+        "severity": "critical",
+        "team": "keystone"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "[Keystone][Engine] Workflow Execution Latency p99"
     }
   ],
   "ContactPoints": null,

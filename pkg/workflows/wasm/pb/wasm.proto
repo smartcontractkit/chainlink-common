@@ -66,6 +66,9 @@ message FetchRequest {
   bytes body = 4;
   uint32 timeoutMs = 5;
   string id = 6;
+  string workflowName = 7;
+  string workflowOwner = 8;
+  string workflowExecutionId = 9;
 }
 
 message FetchResponse {

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/trace"
@@ -22,7 +23,7 @@ func TestNoopClient(t *testing.T) {
 	err := noopClient.Emitter.Emit(tests.Context(t), []byte("test"),
 		"key1", "value1",
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Logger
 	noopClient.Logger.Emit(tests.Context(t), otellog.Record{})
@@ -38,7 +39,7 @@ func TestNoopClient(t *testing.T) {
 	if err != nil {
 		log.Fatalf("failed to create new gauge")
 	}
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Use the counter and gauge for metrics within application logic
 	counter.Add(tests.Context(t), 1)

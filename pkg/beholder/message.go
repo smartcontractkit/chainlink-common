@@ -1,6 +1,7 @@
 package beholder
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -266,10 +267,10 @@ func (m *Metadata) Validate() error {
 
 func (e Message) Validate() error {
 	if e.Body == nil {
-		return fmt.Errorf("message body is required")
+		return errors.New("message body is required")
 	}
 	if len(e.Attrs) == 0 {
-		return fmt.Errorf("message attributes are required")
+		return errors.New("message attributes are required")
 	}
 	metadata := NewMetadata(e.Attrs)
 	return metadata.Validate()

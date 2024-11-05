@@ -8,11 +8,32 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 )
 
+func objectMatchersEqual(a alerting.ObjectMatchers, b alerting.ObjectMatchers) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		foundMatch := false
+		for j := range b {
+			if reflect.DeepEqual(a[i], b[j]) {
+				foundMatch = true
+				break
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+
+	return true
+}
+
 func policyExist(parent alerting.NotificationPolicy, newNotificationPolicy alerting.NotificationPolicy) bool {
 	for _, notificationPolicy := range parent.Routes {
 		matchersEqual := false
 		if notificationPolicy.ObjectMatchers != nil {
-			matchersEqual = reflect.DeepEqual(notificationPolicy.ObjectMatchers, newNotificationPolicy.ObjectMatchers)
+			matchersEqual = objectMatchersEqual(*notificationPolicy.ObjectMatchers, *newNotificationPolicy.ObjectMatchers)
 		}
 		receiversEqual := reflect.DeepEqual(notificationPolicy.Receiver, newNotificationPolicy.Receiver)
 		if matchersEqual && receiversEqual {

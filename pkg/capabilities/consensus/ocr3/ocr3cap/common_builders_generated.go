@@ -28,6 +28,17 @@ func EncoderConfigWrapper(raw sdk.CapDefinition[EncoderConfig]) EncoderConfigCap
 
 type EncoderConfigCap sdk.CapDefinition[EncoderConfig]
 
+// KeyIdWrapper allows access to field from an sdk.CapDefinition[KeyId]
+func KeyIdWrapper(raw sdk.CapDefinition[KeyId]) KeyIdCap {
+	wrapped, ok := raw.(KeyIdCap)
+	if ok {
+		return wrapped
+	}
+	return KeyIdCap(raw)
+}
+
+type KeyIdCap sdk.CapDefinition[KeyId]
+
 // ReportIdWrapper allows access to field from an sdk.CapDefinition[ReportId]
 func ReportIdWrapper(raw sdk.CapDefinition[ReportId]) ReportIdCap {
 	wrapped, ok := raw.(ReportIdCap)

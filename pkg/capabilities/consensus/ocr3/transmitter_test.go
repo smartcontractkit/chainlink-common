@@ -57,6 +57,7 @@ func TestTransmitter(t *testing.T) {
 		"encoder":            "",
 		"encoder_config":     map[string]any{},
 		"report_id":          hex.EncodeToString(repID),
+		"key_id":             "evm",
 	})
 	require.NoError(t, err)
 
@@ -145,6 +146,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 		"encoder":            "",
 		"encoder_config":     map[string]any{},
 		"report_id":          "aaff",
+		"key_id":             "evm",
 	})
 	require.NoError(t, err)
 

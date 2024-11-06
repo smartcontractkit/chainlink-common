@@ -52,6 +52,12 @@
       "type": "object",
       "additionalProperties": true
     },
+    "key_id" : {
+      "type": "string",
+      "examples": [
+        "evm"
+      ]
+    },
     "report_id" : {
       "type": "string",
       "pattern": "^[a-f0-9]{4}$",

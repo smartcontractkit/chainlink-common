@@ -241,23 +241,23 @@ func engine(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Workflow Execution Latency p99",
+			Title:       "Workflow Execution Latency",
 			Description: "",
 			Span:        8,
 			Height:      8,
 			Unit:        "ms",
 			Query: []grafana.Query{
 				{
-					Expr:   `histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{` + p.QueryFilters + `}[$__rate_interval])) by (le, job, workflowExecutionID))`,
-					Legend: "WorkflowExecID: {{workflowExecutionID}}",
+					Expr:   `platform_engine_workflow_time{` + p.QueryFilters + `}`,
+					Legend: "",
 				},
 			},
 		},
 		AlertsOptions: []grafana.AlertOptions{
 			{
-				Title:       p.AlertsTitlePrefix + "[Engine] Workflow Execution Latency p99",
-				Summary:     "Workflow Execution latency (99th percentile) is high",
-				Description: `{{ index $labels "job" }} workflow latency is {{ index $values "B" }}ms`,
+				Title:       p.AlertsTitlePrefix + "[Engine] Workflow Execution Latency",
+				Summary:     "Workflow Execution latency is high",
+				Description: `{{ index $labels "job" }}/{{ index $labels "workflowID" }} workflow latency is {{ index $values "B" }}ms`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 				For:         "5m",
 				Tags: map[string]string{
@@ -266,7 +266,7 @@ func engine(p *Props) []*grafana.Panel {
 				NoDataState: alerting.RuleNoDataStateOK,
 				Query: []grafana.RuleQuery{
 					{
-						Expr:       `histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{` + p.AlertsFilters + `}[5m])) by (job, le))`,
+						Expr:       `platform_engine_workflow_time{` + p.AlertsFilters + `}`,
 						RefID:      "A",
 						Datasource: p.MetricsDataSource.UID,
 					},

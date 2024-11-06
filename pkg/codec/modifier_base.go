@@ -37,6 +37,7 @@ func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType st
 		return cached, nil
 	}
 
+	var offChainType reflect.Type
 	switch onChainType.Kind() {
 	case reflect.Pointer:
 		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
@@ -44,35 +45,30 @@ func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType st
 			return nil, err
 		}
 
-		ptr := reflect.PointerTo(elm)
-		m.onToOffChainType[onChainType] = ptr
-		m.offToOnChainType[ptr] = onChainType
-		return ptr, nil
+		offChainType = reflect.PointerTo(elm)
 	case reflect.Slice:
 		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
 			return nil, err
 		}
 
-		sliceType := reflect.SliceOf(elm)
-		m.onToOffChainType[onChainType] = sliceType
-		m.offToOnChainType[sliceType] = onChainType
-		return sliceType, nil
+		offChainType = reflect.SliceOf(elm)
 	case reflect.Array:
 		elm, err := m.RetypeToOffChain(onChainType.Elem(), "")
 		if err != nil {
 			return nil, err
 		}
 
-		arrayType := reflect.ArrayOf(onChainType.Len(), elm)
-		m.onToOffChainType[onChainType] = arrayType
-		m.offToOnChainType[arrayType] = onChainType
-		return arrayType, nil
+		offChainType = reflect.ArrayOf(onChainType.Len(), elm)
 	case reflect.Struct:
 		return m.getStructType(onChainType)
 	default:
 		return nil, fmt.Errorf("%w: cannot retype the kind %v", types.ErrInvalidType, onChainType.Kind())
 	}
+
+	m.onToOffChainType[onChainType] = offChainType
+	m.offToOnChainType[offChainType] = onChainType
+	return offChainType, nil
 }
 
 func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, error) {

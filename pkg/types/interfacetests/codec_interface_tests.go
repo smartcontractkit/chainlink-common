@@ -65,7 +65,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
 				resp := tester.EncodeFields(t, req)
 				compatibleItem := compatibleTestStruct{
-					Account:             item.Account,
+					AccountStruct:       item.AccountStruct,
 					Accounts:            item.Accounts,
 					BigField:            item.BigField,
 					DifferentField:      item.DifferentField,
@@ -94,7 +94,10 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				req := &EncodeRequest{TestStructs: []TestStruct{item}, TestOn: TestItemType}
 				resp := tester.EncodeFields(t, req)
 				compatibleMap := map[string]any{
-					"Account":        item.Account,
+					"AccountStruct": map[string]any{
+						"Account":    item.AccountStruct.Account,
+						"AccountStr": item.AccountStruct.AccountStr,
+					},
 					"Accounts":       item.Accounts,
 					"BigField":       item.BigField,
 					"DifferentField": item.DifferentField,
@@ -138,7 +141,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 					DifferentField:      ts.DifferentField,
 					OracleID:            ts.OracleID,
 					OracleIDs:           ts.OracleIDs,
-					Account:             ts.Account,
+					AccountStruct:       ts.AccountStruct,
 					Accounts:            ts.Accounts,
 					BigField:            ts.BigField,
 					NestedDynamicStruct: ts.NestedDynamicStruct,
@@ -322,7 +325,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				cr := tester.GetCodec(t)
 				modified := CreateTestStruct[*testing.T](0, tester)
 				modified.BigField = nil
-				modified.Account = nil
+				modified.AccountStruct.Account = nil
 				actual, err := cr.Encode(ctx, modified, TestItemWithConfigExtra)
 				require.NoError(t, err)
 
@@ -352,7 +355,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 					DifferentField:      "",
 					OracleID:            0,
 					OracleIDs:           [32]commontypes.OracleID{},
-					Account:             nil,
+					AccountStruct:       AccountStruct{},
 					Accounts:            nil,
 					BigField:            nil,
 					NestedDynamicStruct: MidLevelDynamicTestStruct{},

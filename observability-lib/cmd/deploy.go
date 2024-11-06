@@ -14,14 +14,18 @@ var DeployCmd = &cobra.Command{
 			return errAlertsTags
 		}
 
-		metricsDataSource, errMetricsDataSource := grafana.GetDataSourceFromGrafana(
-			cmd.Flag("metrics-datasource").Value.String(),
-			cmd.Flag("grafana-url").Value.String(),
-			cmd.Flag("grafana-token").Value.String(),
-		)
+		var metricsDataSource *grafana.DataSource
+		if cmd.Flag("metrics-datasource").Value.String() != "" {
+			var errMetricsDataSource error
+			metricsDataSource, errMetricsDataSource = grafana.GetDataSourceFromGrafana(
+				cmd.Flag("metrics-datasource").Value.String(),
+				cmd.Flag("grafana-url").Value.String(),
+				cmd.Flag("grafana-token").Value.String(),
+			)
 
-		if errMetricsDataSource != nil {
-			return errMetricsDataSource
+			if errMetricsDataSource != nil {
+				return errMetricsDataSource
+			}
 		}
 
 		var logsDataSource *grafana.DataSource

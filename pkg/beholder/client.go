@@ -6,6 +6,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	otellog "go.opentelemetry.io/otel/log"
@@ -53,35 +54,58 @@ type Client struct {
 // NewClient creates a new Client with initialized OpenTelemetry components
 // To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler)
 func NewClient(cfg Config) (*Client, error) {
+	if cfg.OtelExporterGRPCEndpoint != "" && cfg.OtelExporterHTTPEndpoint != "" {
+		return nil, errors.New("only one exporter endpoint should be set")
+	}
+	if cfg.OtelExporterGRPCEndpoint == "" && cfg.OtelExporterHTTPEndpoint == "" {
+		return nil, errors.New("at least one exporter endpoint should be set")
+	}
+	if cfg.OtelExporterHTTPEndpoint != "" {
+		factory := func(options ...otlploghttp.Option) (sdklog.Exporter, error) {
+			// note: context is unused internally
+			return otlploghttp.New(context.Background(), options...) //nolint
+		}
+		return newHTTPClient(cfg, factory)
+	}
+
 	factory := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		// note: context is unused internally
 		return otlploggrpc.New(context.Background(), options...) //nolint
 	}
-	return newClient(cfg, factory)
+	return newGRPCClient(cfg, factory)
 }
 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
+func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
-	noop := NewNoopClient()
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	creds := insecure.NewCredentials()
 	if !cfg.InsecureConnection && cfg.CACertFile != "" {
 		creds, err = credentials.NewClientTLSFromFile(cfg.CACertFile, "")
 		if err != nil {
-			return noop, err
+			return nil, err
 		}
 	}
-	sharedLogExporter, err := otlploggrpcNew(
+	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
-	)
+	}
+	if cfg.LogRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
+			Enabled:         cfg.LogRetryConfig.Enabled(),
+			InitialInterval: cfg.LogRetryConfig.GetInitialInterval(),
+			MaxInterval:     cfg.LogRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  cfg.LogRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	sharedLogExporter, err := otlploggrpcNew(opts...)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 
 	// Logger
@@ -102,7 +126,7 @@ func newClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 		baseResource,
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	loggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(loggerResource),
@@ -113,14 +137,14 @@ func newClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
 	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
@@ -143,7 +167,7 @@ func newClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 		baseResource,
 	)
 	if err != nil {
-		return noop, err
+		return nil, err
 	}
 
 	messageLoggerProvider := sdklog.NewLoggerProvider(
@@ -174,7 +198,15 @@ func (c Client) Close() (err error) {
 }
 
 // Returns a new Client with the same configuration but with a different package name
+// Deprecated: Use ForName
 func (c Client) ForPackage(name string) Client {
+	return c.ForName(name)
+}
+
+// ForName returns a new Client with the same configuration but with a different name.
+// For global package-scoped telemetry, use the package name.
+// For injected component-scoped telemetry, use a fully qualified name that uniquely identifies this instance.
+func (c Client) ForName(name string) Client {
 	// Logger
 	logger := c.LoggerProvider.Logger(name)
 	// Tracer
@@ -247,10 +279,21 @@ type shutdowner interface {
 func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
-	exporter, err := otlptracegrpc.New(ctx,
+	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-	)
+	}
+	if config.TraceRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
+			Enabled:         config.TraceRetryConfig.Enabled(),
+			InitialInterval: config.TraceRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.TraceRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.TraceRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	// note: context is used internally
+	exporter, err := otlptracegrpc.New(ctx, exporterOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -272,12 +315,21 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 
 func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
-
-	exporter, err := otlpmetricgrpc.New(
-		ctx,
+	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-	)
+	}
+	if config.MetricRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		opts = append(opts, otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
+			Enabled:         config.MetricRetryConfig.Enabled(),
+			InitialInterval: config.MetricRetryConfig.GetInitialInterval(),
+			MaxInterval:     config.MetricRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  config.MetricRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	// note: context is unused internally
+	exporter, err := otlpmetricgrpc.New(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}

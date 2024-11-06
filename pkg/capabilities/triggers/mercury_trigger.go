@@ -246,5 +246,5 @@ func (o *MercuryTriggerService) HealthReport() map[string]error {
 }
 
 func (o *MercuryTriggerService) Name() string {
-	return "MercuryTriggerService"
+	return o.lggr.Name()
 }

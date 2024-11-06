@@ -22,6 +22,8 @@ import (
 // - hard code -> [HardCodeModifierConfig]
 // - extract element -> [ElementExtractorModifierConfig]
 // - epoch to time -> [EpochToTimeModifierConfig]
+// - address to string -> [AddressBytesToStringModifierConfig]
+// - field wrapper -> [WrapperModifierConfig]
 type ModifiersConfig []ModifierConfig
 
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
@@ -52,6 +54,10 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &EpochToTimeModifierConfig{}
 		case ModifierExtractProperty:
 			(*m)[i] = &PropertyExtractorConfig{}
+		case ModifierAddressToString:
+			(*m)[i] = &AddressBytesToStringModifierConfig{}
+		case ModifierWrapper:
+			(*m)[i] = &ModifiersConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -84,6 +90,8 @@ const (
 	ModifierExtractElement  ModifierType = "extract element"
 	ModifierEpochToTime     ModifierType = "epoch to time"
 	ModifierExtractProperty ModifierType = "extract property"
+	ModifierAddressToString ModifierType = "address to string"
+	ModifierWrapper         ModifierType = "wrapper"
 )
 
 type ModifierConfig interface {
@@ -222,6 +230,99 @@ func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[PropertyExtractorConfig]{
 		Type: ModifierExtractProperty,
 		T:    c,
+	})
+}
+
+// AddressBytesToStringModifierConfig is used to transform address byte fields into string fields.
+// It holds the list of fields that should be modified and the chain-specific logic to do the modifications.
+type AddressBytesToStringModifierConfig struct {
+	Fields []string
+	// Modifier is skipped in JSON serialization, will be injected later.
+	Modifier AddressModifier `json:"-"`
+}
+
+func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewAddressBytesToStringModifier(c.Fields, c.Modifier), nil
+}
+
+func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[AddressBytesToStringModifierConfig]{
+		Type: ModifierAddressToString,
+		T:    c,
+	})
+}
+
+// WrapperModifierConfig replaces each field based on cfg map keys with a struct containing one field with the value of the original field which has is named based on map values.
+// Wrapper modifier does not maintain the original pointers.
+// Wrapper modifier config shouldn't edit fields that affect each other since the results are not deterministic.
+//
+//		Example #1:
+//
+//		Based on this input struct:
+//			type example struct {
+//				A string
+//			}
+//
+//		And the wrapper config defined as:
+//	 		{"D": "W"}
+//
+//		Result:
+//			type example struct {
+//				D
+//			}
+//
+//		where D is a struct that contains the original value of D under the name W:
+//			type D struct {
+//				W string
+//			}
+//
+//
+//		Example #2:
+//		Wrapper modifier works on any type of field, including nested fields or nested fields in slices etc.!
+//
+//		Based on this input struct:
+//			type example struct {
+//				A []B
+//			}
+//
+//			type B struct {
+//				C string
+//				D string
+//			}
+//
+//		And the wrapper config defined as:
+//	 		{"A.C": "E", "A.D": "F"}
+//
+//		Result:
+//			type example struct {
+//				A []B
+//			}
+//
+//			type B struct {
+//				C type struct { E string }
+//				D type struct { F string }
+//			}
+//
+//		Where each element of slice A under fields C.E and D.F retains the values of their respective input slice elements A.C and A.D .
+type WrapperModifierConfig struct {
+	// Fields key defines the fields to be wrapped and the name of the wrapper struct.
+	// The field becomes a subfield of the wrapper struct where the name of the subfield is map value.
+	Fields map[string]string
+}
+
+func (r *WrapperModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	fields := map[string]string{}
+	for i, f := range r.Fields {
+		// using a private variable will make the field not serialize, essentially dropping the field
+		fields[upperFirstCharacter(f)] = fmt.Sprintf("dropFieldPrivateName-%s", i)
+	}
+	return NewWrapperModifier(r.Fields), nil
+}
+
+func (r *WrapperModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[WrapperModifierConfig]{
+		Type: ModifierWrapper,
+		T:    r,
 	})
 }
 

@@ -46,6 +46,9 @@ type ContractReader interface {
 	// Passing in a *values.Value as the returnVal will encode the return value as an appropriate value.Value instance.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
+	// GetLatestValueWithHeadData should be used in the same way as GetLatestValue, but also returns the head data.
+	GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error)
+
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
 	// BatchGetLatestValuesResult response is grouped by contract names, which contain read results that maintain the order from the request.
@@ -128,6 +131,10 @@ var _ ContractReader = UnimplementedContractReader{}
 
 func (UnimplementedContractReader) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
 	return UnimplementedError("ContractReader.GetLatestValue unimplemented")
+}
+
+func (UnimplementedContractReader) GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (Head, error) {
+	return Head{}, UnimplementedError("ContractReader.GetLatestValueWithHeadData unimplemented")
 }
 
 func (UnimplementedContractReader) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error) {

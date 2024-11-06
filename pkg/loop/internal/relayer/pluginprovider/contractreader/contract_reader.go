@@ -618,11 +618,11 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 		var tp pb.SortType
 
 		switch sort := sortBy.(type) {
-		case query.SortByBlock:
+		case query.SortByBlock, *query.SortByBlock:
 			tp = pb.SortType_SortBlock
-		case query.SortByTimestamp:
+		case query.SortByTimestamp, *query.SortByTimestamp:
 			tp = pb.SortType_SortTimestamp
-		case query.SortBySequence:
+		case query.SortBySequence, *query.SortBySequence:
 			tp = pb.SortType_SortSequence
 		default:
 			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sort)
@@ -902,5 +902,7 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 }
 
 func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader) {
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader})
+	service := goplugin.ServiceServer{Srv: contractReader}
+	pb.RegisterServiceServer(s, &service)
+	pb.RegisterContractReaderServer(s, NewServer(contractReader))
 }

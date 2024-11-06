@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -159,6 +160,11 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 	)
 
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
+	// Define and add a target to the workflow
+	targetInput := basictarget.TargetInput{CoolInput: trigger.CoolOutput()}
+	targetConfig := basictarget.TargetConfig{Name: "basictarget", Number: 150}
+	targetConfig.New(workflow, targetInput)
+
 	computeFn := func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
 		return true, nil
 	}
@@ -200,5 +206,9 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 	// Do some massaging due to protos lossy conversion of types
 	gotSpec.Triggers[0].Inputs.Mapping = map[string]any{}
 	gotSpec.Triggers[0].Config["number"] = int64(gotSpec.Triggers[0].Config["number"].(uint64))
+	gotSpec.Targets[0].Config["number"] = int64(gotSpec.Targets[0].Config["number"].(uint64))
 	assert.Equal(t, &gotSpec, spc)
+
+	// Verify the target is included in the workflow spec
+	assert.Equal(t, targetConfig.Number, uint64(gotSpec.Targets[0].Config["number"].(int64)))
 }

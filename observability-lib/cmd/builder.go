@@ -116,6 +116,8 @@ func BuildDashboardWithType(options *BuildOptions) (*grafana.Observability, erro
 			Name:              options.Name,
 			MetricsDataSource: options.MetricsDataSource,
 			LogsDataSource:    options.LogsDataSource,
+			SlackChannel:      options.SlackChannel,
+			SlackWebhookURL:   options.SlackWebhookURL,
 		})
 	default:
 		return nil, errors.New("invalid dashboard type")

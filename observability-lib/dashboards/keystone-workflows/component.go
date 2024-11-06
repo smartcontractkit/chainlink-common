@@ -326,7 +326,7 @@ func registrySyncer(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_registrysyncer_sync_failures{` + p.QueryFilters + `}`,
+					Expr:   `platform_registrysyncer_sync_failures_total{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730902923440,
+  "lastUpdate": 1730921390063,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6006,6 +6006,48 @@ window.BENCHMARK_DATA = {
             "value": 28279,
             "unit": "ns/op",
             "extra": "42210 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1702865+kidambisrinivas@users.noreply.github.com",
+            "name": "Sri Kidambi",
+            "username": "kidambisrinivas"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aa5186fe92b4af2378e6fab896addd8a8c886072",
+          "message": "Register ContractReader gRPC service fixes and tests (#921)",
+          "timestamp": "2024-11-06T19:28:50Z",
+          "tree_id": "3b93e962d0ddbc28e702e7c421702313e46387bc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/aa5186fe92b4af2378e6fab896addd8a8c886072"
+        },
+        "date": 1730921389468,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.9,
+            "unit": "ns/op",
+            "extra": "2658676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 503.7,
+            "unit": "ns/op",
+            "extra": "2228364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28718,
+            "unit": "ns/op",
+            "extra": "42397 times\n4 procs"
           }
         ]
       }

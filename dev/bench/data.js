@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730921390063,
+  "lastUpdate": 1730924800137,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6046,6 +6046,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "BenchmarkKeystore_Sign/ed25519/in-process",
             "value": 28718,
+            "unit": "ns/op",
+            "extra": "42397 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3b320ad9b7c45432e44dde9c5441b8d6ce03d33c",
+          "message": "(fix): Enforce Consensus Capability config field key_id (#892)\n\n* (fix): Enforce Consensus Capability config field key_id\r\n\r\n* Generate\r\n\r\n* (test): Fix from merge, add key_id to another test\r\n\r\n---------\r\n\r\nCo-authored-by: Bolek <1416262+bolekk@users.noreply.github.com>",
+          "timestamp": "2024-11-06T15:25:32-05:00",
+          "tree_id": "41ad935712096685b34c7925f773bc55ed925810",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3b320ad9b7c45432e44dde9c5441b8d6ce03d33c"
+        },
+        "date": 1730924799454,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.6,
+            "unit": "ns/op",
+            "extra": "2584399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.4,
+            "unit": "ns/op",
+            "extra": "2361644 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28613,
             "unit": "ns/op",
             "extra": "42397 times\n4 procs"
           }

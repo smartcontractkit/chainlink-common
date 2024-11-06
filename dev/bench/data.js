@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730831491838,
+  "lastUpdate": 1730902923440,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -5964,6 +5964,48 @@ window.BENCHMARK_DATA = {
             "value": 28287,
             "unit": "ns/op",
             "extra": "42333 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cfal@users.noreply.github.com",
+            "name": "cfal",
+            "username": "cfal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c7bded1c08ae54419c07501f396840763f3e609c",
+          "message": "pkg/config/validate.go: check CanInterface on subitems correctly (#918)",
+          "timestamp": "2024-11-06T22:20:51+08:00",
+          "tree_id": "6eb5489cd9a6d9aea4e4e9fbc2032c433e709eaf",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c7bded1c08ae54419c07501f396840763f3e609c"
+        },
+        "date": 1730902922806,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.6,
+            "unit": "ns/op",
+            "extra": "2634972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 505.8,
+            "unit": "ns/op",
+            "extra": "2367771 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28279,
+            "unit": "ns/op",
+            "extra": "42210 times\n4 procs"
           }
         ]
       }

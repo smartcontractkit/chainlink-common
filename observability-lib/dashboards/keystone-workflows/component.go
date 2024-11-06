@@ -73,7 +73,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "env",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform_engine_workflows_count, env)`,
+		Query:      `label_values(platform_engine_workflow_count, env)`,
 		Multi:      false,
 	}))
 
@@ -83,7 +83,7 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 			Name:  "cluster",
 		},
 		Datasource: p.MetricsDataSource.Name,
-		Query:      `label_values(platform_engine_workflows_count{env="$env"}, cluster)`,
+		Query:      `label_values(platform_engine_workflow_count{env="$env"}, cluster)`,
 	}))
 
 	return variables
@@ -101,7 +101,7 @@ func engine(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform_engine_workflows_count{` + p.QueryFilters + `}) by (workflowOwner, workflowName)`,
+					Expr:   `sum(platform_engine_workflow_count{` + p.QueryFilters + `}) by (workflowOwner, workflowName)`,
 					Legend: "{{ workflowOwner }} - {{ workflowName }}",
 				},
 			},
@@ -119,7 +119,7 @@ func engine(p *Props) []*grafana.Panel {
 				NoDataState: alerting.RuleNoDataStateOK,
 				Query: []grafana.RuleQuery{
 					{
-						Expr:       `platform_engine_workflows_count{` + p.AlertsFilters + `}`,
+						Expr:       `platform_engine_workflow_count{` + p.AlertsFilters + `}`,
 						RefID:      "A",
 						Datasource: p.MetricsDataSource.UID,
 					},
@@ -158,7 +158,7 @@ func engine(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform_engine_workflows_count{` + p.QueryFilters + `}) by (status)`,
+					Expr:   `sum(platform_engine_workflow_count{` + p.QueryFilters + `}) by (status)`,
 					Legend: "{{ status }}",
 				},
 			},
@@ -231,7 +231,7 @@ func engine(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_engine_workflow_errors{` + p.QueryFilters + `}`,
+					Expr:   `platform_engine_workflow_errors_total{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},
@@ -304,7 +304,7 @@ func engine(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_engine_capabilities_count{` + p.QueryFilters + `}`,
+					Expr:   `platform_engine_capabilities_count_total{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},

@@ -33,7 +33,7 @@
         "id": 1,
         "targets": [
           {
-            "expr": "sum(platform_engine_workflows_count{env=~\"${env}\", cluster=~\"${cluster}\"}) by (workflowOwner, workflowName)",
+            "expr": "sum(platform_engine_workflow_count{env=~\"${env}\", cluster=~\"${cluster}\"}) by (workflowOwner, workflowName)",
             "format": "",
             "legendFormat": "{{ workflowOwner }} - {{ workflowName }}",
             "refId": ""
@@ -83,7 +83,7 @@
         "id": 2,
         "targets": [
           {
-            "expr": "sum(platform_engine_workflows_count{env=~\"${env}\", cluster=~\"${cluster}\"}) by (status)",
+            "expr": "sum(platform_engine_workflow_count{env=~\"${env}\", cluster=~\"${cluster}\"}) by (status)",
             "format": "",
             "legendFormat": "{{ status }}",
             "refId": ""
@@ -183,7 +183,7 @@
         "id": 4,
         "targets": [
           {
-            "expr": "platform_engine_workflow_errors{env=~\"${env}\", cluster=~\"${cluster}\"}",
+            "expr": "platform_engine_workflow_errors_total{env=~\"${env}\", cluster=~\"${cluster}\"}",
             "format": "",
             "legendFormat": "",
             "refId": ""
@@ -449,7 +449,7 @@
           "name": "env",
           "label": "Environment",
           "description": "",
-          "query": "label_values(platform_engine_workflows_count, env)",
+          "query": "label_values(platform_engine_workflow_count, env)",
           "datasource": {
             "uid": "Prometheus"
           },
@@ -470,7 +470,7 @@
           "name": "cluster",
           "label": "Cluster",
           "description": "",
-          "query": "label_values(platform_engine_workflows_count{env=\"$env\"}, cluster)",
+          "query": "label_values(platform_engine_workflow_count{env=\"$env\"}, cluster)",
           "datasource": {
             "uid": "Prometheus"
           },
@@ -503,7 +503,7 @@
         {
           "datasourceUid": "1",
           "model": {
-            "expr": "platform_engine_workflows_count{}",
+            "expr": "platform_engine_workflow_count{}",
             "legendFormat": "__auto",
             "refId": "A"
           },

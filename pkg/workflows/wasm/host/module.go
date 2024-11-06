@@ -164,7 +164,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	// and local testing has shown that with less than 64 mbs, some
 	// binaries may error sporadically. At 64 MB max memory, we have
 	// some OOM issues with compute steps while using debugger.
-	modCfg.MaxMemoryMBs = int64(math.Max(float64(defaultMaxMemoryMBs), float64(modCfg.MaxMemoryMBs)))
+	modCfg.MaxMemoryMBs = int64(math.Max(float64(500), float64(500)))
 
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
